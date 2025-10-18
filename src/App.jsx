@@ -358,7 +358,10 @@ const WorkoutTrackerApp = () => {
       {/* Header */}
       <div className="bg-slate-800/50 backdrop-blur-sm shadow-xl border-b border-slate-700">
         <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">💪 Workout Tracker</h1>
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Momentum Logo" className="w-10 h-10" />
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Momentum</h1>
+          </div>
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-all duration-200 shadow-lg"
@@ -514,7 +517,7 @@ const WorkoutTrackerApp = () => {
                 {/* Exercises */}
                 <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">
                   <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-                    <span className="text-purple-400">💪</span>
+                    <img src="/logo.png" alt="Momentum Logo" className="w-6 h-6" />
                     Exercices
                   </h3>
                   <div className="space-y-3">

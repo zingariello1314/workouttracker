@@ -1,11 +1,12 @@
-# 💪 Workout Tracker - Suivi d'Entraînement Personnel
+# 🚀 Momentum - Suivi d'Entraînement Personnel
 
 <div align="center">
 
-![Workout Tracker](https://img.shields.io/badge/Workout-Tracker-purple?style=for-the-badge&logo=dumbbell)
-![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=for-the-badge&logo=react)
-![Vite](https://img.shields.io/badge/Vite-5.4.10-646CFF?style=for-the-badge&logo=vite)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.14-38B2AC?style=for-the-badge&logo=tailwind-css)
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge)](https://github.com/zingariello1314/workouttracker)
+![Momentum](https://img.shields.io/badge/Momentum-Fitness-purple?style=for-the-badge&logo=dumbbell)
+[![React](https://img.shields.io/badge/React-18.0+-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=for-the-badge&logo=vite)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.0+-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 
 *Une application web moderne et élégante pour suivre vos entraînements de musculation*
 
@@ -15,9 +16,9 @@
 
 ---
 
-## 🌟 Aperçu
+## 🎯 À Propos
 
-**Workout Tracker** est une application web progressive (PWA) conçue pour les passionnés de fitness qui souhaitent suivre leurs entraînements de musculation de manière efficace et motivante. Avec son interface moderne au thème sombre élégant, l'application offre une expérience utilisateur exceptionnelle pour planifier, exécuter et analyser vos séances d'entraînement.
+**Momentum** est une application web progressive (PWA) conçue pour les passionnés de fitness qui souhaitent suivre leurs entraînements de musculation de manière efficace et motivante. Avec son interface moderne au thème sombre élégant et son logo distinctif, l'application offre une expérience utilisateur exceptionnelle pour planifier, exécuter et analyser vos séances d'entraînement.
 
 ### ✨ Points Forts
 
