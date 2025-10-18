@@ -18,7 +18,7 @@ export const useWorkoutData = () => {
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
         if (!db.objectStoreNames.contains('workoutData')) {
-          db.createObjectStore('workoutData');
+          db.createObjectStore('workoutData', { keyPath: 'id' });
         }
       };
       
@@ -32,7 +32,7 @@ export const useWorkoutData = () => {
       const db = await openDB();
       const transaction = db.transaction(['workoutData'], 'readwrite');
       const store = transaction.objectStore('workoutData');
-      store.put(newData, 'main');
+      store.put({ id: 'main', ...newData });
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
     }
@@ -48,7 +48,13 @@ export const useWorkoutData = () => {
       return new Promise((resolve) => {
         request.onsuccess = () => {
           const result = request.result;
-          resolve(result || null);
+          if (result && result.id) {
+            // Supprimer l'id avant de retourner les données
+            const { id, ...dataWithoutId } = result;
+            resolve(dataWithoutId);
+          } else {
+            resolve(null);
+          }
         };
         request.onerror = () => resolve(null);
       });

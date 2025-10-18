@@ -14,13 +14,18 @@ const useWorkout = () => {
   return context;
 };
 
-export const WorkoutProvider = ({ children }) => {
+const WorkoutProvider = ({ children }) => {
   // État principal
   const [currentDate, setCurrentDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('today');
   const [weekVariant, setWeekVariant] = useState('A');
   const [statsPeriod, setStatsPeriod] = useState('week');
   const [isGymMode, setIsGymMode] = useState(false);
+  
+  // États pour les modifications non sauvegardées par section
+  const [hasUnsavedExercises, setHasUnsavedExercises] = useState(false);
+  const [hasUnsavedStretches, setHasUnsavedStretches] = useState(false);
+  const [tempData, setTempData] = useState(null);
   
   // États des modales
   const [showSettings, setShowSettings] = useState(false);
@@ -55,7 +60,57 @@ export const WorkoutProvider = ({ children }) => {
 
   // Hooks personnalisés
   const { data, updateData } = useWorkoutData();
-  const workoutLogic = useWorkoutLogic(data, updateData);
+
+  // Fonction pour obtenir les données actuelles (temp ou réelles)
+  const getCurrentData = () => {
+    return hasUnsavedExercises || hasUnsavedStretches ? tempData : data;
+  };
+
+  // Fonction pour mettre à jour les données temporaires des exercices
+  const updateTempExerciseData = (newData) => {
+    setTempData(newData);
+    setHasUnsavedExercises(true);
+  };
+
+  // Fonction pour mettre à jour les données temporaires des étirements
+  const updateTempStretchData = (newData) => {
+    setTempData(newData);
+    setHasUnsavedStretches(true);
+  };
+
+  // Fonctions de sauvegarde et annulation pour exercices
+  const saveExerciseChanges = () => {
+    updateData(tempData);
+    setHasUnsavedExercises(false);
+    if (!hasUnsavedStretches) {
+      setTempData(data);
+    }
+  };
+
+  const discardExerciseChanges = () => {
+    setHasUnsavedExercises(false);
+    if (!hasUnsavedStretches) {
+      setTempData(data);
+    }
+  };
+
+  // Fonctions de sauvegarde et annulation pour étirements
+  const saveStretchChanges = () => {
+    updateData(tempData);
+    setHasUnsavedStretches(false);
+    if (!hasUnsavedExercises) {
+      setTempData(data);
+    }
+  };
+
+  const discardStretchChanges = () => {
+    setHasUnsavedStretches(false);
+    if (!hasUnsavedExercises) {
+      setTempData(data);
+    }
+  };
+
+  const workoutLogic = useWorkoutLogic(data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData);
   const workoutStats = useWorkoutStats(data);
 
   // Fonctions utilitaires
@@ -157,6 +212,18 @@ export const WorkoutProvider = ({ children }) => {
     setIsGymMode,
     data,
     
+    // État temporaire
+    tempData,
+    hasUnsavedExercises,
+    hasUnsavedStretches,
+    getCurrentData,
+    updateTempExerciseData,
+    updateTempStretchData,
+    saveExerciseChanges,
+    discardExerciseChanges,
+    saveStretchChanges,
+    discardStretchChanges,
+    
     // Modales
     showSettings,
     setShowSettings,
@@ -217,5 +284,4 @@ export const WorkoutProvider = ({ children }) => {
   );
 };
 
-// Exports
-export { WorkoutContext, useWorkout };
+export { WorkoutContext, useWorkout, WorkoutProvider };

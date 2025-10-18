@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare } from 'lucide-react';
+import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { workoutProgram } from '../../data/workoutProgram';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -14,16 +14,125 @@ const TodayTab = () => {
     getTodayWorkout,
     getDateStr,
     getDayName,
-    toggleCheck,
-    updateReps,
-    toggleEtirement,
     setSelectedExercise,
     setShowExerciseVariations,
     setSessionData,
     setShowSessionFeedback,
     isGymMode,
-    setIsGymMode
+    setIsGymMode,
+    hasUnsavedExercises,
+    hasUnsavedStretches,
+    saveExerciseChanges,
+    discardExerciseChanges,
+    saveStretchChanges,
+    discardStretchChanges,
+    updateTempExerciseData,
+    updateTempStretchData,
+    getCurrentData
   } = useWorkout();
+
+  // Fonctions locales pour les exercices
+  const toggleCheck = (exerciseId, date, autoFillReps = false) => {
+    const currentData = getCurrentData();
+    const dateStr = getDateStr(date);
+    const key = `${dateStr}_${exerciseId}`;
+    const isCurrentlyChecked = currentData.checkedExercises[key] || false;
+    
+    if (!isCurrentlyChecked && autoFillReps) {
+      const workout = getTodayWorkout(date, isGymMode);
+      const exercise = workout.exercices?.find(ex => ex.id === exerciseId);
+      
+      if (exercise && exercise.series) {
+        // Calculer les répétitions moyennes
+        const seriesText = exercise.series;
+        let autoReps = null;
+        
+        if (seriesText.includes('×')) {
+          const match = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
+          if (match) {
+            const sets = parseInt(match[1]);
+            const minReps = parseInt(match[2]);
+            const maxReps = match[3] ? parseInt(match[3]) : minReps;
+            autoReps = sets * Math.round((minReps + maxReps) / 2);
+          }
+        }
+        
+        if (autoReps) {
+          const newData = {
+            ...currentData,
+            checkedExercises: {
+              ...currentData.checkedExercises,
+              [key]: true
+            },
+            reps: {
+              ...currentData.reps,
+              [key]: autoReps.toString()
+            }
+          };
+          updateTempExerciseData(newData);
+          return;
+        }
+      }
+    }
+    
+    const newData = {
+      ...currentData,
+      checkedExercises: {
+        ...currentData.checkedExercises,
+        [key]: !isCurrentlyChecked
+      }
+    };
+    updateTempExerciseData(newData);
+  };
+
+  const updateReps = (exerciseId, reps, date) => {
+    const currentData = getCurrentData();
+    const dateStr = getDateStr(date);
+    const key = `${dateStr}_${exerciseId}`;
+    
+    const newData = {
+      ...currentData,
+      reps: {
+        ...currentData.reps,
+        [key]: reps
+      }
+    };
+    updateTempExerciseData(newData);
+  };
+
+  // Fonctions locales pour les étirements
+  const toggleEtirement = (type, date) => {
+    const currentData = getCurrentData();
+    const dateStr = getDateStr(date);
+    const key = `${dateStr}_${type}`;
+    
+    const newData = {
+      ...currentData,
+      checkedStretches: {
+        ...currentData.checkedStretches,
+        [key]: !currentData.checkedStretches[key]
+      }
+    };
+    updateTempStretchData(newData);
+  };
+
+  // Gestionnaires pour les exercices
+  const handleSaveExercises = () => {
+    saveExerciseChanges();
+  };
+
+  const handleDiscardExercises = () => {
+    discardExerciseChanges();
+  };
+
+  // Gestionnaires pour les étirements
+  const handleSaveStretches = () => {
+    saveStretchChanges();
+  };
+
+  const handleDiscardStretches = () => {
+    discardStretchChanges();
+  };
 
   const workout = getTodayWorkout(currentDate, isGymMode);
   const dateStr = getDateStr(currentDate);
@@ -57,6 +166,14 @@ const TodayTab = () => {
     
     setSessionData(todayData);
     setShowSessionFeedback(true);
+  };
+
+  const handleSave = () => {
+    saveChanges();
+  };
+
+  const handleDiscard = () => {
+    discardChanges();
   };
 
   if (!workout.exercices || workout.exercices.length === 0) {
@@ -174,6 +291,38 @@ const TodayTab = () => {
             );
           })}
         </div>
+
+        {/* Boutons de sauvegarde */}
+        {hasUnsavedExercises && (
+          <div className="mt-6 pt-4 border-t border-slate-600/50">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-yellow-400 flex items-center gap-2">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                Modifications non sauvegardées
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDiscardExercises}
+                  icon={X}
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSaveExercises}
+                  icon={Save}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Enregistrer
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Étirements */}
@@ -203,8 +352,42 @@ const TodayTab = () => {
               </div>
             ))}
           </div>
+
+          {/* Boutons de sauvegarde */}
+          {hasUnsavedStretches && (
+            <div className="mt-6 pt-4 border-t border-slate-600/50">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-yellow-400 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                  Modifications non sauvegardées
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDiscardStretches}
+                    icon={X}
+                    className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleSaveStretches}
+                    icon={Save}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Enregistrer
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
+
+
 
       {/* Bouton de feedback de session */}
       <div className="text-center">

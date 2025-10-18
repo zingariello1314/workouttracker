@@ -300,7 +300,7 @@ const DataEntryTab = () => {
                 💡 <strong>Astuce :</strong> Vous pouvez saisir vos répétitions en avance ou rattraper celles en retard directement dans ce tableau.
               </p>
               <p className={`${typography.presets.bodySmall} text-slate-500`}>
-                Les exercices sont automatiquement marqués comme terminés quand vous saisissez des répétitions > 0.
+                Les exercices sont automatiquement marqués comme terminés quand vous saisissez des répétitions &gt; 0.
               </p>
             </div>
           </CardContent>

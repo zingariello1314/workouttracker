@@ -1,6 +1,9 @@
 import { workoutProgram } from '../data/workoutProgram';
 
-export const useWorkoutLogic = (data, updateData) => {
+export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData) => {
+  // Utiliser getCurrentData si disponible, sinon data
+  const currentData = getCurrentData ? getCurrentData() : data;
+
   const getDateStr = (date) => {
     return date.toISOString().split('T')[0];
   };
@@ -38,18 +41,100 @@ export const useWorkoutLogic = (data, updateData) => {
     };
   };
 
-  const toggleCheck = (exerciseId, date) => {
+  // Fonction pour calculer les répétitions totales à partir du format "NxX-Y" ou "NxX"
+  const calculateAverageReps = (seriesText) => {
+    if (!seriesText) return null;
+    
+    // Rechercher le pattern "nombre×nombre-nombre" (ex: "4×10-12")
+    const fullRangeMatch = seriesText.match(/(\d+)×(\d+)-(\d+)/);
+    if (fullRangeMatch) {
+      const series = parseInt(fullRangeMatch[1]);
+      const minReps = parseInt(fullRangeMatch[2]);
+      const maxReps = parseInt(fullRangeMatch[3]);
+      const averageReps = (minReps + maxReps) / 2;
+      
+      // Retourner le total : nombre de séries × répétitions moyennes
+      return Math.round(series * averageReps);
+    }
+    
+    // Rechercher le pattern "nombre×nombre" (ex: "4×10")
+    const seriesMatch = seriesText.match(/(\d+)×(\d+)/);
+    if (seriesMatch) {
+      const series = parseInt(seriesMatch[1]);
+      const reps = parseInt(seriesMatch[2]);
+      return series * reps;
+    }
+    
+    // Rechercher le pattern "nombre-nombre" sans séries (ex: "10-12")
+    const rangeMatch = seriesText.match(/(\d+)-(\d+)/);
+    if (rangeMatch) {
+      const min = parseInt(rangeMatch[1]);
+      const max = parseInt(rangeMatch[2]);
+      const average = (min + max) / 2;
+      
+      return Math.round(average);
+    }
+    
+    // Si pas de range trouvé, essayer de trouver un nombre simple
+    const singleMatch = seriesText.match(/(\d+)/);
+    if (singleMatch) {
+      return parseInt(singleMatch[1]);
+    }
+    
+    return null;
+  };
+
+  const toggleCheck = (exerciseId, date, autoReps = null) => {
     const dateStr = getDateStr(date);
     const key = `${dateStr}_${exerciseId}`;
+    const isCurrentlyChecked = currentData.checkedExercises[key] || false;
     
+    // Si on décoche, on supprime les reps
+    if (isCurrentlyChecked) {
+      const newData = {
+        ...currentData,
+        checkedExercises: {
+          ...currentData.checkedExercises,
+          [key]: false
+        },
+        reps: {
+          ...currentData.reps,
+          [key]: undefined
+        }
+      };
+      updateTempExerciseData(newData);
+      return;
+    }
+    
+    // Si on coche et qu'il y a des reps automatiques
+    if (autoReps) {
+      const exerciseKey = `${dateStr}_${exerciseId}`;
+      if (!currentData.reps[exerciseKey]) {
+        const newData = {
+          ...currentData,
+          checkedExercises: {
+            ...currentData.checkedExercises,
+            [key]: true
+          },
+          reps: {
+            ...currentData.reps,
+            [key]: autoReps.toString()
+          }
+        };
+        updateTempExerciseData(newData);
+        return;
+      }
+    }
+    
+    // Comportement normal : juste cocher/décocher
     const newData = {
-      ...data,
+      ...currentData,
       checkedExercises: {
-        ...data.checkedExercises,
-        [key]: !data.checkedExercises[key]
+        ...currentData.checkedExercises,
+        [key]: !isCurrentlyChecked
       }
     };
-    updateData(newData);
+    updateTempExerciseData(newData);
   };
 
   const updateReps = (exerciseId, reps, date) => {
@@ -57,13 +142,13 @@ export const useWorkoutLogic = (data, updateData) => {
     const key = `${dateStr}_${exerciseId}`;
     
     const newData = {
-      ...data,
+      ...currentData,
       reps: {
-        ...data.reps,
+        ...currentData.reps,
         [key]: reps
       }
     };
-    updateData(newData);
+    updateTempExerciseData(newData);
   };
 
   const toggleEtirement = (type, date) => {
@@ -71,18 +156,18 @@ export const useWorkoutLogic = (data, updateData) => {
     const key = `${dateStr}_${type}`;
     
     const newData = {
-      ...data,
+      ...currentData,
       checkedStretches: {
-        ...data.checkedStretches,
-        [key]: !data.checkedStretches[key]
+        ...currentData.checkedStretches,
+        [key]: !currentData.checkedStretches[key]
       }
     };
-    updateData(newData);
+    updateTempStretchData(newData);
   };
 
   const changeWeekVariant = (variant) => {
     const newData = {
-      ...data,
+      ...currentData,
       weekVariant: variant
     };
     updateData(newData);
@@ -91,7 +176,7 @@ export const useWorkoutLogic = (data, updateData) => {
   const startProgram = () => {
     const startDate = new Date().toISOString();
     const newData = {
-      ...data,
+      ...currentData,
       startDate,
       weekVariant: 'A'
     };

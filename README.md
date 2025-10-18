@@ -568,6 +568,36 @@ refactor: optimisation du hook useWorkoutStats
 test: ajout de tests pour le composant CalendarTab
 ```
 
+---
+
+## 📝 Changelog
+
+### Version 1.0.1 - Janvier 2025
+
+#### 🔧 Corrections Majeures
+- **Fix: Système de sauvegarde par section** 
+  - Séparation de la logique de sauvegarde entre exercices et étirements
+  - Les boutons "Enregistrer/Annuler" apparaissent maintenant uniquement pour la section modifiée
+  - Suppression des messages de sauvegarde dupliqués
+
+#### 🛠️ Améliorations Techniques
+- **Refactoring du système de données temporaires**
+  - Remplacement de `updateTempData` par `updateTempExerciseData` et `updateTempStretchData`
+  - Ajout des états séparés `hasUnsavedExercises` et `hasUnsavedStretches`
+  - Fonctions de sauvegarde dédiées par section (`saveExerciseChanges`, `saveStretchChanges`)
+
+#### 🐛 Corrections de Bugs
+- **Correction erreur IndexedDB** : Configuration correcte de l'object store avec keyPath
+- **Fix Fast Refresh** : Résolution des avertissements de développement React
+- **Correction références manquantes** : Mise à jour des imports et exports dans useWorkoutLogic
+
+#### 🎯 Expérience Utilisateur
+- Interface plus intuitive avec sauvegarde contextuelle
+- Réduction des interactions inutiles
+- Meilleure gestion des modifications non sauvegardées
+
+---
+
 ### Communauté
 - **Discord** : [Rejoindre le serveur](https://discord.gg/momentum-fitness)
 - **Forum** : [Discussions GitHub](https://github.com/zingariello1314/workouttracker/discussions)
