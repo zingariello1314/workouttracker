@@ -16,6 +16,8 @@ import {
   Calendar,
   Activity
 } from 'lucide-react';
+import { useWorkout } from '../context/WorkoutContext';
+import { getDateStr } from '../utils/dateUtils';
 
 const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
   const [feedback, setFeedback] = useState({
@@ -129,7 +131,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
   const handleSave = () => {
     const feedbackData = {
       ...feedback,
-      date: new Date().toISOString().split('T')[0],
+      date: getDateStr(new Date()),
       timestamp: new Date().toISOString(),
       sessionId: sessionData?.id || Date.now(),
       sessionDuration: sessionData?.duration || 0,

@@ -1,36 +1,161 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Save, Copy, Trash2, Edit3, Target, Clock, Dumbbell, Calendar } from 'lucide-react';
+import { Plus, X, Save, Copy, Trash2, Edit3, Target, Clock, Dumbbell, Calendar, Sunrise, Sun, Sunset } from 'lucide-react';
 
 const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
   const [programName, setProgramName] = useState('');
   const [programDescription, setProgramDescription] = useState('');
-  const [programDuration, setProgramDuration] = useState(4); // semaines
+  const [programDuration, setProgramDuration] = useState(12);
   const [programGoal, setProgramGoal] = useState('strength');
-  const [weeklySchedule, setWeeklySchedule] = useState({
-    monday: { active: true, exercises: [] },
-    tuesday: { active: false, exercises: [] },
-    wednesday: { active: true, exercises: [] },
-    thursday: { active: false, exercises: [] },
-    friday: { active: true, exercises: [] },
-    saturday: { active: false, exercises: [] },
-    sunday: { active: false, exercises: [] }
-  });
-
   const [selectedDay, setSelectedDay] = useState('monday');
   const [showExerciseModal, setShowExerciseModal] = useState(false);
+  const [showStretchModal, setShowStretchModal] = useState(false);
   const [editingExercise, setEditingExercise] = useState(null);
+  const [stretchType, setStretchType] = useState('matin'); // matin, midi, soir
+
+  const [weeklySchedule, setWeeklySchedule] = useState({
+    monday: { 
+      active: false, 
+      exercises: [], 
+      name: '',
+      focus: '',
+      duration: 0,
+      notes: '',
+      etirements: {
+        matin: [],
+        midi: [],
+        soir: []
+      }
+    },
+    tuesday: { 
+      active: false, 
+      exercises: [], 
+      name: '',
+      focus: '',
+      duration: 0,
+      notes: '',
+      etirements: {
+        matin: [],
+        midi: [],
+        soir: []
+      }
+    },
+    wednesday: { 
+      active: false, 
+      exercises: [], 
+      name: '',
+      focus: '',
+      duration: 0,
+      notes: '',
+      etirements: {
+        matin: [],
+        midi: [],
+        soir: []
+      }
+    },
+    thursday: { 
+      active: false, 
+      exercises: [], 
+      name: '',
+      focus: '',
+      duration: 0,
+      notes: '',
+      etirements: {
+        matin: [],
+        midi: [],
+        soir: []
+      }
+    },
+    friday: { 
+      active: false, 
+      exercises: [], 
+      name: '',
+      focus: '',
+      duration: 0,
+      notes: '',
+      etirements: {
+        matin: [],
+        midi: [],
+        soir: []
+      }
+    },
+    saturday: { 
+      active: false, 
+      exercises: [], 
+      name: '',
+      focus: '',
+      duration: 0,
+      notes: '',
+      etirements: {
+        matin: [],
+        midi: [],
+        soir: []
+      }
+    },
+    sunday: { 
+      active: false, 
+      exercises: [], 
+      name: '',
+      focus: '',
+      duration: 0,
+      notes: '',
+      etirements: {
+        matin: [],
+        midi: [],
+        soir: []
+      }
+    }
+  });
+
+  // Exercise modal states
+  const [exerciseName, setExerciseName] = useState('');
+  const [exerciseSets, setExerciseSets] = useState('');
+  const [exerciseReps, setExerciseReps] = useState('');
+  const [exerciseRest, setExerciseRest] = useState('');
+  const [exerciseMuscle, setExerciseMuscle] = useState('pectoraux');
+  const [exerciseIntensity, setExerciseIntensity] = useState('moderate');
+  const [exerciseNotes, setExerciseNotes] = useState('');
+  const [exerciseMaterial, setExerciseMaterial] = useState('');
+  const [exerciseType, setExerciseType] = useState('normal');
+  const [exerciseSeries, setExerciseSeries] = useState('');
+
+  // Stretch modal states
+  const [stretchName, setStretchName] = useState('');
+  const [stretchDuration, setStretchDuration] = useState('');
+  const [stretchInstructions, setStretchInstructions] = useState('');
+
+  const dayNames = {
+    monday: 'Lundi',
+    tuesday: 'Mardi',
+    wednesday: 'Mercredi',
+    thursday: 'Jeudi',
+    friday: 'Vendredi',
+    saturday: 'Samedi',
+    sunday: 'Dimanche'
+  };
 
   const goals = [
     { id: 'strength', label: 'Force', color: 'red' },
-    { id: 'hypertrophy', label: 'Hypertrophie', color: 'blue' },
+    { id: 'muscle', label: 'Muscle', color: 'blue' },
     { id: 'endurance', label: 'Endurance', color: 'green' },
-    { id: 'powerlifting', label: 'Powerlifting', color: 'purple' },
-    { id: 'general', label: 'Général', color: 'gray' }
+    { id: 'weight_loss', label: 'Perte de poids', color: 'yellow' }
   ];
 
   const muscleGroups = [
-    'Pectoraux', 'Dos', 'Épaules', 'Biceps', 'Triceps', 'Quadriceps', 
-    'Ischio-jambiers', 'Mollets', 'Abdominaux', 'Fessiers'
+    'pectoraux', 'dos', 'épaules', 'biceps', 'triceps', 'jambes', 
+    'quadriceps', 'ischio-jambiers', 'mollets', 'abdominaux', 'fessiers'
+  ];
+
+  const exerciseTypes = [
+    { id: 'normal', label: 'Normal' },
+    { id: 'circuit', label: 'Circuit' },
+    { id: 'superset', label: 'Superset' },
+    { id: 'circuit_abdos', label: 'Circuit Abdos' },
+    { id: 'finisher', label: 'Finisher' }
+  ];
+
+  const materials = [
+    'Aucun', 'Haltères', 'Barre', 'Élastiques', 'Kettlebell', 'Machine', 
+    'Banc', 'Tapis', 'Swiss Ball', 'TRX', 'Corde à sauter'
   ];
 
   const exerciseTemplates = {
@@ -46,57 +171,185 @@ const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
     'Fessiers': ['Hip thrust', 'Fentes bulgares', 'Squat sumo', 'Pont fessier']
   };
 
-  const dayNames = {
-    monday: 'Lundi',
-    tuesday: 'Mardi',
-    wednesday: 'Mercredi',
-    thursday: 'Jeudi',
-    friday: 'Vendredi',
-    saturday: 'Samedi',
-    sunday: 'Dimanche'
-  };
-
   useEffect(() => {
     if (initialProgram) {
       setProgramName(initialProgram.name || '');
       setProgramDescription(initialProgram.description || '');
-      setProgramDuration(initialProgram.duration || 4);
+      setProgramDuration(initialProgram.duration || 12);
       setProgramGoal(initialProgram.goal || 'strength');
-      setWeeklySchedule(initialProgram.schedule || weeklySchedule);
+      if (initialProgram.schedule) {
+        setWeeklySchedule(initialProgram.schedule);
+      }
     }
   }, [initialProgram]);
 
-  const ExerciseModal = () => {
-    const [exerciseName, setExerciseName] = useState('');
-    const [exerciseSets, setExerciseSets] = useState('3');
-    const [exerciseReps, setExerciseReps] = useState('8-12');
-    const [exerciseRest, setExerciseRest] = useState('90');
-    const [exerciseMuscle, setExerciseMuscle] = useState('Pectoraux');
-    const [exerciseNotes, setExerciseNotes] = useState('');
-    const [exerciseIntensity, setExerciseIntensity] = useState('moderate');
+  // Reset exercise modal states
+  const resetExerciseModal = () => {
+    setExerciseName('');
+    setExerciseSets('');
+    setExerciseReps('');
+    setExerciseRest('');
+    setExerciseMuscle('pectoraux');
+    setExerciseIntensity('moderate');
+    setExerciseNotes('');
+    setExerciseMaterial('');
+    setExerciseType('normal');
+    setExerciseSeries('');
+  };
 
+  // Reset stretch modal states
+  const resetStretchModal = () => {
+    setStretchName('');
+    setStretchDuration('');
+    setStretchInstructions('');
+  };
+
+  // Stretch Modal Component
+  const StretchModal = () => {
+    const handleSaveStretch = () => {
+      if (!stretchName.trim()) return;
+
+      const stretch = {
+        id: Date.now() + Math.random(),
+        name: stretchName,
+        duration: stretchDuration,
+        instructions: stretchInstructions
+      };
+
+      setWeeklySchedule(prev => ({
+        ...prev,
+        [selectedDay]: {
+          ...prev[selectedDay],
+          etirements: {
+            ...prev[selectedDay].etirements,
+            [stretchType]: [...prev[selectedDay].etirements[stretchType], stretch]
+          }
+        }
+      }));
+
+      setShowStretchModal(false);
+      resetStretchModal();
+    };
+
+    const stretchIcons = {
+      matin: Sunrise,
+      midi: Sun,
+      soir: Sunset
+    };
+
+    const StretchIcon = stretchIcons[stretchType];
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-slate-800 rounded-lg p-6 w-full max-w-2xl">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+              <StretchIcon size={24} />
+              <span>Ajouter un étirement - {stretchType}</span>
+            </h3>
+            <button
+              onClick={() => setShowStretchModal(false)}
+              className="text-gray-400 hover:text-white"
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Nom de l'étirement
+              </label>
+              <input
+                type="text"
+                value={stretchName}
+                onChange={(e) => setStretchName(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                placeholder="Ex: Étirement des quadriceps"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Durée
+              </label>
+              <input
+                type="text"
+                value={stretchDuration}
+                onChange={(e) => setStretchDuration(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                placeholder="Ex: 30 sec, 1 min"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Instructions
+              </label>
+              <textarea
+                value={stretchInstructions}
+                onChange={(e) => setStretchInstructions(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                rows="3"
+                placeholder="Instructions détaillées pour l'étirement"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              onClick={() => setShowStretchModal(false)}
+              className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleSaveStretch}
+              disabled={!stretchName.trim()}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white rounded-lg"
+            >
+              Ajouter
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Enhanced Exercise Modal Component
+  const ExerciseModal = () => {
     useEffect(() => {
       if (editingExercise) {
         setExerciseName(editingExercise.name || '');
-        setExerciseSets(editingExercise.sets || '3');
-        setExerciseReps(editingExercise.reps || '8-12');
-        setExerciseRest(editingExercise.rest || '90');
-        setExerciseMuscle(editingExercise.muscle || 'Pectoraux');
-        setExerciseNotes(editingExercise.notes || '');
+        setExerciseSets(editingExercise.sets || '');
+        setExerciseReps(editingExercise.reps || '');
+        setExerciseRest(editingExercise.rest || '');
+        setExerciseMuscle(editingExercise.muscle || 'pectoraux');
         setExerciseIntensity(editingExercise.intensity || 'moderate');
+        setExerciseNotes(editingExercise.notes || '');
+        setExerciseMaterial(editingExercise.materiel || '');
+        setExerciseType(editingExercise.type || 'normal');
+        setExerciseSeries(editingExercise.series || '');
+      } else {
+        resetExerciseModal();
       }
     }, [editingExercise]);
 
     const handleSaveExercise = () => {
+      if (!exerciseName.trim()) return;
+
       const exercise = {
-        id: editingExercise?.id || Date.now(),
+        id: editingExercise?.id || Date.now() + Math.random(),
         name: exerciseName,
         sets: exerciseSets,
         reps: exerciseReps,
         rest: exerciseRest,
         muscle: exerciseMuscle,
+        intensity: exerciseIntensity,
         notes: exerciseNotes,
-        intensity: exerciseIntensity
+        materiel: exerciseMaterial,
+        type: exerciseType,
+        series: exerciseSeries || `${exerciseSets}x${exerciseReps}`
       };
 
       setWeeklySchedule(prev => ({
@@ -111,6 +364,7 @@ const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
 
       setShowExerciseModal(false);
       setEditingExercise(null);
+      resetExerciseModal();
     };
 
     return (
@@ -124,6 +378,7 @@ const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
               onClick={() => {
                 setShowExerciseModal(false);
                 setEditingExercise(null);
+                resetExerciseModal();
               }}
               className="text-gray-400 hover:text-white"
             >
@@ -134,42 +389,60 @@ const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Groupe musculaire
+                Nom de l'exercice
               </label>
-              <select
-                value={exerciseMuscle}
-                onChange={(e) => setExerciseMuscle(e.target.value)}
+              <input
+                type="text"
+                value={exerciseName}
+                onChange={(e) => setExerciseName(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-              >
-                {muscleGroups.map(muscle => (
-                  <option key={muscle} value={muscle}>{muscle}</option>
-                ))}
-              </select>
+                placeholder="Ex: Développé couché"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Groupe musculaire
+                </label>
+                <select
+                  value={exerciseMuscle}
+                  onChange={(e) => setExerciseMuscle(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                >
+                  {muscleGroups.map(muscle => (
+                    <option key={muscle} value={muscle}>{muscle}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Type d'exercice
+                </label>
+                <select
+                  value={exerciseType}
+                  onChange={(e) => setExerciseType(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                >
+                  {exerciseTypes.map(type => (
+                    <option key={type.id} value={type.id}>{type.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Exercice
+                Format des séries (flexible)
               </label>
-              <div className="flex space-x-2">
-                <select
-                  value={exerciseName}
-                  onChange={(e) => setExerciseName(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                >
-                  <option value="">Choisir un exercice</option>
-                  {exerciseTemplates[exerciseMuscle]?.map(exercise => (
-                    <option key={exercise} value={exercise}>{exercise}</option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Ou saisir un exercice personnalisé"
-                  value={exerciseName}
-                  onChange={(e) => setExerciseName(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                />
-              </div>
+              <input
+                type="text"
+                value={exerciseSeries}
+                onChange={(e) => setExerciseSeries(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                placeholder="Ex: 4x4-6, 3x8-12, 30 sec, 4x max"
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
@@ -211,32 +484,49 @@ const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Intensité
-              </label>
-              <select
-                value={exerciseIntensity}
-                onChange={(e) => setExerciseIntensity(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-              >
-                <option value="light">Légère (60-70%)</option>
-                <option value="moderate">Modérée (70-80%)</option>
-                <option value="heavy">Lourde (80-90%)</option>
-                <option value="max">Maximale (90%+)</option>
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Matériel
+                </label>
+                <select
+                  value={exerciseMaterial}
+                  onChange={(e) => setExerciseMaterial(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                >
+                  {materials.map(material => (
+                    <option key={material} value={material}>{material}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Intensité
+                </label>
+                <select
+                  value={exerciseIntensity}
+                  onChange={(e) => setExerciseIntensity(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                >
+                  <option value="light">Légère (60-70%)</option>
+                  <option value="moderate">Modérée (70-80%)</option>
+                  <option value="heavy">Lourde (80-90%)</option>
+                  <option value="max">Maximale (90%+)</option>
+                </select>
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Notes
+                Notes techniques
               </label>
               <textarea
                 value={exerciseNotes}
                 onChange={(e) => setExerciseNotes(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
                 rows="3"
-                placeholder="Instructions spéciales, technique, etc."
+                placeholder="Instructions spéciales, technique, conseils..."
               />
             </div>
           </div>
@@ -246,6 +536,7 @@ const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
               onClick={() => {
                 setShowExerciseModal(false);
                 setEditingExercise(null);
+                resetExerciseModal();
               }}
               className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg"
             >
@@ -253,7 +544,7 @@ const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
             </button>
             <button
               onClick={handleSaveExercise}
-              disabled={!exerciseName}
+              disabled={!exerciseName.trim()}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white rounded-lg"
             >
               {editingExercise ? 'Modifier' : 'Ajouter'}
@@ -424,71 +715,174 @@ const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
                     />
                     <span className="text-white">Jour d'entraînement</span>
                   </label>
-                  <button
-                    onClick={() => setShowExerciseModal(true)}
-                    disabled={!weeklySchedule[selectedDay].active}
-                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white rounded-lg flex items-center space-x-1"
-                  >
-                    <Plus size={16} />
-                    <span>Exercice</span>
-                  </button>
                 </div>
               </div>
 
               {weeklySchedule[selectedDay].active && (
-                <div className="space-y-3">
-                  {weeklySchedule[selectedDay].exercises.map((exercise, index) => (
-                    <div key={exercise.id} className="bg-slate-800 p-4 rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-white font-medium">{exercise.name}</span>
-                            <span className="text-xs bg-slate-600 text-gray-300 px-2 py-1 rounded">
-                              {exercise.muscle}
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-300 space-x-4">
-                            <span>{exercise.sets} séries</span>
-                            <span>{exercise.reps} reps</span>
-                            <span>{exercise.rest}s repos</span>
-                            <span className="capitalize">{exercise.intensity}</span>
-                          </div>
-                          {exercise.notes && (
-                            <div className="text-xs text-gray-400 mt-1">{exercise.notes}</div>
-                          )}
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => {
-                              setEditingExercise(exercise);
-                              setShowExerciseModal(true);
-                            }}
-                            className="p-2 bg-slate-600 hover:bg-slate-500 text-white rounded"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          <button
-                            onClick={() => setWeeklySchedule(prev => ({
-                              ...prev,
-                              [selectedDay]: {
-                                ...prev[selectedDay],
-                                exercises: prev[selectedDay].exercises.filter(ex => ex.id !== exercise.id)
-                              }
-                            }))}
-                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
+                <div className="space-y-6">
+                  {/* Day Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Nom de la séance
+                      </label>
+                      <input
+                        type="text"
+                        value={weeklySchedule[selectedDay].name}
+                        onChange={(e) => setWeeklySchedule(prev => ({
+                          ...prev,
+                          [selectedDay]: { ...prev[selectedDay], name: e.target.value }
+                        }))}
+                        className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-lg text-white"
+                        placeholder="Ex: Push Day"
+                      />
                     </div>
-                  ))}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Focus musculaire
+                      </label>
+                      <input
+                        type="text"
+                        value={weeklySchedule[selectedDay].focus}
+                        onChange={(e) => setWeeklySchedule(prev => ({
+                          ...prev,
+                          [selectedDay]: { ...prev[selectedDay], focus: e.target.value }
+                        }))}
+                        className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-lg text-white"
+                        placeholder="Ex: Pectoraux, Épaules"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Durée estimée (min)
+                      </label>
+                      <input
+                        type="number"
+                        value={weeklySchedule[selectedDay].duration}
+                        onChange={(e) => setWeeklySchedule(prev => ({
+                          ...prev,
+                          [selectedDay]: { ...prev[selectedDay], duration: parseInt(e.target.value) || 0 }
+                        }))}
+                        className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-lg text-white"
+                        placeholder="60"
+                      />
+                    </div>
+                  </div>
 
-                  {weeklySchedule[selectedDay].exercises.length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
-                      Aucun exercice ajouté pour ce jour
+                  {/* Stretches Section */}
+                  <div className="bg-slate-800 rounded-lg p-4">
+                    <h5 className="text-lg font-semibold text-white mb-4">Étirements</h5>
+                    <div className="grid grid-cols-3 gap-4">
+                      {['matin', 'midi', 'soir'].map(period => {
+                        const icons = { matin: Sunrise, midi: Sun, soir: Sunset };
+                        const Icon = icons[period];
+                        return (
+                          <div key={period} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h6 className="text-white font-medium flex items-center space-x-1">
+                                <Icon size={16} />
+                                <span className="capitalize">{period}</span>
+                              </h6>
+                              <button
+                                onClick={() => {
+                                  setStretchType(period);
+                                  setShowStretchModal(true);
+                                }}
+                                className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                            <div className="space-y-1">
+                              {weeklySchedule[selectedDay].etirements[period].map(stretch => (
+                                <div key={stretch.id} className="text-xs bg-slate-600 p-2 rounded">
+                                  <div className="text-white font-medium">{stretch.name}</div>
+                                  <div className="text-gray-300">{stretch.duration}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
+
+                  {/* Exercises Section */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h5 className="text-lg font-semibold text-white">Exercices</h5>
+                      <button
+                        onClick={() => setShowExerciseModal(true)}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-1"
+                      >
+                        <Plus size={16} />
+                        <span>Exercice</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {weeklySchedule[selectedDay].exercises.map((exercise, index) => (
+                        <div key={exercise.id} className="bg-slate-800 p-4 rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <span className="text-white font-medium">{exercise.name}</span>
+                                <span className="text-xs bg-slate-600 text-gray-300 px-2 py-1 rounded">
+                                  {exercise.muscle}
+                                </span>
+                                {exercise.type !== 'normal' && (
+                                  <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded">
+                                    {exerciseTypes.find(t => t.id === exercise.type)?.label}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-300 space-x-4">
+                                <span>{exercise.sets || `${exercise.sets} séries`}</span>
+                                {exercise.reps && <span>{exercise.reps} reps</span>}
+                                {exercise.rest && <span>{exercise.rest}s repos</span>}
+                                <span className="capitalize">{exercise.intensity}</span>
+                                {exercise.materiel && exercise.materiel !== 'Aucun' && (
+                                  <span className="text-blue-300">• {exercise.materiel}</span>
+                                )}
+                              </div>
+                              {exercise.notes && (
+                                <div className="text-xs text-gray-400 mt-1">{exercise.notes}</div>
+                              )}
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => {
+                                  setEditingExercise(exercise);
+                                  setShowExerciseModal(true);
+                                }}
+                                className="p-2 bg-slate-600 hover:bg-slate-500 text-white rounded"
+                              >
+                                <Edit3 size={16} />
+                              </button>
+                              <button
+                                onClick={() => setWeeklySchedule(prev => ({
+                                  ...prev,
+                                  [selectedDay]: {
+                                    ...prev[selectedDay],
+                                    exercises: prev[selectedDay].exercises.filter(ex => ex.id !== exercise.id)
+                                  }
+                                }))}
+                                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {weeklySchedule[selectedDay].exercises.length === 0 && (
+                        <div className="text-center py-8 text-gray-400">
+                          Aucun exercice ajouté pour ce jour
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -526,6 +920,7 @@ const ProgramEditor = ({ isOpen, onClose, onSave, initialProgram = null }) => {
       </div>
 
       {showExerciseModal && <ExerciseModal />}
+      {showStretchModal && <StretchModal />}
     </div>
   );
 };

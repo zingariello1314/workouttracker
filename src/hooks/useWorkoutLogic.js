@@ -1,12 +1,9 @@
 import { workoutProgram } from '../data/workoutProgram';
+import { getDateStr } from '../utils/dateUtils';
 
 export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData) => {
   // Utiliser getCurrentData si disponible, sinon data
   const currentData = getCurrentData ? getCurrentData() : data;
-
-  const getDateStr = (date) => {
-    return date.toISOString().split('T')[0];
-  };
 
   const getDayName = (date) => {
     const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];

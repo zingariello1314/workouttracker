@@ -1,13 +1,16 @@
 import React, { useState, useContext } from 'react';
 import { WorkoutContext } from '../../context/WorkoutContext';
-import { Play, Pause, Plus, Clock, Calendar, Archive, Settings, Edit3, Trash2 } from 'lucide-react';
+import { Play, Pause, Plus, Clock, Calendar, Archive, Settings, Edit3, Trash2, Download, Eye } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { typography } from '../../styles/typography';
+import { workoutProgram } from '../../data/workoutProgram';
+import ProgramDetailView from '../ProgramDetailView';
 
 const ProgramTab = () => {
-  const { programs, activeProgram, createProgram, activateProgram, deactivateProgram, deleteProgram } = useContext(WorkoutContext);
+  const { programs, activeProgram, createProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram } = useContext(WorkoutContext);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState(null);
   const [newProgram, setNewProgram] = useState({
     name: '',
     description: '',
@@ -44,29 +47,147 @@ const ProgramTab = () => {
     activateProgram(programId);
   };
 
+  const handleViewProgram = (program) => {
+    setSelectedProgram(program);
+  };
+
+  const handleBackToList = () => {
+    setSelectedProgram(null);
+  };
+
+  const handleUpdateProgram = (updatedProgram) => {
+    updateProgram(updatedProgram);
+    setSelectedProgram(updatedProgram);
+  };
+
   const handleDeactivateProgram = () => {
     deactivateProgram();
+  };
+
+  // Fonction pour importer automatiquement le programme actuel
+  const importCurrentProgram = () => {
+    // Conversion du programme actuel au format de l'application
+    const convertedSchedule = {};
+    
+    Object.entries(workoutProgram).forEach(([day, dayData]) => {
+      convertedSchedule[day] = {
+        name: dayData.name,
+        focus: dayData.focus,
+        duration: dayData.duree || "Non spécifié",
+        notes: dayData.notes || "",
+        etirements: {
+          matin: { 
+            name: "Étirements matinaux", 
+            duration: "5-7 min", 
+            instructions: dayData.etirements?.matin || "" 
+          },
+          midi: { 
+            name: "Pause active", 
+            duration: "4-6 min", 
+            instructions: dayData.etirements?.midi || "" 
+          },
+          soir: { 
+            name: "Récupération", 
+            duration: "5-7 min", 
+            instructions: dayData.etirements?.soir || "" 
+          }
+        },
+        exercises: dayData.exercices?.map(exercise => ({
+          id: exercise.id,
+          name: exercise.name,
+          series: exercise.series,
+          reps: "",
+          rest: exercise.type?.includes('circuit') ? 30 : (exercise.type?.includes('superset') ? 45 : 90),
+          intensity: exercise.series?.includes('4×') ? "heavy" : (exercise.series?.includes('3×') ? "moderate" : "light"),
+          notes: exercise.notes || "",
+          materiel: exercise.materiel || "poids du corps",
+          type: exercise.type || "standard"
+        })) || [],
+        // Ajout des variantes salle si elles existent
+        salleVariants: dayData.salleVariants ? {
+          semaineA: {
+            name: dayData.salleVariants.semaineA.name,
+            exercises: dayData.salleVariants.semaineA.exercices.map(ex => ({
+              id: ex.id,
+              name: ex.name,
+              series: ex.series,
+              reps: "",
+              rest: 90,
+              intensity: "moderate",
+              notes: ex.notes || "",
+              materiel: "salle de sport",
+              type: "standard"
+            }))
+          },
+          semaineB: {
+            name: dayData.salleVariants.semaineB.name,
+            exercises: dayData.salleVariants.semaineB.exercices.map(ex => ({
+              id: ex.id,
+              name: ex.name,
+              series: ex.series,
+              reps: "",
+              rest: 90,
+              intensity: "moderate",
+              notes: ex.notes || "",
+              materiel: "salle de sport",
+              type: "standard"
+            }))
+          }
+        } : undefined
+      };
+    });
+
+    const currentProgram = {
+      id: Date.now().toString(),
+      name: "Programme Cycle 3+1",
+      description: "Programme d'entraînement complet - Street Workout, Boxe, Natation et Musculation",
+      duration: 12, // 12 semaines
+      goal: "Force, endurance et développement musculaire complet",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      schedule: convertedSchedule
+    };
+
+    createProgram(currentProgram);
+    alert('Programme actuel importé avec succès !');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        {/* En-tête */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className={`${typography.presets.h1} mb-2`}>
-              Programmes d'Entraînement
-            </h1>
-            <p className="text-slate-300">Gérez vos programmes et suivez votre progression</p>
-          </div>
-          <Button
-            onClick={() => setShowCreateForm(true)}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus size={20} />
-            Nouveau Programme
-          </Button>
-        </div>
+        {selectedProgram ? (
+          <ProgramDetailView 
+            program={selectedProgram}
+            onBack={handleBackToList}
+            onUpdateProgram={handleUpdateProgram}
+          />
+        ) : (
+          <>
+            {/* En-tête */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+              <div>
+                <h1 className={`${typography.presets.h1} mb-2`}>
+                  Programmes d'Entraînement
+                </h1>
+                <p className="text-slate-300">Gérez vos programmes et suivez votre progression</p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={importCurrentProgram}
+                  className="bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 flex items-center gap-2"
+                >
+                  <Download size={20} />
+                  Importer Programme
+                </Button>
+                <Button
+                  onClick={() => setShowCreateForm(true)}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Plus size={20} />
+                  Nouveau Programme
+                </Button>
+              </div>
+            </div>
 
         {/* Programme Actuel */}
         {activeProgram && (
@@ -256,6 +377,14 @@ const ProgramTab = () => {
                           </Button>
                         )}
                         
+                        <Button
+                          onClick={() => handleViewProgram(program)}
+                          className="bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 px-3 py-1 text-sm"
+                        >
+                          <Eye size={14} className="mr-1" />
+                          Voir
+                        </Button>
+                        
                         <button className="p-2 text-slate-400 hover:text-slate-200 transition-colors">
                           <Edit3 size={16} />
                         </button>
@@ -282,6 +411,8 @@ const ProgramTab = () => {
             )}
           </CardContent>
         </Card>
+        </>
+        )}
       </div>
     </div>
   );

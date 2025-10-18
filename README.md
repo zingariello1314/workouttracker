@@ -572,6 +572,30 @@ test: ajout de tests pour le composant CalendarTab
 
 ## 📝 Changelog
 
+### Version 1.0.2 - Janvier 2025
+
+#### 🔧 Correction Critique - Synchronisation des Dates
+- **Fix: Problème de décalage de dates UTC/Local**
+  - Correction de `getDateStr` dans `src/utils/dateUtils.js` pour utiliser le fuseau horaire local
+  - Remplacement de `date.toISOString().split('T')[0]` par une construction manuelle avec `getFullYear()`, `getMonth()`, `getDate()`
+  - Élimination des décalages d'un jour causés par la conversion UTC
+
+#### 🛠️ Uniformisation du Formatage des Dates
+- **Centralisation de la logique de dates**
+  - Mise à jour de tous les fichiers pour utiliser `getDateStr` importé depuis `dateUtils`
+  - Corrections dans : `useWorkoutStats.js`, `useWorkoutLogic.js`, `WorkoutContext.jsx`, `CalendarHeatmap.jsx`, `SessionFeedback.jsx`, `DataEntryTab.jsx`, `TrainingCycles.jsx`
+  - Suppression des définitions locales redondantes de `getDateStr`
+
+#### 🎯 Impact Utilisateur
+- **Synchronisation parfaite** entre les données sauvegardées et l'affichage des colonnes
+- **Cohérence temporelle** : les exercices du samedi soir apparaissent maintenant correctement le samedi
+- **Fiabilité accrue** du suivi quotidien et des statistiques
+
+#### ✅ Validation Technique
+- Vérification de la logique d'attribution des exercices par jour
+- Confirmation que les squats sont bien attribués au dimanche (pas au samedi)
+- Tests de la fonction `getDayName` avec différentes dates
+
 ### Version 1.0.1 - Janvier 2025
 
 #### 🔧 Corrections Majeures

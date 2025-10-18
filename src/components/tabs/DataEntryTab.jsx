@@ -7,6 +7,7 @@ import Input from '../ui/Input';
 import { Badge } from '../ui/Badge';
 import { Calendar, Save, RotateCcw, TrendingUp, Clock, Target } from 'lucide-react';
 import { typography } from '../../styles/typography';
+import PastWorkoutsTable from '../PastWorkoutsTable';
 
 const DataEntryTab = () => {
   const { data, updateReps, toggleCheck, getDateStr, getDayName } = useWorkout();
@@ -138,7 +139,7 @@ const DataEntryTab = () => {
         <div className="flex items-center gap-4">
           <Input
             type="date"
-            value={selectedDate.toISOString().split('T')[0]}
+            value={getDateStr(selectedDate)}
             onChange={(e) => setSelectedDate(new Date(e.target.value))}
             className="bg-slate-800 border-slate-700 text-white"
           />
@@ -354,6 +355,11 @@ const DataEntryTab = () => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Tableau des séances passées */}
+      <div className="mt-8">
+        <PastWorkoutsTable />
+      </div>
     </div>
   );
 };

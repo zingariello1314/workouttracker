@@ -1,0 +1,386 @@
+.past-workouts-table {
+  padding: 1.5rem;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.table-header h2 {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.table-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.program-name {
+  color: #60a5fa;
+  font-weight: 500;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.days-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.days-selector label {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.days-selector select {
+  background: #1e293b;
+  color: white;
+  border: 1px solid #475569;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.days-selector select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.table-container {
+  background: #1e293b;
+  border-radius: 0.75rem;
+  border: 1px solid #334155;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.workout-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.workout-table th,
+.workout-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid #334155;
+}
+
+.workout-table th {
+  background: #334155;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.exercise-column {
+  text-align: left !important;
+  min-width: 200px;
+  max-width: 250px;
+}
+
+.date-column {
+  min-width: 80px;
+  max-width: 100px;
+}
+
+.actions-column {
+  min-width: 100px;
+}
+
+.date-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.day-name {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.date-number {
+  font-size: 0.875rem;
+  color: white;
+  font-weight: 500;
+}
+
+.exercise-row {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.stretch-row {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.exercise-name {
+  text-align: left !important;
+  padding: 1rem 0.75rem;
+}
+
+.exercise-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.exercise-info .name {
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.exercise-info .type {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.data-cell {
+  position: relative;
+  padding: 0.5rem;
+}
+
+.cell-value {
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.cell-value:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+}
+
+.cell-value.has-value {
+  background: #1f2937;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.cell-input {
+  background: #1f2937;
+  border: 2px solid #3b82f6;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  color: white;
+  text-align: center;
+  width: 100%;
+  font-weight: 500;
+}
+
+.cell-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.stretch-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 2.5rem;
+}
+
+.stretch-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: #10b981;
+  cursor: pointer;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btn {
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.action-btn:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+}
+
+.no-active-table {
+  text-align: center;
+  padding: 3rem;
+  background: #1e293b;
+  border-radius: 0.75rem;
+  border: 1px solid #334155;
+}
+
+.no-active-table h3 {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.no-active-table p {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.tables-history {
+  background: #1e293b;
+  border-radius: 0.75rem;
+  border: 1px solid #334155;
+  padding: 1.5rem;
+}
+
+.tables-history h3 {
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.tables-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.table-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #374151;
+  border-radius: 0.5rem;
+  border: 1px solid #4b5563;
+  transition: all 0.2s;
+}
+
+.table-item.active {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+.table-item:hover {
+  background: #4b5563;
+}
+
+.table-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.table-name {
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.table-date {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.table-trigger {
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.reactivate-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reactivate-btn:hover {
+  background: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .past-workouts-table {
+    padding: 1rem;
+  }
+  
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .table-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .workout-table th,
+  .workout-table td {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .exercise-column {
+    min-width: 150px;
+  }
+  
+  .date-column {
+    min-width: 60px;
+  }
+  
+  .actions-column {
+    min-width: 80px;
+  }
+  
+  .table-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .reactivate-btn {
+    align-self: flex-end;
+  }
+}

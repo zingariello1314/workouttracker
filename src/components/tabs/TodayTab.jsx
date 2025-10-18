@@ -253,7 +253,7 @@ const TodayTab = () => {
                 <label className="flex items-center">
                   <Checkbox
                     checked={isChecked}
-                    onChange={() => toggleCheck(exercise.id, currentDate)}
+                    onChange={() => toggleCheck(exercise.id, currentDate, true)}
                     className="w-5 h-5"
                   />
                 </label>

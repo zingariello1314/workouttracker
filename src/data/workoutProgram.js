@@ -9,19 +9,19 @@ export const workoutProgram = {
       soir: "3 min jambe à la paroi (décrocher le bassin) + 1 min d'étirement passif des fléchisseurs de hanche + 1 min dead hang passif au chambranle (optionnel si accessible)"
     },
     exercices: [
-      { id: 1, name: "Tractions pronation", series: "4×4-6", materiel: "barre" },
-      { id: 2, name: "Tractions australiennes", series: "4×10", materiel: "barre" },
-      { id: 3, name: "Dips parallèles", series: "4×12 (8 normales + 4 amplitude complète)", materiel: "parallèles" },
-      { id: 4, name: "Pompes inclinées pieds sur banc", series: "3×12", materiel: "banc" },
-      { id: 5, name: "Pompes inclinées mains sur banc", series: "2×12", materiel: "banc" },
-      { id: 6, name: "Relevés de genoux à la barre", series: "2×20", materiel: "barre" },
-      { id: 7, name: "Relevés de genoux aux parallèles", series: "2×20", materiel: "parallèles" },
-      { id: 8, name: "Mountain climbers", series: "30 sec", type: "circuit_abdos" },
-      { id: 9, name: "Planche", series: "1 min", type: "circuit_abdos" },
-      { id: 10, name: "Jambes tendues rétroversées", series: "20×", type: "circuit_abdos" },
-      { id: 11, name: "Gainage latéral", series: "30 sec chaque côté", type: "circuit_abdos" },
-      { id: 12, name: "Crunchs inversés", series: "15×", type: "circuit_abdos" },
-      { id: 13, name: "Vacuum allongé", series: "5 cycles", type: "circuit_abdos" }
+      { id: 101, name: "Tractions pronation", series: "4×4-6", materiel: "barre" },
+      { id: 102, name: "Tractions australiennes", series: "4×10", materiel: "barre" },
+      { id: 103, name: "Dips parallèles", series: "4×12 (8 normales + 4 amplitude complète)", materiel: "parallèles" },
+      { id: 104, name: "Pompes inclinées pieds sur banc", series: "3×12", materiel: "banc" },
+      { id: 105, name: "Pompes inclinées mains sur banc", series: "2×12", materiel: "banc" },
+      { id: 106, name: "Relevés de genoux à la barre", series: "2×20", materiel: "barre" },
+      { id: 107, name: "Relevés de genoux aux parallèles", series: "2×20", materiel: "parallèles" },
+      { id: 108, name: "Mountain climbers", series: "30 sec", type: "circuit_abdos" },
+      { id: 109, name: "Planche", series: "1 min", type: "circuit_abdos" },
+      { id: 110, name: "Jambes tendues rétroversées", series: "20×", type: "circuit_abdos" },
+      { id: 111, name: "Gainage latéral", series: "30 sec chaque côté", type: "circuit_abdos" },
+      { id: 112, name: "Crunchs inversés", series: "15×", type: "circuit_abdos" },
+      { id: 113, name: "Vacuum allongé", series: "5 cycles", type: "circuit_abdos" }
     ],
     duree: "1h",
     notes: "Boxe 1h30 de 19h30 à 21h"
@@ -36,13 +36,13 @@ export const workoutProgram = {
       soir: "2 min étirement cou + trapèzes (assise, inclinaisons lentes) + 2 min couchée sur rouleau serviette vertical (bras ouverts) + 1 min respiration nasale profonde, tempo 4-4-4"
     },
     exercices: [
-      { id: 1, name: "Pompes lestées", series: "4×10-12", materiel: "gilet lesté", notes: "Focus contrôle + descente lente" },
-      { id: 2, name: "Pompes inclinées sur support", series: "4×12", materiel: "support", notes: "haut des pecs" },
-      { id: 3, name: "Curl alterné", series: "3×10 par bras", materiel: "haltère" },
-      { id: 4, name: "Curl marteau", series: "3×12 par bras", materiel: "haltère" },
-      { id: 5, name: "Curl Zottman", series: "3×10 par bras", materiel: "haltère", notes: "montée supination, descente pronation" },
-      { id: 6, name: "Pompes serrées diamant", series: "3×12", materiel: "poids du corps" },
-      { id: 7, name: "Planche bras tendus", series: "3×30 sec", materiel: "poids du corps", type: "finisher" }
+      { id: 201, name: "Pompes lestées", series: "4×10-12", materiel: "gilet lesté", notes: "Focus contrôle + descente lente" },
+      { id: 202, name: "Pompes inclinées sur support", series: "4×12", materiel: "support", notes: "haut des pecs" },
+      { id: 203, name: "Curl alterné", series: "3×10 par bras", materiel: "haltère" },
+      { id: 204, name: "Curl marteau", series: "3×12 par bras", materiel: "haltère" },
+      { id: 205, name: "Curl Zottman", series: "3×10 par bras", materiel: "haltère", notes: "montée supination, descente pronation" },
+      { id: 206, name: "Pompes serrées diamant", series: "3×12", materiel: "poids du corps" },
+      { id: 207, name: "Planche bras tendus", series: "3×30 sec", materiel: "poids du corps", type: "finisher" }
     ],
     duree: "45-55 min",
     notes: "Natation 2h + récup. Option lourde : gilet sur les 2 premières séries de pompes"
@@ -57,16 +57,16 @@ export const workoutProgram = {
       soir: "3 min posture de l'enfant (bras loin devant) + 1 min chat-vache lent + 2 min allongé, jambes croisées (étirement piriforme + fessier)"
     },
     exercices: [
-      { id: 1, name: "Pompes déclinées", series: "4×10", materiel: "support", notes: "Gilet sur 2 séries si possible" },
-      { id: 2, name: "Pompes pseudo-planche", series: "3×10", materiel: "poids du corps", notes: "Haut des pecs / delto avant" },
-      { id: 3, name: "Développé militaire unilatéral", series: "3×10 par bras", materiel: "haltère" },
-      { id: 4, name: "Élévations latérales", series: "12-15 par bras", materiel: "haltère", type: "superset_epaules" },
-      { id: 5, name: "Oiseaux", series: "12-15", materiel: "haltère", type: "superset_epaules", notes: "élévations postérieures" },
-      { id: 6, name: "Face pull", series: "15", materiel: "élastique", type: "superset_epaules" },
-      { id: 7, name: "Extensions triceps unilatérales", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps", notes: "au-dessus de la tête" },
-      { id: 8, name: "Kickbacks triceps", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps" },
-      { id: 9, name: "Pompes diamant lentes", series: "10-12", materiel: "poids du corps", type: "bloc_triceps", notes: "3s descente / 1s montée" },
-      { id: 10, name: "Pompes sur poignées tempo", series: "3×12", materiel: "poignées", type: "finisher", notes: "Focus contrôle et congestion" }
+      { id: 301, name: "Pompes déclinées", series: "4×10", materiel: "support", notes: "Gilet sur 2 séries si possible" },
+      { id: 302, name: "Pompes pseudo-planche", series: "3×10", materiel: "poids du corps", notes: "Haut des pecs / delto avant" },
+      { id: 303, name: "Développé militaire unilatéral", series: "3×10 par bras", materiel: "haltère" },
+      { id: 304, name: "Élévations latérales", series: "12-15 par bras", materiel: "haltère", type: "superset_epaules" },
+      { id: 305, name: "Oiseaux", series: "12-15", materiel: "haltère", type: "superset_epaules", notes: "élévations postérieures" },
+      { id: 306, name: "Face pull", series: "15", materiel: "élastique", type: "superset_epaules" },
+      { id: 307, name: "Extensions triceps unilatérales", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps", notes: "au-dessus de la tête" },
+      { id: 308, name: "Kickbacks triceps", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps" },
+      { id: 309, name: "Pompes diamant lentes", series: "10-12", materiel: "poids du corps", type: "bloc_triceps", notes: "3s descente / 1s montée" },
+      { id: 310, name: "Pompes sur poignées tempo", series: "3×12", materiel: "poignées", type: "finisher", notes: "Focus contrôle et congestion" }
     ],
     duree: "60-70 min",
     notes: "Superset épaules - 3 à 4 tours (30s entre exos / 90s entre tours). Bloc triceps - 3 à 4 tours (30-45s entre exos / 90s entre tours)"
@@ -94,18 +94,18 @@ export const workoutProgram = {
       soir: "2 min pendule bras + hanche + 2 min relâchement lombaire (genoux pliés, bascule douce bassin) + 2 min jambe à la verticale (décompression veineuse + bassin)"
     },
     exercices: [
-      { id: 1, name: "Tractions supination", series: "4×3", materiel: "barre + gilet lesté" },
-      { id: 2, name: "Tractions australiennes pieds surélevés", series: "4×10-12", materiel: "barre + support" },
-      { id: 3, name: "Dips sur barre parallèle avec gilet", series: "3×6-8", materiel: "parallèles + gilet" },
-      { id: 4, name: "Pompes déclinées", series: "5×10", materiel: "support", notes: "haut des pecs" },
-      { id: 5, name: "Relevés de genoux à la barre", series: "3×20", materiel: "barre" },
-      { id: 6, name: "Relevés de genoux aux parallèles", series: "2×20", materiel: "parallèles" },
-      { id: 7, name: "Mountain climbers", series: "30 sec", type: "circuit_abdos" },
-      { id: 8, name: "Planche dynamique", series: "1 min", type: "circuit_abdos" },
-      { id: 9, name: "Crunch bicyclettes", series: "12×", type: "circuit_abdos" },
-      { id: 10, name: "Gainage latéral dynamique", series: "30 sec", type: "circuit_abdos" },
-      { id: 11, name: "Crunch inversés", series: "12×", type: "circuit_abdos" },
-      { id: 12, name: "Vacuum", series: "5 cycles", type: "circuit_abdos" }
+      { id: 501, name: "Tractions supination", series: "4×3", materiel: "barre + gilet lesté" },
+      { id: 502, name: "Tractions australiennes pieds surélevés", series: "4×10-12", materiel: "barre + support" },
+      { id: 503, name: "Dips sur barre parallèle avec gilet", series: "3×6-8", materiel: "parallèles + gilet" },
+      { id: 504, name: "Pompes déclinées", series: "5×10", materiel: "support", notes: "haut des pecs" },
+      { id: 505, name: "Relevés de genoux à la barre", series: "3×20", materiel: "barre" },
+      { id: 506, name: "Relevés de genoux aux parallèles", series: "2×20", materiel: "parallèles" },
+      { id: 507, name: "Mountain climbers", series: "30 sec", type: "circuit_abdos" },
+      { id: 508, name: "Planche dynamique", series: "1 min", type: "circuit_abdos" },
+      { id: 509, name: "Crunch bicyclettes", series: "12×", type: "circuit_abdos" },
+      { id: 510, name: "Gainage latéral dynamique", series: "30 sec", type: "circuit_abdos" },
+      { id: 511, name: "Crunch inversés", series: "12×", type: "circuit_abdos" },
+      { id: 512, name: "Vacuum", series: "5 cycles", type: "circuit_abdos" }
     ],
     duree: "1h"
   },
@@ -119,43 +119,43 @@ export const workoutProgram = {
       soir: "3 min assis, jambe croisée (twist lent colonne) + 2 min étirement psoas + 2 min jambes surélevées + respiration basse + yeux fermés"
     },
     exercices: [
-      { id: 1, name: "Pompes inclinées tempo", series: "4×10-12", materiel: "support", notes: "haut pecs, pieds sur support" },
-      { id: 2, name: "Pompes serrées tempo", series: "3×12", materiel: "poids du corps", notes: "triceps + pecs internes" },
-      { id: 3, name: "Curl concentration assis", series: "3×10 par bras", materiel: "haltère" },
-      { id: 4, name: "Curl marteau", series: "3×12 par bras", materiel: "haltère" },
-      { id: 5, name: "Curl Zottman", series: "3×10-12 par bras", materiel: "haltère" },
-      { id: 6, name: "Planche avec lever de bras alterné", series: "3×30 sec", materiel: "poids du corps" }
+      { id: 601, name: "Pompes inclinées tempo", series: "4×10-12", materiel: "support", notes: "haut pecs, pieds sur support" },
+      { id: 602, name: "Pompes serrées tempo", series: "3×12", materiel: "poids du corps", notes: "triceps + pecs internes" },
+      { id: 603, name: "Curl concentration assis", series: "3×10 par bras", materiel: "haltère" },
+      { id: 604, name: "Curl marteau", series: "3×12 par bras", materiel: "haltère" },
+      { id: 605, name: "Curl Zottman", series: "3×10-12 par bras", materiel: "haltère" },
+      { id: 606, name: "Planche avec lever de bras alterné", series: "3×30 sec", materiel: "poids du corps" }
     ],
     duree: "45-55 min",
     salleVariants: {
       semaineA: {
         name: "PECS / TRICEPS / BICEPS",
         exercices: [
-          { id: 1, name: "Développé incliné haltères", series: "4×8-10", notes: "Contrôle lent, contraction forte en haut (angle 30-40°)" },
-          { id: 2, name: "Développé incliné barre ou Smith", series: "3×8-10", notes: "Focus zone claviculaire" },
-          { id: 3, name: "Écarté incliné", series: "3×12-15", notes: "Étirement complet, contraction lente" },
-          { id: 4, name: "Pompes déclinées ou machine convergente", series: "3×max", notes: "Congestion maximale" },
-          { id: 5, name: "Développé couché prise serrée", series: "3×8-10", notes: "Base de force triceps" },
-          { id: 6, name: "Extension à la poulie corde", series: "3×12-15", notes: "Monte lentement, descends en contractant" },
-          { id: 7, name: "Extension unilatérale à la poulie", series: "3×12-15 par bras", notes: "Bras collé, coude fixe" },
-          { id: 8, name: "Curl incliné haltères", series: "4×10-12", notes: "Étirement maximal en bas" },
-          { id: 9, name: "Curl marteau", series: "3×10-12", notes: "Cible le brachial" },
-          { id: 10, name: "Curl poulie basse unilatéral", series: "3×12-15", notes: "Tension continue" }
+          { id: 631, name: "Développé incliné haltères", series: "4×8-10", notes: "Contrôle lent, contraction forte en haut (angle 30-40°)" },
+          { id: 632, name: "Développé incliné barre ou Smith", series: "3×8-10", notes: "Focus zone claviculaire" },
+          { id: 633, name: "Écarté incliné", series: "3×12-15", notes: "Étirement complet, contraction lente" },
+          { id: 634, name: "Pompes déclinées ou machine convergente", series: "3×max", notes: "Congestion maximale" },
+          { id: 635, name: "Développé couché prise serrée", series: "3×8-10", notes: "Base de force triceps" },
+          { id: 636, name: "Extension à la poulie corde", series: "3×12-15", notes: "Monte lentement, descends en contractant" },
+          { id: 637, name: "Extension unilatérale à la poulie", series: "3×12-15 par bras", notes: "Bras collé, coude fixe" },
+          { id: 638, name: "Curl incliné haltères", series: "4×10-12", notes: "Étirement maximal en bas" },
+          { id: 639, name: "Curl marteau", series: "3×10-12", notes: "Cible le brachial" },
+          { id: 640, name: "Curl poulie basse unilatéral", series: "3×12-15", notes: "Tension continue" }
         ]
       },
       semaineB: {
         name: "PECS / TRICEPS / BICEPS - VARIANTE",
         exercices: [
-          { id: 1, name: "Développé incliné haltères", series: "4×8-10", notes: "Angle 30-40°, amplitude complète" },
-          { id: 2, name: "Développé haltères plat", series: "3×8-10", notes: "Focus milieu poitrine" },
-          { id: 3, name: "Écarté à la poulie vis-à-vis", series: "3×12-15", notes: "Tension constante" },
-          { id: 4, name: "Pompes lestées ou classiques", series: "3×max", notes: "Congestion parfaite" },
-          { id: 5, name: "Extension poulie prise pronation", series: "3×10-12", notes: "Focus vaste latéral" },
-          { id: 6, name: "Extension poulie prise supination", series: "3×10-12", notes: "Accent longue portion" },
-          { id: 7, name: "Extension unilatérale poulie", series: "3×12-15 par bras", notes: "Isolation maximale" },
-          { id: 8, name: "Curl incliné haltères", series: "4×10-12", notes: "Étirement profond" },
-          { id: 9, name: "Curl marteau", series: "3×10-12", notes: "Épaissit le bras" },
-          { id: 10, name: "Curl poulie basse unilatéral", series: "3×12-15", notes: "Mouvement fluide" }
+          { id: 651, name: "Développé incliné haltères", series: "4×8-10", notes: "Angle 30-40°, amplitude complète" },
+          { id: 652, name: "Développé haltères plat", series: "3×8-10", notes: "Focus milieu poitrine" },
+          { id: 653, name: "Écarté à la poulie vis-à-vis", series: "3×12-15", notes: "Tension constante" },
+          { id: 654, name: "Pompes lestées ou classiques", series: "3×max", notes: "Congestion parfaite" },
+          { id: 655, name: "Extension poulie prise pronation", series: "3×10-12", notes: "Focus vaste latéral" },
+          { id: 656, name: "Extension poulie prise supination", series: "3×10-12", notes: "Accent longue portion" },
+          { id: 657, name: "Extension unilatérale poulie", series: "3×12-15 par bras", notes: "Isolation maximale" },
+          { id: 658, name: "Curl incliné haltères", series: "4×10-12", notes: "Étirement profond" },
+          { id: 659, name: "Curl marteau", series: "3×10-12", notes: "Épaissit le bras" },
+          { id: 660, name: "Curl poulie basse unilatéral", series: "3×12-15", notes: "Mouvement fluide" }
         ]
       }
     }
@@ -170,47 +170,47 @@ export const workoutProgram = {
       soir: "5 min allongé jambes en l'air ou sur un support + Respiration 4-7-8 (inspire 4s – bloque 7s – expire 8s) + Introspection / recentrage / récupération profonde"
     },
     exercices: [
-      { id: 1, name: "Pompes sur poignées avec gilet", series: "4×10-12", materiel: "poignées + gilet" },
-      { id: 2, name: "Pompes pseudo-planche inclinées", series: "3×10", materiel: "support", notes: "haut pecs / delto avant" },
-      { id: 3, name: "Développé militaire unilatéral assis", series: "3×10 par bras", materiel: "haltère" },
-      { id: 4, name: "Élévations frontales", series: "12-15 par bras", materiel: "haltère", type: "superset_epaules" },
-      { id: 5, name: "Oiseaux penché", series: "12-15", materiel: "haltère", type: "superset_epaules" },
-      { id: 6, name: "Face pull élastique", series: "15", materiel: "élastique", type: "superset_epaules" },
-      { id: 7, name: "Extensions triceps allongé", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps" },
-      { id: 8, name: "Kickbacks triceps", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps" },
-      { id: 9, name: "Pompes diamant lentes", series: "10-12", materiel: "poids du corps", type: "bloc_triceps" },
-      { id: 10, name: "Pompes tempo sur poignées", series: "3×12", materiel: "poignées", type: "finisher" }
+      { id: 701, name: "Pompes sur poignées avec gilet", series: "4×10-12", materiel: "poignées + gilet" },
+      { id: 702, name: "Pompes pseudo-planche inclinées", series: "3×10", materiel: "support", notes: "haut pecs / delto avant" },
+      { id: 703, name: "Développé militaire unilatéral assis", series: "3×10 par bras", materiel: "haltère" },
+      { id: 704, name: "Élévations frontales", series: "12-15 par bras", materiel: "haltère", type: "superset_epaules" },
+      { id: 705, name: "Oiseaux penché", series: "12-15", materiel: "haltère", type: "superset_epaules" },
+      { id: 706, name: "Face pull élastique", series: "15", materiel: "élastique", type: "superset_epaules" },
+      { id: 707, name: "Extensions triceps allongé", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps" },
+      { id: 708, name: "Kickbacks triceps", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps" },
+      { id: 709, name: "Pompes diamant lentes", series: "10-12", materiel: "poids du corps", type: "bloc_triceps" },
+      { id: 710, name: "Pompes tempo sur poignées", series: "3×12", materiel: "poignées", type: "finisher" }
     ],
     duree: "60-70 min",
     salleVariants: {
       semaineA: {
         name: "JAMBES - SPÉCIALE DÉBUTANT / REPRISE",
         exercices: [
-          { id: 1, name: "Squat", series: "4×8-10", notes: "Barre ou haltères, pieds largeur épaules" },
-          { id: 2, name: "Presse à cuisses", series: "3×10-12", notes: "Pousse avec les talons" },
-          { id: 3, name: "Fentes marchées", series: "3×10 par jambe", notes: "Grande amplitude, buste droit" },
-          { id: 4, name: "Leg extension", series: "3×12-15", notes: "Monte vite, descends lentement" },
-          { id: 5, name: "Leg curl allongé", series: "3×10-12", notes: "Contracte fort en haut" },
-          { id: 6, name: "Hip thrust", series: "3×10-12", notes: "Dos sur banc, contraction max" },
-          { id: 7, name: "Soulevé de terre jambes semi-tendues", series: "3×10-12", notes: "Légère flexion genoux" },
-          { id: 8, name: "Mollets debout", series: "4×15-20", notes: "Contraction 1 sec en haut" },
-          { id: 9, name: "Mollets assis", series: "3×15-20", notes: "Cible le soléaire" },
-          { id: 10, name: "Gainage", series: "3×30-45 sec", notes: "Stabilité du tronc" }
+          { id: 731, name: "Squat", series: "4×8-10", notes: "Barre ou haltères, pieds largeur épaules" },
+          { id: 732, name: "Presse à cuisses", series: "3×10-12", notes: "Pousse avec les talons" },
+          { id: 733, name: "Fentes marchées", series: "3×10 par jambe", notes: "Grande amplitude, buste droit" },
+          { id: 734, name: "Leg extension", series: "3×12-15", notes: "Monte vite, descends lentement" },
+          { id: 735, name: "Leg curl allongé", series: "3×10-12", notes: "Contracte fort en haut" },
+          { id: 736, name: "Hip thrust", series: "3×10-12", notes: "Dos sur banc, contraction max" },
+          { id: 737, name: "Soulevé de terre jambes semi-tendues", series: "3×10-12", notes: "Légère flexion genoux" },
+          { id: 738, name: "Mollets debout", series: "4×15-20", notes: "Contraction 1 sec en haut" },
+          { id: 739, name: "Mollets assis", series: "3×15-20", notes: "Cible le soléaire" },
+          { id: 740, name: "Gainage", series: "3×30-45 sec", notes: "Stabilité du tronc" }
         ]
       },
       semaineB: {
         name: "JAMBES - VARIANTE",
         exercices: [
-          { id: 1, name: "Front squat", series: "4×8-10", notes: "Plus de charge sur quadriceps" },
-          { id: 2, name: "Hack squat", series: "3×10-12", notes: "Excellent pour quadriceps" },
-          { id: 3, name: "Fentes bulgares", series: "3×10 par jambe", notes: "Pied arrière sur banc" },
-          { id: 4, name: "Sissy squat", series: "3×12-15", notes: "Finition quadriceps" },
-          { id: 5, name: "Soulevé de terre jambes tendues", series: "3×10-12", notes: "Accent ischios et fessiers" },
-          { id: 6, name: "Good morning", series: "3×12-15", notes: "Mouvement de charnière hanche" },
-          { id: 7, name: "Glute bridge", series: "3×12-15", notes: "Variante hip thrust" },
-          { id: 8, name: "Mollets à la presse", series: "4×15-20", notes: "Descente lente" },
-          { id: 9, name: "Mollets unilatéraux debout", series: "3×15 par jambe", notes: "Corriger déséquilibres" },
-          { id: 10, name: "Gainage dynamique", series: "3×30-45 sec", notes: "Alternance planche avant/côté" }
+          { id: 751, name: "Front squat", series: "4×8-10", notes: "Plus de charge sur quadriceps" },
+          { id: 752, name: "Hack squat", series: "3×10-12", notes: "Excellent pour quadriceps" },
+          { id: 753, name: "Fentes bulgares", series: "3×10 par jambe", notes: "Pied arrière sur banc" },
+          { id: 754, name: "Sissy squat", series: "3×12-15", notes: "Finition quadriceps" },
+          { id: 755, name: "Soulevé de terre jambes tendues", series: "3×10-12", notes: "Accent ischios et fessiers" },
+          { id: 756, name: "Good morning", series: "3×12-15", notes: "Mouvement de charnière hanche" },
+          { id: 757, name: "Glute bridge", series: "3×12-15", notes: "Variante hip thrust" },
+          { id: 758, name: "Mollets à la presse", series: "4×15-20", notes: "Descente lente" },
+          { id: 759, name: "Mollets unilatéraux debout", series: "3×15 par jambe", notes: "Corriger déséquilibres" },
+          { id: 760, name: "Gainage dynamique", series: "3×30-45 sec", notes: "Alternance planche avant/côté" }
         ]
       }
     }

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, TrendingUp, Target, RotateCcw, Play, Pause, CheckCircle, AlertCircle, BarChart3, Clock, Zap } from 'lucide-react';
+import { Calendar, Plus, Edit2, Trash2, Play, Pause, RotateCcw, Target, TrendingUp, CheckCircle, AlertCircle, BarChart3, Clock, Zap, X } from 'lucide-react';
+import { useWorkout } from '../context/WorkoutContext';
+import { getDateStr } from '../utils/dateUtils';
 
 const TrainingCycles = ({ isOpen, onClose, workoutData = [], programs = [] }) => {
   const [activeCycle, setActiveCycle] = useState(null);
@@ -55,7 +57,7 @@ const TrainingCycles = ({ isOpen, onClose, workoutData = [], programs = [] }) =>
   const CreateCycleModal = () => {
     const [cycleName, setCycleName] = useState('');
     const [cycleType, setCycleType] = useState('linear');
-    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(getDateStr(new Date()));
     const [selectedProgramId, setSelectedProgramId] = useState('');
     const [customPhases, setCustomPhases] = useState([]);
 

@@ -12,6 +12,8 @@ import {
   Zap,
   BarChart3
 } from 'lucide-react';
+import { useWorkout } from '../context/WorkoutContext';
+import { getDateStr } from '../utils/dateUtils';
 
 const CalendarHeatmap = ({ workoutHistory = [] }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -21,7 +23,7 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
 
   // Calcul de l'intensité pour une date donnée avec plus de précision
   const getIntensityForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getDateStr(date);
     const session = workoutHistory.find(s => s.date === dateStr);
     
     if (!session || !session.exercises) return { level: 0, reps: 0, exercises: 0, duration: 0 };
