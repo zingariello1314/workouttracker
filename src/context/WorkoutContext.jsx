@@ -5,7 +5,8 @@ import { useWorkoutStats } from '../hooks/useWorkoutStats';
 
 const WorkoutContext = createContext();
 
-export const useWorkout = () => {
+// Hook personnalisé pour utiliser le contexte
+const useWorkout = () => {
   const context = useContext(WorkoutContext);
   if (!context) {
     throw new Error('useWorkout must be used within a WorkoutProvider');
@@ -38,6 +39,8 @@ export const WorkoutProvider = ({ children }) => {
   const [sessionData, setSessionData] = useState(null);
   const [editingProgram, setEditingProgram] = useState(null);
   const [customPrograms, setCustomPrograms] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [activeProgram, setActiveProgram] = useState(null);
   const [progressForm, setProgressForm] = useState({
     date: new Date().toISOString().split('T')[0],
     weight: '',
@@ -45,7 +48,6 @@ export const WorkoutProvider = ({ children }) => {
       chest: '',
       waist: '',
       hips: '',
-      arms: '',
       thighs: ''
     },
     notes: ''
@@ -83,6 +85,62 @@ export const WorkoutProvider = ({ children }) => {
       progressPhotos: data.progressPhotos.filter(photo => photo.id !== photoId)
     };
     updateData(newData);
+  };
+
+  // Fonctions de gestion des programmes
+  const createProgram = (programData) => {
+    const newProgram = {
+      id: Date.now(),
+      ...programData,
+      status: 'inactive',
+      createdAt: new Date().toISOString(),
+      startDate: null,
+      endDate: null
+    };
+    setPrograms(prev => [...prev, newProgram]);
+  };
+
+  const activateProgram = (programId) => {
+    // Désactiver le programme actuel s'il y en a un
+    if (activeProgram) {
+      setPrograms(prev => prev.map(p => 
+        p.id === activeProgram.id 
+          ? { ...p, status: 'completed', endDate: new Date().toISOString() }
+          : p
+      ));
+    }
+    
+    // Activer le nouveau programme
+    const programToActivate = programs.find(p => p.id === programId);
+    if (programToActivate) {
+      const updatedProgram = {
+        ...programToActivate,
+        status: 'active',
+        startDate: new Date().toISOString()
+      };
+      setPrograms(prev => prev.map(p => 
+        p.id === programId ? updatedProgram : p
+      ));
+      setActiveProgram(updatedProgram);
+    }
+  };
+
+  const deactivateProgram = () => {
+    if (activeProgram) {
+      setPrograms(prev => prev.map(p => 
+        p.id === activeProgram.id 
+          ? { ...p, status: 'completed', endDate: new Date().toISOString() }
+          : p
+      ));
+      setActiveProgram(null);
+    }
+  };
+
+  const deleteProgram = (programId) => {
+    setPrograms(prev => prev.filter(p => p.id !== programId));
+    if (activeProgram && activeProgram.id === programId) {
+      setActiveProgram(null);
+    }
   };
 
   const value = {
@@ -130,6 +188,10 @@ export const WorkoutProvider = ({ children }) => {
     setEditingProgram,
     customPrograms,
     setCustomPrograms,
+    programs,
+    setPrograms,
+    activeProgram,
+    setActiveProgram,
     progressForm,
     setProgressForm,
     
@@ -141,6 +203,10 @@ export const WorkoutProvider = ({ children }) => {
     changeDate,
     addProgressPhoto,
     deleteProgressPhoto,
+    createProgram,
+    activateProgram,
+    deactivateProgram,
+    deleteProgram,
     updateData
   };
 
@@ -150,3 +216,6 @@ export const WorkoutProvider = ({ children }) => {
     </WorkoutContext.Provider>
   );
 };
+
+// Exports
+export { WorkoutContext, useWorkout };

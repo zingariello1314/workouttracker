@@ -27,7 +27,7 @@
 - 💾 **Stockage Local** : Vos données restent privées et accessibles hors ligne
 - 📊 **Analyses Détaillées** : Statistiques complètes et suivi de progression
 - 🔄 **Temps Réel** : Interface réactive avec mises à jour instantanées
-- 🗂️ **Navigation Complète** : 7 onglets spécialisés pour une expérience optimale
+- 🗂️ **Navigation Complète** : 8 onglets spécialisés pour une expérience optimale
 
 ---
 
@@ -90,6 +90,32 @@
   - Identification des patterns d'entraînement
   - Détection des périodes d'inactivité
   - Suggestions d'optimisation du planning
+
+### ✏️ Onglet "Saisie"
+**Interface dédiée à la saisie de données d'entraînement**
+- **Saisie Rapide du Jour** :
+  - Liste automatique des exercices programmés pour la date sélectionnée
+  - Saisie directe des répétitions avec validation en temps réel
+  - Marquage automatique des exercices comme "terminés" lors de la saisie
+  - Badges visuels pour indiquer le statut (✓ Fait, nombre de reps)
+  - Sélecteur de date pour choisir n'importe quel jour
+- **Mode Avancé - Tableau Multi-Jours** :
+  - Vue tableau des 7 derniers jours avec tous les exercices
+  - Saisie en avance ou en retard directement dans le tableau
+  - Détection automatique des exercices programmés par jour
+  - Indicateurs visuels pour les exercices terminés
+  - Mise à jour en temps réel des données
+- **Fonctionnalités Avancées** :
+  - Sauvegarde automatique dans le système de données
+  - Réinitialisation complète des données d'une journée
+  - Résumé en temps réel : répétitions totales, exercices terminés, progression
+  - Interface cohérente avec le thème sombre de l'application
+  - Gestion intelligente des jours de repos avec messages informatifs
+- **Flexibilité d'Usage** :
+  - Alternative à l'onglet "Aujourd'hui" pour la saisie de données
+  - Rattrapage des données des jours précédents
+  - Anticipation des saisies pour les jours suivants
+  - Vue d'ensemble sur une semaine complète
 
 ### 📊 Onglet "Graphiques"
 **Visualisation avancée de vos performances**

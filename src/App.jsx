@@ -3,8 +3,10 @@ import { WorkoutProvider } from './context/WorkoutContext';
 import Header from './components/layout/Header';
 import Navigation from './components/layout/Navigation';
 import TodayTab from './components/tabs/TodayTab';
+import DataEntryTab from './components/tabs/DataEntryTab';
 import ProgressTab from './components/tabs/ProgressTab';
 import CalendarTab from './components/tabs/CalendarTab';
+import ProgramTab from './components/tabs/ProgramTab';
 import ChartsTab from './components/tabs/ChartsTab';
 import StatsTab from './components/tabs/StatsTab';
 import ExercisesTab from './components/tabs/ExercisesTab';
@@ -34,10 +36,14 @@ const WorkoutTrackerContent = () => {
     switch (activeTab) {
       case 'today':
         return <TodayTab />;
+      case 'data-entry':
+        return <DataEntryTab />;
       case 'progress':
         return <ProgressTab />;
       case 'calendar':
         return <CalendarTab />;
+      case 'program':
+        return <ProgramTab />;
       case 'charts':
         return <ChartsTab />;
       case 'stats':
