@@ -3,11 +3,27 @@ import { useWorkout } from '../../context/WorkoutContext';
 import CalendarHeatmap from '../CalendarHeatmap';
 
 const CalendarTab = () => {
-  const { data } = useWorkout();
+  const { getWorkoutHistory } = useWorkout();
+  
+  const workoutHistory = getWorkoutHistory();
+
+  // Debug: Afficher les données récupérées du contexte
+  console.log('🔍 DEBUG CalendarTab: getWorkoutHistory appelé');
+  console.log('🔍 DEBUG CalendarTab: workoutHistory récupéré:', workoutHistory);
+  console.log('🔍 DEBUG CalendarTab: Nombre de sessions dans workoutHistory:', workoutHistory?.length || 0);
+  
+  if (workoutHistory && workoutHistory.length > 0) {
+    console.log('🔍 DEBUG CalendarTab: Première session:', workoutHistory[0]);
+    console.log('🔍 DEBUG CalendarTab: Structure de la première session:', {
+      date: workoutHistory[0].date,
+      exercises: workoutHistory[0].exercises,
+      exercisesCount: workoutHistory[0].exercises?.length || 0
+    });
+  }
 
   return (
     <div className="p-6">
-      <CalendarHeatmap data={data} />
+      <CalendarHeatmap workoutHistory={workoutHistory} />
     </div>
   );
 };

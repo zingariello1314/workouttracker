@@ -113,7 +113,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 Cycles d'entraînement
               </Button>
             </div>
-          </Card.Content>
+          </CardContent>
         </Card>
 
         {/* Sauvegarde et restauration */}

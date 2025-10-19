@@ -16,10 +16,22 @@ import { useWorkout } from '../context/WorkoutContext';
 import { getDateStr } from '../utils/dateUtils';
 
 const CalendarHeatmap = ({ workoutHistory = [] }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Initialiser avec l'année actuelle pour éviter le décalage
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  });
   const [viewMode, setViewMode] = useState('year'); // month, year, streak
   const [selectedDate, setSelectedDate] = useState(null);
   const [showStats, setShowStats] = useState(true);
+
+  // Debug: Afficher les données reçues
+  console.log('🔍 DEBUG CalendarHeatmap: workoutHistory reçu:', workoutHistory);
+  console.log('🔍 DEBUG CalendarHeatmap: Nombre de sessions:', workoutHistory.length);
+  if (workoutHistory.length > 0) {
+    console.log('🔍 DEBUG CalendarHeatmap: Première session:', workoutHistory[0]);
+    console.log('🔍 DEBUG CalendarHeatmap: Dernière session:', workoutHistory[workoutHistory.length - 1]);
+  }
 
   // Calcul de l'intensité pour une date donnée avec plus de précision
   const getIntensityForDate = (date) => {
@@ -41,7 +53,7 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
     else if (intensityScore > 100) level = 2; // Modéré
     else if (intensityScore > 20) level = 1; // Léger
     
-    return { 
+    const result = { 
       level, 
       reps: totalReps, 
       exercises: exerciseCount, 
@@ -49,6 +61,8 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
       duration: Math.round(estimatedDuration),
       intensityScore: Math.round(intensityScore)
     };
+    
+    return result;
   };
 
   // Calcul des streaks
@@ -264,7 +278,7 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
     setCurrentDate(newDate);
   };
 
-  const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  const weekDays = ['L', 'Ma', 'Me', 'J', 'V', 'S', 'D']; // Correction: Ma=Mardi, Me=Mercredi
   const monthNames = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
@@ -378,8 +392,8 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           {/* En-têtes des jours */}
           <div className="grid grid-cols-7 gap-2 mb-4">
-            {weekDays.map(day => (
-              <div key={day} className="text-center text-slate-400 text-sm font-medium p-2">
+            {weekDays.map((day, index) => (
+              <div key={`weekday-${index}`} className="text-center text-slate-400 text-sm font-medium p-2">
                 {day}
               </div>
             ))}
@@ -400,7 +414,7 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
                   }
                   hover:ring-2 hover:ring-purple-300 hover:scale-105
                 `}
-                title={`${day.date.toLocaleDateString('fr-FR')} - ${getIntensityLabel(day.intensity.level)} (${day.intensity.reps} reps, ${day.intensity.duration}min)`}
+                title={`${day.date.toLocaleDateString('fr-FR')} - ${getIntensityLabel(day.intensity.level)} (${day.intensity.duration}min)`}
               >
                 <div className="w-full h-full flex flex-col items-center justify-center">
                   <span className={`text-sm font-medium ${
@@ -479,8 +493,8 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
                   {/* Mini calendrier */}
                   <div className="bg-slate-700/30 rounded-lg p-2">
                     <div className="grid grid-cols-7 gap-1 mb-1">
-                      {weekDays.map(day => (
-                        <div key={day} className="text-center text-slate-500 text-xs">
+                      {weekDays.map((day, index) => (
+                        <div key={`year-weekday-${index}`} className="text-center text-slate-500 text-xs">
                           {day}
                         </div>
                       ))}

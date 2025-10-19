@@ -128,21 +128,26 @@ export const useWorkoutData = () => {
       const store = transaction.objectStore('workoutData');
       const request = store.get('main');
       
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         request.onsuccess = () => {
           const result = request.result;
-          if (result && result.id) {
-            // Supprimer l'id avant de retourner les données
-            const { id, ...dataWithoutId } = result;
-            resolve(dataWithoutId);
-          } else {
-            resolve(null);
+          console.log('🔍 DEBUG: Données chargées depuis IndexedDB:', result);
+          if (result) {
+            console.log('🔍 DEBUG: checkedExercises:', result.checkedExercises);
+            console.log('🔍 DEBUG: reps:', result.reps);
+            console.log('🔍 DEBUG: Nombre de clés dans reps:', Object.keys(result.reps || {}).length);
+            console.log('🔍 DEBUG: Nombre de clés dans checkedExercises:', Object.keys(result.checkedExercises || {}).length);
           }
+          resolve(result);
         };
-        request.onerror = () => resolve(null);
+        
+        request.onerror = (event) => {
+          console.error('❌ Erreur lors du chargement:', event.target.error);
+          reject(event.target.error);
+        };
       });
     } catch (error) {
-      console.error('Erreur chargement:', error);
+      console.error('❌ Erreur dans loadFromDB:', error);
       return null;
     }
   };
