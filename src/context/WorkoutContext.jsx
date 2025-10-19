@@ -65,7 +65,7 @@ const WorkoutProvider = ({ children }) => {
   const isInitialLoadRef = useRef(true);
 
   // Hooks personnalisés
-  const { data, updateData } = useWorkoutData();
+  const { data, updateData, loadFromDB } = useWorkoutData();
   
   // État pour les tableaux historiques
   const [workoutTables, setWorkoutTables] = useState([]);
@@ -363,7 +363,7 @@ const WorkoutProvider = ({ children }) => {
   // Référence pour éviter les créations multiples
   const tableCreationTimeoutRef = useRef(null);
 
-  const triggerTableOnDataSave = () => {
+  const triggerTableOnDataSave = (data) => {
     console.log('🔍 triggerTableOnDataSave appelé');
     console.log('🔍 activeProgram:', activeProgram);
     console.log('🔍 data:', data);
@@ -390,6 +390,8 @@ const WorkoutProvider = ({ children }) => {
       console.log('🔍 hasDataToday:', hasDataToday);
       console.log('🔍 checkedExercises keys:', Object.keys(data.checkedExercises || {}));
       console.log('🔍 reps keys:', Object.keys(data.reps || {}));
+      console.log('📊 Toutes les données data:', Object.keys(data));
+      console.log('📈 A des données sauvegardées:', Object.keys(data.checkedExercises || {}).length > 0 || Object.keys(data.reps || {}).length > 0);
 
       // NOUVELLE LOGIQUE : Créer un tableau seulement si :
       // 1. Il y a un programme actif ET
@@ -398,6 +400,7 @@ const WorkoutProvider = ({ children }) => {
       if (hasDataToday) {
         const activeTable = workoutTables.find(table => table.isActive && table.programId === activeProgram.id);
         console.log('🔍 activeTable trouvé:', activeTable);
+        console.log('🔍 Tous les tableaux existants:', workoutTables.map(t => ({id: t.id, programId: t.programId, isActive: t.isActive})));
         
         if (!activeTable) {
           console.log('✅ Création du tableau pour:', activeProgram.name);
@@ -408,6 +411,7 @@ const WorkoutProvider = ({ children }) => {
         }
       } else {
         console.log('❌ Pas de données pour aujourd\'hui');
+        console.log('❌ hasDataToday:', hasDataToday, 'activeProgram:', !!activeProgram);
       }
     }, 100); // Délai de 100ms pour regrouper les sauvegardes
   };
@@ -454,33 +458,39 @@ const WorkoutProvider = ({ children }) => {
       const transaction = db.transaction(['contextData'], 'readwrite');
       const store = transaction.objectStore('contextData');
       store.put({ id: 'context', ...contextData });
-      console.log('✅ État du contexte sauvegardé automatiquement');
+      // console.log('✅ État du contexte sauvegardé automatiquement');
     } catch (error) {
-      console.error('❌ Erreur sauvegarde contexte:', error);
+      // console.error('❌ Erreur sauvegarde contexte:', error);
     }
   };
 
-  const loadContextFromDB = async () => {
+  // Charger le contexte depuis IndexedDB
+  const loadContext = async () => {
     try {
-      const db = await openContextDB();
-      const transaction = db.transaction(['contextData'], 'readonly');
-      const store = transaction.objectStore('contextData');
-      const request = store.get('context');
-      
-      return new Promise((resolve) => {
-        request.onsuccess = () => {
-          const result = request.result;
-          if (result && result.id) {
-            const { id, ...contextWithoutId } = result;
-            resolve(contextWithoutId);
-          } else {
-            resolve(null);
+      const savedContext = await loadFromDB();
+      if (savedContext) {
+        // Nettoyer les tables invalides lors du chargement
+        const validTables = savedContext.workoutTables.filter(table => {
+          const isValid = table && 
+                         table.id && 
+                         table.programName && 
+                         table.exercises && 
+                         Array.isArray(table.exercises) &&
+                         table.dates && 
+                         Array.isArray(table.dates);
+          
+          if (!isValid) {
+            // console.warn('🧹 Table invalide supprimée lors du chargement:', table);
           }
-        };
-        request.onerror = () => resolve(null);
-      });
+          
+          return isValid;
+        });
+
+        // console.log(`🧹 Nettoyage: ${savedContext.workoutTables.length - validTables.length} tables invalides supprimées`);
+        setWorkoutTables(validTables);
+      }
     } catch (error) {
-      console.error('❌ Erreur chargement contexte:', error);
+      // console.error('❌ Erreur chargement contexte:', error);
       return null;
     }
   };
@@ -591,7 +601,7 @@ const WorkoutProvider = ({ children }) => {
   // Chargement initial des données du contexte
   useEffect(() => {
     const loadInitialContextData = async () => {
-      const savedContext = await loadContextFromDB();
+      const savedContext = await loadFromDB();
       if (savedContext) {
         // Restaurer les programmes et l'état actif
         if (savedContext.programs) {
@@ -616,7 +626,7 @@ const WorkoutProvider = ({ children }) => {
             return isValid;
           });
           
-          console.log(`🧹 Nettoyage: ${savedContext.workoutTables.length - validTables.length} tables invalides supprimées`);
+          // console.log(`🧹 Nettoyage: ${savedContext.workoutTables.length - validTables.length} tables invalides supprimées`);
           setWorkoutTables(validTables);
         }
         if (savedContext.programHistory) {

@@ -120,18 +120,21 @@ export const useWorkoutStats = (data) => {
   };
 
   const getWorkoutHistory = () => {
-    // Debug: Afficher le contenu des données
-    console.log('🔍 DEBUG getWorkoutHistory: data.reps:', data.reps);
-    console.log('🔍 DEBUG getWorkoutHistory: data.checkedExercises:', data.checkedExercises);
-    console.log('🔍 DEBUG getWorkoutHistory: Nombre de clés dans reps:', Object.keys(data.reps || {}).length);
-    console.log('🔍 DEBUG getWorkoutHistory: Nombre de clés dans checkedExercises:', Object.keys(data.checkedExercises || {}).length);
+    if (!data || !data.reps || !data.checkedExercises) {
+      return [];
+    }
+
+    // console.log('🔍 DEBUG getWorkoutHistory: data.reps:', data.reps);
+    // console.log('🔍 DEBUG getWorkoutHistory: data.checkedExercises:', data.checkedExercises);
+    // console.log('🔍 DEBUG getWorkoutHistory: Nombre de clés dans reps:', Object.keys(data.reps || {}).length);
+    // console.log('🔍 DEBUG getWorkoutHistory: Nombre de clés dans checkedExercises:', Object.keys(data.checkedExercises || {}).length);
     
     const history = [];
     const processedDates = new Set();
 
     Object.entries(data.reps).forEach(([key, reps]) => {
       const [dateStr, exerciseId] = key.split('_');
-      console.log(`🔍 DEBUG getWorkoutHistory: Traitement clé ${key} -> date: ${dateStr}, exerciseId: ${exerciseId}`);
+      // console.log(`🔍 DEBUG getWorkoutHistory: Traitement clé ${key} -> date: ${dateStr}, exerciseId: ${exerciseId}`);
       
       if (!processedDates.has(dateStr)) {
         processedDates.add(dateStr);
@@ -140,7 +143,7 @@ export const useWorkoutStats = (data) => {
         const dayName = getDayName(date);
         const workout = workoutProgram[dayName];
         
-        console.log(`🔍 DEBUG getWorkoutHistory: Date ${dateStr}, jour: ${dayName}, workout trouvé:`, !!workout);
+        // console.log(`🔍 DEBUG getWorkoutHistory: Date ${dateStr}, jour: ${dayName}, workout trouvé:`, !!workout);
         
         if (workout) {
           // Utiliser les variantes de salle si disponibles, sinon les exercices de base
@@ -151,7 +154,7 @@ export const useWorkoutStats = (data) => {
             const exerciseReps = parseInt(data.reps[exerciseKey]) || 0;
             const isCompleted = data.checkedExercises[exerciseKey] || false;
             
-            console.log(`🔍 DEBUG getWorkoutHistory: Exercice ${exercise.name} (${exerciseKey}) - reps: ${exerciseReps}, completed: ${isCompleted}`);
+            // console.log(`🔍 DEBUG getWorkoutHistory: Exercice ${exercise.name} (${exerciseKey}) - reps: ${exerciseReps}, completed: ${isCompleted}`);
             
             return {
               ...exercise,
@@ -160,7 +163,7 @@ export const useWorkoutStats = (data) => {
             };
           }).filter(ex => ex.completed);
 
-          console.log(`🔍 DEBUG getWorkoutHistory: Exercices complétés pour ${dateStr}:`, exercises.length);
+          // console.log(`🔍 DEBUG getWorkoutHistory: Exercices complétés pour ${dateStr}:`, exercises.length);
 
           if (exercises.length > 0) {
             const sessionData = {
@@ -168,14 +171,14 @@ export const useWorkoutStats = (data) => {
               exercises,
               totalReps: exercises.reduce((sum, ex) => sum + ex.reps, 0)
             };
-            console.log(`🔍 DEBUG getWorkoutHistory: Session ajoutée:`, sessionData);
+            // console.log(`🔍 DEBUG getWorkoutHistory: Session ajoutée:`, sessionData);
             history.push(sessionData);
           }
         }
       }
     });
 
-    console.log(`🔍 DEBUG getWorkoutHistory: Historique final (${history.length} sessions):`, history);
+    // console.log(`🔍 DEBUG getWorkoutHistory: Historique final (${history.length} sessions):`, history);
     return history.sort((a, b) => new Date(b.date) - new Date(a.date));
   };
 

@@ -35,10 +35,10 @@ const TodayTab = () => {
   // Script temporaire pour inspecter IndexedDB
   const inspectIndexedDB = async () => {
     try {
-      console.log('🔍 === INSPECTION INDEXEDDB ===');
-      console.log('🔍 Données actuelles du contexte:', data);
+      // console.log('🔍 === INSPECTION INDEXEDDB ===');
+      // console.log('🔍 Données actuelles du contexte:', data);
       
-      const request = indexedDB.open('WorkoutTrackerDB', 2);
+      const request = indexedDB.open('WorkoutTrackerDB', 3);
       request.onsuccess = () => {
         const db = request.result;
         const transaction = db.transaction(['workoutData'], 'readonly');
@@ -47,20 +47,20 @@ const TodayTab = () => {
         
         getRequest.onsuccess = () => {
           const result = getRequest.result;
-          console.log('🔍 === DONNÉES INDEXEDDB ===');
-          console.log('🔍 Données complètes:', result);
+          // console.log('🔍 === DONNÉES INDEXEDDB ===');
+          // console.log('🔍 Données complètes:', result);
           if (result) {
-            console.log('🔍 checkedExercises:', result.checkedExercises);
-            console.log('🔍 reps:', result.reps);
-            console.log('🔍 checkedStretches:', result.checkedStretches);
-            console.log('🔍 Nombre de clés reps:', Object.keys(result.reps || {}).length);
-            console.log('🔍 Nombre de clés checkedExercises:', Object.keys(result.checkedExercises || {}).length);
+            // console.log('🔍 checkedExercises:', result.checkedExercises);
+            // console.log('🔍 reps:', result.reps);
+            // console.log('🔍 checkedStretches:', result.checkedStretches);
+            // console.log('🔍 Nombre de clés reps:', Object.keys(result.reps || {}).length);
+            // console.log('🔍 Nombre de clés checkedExercises:', Object.keys(result.checkedExercises || {}).length);
             
             // Afficher quelques exemples de clés
             const repsKeys = Object.keys(result.reps || {});
             const exerciseKeys = Object.keys(result.checkedExercises || {});
-            console.log('🔍 Exemples de clés reps:', repsKeys.slice(0, 10));
-            console.log('🔍 Exemples de clés exercices:', exerciseKeys.slice(0, 10));
+            // console.log('🔍 Exemples de clés reps:', repsKeys.slice(0, 10));
+            // console.log('🔍 Exemples de clés exercices:', exerciseKeys.slice(0, 10));
             
             // Vérifier les dates récentes
             const today = new Date();
@@ -69,25 +69,25 @@ const TodayTab = () => {
             const todayStr = getDateStr(today);
             const yesterdayStr = getDateStr(yesterday);
             
-            console.log('🔍 Vérification des dates récentes:');
-            console.log('🔍 Aujourd\'hui (' + todayStr + '):', 
-              Object.keys(result.reps || {}).filter(key => key.startsWith(todayStr)));
-            console.log('🔍 Hier (' + yesterdayStr + '):', 
-              Object.keys(result.reps || {}).filter(key => key.startsWith(yesterdayStr)));
+            // console.log('🔍 Vérification des dates récentes:');
+            // console.log('🔍 Aujourd\'hui (' + todayStr + '):', 
+            //   Object.keys(result.reps || {}).filter(key => key.startsWith(todayStr)));
+            // console.log('🔍 Hier (' + yesterdayStr + '):', 
+            //   Object.keys(result.reps || {}).filter(key => key.startsWith(yesterdayStr)));
           } else {
-            console.log('🔍 Aucune donnée trouvée dans IndexedDB');
+            // console.log('🔍 Aucune donnée trouvée dans IndexedDB');
           }
         };
       };
     } catch (error) {
-      console.error('🔍 Erreur inspection DB:', error);
+      // console.error('🔍 Erreur inspection DB:', error);
     }
   };
 
-  // Exécuter l'inspection au chargement du composant
-  React.useEffect(() => {
-    inspectIndexedDB();
-  }, []);
+  // Exécuter l'inspection au chargement du composant (DÉSACTIVÉ)
+  // React.useEffect(() => {
+  //   inspectIndexedDB();
+  // }, []);
 
   // Fonctions locales pour les exercices
   const toggleCheck = (exerciseId, date, autoFillReps = false) => {

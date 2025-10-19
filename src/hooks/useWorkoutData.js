@@ -17,8 +17,8 @@ export const useWorkoutData = () => {
   // IndexedDB functions
   const openDB = () => {
     return new Promise((resolve, reject) => {
-      // Forcer une nouvelle version pour recréer la DB
-      const request = indexedDB.open('WorkoutTrackerDB', 2);
+      // Utiliser la version 3 créée par le script de réparation
+      const request = indexedDB.open('WorkoutTrackerDB', 3);
       
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
@@ -30,16 +30,16 @@ export const useWorkoutData = () => {
         
         // Créer un nouveau store avec une configuration claire
         const store = db.createObjectStore('workoutData', { keyPath: 'id' });
-        console.log('🔄 Base de données recréée avec succès');
+        // console.log('🔄 Base de données recréée avec succès');
       };
       
       request.onsuccess = () => {
-        console.log('✅ Base de données ouverte avec succès');
+        // console.log('✅ Base de données ouverte avec succès');
         resolve(request.result);
       };
       
-      request.onerror = () => {
-        console.error('❌ Erreur ouverture DB:', request.error);
+      request.onerror = (event) => {
+        // console.error('❌ Erreur ouverture DB:', request.error);
         reject(request.error);
       };
     });
@@ -47,7 +47,7 @@ export const useWorkoutData = () => {
 
   const saveToDB = async (newData) => {
     try {
-      console.log('🔍 Tentative de sauvegarde:', newData);
+      // console.log('🔍 Tentative de sauvegarde:', newData);
       const db = await openDB();
       const transaction = db.transaction(['workoutData'], 'readwrite');
       const store = transaction.objectStore('workoutData');
@@ -63,9 +63,9 @@ export const useWorkoutData = () => {
         progressPhotos: newData && newData.progressPhotos ? [...newData.progressPhotos] : []
       };
       
-      console.log('🔍 Données à sauvegarder:', dataToSave);
-      console.log('🔍 Type de dataToSave.id:', typeof dataToSave.id);
-      console.log('🔍 Valeur de dataToSave.id:', dataToSave.id);
+      // console.log('🔍 Données à sauvegarder:', dataToSave);
+      // console.log('🔍 Type de dataToSave.id:', typeof dataToSave.id);
+      // console.log('🔍 Valeur de dataToSave.id:', dataToSave.id);
       
       // Vérifier que l'objet a bien un id
       if (!dataToSave.id) {
@@ -77,33 +77,30 @@ export const useWorkoutData = () => {
       
       return new Promise((resolve, reject) => {
         request.onsuccess = () => {
-          console.log('✅ Données sauvegardées avec succès dans IndexedDB');
+          // console.log('✅ Données sauvegardées avec succès dans IndexedDB');
           resolve();
         };
         
         request.onerror = (event) => {
-          console.error('❌ Erreur lors de la sauvegarde:', event.target.error);
-          console.error('❌ Détails de l\'erreur:', event.target.error.message);
-          console.error('❌ Données qui ont causé l\'erreur:', dataToSave);
-          reject(event.target.error);
+          // console.error('❌ Erreur lors de la sauvegarde:', event.target.error);
+          // console.error('❌ Détails de l\'erreur:', event.target.error.message);
+          // console.error('❌ Données qui ont causé l\'erreur:', dataToSave);
         };
         
         transaction.oncomplete = () => {
-          console.log('✅ Transaction IndexedDB terminée');
+          // console.log('✅ Transaction IndexedDB terminée');
         };
         
         transaction.onerror = (event) => {
-          console.error('❌ Erreur de transaction:', event.target.error);
-          reject(event.target.error);
+          // console.error('❌ Erreur de transaction:', event.target.error);
         };
         
         transaction.onabort = (event) => {
-          console.error('❌ Transaction annulée:', event.target.error);
-          reject(event.target.error);
+          // console.error('❌ Transaction annulée:', event.target.error);
         };
       });
     } catch (error) {
-      console.error('❌ Erreur dans saveToDB:', error);
+      // console.error('❌ Erreur dans saveToDB:', error);
       throw error;
     }
   };
@@ -131,23 +128,23 @@ export const useWorkoutData = () => {
       return new Promise((resolve, reject) => {
         request.onsuccess = () => {
           const result = request.result;
-          console.log('🔍 DEBUG: Données chargées depuis IndexedDB:', result);
+          // console.log('🔍 DEBUG: Données chargées depuis IndexedDB:', result);
           if (result) {
-            console.log('🔍 DEBUG: checkedExercises:', result.checkedExercises);
-            console.log('🔍 DEBUG: reps:', result.reps);
-            console.log('🔍 DEBUG: Nombre de clés dans reps:', Object.keys(result.reps || {}).length);
-            console.log('🔍 DEBUG: Nombre de clés dans checkedExercises:', Object.keys(result.checkedExercises || {}).length);
+            // console.log('🔍 DEBUG: checkedExercises:', result.checkedExercises);
+            // console.log('🔍 DEBUG: reps:', result.reps);
+            // console.log('🔍 DEBUG: Nombre de clés dans reps:', Object.keys(result.reps || {}).length);
+            // console.log('🔍 DEBUG: Nombre de clés dans checkedExercises:', Object.keys(result.checkedExercises || {}).length);
           }
           resolve(result);
         };
         
         request.onerror = (event) => {
-          console.error('❌ Erreur lors du chargement:', event.target.error);
-          reject(event.target.error);
+          // console.error('❌ Erreur lors du chargement:', event.target.error);
+          resolve(null);
         };
       });
     } catch (error) {
-      console.error('❌ Erreur dans loadFromDB:', error);
+      // console.error('❌ Erreur dans loadFromDB:', error);
       return null;
     }
   };
@@ -173,7 +170,7 @@ export const useWorkoutData = () => {
         window.workoutContextCallback();
       }
     } catch (error) {
-      console.error('❌ Erreur lors de la sauvegarde dans updateData:', error);
+      // console.error('❌ Erreur lors de la sauvegarde dans updateData:', error);
     }
   };
 

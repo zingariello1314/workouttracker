@@ -198,7 +198,7 @@ const PastWorkoutsTable = () => {
   const deleteTable = (tableId) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce tableau ? Cette action est irréversible.')) {
       setWorkoutTables(prev => prev.filter(table => table.id !== tableId));
-      console.log('🗑️ Tableau supprimé:', tableId);
+      // console.log('🗑️ Tableau supprimé:', tableId);
     }
   };
   
@@ -289,13 +289,8 @@ const PastWorkoutsTable = () => {
   const getTableStats = (table) => {
     // Vérifier que table et ses propriétés existent
     if (!table || !table.dates || !table.exercises) {
-      console.warn('⚠️ Table invalide dans getTableStats:', table);
-      return {
-        totalReps: 0,
-        completedExercises: 0,
-        totalExercises: 0,
-        completionRate: 0
-      };
+      // console.warn('⚠️ Table invalide dans getTableStats:', table);
+      return null;
     }
 
     const totalReps = table.dates.reduce((total, date) => {
@@ -364,8 +359,8 @@ const PastWorkoutsTable = () => {
       {workoutTables.map((table) => {
         // Vérifier que la table a une structure valide
         if (!table || !table.exercises || !Array.isArray(table.exercises)) {
-          console.warn('⚠️ Table avec structure invalide ignorée:', table);
-          console.warn('⚠️ Propriétés manquantes - exercises:', !!table?.exercises, 'dates:', !!table?.dates);
+          // console.warn('⚠️ Table avec structure invalide ignorée:', table);
+          // console.warn('⚠️ Propriétés manquantes - exercises:', !!table?.exercises, 'dates:', !!table?.dates);
           return null;
         }
 

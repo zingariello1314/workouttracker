@@ -26,11 +26,11 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
   const [showStats, setShowStats] = useState(true);
 
   // Debug: Afficher les données reçues
-  console.log('🔍 DEBUG CalendarHeatmap: workoutHistory reçu:', workoutHistory);
-  console.log('🔍 DEBUG CalendarHeatmap: Nombre de sessions:', workoutHistory.length);
+  // console.log('🔍 DEBUG CalendarHeatmap: workoutHistory reçu:', workoutHistory);
+  // console.log('🔍 DEBUG CalendarHeatmap: Nombre de sessions:', workoutHistory.length);
   if (workoutHistory.length > 0) {
-    console.log('🔍 DEBUG CalendarHeatmap: Première session:', workoutHistory[0]);
-    console.log('🔍 DEBUG CalendarHeatmap: Dernière session:', workoutHistory[workoutHistory.length - 1]);
+    // console.log('🔍 DEBUG CalendarHeatmap: Première session:', workoutHistory[0]);
+    // console.log('🔍 DEBUG CalendarHeatmap: Dernière session:', workoutHistory[workoutHistory.length - 1]);
   }
 
   // Calcul de l'intensité pour une date donnée avec plus de précision
