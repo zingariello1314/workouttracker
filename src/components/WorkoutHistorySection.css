@@ -1,0 +1,274 @@
+/* Styles pour le composant WorkoutHistorySection */
+
+.workout-history-section {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.history-header {
+  margin-bottom: 1.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.history-header:hover {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.history-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Timeline styles */
+.history-timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-indicator {
+  position: absolute;
+  left: -2rem;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+}
+
+.timeline-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.timeline-dot.active {
+  background-color: #10b981;
+  border: 3px solid #d1fae5;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.timeline-dot.completed {
+  background-color: #6b7280;
+  border: 2px solid #e5e7eb;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background-color: white;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.completed-dot {
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.timeline-line {
+  width: 2px;
+  height: 60px;
+  background: linear-gradient(to bottom, #d1d5db, #f3f4f6);
+  margin-top: 8px;
+  border-radius: 1px;
+}
+
+.timeline-content {
+  flex: 1;
+  margin-left: 1rem;
+}
+
+/* État vide */
+.empty-state {
+  text-align: center;
+  border: 2px dashed #d1d5db;
+  background-color: #f9fafb;
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* Pied de section */
+.history-footer {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .workout-history-section {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .history-header .flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .history-header .flex:first-child {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .history-timeline {
+    padding-left: 1.5rem;
+  }
+
+  .timeline-indicator {
+    left: -1.5rem;
+  }
+
+  .timeline-content {
+    margin-left: 0.5rem;
+  }
+
+  .timeline-line {
+    height: 40px;
+  }
+
+  .empty-state-content {
+    padding: 1.5rem;
+  }
+
+  .history-footer {
+    margin-top: 1.5rem;
+    padding: 0.75rem;
+  }
+
+  .history-footer .flex {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .history-timeline {
+    padding-left: 1rem;
+  }
+
+  .timeline-indicator {
+    left: -1rem;
+  }
+
+  .timeline-dot {
+    width: 12px;
+    height: 12px;
+  }
+
+  .timeline-dot.active {
+    border: 2px solid #d1fae5;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  }
+
+  .pulse-dot {
+    width: 4px;
+    height: 4px;
+  }
+
+  .completed-dot {
+    font-size: 8px;
+  }
+
+  .timeline-line {
+    width: 1px;
+    height: 30px;
+  }
+}
+
+/* Animations d'entrée */
+.timeline-item {
+  animation: slideInLeft 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+.timeline-item:nth-child(1) { animation-delay: 0.1s; }
+.timeline-item:nth-child(2) { animation-delay: 0.2s; }
+.timeline-item:nth-child(3) { animation-delay: 0.3s; }
+.timeline-item:nth-child(4) { animation-delay: 0.4s; }
+.timeline-item:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Styles pour les badges */
+.history-header .badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  font-weight: 500;
+}
+
+/* Hover effects */
+.timeline-item:hover .timeline-dot.completed {
+  background-color: #4b5563;
+  transform: scale(1.1);
+  transition: all 0.2s ease-in-out;
+}
+
+.timeline-item:hover .timeline-dot.active {
+  box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease-in-out;
+}

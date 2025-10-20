@@ -20,4 +20,5 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
   );
 };
 
+export default Badge;
 export { Badge };

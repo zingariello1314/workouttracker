@@ -352,6 +352,110 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   </div>
                 )}
 
+                {/* Variantes Salle */}
+                {dayData.salleVariants && (
+                  <div className="mt-6">
+                    <h3 className={`${typography.presets.h3} mb-4 flex items-center gap-2`}>
+                      <Dumbbell size={20} className="text-purple-400" />
+                      Variantes Salle
+                    </h3>
+                    
+                    {/* Semaine A */}
+                    <div className="mb-6">
+                      <h4 className="text-lg font-semibold text-purple-200 mb-3 flex items-center gap-2">
+                        <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-sm">
+                          Semaine A
+                        </span>
+                        {dayData.salleVariants.semaineA.name}
+                      </h4>
+                      <div className="space-y-3">
+                        {dayData.salleVariants.semaineA.exercises.map((exercise, index) => (
+                          <div key={exercise.id} className="bg-purple-700/20 rounded-lg p-4 border border-purple-600/30">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-xs font-medium">
+                                {index + 1}
+                              </span>
+                              <h5 className="font-medium text-slate-200">{exercise.name}</h5>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-300 mb-2">
+                              <div>
+                                <span className="text-slate-400">Séries:</span>
+                                <div className="font-medium">{exercise.series}</div>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Repos:</span>
+                                <div className="font-medium">{exercise.rest}s</div>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Intensité:</span>
+                                <div className="font-medium capitalize">{exercise.intensity}</div>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Matériel:</span>
+                                <div className="font-medium">{exercise.materiel}</div>
+                              </div>
+                            </div>
+                            
+                            {exercise.notes && (
+                              <div className="text-xs text-slate-400 italic mt-2">
+                                {exercise.notes}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Semaine B */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-purple-200 mb-3 flex items-center gap-2">
+                        <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-sm">
+                          Semaine B
+                        </span>
+                        {dayData.salleVariants.semaineB.name}
+                      </h4>
+                      <div className="space-y-3">
+                        {dayData.salleVariants.semaineB.exercises.map((exercise, index) => (
+                          <div key={exercise.id} className="bg-purple-700/20 rounded-lg p-4 border border-purple-600/30">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-xs font-medium">
+                                {index + 1}
+                              </span>
+                              <h5 className="font-medium text-slate-200">{exercise.name}</h5>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-300 mb-2">
+                              <div>
+                                <span className="text-slate-400">Séries:</span>
+                                <div className="font-medium">{exercise.series}</div>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Repos:</span>
+                                <div className="font-medium">{exercise.rest}s</div>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Intensité:</span>
+                                <div className="font-medium capitalize">{exercise.intensity}</div>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Matériel:</span>
+                                <div className="font-medium">{exercise.materiel}</div>
+                              </div>
+                            </div>
+                            
+                            {exercise.notes && (
+                              <div className="text-xs text-slate-400 italic mt-2">
+                                {exercise.notes}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Notes du jour */}
                 {dayData.notes && (
                   <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">

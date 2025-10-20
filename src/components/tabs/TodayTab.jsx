@@ -29,7 +29,9 @@ const TodayTab = () => {
     discardStretchChanges,
     updateTempExerciseData,
     updateTempStretchData,
-    getCurrentData
+    getCurrentData,
+    updateReps,
+    toggleCheck
   } = useWorkout();
 
   // Script temporaire pour inspecter IndexedDB
@@ -89,19 +91,56 @@ const TodayTab = () => {
   //   inspectIndexedDB();
   // }, []);
 
-  // Fonctions locales pour les exercices
-  const toggleCheck = (exerciseId, date, autoFillReps = false) => {
+  // Fonction pour calculer automatiquement les répétitions basées sur les séries
+  const calculateAutoReps = (seriesText) => {
+    if (!seriesText || !seriesText.includes('×')) {
+      return null;
+    }
+    
+    const match = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
+    if (match) {
+      const sets = parseInt(match[1]);
+      const minReps = parseInt(match[2]);
+      const maxReps = match[3] ? parseInt(match[3]) : minReps;
+      
+      // Calculer le juste milieu des répétitions
+      const avgReps = (minReps + maxReps) / 2;
+      
+      // Retourner le total exact (sets × moyenne)
+      return sets * avgReps;
+    }
+    
+    return null;
+  };
+
+  // Gestionnaire pour l'auto-remplissage au focus/clic
+  const handleInputFocus = (exerciseId, exercise) => {
+    const dateStr = getDateStr(currentDate);
+    const key = `${dateStr}_${exerciseId}`;
+    const currentValue = data.reps[key] || '';
+    
+    // Si le champ est vide, calculer et remplir automatiquement
+    if (!currentValue && exercise.series) {
+      const autoReps = calculateAutoReps(exercise.series);
+      if (autoReps) {
+        updateLocalReps(exerciseId, autoReps.toString(), currentDate);
+      }
+    }
+  };
+
+  // Fonction pour gérer le clic sur une case à cocher avec auto-remplissage
+  const handleExerciseCheck = (exerciseId, date) => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const key = `${dateStr}_${exerciseId}`;
     const isCurrentlyChecked = currentData.checkedExercises[key] || false;
     
-    if (!isCurrentlyChecked && autoFillReps) {
+    // Si pas encore coché, calculer les reps automatiques
+    if (!isCurrentlyChecked) {
       const workout = getTodayWorkout(date, isGymMode);
       const exercise = workout.exercices?.find(ex => ex.id === exerciseId);
       
       if (exercise && exercise.series) {
-        // Calculer les répétitions moyennes
         const seriesText = exercise.series;
         let autoReps = null;
         
@@ -115,35 +154,39 @@ const TodayTab = () => {
           }
         }
         
-        if (autoReps) {
-          const newData = {
-            ...currentData,
-            checkedExercises: {
-              ...currentData.checkedExercises,
-              [key]: true
-            },
-            reps: {
-              ...currentData.reps,
-              [key]: autoReps.toString()
-            }
-          };
-          updateTempExerciseData(newData);
-          return;
-        }
+        // Mettre à jour les données avec case cochée ET répétitions
+        const newData = {
+          ...currentData,
+          checkedExercises: {
+            ...currentData.checkedExercises,
+            [key]: true
+          },
+          reps: {
+            ...currentData.reps,
+            [key]: autoReps ? autoReps.toString() : ''
+          }
+        };
+        updateTempExerciseData(newData);
+        return;
       }
     }
     
+    // Sinon, simple toggle de la case
     const newData = {
       ...currentData,
       checkedExercises: {
         ...currentData.checkedExercises,
         [key]: !isCurrentlyChecked
+      },
+      reps: {
+        ...currentData.reps,
+        [key]: !isCurrentlyChecked ? currentData.reps[key] || '' : undefined
       }
     };
     updateTempExerciseData(newData);
   };
 
-  const updateReps = (exerciseId, reps, date) => {
+  const updateLocalReps = (exerciseId, reps, date) => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const key = `${dateStr}_${exerciseId}`;
@@ -303,19 +346,12 @@ const TodayTab = () => {
         <div className="space-y-3">
           {workout.exercices.map((exercise) => {
             const exerciseKey = `${dateStr}_${exercise.id}`;
-            const isChecked = data.checkedExercises[exerciseKey] || false;
-            const reps = data.reps[exerciseKey] || '';
+            const currentData = getCurrentData();
+            const isChecked = currentData.checkedExercises[exerciseKey] || false;
+            const reps = currentData.reps[exerciseKey] || '';
 
             return (
               <div key={exercise.id} className="flex items-center space-x-3 p-4 bg-slate-700/50 rounded-lg border border-slate-600/50 hover:bg-slate-700/70 transition-all duration-200">
-                <label className="flex items-center">
-                  <Checkbox
-                    checked={isChecked}
-                    onChange={() => toggleCheck(exercise.id, currentDate, true)}
-                    className="w-5 h-5"
-                  />
-                </label>
-                
                 <div className="flex-1">
                   <div className="font-medium text-white">{exercise.name}</div>
                   <div className="text-sm text-gray-300">
@@ -326,14 +362,24 @@ const TodayTab = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={isChecked}
+                    onChange={() => handleExerciseCheck(exercise.id, currentDate)}
+                    className="text-green-400"
+                    name={`exercise_${exercise.id}`}
+                  />
                   <Input
                     type="number"
                     placeholder="Reps"
                     value={reps}
-                    onChange={(e) => updateReps(exercise.id, e.target.value, currentDate)}
-                    className="w-20"
+                    onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
+                    onFocus={() => handleInputFocus(exercise.id, exercise)}
+                    className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
                     size="sm"
                   />
+                  {isChecked && (
+                    <div className="text-green-400 text-sm font-medium">✓ Fait</div>
+                  )}
                   <Button
                     variant="primary"
                     size="sm"
@@ -460,7 +506,6 @@ const TodayTab = () => {
       </div>
     </div>
   );
-
 };
 
 export default TodayTab;

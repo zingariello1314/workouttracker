@@ -67,17 +67,8 @@ const WorkoutProvider = ({ children }) => {
   // Hooks personnalisés
   const { data, updateData, loadFromDB } = useWorkoutData();
   
-  // État pour les tableaux historiques
-  const [workoutTables, setWorkoutTables] = useState([]);
+  // État pour l'historique des programmes
   const [programHistory, setProgramHistory] = useState([]);
-  
-  // Enregistrer le callback pour triggerTableOnDataSave
-  useEffect(() => {
-    window.workoutContextCallback = triggerTableOnDataSave;
-    return () => {
-      delete window.workoutContextCallback;
-    };
-  }, [activeProgram, data, workoutTables]);
 
   // Fonction pour obtenir les données actuelles (temp ou réelles)
   const getCurrentData = () => {
@@ -97,105 +88,89 @@ const WorkoutProvider = ({ children }) => {
   };
 
   // Fonctions de sauvegarde et annulation pour exercices
-  const saveExerciseChanges = async () => {
-    await updateData(tempData);
-    setHasUnsavedExercises(false);
-    if (!hasUnsavedStretches) {
-      setTempData(data);
-    }
-    // Déclencher la création d'un tableau si nécessaire (seulement si pas d'étirements en attente)
-    if (!hasUnsavedStretches) {
-      triggerTableOnDataSave();
+  const saveExerciseChanges = () => {
+    if (hasUnsavedExercises && tempData) {
+      updateData(tempData);
+      setHasUnsavedExercises(false);
+      setTempData(null);
     }
   };
 
-  const discardExerciseChanges = () => {
+  const cancelExerciseChanges = () => {
     setHasUnsavedExercises(false);
-    if (!hasUnsavedStretches) {
-      setTempData(data);
-    }
+    setTempData(null);
   };
 
   // Fonctions de sauvegarde et annulation pour étirements
-  const saveStretchChanges = async () => {
-    await updateData(tempData);
+  const saveStretchChanges = () => {
+    if (hasUnsavedStretches && tempData) {
+      updateData(tempData);
+      setHasUnsavedStretches(false);
+      setTempData(null);
+    }
+  };
+
+  const cancelStretchChanges = () => {
     setHasUnsavedStretches(false);
-    if (!hasUnsavedExercises) {
-      setTempData(data);
-    }
-    // Déclencher la création d'un tableau si nécessaire (seulement si pas d'exercices en attente)
-    if (!hasUnsavedExercises) {
-      triggerTableOnDataSave();
-    }
+    setTempData(null);
   };
 
-  const discardStretchChanges = () => {
-    setHasUnsavedStretches(false);
-    if (!hasUnsavedExercises) {
-      setTempData(data);
-    }
-  };
-
-  const workoutLogic = useWorkoutLogic(data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData);
-  const workoutStats = useWorkoutStats(data);
-
-  // Fonctions utilitaires
-  const changeDate = (direction) => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() + (direction === 'next' ? 1 : -1));
-    setCurrentDate(newDate);
-  };
-
-  const addProgressPhoto = (photoData) => {
-    const newPhoto = {
-      id: Date.now(),
-      date: new Date().toISOString(),
-      ...photoData
-    };
+  // Fonction pour réinitialiser les données d'une journée
+  const resetDay = (dateStr) => {
+    const currentData = getCurrentData();
+    const newData = { ...currentData };
     
-    const newData = {
-      ...data,
-      progressPhotos: [...(data.progressPhotos || []), newPhoto]
-    };
+    // Réinitialiser les exercices cochés pour cette date
+    Object.keys(newData.checkedExercises || {}).forEach(key => {
+      if (key.startsWith(dateStr)) {
+        delete newData.checkedExercises[key];
+      }
+    });
+    
+    // Réinitialiser les répétitions pour cette date
+    Object.keys(newData.reps || {}).forEach(key => {
+      if (key.startsWith(dateStr)) {
+        delete newData.reps[key];
+      }
+    });
+    
+    // Réinitialiser les étirements pour cette date
+    Object.keys(newData.checkedStretches || {}).forEach(key => {
+      if (key.startsWith(dateStr)) {
+        delete newData.checkedStretches[key];
+      }
+    });
+    
     updateData(newData);
   };
 
-  const deleteProgressPhoto = (photoId) => {
-    const newData = {
-      ...data,
-      progressPhotos: data.progressPhotos.filter(photo => photo.id !== photoId)
-    };
-    updateData(newData);
-  };
-
-  // Fonctions de gestion des programmes
-  const createProgram = (programData) => {
+  // Gestion des programmes
+  const addProgram = (program) => {
     const newProgram = {
-      id: Date.now(),
-      ...programData,
-      status: 'inactive',
+      ...program,
+      id: Date.now().toString(),
       createdAt: new Date().toISOString(),
-      startDate: null,
-      endDate: null
+      status: 'inactive'
     };
     setPrograms(prev => [...prev, newProgram]);
+    return newProgram;
   };
 
   const activateProgram = (programId) => {
-    // Désactiver le programme actuel s'il y en a un
-    if (activeProgram) {
-      setPrograms(prev => prev.map(p => 
-        p.id === activeProgram.id 
-          ? { ...p, status: 'completed', endDate: new Date().toISOString() }
-          : p
-      ));
-    }
-    
-    // Activer le nouveau programme
-    const programToActivate = programs.find(p => p.id === programId);
-    if (programToActivate) {
+    const program = programs.find(p => p.id === programId);
+    if (program) {
+      // Désactiver l'ancien programme actif s'il y en a un
+      if (activeProgram) {
+        setPrograms(prev => prev.map(p => 
+          p.id === activeProgram.id 
+            ? { ...p, status: 'completed', endDate: new Date().toISOString() }
+            : p
+        ));
+      }
+      
+      // Activer le nouveau programme
       const updatedProgram = {
-        ...programToActivate,
+        ...program,
         status: 'active',
         startDate: new Date().toISOString()
       };
@@ -203,9 +178,6 @@ const WorkoutProvider = ({ children }) => {
         p.id === programId ? updatedProgram : p
       ));
       setActiveProgram(updatedProgram);
-      
-      // NE PLUS créer automatiquement un tableau lors de l'activation
-      // Le tableau sera créé seulement lors de la première sauvegarde de données
     }
   };
 
@@ -236,205 +208,6 @@ const WorkoutProvider = ({ children }) => {
     }
   };
 
-  // Fonction pour créer un nouveau tableau historique
-  const createWorkoutTable = (program, triggerType = 'program_change') => {
-    const tableId = `table_${program.id}_${Date.now()}`;
-    
-    // Générer les dates pour les 7 derniers jours
-    const generateDateRange = (days = 7) => {
-      const dates = [];
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        dates.push(date);
-      }
-      return dates;
-    };
-
-    // Obtenir tous les exercices du programme
-    const getAllProgramExercises = (programData = workoutProgram) => {
-      const allExercises = [];
-      const exerciseIds = new Set();
-      
-      // Fonction helper pour ajouter un exercice
-      const addExercise = (exercise, day, variant = null) => {
-        if (!exerciseIds.has(exercise.id)) {
-          exerciseIds.add(exercise.id);
-          allExercises.push({
-            ...exercise,
-            availableDays: [day],
-            variant: variant // Marquer si c'est une variante (semaineA, semaineB, etc.)
-          });
-        } else {
-          // Si l'exercice existe déjà, ajouter ce jour à ses jours disponibles
-          const existingExercise = allExercises.find(ex => ex.id === exercise.id);
-          if (existingExercise && !existingExercise.availableDays.includes(day)) {
-            existingExercise.availableDays.push(day);
-          }
-        }
-      };
-      
-      const days = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
-      
-      days.forEach(day => {
-        const workout = programData[day];
-        if (workout) {
-          // Ajouter les exercices de base
-          if (workout.exercices) {
-            workout.exercices.forEach(exercise => {
-              addExercise(exercise, day);
-            });
-          }
-          
-          // Ajouter les exercices des variantes de salle (semaineA et semaineB)
-          if (workout.salleVariants) {
-            if (workout.salleVariants.semaineA && workout.salleVariants.semaineA.exercices) {
-              workout.salleVariants.semaineA.exercices.forEach(exercise => {
-                addExercise(exercise, day, 'semaineA');
-              });
-            }
-            
-            if (workout.salleVariants.semaineB && workout.salleVariants.semaineB.exercices) {
-              workout.salleVariants.semaineB.exercices.forEach(exercise => {
-                addExercise(exercise, day, 'semaineB');
-              });
-            }
-          }
-        }
-      });
-      
-      return allExercises;
-    };
-
-    const dates = generateDateRange(7);
-    
-    const newTable = {
-      id: tableId,
-      programId: program.id,
-      programName: program.name,
-      programData: workoutProgram, // Utiliser workoutProgram au lieu de program.data
-      startDate: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      dates: dates.map(date => getDateStr(date)),
-      exercises: getAllProgramExercises(workoutProgram),
-      triggerType, // 'program_change' ou 'data_save'
-      isActive: true
-    };
-
-    // Désactiver tous les autres tableaux
-    setWorkoutTables(prev => [
-      newTable,
-      ...prev.map(table => ({ ...table, isActive: false }))
-    ]);
-
-    // Ajouter à l'historique des programmes
-    setProgramHistory(prev => [
-      {
-        programId: program.id,
-        programName: program.name,
-        tableId: tableId,
-        startDate: new Date().toISOString(),
-        triggerType
-      },
-      ...prev
-    ]);
-
-    return newTable;
-  };
-
-  // Fonction pour réactiver un tableau existant
-  const reactivateWorkoutTable = (programId) => {
-    const existingTable = workoutTables.find(table => table.programId === programId);
-    
-    if (existingTable) {
-      // Désactiver tous les tableaux et réactiver celui-ci
-      setWorkoutTables(prev => prev.map(table => ({
-        ...table,
-        isActive: table.id === existingTable.id
-      })));
-      
-      return existingTable;
-    }
-    
-    return null;
-  };
-
-  // Fonction pour déclencher la création d'un tableau lors d'un enregistrement
-  // Référence pour éviter les créations multiples
-  const tableCreationTimeoutRef = useRef(null);
-
-  const triggerTableOnDataSave = (data) => {
-    console.log('🔍 triggerTableOnDataSave appelé');
-    console.log('🔍 activeProgram:', activeProgram);
-    console.log('🔍 data:', data);
-    console.log('🔍 workoutTables:', workoutTables);
-    
-    if (!activeProgram) {
-      console.log('❌ Pas de programme actif');
-      return;
-    }
-
-    // Annuler le timeout précédent s'il existe pour éviter les créations multiples
-    if (tableCreationTimeoutRef.current) {
-      clearTimeout(tableCreationTimeoutRef.current);
-    }
-
-    // Délai pour regrouper les sauvegardes multiples (exercices + étirements)
-    tableCreationTimeoutRef.current = setTimeout(() => {
-      // Vérifier s'il y a des données pour aujourd'hui
-      const today = getDateStr(new Date());
-      const hasDataToday = Object.keys(data.checkedExercises || {}).some(key => key.startsWith(today)) ||
-                          Object.keys(data.reps || {}).some(key => key.startsWith(today));
-
-      console.log('🔍 today:', today);
-      console.log('🔍 hasDataToday:', hasDataToday);
-      console.log('🔍 checkedExercises keys:', Object.keys(data.checkedExercises || {}));
-      console.log('🔍 reps keys:', Object.keys(data.reps || {}));
-      console.log('📊 Toutes les données data:', Object.keys(data));
-      console.log('📈 A des données sauvegardées:', Object.keys(data.checkedExercises || {}).length > 0 || Object.keys(data.reps || {}).length > 0);
-
-      // NOUVELLE LOGIQUE : Créer un tableau seulement si :
-      // 1. Il y a un programme actif ET
-      // 2. Il y a des données sauvegardées ET
-      // 3. Il n'y a pas déjà un tableau actif pour ce programme
-      if (hasDataToday) {
-        const activeTable = workoutTables.find(table => table.isActive && table.programId === activeProgram.id);
-        console.log('🔍 activeTable trouvé:', activeTable);
-        console.log('🔍 Tous les tableaux existants:', workoutTables.map(t => ({id: t.id, programId: t.programId, isActive: t.isActive})));
-        
-        if (!activeTable) {
-          console.log('✅ Création du tableau pour:', activeProgram.name);
-          // Créer le tableau seulement quand on sauvegarde des données avec un programme actif
-          createWorkoutTable(activeProgram, 'data_save');
-        } else {
-          console.log('ℹ️ Tableau déjà actif pour ce programme');
-        }
-      } else {
-        console.log('❌ Pas de données pour aujourd\'hui');
-        console.log('❌ hasDataToday:', hasDataToday, 'activeProgram:', !!activeProgram);
-      }
-    }, 100); // Délai de 100ms pour regrouper les sauvegardes
-  };
-
-  // Fonction pour obtenir les statistiques d'un tableau
-  const getTableStatistics = (tableId) => {
-    const table = workoutTables.find(t => t.id === tableId);
-    if (!table) return null;
-
-    // Calculer les statistiques basées sur les données
-    const tableStats = {
-      totalReps: 0,
-      completedExercises: 0,
-      totalDays: 0,
-      completionRate: 0
-    };
-
-    // Logique de calcul des statistiques
-    // (sera implémentée selon les besoins spécifiques)
-
-    return tableStats;
-  };
-
   // Fonctions de sauvegarde automatique pour les états du contexte
   const openContextDB = () => {
     return new Promise((resolve, reject) => {
@@ -458,9 +231,8 @@ const WorkoutProvider = ({ children }) => {
       const transaction = db.transaction(['contextData'], 'readwrite');
       const store = transaction.objectStore('contextData');
       store.put({ id: 'context', ...contextData });
-      // console.log('✅ État du contexte sauvegardé automatiquement');
     } catch (error) {
-      // console.error('❌ Erreur sauvegarde contexte:', error);
+      console.error('❌ Erreur sauvegarde contexte:', error);
     }
   };
 
@@ -469,28 +241,25 @@ const WorkoutProvider = ({ children }) => {
     try {
       const savedContext = await loadFromDB();
       if (savedContext) {
-        // Nettoyer les tables invalides lors du chargement
-        const validTables = savedContext.workoutTables.filter(table => {
-          const isValid = table && 
-                         table.id && 
-                         table.programName && 
-                         table.exercises && 
-                         Array.isArray(table.exercises) &&
-                         table.dates && 
-                         Array.isArray(table.dates);
-          
-          if (!isValid) {
-            // console.warn('🧹 Table invalide supprimée lors du chargement:', table);
-          }
-          
-          return isValid;
-        });
-
-        // console.log(`🧹 Nettoyage: ${savedContext.workoutTables.length - validTables.length} tables invalides supprimées`);
-        setWorkoutTables(validTables);
+        // Charger les programmes et l'état
+        if (savedContext.programs) {
+          setPrograms(savedContext.programs);
+        }
+        if (savedContext.activeProgram) {
+          setActiveProgram(savedContext.activeProgram);
+        }
+        if (savedContext.programHistory) {
+          setProgramHistory(savedContext.programHistory);
+        }
+        if (savedContext.weekVariant) {
+          setWeekVariant(savedContext.weekVariant);
+        }
+        if (savedContext.isGymMode !== undefined) {
+          setIsGymMode(savedContext.isGymMode);
+        }
       }
     } catch (error) {
-      // console.error('❌ Erreur chargement contexte:', error);
+      console.error('❌ Erreur chargement contexte:', error);
       return null;
     }
   };
@@ -500,14 +269,19 @@ const WorkoutProvider = ({ children }) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-
+    
     debounceTimerRef.current = setTimeout(() => {
       saveContextToDB(contextData);
-    }, 2000); // 2 secondes pour les états du contexte
+    }, 1000);
   }, []);
 
-  const value = {
-    // État
+  // Hooks personnalisés pour la logique et les statistiques
+  const workoutLogic = useWorkoutLogic(data, updateData);
+  const workoutStats = useWorkoutStats(data);
+
+  // Valeurs du contexte
+  const contextValue = {
+    // États principaux
     currentDate,
     setCurrentDate,
     activeTab,
@@ -518,21 +292,25 @@ const WorkoutProvider = ({ children }) => {
     setStatsPeriod,
     isGymMode,
     setIsGymMode,
-    data,
     
-    // État temporaire
-    tempData,
+    // Données et fonctions de données
+    data,
+    updateData,
+    getCurrentData,
+    resetDay,
+    
+    // Gestion des modifications temporaires
     hasUnsavedExercises,
     hasUnsavedStretches,
-    getCurrentData,
+    tempData,
     updateTempExerciseData,
     updateTempStretchData,
     saveExerciseChanges,
-    discardExerciseChanges,
+    cancelExerciseChanges,
     saveStretchChanges,
-    discardStretchChanges,
+    cancelStretchChanges,
     
-    // Modales
+    // États des modales
     showSettings,
     setShowSettings,
     showPhotoModal,
@@ -561,121 +339,154 @@ const WorkoutProvider = ({ children }) => {
     setSessionData,
     editingProgram,
     setEditingProgram,
-    customPrograms,
-    setCustomPrograms,
+    progressForm,
+    setProgressForm,
+    
+    // Gestion des programmes
     programs,
     setPrograms,
     activeProgram,
     setActiveProgram,
-    progressForm,
-    setProgressForm,
-    
-    // Tableaux historiques
-    workoutTables,
-    setWorkoutTables,
     programHistory,
     setProgramHistory,
-    
-    // Logique métier
-    ...workoutLogic,
-    ...workoutStats,
-    
-    // Fonctions utilitaires
-    changeDate,
-    addProgressPhoto,
-    deleteProgressPhoto,
-    createProgram,
+    addProgram,
     activateProgram,
     deactivateProgram,
     deleteProgram,
     updateProgram,
-    updateData,
     
-    // Fonctions pour les tableaux historiques
-    createWorkoutTable,
-    reactivateWorkoutTable,
-    triggerTableOnDataSave,
-    getTableStatistics
+    // Programmes personnalisés
+    customPrograms,
+    setCustomPrograms,
+    
+    // Hooks personnalisés
+    ...workoutLogic,
+    ...workoutStats
   };
 
-  // Chargement initial des données du contexte
+  // Sauvegarde automatique du contexte
   useEffect(() => {
-    const loadInitialContextData = async () => {
-      const savedContext = await loadFromDB();
-      if (savedContext) {
-        // Restaurer les programmes et l'état actif
-        if (savedContext.programs) {
-          setPrograms(savedContext.programs);
-        }
-        if (savedContext.activeProgram) {
-          setActiveProgram(savedContext.activeProgram);
-        }
-        if (savedContext.workoutTables) {
-          // Filtrer les tables pour ne garder que celles avec une structure valide
-          const validTables = savedContext.workoutTables.filter(table => {
-            const isValid = table && 
-                           table.exercises && 
-                           Array.isArray(table.exercises) && 
-                           table.dates && 
-                           Array.isArray(table.dates);
-            
-            if (!isValid) {
-              console.warn('🧹 Table invalide supprimée lors du chargement:', table);
-            }
-            
-            return isValid;
-          });
-          
-          // console.log(`🧹 Nettoyage: ${savedContext.workoutTables.length - validTables.length} tables invalides supprimées`);
-          setWorkoutTables(validTables);
-        }
-        if (savedContext.programHistory) {
-          setProgramHistory(savedContext.programHistory);
-        }
-        // Restaurer d'autres états si nécessaire
-        if (savedContext.weekVariant) {
-          setWeekVariant(savedContext.weekVariant);
-        }
-        if (savedContext.isGymMode !== undefined) {
-          setIsGymMode(savedContext.isGymMode);
-        }
+    if (!isInitialLoadRef.current) {
+      const contextData = {
+        programs,
+        activeProgram,
+        programHistory,
+        weekVariant,
+        isGymMode
+      };
+      autoSaveContext(contextData);
+    }
+  }, [programs, activeProgram, programHistory, weekVariant, isGymMode, autoSaveContext]);
+
+  // Initialisation avec le programme par défaut si aucun programme actif
+  useEffect(() => {
+    const initializeDefaultProgram = () => {
+      // Si aucun programme actif et aucun programme dans la liste, créer le programme par défaut
+      if (!activeProgram && programs.length === 0) {
+        // Conversion du workoutProgram au format attendu par ProgramDetailView
+        const convertedSchedule = {};
+        
+        Object.entries(workoutProgram).forEach(([day, dayData]) => {
+          convertedSchedule[day] = {
+            name: dayData.name,
+            focus: dayData.focus,
+            duration: dayData.duree || "Non spécifié",
+            notes: dayData.notes || "",
+            etirements: {
+              matin: { 
+                name: "Étirements matinaux", 
+                duration: "5-7 min", 
+                instructions: dayData.etirements?.matin || "" 
+              },
+              midi: { 
+                name: "Pause active", 
+                duration: "4-6 min", 
+                instructions: dayData.etirements?.midi || "" 
+              },
+              soir: { 
+                name: "Récupération", 
+                duration: "3-5 min",
+                instructions: dayData.etirements?.soir || "" 
+              }
+            },
+            exercises: dayData.exercices?.map(exercise => ({
+              id: exercise.id,
+              name: exercise.name,
+              series: exercise.series,
+              reps: "",
+              rest: exercise.type?.includes('circuit') ? 30 : (exercise.type?.includes('superset') ? 45 : 90),
+              intensity: exercise.series?.includes('4×') ? "heavy" : (exercise.series?.includes('3×') ? "moderate" : "light"),
+              notes: exercise.notes || "",
+              materiel: exercise.materiel || "poids du corps",
+              type: exercise.type || "standard"
+            })) || [],
+            // Ajout des variantes salle si elles existent
+            salleVariants: dayData.salleVariants ? {
+              semaineA: {
+                name: dayData.salleVariants.semaineA.name,
+                exercises: dayData.salleVariants.semaineA.exercices.map(ex => ({
+                  id: ex.id,
+                  name: ex.name,
+                  series: ex.series,
+                  reps: "",
+                  rest: 90,
+                  intensity: "moderate",
+                  notes: ex.notes || "",
+                  materiel: "salle de sport",
+                  type: "standard"
+                }))
+              },
+              semaineB: {
+                name: dayData.salleVariants.semaineB.name,
+                exercises: dayData.salleVariants.semaineB.exercices.map(ex => ({
+                  id: ex.id,
+                  name: ex.name,
+                  series: ex.series,
+                  reps: "",
+                  rest: 90,
+                  intensity: "moderate",
+                  notes: ex.notes || "",
+                  materiel: "salle de sport",
+                  type: "standard"
+                }))
+              }
+            } : undefined
+          };
+        });
+
+        const defaultProgram = {
+          id: 'default-program',
+          name: "Programme Cycle 3+1",
+          description: "Programme d'entraînement complet - Street Workout, Boxe, Natation et Musculation",
+          duration: 12,
+          goal: "Force, endurance et développement musculaire complet",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          status: 'active',
+          startDate: new Date().toISOString(),
+          schedule: convertedSchedule
+        };
+        
+        setPrograms([defaultProgram]);
+        setActiveProgram(defaultProgram);
       }
+    };
+    
+    // Délai pour s'assurer que le contexte est bien chargé
+    const timer = setTimeout(initializeDefaultProgram, 200);
+    return () => clearTimeout(timer);
+  }, [programs, activeProgram]);
+  useEffect(() => {
+    const initializeContext = async () => {
+      await loadContext();
       isInitialLoadRef.current = false;
     };
-
-    loadInitialContextData();
-  }, []);
-
-  // Sauvegarde automatique des états du contexte
-  useEffect(() => {
-    if (isInitialLoadRef.current) {
-      return;
-    }
-
-    const contextData = {
-      programs,
-      activeProgram,
-      workoutTables,
-      programHistory,
-      weekVariant,
-      isGymMode,
-      // Ajouter d'autres états importants à sauvegarder
-    };
-
-    autoSaveContext(contextData);
-  }, [programs, activeProgram, workoutTables, programHistory, weekVariant, isGymMode, autoSaveContext]);
-
-  // Nettoyage du timer lors du démontage
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
+    
+    initializeContext();
   }, []);
 
   return (
-    <WorkoutContext.Provider value={value}>
+    <WorkoutContext.Provider value={contextValue}>
       {children}
     </WorkoutContext.Provider>
   );

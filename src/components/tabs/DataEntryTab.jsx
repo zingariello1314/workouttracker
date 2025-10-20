@@ -5,20 +5,56 @@ import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { Badge } from '../ui/Badge';
-import { Calendar, Save, RotateCcw, TrendingUp, Clock, Target } from 'lucide-react';
+import { Calendar, Save, RotateCcw, TrendingUp, Clock, Target, ChevronDown, ChevronRight } from 'lucide-react';
 import { typography } from '../../styles/typography';
-import PastWorkoutsTable from '../PastWorkoutsTable';
+import WorkoutHistorySection from '../WorkoutHistorySection';
 
 const DataEntryTab = () => {
-  const { data, updateReps, toggleCheck, getDateStr, getDayName } = useWorkout();
+  const { data, updateReps, toggleCheck, getDateStr, getDayName, getCurrentData } = useWorkout();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [repsData, setRepsData] = useState({});
   const [advancedMode, setAdvancedMode] = useState(false);
   const [bulkEntryData, setBulkEntryData] = useState({});
+  const [collapsedDays, setCollapsedDays] = useState({});
 
   const dateStr = getDateStr(selectedDate);
   const dayName = getDayName(selectedDate);
   const workout = workoutProgram[dayName];
+
+  // Ordre chronologique des jours
+  const daysOrder = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+  // Fonction pour basculer l'état plié/déplié d'un jour
+  const toggleDayCollapse = (day) => {
+    setCollapsedDays(prev => ({
+      ...prev,
+      [day]: !prev[day]
+    }));
+  };
+
+  // Fonction pour obtenir tous les exercices d'un jour (incluant les variantes)
+  const getAllExercisesForDay = (dayWorkout) => {
+    if (!dayWorkout) return [];
+    
+    let allExercises = [...dayWorkout.exercices];
+    
+    // Ajouter les variantes de salle si elles existent
+    if (dayWorkout.salleVariants) {
+      allExercises = [
+        ...allExercises,
+        ...dayWorkout.salleVariants.semaineA.exercices.map(ex => ({
+          ...ex,
+          variant: 'Semaine A'
+        })),
+        ...dayWorkout.salleVariants.semaineB.exercices.map(ex => ({
+          ...ex,
+          variant: 'Semaine B'
+        }))
+      ];
+    }
+    
+    return allExercises;
+  };
 
   // Fonction pour calculer automatiquement les répétitions basées sur les séries
   const calculateAutoReps = (seriesText) => {
@@ -250,8 +286,9 @@ const DataEntryTab = () => {
         <CardContent className="space-y-4">
           {workout.exercices.map((exercise) => {
             const key = `${dateStr}_${exercise.id}`;
-            const currentReps = data.reps[key] || '';
-            const isCompleted = data.checkedExercises[key] || false;
+            const currentData = getCurrentData();
+            const currentReps = currentData.reps[key] || '';
+            const isCompleted = currentData.checkedExercises[key] || false;
             const tempReps = repsData[exercise.id] || currentReps;
 
             return (
@@ -277,14 +314,12 @@ const DataEntryTab = () => {
                     value={tempReps}
                     onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
                     onFocus={() => handleInputFocus(exercise.id, exercise)}
-                    className="w-20 bg-slate-800 border-slate-600 text-white text-center"
+                    className={`w-20 text-center ${isCompleted ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
                     min="0"
                   />
                   
                   {isCompleted && (
-                    <Badge variant="success" className="bg-green-600 text-white">
-                      ✓ Fait
-                    </Badge>
+                    <div className="text-green-400 text-sm font-medium">✓ Fait</div>
                   )}
                   
                   {currentReps && !isCompleted && (
@@ -350,8 +385,9 @@ const DataEntryTab = () => {
                         const dayWorkout = workoutProgram[day.dayName];
                         const dayExercise = dayWorkout?.exercices.find(ex => ex.name === exercise.name);
                         const key = `${day.dateStr}_${exercise.id}`;
-                        const reps = data.reps[key] || '';
-                        const isCompleted = data.checkedExercises[key] || false;
+                        const currentData = getCurrentData();
+                        const reps = currentData.reps[key] || '';
+                        const isCompleted = currentData.checkedExercises[key] || false;
                         const isScheduled = !!dayExercise;
 
                         return (
@@ -365,7 +401,8 @@ const DataEntryTab = () => {
                                   onChange={(e) => updateReps(exercise.id, e.target.value, day.date)}
                                   onFocus={() => {
                                     const key = `${day.dateStr}_${exercise.id}`;
-                                    const currentValue = data.reps[key] || '';
+                                    const currentData = getCurrentData();
+                                    const currentValue = currentData.reps[key] || '';
                                     
                                     // Si le champ est vide, calculer et remplir automatiquement
                                     if (!currentValue && dayExercise && dayExercise.series) {
@@ -420,8 +457,9 @@ const DataEntryTab = () => {
             <CardContent className="space-y-4">
               {workout.salleVariants.semaineA.exercices.map((exercise) => {
                 const key = `${dateStr}_${exercise.id}`;
-                const currentReps = data.reps[key] || '';
-                const isCompleted = data.checkedExercises[key] || false;
+                const currentData = getCurrentData();
+                const currentReps = currentData.reps[key] || '';
+                const isCompleted = currentData.checkedExercises[key] || false;
                 const tempReps = repsData[exercise.id] || currentReps;
 
                 return (
@@ -441,28 +479,26 @@ const DataEntryTab = () => {
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <Input
-                        type="number"
-                        placeholder="Reps"
-                        value={tempReps}
-                        onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
-                        onFocus={() => handleInputFocus(exercise.id, exercise)}
-                        className="w-20 bg-slate-800 border-slate-600 text-white text-center"
-                        min="0"
-                      />
-                      
-                      {isCompleted && (
-                        <Badge variant="success" className="bg-green-600 text-white">
-                          ✓ Fait
-                        </Badge>
-                      )}
-                      
-                      {currentReps && !isCompleted && (
-                        <Badge variant="outline" className="border-yellow-500 text-yellow-400">
-                          {currentReps} reps
-                        </Badge>
-                      )}
-                    </div>
+                   <Input
+                     type="number"
+                     placeholder="Reps"
+                     value={tempReps}
+                     onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
+                     onFocus={() => handleInputFocus(exercise.id, exercise)}
+                     className={`w-20 text-center ${isCompleted ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+                     min="0"
+                   />
+                   
+                   {isCompleted && (
+                     <div className="text-green-400 text-sm font-medium">✓ Fait</div>
+                   )}
+                   
+                   {currentReps && !isCompleted && (
+                     <Badge variant="outline" className="border-yellow-500 text-yellow-400">
+                       {currentReps} reps
+                     </Badge>
+                   )}
+                 </div>
                   </div>
                 );
               })}
@@ -491,8 +527,9 @@ const DataEntryTab = () => {
             <CardContent className="space-y-4">
               {workout.salleVariants.semaineB.exercices.map((exercise) => {
                 const key = `${dateStr}_${exercise.id}`;
-                const currentReps = data.reps[key] || '';
-                const isCompleted = data.checkedExercises[key] || false;
+                const currentData = getCurrentData();
+                const currentReps = currentData.reps[key] || '';
+                const isCompleted = currentData.checkedExercises[key] || false;
                 const tempReps = repsData[exercise.id] || currentReps;
 
                 return (
@@ -512,28 +549,26 @@ const DataEntryTab = () => {
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <Input
-                        type="number"
-                        placeholder="Reps"
-                        value={tempReps}
-                        onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
-                        onFocus={() => handleInputFocus(exercise.id, exercise)}
-                        className="w-20 bg-slate-800 border-slate-600 text-white text-center"
-                        min="0"
-                      />
-                      
-                      {isCompleted && (
-                        <Badge variant="success" className="bg-green-600 text-white">
-                          ✓ Fait
-                        </Badge>
-                      )}
-                      
-                      {currentReps && !isCompleted && (
-                        <Badge variant="outline" className="border-yellow-500 text-yellow-400">
-                          {currentReps} reps
-                        </Badge>
-                      )}
-                    </div>
+                       <Input
+                         type="number"
+                         placeholder="Reps"
+                         value={tempReps}
+                         onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
+                         onFocus={() => handleInputFocus(exercise.id, exercise)}
+                         className={`w-20 text-center ${isCompleted ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+                         min="0"
+                       />
+                       
+                       {isCompleted && (
+                         <div className="text-green-400 text-sm font-medium">✓ Fait</div>
+                       )}
+                       
+                       {currentReps && !isCompleted && (
+                         <Badge variant="outline" className="border-yellow-500 text-yellow-400">
+                           {currentReps} reps
+                         </Badge>
+                       )}
+                     </div>
                   </div>
                 );
               })}
@@ -566,23 +601,24 @@ const DataEntryTab = () => {
               <div className={`${typography.presets.h2} text-blue-400 mb-1`}>
                 {(() => {
                   let totalReps = 0;
+                  const currentData = getCurrentData();
                   
                   // Répétitions des exercices normaux
                   workout.exercices.forEach(exercise => {
                     const key = `${dateStr}_${exercise.id}`;
-                    totalReps += parseInt(data.reps[key]) || 0;
+                    totalReps += parseInt(currentData.reps[key]) || 0;
                   });
                   
                   // Répétitions des variantes de salle
                   if (workout.salleVariants) {
                     workout.salleVariants.semaineA.exercices.forEach(exercise => {
                       const key = `${dateStr}_${exercise.id}`;
-                      totalReps += parseInt(data.reps[key]) || 0;
+                      totalReps += parseInt(currentData.reps[key]) || 0;
                     });
                     
                     workout.salleVariants.semaineB.exercices.forEach(exercise => {
                       const key = `${dateStr}_${exercise.id}`;
-                      totalReps += parseInt(data.reps[key]) || 0;
+                      totalReps += parseInt(currentData.reps[key]) || 0;
                     });
                   }
                   
@@ -598,23 +634,24 @@ const DataEntryTab = () => {
               <div className={`${typography.presets.h2} text-green-400 mb-1`}>
                 {(() => {
                   let completedExercises = 0;
+                  const currentData = getCurrentData();
                   
                   // Exercices normaux terminés
                   completedExercises += workout.exercices.filter(exercise => {
                     const key = `${dateStr}_${exercise.id}`;
-                    return data.checkedExercises[key];
+                    return currentData.checkedExercises[key];
                   }).length;
                   
                   // Exercices des variantes de salle terminés
                   if (workout.salleVariants) {
                     completedExercises += workout.salleVariants.semaineA.exercices.filter(exercise => {
                       const key = `${dateStr}_${exercise.id}`;
-                      return data.checkedExercises[key];
+                      return currentData.checkedExercises[key];
                     }).length;
                     
                     completedExercises += workout.salleVariants.semaineB.exercices.filter(exercise => {
                       const key = `${dateStr}_${exercise.id}`;
-                      return data.checkedExercises[key];
+                      return currentData.checkedExercises[key];
                     }).length;
                   }
                   
@@ -631,11 +668,12 @@ const DataEntryTab = () => {
                 {(() => {
                   let totalExercises = workout.exercices.length;
                   let completedExercises = 0;
+                  const currentData = getCurrentData();
                   
                   // Exercices normaux
                   completedExercises += workout.exercices.filter(exercise => {
                     const key = `${dateStr}_${exercise.id}`;
-                    return data.checkedExercises[key];
+                    return currentData.checkedExercises[key];
                   }).length;
                   
                   // Exercices des variantes de salle
@@ -645,12 +683,12 @@ const DataEntryTab = () => {
                     
                     completedExercises += workout.salleVariants.semaineA.exercices.filter(exercise => {
                       const key = `${dateStr}_${exercise.id}`;
-                      return data.checkedExercises[key];
+                      return currentData.checkedExercises[key];
                     }).length;
                     
                     completedExercises += workout.salleVariants.semaineB.exercices.filter(exercise => {
                       const key = `${dateStr}_${exercise.id}`;
-                      return data.checkedExercises[key];
+                      return currentData.checkedExercises[key];
                     }).length;
                   }
                   
@@ -665,10 +703,9 @@ const DataEntryTab = () => {
         </CardContent>
       </Card>
       
-      {/* Tableau des séances passées */}
-      <div className="mt-8">
-        <PastWorkoutsTable />
-      </div>
+      {/* Section Saisies passées */}
+      <WorkoutHistorySection />
+
     </div>
   );
 };

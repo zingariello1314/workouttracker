@@ -8,7 +8,7 @@ import { workoutProgram } from '../../data/workoutProgram';
 import ProgramDetailView from '../ProgramDetailView';
 
 const ProgramTab = () => {
-  const { programs, activeProgram, createProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram } = useContext(WorkoutContext);
+  const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram } = useContext(WorkoutContext);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [newProgram, setNewProgram] = useState({
@@ -148,7 +148,7 @@ const ProgramTab = () => {
       schedule: convertedSchedule
     };
 
-    createProgram(currentProgram);
+    addProgram(currentProgram);
     alert('Programme actuel importé avec succès !');
   };
 
