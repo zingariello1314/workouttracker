@@ -61,6 +61,7 @@ const WorkoutHistorySection = () => {
           day: '2-digit', 
           month: '2-digit' 
         }),
+        isoDateStr: getDateStr(date), // Utiliser la fonction du contexte pour le format ISO
         fullDateStr: date.toLocaleDateString('fr-FR', { 
           weekday: 'long',
           day: '2-digit', 
@@ -106,7 +107,7 @@ const WorkoutHistorySection = () => {
   // Gérer la saisie des répétitions
   const handleRepsChange = (exerciseId, dateStr, value) => {
     const currentData = getCurrentData();
-    const key = `${exerciseId}_${dateStr}`;
+    const key = `${dateStr}_${exerciseId}`;
     const newData = {
       ...currentData,
       reps: {
@@ -115,12 +116,14 @@ const WorkoutHistorySection = () => {
       }
     };
     updateTempExerciseData(newData);
+    // Sauvegarde automatique après chaque modification
+    setTimeout(() => saveExerciseChanges(), 500);
   };
 
   // Gérer les cases à cocher
   const handleCompletedToggle = (exerciseId, dateStr) => {
     const currentData = getCurrentData();
-    const key = `${exerciseId}_${dateStr}`;
+    const key = `${dateStr}_${exerciseId}`;
     const newData = {
       ...currentData,
       checkedExercises: {
@@ -129,19 +132,21 @@ const WorkoutHistorySection = () => {
       }
     };
     updateTempExerciseData(newData);
+    // Sauvegarde automatique après chaque modification
+    setTimeout(() => saveExerciseChanges(), 500);
   };
 
   // Obtenir la valeur saisie
   const getRepsValue = (exerciseId, dateStr) => {
     const currentData = getCurrentData();
-    const key = `${exerciseId}_${dateStr}`;
+    const key = `${dateStr}_${exerciseId}`;
     return currentData.reps[key] || '';
   };
 
   // Vérifier si un exercice est marqué comme terminé
   const isExerciseCompleted = (exerciseId, dateStr) => {
     const currentData = getCurrentData();
-    const key = `${exerciseId}_${dateStr}`;
+    const key = `${dateStr}_${exerciseId}`;
     return currentData.checkedExercises[key] || false;
   };
 
@@ -330,33 +335,33 @@ const WorkoutHistorySection = () => {
 
                               {/* Colonnes de dates passées pour ce jour */}
                               {pastDates.map((dateInfo) => {
-                                const repsValue = getRepsValue(exercise.id, dateInfo.dateStr);
-                                const isCompleted = isExerciseCompleted(exercise.id, dateInfo.dateStr);
+                                const repsValue = getRepsValue(exercise.id, dateInfo.isoDateStr);
+                                const isCompleted = isExerciseCompleted(exercise.id, dateInfo.isoDateStr);
                                 
                                 return (
-                                  <td key={`${exercise.id}_${dateInfo.dateStr}`} className="p-2">
-                                    <div className="flex flex-col items-center gap-1">
+                                  <td key={`${exercise.id}_${dateInfo.isoDateStr}`} className="p-3">
+                                    <div className="flex flex-col items-center gap-2">
                                       {/* Champ de saisie */}
                                       <Input
                                         type="number"
                                         value={repsValue}
-                                        onChange={(e) => handleRepsChange(exercise.id, dateInfo.dateStr, e.target.value)}
+                                        onChange={(e) => handleRepsChange(exercise.id, dateInfo.isoDateStr, e.target.value)}
                                         placeholder="0"
-                                        className="w-12 h-8 text-center text-xs bg-slate-700 border-slate-600 text-white"
+                                        className="w-16 h-10 text-center text-sm bg-slate-700 border-slate-600 text-white font-medium focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                                         min="0"
                                       />
                                       
                                       {/* Case à cocher */}
                                       <button
-                                        onClick={() => handleCompletedToggle(exercise.id, dateInfo.dateStr)}
-                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                        onClick={() => handleCompletedToggle(exercise.id, dateInfo.isoDateStr)}
+                                        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
                                           isCompleted 
                                             ? 'bg-green-500 border-green-500' 
                                             : 'border-slate-500 hover:border-green-400'
                                         }`}
                                       >
                                         {isCompleted && (
-                                          <Check size={12} className="text-white" />
+                                          <Check size={14} className="text-white" />
                                         )}
                                       </button>
                                     </div>
