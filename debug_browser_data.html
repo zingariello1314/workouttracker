@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Données Navigateur</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .section { margin: 20px 0; padding: 15px; background: #2a2a2a; border-radius: 8px; }
+        .key { color: #4CAF50; }
+        .value { color: #2196F3; }
+        .error { color: #f44336; }
+        pre { background: #333; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug des Données du Navigateur</h1>
+    
+    <div class="section">
+        <h2>📊 Données LocalStorage</h2>
+        <div id="localStorage-data"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🗄️ Données IndexedDB</h2>
+        <div id="indexeddb-data"></div>
+    </div>
+    
+    <div class="section">
+        <h2>🎯 Recherche pour 18/10/2025</h2>
+        <div id="search-results"></div>
+    </div>
+
+    <script>
+        // Debug LocalStorage
+        function debugLocalStorage() {
+            const container = document.getElementById('localStorage-data');
+            const keys = Object.keys(localStorage);
+            
+            if (keys.length === 0) {
+                container.innerHTML = '<p class="error">Aucune donnée dans localStorage</p>';
+                return;
+            }
+            
+            let html = '<h3>Clés trouvées:</h3>';
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                html += `<div><span class="key">${key}</span>: <span class="value">${value}</span></div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Debug IndexedDB
+        async function debugIndexedDB() {
+            const container = document.getElementById('indexeddb-data');
+            
+            try {
+                const databases = await indexedDB.databases();
+                let html = '<h3>Bases de données IndexedDB:</h3>';
+                
+                if (databases.length === 0) {
+                    html += '<p class="error">Aucune base de données IndexedDB trouvée</p>';
+                } else {
+                    databases.forEach(db => {
+                        html += `<div>📁 <span class="key">${db.name}</span> (version ${db.version})</div>`;
+                    });
+                }
+                
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<p class="error">Erreur: ${error.message}</p>`;
+            }
+        }
+        
+        // Recherche spécifique pour le 18/10/2025
+        function searchForDate() {
+            const container = document.getElementById('search-results');
+            const targetDate = '2025-10-18';
+            
+            let html = `<h3>Recherche pour ${targetDate}:</h3>`;
+            let found = 0;
+            
+            // Chercher dans localStorage
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes(targetDate)) {
+                    const value = localStorage.getItem(key);
+                    html += `<div>✅ <span class="key">${key}</span>: <span class="value">${value}</span></div>`;
+                    found++;
+                }
+            });
+            
+            if (found === 0) {
+                html += '<p class="error">❌ Aucune donnée trouvée pour cette date dans localStorage</p>';
+            } else {
+                html += `<p class="key">✅ ${found} entrées trouvées pour cette date</p>`;
+            }
+            
+            // Vérifier aussi les patterns alternatifs
+            html += '<h4>Patterns alternatifs testés:</h4>';
+            const patterns = [
+                '18/10/2025',
+                '2025/10/18', 
+                '18-10-2025',
+                '2025-10-18',
+                'Oct 18, 2025'
+            ];
+            
+            patterns.forEach(pattern => {
+                let patternFound = 0;
+                Object.keys(localStorage).forEach(key => {
+                    if (key.includes(pattern)) {
+                        patternFound++;
+                    }
+                });
+                html += `<div>${pattern}: ${patternFound > 0 ? '✅' : '❌'} ${patternFound} entrées</div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Exécuter tous les debugs
+        debugLocalStorage();
+        debugIndexedDB();
+        searchForDate();
+        
+        console.log('=== DEBUG COMPLET ===');
+        console.log('LocalStorage keys:', Object.keys(localStorage));
+        console.log('Recherche 2025-10-18:', Object.keys(localStorage).filter(k => k.includes('2025-10-18')));
+    </script>
+</body>
+</html>

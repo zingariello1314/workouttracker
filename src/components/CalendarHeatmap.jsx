@@ -14,129 +14,300 @@ import {
 } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
 import { getDateStr } from '../utils/dateUtils';
+import { workoutProgram } from '../data/workoutProgram';
 
 const CalendarHeatmap = ({ workoutHistory = [] }) => {
-  // Initialiser avec l'année actuelle pour éviter le décalage
-  const [currentDate, setCurrentDate] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  });
-  const [viewMode, setViewMode] = useState('year'); // month, year, streak
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState('year'); // 'month', 'year', 'streaks'
   const [selectedDate, setSelectedDate] = useState(null);
-  const [showStats, setShowStats] = useState(true);
+  const [showStats, setShowStats] = useState(false);
 
-  // Debug: Afficher les données reçues
-  // console.log('🔍 DEBUG CalendarHeatmap: workoutHistory reçu:', workoutHistory);
-  // console.log('🔍 DEBUG CalendarHeatmap: Nombre de sessions:', workoutHistory.length);
-  if (workoutHistory.length > 0) {
-    // console.log('🔍 DEBUG CalendarHeatmap: Première session:', workoutHistory[0]);
-    // console.log('🔍 DEBUG CalendarHeatmap: Dernière session:', workoutHistory[workoutHistory.length - 1]);
-  }
+  // Récupérer les données du contexte pour le calcul du temps réel
+  const { data, getCurrentData } = useWorkout();
+  // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées)
+  const allData = getCurrentData();
 
-  // Calcul de l'intensité pour une date donnée avec plus de précision
+  // Fonction pour obtenir le nom du jour
+  const getDayName = (date) => {
+    const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    return days[date.getDay()];
+  };
+
+  // Calculer les seuils dynamiques basés sur toutes les données existantes
+  const calculateDynamicThresholds = () => {
+    if (!allData?.reps) return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100] };
+    
+    // Récupérer toutes les répétitions par jour
+    const dailyReps = {};
+    Object.keys(allData.reps).forEach(key => {
+      const reps = parseInt(allData.reps[key]) || 0;
+      if (reps > 0) {
+        const dateMatch = key.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+          const date = dateMatch[1];
+          dailyReps[date] = (dailyReps[date] || 0) + reps;
+        }
+      }
+    });
+    
+    const repValues = Object.values(dailyReps).filter(reps => reps > 0);
+    
+    if (repValues.length === 0) {
+      return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100] };
+    }
+    
+    const min = Math.min(...repValues);
+    const max = Math.max(...repValues);
+    
+    // Créer des seuils proportionnels
+    const range = max - min;
+    const thresholds = [
+      0, // Pas d'exercice
+      min, // Minimum enregistré (vert)
+      min + range * 0.33, // Modéré (jaune)
+      min + range * 0.66, // Intense (orange)
+      max // Maximum (rouge)
+    ];
+    
+    return { min, max, thresholds, dailyReps };
+  };
+
+  // Calculer le niveau d'intensité basé sur les seuils dynamiques
+  const calculateDynamicIntensityLevel = (totalReps, thresholds) => {
+    if (totalReps === 0) return 0;
+    if (totalReps <= thresholds[1]) return 1; // Léger (vert)
+    if (totalReps <= thresholds[2]) return 2; // Modéré (jaune)
+    if (totalReps <= thresholds[3]) return 3; // Intense (orange)
+    return 4; // Extrême (rouge)
+  };
   const getIntensityForDate = (date) => {
     const dateStr = getDateStr(date);
-    const session = workoutHistory.find(s => s.date === dateStr);
+    const dayName = getDayName(date);
+    const workout = workoutProgram[dayName];
     
-    if (!session || !session.exercises) return { level: 0, reps: 0, exercises: 0, duration: 0 };
+    // Si pas de programme pour ce jour, retourner des valeurs par défaut
+    if (!workout) {
+      return { level: 0, reps: 0, duration: 0, exerciseCount: 0, completedCount: 0, intensityScore: 0 };
+    }
+
+    // Obtenir la liste des exercices - CORRECTION: inclure TOUTES les variantes
+    let exercisesList = [];
     
-    const totalReps = session.exercises.reduce((sum, ex) => sum + (ex.reps || 0), 0);
-    const exerciseCount = session.exercises.length;
-    const estimatedDuration = exerciseCount * 3 + totalReps * 0.05; // Estimation en minutes
+    if (workout.salleVariants) {
+      // Pour les jours avec variantes de salle, inclure TOUS les exercices possibles
+      const semaineA = workout.salleVariants.semaineA?.exercices || [];
+      const semaineB = workout.salleVariants.semaineB?.exercices || [];
+      const streetExercices = workout.exercices || [];
+      
+      // Combiner tous les exercices possibles (salle A, salle B, street)
+      exercisesList = [...semaineA, ...semaineB, ...streetExercices];
+    } else {
+      // Pour les jours sans variantes, utiliser les exercices de base
+      exercisesList = workout.exercices || [];
+    }
     
-    // Calcul d'intensité plus sophistiqué
-    let level = 0;
-    const intensityScore = totalReps * 0.7 + exerciseCount * 15;
+    let totalReps = 0;
+    let completedExercises = 0;
+    let totalPlannedExercises = exercisesList.length;
     
-    if (intensityScore > 300) level = 4; // Extrême
-    else if (intensityScore > 200) level = 3; // Intense
-    else if (intensityScore > 100) level = 2; // Modéré
-    else if (intensityScore > 20) level = 1; // Léger
-    
-    const result = { 
-      level, 
-      reps: totalReps, 
-      exercises: exerciseCount, 
-      session,
-      duration: Math.round(estimatedDuration),
-      intensityScore: Math.round(intensityScore)
+    // Calculer les répétitions réelles et exercices accomplis
+    exercisesList.forEach(exercise => {
+      const baseKey = `${dateStr}_${exercise.id}`;
+      
+      // Chercher la clé avec les suffixes possibles (_semaineA, _semaineB, ou sans suffixe)
+      let actualKey = baseKey;
+      let reps = 0;
+      let isCompleted = false;
+      
+      // Vérifier d'abord la clé de base
+      if (allData?.reps?.[baseKey] !== undefined || allData?.checkedExercises?.[baseKey] !== undefined) {
+        actualKey = baseKey;
+      } else {
+        // Chercher avec les suffixes
+        const possibleKeys = [
+          `${baseKey}_semaineA`,
+          `${baseKey}_semaineB`
+        ];
+        
+        for (const possibleKey of possibleKeys) {
+          if (allData?.reps?.[possibleKey] !== undefined || allData?.checkedExercises?.[possibleKey] !== undefined) {
+            actualKey = possibleKey;
+            break;
+          }
+        }
+      }
+      
+      reps = parseInt(allData?.reps?.[actualKey] || 0);
+      isCompleted = allData?.checkedExercises?.[actualKey] || false;
+      
+      if (isCompleted) {
+        completedExercises++;
+        totalReps += reps;
+      }
+    });
+
+    // Calculer la durée réelle basée sur les exercices accomplis
+    const calculateRealDuration = () => {
+      if (completedExercises === 0) return 0;
+      
+      let totalDurationMinutes = 0;
+      
+      exercisesList.forEach(exercise => {
+        const key = `${dateStr}_${exercise.id}`;
+        const isCompleted = allData.checkedExercises[key] || false;
+        
+        if (isCompleted && exercise.series) {
+          // Calculer le temps pour cet exercice
+          let exerciseDuration = 0;
+          
+          // Extraire le nombre de séries et répétitions
+          const seriesMatch = exercise.series.match(/(\d+)×(\d+)(?:-(\d+))?/);
+          if (seriesMatch) {
+            const sets = parseInt(seriesMatch[1]);
+            const minReps = parseInt(seriesMatch[2]);
+            const maxReps = seriesMatch[3] ? parseInt(seriesMatch[3]) : minReps;
+            const avgReps = (minReps + maxReps) / 2;
+            
+            // Temps par répétition (en secondes) selon le type d'exercice
+            let timePerRep = 3; // défaut 3 secondes par rep
+            
+            if (exercise.name.toLowerCase().includes('planche') || 
+                exercise.name.toLowerCase().includes('gainage')) {
+              // Exercices isométriques : temps en secondes directement
+              if (exercise.series.includes('sec') || exercise.series.includes('min')) {
+                const timeMatch = exercise.series.match(/(\d+)\s*(sec|min)/);
+                if (timeMatch) {
+                  const timeValue = parseInt(timeMatch[1]);
+                  const timeUnit = timeMatch[2];
+                  exerciseDuration = timeUnit === 'min' ? timeValue * 60 : timeValue;
+                }
+              } else {
+                exerciseDuration = avgReps; // Pour les planches en secondes
+              }
+            } else {
+              // Exercices dynamiques
+              exerciseDuration = sets * avgReps * timePerRep; // en secondes
+              
+              // Ajouter le temps de repos entre séries
+              const restTime = exercise.rest || 90; // repos par défaut 90s
+              exerciseDuration += (sets - 1) * restTime;
+            }
+            
+            totalDurationMinutes += exerciseDuration / 60; // convertir en minutes
+          } else if (exercise.series.includes('sec')) {
+            // Exercices en secondes (circuits, etc.)
+            const timeMatch = exercise.series.match(/(\d+)\s*sec/);
+            if (timeMatch) {
+              totalDurationMinutes += parseInt(timeMatch[1]) / 60;
+            }
+          } else if (exercise.series.includes('min')) {
+            // Exercices en minutes
+            const timeMatch = exercise.series.match(/(\d+)\s*min/);
+            if (timeMatch) {
+              totalDurationMinutes += parseInt(timeMatch[1]);
+            }
+          }
+        }
+      });
+      
+      return Math.round(totalDurationMinutes);
     };
+
+    const realDuration = calculateRealDuration();
+    const completionRate = totalPlannedExercises > 0 ? completedExercises / totalPlannedExercises : 0;
     
-    return result;
+    // Calculer le niveau d'intensité basé sur le taux de complétion et les répétitions
+    let intensityLevel = 0;
+    if (completedExercises > 0) {
+      if (completionRate >= 0.8 && totalReps >= 100) intensityLevel = 4; // Extrême
+      else if (completionRate >= 0.6 && totalReps >= 60) intensityLevel = 3; // Intense
+      else if (completionRate >= 0.4 && totalReps >= 30) intensityLevel = 2; // Modéré
+      else intensityLevel = 1; // Léger
+    }
+    
+    const intensityScore = completionRate * 100 + (totalReps * 0.1);
+    
+    return {
+      level: intensityLevel,
+      reps: totalReps,
+      duration: realDuration,
+      exerciseCount: totalPlannedExercises,
+      completedCount: completedExercises,
+      intensityScore,
+      completionRate: Math.round(completionRate * 100),
+      // Garder la compatibilité avec l'ancien format
+      exercises: completedExercises,
+      session: completedExercises > 0 ? { 
+        exercises: exercisesList.filter(ex => allData.checkedExercises[`${dateStr}_${ex.id}`]).map(ex => ({
+          name: ex.name,
+          reps: parseInt(allData.reps[`${dateStr}_${ex.id}`]) || 0
+        }))
+      } : null
+    };
   };
 
   // Calcul des streaks
   const calculateStreaks = () => {
-    if (workoutHistory.length === 0) return { current: 0, longest: 0, streaks: [] };
+    const today = new Date();
+    const sortedHistory = [...workoutHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    const sortedDates = workoutHistory
-      .map(s => new Date(s.date))
-      .sort((a, b) => a - b);
-    
-    let streaks = [];
-    let currentStreak = 1;
-    let longestStreak = 1;
-    let currentStreakCount = 1;
-    
-    for (let i = 1; i < sortedDates.length; i++) {
-      const prevDate = sortedDates[i - 1];
-      const currentDate = sortedDates[i];
-      const diffDays = Math.floor((currentDate - prevDate) / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) {
-        currentStreakCount++;
-      } else {
-        if (currentStreakCount > 1) {
-          streaks.push({
-            start: new Date(sortedDates[i - currentStreakCount]),
-            end: new Date(prevDate),
-            length: currentStreakCount
-          });
-        }
-        longestStreak = Math.max(longestStreak, currentStreakCount);
-        currentStreakCount = 1;
-      }
-    }
-    
-    // Ajouter le dernier streak
-    if (currentStreakCount > 1) {
-      streaks.push({
-        start: new Date(sortedDates[sortedDates.length - currentStreakCount]),
-        end: new Date(sortedDates[sortedDates.length - 1]),
-        length: currentStreakCount
-      });
-    }
-    longestStreak = Math.max(longestStreak, currentStreakCount);
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
     
     // Calculer le streak actuel
-    const today = new Date();
-    const lastWorkout = sortedDates[sortedDates.length - 1];
-    const daysSinceLastWorkout = Math.floor((today - lastWorkout) / (1000 * 60 * 60 * 24));
+    for (let i = 0; i < 30; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() - i);
+      const dateStr = getDateStr(checkDate);
+      
+      const hasWorkout = sortedHistory.some(session => session.date === dateStr);
+      
+      if (hasWorkout) {
+        if (i === 0 || currentStreak > 0) currentStreak++;
+      } else {
+        break;
+      }
+    }
     
-    let currentStreakLength = 0;
-    if (daysSinceLastWorkout <= 1) {
-      // Compter en arrière depuis aujourd'hui
-      for (let i = sortedDates.length - 1; i >= 0; i--) {
-        const date = sortedDates[i];
-        const expectedDate = new Date(today);
-        expectedDate.setDate(today.getDate() - currentStreakLength);
+    // Calculer le plus long streak
+    let consecutiveDays = 0;
+    for (const session of sortedHistory) {
+      consecutiveDays++;
+      tempStreak = Math.max(tempStreak, consecutiveDays);
+      
+      // Vérifier s'il y a une interruption
+      const nextIndex = sortedHistory.indexOf(session) + 1;
+      if (nextIndex < sortedHistory.length) {
+        const currentDate = new Date(session.date);
+        const nextDate = new Date(sortedHistory[nextIndex].date);
+        const dayDiff = (nextDate - currentDate) / (1000 * 60 * 60 * 24);
         
-        if (Math.abs(date - expectedDate) <= 24 * 60 * 60 * 1000) {
-          currentStreakLength++;
-        } else {
-          break;
+        if (dayDiff > 1) {
+          longestStreak = Math.max(longestStreak, tempStreak);
+          tempStreak = 0;
+          consecutiveDays = 0;
         }
       }
     }
     
-    return {
-      current: currentStreakLength,
-      longest: longestStreak,
-      streaks: streaks.sort((a, b) => b.length - a.length)
-    };
+    longestStreak = Math.max(longestStreak, tempStreak);
+    
+    return { currentStreak, longestStreak };
   };
 
-  // Génération des jours du mois avec plus de détails
+  // Navigation
+  const navigateDate = (direction) => {
+    const newDate = new Date(currentDate);
+    if (viewMode === 'month') {
+      newDate.setMonth(currentDate.getMonth() + direction);
+    } else if (viewMode === 'year') {
+      newDate.setFullYear(currentDate.getFullYear() + direction);
+    }
+    setCurrentDate(newDate);
+  };
+
+  // Génération des jours du mois avec intensité dynamique
   const generateMonthDays = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -151,10 +322,14 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
     
     const days = [];
     const currentDay = new Date(startDate);
+    const { thresholds } = calculateDynamicThresholds();
     
     // Générer 6 semaines (42 jours) pour couvrir tout le mois
     for (let i = 0; i < 42; i++) {
       const intensity = getIntensityForDate(currentDay);
+      // Appliquer le système d'intensité dynamique
+      intensity.level = calculateDynamicIntensityLevel(intensity.reps, thresholds);
+      
       days.push({
         date: new Date(currentDay),
         isCurrentMonth: currentDay.getMonth() === month,
@@ -233,111 +408,63 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
 
   const getIntensityColor = (level, isToday = false) => {
     const baseColors = {
-      4: 'bg-red-500 border-red-400', // Extrême
-      3: 'bg-orange-500 border-orange-400', // Intense  
+      4: 'bg-red-500 border-red-400', // Extrême (maximum)
+      3: 'bg-orange-500 border-orange-400', // Intense
       2: 'bg-yellow-500 border-yellow-400', // Modéré
-      1: 'bg-green-500 border-green-400', // Léger
-      0: 'bg-slate-600 border-slate-500' // Repos
+      1: 'bg-green-500 border-green-400', // Léger (minimum enregistré)
+      0: 'bg-gray-200 border-gray-300' // Pas d'exercice
     };
     
     const todayRing = isToday ? ' ring-2 ring-blue-400' : '';
-    return baseColors[level] + todayRing;
+    return `${baseColors[level]}${todayRing}`;
   };
 
   const getIntensityLabel = (level) => {
     const labels = {
-      4: 'Extrême 🔥',
-      3: 'Intense 💪',
-      2: 'Modéré ⚡',
-      1: 'Léger 🌱',
-      0: 'Repos 😴'
+      4: 'Extrême',
+      3: 'Intense',
+      2: 'Modéré', 
+      1: 'Léger',
+      0: 'Repos'
     };
     return labels[level];
   };
 
-  const { months: yearMonths, yearStats } = useMemo(() => 
-    generateYearData(currentDate), [currentDate, workoutHistory]
-  );
-  
-  const monthDays = useMemo(() => 
-    viewMode === 'month' ? generateMonthDays(currentDate) : [], 
-    [currentDate, workoutHistory, viewMode]
-  );
-  
-  const streakData = useMemo(() => 
-    calculateStreaks(), [workoutHistory]
-  );
+  // Données calculées
+  const monthDays = useMemo(() => generateMonthDays(currentDate), [currentDate, allData]);
+  const { months: yearMonths, yearStats } = useMemo(() => generateYearData(currentDate), [currentDate, allData]);
+  const streaks = useMemo(() => calculateStreaks(), [workoutHistory]);
 
-  const navigateDate = (direction) => {
-    const newDate = new Date(currentDate);
-    if (viewMode === 'month') {
-      newDate.setMonth(currentDate.getMonth() + direction);
-    } else {
-      newDate.setFullYear(currentDate.getFullYear() + direction);
-    }
-    setCurrentDate(newDate);
-  };
-
-  const weekDays = ['L', 'Ma', 'Me', 'J', 'V', 'S', 'D']; // Correction: Ma=Mardi, Me=Mercredi
+  // Constantes pour l'affichage
   const monthNames = [
     'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
   ];
+  
+  const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
   return (
     <div className="space-y-6">
-      {/* En-tête avec statistiques */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Calendar className="text-purple-400" />
-            📅 Calendrier d'Activité
-          </h2>
+      {/* En-tête avec navigation */}
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex gap-2">
-            {[
-              { mode: 'year', label: 'Année', icon: Calendar },
-              { mode: 'month', label: 'Mois', icon: BarChart3 },
-              { mode: 'streak', label: 'Streaks', icon: Flame }
-            ].map(({ mode, label, icon: Icon }) => (
+            {['month', 'year', 'streaks'].map(mode => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
-                  viewMode === mode
-                    ? 'bg-purple-600 text-white'
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  viewMode === mode 
+                    ? 'bg-purple-600 text-white' 
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
-                <Icon size={16} />
-                {label}
+                {mode === 'month' ? 'Mois' : mode === 'year' ? 'Année' : 'Streaks'}
               </button>
             ))}
           </div>
         </div>
-
-        {/* Statistiques rapides */}
-        {showStats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{streakData.current}</div>
-              <div className="text-sm text-slate-400">Streak actuel</div>
-            </div>
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{streakData.longest}</div>
-              <div className="text-sm text-slate-400">Record streak</div>
-            </div>
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{yearStats.totalSessions}</div>
-              <div className="text-sm text-slate-400">Séances {currentDate.getFullYear()}</div>
-            </div>
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{Math.round(yearStats.totalDuration / 60)}h</div>
-              <div className="text-sm text-slate-400">Temps total</div>
-            </div>
-          </div>
-        )}
-
-        {/* Navigation */}
+        
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigateDate(-1)}
@@ -532,8 +659,8 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
                       <div className="text-slate-400">reps</div>
                     </div>
                     <div className="bg-slate-700/50 rounded p-2 text-center">
-                      <div className="text-white font-bold">{Math.round(month.totalDuration / 60)}h</div>
-                      <div className="text-slate-400">temps</div>
+                      <div className="text-white font-bold">{month.totalDuration}min</div>
+                      <div className="text-slate-400">temps réel</div>
                     </div>
                   </div>
                 </div>
@@ -543,130 +670,81 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
         </div>
       )}
 
-      {/* Vue des streaks */}
-      {viewMode === 'streak' && (
+      {/* Vue Streaks */}
+      {viewMode === 'streaks' && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-            <Flame className="text-orange-400" />
-            🔥 Analyse des Streaks
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="bg-gradient-to-r from-orange-600/20 to-red-600/20 rounded-lg p-6 border border-orange-600/30">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-400 mb-2">{streakData.current}</div>
-                <div className="text-white font-medium">Streak Actuel</div>
-                <div className="text-sm text-slate-300 mt-1">
-                  {streakData.current > 0 ? 'Continue comme ça! 🔥' : 'Il est temps de recommencer! 💪'}
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-700/50 rounded-lg p-6 text-center">
+              <Flame className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+              <div className="text-3xl font-bold text-white mb-2">{streaks.currentStreak}</div>
+              <div className="text-slate-300">Streak actuel</div>
+              <div className="text-sm text-slate-400 mt-2">
+                {streaks.currentStreak > 0 ? 'Jours consécutifs' : 'Aucun streak en cours'}
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 rounded-lg p-6 border border-yellow-600/30">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-400 mb-2">{streakData.longest}</div>
-                <div className="text-white font-medium">Record Personnel</div>
-                <div className="text-sm text-slate-300 mt-1">
-                  Ton meilleur streak de tous les temps! 🏆
-                </div>
-              </div>
+            <div className="bg-slate-700/50 rounded-lg p-6 text-center">
+              <Award className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+              <div className="text-3xl font-bold text-white mb-2">{streaks.longestStreak}</div>
+              <div className="text-slate-300">Record personnel</div>
+              <div className="text-sm text-slate-400 mt-2">Plus long streak</div>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Top 5 des streaks */}
-          {streakData.streaks.length > 0 && (
-            <div>
-              <h4 className="text-white font-medium mb-4">🏅 Top 5 des Streaks</h4>
-              <div className="space-y-3">
-                {streakData.streaks.slice(0, 5).map((streak, index) => (
-                  <div key={index} className="bg-slate-700/50 rounded-lg p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                        index === 0 ? 'bg-yellow-500 text-black' :
-                        index === 1 ? 'bg-gray-400 text-black' :
-                        index === 2 ? 'bg-orange-600 text-white' :
-                        'bg-slate-600 text-white'
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <div>
-                        <div className="text-white font-medium">{streak.length} jours consécutifs</div>
-                        <div className="text-sm text-slate-400">
-                          {streak.start.toLocaleDateString('fr-FR')} - {streak.end.toLocaleDateString('fr-FR')}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {index === 0 && <span className="text-yellow-400">👑</span>}
-                      {index === 1 && <span className="text-gray-400">🥈</span>}
-                      {index === 2 && <span className="text-orange-600">🥉</span>}
-                    </div>
+      {/* Détails de la date sélectionnée */}
+      {selectedDate && (
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-white">
+              {selectedDate.date.toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </h3>
+            <button
+              onClick={() => setSelectedDate(null)}
+              className="text-slate-400 hover:text-white"
+            >
+              ×
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-white">{selectedDate.intensity.reps}</div>
+              <div className="text-slate-400 text-sm">Répétitions</div>
+            </div>
+            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-white">{selectedDate.intensity.completedCount}</div>
+              <div className="text-slate-400 text-sm">Exercices</div>
+            </div>
+            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-white">{selectedDate.intensity.duration}min</div>
+              <div className="text-slate-400 text-sm">Durée réelle</div>
+            </div>
+            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-white">{getIntensityLabel(selectedDate.intensity.level)}</div>
+              <div className="text-slate-400 text-sm">Intensité</div>
+            </div>
+          </div>
+          
+          {selectedDate.intensity.session && (
+            <div className="mt-4">
+              <h4 className="text-white font-medium mb-2">Exercices réalisés:</h4>
+              <div className="space-y-2">
+                {selectedDate.intensity.session.exercises.map((exercise, index) => (
+                  <div key={index} className="bg-slate-700/30 rounded p-2 flex justify-between">
+                    <span className="text-slate-300">{exercise.name}</span>
+                    <span className="text-white font-medium">{exercise.reps} reps</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Détails de la date sélectionnée - Version améliorée */}
-      {selectedDate && selectedDate.intensity.session && (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <Activity className="text-green-400" />
-            📊 Détails du {selectedDate.date.toLocaleDateString('fr-FR', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-slate-400 text-sm mb-1">Total Reps</div>
-              <div className="text-2xl font-bold text-white">{selectedDate.intensity.reps}</div>
-            </div>
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-slate-400 text-sm mb-1">Exercices</div>
-              <div className="text-2xl font-bold text-white">{selectedDate.intensity.exercises}</div>
-            </div>
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-slate-400 text-sm mb-1">Durée estimée</div>
-              <div className="text-2xl font-bold text-white">{selectedDate.intensity.duration}min</div>
-            </div>
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-slate-400 text-sm mb-1">Intensité</div>
-              <div className={`text-lg font-bold flex items-center justify-center gap-2 ${
-                selectedDate.intensity.level >= 3 ? 'text-red-400' : 
-                selectedDate.intensity.level >= 2 ? 'text-orange-400' : 
-                selectedDate.intensity.level >= 1 ? 'text-yellow-400' : 'text-green-400'
-              }`}>
-                <Flame size={20} />
-                {getIntensityLabel(selectedDate.intensity.level)}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="text-white font-medium flex items-center gap-2">
-              <Target size={16} />
-              Exercices effectués:
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {selectedDate.intensity.session.exercises.map((exercise, index) => (
-                <div key={index} className="flex justify-between items-center bg-slate-700/30 rounded-lg p-3">
-                  <span className="text-slate-300">{exercise.name}</span>
-                  <div className="text-right">
-                    <span className="text-white font-medium">{exercise.reps} reps</span>
-                    <div className="text-xs text-slate-400">
-                      ~{Math.round(exercise.reps * 0.05 + 2)}min
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       )}
     </div>

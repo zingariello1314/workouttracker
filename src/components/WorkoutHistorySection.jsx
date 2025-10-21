@@ -41,36 +41,41 @@ const WorkoutHistorySection = () => {
 
   // Générer les dates passées pour un jour spécifique de la semaine
   const generatePastDatesForDay = (dayName) => {
+    const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const targetDayIndex = dayNames.indexOf(dayName.toLowerCase());
+    
+    if (targetDayIndex === -1) {
+      return [];
+    }
+
     const dates = [];
     const today = new Date();
-    const targetDayIndex = daysOrder.indexOf(dayName); // 0 = Lundi, 1 = Mardi, etc.
     
-    // Trouver le dernier jour correspondant (aujourd'hui ou avant)
-    let currentDate = new Date(today);
-    while (currentDate.getDay() !== (targetDayIndex + 1) % 7) { // getDay(): 0=Dimanche, 1=Lundi, etc.
-      currentDate.setDate(currentDate.getDate() - 1);
+    // Chercher les 6 dernières occurrences de ce jour (au lieu de 4) pour inclure plus de dates récentes
+    for (let i = 0; i < 42; i++) { // Chercher sur 6 semaines
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() - i);
+      
+      if (checkDate.getDay() === targetDayIndex) {
+        dates.push({
+          date: new Date(checkDate),
+          dateStr: checkDate.toLocaleDateString('fr-FR', { 
+            day: '2-digit', 
+            month: '2-digit' 
+          }),
+          isoDateStr: getDateStr(checkDate), // Utiliser la fonction du contexte pour le format ISO
+          fullDateStr: checkDate.toLocaleDateString('fr-FR', { 
+            weekday: 'long',
+            day: '2-digit', 
+            month: '2-digit' 
+          })
+        });
+        
+        if (dates.length === 6) break; // Augmenté de 4 à 6 pour plus de flexibilité
+      }
     }
     
-    // Générer les 4 dernières occurrences de ce jour
-    for (let i = 0; i < 4; i++) {
-      const date = new Date(currentDate);
-      date.setDate(currentDate.getDate() - (i * 7));
-      dates.push({
-        date: date,
-        dateStr: date.toLocaleDateString('fr-FR', { 
-          day: '2-digit', 
-          month: '2-digit' 
-        }),
-        isoDateStr: getDateStr(date), // Utiliser la fonction du contexte pour le format ISO
-        fullDateStr: date.toLocaleDateString('fr-FR', { 
-          weekday: 'long',
-          day: '2-digit', 
-          month: '2-digit' 
-        })
-      });
-    }
-    
-    return dates;
+    return dates.reverse(); // Inverser pour avoir les plus récents en dernier
   };
 
   // Fonction pour obtenir tous les exercices d'un jour (incluant les variantes)
