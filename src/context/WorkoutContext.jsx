@@ -122,7 +122,6 @@ const WorkoutProvider = ({ children }) => {
         await updateData(tempData);
         setHasUnsavedExercises(false);
         setTempData(null);
-        console.log('✅ Exercices sauvegardés avec succès');
       } catch (error) {
         console.error('❌ Erreur lors de la sauvegarde des exercices:', error);
         throw error; // Propager l'erreur pour que l'UI puisse la gérer
@@ -134,7 +133,6 @@ const WorkoutProvider = ({ children }) => {
     try {
       setHasUnsavedExercises(false);
       setTempData(null);
-      console.log('✅ Modifications d\'exercices annulées');
     } catch (error) {
       console.error('❌ Erreur lors de l\'annulation des exercices:', error);
     }
@@ -169,7 +167,6 @@ const WorkoutProvider = ({ children }) => {
         await updateData(tempData);
         setHasUnsavedStretches(false);
         setTempData(null);
-        console.log('✅ Étirements sauvegardés avec succès');
       } catch (error) {
         console.error('❌ Erreur lors de la sauvegarde des étirements:', error);
         throw error; // Propager l'erreur pour que l'UI puisse la gérer
@@ -181,7 +178,6 @@ const WorkoutProvider = ({ children }) => {
     try {
       setHasUnsavedStretches(false);
       setTempData(null);
-      console.log('✅ Modifications d\'étirements annulées');
     } catch (error) {
       console.error('❌ Erreur lors de l\'annulation des étirements:', error);
     }
@@ -307,7 +303,6 @@ const WorkoutProvider = ({ children }) => {
           const db = event.target.result;
           if (!db.objectStoreNames.contains('contextData')) {
             const store = db.createObjectStore('contextData', { keyPath: 'id' });
-            console.log('✅ Object store contextData créé');
           }
         } catch (error) {
           console.error('❌ Erreur lors de la création de l\'object store:', error);
@@ -325,7 +320,6 @@ const WorkoutProvider = ({ children }) => {
           return;
         }
         
-        console.log('✅ Connexion à WorkoutTrackerContextDB réussie');
         resolve(db);
       };
       
@@ -367,7 +361,6 @@ const WorkoutProvider = ({ children }) => {
           const request = store.put(dataToSave);
           
           request.onsuccess = () => {
-            console.log('✅ Contexte sauvegardé avec succès');
             
             // Sauvegarde de secours en localStorage
             try {
@@ -385,7 +378,6 @@ const WorkoutProvider = ({ children }) => {
           };
           
           transaction.oncomplete = () => {
-            console.log('✅ Transaction de sauvegarde du contexte terminée');
           };
           
           transaction.onerror = (event) => {
@@ -406,7 +398,6 @@ const WorkoutProvider = ({ children }) => {
               ...contextData,
               lastSaved: new Date().toISOString()
             }));
-            console.log('✅ Sauvegarde de secours du contexte réussie en localStorage');
           } catch (localStorageError) {
             console.error('❌ Échec de la sauvegarde de secours du contexte:', localStorageError);
           }
@@ -460,7 +451,7 @@ const WorkoutProvider = ({ children }) => {
 
   // Hooks personnalisés pour la logique et les statistiques
   const workoutLogic = useWorkoutLogic(data, updateData);
-  const workoutStats = useWorkoutStats(data);
+  const workoutStats = useWorkoutStats(getCurrentData(), activeProgram);
 
   // Fonction pour ajouter une photo de progression
   const addProgressPhoto = async (photoData) => {
@@ -485,7 +476,6 @@ const WorkoutProvider = ({ children }) => {
       };
 
       await updateData(updatedData);
-      console.log('✅ Photo de progression ajoutée avec succès');
     } catch (error) {
       console.error('❌ Erreur lors de l\'ajout de la photo de progression:', error);
       throw error;
@@ -513,7 +503,6 @@ const WorkoutProvider = ({ children }) => {
       };
 
       await updateData(updatedData);
-      console.log('✅ Photo de progression supprimée avec succès');
     } catch (error) {
       console.error('❌ Erreur lors de la suppression de la photo de progression:', error);
       throw error;

@@ -37,9 +37,6 @@ const TodayTab = () => {
   // Script temporaire pour inspecter IndexedDB
   const inspectIndexedDB = async () => {
     try {
-      // console.log('🔍 === INSPECTION INDEXEDDB ===');
-      // console.log('🔍 Données actuelles du contexte:', data);
-      
       const request = indexedDB.open('WorkoutTrackerDB', 3);
       request.onsuccess = () => {
         const db = request.result;
@@ -49,20 +46,10 @@ const TodayTab = () => {
         
         getRequest.onsuccess = () => {
           const result = getRequest.result;
-          // console.log('🔍 === DONNÉES INDEXEDDB ===');
-          // console.log('🔍 Données complètes:', result);
           if (result) {
-            // console.log('🔍 checkedExercises:', result.checkedExercises);
-            // console.log('🔍 reps:', result.reps);
-            // console.log('🔍 checkedStretches:', result.checkedStretches);
-            // console.log('🔍 Nombre de clés reps:', Object.keys(result.reps || {}).length);
-            // console.log('🔍 Nombre de clés checkedExercises:', Object.keys(result.checkedExercises || {}).length);
-            
             // Afficher quelques exemples de clés
             const repsKeys = Object.keys(result.reps || {});
             const exerciseKeys = Object.keys(result.checkedExercises || {});
-            // console.log('🔍 Exemples de clés reps:', repsKeys.slice(0, 10));
-            // console.log('🔍 Exemples de clés exercices:', exerciseKeys.slice(0, 10));
             
             // Vérifier les dates récentes
             const today = new Date();
@@ -70,19 +57,11 @@ const TodayTab = () => {
             yesterday.setDate(today.getDate() - 1);
             const todayStr = getDateStr(today);
             const yesterdayStr = getDateStr(yesterday);
-            
-            // console.log('🔍 Vérification des dates récentes:');
-            // console.log('🔍 Aujourd\'hui (' + todayStr + '):', 
-            //   Object.keys(result.reps || {}).filter(key => key.startsWith(todayStr)));
-            // console.log('🔍 Hier (' + yesterdayStr + '):', 
-            //   Object.keys(result.reps || {}).filter(key => key.startsWith(yesterdayStr)));
-          } else {
-            // console.log('🔍 Aucune donnée trouvée dans IndexedDB');
           }
         };
       };
     } catch (error) {
-      // console.error('🔍 Erreur inspection DB:', error);
+      // Erreur lors de l'inspection de la base de données
     }
   };
 
@@ -222,9 +201,7 @@ const TodayTab = () => {
     try {
       // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
       await saveExerciseChanges();
-      console.log('Exercices sauvegardés avec succès');
     } catch (error) {
-      console.error('Erreur critique lors de la sauvegarde des exercices:', error);
       alert('Erreur critique lors de la sauvegarde des exercices. Veuillez réessayer.');
     }
   };
@@ -234,9 +211,7 @@ const TodayTab = () => {
     try {
       // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
       await saveStretchChanges();
-      console.log('Étirements sauvegardés avec succès');
     } catch (error) {
-      console.error('Erreur critique lors de la sauvegarde des étirements:', error);
       alert('Erreur critique lors de la sauvegarde des étirements. Veuillez réessayer.');
     }
   };

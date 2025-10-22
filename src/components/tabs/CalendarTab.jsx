@@ -16,11 +16,10 @@ const CalendarTab = () => {
   // Utiliser useMemo pour recalculer l'historique quand les données changent
   const workoutHistory = useMemo(() => {
     const history = getWorkoutHistory();
-    console.log('🔍 DEBUG CalendarTab: Historique recalculé:', history.length, 'sessions');
     return history;
   }, [currentData.reps, currentData.checkedExercises, getWorkoutHistory]);
   
-  console.log('🔍 DEBUG CalendarTab: Rendu avec', workoutHistory?.length || 0, 'sessions');
+
   
   return (
     <div className="p-6">

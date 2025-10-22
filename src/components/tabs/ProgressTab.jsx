@@ -35,9 +35,7 @@ const ProgressTab = () => {
 
       await addProgressPhoto(progressForm);
       setProgressForm({ weight: '', notes: '', photo: null });
-      console.log('✅ Photo de progression ajoutée avec succès');
     } catch (error) {
-      console.error('❌ Erreur lors de l\'ajout de la photo:', error);
       alert('Erreur lors de l\'ajout de la photo. Veuillez réessayer.');
     }
   };
@@ -68,7 +66,6 @@ const ProgressTab = () => {
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error('❌ Erreur lors du téléchargement de la photo:', error);
       alert('Erreur lors du téléchargement de la photo.');
     }
   };
@@ -77,10 +74,8 @@ const ProgressTab = () => {
     try {
       if (window.confirm('Êtes-vous sûr de vouloir supprimer cette photo de progression ?')) {
         await deleteProgressPhoto(index);
-        console.log('✅ Photo supprimée avec succès');
       }
     } catch (error) {
-      console.error('❌ Erreur lors de la suppression:', error);
       alert('Erreur lors de la suppression de la photo.');
     }
   };

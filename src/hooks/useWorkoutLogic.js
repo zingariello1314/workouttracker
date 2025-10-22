@@ -138,12 +138,10 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     try {
       // Validation des paramètres d'entrée
       if (!exerciseId || exerciseId < 0) {
-        console.warn('ID d\'exercice invalide:', exerciseId);
         return;
       }
       
       if (!date) {
-        console.warn('Date invalide pour updateReps');
         return;
       }
 
@@ -152,7 +150,6 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
       if (reps !== '' && reps !== undefined && reps !== null) {
         const numReps = parseInt(reps);
         if (isNaN(numReps) || numReps < 0 || numReps > 999) {
-          console.warn(`Valeur de répétition invalide: ${reps}. Utilisation de valeur vide.`);
           cleanReps = '';
         } else {
           cleanReps = numReps.toString();
@@ -164,7 +161,6 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
       
       // Vérification de l'intégrité des données actuelles
       if (!currentData || typeof currentData !== 'object') {
-        console.error('Données actuelles corrompues dans updateReps');
         return;
       }
       
@@ -186,12 +182,10 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     try {
       // Validation des paramètres
       if (!type || typeof type !== 'string') {
-        console.warn('Type d\'étirement invalide:', type);
         return;
       }
       
       if (!date) {
-        console.warn('Date invalide pour toggleEtirement');
         return;
       }
 
@@ -200,7 +194,6 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
       
       // Vérification de l'intégrité des données actuelles
       if (!currentData || typeof currentData !== 'object') {
-        console.error('Données actuelles corrompues dans toggleEtirement');
         return;
       }
       
@@ -222,13 +215,11 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     try {
       // Validation de la variante
       if (!variant || (variant !== 'A' && variant !== 'B')) {
-        console.warn('Variante de semaine invalide:', variant);
         return;
       }
 
       // Vérification de l'intégrité des données actuelles
       if (!currentData || typeof currentData !== 'object') {
-        console.error('Données actuelles corrompues dans changeWeekVariant');
         return;
       }
 
@@ -247,7 +238,6 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     try {
       // Vérification de l'intégrité des données actuelles
       if (!currentData || typeof currentData !== 'object') {
-        console.error('Données actuelles corrompues dans startProgram');
         return;
       }
 
@@ -281,7 +271,6 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
       };
       
       updateData(newData);
-      console.log('✅ Toutes les données ont été réinitialisées');
     } catch (error) {
       console.error('Erreur dans resetAll:', error);
     }

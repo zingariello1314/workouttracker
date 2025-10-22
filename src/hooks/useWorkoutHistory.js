@@ -242,10 +242,7 @@ export const useWorkoutHistory = () => {
       );
       
       if (!activeTable) {
-        console.log('✅ Création automatique d\'un tableau pour:', activeProgram.name);
         createWorkoutTable(activeProgram, 'program_change');
-      } else {
-        console.log('ℹ️ Tableau déjà existant pour ce programme');
       }
     }
   }, [activeProgram, workoutTables, createWorkoutTable, cleanupOrphanTables]);
@@ -253,10 +250,8 @@ export const useWorkoutHistory = () => {
   // Effet pour surveiller les données et créer des tableaux si nécessaire
   useEffect(() => {
     const hasNewData = Object.keys(data.checkedExercises || {}).length > 0;
-    console.log('🔍 Surveillance des données:', { hasNewData, checkedExercises: data.checkedExercises, shouldCreate: shouldCreateTable() });
     
     if (hasNewData && shouldCreateTable()) {
-      console.log('✅ Déclenchement de la création de tableau depuis useEffect');
       triggerTableCreation();
     }
   }, [data.checkedExercises, shouldCreateTable, triggerTableCreation]);
@@ -264,19 +259,9 @@ export const useWorkoutHistory = () => {
   // S'enregistrer pour les callbacks de sauvegarde
   useEffect(() => {
     const handleDataSaved = () => {
-      console.log('📊 Callback de sauvegarde déclenché');
-      console.log('📊 ActiveProgram:', activeProgram);
-      console.log('📊 ShouldCreateTable:', shouldCreateTable());
-      console.log('📊 WorkoutTables:', workoutTables);
-      console.log('📊 CheckedExercises:', data.checkedExercises);
       
       if (shouldCreateTable() && activeProgram) {
-        console.log('🚀 Création d\'un nouveau tableau pour:', activeProgram.name);
         createWorkoutTable(activeProgram, 'data_save');
-      } else {
-        console.log('❌ Conditions non remplies pour créer un tableau');
-        if (!activeProgram) console.log('  - Pas de programme actif');
-        if (!shouldCreateTable()) console.log('  - shouldCreateTable() retourne false');
       }
     };
     

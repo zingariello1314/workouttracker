@@ -8,15 +8,108 @@ const StatsTab = () => {
   const {
     statsPeriod,
     setStatsPeriod,
-    getStats,
-    getCurrentStreak,
-    getLongestStreak,
+    getWorkoutHistory,
     setShowAdvancedStats
   } = useWorkout();
 
-  const stats = getStats(statsPeriod);
-  const currentStreak = getCurrentStreak();
-  const longestStreak = getLongestStreak();
+  // Utiliser les vraies données de l'historique des entraînements
+  const workoutHistory = getWorkoutHistory();
+  
+  // Calculer les statistiques à partir des vraies données
+  const calculateStats = (period) => {
+    const now = new Date();
+    let startDate;
+    
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+    
+    const filteredHistory = workoutHistory.filter(session => {
+      const sessionDate = new Date(session.date);
+      return sessionDate >= startDate && sessionDate <= now;
+    });
+    
+    const totalWorkouts = filteredHistory.length;
+    const totalReps = filteredHistory.reduce((sum, session) => 
+      sum + (session.exercises?.reduce((reps, ex) => reps + (ex.reps || 0), 0) || 0), 0
+    );
+    const activeDays = new Set(filteredHistory.map(session => session.date)).size;
+    
+    return {
+      totalWorkouts,
+      totalReps,
+      activeDays
+    };
+  };
+
+  // Calculer la série actuelle
+  const calculateCurrentStreak = () => {
+    if (workoutHistory.length === 0) return 0;
+    
+    let streak = 0;
+    const today = new Date();
+    const sortedHistory = [...workoutHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    for (let i = 0; i < 365; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() - i);
+      const dateStr = checkDate.toISOString().split('T')[0];
+      
+      const hasWorkout = sortedHistory.some(session => session.date === dateStr);
+      
+      if (hasWorkout) {
+        streak++;
+      } else if (i > 0) {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  // Calculer la plus longue série
+  const calculateLongestStreak = () => {
+    if (workoutHistory.length === 0) return 0;
+    
+    const sortedHistory = [...workoutHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let maxStreak = 0;
+    let currentStreak = 0;
+    let lastDate = null;
+    
+    sortedHistory.forEach(session => {
+      const sessionDate = new Date(session.date);
+      
+      if (lastDate) {
+        const dayDiff = (sessionDate - lastDate) / (1000 * 60 * 60 * 24);
+        if (dayDiff === 1) {
+          currentStreak++;
+        } else {
+          maxStreak = Math.max(maxStreak, currentStreak);
+          currentStreak = 1;
+        }
+      } else {
+        currentStreak = 1;
+      }
+      
+      lastDate = sessionDate;
+    });
+    
+    return Math.max(maxStreak, currentStreak);
+  };
+
+  const stats = calculateStats(statsPeriod);
+  const currentStreak = calculateCurrentStreak();
+  const longestStreak = calculateLongestStreak();
 
   const periods = [
     { key: 'week', label: 'Semaine' },

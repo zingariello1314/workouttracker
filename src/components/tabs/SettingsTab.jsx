@@ -57,7 +57,6 @@ const SettingsTab = () => {
       setTimeout(() => setExportStatus(null), 3000);
       
     } catch (error) {
-      console.error('❌ Erreur lors de l\'export:', error);
       setExportStatus('error');
       setTimeout(() => setExportStatus(null), 3000);
     }
@@ -128,12 +127,10 @@ const SettingsTab = () => {
         setShowImportPreview(true);
         setImportStatus('preview');
       } else {
-        console.error('Erreurs de validation:', validation.errors);
         setImportStatus('error');
       }
       
     } catch (error) {
-      console.error('❌ Erreur lors de la prévisualisation:', error);
       setImportStatus('error');
     }
   };
@@ -162,7 +159,6 @@ const SettingsTab = () => {
       setTimeout(() => setImportStatus(null), 3000);
       
     } catch (error) {
-      console.error('❌ Erreur lors de l\'import:', error);
       setImportStatus('error');
       setTimeout(() => setImportStatus(null), 3000);
     }
@@ -191,7 +187,7 @@ const SettingsTab = () => {
         setTimeout(() => setImportStatus(null), 3000);
       }
     } catch (error) {
-      console.error('❌ Erreur lors de la restauration:', error);
+      // Erreur lors de la restauration
     }
   };
 

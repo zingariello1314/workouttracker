@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -20,14 +20,21 @@ import BestDayEver from '../BestDayEver';
 import { typography } from '../../styles/typography';
 
 const ChartsTab = () => {
-  const { data, workoutHistory = [] } = useWorkout();
+  const { data, getWorkoutHistory } = useWorkout();
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [activeChart, setActiveChart] = useState('progression');
   const [showBestDayEver, setShowBestDayEver] = useState(false);
 
+  // Récupération de l'historique des entraînements réels
+  const workoutHistory = useMemo(() => {
+    const history = getWorkoutHistory();
+    return history;
+  }, [getWorkoutHistory]);
+
   // Calcul des données de progression par exercice
   const getProgressionData = (exerciseName) => {
+    
     const exerciseHistory = workoutHistory
       .filter(session => session.exercises?.some(ex => ex.name === exerciseName))
       .map(session => ({
@@ -51,11 +58,13 @@ const ChartsTab = () => {
       dayStats[dayOfWeek] += totalReps;
     });
 
-    return dayStats.map((reps, index) => ({
+    const result = dayStats.map((reps, index) => ({
       day: dayNames[index],
       reps,
       intensity: reps > 250 ? 'high' : reps > 150 ? 'medium' : reps > 50 ? 'low' : 'rest'
     }));
+    
+    return result;
   };
 
   // Comparaison mois actuel vs mois précédent

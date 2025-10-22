@@ -94,16 +94,6 @@ const DataEntryTab = () => {
 
   // Initialiser les données de répétitions pour la date sélectionnée
   useEffect(() => {
-    // console.log('🔍 DataEntryTab Debug - Date sélectionnée:', selectedDate);
-    // console.log('🔍 DataEntryTab Debug - dateStr:', dateStr);
-    // console.log('🔍 DataEntryTab Debug - dayName:', dayName);
-    // console.log('🔍 DataEntryTab Debug - workout existe:', !!workout);
-    // console.log('🔍 DataEntryTab Debug - clés workoutProgram:', Object.keys(workoutProgram));
-    // if (workout) {
-    //   console.log('🔍 DataEntryTab Debug - nom du workout:', workout.name);
-    //   console.log('🔍 DataEntryTab Debug - nombre d\'exercices:', workout.exercices?.length || 0);
-    // }
-    
     if (workout) {
       const initialReps = {};
       
@@ -152,11 +142,9 @@ const DataEntryTab = () => {
             }
           } else {
             errorCount++;
-            console.warn(`Valeur invalide pour l'exercice ${exerciseId}: ${reps}`);
           }
         } catch (error) {
           errorCount++;
-          console.error(`Erreur lors de la sauvegarde de l'exercice ${exerciseId}:`, error);
         }
       }
     });

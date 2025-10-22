@@ -40,13 +40,11 @@ export const useWorkoutData = () => {
         }
 
         // Utiliser localStorage uniquement pour éviter les problèmes IndexedDB
-        console.log('🔄 Utilisation de localStorage uniquement pour éviter les erreurs IndexedDB');
         dbConnectionRef.current = null;
         resolve(null);
 
       } catch (error) {
         console.error('❌ Erreur critique dans openDB:', error);
-        console.log('🔄 Basculement vers localStorage uniquement');
         dbConnectionRef.current = null;
         resolve(null);
       }
@@ -56,7 +54,6 @@ export const useWorkoutData = () => {
   };
   const saveToDB = async (newData) => {
     try {
-      console.log('💾 Tentative de sauvegarde:', newData);
       
       // Validation stricte des données avant sauvegarde
       if (!newData || typeof newData !== 'object') {
@@ -106,10 +103,8 @@ export const useWorkoutData = () => {
       
       // Si IndexedDB n'est pas disponible, utiliser localStorage uniquement
       if (!db) {
-        console.log('🔄 Sauvegarde en localStorage uniquement');
         try {
           localStorage.setItem('workoutData_backup', JSON.stringify(newData));
-          console.log('✅ Sauvegarde localStorage réussie');
           return;
         } catch (localStorageError) {
           console.error('❌ Échec de la sauvegarde localStorage:', localStorageError);
@@ -133,13 +128,10 @@ export const useWorkoutData = () => {
         dataVersion: '1.0' // Ajout d'une version pour la compatibilité future
       };
       
-      console.log('🔍 Données validées à sauvegarder:', dataToSave);
-      
       const request = store.put(dataToSave);
       
       return new Promise((resolve, reject) => {
         request.onsuccess = () => {
-          console.log('✅ Données sauvegardées avec succès dans IndexedDB');
           // Sauvegarder aussi en localStorage comme backup
           try {
             localStorage.setItem('workoutData_backup', JSON.stringify(newData));
@@ -156,7 +148,6 @@ export const useWorkoutData = () => {
           try {
             localStorage.setItem('workoutData_backup', JSON.stringify(newData));
             localStorage.setItem('workoutData_lastSaved', new Date().toISOString());
-            console.log('✅ Sauvegarde de secours en localStorage réussie');
             resolve();
           } catch (localStorageError) {
             console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
@@ -172,7 +163,6 @@ export const useWorkoutData = () => {
       try {
         localStorage.setItem('workoutData_backup', JSON.stringify(newData));
         localStorage.setItem('workoutData_lastSaved', new Date().toISOString());
-        console.log('✅ Sauvegarde de secours en localStorage réussie');
       } catch (localStorageError) {
         console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
         throw new Error('Impossible de sauvegarder les données - tous les systèmes de sauvegarde ont échoué');
@@ -209,12 +199,10 @@ export const useWorkoutData = () => {
       
       // Si IndexedDB n'est pas disponible, utiliser localStorage uniquement
       if (!db) {
-        console.log('🔄 Chargement depuis localStorage uniquement');
         try {
           const backupData = localStorage.getItem('workoutData_backup');
           if (backupData) {
             const parsedBackup = JSON.parse(backupData);
-            console.log('✅ Données récupérées depuis localStorage');
             return parsedBackup;
           }
         } catch (backupError) {
@@ -230,7 +218,6 @@ export const useWorkoutData = () => {
       return new Promise((resolve, reject) => {
         request.onsuccess = () => {
           const result = request.result;
-          console.log('🔍 DEBUG: Données chargées depuis IndexedDB:', result);
           
           if (result) {
             // Validation des données chargées
@@ -243,20 +230,13 @@ export const useWorkoutData = () => {
               progressPhotos: Array.isArray(result.progressPhotos) ? result.progressPhotos : []
             };
             
-            console.log('🔍 DEBUG: checkedExercises:', validatedData.checkedExercises);
-            console.log('🔍 DEBUG: reps:', validatedData.reps);
-            console.log('🔍 DEBUG: Nombre de clés dans reps:', Object.keys(validatedData.reps).length);
-            console.log('🔍 DEBUG: Nombre de clés dans checkedExercises:', Object.keys(validatedData.checkedExercises).length);
-            
             resolve(validatedData);
           } else {
             // Pas de données en IndexedDB, essayer de récupérer depuis localStorage
-            console.log('🔄 Aucune donnée en IndexedDB, vérification du localStorage de secours');
             try {
               const backupData = localStorage.getItem('workoutData_backup');
               if (backupData) {
                 const parsedBackup = JSON.parse(backupData);
-                console.log('✅ Données récupérées depuis localStorage de secours');
                 resolve(parsedBackup);
               } else {
                 resolve(null);
@@ -276,7 +256,6 @@ export const useWorkoutData = () => {
             const backupData = localStorage.getItem('workoutData_backup');
             if (backupData) {
               const parsedBackup = JSON.parse(backupData);
-              console.log('✅ Données récupérées depuis localStorage de secours après erreur');
               resolve(parsedBackup);
             } else {
               resolve(null);
@@ -295,7 +274,6 @@ export const useWorkoutData = () => {
         const backupData = localStorage.getItem('workoutData_backup');
         if (backupData) {
           const parsedBackup = JSON.parse(backupData);
-          console.log('✅ Données récupérées depuis localStorage de secours après erreur critique');
           return parsedBackup;
         }
       } catch (backupError) {

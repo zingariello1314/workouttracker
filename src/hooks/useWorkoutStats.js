@@ -1,11 +1,30 @@
 import { workoutProgram } from '../data/workoutProgram';
 import { getDateStr } from '../utils/dateUtils';
 
-export const useWorkoutStats = (data) => {
+export const useWorkoutStats = (data, activeProgram = null) => {
 
   const getDayName = (date) => {
     const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
     return days[date.getDay()];
+  };
+
+  // Fonction pour obtenir le programme à utiliser (actif ou par défaut)
+  const getCurrentProgram = () => {
+    if (activeProgram && activeProgram.schedule) {
+      // Convertir le format du programme actif vers le format attendu
+      const convertedProgram = {};
+      Object.entries(activeProgram.schedule).forEach(([day, dayData]) => {
+        convertedProgram[day.toLowerCase()] = {
+          exercices: dayData.exercises || [],
+          salleVariants: dayData.salleVariants ? {
+            semaineA: { exercices: dayData.salleVariants.semaineA?.exercises || [] },
+            semaineB: { exercices: dayData.salleVariants.semaineB?.exercises || [] }
+          } : undefined
+        };
+      });
+      return convertedProgram;
+    }
+    return workoutProgram;
   };
 
   const getDateRange = (period) => {
@@ -39,7 +58,8 @@ export const useWorkoutStats = (data) => {
       
       if (date >= startDate && date <= endDate) {
         const dayName = getDayName(date);
-        const workout = workoutProgram[dayName];
+        const currentProgram = getCurrentProgram();
+        const workout = currentProgram[dayName];
         if (workout) {
           const exercise = workout.exercices.find(ex => ex.id.toString() === exerciseId);
           if (exercise) {
@@ -124,37 +144,46 @@ export const useWorkoutStats = (data) => {
       return [];
     }
 
-    // console.log('🔍 DEBUG getWorkoutHistory: data.reps:', data.reps);
-    // console.log('🔍 DEBUG getWorkoutHistory: data.checkedExercises:', data.checkedExercises);
-    // console.log('🔍 DEBUG getWorkoutHistory: Nombre de clés dans reps:', Object.keys(data.reps || {}).length);
-    // console.log('🔍 DEBUG getWorkoutHistory: Nombre de clés dans checkedExercises:', Object.keys(data.checkedExercises || {}).length);
-    
     const history = [];
     const processedDates = new Set();
 
     Object.entries(data.reps).forEach(([key, reps]) => {
       const [dateStr, exerciseId] = key.split('_');
-      // console.log(`🔍 DEBUG getWorkoutHistory: Traitement clé ${key} -> date: ${dateStr}, exerciseId: ${exerciseId}`);
       
       if (!processedDates.has(dateStr)) {
         processedDates.add(dateStr);
         
         const date = new Date(dateStr);
         const dayName = getDayName(date);
-        const workout = workoutProgram[dayName];
-        
-        // console.log(`🔍 DEBUG getWorkoutHistory: Date ${dateStr}, jour: ${dayName}, workout trouvé:`, !!workout);
+        const currentProgram = getCurrentProgram();
+        const workout = currentProgram[dayName];
         
         if (workout) {
           // Utiliser les variantes de salle si disponibles, sinon les exercices de base
           const exercisesList = workout.salleVariants?.semaineA?.exercices || workout.exercices;
           
           const exercises = exercisesList.map(exercise => {
-            const exerciseKey = `${dateStr}_${exercise.id}`;
-            const exerciseReps = parseInt(data.reps[exerciseKey]) || 0;
-            const isCompleted = data.checkedExercises[exerciseKey] || false;
+            // Chercher la clé avec les différents suffixes possibles
+            let exerciseKey = `${dateStr}_${exercise.id}`;
+            let exerciseReps = parseInt(data.reps[exerciseKey]) || 0;
+            let isCompleted = data.checkedExercises[exerciseKey] || false;
             
-            // console.log(`🔍 DEBUG getWorkoutHistory: Exercice ${exercise.name} (${exerciseKey}) - reps: ${exerciseReps}, completed: ${isCompleted}`);
+            // Si pas trouvé, essayer avec les suffixes de variantes
+            if (exerciseReps === 0 && !isCompleted) {
+              const keysToTry = [
+                `${dateStr}_${exercise.id}_semaineA`,
+                `${dateStr}_${exercise.id}_semaineB`
+              ];
+              
+              for (const keyToTry of keysToTry) {
+                if (data.reps[keyToTry] || data.checkedExercises[keyToTry]) {
+                  exerciseKey = keyToTry;
+                  exerciseReps = parseInt(data.reps[keyToTry]) || 0;
+                  isCompleted = data.checkedExercises[keyToTry] || false;
+                  break;
+                }
+              }
+            }
             
             return {
               ...exercise,
@@ -162,8 +191,6 @@ export const useWorkoutStats = (data) => {
               completed: isCompleted
             };
           }).filter(ex => ex.completed);
-
-          // console.log(`🔍 DEBUG getWorkoutHistory: Exercices complétés pour ${dateStr}:`, exercises.length);
 
           if (exercises.length > 0) {
             // Calculer la durée réelle de la session
@@ -251,14 +278,12 @@ export const useWorkoutStats = (data) => {
               totalReps: exercises.reduce((sum, ex) => sum + ex.reps, 0),
               duration: calculateSessionDuration() // Ajouter la durée calculée
             };
-            // console.log(`🔍 DEBUG getWorkoutHistory: Session ajoutée:`, sessionData);
             history.push(sessionData);
           }
         }
       }
     });
 
-    // console.log(`🔍 DEBUG getWorkoutHistory: Historique final (${history.length} sessions):`, history);
     return history.sort((a, b) => new Date(b.date) - new Date(a.date));
   };
 
