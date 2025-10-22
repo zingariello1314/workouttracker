@@ -135,61 +135,156 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
   };
 
   const updateReps = (exerciseId, reps, date) => {
-    const dateStr = getDateStr(date);
-    const key = `${dateStr}_${exerciseId}`;
-    
-    const newData = {
-      ...currentData,
-      reps: {
-        ...currentData.reps,
-        [key]: reps
+    try {
+      // Validation des paramètres d'entrée
+      if (!exerciseId || exerciseId < 0) {
+        console.warn('ID d\'exercice invalide:', exerciseId);
+        return;
       }
-    };
-    updateTempExerciseData(newData);
+      
+      if (!date) {
+        console.warn('Date invalide pour updateReps');
+        return;
+      }
+
+      // Validation et nettoyage de la valeur des répétitions
+      let cleanReps = reps;
+      if (reps !== '' && reps !== undefined && reps !== null) {
+        const numReps = parseInt(reps);
+        if (isNaN(numReps) || numReps < 0 || numReps > 999) {
+          console.warn(`Valeur de répétition invalide: ${reps}. Utilisation de valeur vide.`);
+          cleanReps = '';
+        } else {
+          cleanReps = numReps.toString();
+        }
+      }
+
+      const dateStr = getDateStr(date);
+      const key = `${dateStr}_${exerciseId}`;
+      
+      // Vérification de l'intégrité des données actuelles
+      if (!currentData || typeof currentData !== 'object') {
+        console.error('Données actuelles corrompues dans updateReps');
+        return;
+      }
+      
+      const newData = {
+        ...currentData,
+        reps: {
+          ...currentData.reps,
+          [key]: cleanReps
+        }
+      };
+      
+      updateTempExerciseData(newData);
+    } catch (error) {
+      console.error('Erreur dans updateReps:', error);
+    }
   };
 
   const toggleEtirement = (type, date) => {
-    const dateStr = getDateStr(date);
-    const key = `${dateStr}_${type}`;
-    
-    const newData = {
-      ...currentData,
-      checkedStretches: {
-        ...currentData.checkedStretches,
-        [key]: !currentData.checkedStretches[key]
+    try {
+      // Validation des paramètres
+      if (!type || typeof type !== 'string') {
+        console.warn('Type d\'étirement invalide:', type);
+        return;
       }
-    };
-    updateTempStretchData(newData);
+      
+      if (!date) {
+        console.warn('Date invalide pour toggleEtirement');
+        return;
+      }
+
+      const dateStr = getDateStr(date);
+      const key = `${dateStr}_${type}`;
+      
+      // Vérification de l'intégrité des données actuelles
+      if (!currentData || typeof currentData !== 'object') {
+        console.error('Données actuelles corrompues dans toggleEtirement');
+        return;
+      }
+      
+      const newData = {
+        ...currentData,
+        checkedStretches: {
+          ...currentData.checkedStretches,
+          [key]: !currentData.checkedStretches[key]
+        }
+      };
+      
+      updateTempStretchData(newData);
+    } catch (error) {
+      console.error('Erreur dans toggleEtirement:', error);
+    }
   };
 
   const changeWeekVariant = (variant) => {
-    const newData = {
-      ...currentData,
-      weekVariant: variant
-    };
-    updateData(newData);
+    try {
+      // Validation de la variante
+      if (!variant || (variant !== 'A' && variant !== 'B')) {
+        console.warn('Variante de semaine invalide:', variant);
+        return;
+      }
+
+      // Vérification de l'intégrité des données actuelles
+      if (!currentData || typeof currentData !== 'object') {
+        console.error('Données actuelles corrompues dans changeWeekVariant');
+        return;
+      }
+
+      const newData = {
+        ...currentData,
+        weekVariant: variant
+      };
+      
+      updateData(newData);
+    } catch (error) {
+      console.error('Erreur dans changeWeekVariant:', error);
+    }
   };
 
   const startProgram = () => {
-    const startDate = new Date().toISOString();
-    const newData = {
-      ...currentData,
-      startDate,
-      weekVariant: 'A'
-    };
-    updateData(newData);
+    try {
+      // Vérification de l'intégrité des données actuelles
+      if (!currentData || typeof currentData !== 'object') {
+        console.error('Données actuelles corrompues dans startProgram');
+        return;
+      }
+
+      const startDate = new Date().toISOString();
+      const newData = {
+        ...currentData,
+        startDate,
+        weekVariant: 'A'
+      };
+      
+      updateData(newData);
+    } catch (error) {
+      console.error('Erreur dans startProgram:', error);
+    }
   };
 
   const resetAll = () => {
-    const newData = {
-      checkedExercises: {},
-      reps: {},
-      checkedStretches: {},
-      startDate: null,
-      weekVariant: 'A',
-      progressPhotos: []
-    };
-    updateData(newData);
+    try {
+      // Confirmation avant réinitialisation complète
+      if (!window.confirm('Êtes-vous sûr de vouloir réinitialiser toutes les données ? Cette action est irréversible.')) {
+        return;
+      }
+
+      const newData = {
+        checkedExercises: {},
+        reps: {},
+        checkedStretches: {},
+        startDate: null,
+        weekVariant: 'A',
+        progressPhotos: []
+      };
+      
+      updateData(newData);
+      console.log('✅ Toutes les données ont été réinitialisées');
+    } catch (error) {
+      console.error('Erreur dans resetAll:', error);
+    }
   };
 
   return {

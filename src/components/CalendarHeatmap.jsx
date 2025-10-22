@@ -153,8 +153,31 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
       let totalDurationMinutes = 0;
       
       exercisesList.forEach(exercise => {
-        const key = `${dateStr}_${exercise.id}`;
-        const isCompleted = allData.checkedExercises[key] || false;
+        const baseKey = `${dateStr}_${exercise.id}`;
+        
+        // Utiliser la même logique de recherche de clé que pour les répétitions
+        let actualKey = baseKey;
+        let isCompleted = false;
+        
+        // Vérifier d'abord la clé de base
+        if (allData?.checkedExercises?.[baseKey] !== undefined) {
+          actualKey = baseKey;
+        } else {
+          // Chercher avec les suffixes
+          const possibleKeys = [
+            `${baseKey}_semaineA`,
+            `${baseKey}_semaineB`
+          ];
+          
+          for (const possibleKey of possibleKeys) {
+            if (allData?.checkedExercises?.[possibleKey] !== undefined) {
+              actualKey = possibleKey;
+              break;
+            }
+          }
+        }
+        
+        isCompleted = allData?.checkedExercises?.[actualKey] || false;
         
         if (isCompleted && exercise.series) {
           // Calculer le temps pour cet exercice

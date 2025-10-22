@@ -13,7 +13,8 @@ const Navigation = () => {
     { id: 'charts', label: 'Graphiques', icon: '📊' },
     { id: 'stats', label: 'Statistiques', icon: '📈' },
     { id: 'exercises', label: 'Exercices', icon: '💪' },
-    { id: 'history', label: 'Historique', icon: '📋' }
+    { id: 'history', label: 'Historique', icon: '📋' },
+    { id: 'settings', label: 'Paramètres', icon: '⚙️' }
   ];
 
   return (

@@ -60,12 +60,12 @@ const WorkoutProvider = ({ children }) => {
     notes: ''
   });
 
-  // Références pour la sauvegarde automatique
+  // Références pour la sauvegarde automatique du contexte
   const debounceTimerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
 
   // Hooks personnalisés
-  const { data, updateData, loadFromDB } = useWorkoutData();
+  const { data, updateData, loadFromDB, saveToDB } = useWorkoutData();
   
   // État pour l'historique des programmes
   const [programHistory, setProgramHistory] = useState([]);
@@ -88,26 +88,108 @@ const WorkoutProvider = ({ children }) => {
   };
 
   // Fonctions de sauvegarde et annulation pour exercices
-  const saveExerciseChanges = () => {
+  const saveExerciseChanges = async () => {
     if (hasUnsavedExercises && tempData) {
-      updateData(tempData);
+      try {
+        // Validation des données avant sauvegarde
+        if (!tempData || typeof tempData !== 'object') {
+          throw new Error('Données temporaires invalides pour les exercices');
+        }
+
+        // Vérifier l'intégrité des données d'exercices
+        const { checkedExercises, reps } = tempData;
+        if (checkedExercises && typeof checkedExercises !== 'object') {
+          throw new Error('Format invalide pour checkedExercises');
+        }
+        if (reps && typeof reps !== 'object') {
+          throw new Error('Format invalide pour reps');
+        }
+
+        // Validation des valeurs de répétitions
+        if (reps) {
+          for (const [key, value] of Object.entries(reps)) {
+            if (value !== '' && value !== undefined && value !== null) {
+              const numValue = parseInt(value);
+              if (isNaN(numValue) || numValue < 0 || numValue > 999) {
+                console.warn(`Valeur de répétition invalide pour ${key}: ${value}`);
+                // Nettoyer la valeur invalide
+                tempData.reps[key] = '';
+              }
+            }
+          }
+        }
+
+        await updateData(tempData);
+        setHasUnsavedExercises(false);
+        setTempData(null);
+        console.log('✅ Exercices sauvegardés avec succès');
+      } catch (error) {
+        console.error('❌ Erreur lors de la sauvegarde des exercices:', error);
+        throw error; // Propager l'erreur pour que l'UI puisse la gérer
+      }
+    }
+  };
+
+  const discardExerciseChanges = () => {
+    try {
       setHasUnsavedExercises(false);
       setTempData(null);
+      console.log('✅ Modifications d\'exercices annulées');
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'annulation des exercices:', error);
+    }
+  };
+
+  // Fonctions de sauvegarde et annulation pour étirements
+  const saveStretchChanges = async () => {
+    if (hasUnsavedStretches && tempData) {
+      try {
+        // Validation des données avant sauvegarde
+        if (!tempData || typeof tempData !== 'object') {
+          throw new Error('Données temporaires invalides pour les étirements');
+        }
+
+        // Vérifier l'intégrité des données d'étirements
+        const { checkedStretches } = tempData;
+        if (checkedStretches && typeof checkedStretches !== 'object') {
+          throw new Error('Format invalide pour checkedStretches');
+        }
+
+        // Validation des clés d'étirements
+        if (checkedStretches) {
+          for (const [key, value] of Object.entries(checkedStretches)) {
+            if (typeof value !== 'boolean' && value !== undefined && value !== null) {
+              console.warn(`Valeur d'étirement invalide pour ${key}: ${value}`);
+              // Convertir en booléen
+              tempData.checkedStretches[key] = Boolean(value);
+            }
+          }
+        }
+
+        await updateData(tempData);
+        setHasUnsavedStretches(false);
+        setTempData(null);
+        console.log('✅ Étirements sauvegardés avec succès');
+      } catch (error) {
+        console.error('❌ Erreur lors de la sauvegarde des étirements:', error);
+        throw error; // Propager l'erreur pour que l'UI puisse la gérer
+      }
+    }
+  };
+
+  const discardStretchChanges = () => {
+    try {
+      setHasUnsavedStretches(false);
+      setTempData(null);
+      console.log('✅ Modifications d\'étirements annulées');
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'annulation des étirements:', error);
     }
   };
 
   const cancelExerciseChanges = () => {
     setHasUnsavedExercises(false);
     setTempData(null);
-  };
-
-  // Fonctions de sauvegarde et annulation pour étirements
-  const saveStretchChanges = () => {
-    if (hasUnsavedStretches && tempData) {
-      updateData(tempData);
-      setHasUnsavedStretches(false);
-      setTempData(null);
-    }
   };
 
   const cancelStretchChanges = () => {
@@ -211,28 +293,129 @@ const WorkoutProvider = ({ children }) => {
   // Fonctions de sauvegarde automatique pour les états du contexte
   const openContextDB = () => {
     return new Promise((resolve, reject) => {
+      // Vérifier le support d'IndexedDB
+      if (!window.indexedDB) {
+        console.error('❌ IndexedDB non supporté');
+        reject(new Error('IndexedDB non supporté'));
+        return;
+      }
+
       const request = indexedDB.open('WorkoutTrackerContextDB', 1);
       
       request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('contextData')) {
-          db.createObjectStore('contextData', { keyPath: 'id' });
+        try {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('contextData')) {
+            const store = db.createObjectStore('contextData', { keyPath: 'id' });
+            console.log('✅ Object store contextData créé');
+          }
+        } catch (error) {
+          console.error('❌ Erreur lors de la création de l\'object store:', error);
+          reject(error);
         }
       };
       
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+      request.onsuccess = (event) => {
+        const db = event.target.result;
+        
+        // Vérifier la structure de la base de données
+        if (!db.objectStoreNames.contains('contextData')) {
+          console.error('❌ Object store contextData manquant');
+          reject(new Error('Structure de base de données invalide'));
+          return;
+        }
+        
+        console.log('✅ Connexion à WorkoutTrackerContextDB réussie');
+        resolve(db);
+      };
+      
+      request.onerror = (event) => {
+        console.error('❌ Erreur ouverture WorkoutTrackerContextDB:', event.target.error);
+        reject(event.target.error);
+      };
+
+      request.onblocked = (event) => {
+        console.warn('⚠️ Ouverture de WorkoutTrackerContextDB bloquée');
+        reject(new Error('Base de données bloquée'));
+      };
     });
   };
 
   const saveContextToDB = async (contextData) => {
-    try {
-      const db = await openContextDB();
-      const transaction = db.transaction(['contextData'], 'readwrite');
-      const store = transaction.objectStore('contextData');
-      store.put({ id: 'context', ...contextData });
-    } catch (error) {
-      console.error('❌ Erreur sauvegarde contexte:', error);
+    const maxRetries = 3;
+    
+    for (let retryCount = 1; retryCount <= maxRetries; retryCount++) {
+      try {
+        // Validation des données avant sauvegarde
+        if (!contextData || typeof contextData !== 'object') {
+          throw new Error('Données de contexte invalides');
+        }
+
+        const dataToSave = {
+          id: 'context',
+          ...contextData,
+          lastSaved: new Date().toISOString()
+        };
+
+        console.log(`🔄 Tentative ${retryCount}/${maxRetries} de sauvegarde du contexte`);
+        
+        const db = await openContextDB();
+        const transaction = db.transaction(['contextData'], 'readwrite');
+        const store = transaction.objectStore('contextData');
+        
+        return new Promise((resolve, reject) => {
+          const request = store.put(dataToSave);
+          
+          request.onsuccess = () => {
+            console.log('✅ Contexte sauvegardé avec succès');
+            
+            // Sauvegarde de secours en localStorage
+            try {
+              localStorage.setItem('workoutContext_backup', JSON.stringify(dataToSave));
+            } catch (localStorageError) {
+              console.warn('⚠️ Impossible de sauvegarder le contexte en localStorage:', localStorageError);
+            }
+            
+            resolve();
+          };
+          
+          request.onerror = (event) => {
+            console.error(`❌ Erreur sauvegarde contexte (tentative ${retryCount}):`, event.target.error);
+            reject(event.target.error);
+          };
+          
+          transaction.oncomplete = () => {
+            console.log('✅ Transaction de sauvegarde du contexte terminée');
+          };
+          
+          transaction.onerror = (event) => {
+            console.error(`❌ Erreur transaction contexte (tentative ${retryCount}):`, event.target.error);
+            reject(event.target.error);
+          };
+        });
+        
+      } catch (error) {
+        console.error(`❌ Erreur lors de la tentative ${retryCount} de sauvegarde du contexte:`, error);
+        
+        if (retryCount === maxRetries) {
+          // Dernière tentative échouée - essayer de sauvegarder en localStorage comme fallback
+          try {
+            console.log('🔄 Tentative de sauvegarde de secours du contexte en localStorage');
+            localStorage.setItem('workoutContext_backup', JSON.stringify({
+              id: 'context',
+              ...contextData,
+              lastSaved: new Date().toISOString()
+            }));
+            console.log('✅ Sauvegarde de secours du contexte réussie en localStorage');
+          } catch (localStorageError) {
+            console.error('❌ Échec de la sauvegarde de secours du contexte:', localStorageError);
+          }
+          throw error;
+        }
+        
+        // Attendre avant de réessayer
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+      }
     }
   };
 
@@ -279,6 +462,64 @@ const WorkoutProvider = ({ children }) => {
   const workoutLogic = useWorkoutLogic(data, updateData);
   const workoutStats = useWorkoutStats(data);
 
+  // Fonction pour ajouter une photo de progression
+  const addProgressPhoto = async (photoData) => {
+    try {
+      if (!photoData || !photoData.weight || !photoData.notes) {
+        throw new Error('Données de photo de progression invalides');
+      }
+
+      const newPhoto = {
+        id: `photo_${Date.now()}`,
+        date: new Date().toISOString(),
+        weight: parseFloat(photoData.weight),
+        notes: photoData.notes,
+        photo: photoData.photo || null,
+        measurements: photoData.measurements || {}
+      };
+
+      const currentData = getCurrentData();
+      const updatedData = {
+        ...currentData,
+        progressPhotos: [...(currentData.progressPhotos || []), newPhoto]
+      };
+
+      await updateData(updatedData);
+      console.log('✅ Photo de progression ajoutée avec succès');
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'ajout de la photo de progression:', error);
+      throw error;
+    }
+  };
+
+  // Fonction pour supprimer une photo de progression
+  const deleteProgressPhoto = async (photoIndex) => {
+    try {
+      if (typeof photoIndex !== 'number' || photoIndex < 0) {
+        throw new Error('Index de photo invalide');
+      }
+
+      const currentData = getCurrentData();
+      const progressPhotos = currentData.progressPhotos || [];
+      
+      if (photoIndex >= progressPhotos.length) {
+        throw new Error('Photo non trouvée');
+      }
+
+      const updatedPhotos = progressPhotos.filter((_, index) => index !== photoIndex);
+      const updatedData = {
+        ...currentData,
+        progressPhotos: updatedPhotos
+      };
+
+      await updateData(updatedData);
+      console.log('✅ Photo de progression supprimée avec succès');
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression de la photo de progression:', error);
+      throw error;
+    }
+  };
+
   // Valeurs du contexte
   const contextValue = {
     // États principaux
@@ -296,6 +537,8 @@ const WorkoutProvider = ({ children }) => {
     // Données et fonctions de données
     data,
     updateData,
+    loadFromDB,
+    saveToDB,
     getCurrentData,
     resetDay,
     
@@ -306,8 +549,10 @@ const WorkoutProvider = ({ children }) => {
     updateTempExerciseData,
     updateTempStretchData,
     saveExerciseChanges,
-    cancelExerciseChanges,
+    discardExerciseChanges,
     saveStretchChanges,
+    discardStretchChanges,
+    cancelExerciseChanges,
     cancelStretchChanges,
     
     // États des modales
@@ -341,6 +586,10 @@ const WorkoutProvider = ({ children }) => {
     setEditingProgram,
     progressForm,
     setProgressForm,
+    
+    // Fonctions de photos de progression
+    addProgressPhoto,
+    deleteProgressPhoto,
     
     // Gestion des programmes
     programs,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
@@ -109,36 +109,93 @@ const WorkoutHistorySection = () => {
     return allExercises;
   };
 
-  // Gérer la saisie des répétitions
-  const handleRepsChange = (exerciseId, dateStr, value) => {
-    const currentData = getCurrentData();
-    const key = `${dateStr}_${exerciseId}`;
-    const newData = {
-      ...currentData,
-      reps: {
-        ...currentData.reps,
-        [key]: value
+  // Référence pour le debounce de sauvegarde
+  const saveTimeoutRef = useRef(null);
+
+  // Fonction de sauvegarde avec debounce optimisé
+  const debouncedSave = useCallback(() => {
+    // Annuler la sauvegarde précédente si elle existe
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Programmer une nouvelle sauvegarde après 1.5 secondes d'inactivité
+    saveTimeoutRef.current = setTimeout(() => {
+      saveExerciseChanges();
+    }, 1500);
+  }, [saveExerciseChanges]);
+
+  // Nettoyer le timeout lors du démontage
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
     };
-    updateTempExerciseData(newData);
-    // Sauvegarde automatique après chaque modification
-    setTimeout(() => saveExerciseChanges(), 500);
+  }, []);
+
+  // Gérer la saisie des répétitions
+  const handleRepsChange = (exerciseId, dateStr, value) => {
+    try {
+      // Validation de base
+      if (!exerciseId || !dateStr) {
+        console.warn('Paramètres invalides pour handleRepsChange');
+        return;
+      }
+
+      const currentData = getCurrentData();
+      if (!currentData) {
+        console.error('Données actuelles non disponibles');
+        return;
+      }
+
+      const key = `${dateStr}_${exerciseId}`;
+      const newData = {
+        ...currentData,
+        reps: {
+          ...currentData.reps,
+          [key]: value
+        }
+      };
+      
+      updateTempExerciseData(newData);
+      // Utiliser le système de debounce unifié
+      debouncedSave();
+    } catch (error) {
+      console.error('Erreur dans handleRepsChange:', error);
+    }
   };
 
   // Gérer les cases à cocher
   const handleCompletedToggle = (exerciseId, dateStr) => {
-    const currentData = getCurrentData();
-    const key = `${dateStr}_${exerciseId}`;
-    const newData = {
-      ...currentData,
-      checkedExercises: {
-        ...currentData.checkedExercises,
-        [key]: !currentData.checkedExercises[key]
+    try {
+      // Validation de base
+      if (!exerciseId || !dateStr) {
+        console.warn('Paramètres invalides pour handleCompletedToggle');
+        return;
       }
-    };
-    updateTempExerciseData(newData);
-    // Sauvegarde automatique après chaque modification
-    setTimeout(() => saveExerciseChanges(), 500);
+
+      const currentData = getCurrentData();
+      if (!currentData) {
+        console.error('Données actuelles non disponibles');
+        return;
+      }
+
+      const key = `${dateStr}_${exerciseId}`;
+      const newData = {
+        ...currentData,
+        checkedExercises: {
+          ...currentData.checkedExercises,
+          [key]: !currentData.checkedExercises[key]
+        }
+      };
+      
+      updateTempExerciseData(newData);
+      // Utiliser le système de debounce unifié
+      debouncedSave();
+    } catch (error) {
+      console.error('Erreur dans handleCompletedToggle:', error);
+    }
   };
 
   // Obtenir la valeur saisie

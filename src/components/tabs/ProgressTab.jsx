@@ -14,21 +14,74 @@ const ProgressTab = () => {
     deleteProgressPhoto
   } = useWorkout();
 
-  const handleAddPhoto = () => {
-    if (progressForm.weight && progressForm.notes) {
-      addProgressPhoto(progressForm);
+  const handleAddPhoto = async () => {
+    try {
+      // Validation renforcée
+      if (!progressForm.weight || !progressForm.notes) {
+        alert('Veuillez remplir le poids et les notes avant d\'ajouter une photo.');
+        return;
+      }
+
+      const weight = parseFloat(progressForm.weight);
+      if (isNaN(weight) || weight <= 0 || weight > 500) {
+        alert('Veuillez entrer un poids valide (entre 0 et 500 kg).');
+        return;
+      }
+
+      if (progressForm.notes.trim().length < 3) {
+        alert('Les notes doivent contenir au moins 3 caractères.');
+        return;
+      }
+
+      await addProgressPhoto(progressForm);
       setProgressForm({ weight: '', notes: '', photo: null });
+      console.log('✅ Photo de progression ajoutée avec succès');
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'ajout de la photo:', error);
+      alert('Erreur lors de l\'ajout de la photo. Veuillez réessayer.');
     }
   };
 
   const handlePhotoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    try {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Validation du fichier
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner un fichier image valide.');
+        return;
+      }
+
+      // Limite de taille (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La taille de l\'image ne doit pas dépasser 5MB.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setProgressForm(prev => ({ ...prev, photo: e.target.result }));
       };
+      reader.onerror = () => {
+        alert('Erreur lors de la lecture du fichier image.');
+      };
       reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('❌ Erreur lors du téléchargement de la photo:', error);
+      alert('Erreur lors du téléchargement de la photo.');
+    }
+  };
+
+  const handleDeletePhoto = async (index) => {
+    try {
+      if (window.confirm('Êtes-vous sûr de vouloir supprimer cette photo de progression ?')) {
+        await deleteProgressPhoto(index);
+        console.log('✅ Photo supprimée avec succès');
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression de la photo.');
     }
   };
 
@@ -140,7 +193,7 @@ const ProgressTab = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => deleteProgressPhoto(index)}
+                      onClick={() => handleDeletePhoto(index)}
                       icon={Trash2}
                       className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                     />

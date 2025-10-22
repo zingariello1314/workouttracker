@@ -166,10 +166,90 @@ export const useWorkoutStats = (data) => {
           // console.log(`🔍 DEBUG getWorkoutHistory: Exercices complétés pour ${dateStr}:`, exercises.length);
 
           if (exercises.length > 0) {
+            // Calculer la durée réelle de la session
+            const calculateSessionDuration = () => {
+              let totalDurationMinutes = 0;
+              
+              exercises.forEach(exercise => {
+                const baseKey = `${dateStr}_${exercise.id}`;
+                
+                // Utiliser la même logique de recherche de clé que pour les répétitions
+                let actualKey = baseKey;
+                
+                // Vérifier d'abord la clé de base
+                if (data?.checkedExercises?.[baseKey] !== undefined) {
+                  actualKey = baseKey;
+                } else {
+                  // Chercher avec les suffixes
+                  const possibleKeys = [
+                    `${baseKey}_semaineA`,
+                    `${baseKey}_semaineB`
+                  ];
+                  
+                  for (const possibleKey of possibleKeys) {
+                    if (data?.checkedExercises?.[possibleKey] !== undefined) {
+                      actualKey = possibleKey;
+                      break;
+                    }
+                  }
+                }
+                
+                const isCompleted = data?.checkedExercises?.[actualKey];
+                if (!isCompleted) return;
+                
+                let exerciseDuration = 0;
+                
+                // Calculer la durée selon le type d'exercice
+                if (exercise.isIsometric) {
+                  // Pour les exercices isométriques (planches, etc.)
+                  const timeMatch = exercise.time?.match(/(\d+)\s*(min|sec)/);
+                  if (timeMatch) {
+                    const timeValue = parseInt(timeMatch[1]);
+                    const timeUnit = timeMatch[2];
+                    exerciseDuration = timeUnit === 'min' ? timeValue * 60 : timeValue;
+                  } else {
+                    exerciseDuration = exercise.reps; // Pour les planches en secondes
+                  }
+                } else {
+                  // Pour les exercices dynamiques
+                  const sets = exercise.sets || 1;
+                  const avgReps = exercise.reps;
+                  const timePerRep = exercise.timePerRep || 2; // 2 secondes par défaut
+                  const restTime = exercise.restTime || 30; // 30 secondes de repos par défaut
+                  
+                  exerciseDuration = sets * avgReps * timePerRep; // en secondes
+                  
+                  // Ajouter le temps de repos entre les séries
+                  exerciseDuration += (sets - 1) * restTime;
+                }
+                
+                totalDurationMinutes += exerciseDuration / 60; // convertir en minutes
+                
+                // Ajouter du temps pour les étirements si présents
+                if (exercise.stretches) {
+                  const stretchTimeMatch = exercise.stretches.match(/(\d+)\s*min/);
+                  if (stretchTimeMatch) {
+                    totalDurationMinutes += parseInt(stretchTimeMatch[1]) / 60;
+                  }
+                }
+                
+                // Ajouter du temps pour l'échauffement si présent
+                if (exercise.warmup) {
+                  const warmupTimeMatch = exercise.warmup.match(/(\d+)\s*min/);
+                  if (warmupTimeMatch) {
+                    totalDurationMinutes += parseInt(warmupTimeMatch[1]);
+                  }
+                }
+              });
+              
+              return Math.round(totalDurationMinutes);
+            };
+
             const sessionData = {
               date: dateStr,
               exercises,
-              totalReps: exercises.reduce((sum, ex) => sum + ex.reps, 0)
+              totalReps: exercises.reduce((sum, ex) => sum + ex.reps, 0),
+              duration: calculateSessionDuration() // Ajouter la durée calculée
             };
             // console.log(`🔍 DEBUG getWorkoutHistory: Session ajoutée:`, sessionData);
             history.push(sessionData);

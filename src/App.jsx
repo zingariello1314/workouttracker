@@ -11,6 +11,7 @@ import ChartsTab from './components/tabs/ChartsTab';
 import StatsTab from './components/tabs/StatsTab';
 import ExercisesTab from './components/tabs/ExercisesTab';
 import HistoryTab from './components/tabs/HistoryTab';
+import SettingsTab from './components/tabs/SettingsTab';
 import ExerciseVariations from './components/ExerciseVariations/ExerciseVariations';
 import { useWorkout } from './context/WorkoutContext';
 
@@ -52,6 +53,8 @@ const WorkoutTrackerContent = () => {
         return <ExercisesTab />;
       case 'history':
         return <HistoryTab />;
+      case 'settings':
+        return <SettingsTab />;
       default:
         return <TodayTab />;
     }

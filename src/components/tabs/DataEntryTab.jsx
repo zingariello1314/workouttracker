@@ -130,24 +130,46 @@ const DataEntryTab = () => {
     }
   }, [selectedDate, workout, data.reps, dateStr]);
 
-  // Sauvegarder les répétitions
+  // Sauvegarder les répétitions avec vérification d'intégrité
   const handleSaveReps = () => {
+    let savedCount = 0;
+    let errorCount = 0;
+    
     Object.entries(repsData).forEach(([exerciseId, reps]) => {
       if (reps && reps !== '') {
-        updateReps(parseInt(exerciseId), reps, selectedDate);
-        // Marquer automatiquement comme fait si des reps sont saisies
-        if (parseInt(reps) > 0) {
-          const key = `${dateStr}_${exerciseId}`;
-          if (!data.checkedExercises[key]) {
-            toggleCheck(parseInt(exerciseId), selectedDate);
+        try {
+          const parsedReps = parseInt(reps);
+          if (parsedReps >= 0 && parsedReps <= 999) { // Validation des valeurs
+            updateReps(parseInt(exerciseId), reps, selectedDate);
+            savedCount++;
+            
+            // Marquer automatiquement comme fait si des reps sont saisies
+            if (parsedReps > 0) {
+              const key = `${dateStr}_${exerciseId}`;
+              if (!data.checkedExercises[key]) {
+                toggleCheck(parseInt(exerciseId), selectedDate);
+              }
+            }
+          } else {
+            errorCount++;
+            console.warn(`Valeur invalide pour l'exercice ${exerciseId}: ${reps}`);
           }
+        } catch (error) {
+          errorCount++;
+          console.error(`Erreur lors de la sauvegarde de l'exercice ${exerciseId}:`, error);
         }
       }
     });
     
     // Réinitialiser les données temporaires
     setRepsData({});
-    alert('Données sauvegardées avec succès !');
+    
+    // Message de confirmation avec détails
+    if (errorCount === 0) {
+      alert(`${savedCount} exercice(s) sauvegardé(s) avec succès !`);
+    } else {
+      alert(`${savedCount} exercice(s) sauvegardé(s), ${errorCount} erreur(s) détectée(s). Vérifiez la console pour plus de détails.`);
+    }
   };
 
   // Mettre à jour les répétitions localement

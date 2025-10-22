@@ -217,18 +217,32 @@ const TodayTab = () => {
     updateTempStretchData(newData);
   };
 
-  // Gestionnaires pour les exercices
-  const handleSaveExercises = () => {
-    saveExerciseChanges();
+  // Sauvegarder les exercices avec vérification d'intégrité
+  const handleSaveExercises = async () => {
+    try {
+      // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
+      await saveExerciseChanges();
+      console.log('Exercices sauvegardés avec succès');
+    } catch (error) {
+      console.error('Erreur critique lors de la sauvegarde des exercices:', error);
+      alert('Erreur critique lors de la sauvegarde des exercices. Veuillez réessayer.');
+    }
+  };
+
+  // Sauvegarder les étirements avec vérification d'intégrité
+  const handleSaveStretches = async () => {
+    try {
+      // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
+      await saveStretchChanges();
+      console.log('Étirements sauvegardés avec succès');
+    } catch (error) {
+      console.error('Erreur critique lors de la sauvegarde des étirements:', error);
+      alert('Erreur critique lors de la sauvegarde des étirements. Veuillez réessayer.');
+    }
   };
 
   const handleDiscardExercises = () => {
     discardExerciseChanges();
-  };
-
-  // Gestionnaires pour les étirements
-  const handleSaveStretches = () => {
-    saveStretchChanges();
   };
 
   const handleDiscardStretches = () => {
@@ -245,6 +259,74 @@ const TodayTab = () => {
                         workoutProgram[dayName].salleVariants;
 
   const handleSessionFeedback = () => {
+    // Calculer la durée réelle basée sur les exercices accomplis
+    const calculateSessionDuration = () => {
+      const completedExercises = workout.exercices.filter(exercise => {
+        const exerciseKey = `${dateStr}_${exercise.id}`;
+        return data.checkedExercises[exerciseKey] || false;
+      });
+      
+      if (completedExercises.length === 0) return 0;
+      
+      let totalDurationMinutes = 0;
+      
+      completedExercises.forEach(exercise => {
+        if (exercise.series) {
+          let exerciseDuration = 0;
+          
+          // Extraire le nombre de séries et répétitions
+          const seriesMatch = exercise.series.match(/(\d+)×(\d+)(?:-(\d+))?/);
+          if (seriesMatch) {
+            const sets = parseInt(seriesMatch[1]);
+            const minReps = parseInt(seriesMatch[2]);
+            const maxReps = seriesMatch[3] ? parseInt(seriesMatch[3]) : minReps;
+            const avgReps = (minReps + maxReps) / 2;
+            
+            // Temps par répétition (en secondes) selon le type d'exercice
+            let timePerRep = 3; // défaut 3 secondes par rep
+            
+            if (exercise.name.toLowerCase().includes('planche') || 
+                exercise.name.toLowerCase().includes('gainage')) {
+              // Exercices isométriques : temps en secondes directement
+              if (exercise.series.includes('sec') || exercise.series.includes('min')) {
+                const timeMatch = exercise.series.match(/(\d+)\s*(sec|min)/);
+                if (timeMatch) {
+                  const timeValue = parseInt(timeMatch[1]);
+                  const timeUnit = timeMatch[2];
+                  exerciseDuration = timeUnit === 'min' ? timeValue * 60 : timeValue;
+                }
+              } else {
+                exerciseDuration = avgReps; // Pour les planches en secondes
+              }
+            } else {
+              // Exercices dynamiques
+              exerciseDuration = sets * avgReps * timePerRep; // en secondes
+              
+              // Ajouter le temps de repos entre séries
+              const restTime = exercise.rest || 90; // repos par défaut 90s
+              exerciseDuration += (sets - 1) * restTime;
+            }
+            
+            totalDurationMinutes += exerciseDuration / 60; // convertir en minutes
+          } else if (exercise.series.includes('sec')) {
+            // Exercices en secondes (circuits, etc.)
+            const timeMatch = exercise.series.match(/(\d+)\s*sec/);
+            if (timeMatch) {
+              totalDurationMinutes += parseInt(timeMatch[1]) / 60;
+            }
+          } else if (exercise.series.includes('min')) {
+            // Exercices en minutes
+            const timeMatch = exercise.series.match(/(\d+)\s*min/);
+            if (timeMatch) {
+              totalDurationMinutes += parseInt(timeMatch[1]);
+            }
+          }
+        }
+      });
+      
+      return Math.round(totalDurationMinutes);
+    };
+
     const todayData = {
       date: dateStr,
       exercises: workout.exercices.map(exercise => {
@@ -262,7 +344,8 @@ const TodayTab = () => {
         const reps = data.reps[exerciseKey] || '';
         return total + (parseInt(reps) || 0);
       }, 0),
-      estimatedDuration: Math.max(30, workout.exercices.length * 3)
+      estimatedDuration: Math.max(30, workout.exercices.length * 3),
+      duration: calculateSessionDuration() // Ajouter la durée réelle calculée
     };
     
     setSessionData(todayData);
