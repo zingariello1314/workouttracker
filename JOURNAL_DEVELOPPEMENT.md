@@ -732,4 +732,119 @@ L'application dispose maintenant d'un système d'export/import professionnel et 
 
 ---
 
-*Journal créé le 22/10/2025 - Dernière mise à jour : 25/01/2025 21:20*
+### 📅 22/10/2025 22:30 - AMÉLIORATION : Refonte Complète de l'Affichage des Graphiques
+
+**Onglet/Composant concerné :** Onglet Graphiques (ChartsTab)
+**Fichiers modifiés :** 
+- `src/components/tabs/ChartsTab.jsx`
+
+**Description :**
+Refonte majeure de l'affichage des graphiques pour améliorer considérablement la lisibilité et l'expérience utilisateur. Cette amélioration concerne à la fois le mode comparaison multi-exercices et la vue d'un seul exercice.
+
+**Problèmes identifiés et résolus :**
+
+#### 🔧 Mode Comparaison Multi-Exercices
+- **Absence d'axes** : Les graphiques n'avaient pas d'axes X et Y, rendant la lecture difficile
+- **Chevauchement des légendes** : Les légendes des exercices se superposaient au graphique
+- **Chevauchement des points** : Les points de données de différents exercices se chevauchaient
+- **Labels de dates illisibles** : Rotation à -45° causant des chevauchements et une mauvaise lisibilité
+- **Affichage incomplet** : Seulement 2 des 3 exercices sélectionnés étaient parfois affichés
+
+#### 🔧 Vue d'un Seul Exercice
+- **Absence d'axes** : Même problème que le mode comparaison
+- **Labels de dates problématiques** : Rotation et positionnement inadéquats
+- **Manque de structure visuelle** : Absence de grille de référence
+
+**Solutions implémentées :**
+
+#### ✅ Mode Comparaison Multi-Exercices
+1. **Ajout des axes X et Y** :
+   - Axe Y avec échelle graduée sur 6 niveaux (min à max des répétitions)
+   - Calcul dynamique des valeurs min/max pour tous les exercices sélectionnés
+   - Lignes de grille horizontales avec transparence pour faciliter la lecture
+
+2. **Repositionnement des légendes** :
+   - Légendes déplacées dans un conteneur avec fond semi-transparent
+   - Positionnement en haut à gauche avec espacement optimisé
+   - Taille réduite des éléments pour plus de compacité
+   - Couleurs distinctes préservées (violet, bleu, vert, jaune, rouge, rose)
+
+3. **Résolution du chevauchement des points** :
+   - Système d'espacement adaptatif intelligent selon le nombre d'exercices
+   - Calcul automatique du décalage horizontal pour chaque exercice
+   - Positionnement centré avec transformation CSS optimisée
+   - Espacement maximum de 12px, adaptatif selon le nombre d'exercices
+
+4. **Amélioration des labels de dates** :
+   - Suppression de la rotation à -45°
+   - Labels horizontaux centrés sous chaque colonne de points
+   - Fond semi-transparent pour améliorer la lisibilité
+   - Positionnement plus bas pour éviter les conflits avec les points
+
+5. **Correction de l'affichage des exercices** :
+   - Vérification et correction de la logique d'affichage
+   - Garantie que tous les exercices sélectionnés sont visibles
+   - Amélioration de la gestion des données vides ou manquantes
+
+#### ✅ Vue d'un Seul Exercice
+1. **Ajout des axes X et Y** :
+   - Axe Y avec échelle graduée dynamique basée sur les données de l'exercice
+   - Calcul des valeurs min/max spécifiques à l'exercice sélectionné
+   - Lignes de grille horizontales cohérentes avec le mode comparaison
+
+2. **Amélioration des labels de dates** :
+   - Même système que le mode comparaison : labels horizontaux centrés
+   - Fond semi-transparent pour la lisibilité
+   - Format jour/mois cohérent (DD/MM)
+
+3. **Structure visuelle améliorée** :
+   - Espacement ajusté pour accommoder les axes (12px à gauche, 8px en bas)
+   - Grille de référence avec transparence appropriée
+   - Cohérence visuelle avec le mode comparaison
+
+**Améliorations techniques :**
+
+#### 🎨 Cohérence Visuelle
+- **Système d'axes unifié** : Même logique de calcul et d'affichage pour les deux modes
+- **Style de labels cohérent** : Même apparence et positionnement dans les deux vues
+- **Espacement standardisé** : Marges et paddings harmonisés
+- **Couleurs et transparences** : Palette cohérente avec le design system
+
+#### ⚡ Performance et Responsivité
+- **Calculs optimisés** : Logique de calcul des axes et espacements optimisée
+- **Rendu conditionnel** : Affichage intelligent selon les données disponibles
+- **Gestion des états** : Préservation des fonctionnalités de zoom/pan et tooltips
+- **Responsive design** : Adaptation automatique selon le nombre d'exercices
+
+**Impact :**
+- **Lisibilité** : Amélioration drastique de la lisibilité des graphiques
+- **Expérience utilisateur** : Interface plus professionnelle et intuitive
+- **Cohérence** : Harmonisation complète entre les deux modes d'affichage
+- **Accessibilité** : Meilleure compréhension des données grâce aux axes et grilles
+
+**Tests effectués :**
+- ✅ Test du mode comparaison avec 1, 2 et 3 exercices sélectionnés
+- ✅ Test de la vue d'un seul exercice avec différents jeux de données
+- ✅ Vérification du bon fonctionnement du zoom et du panoramique
+- ✅ Test des tooltips interactifs dans les deux modes
+- ✅ Validation de l'affichage sur différentes tailles d'écran
+- ✅ Test de la cohérence visuelle entre les deux modes
+
+**Notes techniques :**
+- Utilisation de calculs CSS dynamiques pour l'espacement adaptatif
+- Préservation de toutes les fonctionnalités existantes (zoom, pan, tooltips)
+- Architecture extensible pour futures améliorations graphiques
+- Code optimisé pour maintenir les performances malgré les calculs supplémentaires
+
+**Fonctionnalités préservées :**
+- ✅ Zoom et panoramique dans les deux modes
+- ✅ Tooltips interactifs avec informations détaillées
+- ✅ Indicateurs spéciaux (records personnels, premier/dernier point)
+- ✅ Types de graphiques (ligne et barres)
+- ✅ Animations et transitions fluides
+- ✅ Analyse de corrélation (mode comparaison à 2 exercices)
+- ✅ Normalisation des échelles (optionnelle)
+
+---
+
+*Journal créé le 22/10/2025 - Dernière mise à jour : 22/10/2025 22:49*
