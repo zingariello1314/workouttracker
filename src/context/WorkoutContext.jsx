@@ -452,6 +452,36 @@ const WorkoutProvider = ({ children }) => {
   const workoutLogic = useWorkoutLogic(data, updateData);
   const workoutStats = useWorkoutStats(getCurrentData(), activeProgram);
 
+  // Fonction pour ajouter une entrée de progression (métriques, impédancemétrie, etc.)
+  const addProgressEntry = async (entryData) => {
+    try {
+      if (!entryData || !entryData.type) {
+        throw new Error('Données d\'entrée de progression invalides');
+      }
+
+      const newEntry = {
+        id: `entry_${Date.now()}`,
+        date: new Date().toISOString(),
+        timestamp: entryData.timestamp || Date.now(),
+        type: entryData.type,
+        ...entryData
+      };
+
+      const currentData = getCurrentData();
+      const progressEntries = currentData.progressEntries || [];
+      
+      const updatedData = {
+        ...currentData,
+        progressEntries: [...progressEntries, newEntry]
+      };
+
+      await updateData(updatedData);
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'ajout de l\'entrée de progression:', error);
+      throw error;
+    }
+  };
+
   // Fonction pour ajouter une photo de progression
   const addProgressPhoto = async (photoData) => {
     try {
@@ -554,8 +584,8 @@ const WorkoutProvider = ({ children }) => {
     setShowChartsModal,
     showHeatmapModal,
     setShowHeatmapModal,
-    showAdvancedStatsModal,
-    setShowAdvancedStatsModal,
+    showAdvancedStats: showAdvancedStatsModal,
+    setShowAdvancedStats: setShowAdvancedStatsModal,
     showSessionFeedback,
     setShowSessionFeedback,
     showExerciseVariations,
@@ -576,6 +606,7 @@ const WorkoutProvider = ({ children }) => {
     setProgressForm,
     
     // Fonctions de photos de progression
+    addProgressEntry,
     addProgressPhoto,
     deleteProgressPhoto,
     

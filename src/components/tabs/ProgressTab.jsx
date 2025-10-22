@@ -1,209 +1,120 @@
-import React from 'react';
-import { Camera, Plus, Trash2, Calendar } from 'lucide-react';
-import { useWorkout } from '../../context/WorkoutContext';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import { formatDate } from '../../utils/dateUtils';
+import React, { useState } from 'react';
+import { 
+  User, 
+  Camera, 
+  Activity, 
+  BarChart3, 
+  Bell,
+  TrendingUp,
+  MessageSquare,
+  Target,
+  Brain,
+  Zap
+} from 'lucide-react';
+import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
+import MetricsSection from '../BodyTracking/MetricsSection';
+import PhotoGallerySection from '../BodyTracking/PhotoGallerySection';
+import ImpedanceSection from '../BodyTracking/ImpedanceSection';
+import SummaryTableSection from '../BodyTracking/SummaryTableSection';
+import RemindersSection from '../BodyTracking/RemindersSection';
+import CorrelationAnalysis from '../BodyTracking/CorrelationAnalysis';
+import PredictionsModule from '../BodyTracking/PredictionsModule';
+import StabilityAnalysis from '../BodyTracking/StabilityAnalysis';
+import ProgressComments from '../BodyTracking/ProgressComments';
 
 const ProgressTab = () => {
-  const {
-    data,
-    progressForm,
-    setProgressForm,
-    addProgressPhoto,
-    deleteProgressPhoto
-  } = useWorkout();
+  const [activeSection, setActiveSection] = useState('metrics');
 
-  const handleAddPhoto = async () => {
-    try {
-      // Validation renforcée
-      if (!progressForm.weight || !progressForm.notes) {
-        alert('Veuillez remplir le poids et les notes avant d\'ajouter une photo.');
-        return;
-      }
+  const sections = [
+    { id: 'metrics', label: 'Métriques', icon: User, description: 'Poids, taille, mensurations', category: 'basic' },
+    { id: 'photos', label: 'Photos', icon: Camera, description: 'Galerie de progression', category: 'basic' },
+    { id: 'impedance', label: 'Impédancemètre', icon: Activity, description: 'Données détaillées', category: 'basic' },
+    { id: 'summary', label: 'Récapitulatif', icon: BarChart3, description: 'Tableau de bord', category: 'basic' },
+    { id: 'reminders', label: 'Rappels', icon: Bell, description: 'Notifications automatiques', category: 'basic' },
+    { id: 'correlations', label: 'Corrélations', icon: TrendingUp, description: 'Analyse des relations', category: 'advanced' },
+    { id: 'predictions', label: 'Prévisions', icon: Target, description: 'Projections futures', category: 'advanced' },
+    { id: 'stability', label: 'Stabilité', icon: Zap, description: 'Détection de stagnations', category: 'advanced' },
+    { id: 'comments', label: 'Commentaires', icon: MessageSquare, description: 'Analyse automatique', category: 'advanced' }
+  ];
 
-      const weight = parseFloat(progressForm.weight);
-      if (isNaN(weight) || weight <= 0 || weight > 500) {
-        alert('Veuillez entrer un poids valide (entre 0 et 500 kg).');
-        return;
-      }
+  const basicSections = sections.filter(s => s.category === 'basic');
+  const advancedSections = sections.filter(s => s.category === 'advanced');
 
-      if (progressForm.notes.trim().length < 3) {
-        alert('Les notes doivent contenir au moins 3 caractères.');
-        return;
-      }
-
-      await addProgressPhoto(progressForm);
-      setProgressForm({ weight: '', notes: '', photo: null });
-    } catch (error) {
-      alert('Erreur lors de l\'ajout de la photo. Veuillez réessayer.');
+  const renderActiveSection = () => {
+    switch (activeSection) {
+      case 'metrics':
+        return <MetricsSection />;
+      case 'photos':
+        return <PhotoGallerySection />;
+      case 'impedance':
+        return <ImpedanceSection />;
+      case 'summary':
+        return <SummaryTableSection />;
+      case 'reminders':
+        return <RemindersSection />;
+      case 'correlations':
+        return <CorrelationAnalysis />;
+      case 'predictions':
+        return <PredictionsModule />;
+      case 'stability':
+        return <StabilityAnalysis />;
+      case 'comments':
+        return <ProgressComments />;
+      default:
+        return <MetricsSection />;
     }
   };
 
-  const handlePhotoUpload = (e) => {
-    try {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      // Validation du fichier
-      if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner un fichier image valide.');
-        return;
-      }
-
-      // Limite de taille (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('La taille de l\'image ne doit pas dépasser 5MB.');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProgressForm(prev => ({ ...prev, photo: e.target.result }));
-      };
-      reader.onerror = () => {
-        alert('Erreur lors de la lecture du fichier image.');
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      alert('Erreur lors du téléchargement de la photo.');
-    }
-  };
-
-  const handleDeletePhoto = async (index) => {
-    try {
-      if (window.confirm('Êtes-vous sûr de vouloir supprimer cette photo de progression ?')) {
-        await deleteProgressPhoto(index);
-      }
-    } catch (error) {
-      alert('Erreur lors de la suppression de la photo.');
-    }
-  };
+  const renderSectionGrid = (sectionList, title) => (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">{title}</h3>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {sectionList.map((section) => {
+          const Icon = section.icon;
+          return (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`p-4 rounded-lg border transition-all text-left ${
+                activeSection === section.id
+                  ? 'border-orange-500 bg-orange-600/20 text-white'
+                  : 'border-slate-600 bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              <Icon className={`w-5 h-5 mb-2 ${
+                activeSection === section.id ? 'text-orange-400' : 'text-slate-400'
+              }`} />
+              <div className="font-medium text-sm">{section.label}</div>
+              <div className="text-xs text-slate-400 mt-1">{section.description}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Formulaire d'ajout */}
+    <div className="space-y-6">
+      {/* Navigation des sections */}
       <Card>
-        <Card.Header>
-          <Card.Title className="flex items-center">
-            <Plus className="w-5 h-5 mr-2" />
-            Ajouter une photo de progrès
-          </Card.Title>
-        </Card.Header>
-        <Card.Content>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Poids (kg)
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                value={progressForm.weight}
-                onChange={(e) => setProgressForm(prev => ({ ...prev, weight: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400"
-                placeholder="Ex: 70.5"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Notes
-              </label>
-              <textarea
-                value={progressForm.notes}
-                onChange={(e) => setProgressForm(prev => ({ ...prev, notes: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400"
-                rows="3"
-                placeholder="Comment vous sentez-vous ? Objectifs atteints ?"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Photo (optionnel)
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
-              />
-              {progressForm.photo && (
-                <div className="mt-2">
-                  <img
-                    src={progressForm.photo}
-                    alt="Aperçu"
-                    className="w-32 h-32 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </Card.Content>
-        <Card.Footer>
-          <Button
-            onClick={handleAddPhoto}
-            disabled={!progressForm.weight || !progressForm.notes}
-            icon={Camera}
-            className="w-full"
-          >
-            Ajouter la photo de progrès
-          </Button>
-        </Card.Footer>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="w-6 h-6 text-orange-400" />
+            Suivi Corporel Complet
+            <span className="text-sm font-normal text-slate-400">
+              - Système intégré de progression
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {renderSectionGrid(basicSections, 'Fonctionnalités de base')}
+          {renderSectionGrid(advancedSections, 'Analyses avancées')}
+        </CardContent>
       </Card>
 
-      {/* Liste des photos de progrès */}
+      {/* Contenu de la section active */}
       <div>
-        <h3 className="text-lg font-semibold mb-4 text-white">Historique des progrès</h3>
-        
-        {!data.progressPhotos || data.progressPhotos.length === 0 ? (
-          <Card className="text-center py-12">
-            <div className="text-gray-400">
-              <Camera className="w-16 h-16 mx-auto mb-4 text-gray-500" />
-              <h4 className="text-xl font-semibold mb-2 text-white">Aucune photo de progrès</h4>
-              <p className="text-gray-400">Ajoutez votre première photo pour suivre votre évolution.</p>
-            </div>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.progressPhotos.map((progress, index) => (
-              <Card key={index} className="overflow-hidden">
-                {progress.photo && (
-                  <div className="aspect-square">
-                    <img
-                      src={progress.photo}
-                      alt={`Progrès du ${formatDate(new Date(progress.date))}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                
-                <Card.Content className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center text-sm text-gray-300">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {formatDate(new Date(progress.date))}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeletePhoto(index)}
-                      icon={Trash2}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                    />
-                  </div>
-                  
-                  <div className="mb-2">
-                    <span className="font-semibold text-lg text-white">{progress.weight} kg</span>
-                  </div>
-                  
-                  <p className="text-sm text-gray-300">{progress.notes}</p>
-                </Card.Content>
-              </Card>
-            ))}
-          </div>
-        )}
+        {renderActiveSection()}
       </div>
     </div>
   );

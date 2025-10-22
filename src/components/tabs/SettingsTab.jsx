@@ -23,19 +23,32 @@ const SettingsTab = () => {
       const currentData = await loadFromDB();
       const dataToExport = currentData || data;
       
-      // Ajouter des métadonnées
+      // Ajouter des métadonnées complètes
       const exportObject = {
         version: '1.0',
         exportDate: new Date().toISOString(),
         appName: 'Workout Tracker',
         data: dataToExport,
         metadata: {
+          // Données d'entraînement
           totalExercises: Object.keys(dataToExport.checkedExercises || {}).length,
           totalReps: Object.keys(dataToExport.reps || {}).length,
           totalStretches: Object.keys(dataToExport.checkedStretches || {}).length,
+          historyReps: Object.keys(dataToExport.historyReps || {}).length,
+          
+          // Données de suivi corporel
           progressPhotos: (dataToExport.progressPhotos || []).length,
+          progressEntries: (dataToExport.progressEntries || []).length,
+          bodyTrackingReminders: (dataToExport.bodyTrackingReminders || []).length,
+          
+          // Configuration et historique
           startDate: dataToExport.startDate,
-          weekVariant: dataToExport.weekVariant
+          weekVariant: dataToExport.weekVariant,
+          programHistory: (dataToExport.programHistory || []).length,
+          
+          // Statistiques générales
+          totalDataPoints: Object.keys(dataToExport).length,
+          exportSize: JSON.stringify(dataToExport).length
         }
       };
 
@@ -84,6 +97,26 @@ const SettingsTab = () => {
       errors.push('progressPhotos doit être un tableau');
     }
 
+    // Validation des entrées de progression (nouveau)
+    if (data.progressEntries && !Array.isArray(data.progressEntries)) {
+      errors.push('progressEntries doit être un tableau');
+    }
+
+    // Validation des rappels de suivi corporel (nouveau)
+    if (data.bodyTrackingReminders && !Array.isArray(data.bodyTrackingReminders)) {
+      errors.push('bodyTrackingReminders doit être un tableau');
+    }
+
+    // Validation de l'historique des répétitions (nouveau)
+    if (data.historyReps && typeof data.historyReps !== 'object') {
+      errors.push('historyReps doit être un objet');
+    }
+
+    // Validation de l'historique des programmes (nouveau)
+    if (data.programHistory && !Array.isArray(data.programHistory)) {
+      errors.push('programHistory doit être un tableau');
+    }
+
     if (data.weekVariant && typeof data.weekVariant !== 'string') {
       errors.push('weekVariant doit être une chaîne de caractères');
     }
@@ -95,7 +128,11 @@ const SettingsTab = () => {
         exercises: Object.keys(data.checkedExercises || {}).length,
         reps: Object.keys(data.reps || {}).length,
         stretches: Object.keys(data.checkedStretches || {}).length,
-        photos: (data.progressPhotos || []).length
+        photos: (data.progressPhotos || []).length,
+        progressEntries: (data.progressEntries || []).length,
+        reminders: (data.bodyTrackingReminders || []).length,
+        historyReps: Object.keys(data.historyReps || {}).length,
+        programHistory: (data.programHistory || []).length
       }
     };
   };
@@ -216,14 +253,40 @@ const SettingsTab = () => {
             
             <div className="bg-slate-700/50 rounded-lg p-4">
               <h4 className="font-medium text-white mb-2">Données incluses :</h4>
-              <ul className="text-sm text-gray-300 space-y-1">
-                <li>• Exercices cochés : {Object.keys(data.checkedExercises || {}).length} entrées</li>
-                <li>• Répétitions : {Object.keys(data.reps || {}).length} entrées</li>
-                <li>• Étirements : {Object.keys(data.checkedStretches || {}).length} entrées</li>
-                <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
-                <li>• Date de début : {data.startDate || 'Non définie'}</li>
-                <li>• Variante de semaine : {data.weekVariant || 'A'}</li>
-              </ul>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <h5 className="text-sm font-medium text-blue-300">🏋️ Entraînement</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Exercices cochés : {Object.keys(data.checkedExercises || {}).length} entrées</li>
+                    <li>• Répétitions : {Object.keys(data.reps || {}).length} entrées</li>
+                    <li>• Étirements : {Object.keys(data.checkedStretches || {}).length} entrées</li>
+                    <li>• Historique répétitions : {Object.keys(data.historyReps || {}).length} entrées</li>
+                  </ul>
+                </div>
+                <div className="space-y-1">
+                  <h5 className="text-sm font-medium text-green-300">📊 Suivi Corporel</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
+                    <li>• Entrées de progression : {(data.progressEntries || []).length} entrées</li>
+                    <li>• Rappels configurés : {(data.bodyTrackingReminders || []).length} rappels</li>
+                  </ul>
+                </div>
+                <div className="space-y-1">
+                  <h5 className="text-sm font-medium text-purple-300">⚙️ Configuration</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Date de début : {data.startDate ? new Date(data.startDate).toLocaleDateString('fr-FR') : 'Non définie'}</li>
+                    <li>• Variante de semaine : {data.weekVariant || 'A'}</li>
+                    <li>• Historique programmes : {(data.programHistory || []).length} entrées</li>
+                  </ul>
+                </div>
+                <div className="space-y-1">
+                  <h5 className="text-sm font-medium text-yellow-300">📈 Statistiques</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Total propriétés : {Object.keys(data).length} champs</li>
+                    <li>• Taille données : {(JSON.stringify(data).length / 1024).toFixed(1)} KB</li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
             <Button
@@ -366,22 +429,48 @@ const SettingsTab = () => {
               <div className="space-y-4">
                 <div className="bg-slate-700/50 rounded-lg p-4">
                   <h4 className="font-medium text-white mb-3">Statistiques des données :</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-400">Exercices :</span>
-                      <span className="text-white ml-2">{previewData.stats.exercises}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div className="space-y-2">
+                      <h5 className="text-blue-300 font-medium">🏋️ Entraînement</h5>
+                      <div className="space-y-1 pl-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Exercices :</span>
+                          <span className="text-white">{previewData.stats.exercises}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Répétitions :</span>
+                          <span className="text-white">{previewData.stats.reps}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Étirements :</span>
+                          <span className="text-white">{previewData.stats.stretches}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Historique reps :</span>
+                          <span className="text-white">{previewData.stats.historyReps || 0}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-gray-400">Répétitions :</span>
-                      <span className="text-white ml-2">{previewData.stats.reps}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Étirements :</span>
-                      <span className="text-white ml-2">{previewData.stats.stretches}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Photos :</span>
-                      <span className="text-white ml-2">{previewData.stats.photos}</span>
+                    <div className="space-y-2">
+                      <h5 className="text-green-300 font-medium">📊 Suivi Corporel</h5>
+                      <div className="space-y-1 pl-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Photos :</span>
+                          <span className="text-white">{previewData.stats.photos}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Entrées progression :</span>
+                          <span className="text-white">{previewData.stats.progressEntries || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Rappels :</span>
+                          <span className="text-white">{previewData.stats.reminders || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Historique programmes :</span>
+                          <span className="text-white">{previewData.stats.programHistory || 0}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

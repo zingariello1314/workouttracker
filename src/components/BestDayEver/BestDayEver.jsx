@@ -1187,7 +1187,7 @@ const BestDayEver = ({ isOpen, onClose, workoutHistory = [] }) => {
     // Calcul des statistiques pour les achievements
     const totalSessions = workoutHistory.length;
     const totalReps = workoutHistory.reduce((sum, session) => 
-      sum + (session.exercises?.reduce((reps, ex) => reps + ex.reps, 0) || 0), 0
+      sum + (session.exercises?.reduce((reps, ex) => reps + (ex.reps || 0), 0) || 0), 0
     );
     const uniqueExercises = new Set(
       workoutHistory.flatMap(session => 
@@ -1196,11 +1196,11 @@ const BestDayEver = ({ isOpen, onClose, workoutHistory = [] }) => {
     ).size;
     
     const maxRepsInSession = Math.max(...workoutHistory.map(session => 
-      session.exercises?.reduce((sum, ex) => sum + ex.reps, 0) || 0
+      session.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0
     ));
     
     const maxRepsInExercise = Math.max(...workoutHistory.flatMap(session => 
-      session.exercises?.map(ex => ex.reps) || [0]
+      session.exercises?.map(ex => ex.reps || 0) || [0]
     ));
 
     // Calcul des séries

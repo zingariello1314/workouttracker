@@ -54,7 +54,7 @@ const ChartsTab = () => {
     workoutHistory.forEach(session => {
       const date = new Date(session.date);
       const dayOfWeek = date.getDay();
-      const totalReps = session.exercises?.reduce((sum, ex) => sum + ex.reps, 0) || 0;
+      const totalReps = session.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0;
       dayStats[dayOfWeek] += totalReps;
     });
 
@@ -87,16 +87,16 @@ const ChartsTab = () => {
     });
 
     const currentStats = {
-      totalReps: currentMonthData.reduce((sum, s) => sum + (s.exercises?.reduce((s2, e) => s2 + e.reps, 0) || 0), 0),
-      sessions: currentMonthData.length,
-      maxDaily: Math.max(...currentMonthData.map(s => s.exercises?.reduce((sum, e) => sum + e.reps, 0) || 0), 0),
+      totalReps: currentMonthData.reduce((sum, s) => sum + (s.exercises?.reduce((s2, e) => s2 + (e.reps || 0), 0) || 0), 0),
+      totalSessions: currentMonthData.length,
+      maxDaily: Math.max(...currentMonthData.map(s => s.exercises?.reduce((sum, e) => sum + (e.reps || 0), 0) || 0), 0),
       streak: calculateStreak(currentMonthData)
     };
 
     const previousStats = {
-      totalReps: previousMonthData.reduce((sum, s) => sum + (s.exercises?.reduce((s2, e) => s2 + e.reps, 0) || 0), 0),
-      sessions: previousMonthData.length,
-      maxDaily: Math.max(...previousMonthData.map(s => s.exercises?.reduce((sum, e) => sum + e.reps, 0) || 0), 0),
+      totalReps: previousMonthData.reduce((sum, s) => sum + (s.exercises?.reduce((s2, e) => s2 + (e.reps || 0), 0) || 0), 0),
+      totalSessions: previousMonthData.length,
+      maxDaily: Math.max(...previousMonthData.map(s => s.exercises?.reduce((sum, e) => sum + (e.reps || 0), 0) || 0), 0),
       streak: calculateStreak(previousMonthData)
     };
 
@@ -168,10 +168,10 @@ const ChartsTab = () => {
     const olderSessions = workoutHistory.slice(-28, -14); // 2 semaines précédentes
 
     const recentAvg = recentSessions.length > 0 ? 
-      recentSessions.reduce((sum, s) => sum + (s.exercises?.reduce((s2, e) => s2 + e.reps, 0) || 0), 0) / recentSessions.length : 0;
+      recentSessions.reduce((sum, s) => sum + (s.exercises?.reduce((s2, e) => s2 + (e.reps || 0), 0) || 0), 0) / recentSessions.length : 0;
     
     const olderAvg = olderSessions.length > 0 ? 
-      olderSessions.reduce((sum, s) => sum + (s.exercises?.reduce((s2, e) => s2 + e.reps, 0) || 0), 0) / olderSessions.length : 0;
+      olderSessions.reduce((sum, s) => sum + (s.exercises?.reduce((s2, e) => s2 + (e.reps || 0), 0) || 0), 0) / olderSessions.length : 0;
 
     const percentageChange = olderAvg > 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : 0;
 
@@ -192,14 +192,14 @@ const ChartsTab = () => {
     if (workoutHistory.length === 0) return null;
 
     const bestSession = workoutHistory.reduce((best, session) => {
-      const sessionReps = session.exercises?.reduce((sum, ex) => sum + ex.reps, 0) || 0;
-      const bestReps = best.exercises?.reduce((sum, ex) => sum + ex.reps, 0) || 0;
+      const sessionReps = session.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0;
+      const bestReps = best.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0;
       return sessionReps > bestReps ? session : best;
     });
 
     return {
       date: bestSession.date,
-      totalReps: bestSession.exercises?.reduce((sum, ex) => sum + ex.reps, 0) || 0,
+      totalReps: bestSession.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0,
       exerciseCount: bestSession.exercises?.length || 0,
       exercises: bestSession.exercises || []
     };

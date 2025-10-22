@@ -13,6 +13,7 @@ import ExercisesTab from './components/tabs/ExercisesTab';
 import HistoryTab from './components/tabs/HistoryTab';
 import SettingsTab from './components/tabs/SettingsTab';
 import ExerciseVariations from './components/ExerciseVariations/ExerciseVariations';
+import AdvancedStats from './components/AdvancedStats';
 import { useWorkout } from './context/WorkoutContext';
 
 const WorkoutTrackerApp = () => {
@@ -30,7 +31,10 @@ const WorkoutTrackerContent = () => {
     activeTab, 
     showExerciseVariations, 
     selectedExercise, 
-    setShowExerciseVariations 
+    setShowExerciseVariations,
+    showAdvancedStats,
+    setShowAdvancedStats,
+    getWorkoutHistory
   } = useWorkout();
 
   const renderTabContent = () => {
@@ -76,6 +80,14 @@ const WorkoutTrackerContent = () => {
         <ExerciseVariations
           baseExercise={selectedExercise}
           onClose={() => setShowExerciseVariations(false)}
+        />
+      )}
+
+      {showAdvancedStats && (
+        <AdvancedStats
+          workoutData={getWorkoutHistory()}
+          isOpen={showAdvancedStats}
+          onClose={() => setShowAdvancedStats(false)}
         />
       )}
     </div>

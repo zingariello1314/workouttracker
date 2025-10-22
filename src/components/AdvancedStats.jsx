@@ -19,66 +19,7 @@ const AdvancedStats = ({ workoutData, isOpen, onClose }) => {
     { value: 'duration', label: 'Durée moyenne', icon: Clock, unit: 'min' }
   ];
 
-  // Calculs des statistiques avancées
-  const stats = useMemo(() => {
-    if (!workoutData || workoutData.length === 0) return null;
-
-    const now = new Date();
-    const periodDays = {
-      week: 7,
-      month: 30,
-      quarter: 90,
-      year: 365
-    };
-
-    const currentPeriodStart = new Date(now.getTime() - periodDays[selectedPeriod] * 24 * 60 * 60 * 1000);
-    const previousPeriodStart = new Date(currentPeriodStart.getTime() - periodDays[selectedPeriod] * 24 * 60 * 60 * 1000);
-
-    const currentPeriodData = workoutData.filter(w => new Date(w.date) >= currentPeriodStart);
-    const previousPeriodData = workoutData.filter(w => 
-      new Date(w.date) >= previousPeriodStart && new Date(w.date) < currentPeriodStart
-    );
-
-    // Calculs pour la période actuelle
-    const currentStats = {
-      totalWorkouts: currentPeriodData.length,
-      totalReps: currentPeriodData.reduce((sum, w) => sum + (w.exercises?.reduce((s, e) => s + e.reps, 0) || 0), 0),
-      totalSets: currentPeriodData.reduce((sum, w) => sum + (w.exercises?.length || 0), 0),
-      avgIntensity: currentPeriodData.length > 0 ? 
-        currentPeriodData.reduce((sum, w) => sum + (w.intensity || 5), 0) / currentPeriodData.length : 0,
-      avgDuration: currentPeriodData.length > 0 ?
-        currentPeriodData.reduce((sum, w) => sum + (w.duration || 30), 0) / currentPeriodData.length : 0,
-      streak: calculateStreak(workoutData),
-      bestDay: getBestPerformanceDay(currentPeriodData),
-      muscleDistribution: getMuscleDistribution(currentPeriodData),
-      weeklyPattern: getWeeklyPattern(currentPeriodData),
-      progressTrend: getProgressTrend(workoutData.slice(-10)),
-      caloriesBurned: estimateCalories(currentPeriodData)
-    };
-
-    // Calculs pour la période précédente
-    const previousStats = {
-      totalWorkouts: previousPeriodData.length,
-      totalReps: previousPeriodData.reduce((sum, w) => sum + (w.exercises?.reduce((s, e) => s + e.reps, 0) || 0), 0),
-      totalSets: previousPeriodData.reduce((sum, w) => sum + (w.exercises?.length || 0), 0),
-      avgIntensity: previousPeriodData.length > 0 ? 
-        previousPeriodData.reduce((sum, w) => sum + (w.intensity || 5), 0) / previousPeriodData.length : 0,
-      avgDuration: previousPeriodData.length > 0 ?
-        previousPeriodData.reduce((sum, w) => sum + (w.duration || 30), 0) / previousPeriodData.length : 0
-    };
-
-    // Calcul des changements
-    const changes = {
-      workouts: calculateChange(currentStats.totalWorkouts, previousStats.totalWorkouts),
-      reps: calculateChange(currentStats.totalReps, previousStats.totalReps),
-      sets: calculateChange(currentStats.totalSets, previousStats.totalSets),
-      intensity: calculateChange(currentStats.avgIntensity, previousStats.avgIntensity),
-      duration: calculateChange(currentStats.avgDuration, previousStats.avgDuration)
-    };
-
-    return { current: currentStats, previous: previousStats, changes };
-  }, [workoutData, selectedPeriod]);
-
+  // Fonctions utilitaires définies avant leur utilisation
   const calculateChange = (current, previous) => {
     if (previous === 0) return current > 0 ? 100 : 0;
     return ((current - previous) / previous) * 100;
@@ -113,8 +54,19 @@ const AdvancedStats = ({ workoutData, isOpen, onClose }) => {
     if (!data || data.length === 0) return null;
     
     return data.reduce((best, current) => {
-      const currentScore = (current.exercises?.reduce((s, e) => s + e.reps, 0) || 0) * (current.intensity || 5);
-      const bestScore = (best.exercises?.reduce((s, e) => s + e.reps, 0) || 0) * (best.intensity || 5);
+      // Calcul du score basé sur plusieurs facteurs
+      const currentReps = current.exercises?.reduce((s, e) => s + (e.reps || 0), 0) || 0;
+      const currentIntensity = current.intensity || 5;
+      const currentExerciseCount = current.exercises?.length || 0;
+      
+      // Score composite : reps * intensité + bonus pour nombre d'exercices
+      const currentScore = (currentReps * currentIntensity) + (currentExerciseCount * 10);
+      
+      const bestReps = best.exercises?.reduce((s, e) => s + (e.reps || 0), 0) || 0;
+      const bestIntensity = best.intensity || 5;
+      const bestExerciseCount = best.exercises?.length || 0;
+      const bestScore = (bestReps * bestIntensity) + (bestExerciseCount * 10);
+      
       return currentScore > bestScore ? current : best;
     });
   };
@@ -123,8 +75,28 @@ const AdvancedStats = ({ workoutData, isOpen, onClose }) => {
     const distribution = {};
     data.forEach(workout => {
       workout.exercises?.forEach(exercise => {
-        const muscle = exercise.muscle || 'Autre';
-        distribution[muscle] = (distribution[muscle] || 0) + exercise.reps;
+        // Utiliser le nom de l'exercice pour déterminer le groupe musculaire
+        const exerciseName = exercise.name || exercise.nom || 'Exercice inconnu';
+        let muscle = 'Autre';
+        
+        // Mapping basique des exercices vers les groupes musculaires
+        if (exerciseName.toLowerCase().includes('pompe') || exerciseName.toLowerCase().includes('pec')) {
+          muscle = 'Pectoraux';
+        } else if (exerciseName.toLowerCase().includes('traction') || exerciseName.toLowerCase().includes('dos')) {
+          muscle = 'Dos';
+        } else if (exerciseName.toLowerCase().includes('squat') || exerciseName.toLowerCase().includes('jambe')) {
+          muscle = 'Jambes';
+        } else if (exerciseName.toLowerCase().includes('curl') || exerciseName.toLowerCase().includes('bicep')) {
+          muscle = 'Biceps';
+        } else if (exerciseName.toLowerCase().includes('tricep') || exerciseName.toLowerCase().includes('dips')) {
+          muscle = 'Triceps';
+        } else if (exerciseName.toLowerCase().includes('épaule') || exerciseName.toLowerCase().includes('shoulder')) {
+          muscle = 'Épaules';
+        } else if (exerciseName.toLowerCase().includes('abdo') || exerciseName.toLowerCase().includes('planche') || exerciseName.toLowerCase().includes('gainage')) {
+          muscle = 'Abdominaux';
+        }
+        
+        distribution[muscle] = (distribution[muscle] || 0) + (exercise.reps || 0);
       });
     });
     
@@ -159,8 +131,8 @@ const AdvancedStats = ({ workoutData, isOpen, onClose }) => {
     const recent = data.slice(-5);
     const older = data.slice(-10, -5);
     
-    const recentAvg = recent.reduce((sum, w) => sum + (w.exercises?.reduce((s, e) => s + e.reps, 0) || 0), 0) / recent.length;
-    const olderAvg = older.length > 0 ? older.reduce((sum, w) => sum + (w.exercises?.reduce((s, e) => s + e.reps, 0) || 0), 0) / older.length : recentAvg;
+    const recentAvg = recent.reduce((sum, w) => sum + (w.exercises?.reduce((s, e) => s + (e.reps || 0), 0) || 0), 0) / recent.length;
+    const olderAvg = older.length > 0 ? older.reduce((sum, w) => sum + (w.exercises?.reduce((s, e) => s + (e.reps || 0), 0) || 0), 0) / older.length : recentAvg;
     
     const change = ((recentAvg - olderAvg) / olderAvg) * 100;
     
@@ -170,11 +142,21 @@ const AdvancedStats = ({ workoutData, isOpen, onClose }) => {
   };
 
   const estimateCalories = (data) => {
-    // Estimation basique : 0.5 calorie par rep + bonus intensité
+    // Estimation plus précise basée sur le type d'exercice et l'intensité
     return data.reduce((total, workout) => {
-      const reps = workout.exercises?.reduce((s, e) => s + e.reps, 0) || 0;
+      const reps = workout.exercises?.reduce((s, e) => s + (e.reps || 0), 0) || 0;
       const intensity = workout.intensity || 5;
-      return total + (reps * 0.5) + (intensity * 10);
+      const duration = workout.duration || 30; // durée en minutes
+      
+      // Calcul basé sur les MET (Metabolic Equivalent of Task)
+      // Entraînement de force : 3-6 MET selon l'intensité
+      const metValue = intensity <= 3 ? 3 : intensity <= 6 ? 4.5 : 6;
+      const caloriesFromDuration = metValue * 70 * (duration / 60); // 70kg poids moyen
+      
+      // Bonus pour le volume de répétitions
+      const caloriesFromReps = reps * 0.3;
+      
+      return total + caloriesFromDuration + caloriesFromReps;
     }, 0);
   };
 
@@ -192,6 +174,66 @@ const AdvancedStats = ({ workoutData, isOpen, onClose }) => {
       </div>
     );
   };
+
+  // Calculs des statistiques avancées
+  const stats = useMemo(() => {
+    if (!workoutData || workoutData.length === 0) return null;
+
+    const now = new Date();
+    const periodDays = {
+      week: 7,
+      month: 30,
+      quarter: 90,
+      year: 365
+    };
+
+    const currentPeriodStart = new Date(now.getTime() - periodDays[selectedPeriod] * 24 * 60 * 60 * 1000);
+    const previousPeriodStart = new Date(currentPeriodStart.getTime() - periodDays[selectedPeriod] * 24 * 60 * 60 * 1000);
+
+    const currentPeriodData = workoutData.filter(w => new Date(w.date) >= currentPeriodStart);
+    const previousPeriodData = workoutData.filter(w => 
+      new Date(w.date) >= previousPeriodStart && new Date(w.date) < currentPeriodStart
+    );
+
+    // Calculs pour la période actuelle
+    const currentStats = {
+      totalWorkouts: currentPeriodData.length,
+      totalReps: currentPeriodData.reduce((sum, w) => sum + (w.exercises?.reduce((s, e) => s + (e.reps || 0), 0) || 0), 0),
+      totalSets: currentPeriodData.reduce((sum, w) => sum + (w.exercises?.length || 0), 0),
+      avgIntensity: currentPeriodData.length > 0 ? 
+        currentPeriodData.reduce((sum, w) => sum + (w.intensity || 5), 0) / currentPeriodData.length : 0,
+      avgDuration: currentPeriodData.length > 0 ?
+        currentPeriodData.reduce((sum, w) => sum + (w.duration || 30), 0) / currentPeriodData.length : 0,
+      streak: calculateStreak(workoutData),
+      bestDay: getBestPerformanceDay(currentPeriodData),
+      muscleDistribution: getMuscleDistribution(currentPeriodData),
+      weeklyPattern: getWeeklyPattern(currentPeriodData),
+      progressTrend: getProgressTrend(workoutData.slice(-10)),
+      caloriesBurned: estimateCalories(currentPeriodData)
+    };
+
+    // Calculs pour la période précédente
+    const previousStats = {
+      totalWorkouts: previousPeriodData.length,
+      totalReps: previousPeriodData.reduce((sum, w) => sum + (w.exercises?.reduce((s, e) => s + (e.reps || 0), 0) || 0), 0),
+      totalSets: previousPeriodData.reduce((sum, w) => sum + (w.exercises?.length || 0), 0),
+      avgIntensity: previousPeriodData.length > 0 ? 
+        previousPeriodData.reduce((sum, w) => sum + (w.intensity || 5), 0) / previousPeriodData.length : 0,
+      avgDuration: previousPeriodData.length > 0 ?
+        previousPeriodData.reduce((sum, w) => sum + (w.duration || 30), 0) / previousPeriodData.length : 0
+    };
+
+    // Calcul des changements
+    const changes = {
+      workouts: calculateChange(currentStats.totalWorkouts, previousStats.totalWorkouts),
+      reps: calculateChange(currentStats.totalReps, previousStats.totalReps),
+      sets: calculateChange(currentStats.totalSets, previousStats.totalSets),
+      intensity: calculateChange(currentStats.avgIntensity, previousStats.avgIntensity),
+      duration: calculateChange(currentStats.avgDuration, previousStats.avgDuration)
+    };
+
+    return { current: currentStats, previous: previousStats, changes };
+  }, [workoutData, selectedPeriod]);
 
   const StatCard = ({ title, value, unit, change, icon: Icon, color = 'purple' }) => (
     <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
@@ -346,7 +388,7 @@ const AdvancedStats = ({ workoutData, isOpen, onClose }) => {
                       {new Date(stats.current.bestDay.date).toLocaleDateString('fr-FR')}
                     </p>
                     <p className="text-slate-300 text-xs">
-                      {stats.current.bestDay.exercises?.reduce((s, e) => s + e.reps, 0)} reps • 
+                      {stats.current.bestDay.exercises?.reduce((s, e) => s + (e.reps || 0), 0)} reps • 
                       Intensité {stats.current.bestDay.intensity}/10
                     </p>
                   </div>
