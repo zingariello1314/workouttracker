@@ -182,13 +182,12 @@ export const useWorkoutData = () => {
     const newDataString = JSON.stringify(newData);
     
     if (currentDataString === newDataString) {
-      console.log('🔍 Données identiques - sauvegarde annulée');
+
       return;
     }
 
     // Programmer une nouvelle sauvegarde après 2 secondes d'inactivité (augmenté de 1 à 2 secondes)
     debounceTimerRef.current = setTimeout(() => {
-      console.log('💾 Sauvegarde automatique déclenchée');
       saveToDB(newData);
     }, 2000); // Augmenté à 2 secondes pour réduire la fréquence
   }, [data]);

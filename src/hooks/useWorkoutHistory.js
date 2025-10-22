@@ -147,7 +147,6 @@ export const useWorkoutHistory = () => {
   // Fonction pour déclencher la création d'un tableau lors de la sauvegarde
   const triggerTableCreation = useCallback(() => {
     if (shouldCreateTable() && activeProgram) {
-      console.log('🚀 Création d\'un nouveau tableau pour:', activeProgram.name);
       createWorkoutTable(activeProgram, 'data_save');
     }
   }, [shouldCreateTable, activeProgram, createWorkoutTable]);
@@ -177,7 +176,6 @@ export const useWorkoutHistory = () => {
       const cleanedTables = prev.map(table => {
         // Si le tableau est actif mais n'a pas de programme actif correspondant
         if (table.isActive && (!activeProgram || activeProgram.id !== table.programId)) {
-          console.log('🧹 Nettoyage du tableau orphelin:', table.id, 'programId:', table.programId);
           return {
             ...table,
             isActive: false,
@@ -204,7 +202,7 @@ export const useWorkoutHistory = () => {
       if (table.isActive) {
         const hasMatchingActiveProgram = activeProgram && activeProgram.id === table.programId;
         if (!hasMatchingActiveProgram) {
-          console.log('⚠️ Tableau orphelin détecté (actif sans programme):', table.id, 'programId:', table.programId);
+  
           return false; // Exclure les tableaux orphelins
         }
       }
@@ -234,8 +232,6 @@ export const useWorkoutHistory = () => {
     cleanupOrphanTables();
     
     if (activeProgram) {
-      console.log('🔄 Programme actif détecté:', activeProgram.name);
-      
       // Vérifier s'il y a déjà un tableau actif pour ce programme
       const activeTable = workoutTables.find(table => 
         table.isActive && table.programId === activeProgram.id

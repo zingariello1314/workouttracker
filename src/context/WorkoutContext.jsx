@@ -351,7 +351,7 @@ const WorkoutProvider = ({ children }) => {
           lastSaved: new Date().toISOString()
         };
 
-        console.log(`🔄 Tentative ${retryCount}/${maxRetries} de sauvegarde du contexte`);
+
         
         const db = await openContextDB();
         const transaction = db.transaction(['contextData'], 'readwrite');
@@ -392,7 +392,6 @@ const WorkoutProvider = ({ children }) => {
         if (retryCount === maxRetries) {
           // Dernière tentative échouée - essayer de sauvegarder en localStorage comme fallback
           try {
-            console.log('🔄 Tentative de sauvegarde de secours du contexte en localStorage');
             localStorage.setItem('workoutContext_backup', JSON.stringify({
               id: 'context',
               ...contextData,
