@@ -304,16 +304,27 @@ const TodayTab = () => {
 
     const todayData = {
       date: dateStr,
-      exercises: workout.exercices.map(exercise => {
-        const exerciseKey = `${dateStr}_${exercise.id}`;
-        const isChecked = data.checkedExercises[exerciseKey] || false;
-        const reps = data.reps[exerciseKey] || '';
-        return {
-          ...exercise,
-          completed: isChecked,
-          reps: parseInt(reps) || 0
-        };
-      }).filter(ex => ex.completed),
+      exercises: [
+        // Exercices classiques
+        ...workout.exercices.map(exercise => {
+          const exerciseKey = `${dateStr}_${exercise.id}`;
+          const isChecked = data.checkedExercises[exerciseKey] || false;
+          const reps = data.reps[exerciseKey] || '';
+          return {
+            ...exercise,
+            completed: isChecked,
+            reps: parseInt(reps) || 0
+          };
+        }).filter(ex => ex.completed),
+        // Activités complémentaires
+        ...(workout.complementaryActivity && data.checkedExercises[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`] ? [{
+          id: `complementary_${workout.complementaryActivity.name.toLowerCase()}`,
+          name: workout.complementaryActivity.name,
+          completed: true,
+          reps: 0,
+          duration: workout.complementaryActivity.duration
+        }] : [])
+      ],
       totalReps: workout.exercices.reduce((total, exercise) => {
         const exerciseKey = `${dateStr}_${exercise.id}`;
         const reps = data.reps[exerciseKey] || '';
@@ -402,6 +413,7 @@ const TodayTab = () => {
           Exercices
         </h3>
         <div className="space-y-3">
+          {/* Exercices classiques */}
           {workout.exercices.map((exercise) => {
             const exerciseKey = `${dateStr}_${exercise.id}`;
             const currentData = getCurrentData();
@@ -452,6 +464,38 @@ const TodayTab = () => {
               </div>
             );
           })}
+          
+          {/* Activités complémentaires */}
+          {workout.complementaryActivity && (
+            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-700/30 to-blue-700/30 rounded-lg border border-purple-500/50 hover:from-purple-700/40 hover:to-blue-700/40 transition-all duration-200">
+              <div className="flex-1">
+                <div className="font-medium text-white flex items-center gap-2">
+                  {workout.complementaryActivity.name}
+                  <span className="text-xs bg-purple-500/30 text-purple-200 px-2 py-1 rounded-full">
+                    {workout.complementaryActivity.type}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-300">
+                  {workout.complementaryActivity.duration} min • {workout.complementaryActivity.timeSlot}
+                </div>
+                <div className="text-xs text-purple-200 mt-1">
+                  {workout.complementaryActivity.benefits.join(' • ')}
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={getCurrentData().checkedExercises[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`] || false}
+                  onChange={() => handleExerciseCheck(`complementary_${workout.complementaryActivity.name.toLowerCase()}`, currentDate)}
+                  className="text-purple-400"
+                  name={`complementary_${workout.complementaryActivity.name.toLowerCase()}`}
+                />
+                <div className="text-purple-300 text-sm font-medium">
+                  {workout.complementaryActivity.duration} min
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Boutons de sauvegarde */}

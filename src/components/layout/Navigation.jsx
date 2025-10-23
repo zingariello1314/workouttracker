@@ -13,7 +13,10 @@ const Navigation = () => {
     { id: 'charts', label: 'Graphiques', icon: '📊' },
     { id: 'stats', label: 'Statistiques', icon: '📈' },
     { id: 'exercises', label: 'Exercices', icon: '💪' },
-    { id: 'history', label: 'Historique', icon: '📋' },
+    { id: 'history', label: 'Historique', icon: '📊' },
+    { id: 'predictions', label: 'Prédictions', icon: '🔮' },
+    { id: 'streaks', label: 'Streaks', icon: '🔥' },
+    { id: 'smart-balancing', label: 'Équilibrage IA', icon: '🧠' },
     { id: 'settings', label: 'Paramètres', icon: '⚙️' }
   ];
 

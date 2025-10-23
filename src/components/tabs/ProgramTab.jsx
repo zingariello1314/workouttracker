@@ -37,7 +37,7 @@ const ProgramTab = () => {
 
   const handleCreateProgram = () => {
     if (newProgram.name.trim()) {
-      createProgram(newProgram);
+      addProgram(newProgram);
       setNewProgram({ name: '', description: '', duration: 4, exercises: [] });
       setShowCreateForm(false);
     }
@@ -92,17 +92,32 @@ const ProgramTab = () => {
             instructions: dayData.etirements?.soir || "" 
           }
         },
-        exercises: dayData.exercices?.map(exercise => ({
-          id: exercise.id,
-          name: exercise.name,
-          series: exercise.series,
-          reps: "",
-          rest: exercise.type?.includes('circuit') ? 30 : (exercise.type?.includes('superset') ? 45 : 90),
-          intensity: exercise.series?.includes('4×') ? "heavy" : (exercise.series?.includes('3×') ? "moderate" : "light"),
-          notes: exercise.notes || "",
-          materiel: exercise.materiel || "poids du corps",
-          type: exercise.type || "standard"
-        })) || [],
+        exercises: [
+          // Exercices classiques
+          ...(dayData.exercices?.map(exercise => ({
+            id: exercise.id,
+            name: exercise.name,
+            series: exercise.series,
+            reps: "",
+            rest: exercise.type?.includes('circuit') ? 30 : (exercise.type?.includes('superset') ? 45 : 90),
+            intensity: exercise.series?.includes('4×') ? "heavy" : (exercise.series?.includes('3×') ? "moderate" : "light"),
+            notes: exercise.notes || "",
+            materiel: exercise.materiel || "poids du corps",
+            type: exercise.type || "standard"
+          })) || []),
+          // Activités complémentaires
+          ...(dayData.complementaryActivity ? [{
+            id: `complementary_${dayData.complementaryActivity.name.toLowerCase()}`,
+            name: dayData.complementaryActivity.name,
+            series: `1×${dayData.complementaryActivity.duration}min`,
+            reps: "",
+            rest: 0,
+            intensity: "moderate",
+            notes: `${dayData.complementaryActivity.timeSlot} - ${dayData.complementaryActivity.benefits.join(', ')}`,
+            materiel: dayData.complementaryActivity.name === "Boxe" ? "Gants de boxe" : "Piscine",
+            type: dayData.complementaryActivity.type
+          }] : [])
+        ],
         // Ajout des variantes salle si elles existent
         salleVariants: dayData.salleVariants ? {
           semaineA: {

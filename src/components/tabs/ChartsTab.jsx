@@ -18,6 +18,7 @@ import {
   BarChart2,
   LineChart,
   PieChart,
+  Lightbulb,
   Maximize2,
   Info,
   Star,
@@ -48,6 +49,11 @@ const ChartsTab = () => {
   // États existants
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
+  
+  // Nouveaux états pour l'interactivité du graphique par jour
+  const [selectedMode, setSelectedMode] = useState('total'); // 'total', 'average', 'sessions'
+  const [hoveredDay, setHoveredDay] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
   const [activeChart, setActiveChart] = useState('progression');
   const [showBestDayEver, setShowBestDayEver] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,7 +103,8 @@ const ChartsTab = () => {
       'Jambes': ['squats', 'fentes', 'jambes', 'quadriceps', 'mollets', 'leg', 'squat'],
       'Épaules': ['épaules', 'développé', 'élévations', 'shoulder', 'press'],
       'Abdominaux': ['abdos', 'crunch', 'planche', 'gainage', 'abs', 'core'],
-      'Cardio': ['course', 'vélo', 'rameur', 'cardio', 'running', 'bike']
+      'Cardio': ['course', 'vélo', 'rameur', 'cardio', 'running', 'bike'],
+      'Activités Complémentaires': ['boxe', 'natation', 'boxing', 'swimming']
     };
 
     for (const [group, keywords] of Object.entries(muscleGroups)) {
@@ -114,6 +121,9 @@ const ChartsTab = () => {
     
     if (['course', 'vélo', 'rameur', 'cardio', 'running', 'bike'].some(keyword => name.includes(keyword))) {
       return 'Cardio';
+    }
+    if (['boxe', 'natation', 'boxing', 'swimming'].some(keyword => name.includes(keyword))) {
+      return 'Activité Complémentaire';
     }
     if (['planche', 'gainage', 'isométrique'].some(keyword => name.includes(keyword))) {
       return 'Endurance';
@@ -427,26 +437,371 @@ const ChartsTab = () => {
     }
   };
 
-  // Calcul des reps par jour de la semaine
-  const getRepsPerDayOfWeek = () => {
-    const dayStats = Array(7).fill(0);
+  // Calcul enrichi des reps par jour de la semaine avec données détaillées
+  const getEnrichedDayOfWeekData = () => {
+    const dayStats = Array(7).fill(null).map(() => ({
+      sessions: [],
+      totalReps: 0,
+      totalSessions: 0,
+      exercises: {},
+      avgRepsPerSession: 0,
+      maxSessionReps: 0,
+      completionRate: 0
+    }));
+    
     const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
     
     workoutHistory.forEach(session => {
       const date = new Date(session.date);
       const dayOfWeek = date.getDay();
-      const totalReps = session.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0;
-      dayStats[dayOfWeek] += totalReps;
+      const sessionReps = session.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0;
+      
+      dayStats[dayOfWeek].sessions.push(session);
+      dayStats[dayOfWeek].totalReps += sessionReps;
+      dayStats[dayOfWeek].totalSessions += 1;
+      dayStats[dayOfWeek].maxSessionReps = Math.max(dayStats[dayOfWeek].maxSessionReps, sessionReps);
+      
+      // Comptage des exercices par type
+      session.exercises?.forEach(ex => {
+        if (ex.name) {
+          if (!dayStats[dayOfWeek].exercises[ex.name]) {
+            dayStats[dayOfWeek].exercises[ex.name] = { count: 0, totalReps: 0 };
+          }
+          dayStats[dayOfWeek].exercises[ex.name].count += 1;
+          dayStats[dayOfWeek].exercises[ex.name].totalReps += ex.reps || 0;
+        }
+      });
     });
 
-    const result = dayStats.map((reps, index) => ({
-      day: dayNames[index],
-      reps,
-      intensity: reps > 250 ? 'high' : reps > 150 ? 'medium' : reps > 50 ? 'low' : 'rest'
-    }));
-    
-    return result;
+    return dayStats.map((stats, index) => {
+      const avgRepsPerSession = stats.totalSessions > 0 ? Math.round(stats.totalReps / stats.totalSessions) : 0;
+      const topExercises = Object.entries(stats.exercises)
+        .sort(([,a], [,b]) => b.totalReps - a.totalReps)
+        .slice(0, 3)
+        .map(([name, data]) => ({ name, ...data }));
+      
+      // Calcul de l'intensité basé sur la moyenne générale
+      const globalAvg = workoutHistory.reduce((sum, s) => sum + (s.exercises?.reduce((reps, ex) => reps + (ex.reps || 0), 0) || 0), 0) / Math.max(workoutHistory.length, 1);
+      const intensity = avgRepsPerSession > globalAvg * 1.5 ? 'high' : 
+                      avgRepsPerSession > globalAvg * 0.8 ? 'medium' : 
+                      avgRepsPerSession > 0 ? 'low' : 'rest';
+
+      return {
+        day: dayNames[index],
+        reps: stats.totalReps,
+        totalSessions: stats.totalSessions,
+        avgRepsPerSession,
+        maxSessionReps: stats.maxSessionReps,
+        topExercises,
+        intensity,
+        globalAvg: Math.round(globalAvg),
+        comparisonToAvg: avgRepsPerSession > 0 ? Math.round(((avgRepsPerSession - globalAvg) / globalAvg) * 100) : 0
+      };
+    });
   };
+
+  const enrichedDayOfWeekData = useMemo(() => getEnrichedDayOfWeekData(), [workoutHistory]);
+
+  // 🚀 FONCTION POUR CALCULER LES MÉTRIQUES ENRICHIES PAR JOUR
+  const getEnrichedMetrics = () => {
+    if (!workoutHistory || workoutHistory.length === 0) {
+      return {
+        exerciseTypeDistribution: {},
+        consistency: 0,
+        favoriteDay: null,
+        weeklyBalance: {},
+        recommendations: []
+      };
+    }
+
+    // 1. Répartition par type d'exercice par jour
+    const exerciseTypeDistribution = {};
+    const dayStats = {};
+    
+    // Classification des exercices par type
+    const classifyExerciseType = (exerciseName) => {
+      const name = exerciseName.toLowerCase();
+      if (name.includes('pompes') || name.includes('dips') || name.includes('pectoraux') || name.includes('développé')) {
+        return 'Force - Pectoraux';
+      }
+      if (name.includes('tractions') || name.includes('rowing') || name.includes('dos') || name.includes('tirage')) {
+        return 'Force - Dos';
+      }
+      if (name.includes('squat') || name.includes('fentes') || name.includes('jambes') || name.includes('cuisses')) {
+        return 'Force - Jambes';
+      }
+      if (name.includes('curl') || name.includes('biceps') || name.includes('triceps') || name.includes('bras')) {
+        return 'Force - Bras';
+      }
+      if (name.includes('abdos') || name.includes('gainage') || name.includes('planche') || name.includes('core')) {
+        return 'Force - Core';
+      }
+      if (name.includes('cardio') || name.includes('course') || name.includes('vélo') || name.includes('rameur')) {
+        return 'Cardio';
+      }
+      if (name.includes('étirement') || name.includes('yoga') || name.includes('mobilité') || name.includes('souplesse')) {
+        return 'Mobilité';
+      }
+      return 'Force - Général';
+    };
+
+    // Analyse des données par jour de la semaine
+    workoutHistory.forEach(session => {
+      const dayOfWeek = new Date(session.date).toLocaleDateString('fr-FR', { weekday: 'long' });
+      const dayKey = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
+      
+      if (!dayStats[dayKey]) {
+        dayStats[dayKey] = {
+          totalSessions: 0,
+          totalReps: 0,
+          exerciseTypes: {},
+          dates: []
+        };
+      }
+      
+      dayStats[dayKey].totalSessions++;
+      dayStats[dayKey].dates.push(session.date);
+      if (!session.exercises || !Array.isArray(session.exercises)) return;
+      
+      session.exercises.forEach(exercise => {
+        const exerciseType = classifyExerciseType(exercise.name);
+        const reps = (exercise.sets && Array.isArray(exercise.sets)) 
+          ? exercise.sets.reduce((sum, set) => sum + (set.reps || 0), 0) 
+          : 0;
+        
+        dayStats[dayKey].totalReps += reps;
+        
+        if (!dayStats[dayKey].exerciseTypes[exerciseType]) {
+          dayStats[dayKey].exerciseTypes[exerciseType] = 0;
+        }
+        dayStats[dayKey].exerciseTypes[exerciseType] += reps;
+      });
+    });
+
+    // 2. Calcul de la consistance (pourcentage de jours où on s'entraîne)
+    const totalDays = Math.max(1, Math.ceil((new Date() - new Date(workoutHistory[0]?.date || new Date())) / (1000 * 60 * 60 * 24)));
+    const activeDays = new Set(workoutHistory.map(session => session.date.split('T')[0])).size;
+    const consistency = Math.round((activeDays / totalDays) * 100);
+
+    // 3. Jour préféré (jour avec le plus d'activité)
+    const favoriteDay = Object.entries(dayStats).reduce((best, [day, stats]) => {
+      const score = stats.totalReps + (stats.totalSessions * 10); // Pondération sessions
+      return !best || score > best.score ? { day, score, stats } : best;
+    }, null);
+
+    // 4. Équilibrage de la semaine
+    const weeklyBalance = {};
+    const totalWeeklyReps = Object.values(dayStats).reduce((sum, stats) => sum + stats.totalReps, 0);
+    
+    Object.entries(dayStats).forEach(([day, stats]) => {
+      weeklyBalance[day] = {
+        percentage: totalWeeklyReps > 0 ? Math.round((stats.totalReps / totalWeeklyReps) * 100) : 0,
+        intensity: stats.totalReps / Math.max(1, stats.totalSessions), // Reps moyennes par session
+        frequency: stats.totalSessions
+      };
+    });
+
+    // 5. Recommandations intelligentes
+    const recommendations = [];
+    
+    // Recommandation d'équilibrage
+    const dayPercentages = Object.values(weeklyBalance).map(b => b.percentage);
+    const maxPercentage = Math.max(...dayPercentages);
+    const minPercentage = Math.min(...dayPercentages.filter(p => p > 0));
+    
+    if (maxPercentage - minPercentage > 40) {
+      const overloadedDay = Object.entries(weeklyBalance).find(([_, stats]) => stats.percentage === maxPercentage)?.[0];
+      const underloadedDays = Object.entries(weeklyBalance)
+        .filter(([_, stats]) => stats.percentage < 15 && stats.percentage > 0)
+        .map(([day, _]) => day);
+      
+      if (overloadedDay && underloadedDays.length > 0) {
+        recommendations.push({
+          type: 'balance',
+          priority: 'high',
+          title: 'Rééquilibrage recommandé',
+          message: `${overloadedDay} représente ${maxPercentage}% de votre volume. Répartissez mieux sur ${underloadedDays.join(', ')}.`,
+          icon: '⚖️'
+        });
+      }
+    }
+
+    // Recommandation de consistance
+    if (consistency < 30) {
+      recommendations.push({
+        type: 'consistency',
+        priority: 'high',
+        title: 'Améliorez votre régularité',
+        message: `Consistance actuelle: ${consistency}%. Visez 3-4 séances par semaine pour de meilleurs résultats.`,
+        icon: '📅'
+      });
+    } else if (consistency > 70) {
+      recommendations.push({
+        type: 'consistency',
+        priority: 'low',
+        title: 'Excellente régularité !',
+        message: `Consistance de ${consistency}%. Continuez ainsi, c'est parfait !`,
+        icon: '🎯'
+      });
+    }
+
+    // Recommandation de diversité
+    const exerciseTypes = new Set();
+    Object.values(dayStats).forEach(stats => {
+      Object.keys(stats.exerciseTypes).forEach(type => exerciseTypes.add(type));
+    });
+    
+    if (exerciseTypes.size < 3) {
+      recommendations.push({
+        type: 'diversity',
+        priority: 'medium',
+        title: 'Diversifiez vos exercices',
+        message: `Vous pratiquez ${exerciseTypes.size} types d'exercices. Ajoutez du cardio ou de la mobilité.`,
+        icon: '🎨'
+      });
+    }
+
+    // Recommandation de jour de repos
+    const restDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
+      .filter(day => !dayStats[day] || dayStats[day].totalSessions === 0);
+    
+    if (restDays.length === 0) {
+      recommendations.push({
+        type: 'rest',
+        priority: 'high',
+        title: 'Pensez au repos',
+        message: 'Vous vous entraînez tous les jours. Intégrez 1-2 jours de repos pour la récupération.',
+        icon: '😴'
+      });
+    }
+
+    return {
+      exerciseTypeDistribution: dayStats,
+      consistency,
+      favoriteDay,
+      weeklyBalance,
+      recommendations: recommendations.sort((a, b) => {
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        return priorityOrder[b.priority] - priorityOrder[a.priority];
+      })
+    };
+  };
+
+  const enrichedMetrics = useMemo(() => getEnrichedMetrics(), [workoutHistory]);
+
+  // Analyse temporelle avancée
+  const getTemporalAnalysis = () => {
+    if (!workoutHistory.length) return null;
+
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+    // Données par période
+    const last30Days = workoutHistory.filter(s => new Date(s.date) >= thirtyDaysAgo);
+    const days31to60 = workoutHistory.filter(s => {
+      const date = new Date(s.date);
+      return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+    });
+    const days61to90 = workoutHistory.filter(s => {
+      const date = new Date(s.date);
+      return date >= ninetyDaysAgo && date < sixtyDaysAgo;
+    });
+
+    // Calcul des moyennes par période
+    const calculatePeriodStats = (sessions) => {
+      if (!sessions.length) return { avgReps: 0, avgSessions: 0, totalReps: 0 };
+      const totalReps = sessions.reduce((sum, s) => sum + s.totalReps, 0);
+      return {
+        totalReps,
+        avgReps: Math.round(totalReps / sessions.length),
+        avgSessions: sessions.length / 30 // sessions par jour sur 30 jours
+      };
+    };
+
+    const stats30 = calculatePeriodStats(last30Days);
+    const stats60 = calculatePeriodStats(days31to60);
+    const stats90 = calculatePeriodStats(days61to90);
+
+    // Tendances et comparaisons
+    const trend30vs60 = stats30.avgReps > stats60.avgReps ? 'hausse' : 
+                       stats30.avgReps < stats60.avgReps ? 'baisse' : 'stable';
+    const trend60vs90 = stats60.avgReps > stats90.avgReps ? 'hausse' : 
+                       stats60.avgReps < stats90.avgReps ? 'baisse' : 'stable';
+
+    // Analyse saisonnière (par mois)
+    const monthlyData = {};
+    workoutHistory.forEach(session => {
+      const month = new Date(session.date).getMonth();
+      const monthName = new Date(2024, month).toLocaleDateString('fr-FR', { month: 'long' });
+      if (!monthlyData[monthName]) {
+        monthlyData[monthName] = { sessions: 0, totalReps: 0 };
+      }
+      monthlyData[monthName].sessions++;
+      monthlyData[monthName].totalReps += session.totalReps;
+    });
+
+    // Meilleur et pire mois
+    const monthEntries = Object.entries(monthlyData);
+    const bestMonth = monthEntries.reduce((best, [month, data]) => 
+      !best || data.totalReps > best[1].totalReps ? [month, data] : best, null);
+    const worstMonth = monthEntries.reduce((worst, [month, data]) => 
+      !worst || data.totalReps < worst[1].totalReps ? [month, data] : worst, null);
+
+    // Prédictions basées sur les tendances
+    const predictNextMonth = () => {
+      if (trend30vs60 === 'hausse' && trend60vs90 === 'hausse') {
+        return {
+          prediction: 'forte_hausse',
+          confidence: 85,
+          expectedReps: Math.round(stats30.avgReps * 1.15),
+          message: 'Tendance très positive ! Continuez sur cette lancée.'
+        };
+      } else if (trend30vs60 === 'hausse') {
+        return {
+          prediction: 'hausse',
+          confidence: 70,
+          expectedReps: Math.round(stats30.avgReps * 1.08),
+          message: 'Progression encourageante, maintenez l\'effort.'
+        };
+      } else if (trend30vs60 === 'baisse') {
+        return {
+          prediction: 'baisse',
+          confidence: 65,
+          expectedReps: Math.round(stats30.avgReps * 0.92),
+          message: 'Attention à la baisse, revigorez votre motivation.'
+        };
+      } else {
+        return {
+          prediction: 'stable',
+          confidence: 60,
+          expectedReps: stats30.avgReps,
+          message: 'Performance stable, essayez de nouveaux défis.'
+        };
+      }
+    };
+
+    return {
+      periods: {
+        last30Days: stats30,
+        days31to60: stats60,
+        days61to90: stats90
+      },
+      trends: {
+        recent: trend30vs60,
+        longTerm: trend60vs90
+      },
+      seasonal: {
+        monthlyData,
+        bestMonth: bestMonth ? { name: bestMonth[0], ...bestMonth[1] } : null,
+        worstMonth: worstMonth ? { name: worstMonth[0], ...worstMonth[1] } : null
+      },
+      prediction: predictNextMonth()
+    };
+  };
+
+  const temporalAnalysis = useMemo(() => getTemporalAnalysis(), [workoutHistory]);
 
   // Comparaison mois actuel vs mois précédent
   const getMonthComparison = () => {
@@ -514,7 +869,8 @@ const ChartsTab = () => {
       'Biceps': ['curl', 'biceps'],
       'Triceps': ['triceps', 'extensions'],
       'Jambes': ['squats', 'fentes', 'jambes'],
-      'Épaules': ['épaules', 'développé']
+      'Épaules': ['épaules', 'développé'],
+      'Activités Complémentaires': ['boxe', 'natation']
     };
 
     const volumes = {};
@@ -529,8 +885,15 @@ const ChartsTab = () => {
         const exerciseName = exercise.name.toLowerCase();
         Object.keys(muscleGroups).forEach(group => {
           if (muscleGroups[group].some(keyword => exerciseName.includes(keyword))) {
-            volumes[group] += exercise.reps;
-            totalVolume += exercise.reps;
+            // Pour les activités complémentaires, utiliser la durée au lieu des reps
+            if (group === 'Activités Complémentaires') {
+              const duration = exercise.duration || 0;
+              volumes[group] += duration;
+              totalVolume += duration;
+            } else {
+              volumes[group] += exercise.reps || 0;
+              totalVolume += exercise.reps || 0;
+            }
           }
         });
       });
@@ -539,7 +902,8 @@ const ChartsTab = () => {
     return Object.keys(volumes).map(group => ({
       group,
       reps: volumes[group],
-      percentage: totalVolume > 0 ? Math.round((volumes[group] / totalVolume) * 100) : 0
+      percentage: totalVolume > 0 ? Math.round((volumes[group] / totalVolume) * 100) : 0,
+      unit: group === 'Activités Complémentaires' ? 'min' : 'reps'
     })).filter(item => item.reps > 0);
   };
 
@@ -625,7 +989,7 @@ const ChartsTab = () => {
   };
 
   const progressionData = selectedExercise ? getProgressionData(selectedExercise) : [];
-  const dayOfWeekData = getRepsPerDayOfWeek();
+  const dayOfWeekData = getEnrichedDayOfWeekData();
   const monthComparison = getMonthComparison();
   const muscleGroupData = getVolumeByMuscleGroup();
   const trends = getTrends();
@@ -1587,59 +1951,638 @@ const ChartsTab = () => {
     );
   };
 
-  const renderDayOfWeekChart = () => (
-    <Card className="mb-6">
-      <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-        <BarChart3 className="mr-2" size={20} />
-        Reps par Jour de la Semaine
-      </h3>
-      
-      <div className="bg-slate-700/50 rounded-lg p-4">
-        <div className="h-48 flex items-end space-x-2">
-          {dayOfWeekData.map((day, index) => {
-            const maxReps = Math.max(...dayOfWeekData.map(d => d.reps));
-            const height = maxReps > 0 ? (day.reps / maxReps) * 100 : 0;
-            
-            const getBarColor = (intensity) => {
-              switch (intensity) {
-                case 'high': return 'from-red-600 to-red-400';
-                case 'medium': return 'from-yellow-600 to-yellow-400';
-                case 'low': return 'from-green-600 to-green-400';
-                default: return 'from-gray-600 to-gray-400';
-              }
-            };
+  const renderDayOfWeekChart = () => {
+    const maxReps = Math.max(...enrichedDayOfWeekData.map(d => d.reps));
+    const minReps = Math.min(...enrichedDayOfWeekData.map(d => d.reps));
+    
+    // Calcul des axes Y avec 6 niveaux
+    const yAxisLevels = [];
+    for (let i = 0; i <= 5; i++) {
+      yAxisLevels.push(Math.round(minReps + (maxReps - minReps) * (i / 5)));
+    }
+    
+    const getBarColor = (intensity) => {
+      switch (intensity) {
+        case 'high': return 'from-red-600 via-red-500 to-red-400';
+        case 'medium': return 'from-yellow-600 via-yellow-500 to-yellow-400';
+        case 'low': return 'from-green-600 via-green-500 to-green-400';
+        default: return 'from-gray-600 via-gray-500 to-gray-400';
+      }
+    };
 
-            return (
-              <div key={index} className="flex-1 flex flex-col items-center">
-                <div 
-                  className={`bg-gradient-to-t ${getBarColor(day.intensity)} rounded-t-sm min-h-[4px] w-full`}
-                  style={{ height: `${height}%` }}
-                  title={`${day.day}: ${day.reps} reps`}
-                />
-                <span className="text-xs text-gray-400 mt-2">{day.day.slice(0, 3)}</span>
-                <span className="text-xs text-white font-medium">{day.reps}</span>
+    const getBarShadow = (intensity) => {
+      switch (intensity) {
+        case 'high': return 'shadow-red-500/30';
+        case 'medium': return 'shadow-yellow-500/30';
+        case 'low': return 'shadow-green-500/30';
+        default: return 'shadow-gray-500/20';
+      }
+    };
+
+    const handleBarClick = (dayData) => {
+      setSelectedDay(selectedDay?.day === dayData.day ? null : dayData);
+    };
+
+    const renderTooltip = (dayData) => {
+      if (!hoveredDay || hoveredDay.day !== dayData.day) return null;
+      
+      return (
+        <div className="absolute z-50 bg-slate-800 border border-slate-600 rounded-lg p-4 shadow-xl min-w-64 -top-2 left-1/2 transform -translate-x-1/2 -translate-y-full">
+          <div className="text-white space-y-2">
+            <div className="font-bold text-lg border-b border-slate-600 pb-2">
+              {dayData.day}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-slate-400">Total répétitions:</span>
+                <div className="font-semibold text-white">{dayData.reps}</div>
               </div>
-            );
-          })}
+              <div>
+                <span className="text-slate-400">Séances:</span>
+                <div className="font-semibold text-white">{dayData.totalSessions}</div>
+              </div>
+              <div>
+                <span className="text-slate-400">Moy. par séance:</span>
+                <div className="font-semibold text-white">{dayData.avgRepsPerSession}</div>
+              </div>
+              <div>
+                <span className="text-slate-400">Record séance:</span>
+                <div className="font-semibold text-white">{dayData.maxSessionReps}</div>
+              </div>
+            </div>
+            
+            <div className="border-t border-slate-600 pt-2">
+              <span className="text-slate-400 text-sm">Vs moyenne générale:</span>
+              <div className={`font-semibold ${dayData.comparisonToAvg > 0 ? 'text-green-400' : dayData.comparisonToAvg < 0 ? 'text-red-400' : 'text-slate-300'}`}>
+                {dayData.comparisonToAvg > 0 ? '+' : ''}{dayData.comparisonToAvg}%
+              </div>
+            </div>
+            
+            {dayData.topExercises.length > 0 && (
+              <div className="border-t border-slate-600 pt-2">
+                <span className="text-slate-400 text-sm">Exercices populaires:</span>
+                <div className="space-y-1 mt-1">
+                  {dayData.topExercises.slice(0, 2).map((ex, idx) => (
+                    <div key={idx} className="text-xs">
+                      <span className="text-white">{ex.name}</span>
+                      <span className="text-slate-400 ml-2">({ex.totalReps} reps)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Flèche du tooltip */}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+        </div>
+      );
+    };
+
+    return (
+      <Card className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white flex items-center">
+            <BarChart3 className="mr-2" size={20} />
+            Analyse par Jour de la Semaine
+          </h3>
+          
+          {/* Sélecteur de mode de vue */}
+          <div className="flex bg-slate-700 rounded-lg p-1">
+            <button
+              onClick={() => setSelectedMode('total')}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                selectedMode === 'total' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              Total
+            </button>
+            <button
+              onClick={() => setSelectedMode('average')}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                selectedMode === 'average' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              Moyenne
+            </button>
+            <button
+              onClick={() => setSelectedMode('sessions')}
+              className={`px-3 py-1 text-xs rounded transition-colors ${
+                selectedMode === 'sessions' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              Séances
+            </button>
+          </div>
         </div>
         
-        <div className="mt-4 flex justify-center space-x-4 text-xs">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-gradient-to-r from-red-600 to-red-400 rounded mr-1"></div>
-            <span className="text-gray-300">Très intense (&gt;250)</span>
+        <div className="bg-slate-700/50 rounded-lg p-6 relative">
+          {/* Grille de fond et axes Y */}
+          <div className="absolute left-0 top-0 w-full h-full pointer-events-none">
+            <div className="relative h-full ml-12 mr-4 mt-4 mb-8">
+              {/* Lignes de grille horizontales */}
+              {yAxisLevels.map((level, index) => (
+                <div
+                  key={index}
+                  className="absolute w-full border-t border-slate-600/30"
+                  style={{ bottom: `${(index / 5) * 100}%` }}
+                >
+                  <span className="absolute -left-10 -top-2 text-xs text-slate-400 font-mono">
+                    {level}
+                  </span>
+                </div>
+              ))}
+              
+              {/* Axe Y */}
+              <div className="absolute -left-12 top-0 bottom-0 w-px bg-slate-500/50"></div>
+              
+              {/* Axe X */}
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-slate-500/50"></div>
+            </div>
           </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded mr-1"></div>
-            <span className="text-gray-300">Modéré (100-250)</span>
+
+          {/* Graphique principal */}
+          <div className="relative ml-12 mr-4 mt-4 mb-8">
+            <div className="h-64 flex items-end justify-between">
+              {enrichedDayOfWeekData.map((day, index) => {
+                const displayValue = selectedMode === 'average' ? day.avgRepsPerSession : 
+                                   selectedMode === 'sessions' ? day.totalSessions : day.reps;
+                const maxValue = selectedMode === 'average' ? Math.max(...enrichedDayOfWeekData.map(d => d.avgRepsPerSession)) :
+                                selectedMode === 'sessions' ? Math.max(...enrichedDayOfWeekData.map(d => d.totalSessions)) : maxReps;
+                const height = maxValue > 0 ? (displayValue / maxValue) * 100 : 0;
+                
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center mx-1 relative">
+                    {/* Tooltip */}
+                    {renderTooltip(day)}
+                    
+                    {/* Barre 3D avec animation et interactivité */}
+                    <div className="relative w-full max-w-16">
+                      <div 
+                        className={`
+                          bg-gradient-to-t ${getBarColor(day.intensity)} 
+                          rounded-t-lg min-h-[4px] w-full relative cursor-pointer
+                          transform transition-all duration-1000 ease-out
+                          shadow-lg ${getBarShadow(day.intensity)}
+                          hover:scale-105 hover:shadow-xl
+                          animate-[slideUp_1s_ease-out_${index * 0.1}s_both]
+                          ${selectedDay?.day === day.day ? 'ring-2 ring-blue-400 scale-105' : ''}
+                        `}
+                        style={{ 
+                          height: `${height}%`,
+                          animationDelay: `${index * 0.1}s`
+                        }}
+                        onMouseEnter={() => setHoveredDay(day)}
+                        onMouseLeave={() => setHoveredDay(null)}
+                        onClick={() => handleBarClick(day)}
+                      >
+                        {/* Effet 3D - face avant */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-t-lg"></div>
+                        
+                        {/* Effet 3D - côté droit */}
+                        <div className="absolute -right-1 top-1 bottom-0 w-1 bg-black/30 transform skew-y-12 rounded-tr-sm"></div>
+                        
+                        {/* Effet 3D - dessus */}
+                        <div className="absolute -top-1 left-0 right-0 h-1 bg-white/20 transform -skew-x-12 rounded-t-lg"></div>
+                        
+                        {/* Valeur au sommet */}
+                        {displayValue > 0 && (
+                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white bg-slate-800/80 px-2 py-1 rounded whitespace-nowrap">
+                            {displayValue}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Labels des jours */}
+                    <div className="mt-3 text-center">
+                      <div className="text-xs text-slate-300 font-medium">
+                        {day.day.slice(0, 3)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-gradient-to-r from-green-600 to-green-400 rounded mr-1"></div>
-            <span className="text-gray-300">Léger (&lt;100)</span>
+          
+          {/* Légende améliorée */}
+          <div className="mt-6 flex justify-center space-x-6 text-xs">
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-gradient-to-r from-red-600 to-red-400 rounded shadow-sm mr-2"></div>
+              <span className="text-slate-300">Très intense (&gt;150% moy.)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-gradient-to-r from-yellow-600 to-yellow-400 rounded shadow-sm mr-2"></div>
+              <span className="text-slate-300">Modéré (80-150% moy.)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-gradient-to-r from-green-600 to-green-400 rounded shadow-sm mr-2"></div>
+              <span className="text-slate-300">Léger (&lt;80% moy.)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-gradient-to-r from-gray-600 to-gray-400 rounded shadow-sm mr-2"></div>
+              <span className="text-slate-300">Repos</span>
+            </div>
           </div>
         </div>
+
+        {/* Détails du jour sélectionné */}
+        {selectedDay && (
+          <div className="mt-4 bg-slate-800/50 rounded-lg p-4 border border-slate-600">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-white font-semibold">Détails - {selectedDay.day}</h4>
+              <button 
+                onClick={() => setSelectedDay(null)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="bg-slate-700/50 rounded p-3">
+                <div className="text-slate-400">Total répétitions</div>
+                <div className="text-xl font-bold text-white">{selectedDay.reps}</div>
+              </div>
+              <div className="bg-slate-700/50 rounded p-3">
+                <div className="text-slate-400">Séances</div>
+                <div className="text-xl font-bold text-white">{selectedDay.totalSessions}</div>
+              </div>
+              <div className="bg-slate-700/50 rounded p-3">
+                <div className="text-slate-400">Moy. par séance</div>
+                <div className="text-xl font-bold text-white">{selectedDay.avgRepsPerSession}</div>
+              </div>
+              <div className="bg-slate-700/50 rounded p-3">
+                <div className="text-slate-400">Record séance</div>
+                <div className="text-xl font-bold text-white">{selectedDay.maxSessionReps}</div>
+              </div>
+            </div>
+            
+            {selectedDay.topExercises.length > 0 && (
+              <div className="mt-4">
+                <h5 className="text-slate-300 font-medium mb-2">Exercices les plus pratiqués</h5>
+                <div className="space-y-2">
+                  {selectedDay.topExercises.map((ex, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-slate-700/30 rounded p-2">
+                      <span className="text-white">{ex.name}</span>
+                      <div className="text-right">
+                        <div className="text-white font-medium">{ex.totalReps} reps</div>
+                        <div className="text-xs text-slate-400">{ex.count} fois</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Styles CSS pour les animations */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes slideUp {
+              from {
+                height: 0;
+                opacity: 0;
+                transform: translateY(10px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `
+        }} />
+      </Card>
+    );
+  };
+
+  // Métriques enrichies pour l'analyse par jour de la semaine
+  // Analyse temporelle avancée - Composant de rendu
+  const renderTemporalAnalysis = () => {
+    if (!temporalAnalysis) return null;
+
+    const { periods, trends, seasonal, prediction } = temporalAnalysis;
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Comparaison des périodes */}
+        <Card className="bg-slate-800/50 border-slate-600">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <Clock className="mr-2" size={18} />
+            Analyse Temporelle (30/60/90 jours)
+          </h4>
+          
+          <div className="space-y-4">
+            {/* 30 derniers jours */}
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-300">30 derniers jours</span>
+                <div className="flex items-center">
+                  {trends.recent === 'hausse' && <TrendingUp className="text-green-500 mr-1" size={16} />}
+                  {trends.recent === 'baisse' && <TrendingDown className="text-red-500 mr-1" size={16} />}
+                  {trends.recent === 'stable' && <span className="text-gray-500 mr-1">→</span>}
+                  <span className="text-lg font-bold text-white">{periods.last30Days.avgReps}</span>
+                </div>
+              </div>
+              <div className="text-xs text-slate-400">
+                {periods.last30Days.totalReps} reps total • {periods.last30Days.avgSessions.toFixed(1)} sessions/jour
+              </div>
+            </div>
+
+            {/* 31-60 jours */}
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-300">31-60 jours</span>
+                <span className="text-lg font-bold text-white">{periods.days31to60.avgReps}</span>
+              </div>
+              <div className="text-xs text-slate-400">
+                {periods.days31to60.totalReps} reps total • {periods.days31to60.avgSessions.toFixed(1)} sessions/jour
+              </div>
+            </div>
+
+            {/* 61-90 jours */}
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-300">61-90 jours</span>
+                <span className="text-lg font-bold text-white">{periods.days61to90.avgReps}</span>
+              </div>
+              <div className="text-xs text-slate-400">
+                {periods.days61to90.totalReps} reps total • {periods.days61to90.avgSessions.toFixed(1)} sessions/jour
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Analyse saisonnière */}
+        <Card className="bg-slate-800/50 border-slate-600">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <Calendar className="mr-2" size={18} />
+            Analyse Saisonnière
+          </h4>
+          
+          <div className="space-y-4">
+            {/* Meilleur mois */}
+            {seasonal.bestMonth && (
+              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <Award className="text-yellow-500 mr-2" size={16} />
+                    <span className="text-sm text-slate-300">Meilleur mois</span>
+                  </div>
+                  <span className="text-lg font-bold text-white capitalize">{seasonal.bestMonth.name}</span>
+                </div>
+                <div className="text-xs text-slate-400">
+                  {seasonal.bestMonth.totalReps} reps • {seasonal.bestMonth.sessions} sessions
+                </div>
+              </div>
+            )}
+
+            {/* Pire mois */}
+            {seasonal.worstMonth && (
+              <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <Target className="text-red-500 mr-2" size={16} />
+                    <span className="text-sm text-slate-300">Mois à améliorer</span>
+                  </div>
+                  <span className="text-lg font-bold text-white capitalize">{seasonal.worstMonth.name}</span>
+                </div>
+                <div className="text-xs text-slate-400">
+                  {seasonal.worstMonth.totalReps} reps • {seasonal.worstMonth.sessions} sessions
+                </div>
+              </div>
+            )}
+
+            {/* Données mensuelles */}
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <h5 className="text-sm font-medium text-white mb-3">Performance par mois</h5>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {Object.entries(seasonal.monthlyData)
+                  .sort(([,a], [,b]) => b.totalReps - a.totalReps)
+                  .map(([month, data]) => (
+                    <div key={month} className="flex justify-between items-center text-xs">
+                      <span className="text-slate-300 capitalize">{month}</span>
+                      <div className="text-right">
+                        <div className="text-white font-medium">{data.totalReps} reps</div>
+                        <div className="text-slate-400">{data.sessions} sessions</div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Prédictions */}
+        <Card className="bg-slate-800/50 border-slate-600 lg:col-span-2">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <Zap className="mr-2" size={18} />
+            Prédictions & Tendances
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Prédiction du mois prochain */}
+            <div className={`rounded-lg p-4 border-l-4 ${
+              prediction.prediction === 'forte_hausse' ? 'bg-green-900/20 border-green-500' :
+              prediction.prediction === 'hausse' ? 'bg-blue-900/20 border-blue-500' :
+              prediction.prediction === 'baisse' ? 'bg-red-900/20 border-red-500' :
+              'bg-yellow-900/20 border-yellow-500'
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-300">Prédiction mois prochain</span>
+                <div className="flex items-center">
+                  {prediction.prediction === 'forte_hausse' && '🚀'}
+                  {prediction.prediction === 'hausse' && '📈'}
+                  {prediction.prediction === 'baisse' && '📉'}
+                  {prediction.prediction === 'stable' && '⚖️'}
+                  <span className="ml-2 text-lg font-bold text-white">{prediction.expectedReps}</span>
+                </div>
+              </div>
+              <div className="text-xs text-slate-400 mb-2">
+                Confiance: {prediction.confidence}%
+              </div>
+              <div className="text-sm text-slate-300">{prediction.message}</div>
+            </div>
+
+            {/* Tendances générales */}
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <h5 className="text-sm font-medium text-white mb-3">Tendances détectées</h5>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-300">Tendance récente (30j)</span>
+                  <div className="flex items-center">
+                    {trends.recent === 'hausse' && <TrendingUp className="text-green-500" size={14} />}
+                    {trends.recent === 'baisse' && <TrendingDown className="text-red-500" size={14} />}
+                    {trends.recent === 'stable' && <span className="text-gray-500">→</span>}
+                    <span className="ml-1 text-xs text-white capitalize">{trends.recent}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-300">Tendance long terme (60j)</span>
+                  <div className="flex items-center">
+                    {trends.longTerm === 'hausse' && <TrendingUp className="text-green-500" size={14} />}
+                    {trends.longTerm === 'baisse' && <TrendingDown className="text-red-500" size={14} />}
+                    {trends.longTerm === 'stable' && <span className="text-gray-500">→</span>}
+                    <span className="ml-1 text-xs text-white capitalize">{trends.longTerm}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
-    </Card>
-  );
+    );
+  };
+
+  const renderEnrichedMetrics = () => {
+    if (!enrichedMetrics) return null;
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Répartition par type d'exercice */}
+        <Card className="bg-slate-800/50 border-slate-600">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <Target className="mr-2" size={18} />
+            Répartition par Type d'Exercice
+          </h4>
+          
+          <div className="space-y-4">
+            {Object.entries(enrichedMetrics.exerciseTypeDistribution).map(([day, types]) => (
+              <div key={day} className="bg-slate-700/30 rounded-lg p-3">
+                <div className="text-sm font-medium text-white mb-2">{day}</div>
+                <div className="space-y-2">
+                  {Object.entries(types).map(([type, data]) => (
+                    <div key={type} className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${
+                          type === 'cardio' ? 'bg-red-500' :
+                          type === 'force' ? 'bg-blue-500' :
+                          type === 'flexibilité' ? 'bg-green-500' :
+                          'bg-purple-500'
+                        }`}></div>
+                        <span className="text-sm text-slate-300 capitalize">{type}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-white">{data.reps}</div>
+                        <div className="text-xs text-slate-400">{data.percentage.toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Métriques de consistance et recommandations */}
+        <Card className="bg-slate-800/50 border-slate-600">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <Activity className="mr-2" size={18} />
+            Analyse de Performance
+          </h4>
+          
+          <div className="space-y-4">
+            {/* Consistance */}
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-300">Consistance</span>
+                <span className="text-lg font-bold text-white">{enrichedMetrics.consistency.toFixed(1)}%</span>
+              </div>
+              <div className="w-full bg-slate-600 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-500 ${
+                    enrichedMetrics.consistency >= 80 ? 'bg-green-500' :
+                    enrichedMetrics.consistency >= 60 ? 'bg-yellow-500' :
+                    'bg-red-500'
+                  }`}
+                  style={{ width: `${enrichedMetrics.consistency}%` }}
+                ></div>
+              </div>
+              <div className="text-xs text-slate-400 mt-1">
+                {enrichedMetrics.consistency >= 80 ? 'Excellent ! 🔥' :
+                 enrichedMetrics.consistency >= 60 ? 'Bien, continue ! 💪' :
+                 'Tu peux faire mieux ! 🎯'}
+              </div>
+            </div>
+
+            {/* Jour préféré */}
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-300">Jour préféré</span>
+                <div className="flex items-center">
+                  <Award className="text-yellow-500 mr-1" size={16} />
+                  <span className="text-lg font-bold text-white">{enrichedMetrics.favoriteDay}</span>
+                </div>
+              </div>
+              <div className="text-xs text-slate-400">
+                {enrichedMetrics.favoriteDayStats.reps} reps en moyenne
+              </div>
+            </div>
+
+            {/* Équilibrage hebdomadaire */}
+            <div className="bg-slate-700/30 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-300">Équilibrage</span>
+                <span className={`text-lg font-bold ${
+                  enrichedMetrics.weeklyBalance >= 80 ? 'text-green-500' :
+                  enrichedMetrics.weeklyBalance >= 60 ? 'text-yellow-500' :
+                  'text-red-500'
+                }`}>
+                  {enrichedMetrics.weeklyBalance.toFixed(0)}%
+                </span>
+              </div>
+              <div className="text-xs text-slate-400">
+                {enrichedMetrics.weeklyBalance >= 80 ? 'Semaine bien équilibrée ⚖️' :
+                 enrichedMetrics.weeklyBalance >= 60 ? 'Équilibrage correct 📊' :
+                 'Concentré sur certains jours 📈'}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Recommandations intelligentes */}
+        <Card className="bg-slate-800/50 border-slate-600 lg:col-span-2">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <Lightbulb className="mr-2" size={18} />
+            Recommandations Intelligentes
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {enrichedMetrics.recommendations.map((rec, index) => (
+              <div key={index} className={`rounded-lg p-4 border-l-4 ${
+                rec.type === 'success' ? 'bg-green-900/20 border-green-500' :
+                rec.type === 'warning' ? 'bg-yellow-900/20 border-yellow-500' :
+                rec.type === 'info' ? 'bg-blue-900/20 border-blue-500' :
+                'bg-red-900/20 border-red-500'
+              }`}>
+                <div className="flex items-start">
+                  <div className="mr-3 mt-1">
+                    {rec.type === 'success' && '✅'}
+                    {rec.type === 'warning' && '⚠️'}
+                    {rec.type === 'info' && 'ℹ️'}
+                    {rec.type === 'danger' && '🚨'}
+                  </div>
+                  <div>
+                    <div className="font-medium text-white mb-1">{rec.title}</div>
+                    <div className="text-sm text-slate-300">{rec.message}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+  };
 
   const renderMonthComparison = () => {
     const currentMonth = new Date().toLocaleDateString('fr-FR', { month: 'long' });
@@ -1774,7 +2717,7 @@ const ChartsTab = () => {
                 </div>
               </div>
               <div className="w-16 text-right">
-                <div className="text-sm font-medium text-white">{group.reps}</div>
+                <div className="text-sm font-medium text-white">{group.reps} {group.unit || 'reps'}</div>
                 <div className="text-xs text-gray-400">{group.percentage}%</div>
               </div>
             </div>
@@ -1905,6 +2848,8 @@ const ChartsTab = () => {
           {renderTrends()}
           {renderProgressionChart()}
           {renderDayOfWeekChart()}
+          {renderEnrichedMetrics()}
+          {renderTemporalAnalysis()}
           {renderMonthComparison()}
           {renderMuscleGroupVolume()}
         </>

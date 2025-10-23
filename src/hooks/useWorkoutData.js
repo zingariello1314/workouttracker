@@ -1,5 +1,100 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+// Données de test pour l'historique d'entraînement
+const generateTestWorkoutData = () => {
+  const testData = {
+    checkedExercises: {},
+    reps: {},
+    checkedStretches: {},
+    startDate: null,
+    weekVariant: 'A',
+    progressPhotos: []
+  };
+
+  // Générer des données pour les 30 derniers jours
+  const today = new Date();
+  
+  // Pool d'exercices avec les vrais IDs du programme
+  const exercisePool = [
+    // Lundi - Dos/Biceps
+    { id: 101, reps: () => Math.floor(Math.random() * 8) + 5 }, // Tractions
+    { id: 102, reps: () => Math.floor(Math.random() * 12) + 8 }, // Tractions australiennes
+    { id: 103, reps: () => Math.floor(Math.random() * 10) + 6 }, // Dips
+    { id: 104, reps: () => Math.floor(Math.random() * 12) + 8 }, // Pompes déclinées
+    { id: 105, reps: () => Math.floor(Math.random() * 20) + 15 }, // Relevés de genoux
+    
+    // Mardi - Pectoraux/Triceps/Épaules
+    { id: 201, reps: () => Math.floor(Math.random() * 12) + 8 }, // Pompes lestées
+    { id: 202, reps: () => Math.floor(Math.random() * 12) + 8 }, // Pompes inclinées
+    { id: 203, reps: () => Math.floor(Math.random() * 10) + 8 }, // Curl alterné
+    { id: 204, reps: () => Math.floor(Math.random() * 12) + 8 }, // Curl marteau
+    { id: 206, reps: () => Math.floor(Math.random() * 12) + 8 }, // Pompes serrées diamant
+    
+    // Mercredi - Boxe
+    { id: 301, reps: () => Math.floor(Math.random() * 10) + 8 }, // Pompes déclinées
+    { id: 302, reps: () => Math.floor(Math.random() * 10) + 8 }, // Pompes pseudo-planche
+    { id: 303, reps: () => Math.floor(Math.random() * 10) + 8 }, // Développé militaire
+    { id: 304, reps: () => Math.floor(Math.random() * 15) + 10 }, // Élévations latérales
+    { id: 307, reps: () => Math.floor(Math.random() * 12) + 8 }, // Extensions triceps
+    
+    // Vendredi - Salle
+    { id: 501, reps: () => Math.floor(Math.random() * 5) + 3 }, // Tractions supination
+    { id: 502, reps: () => Math.floor(Math.random() * 12) + 8 }, // Tractions australiennes
+    { id: 503, reps: () => Math.floor(Math.random() * 8) + 5 }, // Dips parallèles
+    { id: 504, reps: () => Math.floor(Math.random() * 10) + 8 }, // Pompes déclinées
+    { id: 505, reps: () => Math.floor(Math.random() * 20) + 15 }, // Relevés de genoux
+    
+    // Samedi - Variante
+    { id: 601, reps: () => Math.floor(Math.random() * 12) + 8 }, // Pompes inclinées tempo
+    { id: 602, reps: () => Math.floor(Math.random() * 12) + 8 }, // Pompes serrées tempo
+    { id: 603, reps: () => Math.floor(Math.random() * 10) + 8 }, // Curl concentration
+    { id: 604, reps: () => Math.floor(Math.random() * 12) + 8 }, // Curl marteau
+    
+    // Dimanche - Repos actif
+    { id: 701, reps: () => Math.floor(Math.random() * 12) + 8 }, // Pompes sur poignées
+    { id: 702, reps: () => Math.floor(Math.random() * 10) + 8 }, // Pompes pseudo-planche
+    { id: 703, reps: () => Math.floor(Math.random() * 10) + 8 }, // Développé militaire
+    
+    // Variantes salle samedi
+    { id: 631, reps: () => Math.floor(Math.random() * 10) + 6 }, // Développé incliné haltères
+    { id: 632, reps: () => Math.floor(Math.random() * 10) + 6 }, // Développé incliné barre
+    { id: 638, reps: () => Math.floor(Math.random() * 12) + 8 }, // Curl incliné haltères
+    { id: 639, reps: () => Math.floor(Math.random() * 12) + 8 }, // Curl marteau
+    
+    // Variantes salle dimanche (jambes)
+    { id: 731, reps: () => Math.floor(Math.random() * 10) + 6 }, // Squat
+    { id: 732, reps: () => Math.floor(Math.random() * 12) + 8 }, // Presse à cuisses
+    { id: 733, reps: () => Math.floor(Math.random() * 10) + 8 }, // Fentes marchées
+    { id: 738, reps: () => Math.floor(Math.random() * 20) + 15 } // Mollets debout
+  ];
+
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+
+    // Simuler quelques exercices complétés de manière aléatoire
+    if (Math.random() > 0.25) { // 75% de chance d'avoir fait du sport ce jour-là
+      // Sélectionner 3-6 exercices aléatoires du pool
+      const numExercises = Math.floor(Math.random() * 4) + 3;
+      const selectedExercises = [];
+      
+      // Mélanger le pool d'exercices et prendre les premiers
+      const shuffledPool = [...exercisePool].sort(() => Math.random() - 0.5);
+      
+      for (let j = 0; j < numExercises && j < shuffledPool.length; j++) {
+        const exercise = shuffledPool[j];
+        const key = `${dateStr}_${exercise.id}`;
+        testData.checkedExercises[key] = true;
+        testData.reps[key] = exercise.reps();
+        selectedExercises.push(exercise.id);
+      }
+    }
+  }
+
+  return testData;
+};
+
 export const useWorkoutData = () => {
   const [data, setData] = useState({
     checkedExercises: {},
@@ -7,7 +102,8 @@ export const useWorkoutData = () => {
     checkedStretches: {},
     startDate: null,
     weekVariant: 'A',
-    progressPhotos: []
+    progressPhotos: [],
+    sessionFeedbacks: {} // Nouveau: stockage des feedbacks de session par date
   });
 
   // Tous les useRef doivent être déclarés avant les useCallback et useEffect
@@ -124,6 +220,7 @@ export const useWorkoutData = () => {
         startDate: newData && newData.startDate ? newData.startDate : null,
         weekVariant: newData && newData.weekVariant ? newData.weekVariant : 'A',
         progressPhotos: newData && newData.progressPhotos ? [...newData.progressPhotos] : [],
+        sessionFeedbacks: newData && newData.sessionFeedbacks ? { ...newData.sessionFeedbacks } : {},
         lastSaved: new Date().toISOString(),
         dataVersion: '1.0' // Ajout d'une version pour la compatibilité future
       };
@@ -226,7 +323,8 @@ export const useWorkoutData = () => {
               checkedStretches: result.checkedStretches || {},
               startDate: result.startDate || null,
               weekVariant: result.weekVariant || 'A',
-              progressPhotos: Array.isArray(result.progressPhotos) ? result.progressPhotos : []
+              progressPhotos: Array.isArray(result.progressPhotos) ? result.progressPhotos : [],
+              sessionFeedbacks: result.sessionFeedbacks || {}
             };
             
             resolve(validatedData);
@@ -287,6 +385,13 @@ export const useWorkoutData = () => {
     const savedData = await loadFromDB();
     if (savedData) {
       setData(savedData);
+    } else {
+      // Si aucune donnée n'existe, charger les données de test
+      console.log('🎯 Aucune donnée trouvée, chargement des données de test...');
+      const testData = generateTestWorkoutData();
+      setData(testData);
+      // Sauvegarder les données de test
+      await saveToDB(testData);
     }
     // Marquer que le chargement initial est terminé
     isInitialLoadRef.current = false;
@@ -332,10 +437,28 @@ export const useWorkoutData = () => {
     };
   }, []);
 
+  // Fonction pour sauvegarder un feedback de session
+  const saveSessionFeedback = useCallback((date, feedbackData) => {
+    const newData = {
+      ...data,
+      sessionFeedbacks: {
+        ...data.sessionFeedbacks,
+        [date]: {
+          ...feedbackData,
+          timestamp: new Date().toISOString()
+        }
+      }
+    };
+    
+    setData(newData);
+    autoSave(newData);
+  }, [data, autoSave]);
+
   return {
     data,
     updateData,
     saveToDB,
-    loadFromDB
+    loadFromDB,
+    saveSessionFeedback
   };
 };

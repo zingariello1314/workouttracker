@@ -1,7 +1,8 @@
 // Programme d'entraînement complet Cycle 3+1
+
 export const workoutProgram = {
   lundi: {
-    name: "Street Workout-Boxe",
+    name: "Street Workout + Boxe",
     focus: "dos / core / contrôle",
     etirements: {
       matin: "1 min respiration nasale lente (assis ou allongé, main sur ventre) + 1 min auto-grandissement assis (aligner tête/colonne/bassin) + 2 min mobilisation cervicale (flexion / extension / rotation douce) + 2 min rotations d'épaules, bras pendants, debout",
@@ -21,14 +22,21 @@ export const workoutProgram = {
       { id: 110, name: "Jambes tendues rétroversées", series: "20×", type: "circuit_abdos" },
       { id: 111, name: "Gainage latéral", series: "30 sec chaque côté", type: "circuit_abdos" },
       { id: 112, name: "Crunchs inversés", series: "15×", type: "circuit_abdos" },
-      { id: 113, name: "Vacuum allongé", series: "5 cycles", type: "circuit_abdos" }
+      { id: 113, name: "Vacuum allongé", series: "5 cycles", type: "circuit_abdos" },
+      { id: 114, name: "Boxe", series: "1×90min", materiel: "Gants de boxe", type: "cardio_technique", notes: "19h30-21h - coordination, cardio, stress_relief" }
     ],
     duree: "1h",
-    notes: "Boxe 1h30 de 19h30 à 21h"
+    complementaryActivity: {
+      name: "Boxe",
+      duration: 90,
+      timeSlot: "19h30-21h",
+      type: "cardio_technique",
+      benefits: ["coordination", "cardio", "stress_relief"]
+    }
   },
 
   mardi: {
-    name: "Natation / Maison",
+    name: "Biceps / Pectoraux + Natation",
     focus: "Biceps / Pectoraux / Haut du torse",
     etirements: {
       matin: "3 min respiration allongée ventre + bassin surélevé + 2 min mobilité scapulaire (cercles bras tendus devant, coude fléchi) + 2 min étirement actif du haut du dos (assis, mains croisées loin devant)",
@@ -42,14 +50,21 @@ export const workoutProgram = {
       { id: 204, name: "Curl marteau", series: "3×12 par bras", materiel: "haltère" },
       { id: 205, name: "Curl Zottman", series: "3×10 par bras", materiel: "haltère", notes: "montée supination, descente pronation" },
       { id: 206, name: "Pompes serrées diamant", series: "3×12", materiel: "poids du corps" },
-      { id: 207, name: "Planche bras tendus", series: "3×30 sec", materiel: "poids du corps", type: "finisher" }
+      { id: 207, name: "Planche bras tendus", series: "3×30 sec", materiel: "poids du corps", type: "finisher" },
+      { id: 208, name: "Natation", series: "1×90min", materiel: "Piscine", type: "cardio_endurance", notes: "19h30-21h - cardio, endurance, recovery" }
     ],
     duree: "45-55 min",
-    notes: "Natation 2h + récup. Option lourde : gilet sur les 2 premières séries de pompes"
+    complementaryActivity: {
+      name: "Natation",
+      duration: 90,
+      timeSlot: "19h30-21h",
+      type: "cardio_endurance",
+      benefits: ["cardio", "endurance", "recovery"]
+    }
   },
 
   mercredi: {
-    name: "Boxe - Maison",
+    name: "Pectoraux / Triceps + Boxe",
     focus: "Pectoraux / Triceps / Épaules",
     etirements: {
       matin: "2 min étirement ischio (assis, dos droit, jambes tendues) + 2 min activation fessiers (ponts au sol, 2x15 reps lentes) + 2 min assouplissement psoas (fente + bras opposé en élévation)",
@@ -66,10 +81,17 @@ export const workoutProgram = {
       { id: 307, name: "Extensions triceps unilatérales", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps", notes: "au-dessus de la tête" },
       { id: 308, name: "Kickbacks triceps", series: "10-12 par bras", materiel: "haltère", type: "bloc_triceps" },
       { id: 309, name: "Pompes diamant lentes", series: "10-12", materiel: "poids du corps", type: "bloc_triceps", notes: "3s descente / 1s montée" },
-      { id: 310, name: "Pompes sur poignées tempo", series: "3×12", materiel: "poignées", type: "finisher", notes: "Focus contrôle et congestion" }
+      { id: 310, name: "Pompes sur poignées tempo", series: "3×12", materiel: "poignées", type: "finisher", notes: "Focus contrôle et congestion" },
+      { id: 311, name: "Boxe", series: "1×90min", materiel: "Gants de boxe", type: "cardio_technique", notes: "19h30-21h - coordination, cardio, stress_relief" }
     ],
     duree: "60-70 min",
-    notes: "Superset épaules - 3 à 4 tours (30s entre exos / 90s entre tours). Bloc triceps - 3 à 4 tours (30-45s entre exos / 90s entre tours)"
+    complementaryActivity: {
+      name: "Boxe",
+      duration: 90,
+      timeSlot: "19h30-21h",
+      type: "cardio_technique",
+      benefits: ["coordination", "cardio", "stress_relief"]
+    }
   },
 
   jeudi: {
@@ -86,28 +108,32 @@ export const workoutProgram = {
   },
 
   vendredi: {
-    name: "Street Workout variante",
-    focus: "dos / core / contrôle - variante",
+    name: "Jambes / Fessiers + Boxe",
+    focus: "Jambes / Fessiers / Stabilité",
     etirements: {
-      matin: "2 min en appui contre mur (tête/omoplates/fesses/talons) + 1 min marche lente pieds nus (ancrage plantaire) + 2 min élévation sur demi-pointes (activation mollets/posture)",
-      midi: "2 min squat passif (ou assis sur talons si trop dur) + 1 min balancier bras jambe opposée debout + 1 min allongé, jambes en chaise à 90°, focus respiration",
-      soir: "2 min pendule bras + hanche + 2 min relâchement lombaire (genoux pliés, bascule douce bassin) + 2 min jambe à la verticale (décompression veineuse + bassin)"
+      matin: "3 min respiration allongée ventre + bassin surélevé + 2 min mobilité scapulaire (cercles bras tendus devant, coude fléchi) + 2 min étirement actif du haut du dos (assis, mains croisées loin devant)",
+      midi: "2 min ouverture en Y sur le mur (dos collé, bras glissent) + 1 min posture du sphinx (lombaires relâchées, tête rentrée) + 2 min massage auto myofascial (balle ou main sur pectoraux)",
+      soir: "2 min étirement cou + trapèzes (assise, inclinaisons lentes) + 2 min couchée sur rouleau serviette vertical (bras ouverts) + 1 min respiration nasale profonde, tempo 4-4-4"
     },
     exercices: [
-      { id: 501, name: "Tractions supination", series: "4×3", materiel: "barre + gilet lesté" },
-      { id: 502, name: "Tractions australiennes pieds surélevés", series: "4×10-12", materiel: "barre + support" },
-      { id: 503, name: "Dips sur barre parallèle avec gilet", series: "3×6-8", materiel: "parallèles + gilet" },
-      { id: 504, name: "Pompes déclinées", series: "5×10", materiel: "support", notes: "haut des pecs" },
-      { id: 505, name: "Relevés de genoux à la barre", series: "3×20", materiel: "barre" },
-      { id: 506, name: "Relevés de genoux aux parallèles", series: "2×20", materiel: "parallèles" },
-      { id: 507, name: "Mountain climbers", series: "30 sec", type: "circuit_abdos" },
-      { id: 508, name: "Planche dynamique", series: "1 min", type: "circuit_abdos" },
-      { id: 509, name: "Crunch bicyclettes", series: "12×", type: "circuit_abdos" },
-      { id: 510, name: "Gainage latéral dynamique", series: "30 sec", type: "circuit_abdos" },
-      { id: 511, name: "Crunch inversés", series: "12×", type: "circuit_abdos" },
-      { id: 512, name: "Vacuum", series: "5 cycles", type: "circuit_abdos" }
+      { id: 501, name: "Squats lestés", series: "4×12-15", materiel: "gilet lesté", notes: "Descente contrôlée 3s" },
+      { id: 502, name: "Fentes alternées", series: "3×12 par jambe", materiel: "haltère" },
+      { id: 503, name: "Squats bulgares", series: "3×10 par jambe", materiel: "support + haltère" },
+      { id: 504, name: "Soulevé de terre roumain", series: "4×12", materiel: "haltère", notes: "Focus ischio + fessiers" },
+      { id: 505, name: "Hip thrust", series: "3×15", materiel: "support + haltère", notes: "Contraction fessiers 2s" },
+      { id: 506, name: "Squats sautés", series: "3×12", materiel: "poids du corps", type: "explosif" },
+      { id: 507, name: "Mollets debout", series: "3×20", materiel: "haltère" },
+      { id: 508, name: "Gainage latéral", series: "2×30s par côté", materiel: "poids du corps", type: "finisher" },
+      { id: 509, name: "Boxe", series: "1×90min", materiel: "Gants de boxe", type: "cardio_technique", notes: "19h30-21h - coordination, cardio, stress_relief" }
     ],
-    duree: "1h"
+    duree: "55-65 min",
+    complementaryActivity: {
+      name: "Boxe",
+      duration: 90,
+      timeSlot: "19h30-21h",
+      type: "cardio_technique",
+      benefits: ["coordination", "cardio", "stress_relief"]
+    }
   },
 
   samedi: {

@@ -45,10 +45,31 @@ const StatsTab = () => {
     );
     const activeDays = new Set(filteredHistory.map(session => session.date)).size;
     
+    // Calculer les statistiques des activités complémentaires
+    const complementaryStats = filteredHistory.reduce((stats, session) => {
+      const complementaryExercises = session.exercises?.filter(ex => ex.isComplementary) || [];
+      complementaryExercises.forEach(ex => {
+        if (ex.name === 'Boxe') {
+          stats.boxeSessions++;
+          stats.boxeDuration += parseInt(ex.duration) || 0;
+        } else if (ex.name === 'Natation') {
+          stats.natationSessions++;
+          stats.natationDuration += parseInt(ex.duration) || 0;
+        }
+      });
+      return stats;
+    }, {
+      boxeSessions: 0,
+      boxeDuration: 0,
+      natationSessions: 0,
+      natationDuration: 0
+    });
+    
     return {
       totalWorkouts,
       totalReps,
-      activeDays
+      activeDays,
+      complementaryStats
     };
   };
 
@@ -235,6 +256,71 @@ const StatsTab = () => {
           </Card.Content>
         </Card>
       </div>
+
+      {/* Statistiques des activités complémentaires */}
+      {(stats.complementaryStats.boxeSessions > 0 || stats.complementaryStats.natationSessions > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {stats.complementaryStats.boxeSessions > 0 && (
+            <Card>
+              <Card.Header>
+                <Card.Title className="flex items-center">
+                  🥊 Boxe
+                </Card.Title>
+              </Card.Header>
+              <Card.Content>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Séances</span>
+                    <span className="font-semibold">{stats.complementaryStats.boxeSessions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Durée totale</span>
+                    <span className="font-semibold">{stats.complementaryStats.boxeDuration} min</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Moyenne par séance</span>
+                    <span className="font-semibold">
+                      {stats.complementaryStats.boxeSessions > 0 
+                        ? Math.round(stats.complementaryStats.boxeDuration / stats.complementaryStats.boxeSessions) 
+                        : 0} min
+                    </span>
+                  </div>
+                </div>
+              </Card.Content>
+            </Card>
+          )}
+
+          {stats.complementaryStats.natationSessions > 0 && (
+            <Card>
+              <Card.Header>
+                <Card.Title className="flex items-center">
+                  🏊‍♂️ Natation
+                </Card.Title>
+              </Card.Header>
+              <Card.Content>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Séances</span>
+                    <span className="font-semibold">{stats.complementaryStats.natationSessions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Durée totale</span>
+                    <span className="font-semibold">{stats.complementaryStats.natationDuration} min</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Moyenne par séance</span>
+                    <span className="font-semibold">
+                      {stats.complementaryStats.natationSessions > 0 
+                        ? Math.round(stats.complementaryStats.natationDuration / stats.complementaryStats.natationSessions) 
+                        : 0} min
+                    </span>
+                  </div>
+                </div>
+              </Card.Content>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Bouton statistiques avancées */}
       <div className="text-center">

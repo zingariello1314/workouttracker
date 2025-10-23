@@ -217,6 +217,45 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   </div>
                 )}
 
+                {/* Activités complémentaires */}
+                {dayData.complementaryActivity && (
+                  <div className="mb-8">
+                    <h3 className={`${typography.presets.h3} mb-4 flex items-center gap-2`}>
+                      <Sun size={20} className="text-green-400" />
+                      Activité complémentaire
+                    </h3>
+                    <div className="bg-green-700/20 rounded-lg p-4 border border-green-600/30">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="font-medium text-slate-200">{dayData.complementaryActivity.name}</h4>
+                        <span className="bg-green-500/20 text-green-200 px-2 py-1 rounded text-xs">
+                          {dayData.complementaryActivity.type}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-slate-300 mb-2">
+                        <div>
+                          <span className="text-slate-400">Durée:</span>
+                          <div className="font-medium">{dayData.complementaryActivity.duration}</div>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Intensité:</span>
+                          <div className="font-medium capitalize">{dayData.complementaryActivity.intensity}</div>
+                        </div>
+                        {dayData.complementaryActivity.distance && (
+                          <div>
+                            <span className="text-slate-400">Distance:</span>
+                            <div className="font-medium">{dayData.complementaryActivity.distance}</div>
+                          </div>
+                        )}
+                      </div>
+                      {dayData.complementaryActivity.notes && (
+                        <div className="text-xs text-slate-400 italic mt-2">
+                          {dayData.complementaryActivity.notes}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Exercices */}
                 {dayData.exercises && dayData.exercises.length > 0 && (
                   <div>

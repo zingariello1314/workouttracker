@@ -192,6 +192,26 @@ export const useWorkoutStats = (data, activeProgram = null) => {
             };
           }).filter(ex => ex.completed);
 
+          // Ajouter les activités complémentaires si elles sont cochées
+          if (workout.complementaryActivity) {
+            const complementaryKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`;
+            const isComplementaryCompleted = data.checkedExercises[complementaryKey] || false;
+            
+            if (isComplementaryCompleted) {
+              exercises.push({
+                id: `complementary_${workout.complementaryActivity.name.toLowerCase()}`,
+                nom: workout.complementaryActivity.name,
+                name: workout.complementaryActivity.name,
+                type: workout.complementaryActivity.type,
+                reps: parseInt(workout.complementaryActivity.duration) || 0, // Utiliser la durée comme "reps"
+                completed: true,
+                isComplementary: true,
+                duration: workout.complementaryActivity.duration,
+                intensity: workout.complementaryActivity.intensity
+              });
+            }
+          }
+
           if (exercises.length > 0) {
             // Calculer la durée réelle de la session
             const calculateSessionDuration = () => {

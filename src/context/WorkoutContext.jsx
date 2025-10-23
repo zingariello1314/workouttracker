@@ -65,10 +65,21 @@ const WorkoutProvider = ({ children }) => {
   const isInitialLoadRef = useRef(true);
 
   // Hooks personnalisés
-  const { data, updateData, loadFromDB, saveToDB } = useWorkoutData();
+  const { data, updateData, loadFromDB, saveToDB, saveSessionFeedback } = useWorkoutData();
   
   // État pour l'historique des programmes
   const [programHistory, setProgramHistory] = useState([]);
+
+  // Fonction de sauvegarde automatique avec debounce pour le contexte (déplacée ici)
+  const autoSaveContext = useCallback((contextData) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
+      saveContextToDB(contextData);
+    }, 1000);
+  }, []);
 
   // Fonction pour obtenir les données actuelles (temp ou réelles)
   const getCurrentData = () => {
@@ -437,17 +448,6 @@ const WorkoutProvider = ({ children }) => {
     }
   };
 
-  // Fonction de sauvegarde automatique avec debounce pour le contexte
-  const autoSaveContext = useCallback((contextData) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    
-    debounceTimerRef.current = setTimeout(() => {
-      saveContextToDB(contextData);
-    }, 1000);
-  }, []);
-
   // Hooks personnalisés pour la logique et les statistiques
   const workoutLogic = useWorkoutLogic(data, updateData);
   const workoutStats = useWorkoutStats(getCurrentData(), activeProgram);
@@ -626,6 +626,9 @@ const WorkoutProvider = ({ children }) => {
     // Programmes personnalisés
     customPrograms,
     setCustomPrograms,
+    
+    // Fonctions de données
+    saveSessionFeedback,
     
     // Hooks personnalisés
     ...workoutLogic,
