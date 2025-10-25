@@ -13,7 +13,6 @@ import ExercisesTab from './components/tabs/ExercisesTab';
 import HistoryTab from './components/tabs/HistoryTab';
 import SettingsTab from './components/tabs/SettingsTab';
 import PredictionsTab from './components/PredictionsTab';
-import StreaksTab from './components/StreaksTab';
 import SmartBalancingTab from './components/SmartBalancingTab';
 import ExerciseVariations from './components/ExerciseVariations/ExerciseVariations';
 import AdvancedStats from './components/AdvancedStats';
@@ -41,7 +40,6 @@ const WorkoutTrackerContent = () => {
     showSessionFeedback,
     setShowSessionFeedback,
     sessionData,
-    saveSessionFeedback,
     getWorkoutHistory
   } = useWorkout();
 
@@ -67,8 +65,6 @@ const WorkoutTrackerContent = () => {
         return <HistoryTab />;
       case 'predictions':
         return <PredictionsTab />;
-      case 'streaks':
-        return <StreaksTab />;
       case 'smart-balancing':
         return <SmartBalancingTab />;
       case 'settings':
@@ -110,8 +106,6 @@ const WorkoutTrackerContent = () => {
           isOpen={showSessionFeedback}
           onClose={() => setShowSessionFeedback(false)}
           onSave={(feedbackData) => {
-            const today = new Date().toISOString().split('T')[0];
-            saveSessionFeedback(today, feedbackData);
             console.log('Session feedback sauvegardé:', feedbackData);
             setShowSessionFeedback(false);
           }}

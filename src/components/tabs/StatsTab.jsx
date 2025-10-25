@@ -41,7 +41,7 @@ const StatsTab = () => {
     
     const totalWorkouts = filteredHistory.length;
     const totalReps = filteredHistory.reduce((sum, session) => 
-      sum + (session.exercises?.reduce((reps, ex) => reps + (ex.reps || 0), 0) || 0), 0
+      sum + (session.exercises?.reduce((reps, ex) => reps + (parseInt(ex.reps) || 0), 0) || 0), 0
     );
     const activeDays = new Set(filteredHistory.map(session => session.date)).size;
     

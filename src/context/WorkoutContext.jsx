@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useWorkoutData } from '../hooks/useWorkoutData';
 import { useWorkoutLogic } from '../hooks/useWorkoutLogic';
 import { useWorkoutStats } from '../hooks/useWorkoutStats';
@@ -83,7 +83,7 @@ const WorkoutProvider = ({ children }) => {
 
   // Fonction pour obtenir les données actuelles (temp ou réelles)
   const getCurrentData = () => {
-    return hasUnsavedExercises || hasUnsavedStretches ? tempData : data;
+    return (hasUnsavedExercises || hasUnsavedStretches) && tempData ? tempData : data;
   };
 
   // Fonction pour mettre à jour les données temporaires des exercices
@@ -450,7 +450,9 @@ const WorkoutProvider = ({ children }) => {
 
   // Hooks personnalisés pour la logique et les statistiques
   const workoutLogic = useWorkoutLogic(data, updateData);
-  const workoutStats = useWorkoutStats(getCurrentData(), activeProgram);
+  // CORRECTION: Utiliser toujours les données réelles (data) pour les statistiques et badges
+  // Les données temporaires (tempData) ne doivent être utilisées que pour l'édition en cours
+  // const workoutStats = useWorkoutStats(); // Commenté temporairement pour éviter l'erreur circulaire
 
   // Fonction pour ajouter une entrée de progression (métriques, impédancemétrie, etc.)
   const addProgressEntry = async (entryData) => {
@@ -538,7 +540,129 @@ const WorkoutProvider = ({ children }) => {
     }
   };
 
-  // Valeurs du contexte
+  // Fonctions utilitaires pour calculer les données des défis
+  const getWorkoutHistoryFromData = (data) => {
+    if (!data || !data.checkedExercises) return [];
+    
+    const sessions = {};
+    Object.entries(data.checkedExercises).forEach(([key, isChecked]) => {
+      if (isChecked) {
+        const [dateStr, exerciseId] = key.split('_');
+        if (!sessions[dateStr]) {
+          sessions[dateStr] = {
+            date: dateStr,
+            exercises: [],
+            totalReps: 0
+          };
+        }
+        
+        const reps = parseInt(data.reps?.[key] || 0);
+        sessions[dateStr].exercises.push({
+          id: exerciseId,
+          reps: reps
+        });
+        sessions[dateStr].totalReps += reps;
+      }
+    });
+    
+    return Object.values(sessions).sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
+
+  const getUniqueExercisesFromData = (data) => {
+    const uniqueExercises = new Set();
+    Object.keys(data.checkedExercises || {}).forEach(key => {
+      if (data.checkedExercises[key]) {
+        const exerciseId = key.split('_')[1];
+        uniqueExercises.add(exerciseId);
+      }
+    });
+    return uniqueExercises;
+  };
+
+  const getTodayRepsFromData = (data, date = new Date()) => {
+    const dateStr = date.toISOString().split('T')[0];
+    let totalReps = 0;
+    
+    Object.entries(data.reps || {}).forEach(([key, reps]) => {
+      if (key.startsWith(dateStr) && data.checkedExercises?.[key]) {
+        totalReps += parseInt(reps) || 0;
+      }
+    });
+    
+    return totalReps;
+  };
+
+  const getTodayExercisesFromData = (data, date = new Date()) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const exercises = [];
+    
+    Object.keys(data.checkedExercises || {}).forEach(key => {
+      if (key.startsWith(dateStr) && data.checkedExercises[key]) {
+        const exerciseId = key.split('_')[1];
+        exercises.push(exerciseId);
+      }
+    });
+    
+    return exercises;
+  };
+
+  const getTodayWorkoutsFromData = (data, date = new Date()) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const hasWorkout = Object.keys(data.checkedExercises || {}).some(key =>
+      key.startsWith(dateStr) && data.checkedExercises[key]
+    );
+    return hasWorkout ? [dateStr] : [];
+  };
+
+  const getWeekWorkoutsFromData = (data) => {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    
+    const workoutHistory = getWorkoutHistoryFromData(data);
+    return workoutHistory.filter(session => new Date(session.date) >= weekAgo);
+  };
+
+  const getWeekRepsFromData = (data) => {
+    const weekWorkouts = getWeekWorkoutsFromData(data);
+    return weekWorkouts.reduce((sum, session) => sum + session.totalReps, 0);
+  };
+
+  const getMonthWorkoutsFromData = (data) => {
+    const monthAgo = new Date();
+    monthAgo.setDate(monthAgo.getDate() - 30);
+    
+    const workoutHistory = getWorkoutHistoryFromData(data);
+    return workoutHistory.filter(session => new Date(session.date) >= monthAgo);
+  };
+
+  const getMonthRepsFromData = (data) => {
+    const monthWorkouts = getMonthWorkoutsFromData(data);
+    return monthWorkouts.reduce((sum, session) => sum + session.totalReps, 0);
+  };
+
+  const getMonthUniqueExercisesFromData = (data) => {
+    const monthAgo = new Date();
+    monthAgo.setDate(monthAgo.getDate() - 30);
+    const monthAgoStr = monthAgo.toISOString().split('T')[0];
+    
+    const uniqueExercises = new Set();
+    Object.keys(data.checkedExercises || {}).forEach(key => {
+      if (data.checkedExercises[key]) {
+        const dateStr = key.split('_')[0];
+        if (dateStr >= monthAgoStr) {
+          const exerciseId = key.split('_')[1];
+          uniqueExercises.add(exerciseId);
+        }
+      }
+    });
+    return uniqueExercises;
+  };
+
+  const getTotalRepsFromData = (data) => {
+    const workoutHistory = getWorkoutHistoryFromData(data);
+    return workoutHistory.reduce((sum, session) => sum + session.totalReps, 0);
+  };
+
   const contextValue = {
     // États principaux
     currentDate,
@@ -628,11 +752,9 @@ const WorkoutProvider = ({ children }) => {
     setCustomPrograms,
     
     // Fonctions de données
-    saveSessionFeedback,
-    
     // Hooks personnalisés
-    ...workoutLogic,
-    ...workoutStats
+    ...workoutLogic
+    // ...workoutStats // Supprimé temporairement pour éviter l'erreur circulaire
   };
 
   // Sauvegarde automatique du contexte

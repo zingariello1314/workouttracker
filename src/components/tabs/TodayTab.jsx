@@ -6,6 +6,7 @@ import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Checkbox } from '../ui/Input';
 import { typography } from '../../styles/typography';
+import { getAutoWeekVariant } from '../../utils/dateUtils';
 
 const TodayTab = () => {
   const {
@@ -111,12 +112,22 @@ const TodayTab = () => {
   const handleExerciseCheck = (exerciseId, date) => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
-    const key = `${dateStr}_${exerciseId}`;
+    const workout = getTodayWorkout(date, isGymMode);
+    
+    // Générer la clé appropriée selon le type d'exercice
+    let key = `${dateStr}_${exerciseId}`;
+    
+    // Si c'est un exercice de salle (mode gym activé), ajouter le suffixe de semaine
+    if (isGymMode && workout.isGymMode) {
+      const currentWeekVariant = getAutoWeekVariant(date);
+      const weekSuffix = currentWeekVariant === 'A' ? '_semaineA' : '_semaineB';
+      key = `${dateStr}_${exerciseId}${weekSuffix}`;
+    }
+    
     const isCurrentlyChecked = currentData.checkedExercises[key] || false;
     
     // Si pas encore coché, calculer les reps automatiques
     if (!isCurrentlyChecked) {
-      const workout = getTodayWorkout(date, isGymMode);
       const exercise = workout.exercices?.find(ex => ex.id === exerciseId);
       
       if (exercise && exercise.series) {
@@ -168,7 +179,17 @@ const TodayTab = () => {
   const updateLocalReps = (exerciseId, reps, date) => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
-    const key = `${dateStr}_${exerciseId}`;
+    const workout = getTodayWorkout(date, isGymMode);
+    
+    // Générer la clé appropriée selon le type d'exercice
+    let key = `${dateStr}_${exerciseId}`;
+    
+    // Si c'est un exercice de salle (mode gym activé), ajouter le suffixe de semaine
+    if (isGymMode && workout.isGymMode) {
+      const currentWeekVariant = getAutoWeekVariant(date);
+      const weekSuffix = currentWeekVariant === 'A' ? '_semaineA' : '_semaineB';
+      key = `${dateStr}_${exerciseId}${weekSuffix}`;
+    }
     
     const newData = {
       ...currentData,
@@ -228,6 +249,9 @@ const TodayTab = () => {
   const dateStr = getDateStr(currentDate);
   const dayName = getDayName(currentDate);
 
+  // Calculer la variante de semaine automatique (toujours basée sur la date)
+  const currentWeekVariant = getAutoWeekVariant(currentDate);
+
   // Vérifier si des variantes gym sont disponibles pour ce jour
   const hasGymVariants = (dayName === 'samedi' || dayName === 'dimanche') && 
                         workoutProgram[dayName] && 
@@ -237,7 +261,16 @@ const TodayTab = () => {
     // Calculer la durée réelle basée sur les exercices accomplis
     const calculateSessionDuration = () => {
       const completedExercises = workout.exercices.filter(exercise => {
-        const exerciseKey = `${dateStr}_${exercise.id}`;
+        // Générer la clé appropriée selon le type d'exercice
+        let exerciseKey = `${dateStr}_${exercise.id}`;
+        
+        // Si c'est un exercice de salle (mode gym activé), ajouter le suffixe de semaine
+        if (isGymMode && workout.isGymMode) {
+          const currentWeekVariant = getAutoWeekVariant(currentDate);
+          const weekSuffix = currentWeekVariant === 'A' ? '_semaineA' : '_semaineB';
+          exerciseKey = `${dateStr}_${exercise.id}${weekSuffix}`;
+        }
+        
         return data.checkedExercises[exerciseKey] || false;
       });
       
@@ -400,7 +433,7 @@ const TodayTab = () => {
             </div>
             {data.weekVariant && (
               <span className="text-xs text-gray-400 bg-slate-700/30 px-2 py-1 rounded">
-                Semaine {data.weekVariant}
+                Semaine {currentWeekVariant}
               </span>
             )}
           </div>
@@ -415,7 +448,16 @@ const TodayTab = () => {
         <div className="space-y-3">
           {/* Exercices classiques */}
           {workout.exercices.map((exercise) => {
-            const exerciseKey = `${dateStr}_${exercise.id}`;
+            // Générer la clé appropriée selon le type d'exercice
+            let exerciseKey = `${dateStr}_${exercise.id}`;
+            
+            // Si c'est un exercice de salle (mode gym activé), ajouter le suffixe de semaine
+            if (isGymMode && workout.isGymMode) {
+              const currentWeekVariant = getAutoWeekVariant(currentDate);
+              const weekSuffix = currentWeekVariant === 'A' ? '_semaineA' : '_semaineB';
+              exerciseKey = `${dateStr}_${exercise.id}${weekSuffix}`;
+            }
+            
             const currentData = getCurrentData();
             const isChecked = currentData.checkedExercises[exerciseKey] || false;
             const reps = currentData.reps[exerciseKey] || '';

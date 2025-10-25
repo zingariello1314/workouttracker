@@ -135,7 +135,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
       timestamp: new Date().toISOString(),
       sessionId: sessionData?.id || Date.now(),
       sessionDuration: sessionData?.duration || 0,
-      totalReps: sessionData?.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0,
+      totalReps: sessionData?.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0,
       totalExercises: sessionData?.exercises?.length || 0
     };
     onSave(feedbackData);
@@ -295,7 +295,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">
-                    {sessionData.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0}
+                    {sessionData.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0}
                   </div>
                   <div className="text-slate-400">Total reps</div>
                 </div>

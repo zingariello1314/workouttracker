@@ -1,15 +1,12 @@
+import { useWorkout } from '../context/WorkoutContext';
 import { workoutProgram } from '../data/workoutProgram';
 import { getDateStr } from '../utils/dateUtils';
 
-export const useWorkoutStats = (data, activeProgram = null) => {
-
-  const getDayName = (date) => {
-    const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-    return days[date.getDay()];
-  };
+export const useWorkoutStats = () => {
+  const { getCurrentProgram, getDayName, getDateStr, getCurrentData, activeProgram } = useWorkout();
 
   // Fonction pour obtenir le programme à utiliser (actif ou par défaut)
-  const getCurrentProgram = () => {
+  const getProgram = () => {
     if (activeProgram && activeProgram.schedule) {
       // Convertir le format du programme actif vers le format attendu
       const convertedProgram = {};
@@ -51,14 +48,15 @@ export const useWorkoutStats = (data, activeProgram = null) => {
   const getStats = (period) => {
     const { startDate, endDate } = getDateRange(period);
     const stats = {};
+    const currentData = getCurrentData();
     
-    Object.entries(data.reps).forEach(([key, reps]) => {
+    Object.entries(currentData.reps).forEach(([key, reps]) => {
       const [dateStr, exerciseId] = key.split('_');
       const date = new Date(dateStr);
       
       if (date >= startDate && date <= endDate) {
         const dayName = getDayName(date);
-        const currentProgram = getCurrentProgram();
+        const currentProgram = getProgram();
         const workout = currentProgram[dayName];
         if (workout) {
           const exercise = workout.exercices.find(ex => ex.id.toString() === exerciseId);
@@ -97,14 +95,15 @@ export const useWorkoutStats = (data, activeProgram = null) => {
   const getCurrentStreak = () => {
     let streak = 0;
     const today = new Date();
+    const currentData = getCurrentData();
     
     for (let i = 0; i < 365; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() - i);
       const dateStr = getDateStr(checkDate);
       
-      const hasWorkout = Object.keys(data.checkedExercises).some(key =>
-        key.startsWith(dateStr) && data.checkedExercises[key]
+      const hasWorkout = Object.keys(currentData.checkedExercises).some(key =>
+        key.startsWith(dateStr) && currentData.checkedExercises[key]
       );
       
       if (hasWorkout) {
@@ -120,12 +119,13 @@ export const useWorkoutStats = (data, activeProgram = null) => {
   const getLongestStreak = () => {
     let maxStreak = 0;
     let currentStreak = 0;
-    const dates = [...new Set(Object.keys(data.checkedExercises).map(key => key.split('_')[0]))].sort();
+    const currentData = getCurrentData();
+    const dates = [...new Set(Object.keys(currentData.checkedExercises).map(key => key.split('_')[0]))].sort();
     
     for (let i = 0; i < dates.length; i++) {
       const dateStr = dates[i];
-      const hasWorkout = Object.keys(data.checkedExercises).some(key =>
-        key.startsWith(dateStr) && data.checkedExercises[key]
+      const hasWorkout = Object.keys(currentData.checkedExercises).some(key =>
+        key.startsWith(dateStr) && currentData.checkedExercises[key]
       );
       
       if (hasWorkout) {
@@ -140,14 +140,15 @@ export const useWorkoutStats = (data, activeProgram = null) => {
   };
 
   const getWorkoutHistory = () => {
-    if (!data || !data.reps || !data.checkedExercises) {
+    const currentData = getCurrentData();
+    if (!currentData || !currentData.reps || !currentData.checkedExercises) {
       return [];
     }
 
     const history = [];
     const processedDates = new Set();
 
-    Object.entries(data.reps).forEach(([key, reps]) => {
+    Object.entries(currentData.reps).forEach(([key, reps]) => {
       const [dateStr, exerciseId] = key.split('_');
       
       if (!processedDates.has(dateStr)) {
@@ -155,7 +156,7 @@ export const useWorkoutStats = (data, activeProgram = null) => {
         
         const date = new Date(dateStr);
         const dayName = getDayName(date);
-        const currentProgram = getCurrentProgram();
+        const currentProgram = getProgram();
         const workout = currentProgram[dayName];
         
         if (workout) {
@@ -165,21 +166,28 @@ export const useWorkoutStats = (data, activeProgram = null) => {
           const exercises = exercisesList.map(exercise => {
             // Chercher la clé avec les différents suffixes possibles
             let exerciseKey = `${dateStr}_${exercise.id}`;
-            let exerciseReps = parseInt(data.reps[exerciseKey]) || 0;
-            let isCompleted = data.checkedExercises[exerciseKey] || false;
+            let exerciseReps = 0;
+            let isCompleted = false;
+            let hasUserInput = false; // ← NOUVEAU: Vérifier si l'utilisateur a vraiment saisi quelque chose
             
-            // Si pas trouvé, essayer avec les suffixes de variantes
-            if (exerciseReps === 0 && !isCompleted) {
+            // Vérifier d'abord la clé de base
+            if (currentData.reps[exerciseKey] !== undefined && currentData.reps[exerciseKey] !== null && currentData.reps[exerciseKey] !== '') {
+              exerciseReps = parseInt(currentData.reps[exerciseKey]) || 0;
+              isCompleted = currentData.checkedExercises[exerciseKey] || false;
+              hasUserInput = true;
+            } else {
+              // Si pas trouvé, essayer avec les suffixes de variantes
               const keysToTry = [
                 `${dateStr}_${exercise.id}_semaineA`,
                 `${dateStr}_${exercise.id}_semaineB`
               ];
               
               for (const keyToTry of keysToTry) {
-                if (data.reps[keyToTry] || data.checkedExercises[keyToTry]) {
+                if (currentData.reps[keyToTry] !== undefined && currentData.reps[keyToTry] !== null && currentData.reps[keyToTry] !== '') {
                   exerciseKey = keyToTry;
-                  exerciseReps = parseInt(data.reps[keyToTry]) || 0;
-                  isCompleted = data.checkedExercises[keyToTry] || false;
+                  exerciseReps = parseInt(currentData.reps[keyToTry]) || 0;
+                  isCompleted = currentData.checkedExercises[keyToTry] || false;
+                  hasUserInput = true;
                   break;
                 }
               }
@@ -188,14 +196,15 @@ export const useWorkoutStats = (data, activeProgram = null) => {
             return {
               ...exercise,
               reps: exerciseReps,
-              completed: isCompleted
+              completed: isCompleted,
+              hasUserInput // ← NOUVEAU: Marquer si l'utilisateur a saisi des données
             };
-          }).filter(ex => ex.completed);
+          }).filter(ex => ex.hasUserInput && ex.reps > 0); // ← CORRECTION FINALE: Ne garder que les exercices avec saisie utilisateur ET répétitions > 0
 
           // Ajouter les activités complémentaires si elles sont cochées
           if (workout.complementaryActivity) {
             const complementaryKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`;
-            const isComplementaryCompleted = data.checkedExercises[complementaryKey] || false;
+            const isComplementaryCompleted = currentData.checkedExercises[complementaryKey] || false;
             
             if (isComplementaryCompleted) {
               exercises.push({
@@ -224,7 +233,7 @@ export const useWorkoutStats = (data, activeProgram = null) => {
                 let actualKey = baseKey;
                 
                 // Vérifier d'abord la clé de base
-                if (data?.checkedExercises?.[baseKey] !== undefined) {
+                if (currentData?.checkedExercises?.[baseKey] !== undefined) {
                   actualKey = baseKey;
                 } else {
                   // Chercher avec les suffixes
@@ -234,14 +243,14 @@ export const useWorkoutStats = (data, activeProgram = null) => {
                   ];
                   
                   for (const possibleKey of possibleKeys) {
-                    if (data?.checkedExercises?.[possibleKey] !== undefined) {
+                    if (currentData?.checkedExercises?.[possibleKey] !== undefined) {
                       actualKey = possibleKey;
                       break;
                     }
                   }
                 }
                 
-                const isCompleted = data?.checkedExercises?.[actualKey];
+                const isCompleted = currentData?.checkedExercises?.[actualKey];
                 if (!isCompleted) return;
                 
                 let exerciseDuration = 0;
@@ -295,7 +304,7 @@ export const useWorkoutStats = (data, activeProgram = null) => {
             const sessionData = {
               date: dateStr,
               exercises,
-              totalReps: exercises.reduce((sum, ex) => sum + ex.reps, 0),
+              totalReps: exercises.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0),
               duration: calculateSessionDuration() // Ajouter la durée calculée
             };
             history.push(sessionData);

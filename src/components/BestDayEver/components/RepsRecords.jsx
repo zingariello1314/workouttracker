@@ -20,8 +20,8 @@ const RepsRecords = ({ records, formatDate, workoutHistory }) => {
     return workoutHistory
       .filter(session => session.exercises && session.exercises.length > 0)
       .map(session => {
-        const sessionReps = session.totalReps || session.exercises.reduce((sum, ex) => sum + (ex.reps || 0), 0);
-        const maxReps = Math.max(...session.exercises.map(ex => ex.reps || 0));
+        const sessionReps = session.totalReps || session.exercises.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0);
+        const maxReps = Math.max(...session.exercises.map(ex => parseInt(ex.reps) || 0));
         const bestExercise = session.exercises.find(ex => ex.reps === maxReps);
         
         return {
@@ -196,13 +196,13 @@ const RepsRecords = ({ records, formatDate, workoutHistory }) => {
         </div>
         <div className="bg-slate-800/50 rounded-lg p-4 text-center">
           <div className="text-xl font-bold text-white mb-1">
-            {workoutHistory?.reduce((sum, s) => sum + (s.totalReps || s.exercises?.reduce((reps, ex) => reps + (ex.reps || 0), 0) || 0), 0) || 0}
+            {workoutHistory?.reduce((sum, s) => sum + (s.totalReps || s.exercises?.reduce((reps, ex) => reps + (parseInt(ex.reps) || 0), 0) || 0), 0) || 0}
           </div>
           <div className="text-xs text-slate-400">reps totales</div>
         </div>
         <div className="bg-slate-800/50 rounded-lg p-4 text-center">
           <div className="text-xl font-bold text-white mb-1">
-            {Math.round((workoutHistory?.reduce((sum, s) => sum + (s.totalReps || s.exercises?.reduce((reps, ex) => reps + (ex.reps || 0), 0) || 0), 0) || 0) / (workoutHistory?.length || 1))}
+            {Math.round((workoutHistory?.reduce((sum, s) => sum + (s.totalReps || s.exercises?.reduce((reps, ex) => reps + (parseInt(ex.reps) || 0), 0) || 0), 0) || 0) / (workoutHistory?.length || 1))}
           </div>
           <div className="text-xs text-slate-400">moyenne/séance</div>
         </div>

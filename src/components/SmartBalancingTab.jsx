@@ -30,11 +30,13 @@ import {
   Info,
   TrendingDown,
   Plus,
-  Minus
+  Minus,
+  BookOpen,
+  PlayCircle
 } from 'lucide-react';
 
 const SmartBalancingTab = () => {
-  const { getWorkoutHistory, data, updateData } = useWorkout();
+  const { getWorkoutHistory, data, updateData, activeProgram } = useWorkout();
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
   const [showAdvancedAnalysis, setShowAdvancedAnalysis] = useState(false);
   
@@ -42,7 +44,99 @@ const SmartBalancingTab = () => {
     return getWorkoutHistory();
   }, [getWorkoutHistory]);
 
-  // Analyse intelligente du programme
+  // Nouvelle fonction pour analyser le programme prévu vs réalisé
+  const programComparisonAnalysis = useMemo(() => {
+    if (!activeProgram || !activeProgram.schedule || workoutHistory.length === 0) {
+      return null;
+    }
+
+    const last7Days = workoutHistory.filter(session => {
+      const sessionDate = new Date(session.date);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return sessionDate >= sevenDaysAgo;
+    });
+
+    const last30Days = workoutHistory.filter(session => {
+      const sessionDate = new Date(session.date);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return sessionDate >= thirtyDaysAgo;
+    });
+
+    // Calculer les entraînements prévus par semaine selon le programme actif
+    const scheduledDays = Object.keys(activeProgram.schedule).length;
+    const scheduledSessionsPerWeek = scheduledDays;
+
+    // Calculer les entraînements réalisés
+    const actualSessionsThisWeek = last7Days.length;
+    const actualSessionsPerWeek = (last30Days.length / 4.3); // 30 jours ≈ 4.3 semaines
+
+    // Taux de réalisation
+    const weeklyCompletionRate = Math.round((actualSessionsThisWeek / scheduledSessionsPerWeek) * 100);
+    const monthlyCompletionRate = Math.round((actualSessionsPerWeek / scheduledSessionsPerWeek) * 100);
+
+    // Entraînements manqués
+    const missedSessionsThisWeek = Math.max(0, scheduledSessionsPerWeek - actualSessionsThisWeek);
+    const missedSessionsPerWeek = Math.max(0, scheduledSessionsPerWeek - actualSessionsPerWeek);
+
+    // Analyse des jours d'entraînement prévus vs réalisés
+    const scheduledDayNames = Object.keys(activeProgram.schedule);
+    const actualDays = last7Days.map(session => {
+      const date = new Date(session.date);
+      const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+      return dayNames[date.getDay()];
+    });
+
+    const dayComparison = scheduledDayNames.map(scheduledDay => {
+      const wasCompleted = actualDays.includes(scheduledDay);
+      return {
+        day: scheduledDay,
+        scheduled: true,
+        completed: wasCompleted,
+        status: wasCompleted ? 'completed' : 'missed'
+      };
+    });
+
+    // Exercices prévus vs réalisés
+    const totalScheduledExercises = Object.values(activeProgram.schedule).reduce((total, day) => {
+      return total + (day.exercises ? day.exercises.length : 0);
+    }, 0);
+
+    const totalCompletedExercises = last7Days.reduce((total, session) => {
+      return total + (session.totalExercises || 0);
+    }, 0);
+
+    const exerciseCompletionRate = totalScheduledExercises > 0 
+      ? Math.round((totalCompletedExercises / totalScheduledExercises) * 100)
+      : 0;
+
+    return {
+      scheduled: {
+        sessionsPerWeek: scheduledSessionsPerWeek,
+        totalExercises: totalScheduledExercises,
+        days: scheduledDayNames
+      },
+      actual: {
+        sessionsThisWeek: actualSessionsThisWeek,
+        sessionsPerWeek: Math.round(actualSessionsPerWeek * 10) / 10,
+        totalExercises: totalCompletedExercises
+      },
+      completion: {
+        weekly: weeklyCompletionRate,
+        monthly: monthlyCompletionRate,
+        exercises: exerciseCompletionRate
+      },
+      missed: {
+        sessionsThisWeek: missedSessionsThisWeek,
+        sessionsPerWeek: Math.round(missedSessionsPerWeek * 10) / 10
+      },
+      dayComparison,
+      programName: activeProgram.name
+    };
+  }, [activeProgram, workoutHistory]);
+
+  // Analyse intelligente du programme (version améliorée)
   const programAnalysis = useMemo(() => {
     if (workoutHistory.length === 0) return null;
 
@@ -60,56 +154,42 @@ const SmartBalancingTab = () => {
       return sessionDate >= sevenDaysAgo;
     });
 
-    // Analyse de la fréquence
-    const avgSessionsPerWeek = (last30Days.length / 4.3); // 30 jours ≈ 4.3 semaines
+    // Analyse de la fréquence (mise à jour avec données du programme)
+    const avgSessionsPerWeek = (last30Days.length / 4.3);
     const recentSessionsPerWeek = last7Days.length;
     const frequencyTrend = recentSessionsPerWeek - avgSessionsPerWeek;
+    
+    // Utiliser les données du programme pour définir l'optimal si disponible
+    const optimalFrequency = programComparisonAnalysis 
+      ? programComparisonAnalysis.scheduled.sessionsPerWeek 
+      : (avgSessionsPerWeek < 2 ? 3 : avgSessionsPerWeek < 4 ? 4 : 5);
 
     // Analyse de l'intensité
     const avgRepsPerSession = last30Days.reduce((sum, session) => sum + (session.totalReps || 0), 0) / Math.max(1, last30Days.length);
     const recentAvgReps = last7Days.reduce((sum, session) => sum + (session.totalReps || 0), 0) / Math.max(1, last7Days.length);
-    const intensityTrend = recentAvgReps - avgRepsPerSession;
+    const intensityTrend = ((recentAvgReps - avgRepsPerSession) / Math.max(1, avgRepsPerSession)) * 100;
 
-    // Analyse des exercices
+    // Analyse de la variété
+    const allExercises = new Set();
     const exerciseFrequency = {};
-    const exercisePerformance = {};
-    const complementaryActivities = {
-      boxe: { sessions: 0, totalDuration: 0 },
-      natation: { sessions: 0, totalDuration: 0 }
-    };
     
     last30Days.forEach(session => {
       if (session.exercises) {
         session.exercises.forEach(exercise => {
-          const name = exercise.name || exercise.exerciseName;
-          
-          // Traitement spécial pour les activités complémentaires
-          if (exercise.isComplementary || name === 'Boxe' || name === 'Natation') {
-            const activityType = name.toLowerCase();
-            if (complementaryActivities[activityType]) {
-              complementaryActivities[activityType].sessions++;
-              complementaryActivities[activityType].totalDuration += parseInt(exercise.duration) || 0;
-            }
-          }
-          
-          if (!exerciseFrequency[name]) {
-            exerciseFrequency[name] = 0;
-            exercisePerformance[name] = [];
-          }
-          exerciseFrequency[name]++;
-          exercisePerformance[name].push(exercise.reps || 0);
+          allExercises.add(exercise.name);
+          exerciseFrequency[exercise.name] = (exerciseFrequency[exercise.name] || 0) + 1;
         });
       }
     });
 
-    // Détection des déséquilibres
-    const exerciseNames = Object.keys(exerciseFrequency);
-    const mostFrequent = exerciseNames.sort((a, b) => exerciseFrequency[b] - exerciseFrequency[a]);
-    const leastFrequent = exerciseNames.sort((a, b) => exerciseFrequency[a] - exerciseFrequency[b]);
+    const mostFrequentExercises = Object.entries(exerciseFrequency)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([name]) => name);
 
     // Analyse des patterns temporels
-    const weeklyPattern = new Array(7).fill(0);
-    const hourlyPattern = new Array(24).fill(0);
+    const weeklyPattern = Array(7).fill(0);
+    const hourlyPattern = Array(24).fill(0);
     
     last30Days.forEach(session => {
       const date = new Date(session.date);
@@ -119,6 +199,7 @@ const SmartBalancingTab = () => {
 
     const bestDays = weeklyPattern
       .map((count, index) => ({ day: index, count }))
+      .filter(item => item.count > 0)
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
 
@@ -128,32 +209,52 @@ const SmartBalancingTab = () => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
 
-    // Score de consistance
-    const consistencyScore = Math.min(100, Math.max(0, 
-      (avgSessionsPerWeek / 4) * 50 + // Fréquence (50%)
-      (Math.min(avgRepsPerSession / 100, 1)) * 30 + // Intensité (30%)
-      (exerciseNames.length / 10) * 20 // Variété (20%)
-    ));
+    // Analyse des activités complémentaires
+    const complementaryActivities = {
+      boxe: { sessions: 0, totalDuration: 0 },
+      natation: { sessions: 0, totalDuration: 0 },
+      autres: { sessions: 0, totalDuration: 0 }
+    };
+
+    last30Days.forEach(session => {
+      if (session.complementaryActivity) {
+        const activity = session.complementaryActivity.toLowerCase();
+        if (activity.includes('boxe')) {
+          complementaryActivities.boxe.sessions++;
+          complementaryActivities.boxe.totalDuration += session.complementaryActivity.duration || 0;
+        } else if (activity.includes('natation')) {
+          complementaryActivities.natation.sessions++;
+          complementaryActivities.natation.totalDuration += session.complementaryActivity.duration || 0;
+        } else {
+          complementaryActivities.autres.sessions++;
+          complementaryActivities.autres.totalDuration += session.complementaryActivity.duration || 0;
+        }
+      }
+    });
+
+    // Score de consistance amélioré
+    const frequencyScore = Math.min(100, (recentSessionsPerWeek / optimalFrequency) * 100);
+    const varietyScore = Math.min(100, (allExercises.size / 10) * 100);
+    const intensityScore = Math.max(0, Math.min(100, 100 - Math.abs(intensityTrend - 10)));
+    const consistencyScore = (frequencyScore * 0.4 + varietyScore * 0.3 + intensityScore * 0.3);
 
     return {
       frequency: {
-        current: avgSessionsPerWeek,
-        recent: recentSessionsPerWeek,
-        trend: frequencyTrend,
-        optimal: 3.5
+        current: recentSessionsPerWeek,
+        average: Math.round(avgSessionsPerWeek * 10) / 10,
+        optimal: optimalFrequency,
+        trend: Math.round(frequencyTrend * 10) / 10
       },
       intensity: {
-        current: avgRepsPerSession,
-        recent: recentAvgReps,
-        trend: intensityTrend,
-        optimal: 120
+        current: Math.round(recentAvgReps),
+        average: Math.round(avgRepsPerSession),
+        optimal: Math.round(avgRepsPerSession * 1.1),
+        trend: Math.round(intensityTrend)
       },
       exercises: {
-        total: exerciseNames.length,
-        mostFrequent: mostFrequent.slice(0, 3),
-        leastFrequent: leastFrequent.slice(0, 3),
-        frequency: exerciseFrequency,
-        performance: exercisePerformance
+        total: allExercises.size,
+        mostFrequent: mostFrequentExercises,
+        optimalRange: [8, 12]
       },
       patterns: {
         weekly: weeklyPattern,
@@ -171,15 +272,65 @@ const SmartBalancingTab = () => {
       },
       complementaryActivities
     };
-  }, [workoutHistory]);
+  }, [workoutHistory, programComparisonAnalysis]);
 
-  // Génération des recommandations intelligentes
+  // Génération des recommandations intelligentes (version améliorée)
   const recommendations = useMemo(() => {
     if (!programAnalysis) return [];
 
     const recs = [];
 
-    // Recommandations de fréquence
+    // Recommandations basées sur la comparaison programme vs réalité
+    if (programComparisonAnalysis) {
+      if (programComparisonAnalysis.completion.weekly < 50) {
+        recs.push({
+          id: 'low_program_adherence',
+          type: 'program_adherence',
+          priority: 'high',
+          title: 'Faible Adhérence au Programme',
+          description: `Tu as réalisé ${programComparisonAnalysis.actual.sessionsThisWeek}/${programComparisonAnalysis.scheduled.sessionsPerWeek} entraînements prévus cette semaine (${programComparisonAnalysis.completion.weekly}%)`,
+          impact: 'Amélioration significative des résultats en suivant le programme',
+          action: `Il te manque ${programComparisonAnalysis.missed.sessionsThisWeek} entraînements pour respecter ton programme cette semaine`,
+          icon: <BookOpen className="w-5 h-5" />,
+          color: 'text-red-400',
+          bgColor: 'bg-red-400/10',
+          programData: programComparisonAnalysis
+        });
+      } else if (programComparisonAnalysis.completion.weekly >= 80) {
+        recs.push({
+          id: 'excellent_adherence',
+          type: 'program_adherence',
+          priority: 'low',
+          title: 'Excellente Adhérence !',
+          description: `Bravo ! Tu as réalisé ${programComparisonAnalysis.actual.sessionsThisWeek}/${programComparisonAnalysis.scheduled.sessionsPerWeek} entraînements prévus (${programComparisonAnalysis.completion.weekly}%)`,
+          impact: 'Maintien de l\'excellente progression',
+          action: 'Continue sur cette lancée, tu es sur la bonne voie !',
+          icon: <Star className="w-5 h-5" />,
+          color: 'text-green-400',
+          bgColor: 'bg-green-400/10',
+          programData: programComparisonAnalysis
+        });
+      }
+
+      // Recommandations pour les jours manqués
+      const missedDays = programComparisonAnalysis.dayComparison.filter(day => day.status === 'missed');
+      if (missedDays.length > 0) {
+        recs.push({
+          id: 'missed_scheduled_days',
+          type: 'scheduling',
+          priority: 'medium',
+          title: 'Jours d\'Entraînement Manqués',
+          description: `Tu as manqué ${missedDays.length} jour(s) prévu(s) : ${missedDays.map(d => d.day).join(', ')}`,
+          impact: 'Meilleure régularité et respect du planning',
+          action: 'Essaie de rattraper ces séances ou réajuste ton planning',
+          icon: <Calendar className="w-5 h-5" />,
+          color: 'text-orange-400',
+          bgColor: 'bg-orange-400/10'
+        });
+      }
+    }
+
+    // Recommandations de fréquence (version améliorée)
     if (programAnalysis.frequency.current < 2) {
       recs.push({
         id: 'increase_frequency',
@@ -238,39 +389,29 @@ const SmartBalancingTab = () => {
     }
 
     // Recommandations de variété
-    if (programAnalysis.exercises.total < 5) {
+    if (programAnalysis.exercises.total < 6) {
       recs.push({
-        id: 'add_variety',
+        id: 'increase_variety',
         type: 'variety',
         priority: 'medium',
         title: 'Manque de Variété',
-        description: 'Tu utilises moins de 5 exercices différents. Diversifier peut améliorer tes résultats.',
-        impact: 'Développement musculaire plus complet',
-        action: 'Ajouter 2-3 nouveaux exercices cette semaine',
+        description: `Tu n'utilises que ${programAnalysis.exercises.total} exercices différents. Diversifie ton entraînement !`,
+        impact: 'Développement musculaire plus complet et moins d\'ennui',
+        action: 'Ajouter 2-3 nouveaux exercices par semaine',
         icon: <Sparkles className="w-5 h-5" />,
         color: 'text-purple-400',
         bgColor: 'bg-purple-400/10'
       });
-    }
-
-    // Recommandations de timing
-    const bestDay = programAnalysis.patterns.bestDays[0];
-    const worstDays = programAnalysis.patterns.weekly
-      .map((count, index) => ({ day: index, count }))
-      .filter(item => item.count === 0)
-      .slice(0, 2);
-
-    if (worstDays.length > 0) {
-      const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    } else if (programAnalysis.exercises.total > 15) {
       recs.push({
-        id: 'optimize_timing',
-        type: 'timing',
+        id: 'simplify_routine',
+        type: 'variety',
         priority: 'low',
-        title: 'Optimiser le Planning',
-        description: `Tu ne t'entraînes jamais le ${dayNames[worstDays[0].day]}. Considère ce jour pour plus de régularité.`,
-        impact: 'Meilleure répartition de la charge d\'entraînement',
-        action: `Essayer une séance le ${dayNames[worstDays[0].day]}`,
-        icon: <Clock className="w-5 h-5" />,
+        title: 'Routine Complexe',
+        description: `Tu utilises ${programAnalysis.exercises.total} exercices différents. Peut-être trop de variété ?`,
+        impact: 'Meilleure maîtrise technique et progression plus claire',
+        action: 'Focus sur 8-12 exercices principaux',
+        icon: <Target className="w-5 h-5" />,
         color: 'text-blue-400',
         bgColor: 'bg-blue-400/10'
       });
@@ -309,39 +450,13 @@ const SmartBalancingTab = () => {
         color: 'text-cyan-400',
         bgColor: 'bg-cyan-400/10'
       });
-    } else if (totalComplementarySessions < 2) {
-      recs.push({
-        id: 'increase_complementary',
-        type: 'complementary',
-        priority: 'low',
-        title: 'Augmenter les Activités Complémentaires',
-        description: `Tu pratiques ${totalComplementarySessions} séance(s) d'activités complémentaires. Considère en ajouter une de plus.`,
-        impact: 'Meilleur équilibre entre force et cardio',
-        action: 'Viser 2-3 séances d\'activités complémentaires par semaine',
-        icon: <Activity className="w-5 h-5" />,
-        color: 'text-cyan-400',
-        bgColor: 'bg-cyan-400/10'
-      });
-    } else if (totalComplementaryDuration > 0 && totalComplementaryDuration < 60) {
-      recs.push({
-        id: 'extend_complementary_duration',
-        type: 'complementary',
-        priority: 'low',
-        title: 'Prolonger les Activités Complémentaires',
-        description: `Tes séances d'activités complémentaires durent en moyenne ${Math.round(totalComplementaryDuration / totalComplementarySessions)} min. Considère les prolonger.`,
-        impact: 'Meilleurs bénéfices cardiovasculaires',
-        action: 'Viser 30-45 minutes par séance d\'activité complémentaire',
-        icon: <Clock className="w-5 h-5" />,
-        color: 'text-cyan-400',
-        bgColor: 'bg-cyan-400/10'
-      });
     }
 
     return recs.sort((a, b) => {
       const priorityOrder = { high: 3, medium: 2, low: 1 };
       return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
-  }, [programAnalysis]);
+  }, [programAnalysis, programComparisonAnalysis]);
 
   // Génération du programme optimisé
   const optimizedProgram = useMemo(() => {
@@ -356,7 +471,7 @@ const SmartBalancingTab = () => {
       if (!dayProgram || !dayProgram.exercises) return;
 
       const dayAnalysis = {
-        totalReps: dayProgram.exercises.reduce((sum, ex) => sum + (ex.reps || 0), 0),
+        totalReps: dayProgram.exercises.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0),
         exerciseCount: dayProgram.exercises.length,
         balance: 'good'
       };
@@ -467,6 +582,148 @@ const SmartBalancingTab = () => {
         </p>
       </div>
 
+      {/* Analyse comparative prévu vs réalisé */}
+      {programComparisonAnalysis && (
+        <Card className="p-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-blue-400" />
+              Analyse Comparative : Prévu vs Réalisé
+              <Badge variant="outline" className="text-blue-400 border-blue-400">
+                {programComparisonAnalysis.programName}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Taux de réalisation hebdomadaire */}
+              <div className="text-center p-4 bg-slate-800/50 rounded-lg">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Calendar className="w-5 h-5 text-blue-400" />
+                  <h4 className="font-medium text-white">Cette Semaine</h4>
+                </div>
+                <div className={`text-3xl font-bold mb-1 ${
+                  programComparisonAnalysis.completion.weekly >= 80 ? 'text-green-400' :
+                  programComparisonAnalysis.completion.weekly >= 50 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {programComparisonAnalysis.completion.weekly}%
+                </div>
+                <p className="text-sm text-slate-300 mb-2">
+                  {programComparisonAnalysis.actual.sessionsThisWeek}/{programComparisonAnalysis.scheduled.sessionsPerWeek} entraînements
+                </p>
+                {programComparisonAnalysis.missed.sessionsThisWeek > 0 && (
+                  <p className="text-xs text-red-400">
+                    Il te manque {programComparisonAnalysis.missed.sessionsThisWeek} entraînement(s)
+                  </p>
+                )}
+              </div>
+      
+              {/* Taux de réalisation mensuel */}
+              <div className="text-center p-4 bg-slate-800/50 rounded-lg">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <BarChart3 className="w-5 h-5 text-purple-400" />
+                  <h4 className="font-medium text-white">Moyenne Mensuelle</h4>
+                </div>
+                <div className={`text-3xl font-bold mb-1 ${
+                  programComparisonAnalysis.completion.monthly >= 80 ? 'text-green-400' :
+                  programComparisonAnalysis.completion.monthly >= 50 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {programComparisonAnalysis.completion.monthly}%
+                </div>
+                <p className="text-sm text-slate-300 mb-2">
+                  {programComparisonAnalysis.actual.sessionsPerWeek}/{programComparisonAnalysis.scheduled.sessionsPerWeek} séances/semaine
+                </p>
+                {programComparisonAnalysis.missed.sessionsPerWeek > 0 && (
+                  <p className="text-xs text-orange-400">
+                    Manque {programComparisonAnalysis.missed.sessionsPerWeek.toFixed(1)} séances/semaine
+                  </p>
+                )}
+              </div>
+      
+              {/* Exercices réalisés */}
+              <div className="text-center p-4 bg-slate-800/50 rounded-lg">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Activity className="w-5 h-5 text-green-400" />
+                  <h4 className="font-medium text-white">Exercices</h4>
+                </div>
+                <div className={`text-3xl font-bold mb-1 ${
+                  programComparisonAnalysis.completion.exercises >= 80 ? 'text-green-400' :
+                  programComparisonAnalysis.completion.exercises >= 50 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {programComparisonAnalysis.completion.exercises}%
+                </div>
+                <p className="text-sm text-slate-300">
+                  {programComparisonAnalysis.actual.totalExercises}/{programComparisonAnalysis.scheduled.totalExercises} exercices
+                </p>
+              </div>
+            </div>
+      
+            {/* Analyse des jours d'entraînement */}
+            <div className="mt-6 pt-6 border-t border-slate-600">
+              <h5 className="text-sm font-medium text-white mb-4">Jours d'Entraînement Prévus vs Réalisés</h5>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                {programComparisonAnalysis.dayComparison.map((day, index) => (
+                  <div 
+                    key={index}
+                    className={`p-3 rounded-lg text-center border-2 ${
+                      day.status === 'completed' 
+                        ? 'bg-green-400/10 border-green-400 text-green-400' 
+                        : 'bg-red-400/10 border-red-400 text-red-400'
+                    }`}
+                  >
+                    <div className="text-xs font-medium capitalize mb-1">{day.day}</div>
+                    <div className="text-lg">
+                      {day.status === 'completed' ? '✓' : '✗'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+      
+            {/* Feedback contextualisé */}
+            <div className="mt-6 pt-6 border-t border-slate-600">
+              <h5 className="text-sm font-medium text-white mb-3">Feedback Contextualisé</h5>
+              <div className="space-y-3">
+                {programComparisonAnalysis.completion.weekly < 50 && (
+                  <div className="p-3 bg-red-400/10 border-l-4 border-red-400 rounded">
+                    <p className="text-sm text-red-300">
+                      <strong>Attention :</strong> Tu as réalisé seulement {programComparisonAnalysis.actual.sessionsThisWeek}/{programComparisonAnalysis.scheduled.sessionsPerWeek} entraînements prévus cette semaine ({programComparisonAnalysis.completion.weekly}%). 
+                      Il te manque {programComparisonAnalysis.missed.sessionsThisWeek} entraînement(s) pour respecter ton programme.
+                    </p>
+                  </div>
+                )}
+                
+                {programComparisonAnalysis.completion.weekly >= 50 && programComparisonAnalysis.completion.weekly < 80 && (
+                  <div className="p-3 bg-yellow-400/10 border-l-4 border-yellow-400 rounded">
+                    <p className="text-sm text-yellow-300">
+                      <strong>Bien :</strong> Tu as réalisé {programComparisonAnalysis.actual.sessionsThisWeek}/{programComparisonAnalysis.scheduled.sessionsPerWeek} entraînements prévus cette semaine ({programComparisonAnalysis.completion.weekly}%). 
+                      {programComparisonAnalysis.missed.sessionsThisWeek > 0 && `Il te reste ${programComparisonAnalysis.missed.sessionsThisWeek} entraînement(s) pour atteindre ton objectif.`}
+                    </p>
+                  </div>
+                )}
+                
+                {programComparisonAnalysis.completion.weekly >= 80 && (
+                  <div className="p-3 bg-green-400/10 border-l-4 border-green-400 rounded">
+                    <p className="text-sm text-green-300">
+                      <strong>Excellent :</strong> Tu as réalisé {programComparisonAnalysis.actual.sessionsThisWeek}/{programComparisonAnalysis.scheduled.sessionsPerWeek} entraînements prévus cette semaine ({programComparisonAnalysis.completion.weekly}%) ! 
+                      Continue sur cette excellente lancée.
+                    </p>
+                  </div>
+                )}
+      
+                {/* Feedback sur la tendance mensuelle */}
+                <div className="p-3 bg-slate-700/50 border-l-4 border-blue-400 rounded">
+                  <p className="text-sm text-slate-300">
+                    <strong>Tendance mensuelle :</strong> Sur les 30 derniers jours, tu maintiens une moyenne de {programComparisonAnalysis.actual.sessionsPerWeek} séances par semaine 
+                    (objectif : {programComparisonAnalysis.scheduled.sessionsPerWeek}), soit un taux de réalisation de {programComparisonAnalysis.completion.monthly}%.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Score de consistance global */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">

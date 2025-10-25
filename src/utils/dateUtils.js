@@ -64,6 +64,13 @@ export const isToday = (date) => {
 };
 
 export const daysBetween = (date1, date2) => {
-  const oneDay = 24 * 60 * 60 * 1000;
-  return Math.round(Math.abs((date1 - date2) / oneDay));
+  const diffTime = Math.abs(date2 - date1);
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+// Fonction pour calculer automatiquement la variante de semaine A/B
+export const getAutoWeekVariant = (date = new Date()) => {
+  const weekNumber = getWeekNumber(date);
+  // Alternance basée sur le numéro de semaine : pair = A, impair = B
+  return weekNumber % 2 === 0 ? 'A' : 'B';
 };

@@ -15,7 +15,7 @@ const Navigation = () => {
     { id: 'exercises', label: 'Exercices', icon: '💪' },
     { id: 'history', label: 'Historique', icon: '📊' },
     { id: 'predictions', label: 'Prédictions', icon: '🔮' },
-    { id: 'streaks', label: 'Streaks', icon: '🔥' },
+  
     { id: 'smart-balancing', label: 'Équilibrage IA', icon: '🧠' },
     { id: 'settings', label: 'Paramètres', icon: '⚙️' }
   ];

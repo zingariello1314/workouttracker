@@ -1,5 +1,5 @@
 import { workoutProgram } from '../data/workoutProgram';
-import { getDateStr } from '../utils/dateUtils';
+import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 
 export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData) => {
   // Utiliser getCurrentData si disponible, sinon data
@@ -14,9 +14,12 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     const dayName = getDayName(currentDate);
     const baseWorkout = workoutProgram[dayName] || { exercices: [], etirements: [] };
     
+    // Calculer la variante de semaine automatiquement (toujours basée sur la date)
+    const currentWeekVariant = getAutoWeekVariant(currentDate);
+    
     // Si c'est samedi ou dimanche et qu'on est en mode salle, utiliser les variantes A/B
     if ((dayName === 'samedi' || dayName === 'dimanche') && isGymMode && baseWorkout.salleVariants) {
-      const weekVariantKey = data.weekVariant === 'A' ? 'semaineA' : 'semaineB';
+      const weekVariantKey = currentWeekVariant === 'A' ? 'semaineA' : 'semaineB';
       const gymVariant = baseWorkout.salleVariants[weekVariantKey];
       
       if (gymVariant) {
@@ -26,7 +29,7 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
           exercices: gymVariant.exercices,
           focus: gymVariant.name,
           isGymMode: true,
-          weekVariant: data.weekVariant
+          weekVariant: currentWeekVariant
         };
       }
     }
@@ -34,7 +37,7 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     return {
       ...baseWorkout,
       isGymMode: false,
-      weekVariant: data.weekVariant
+      weekVariant: currentWeekVariant
     };
   };
 

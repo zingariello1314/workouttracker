@@ -11,6 +11,9 @@ import WorkoutHistorySection from '../WorkoutHistorySection';
 
 const DataEntryTab = () => {
   const { data, updateReps, toggleCheck, getDateStr, getDayName, getCurrentData } = useWorkout();
+  
+  // Utiliser getCurrentData() pour obtenir les données actuelles (incluant tempData)
+  const currentData = getCurrentData();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [repsData, setRepsData] = useState({});
   const [advancedMode, setAdvancedMode] = useState(false);
@@ -81,7 +84,7 @@ const DataEntryTab = () => {
   // Gestionnaire pour l'auto-remplissage au focus
   const handleInputFocus = (exerciseId, exercise) => {
     const key = `${dateStr}_${exerciseId}`;
-    const currentValue = data.reps[key] || '';
+    const currentValue = currentData.reps[key] || '';
     
     // Si le champ est vide, calculer et remplir automatiquement
     if (!currentValue && exercise.series) {
@@ -100,25 +103,25 @@ const DataEntryTab = () => {
       // Exercices normaux
       workout.exercices.forEach(exercise => {
         const key = `${dateStr}_${exercise.id}`;
-        initialReps[exercise.id] = data.reps[key] || '';
+        initialReps[exercise.id] = currentData.reps[key] || '';
       });
       
       // Exercices des variantes de salle
       if (workout.salleVariants) {
         workout.salleVariants.semaineA.exercices.forEach(exercise => {
-          const key = `${dateStr}_${exercise.id}`;
-          initialReps[exercise.id] = data.reps[key] || '';
+          const key = `${dateStr}_${exercise.id}_semaineA`;
+          initialReps[exercise.id] = currentData.reps[key] || '';
         });
         
         workout.salleVariants.semaineB.exercices.forEach(exercise => {
-          const key = `${dateStr}_${exercise.id}`;
-          initialReps[exercise.id] = data.reps[key] || '';
+          const key = `${dateStr}_${exercise.id}_semaineB`;
+          initialReps[exercise.id] = currentData.reps[key] || '';
         });
       }
       
       setRepsData(initialReps);
     }
-  }, [selectedDate, workout, data.reps, dateStr]);
+  }, [selectedDate, workout, currentData.reps, dateStr]);
 
   // Sauvegarder les répétitions avec vérification d'intégrité
   const handleSaveReps = () => {
@@ -136,7 +139,7 @@ const DataEntryTab = () => {
             // Marquer automatiquement comme fait si des reps sont saisies
             if (parsedReps > 0) {
               const key = `${dateStr}_${exerciseId}`;
-              if (!data.checkedExercises[key]) {
+              if (!currentData.checkedExercises[key]) {
                 toggleCheck(parseInt(exerciseId), selectedDate);
               }
             }
@@ -176,28 +179,25 @@ const DataEntryTab = () => {
         workout.exercices.forEach(exercise => {
           const key = `${dateStr}_${exercise.id}`;
           updateReps(exercise.id, '', selectedDate);
-          if (data.checkedExercises[key]) {
+          if (currentData.checkedExercises[key]) {
             toggleCheck(exercise.id, selectedDate);
           }
         });
 
-        // Réinitialiser les exercices des variantes de salle (Semaine A)
-        if (workout.variantesGym && workout.variantesGym.semaine_a) {
-          workout.variantesGym.semaine_a.forEach(exercise => {
-            const key = `${dateStr}_${exercise.id}`;
+        // Réinitialiser les exercices des variantes de salle
+        if (workout.salleVariants) {
+          workout.salleVariants.semaineA.exercices.forEach(exercise => {
+            const key = `${dateStr}_${exercise.id}_semaineA`;
             updateReps(exercise.id, '', selectedDate);
-            if (data.checkedExercises[key]) {
+            if (currentData.checkedExercises[key]) {
               toggleCheck(exercise.id, selectedDate);
             }
           });
-        }
-
-        // Réinitialiser les exercices des variantes de salle (Semaine B)
-        if (workout.variantesGym && workout.variantesGym.semaine_b) {
-          workout.variantesGym.semaine_b.forEach(exercise => {
-            const key = `${dateStr}_${exercise.id}`;
+          
+          workout.salleVariants.semaineB.exercices.forEach(exercise => {
+            const key = `${dateStr}_${exercise.id}_semaineB`;
             updateReps(exercise.id, '', selectedDate);
-            if (data.checkedExercises[key]) {
+            if (currentData.checkedExercises[key]) {
               toggleCheck(exercise.id, selectedDate);
             }
           });
@@ -213,7 +213,7 @@ const DataEntryTab = () => {
       updateReps(exerciseId, reps, new Date(date));
       if (parseInt(reps) > 0) {
         const key = `${getDateStr(new Date(date))}_${exerciseId}`;
-        if (!data.checkedExercises[key]) {
+        if (!currentData.checkedExercises[key]) {
           toggleCheck(exerciseId, new Date(date));
         }
       }
@@ -622,12 +622,12 @@ const DataEntryTab = () => {
                   // Répétitions des variantes de salle
                   if (workout.salleVariants) {
                     workout.salleVariants.semaineA.exercices.forEach(exercise => {
-                      const key = `${dateStr}_${exercise.id}`;
+                      const key = `${dateStr}_${exercise.id}_semaineA`;
                       totalReps += parseInt(currentData.reps[key]) || 0;
                     });
                     
                     workout.salleVariants.semaineB.exercices.forEach(exercise => {
-                      const key = `${dateStr}_${exercise.id}`;
+                      const key = `${dateStr}_${exercise.id}_semaineB`;
                       totalReps += parseInt(currentData.reps[key]) || 0;
                     });
                   }
@@ -655,12 +655,12 @@ const DataEntryTab = () => {
                   // Exercices des variantes de salle terminés
                   if (workout.salleVariants) {
                     completedExercises += workout.salleVariants.semaineA.exercices.filter(exercise => {
-                      const key = `${dateStr}_${exercise.id}`;
+                      const key = `${dateStr}_${exercise.id}_semaineA`;
                       return currentData.checkedExercises[key];
                     }).length;
                     
                     completedExercises += workout.salleVariants.semaineB.exercices.filter(exercise => {
-                      const key = `${dateStr}_${exercise.id}`;
+                      const key = `${dateStr}_${exercise.id}_semaineB`;
                       return currentData.checkedExercises[key];
                     }).length;
                   }

@@ -454,7 +454,7 @@ const ChartsTab = () => {
     workoutHistory.forEach(session => {
       const date = new Date(session.date);
       const dayOfWeek = date.getDay();
-      const sessionReps = session.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0;
+      const sessionReps = session.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0;
       
       dayStats[dayOfWeek].sessions.push(session);
       dayStats[dayOfWeek].totalReps += sessionReps;
@@ -468,7 +468,7 @@ const ChartsTab = () => {
             dayStats[dayOfWeek].exercises[ex.name] = { count: 0, totalReps: 0 };
           }
           dayStats[dayOfWeek].exercises[ex.name].count += 1;
-          dayStats[dayOfWeek].exercises[ex.name].totalReps += ex.reps || 0;
+          dayStats[dayOfWeek].exercises[ex.name].totalReps += parseInt(ex.reps) || 0;
         }
       });
     });
@@ -481,7 +481,7 @@ const ChartsTab = () => {
         .map(([name, data]) => ({ name, ...data }));
       
       // Calcul de l'intensité basé sur la moyenne générale
-      const globalAvg = workoutHistory.reduce((sum, s) => sum + (s.exercises?.reduce((reps, ex) => reps + (ex.reps || 0), 0) || 0), 0) / Math.max(workoutHistory.length, 1);
+      const globalAvg = workoutHistory.reduce((sum, s) => sum + (s.exercises?.reduce((reps, ex) => reps + (parseInt(ex.reps) || 0), 0) || 0), 0) / Math.max(workoutHistory.length, 1);
       const intensity = avgRepsPerSession > globalAvg * 1.5 ? 'high' : 
                       avgRepsPerSession > globalAvg * 0.8 ? 'medium' : 
                       avgRepsPerSession > 0 ? 'low' : 'rest';
@@ -937,14 +937,14 @@ const ChartsTab = () => {
     if (workoutHistory.length === 0) return null;
 
     const bestSession = workoutHistory.reduce((best, session) => {
-      const sessionReps = session.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0;
-      const bestReps = best.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0;
+      const sessionReps = session.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0;
+      const bestReps = best.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0;
       return sessionReps > bestReps ? session : best;
     });
 
     return {
       date: bestSession.date,
-      totalReps: bestSession.exercises?.reduce((sum, ex) => sum + (ex.reps || 0), 0) || 0,
+      totalReps: bestSession.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0,
       exerciseCount: bestSession.exercises?.length || 0,
       exercises: bestSession.exercises || []
     };

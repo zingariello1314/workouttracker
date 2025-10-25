@@ -14,7 +14,7 @@ const CalendarTab = () => {
   const currentData = getCurrentData();
   
   // Créer une instance du hook avec les données actuelles
-  const { getWorkoutHistory } = useWorkoutStats(currentData);
+  const { getWorkoutHistory } = useWorkoutStats();
   
   // Utiliser useMemo pour recalculer l'historique quand les données changent
   const workoutHistory = useMemo(() => {

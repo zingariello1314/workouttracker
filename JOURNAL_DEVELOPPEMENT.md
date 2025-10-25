@@ -1090,4 +1090,144 @@ L'application **Momentum** dispose maintenant d'un écosystème complet d'intell
 
 ---
 
-*Journal créé le 22/10/2025 - Dernière mise à jour : 23/01/2025 17:00*
+### 📅 [25/01/2025] [20:15] - 🐛 BUGFIX : Correction de l'erreur `complementaryActivities is not defined`
+
+**Onglet/Composant concerné :** Onglet "Équilibrage Intelligent" (SmartBalancingTab)
+**Fichiers modifiés :** 
+- `src/components/SmartBalancingTab.jsx`
+
+**Description :**
+Correction d'une erreur critique dans la fonction `recommendations` du composant SmartBalancingTab où la variable `complementaryActivities` n'était pas correctement référencée, causant une `ReferenceError` à la ligne 296.
+
+**Problème rencontré :**
+- **Erreur JavaScript** : `Uncaught ReferenceError: complementaryActivities is not defined` à la ligne 296
+- **Cause racine** : La fonction `recommendations` tentait d'accéder directement à `complementaryActivities` au lieu de `programAnalysis.complementaryActivities`
+- **Impact** : Blocage complet de l'onglet Équilibrage Intelligent
+
+**Solution implémentée :**
+- **Ligne 296-297** : Remplacement de `complementaryActivities` par `programAnalysis.complementaryActivities` dans les calculs de `totalComplementarySessions` et `totalComplementaryDuration`
+- **Correction du scope** : Utilisation correcte de l'objet `programAnalysis` retourné par la fonction
+
+**Impact :**
+- **Fonctionnalité** : Onglet Équilibrage Intelligent entièrement fonctionnel
+- **Stabilité** : Élimination de l'erreur JavaScript critique
+- **Expérience utilisateur** : Accès complet aux recommandations d'équilibrage
+
+**Tests effectués :**
+- Vérification de l'absence d'erreurs dans la console navigateur
+- Test de l'affichage des recommandations d'équilibrage
+- Validation du calcul des activités complémentaires
+
+**Notes techniques :**
+Cette erreur était due à une incohérence dans l'accès aux données de l'analyse du programme. La correction assure une référence correcte aux données d'activités complémentaires via l'objet `programAnalysis`.
+
+---
+
+### 📅 [25/01/2025] [20:45] - 🆕 FEATURE : Implémentation du module compteur de séances dans l'onglet calendrier
+
+**Onglet/Composant concerné :** Onglet "Calendrier" (CalendarTab)
+**Fichiers modifiés :** 
+- `src/components/tabs/CalendarTab.jsx`
+
+**Description :**
+Ajout d'un module complet de comptage et d'affichage des séances d'entraînement en haut de l'onglet calendrier, offrant une vue d'ensemble de l'activité d'entraînement avec statistiques détaillées et visualisation graphique.
+
+**Fonctionnalités implémentées :**
+
+**📊 Statistiques principales (4 cartes) :**
+- **Total Séances** : Comptage du nombre total de jours où au moins un exercice a été coché
+- **Total Exercices** : Nombre total d'exercices réalisés depuis le début
+- **Moyenne/Séance** : Calcul automatique du nombre moyen d'exercices par séance
+- **Cette Semaine** : Nombre de séances effectuées dans les 7 derniers jours
+
+**📈 Graphique d'activité des 7 derniers jours :**
+- **Visualisation en barres** : Affichage du nombre d'exercices par jour
+- **Couleurs dynamiques** : Intensité visuelle basée sur le nombre d'exercices
+- **Tooltips interactifs** : Informations détaillées au survol
+- **Responsive design** : Adaptation automatique à la taille d'écran
+
+**🔧 Logique de comptage intelligente :**
+- **Fonction `getSessionsCount`** : Analyse des `checkedExercises` pour compter les séances par jour
+- **Critère de séance** : Une séance = au moins 1 exercice coché entre 00h00 et 23h59
+- **Parsing des clés** : Extraction des dates au format "YYYY-MM-DD" depuis les clés d'exercices
+- **Gestion des variantes** : Prise en compte des exercices gym/maison et semaines A/B
+
+**🎨 Interface utilisateur :**
+- **Module en haut** : Positionnement au-dessus du calendrier heatmap existant
+- **Design cohérent** : Utilisation du système de design de l'application
+- **Cartes statistiques** : Layout en grille responsive avec icônes
+- **Graphique intégré** : Visualisation harmonieuse avec le reste de l'interface
+
+**⚡ Optimisations techniques :**
+- **useMemo** : Optimisation des calculs de statistiques pour éviter les recalculs inutiles
+- **Réactivité** : Mise à jour automatique lors des changements dans `checkedExercises`
+- **Performance** : Calculs efficaces même avec un historique important
+
+**Impact :**
+- **Motivation utilisateur** : Vue d'ensemble claire de l'activité d'entraînement
+- **Suivi de progression** : Statistiques détaillées et tendances visuelles
+- **Expérience utilisateur** : Interface enrichie avec informations pertinentes
+- **Engagement** : Encouragement à maintenir une régularité d'entraînement
+
+**Tests effectués :**
+- Vérification de l'affichage correct des statistiques
+- Test de la réactivité du graphique aux changements de données
+- Validation du comptage des séances sur différentes périodes
+- Contrôle de la performance avec un historique conséquent
+
+**Notes techniques :**
+Le module utilise la structure existante des `checkedExercises` avec des clés au format "YYYY-MM-DD_exerciseId" pour extraire les dates et compter les séances. L'implémentation est optimisée avec `useMemo` pour éviter les recalculs lors des re-rendus du composant.
+
+---
+
+### 📅 [25/01/2025] [21:00] - 🔧 MAINTENANCE : Commit et synchronisation des modifications
+
+**Onglet/Composant concerné :** Projet complet
+**Fichiers concernés :** 
+- 28 fichiers modifiés avec 10,056 insertions et 351 suppressions
+
+**Description :**
+Sauvegarde et synchronisation complète de toutes les modifications récentes incluant la correction de l'erreur `complementaryActivities` et l'implémentation du module compteur de séances.
+
+**Actions effectuées :**
+
+**📝 Commit Git :**
+- **Hash** : `6d7f1b3`
+- **Message** : "feat: Ajout du module compteur de séances dans l'onglet calendrier"
+- **Description détaillée** : Commit complet avec description des fonctionnalités ajoutées
+- **Statistiques** : 28 fichiers modifiés, 10,056 insertions, 351 suppressions
+
+**🚀 Push vers dépôt distant :**
+- **Branche** : `master`
+- **Dépôt** : `https://github.com/zingariello1314/workouttracker.git`
+- **Statut** : Synchronisation réussie avec le dépôt GitHub
+
+**📋 Contenu du commit :**
+- Correction de l'erreur `complementaryActivities is not defined` dans SmartBalancingTab
+- Implémentation complète du module compteur de séances dans CalendarTab
+- Ajout de nouvelles fonctionnalités et composants
+- Optimisations de performance et corrections diverses
+
+**🔍 Fichiers principaux inclus :**
+- `src/components/SmartBalancingTab.jsx` : Correction de l'erreur de référence
+- `src/components/tabs/CalendarTab.jsx` : Nouveau module compteur de séances
+- Multiples fichiers de composants, hooks et utilitaires
+- Fichiers de configuration et documentation
+
+**Impact :**
+- **Sauvegarde sécurisée** : Toutes les modifications sont maintenant versionnées
+- **Collaboration** : Changements disponibles pour l'équipe via GitHub
+- **Traçabilité** : Historique complet des modifications dans Git
+- **Déploiement** : Code prêt pour la mise en production
+
+**Tests effectués :**
+- Vérification de l'intégrité du commit
+- Validation de la synchronisation avec le dépôt distant
+- Contrôle de l'absence d'erreurs lors du push
+
+**Notes techniques :**
+Le commit inclut des avertissements Git concernant la conversion des fins de ligne (LF vers CRLF) sur Windows, ce qui est normal et n'affecte pas le fonctionnement de l'application. Toutes les modifications sont maintenant sauvegardées et synchronisées avec succès.
+
+---
+
+*Journal créé le 22/10/2025 - Dernière mise à jour : 25/01/2025 21:00*
