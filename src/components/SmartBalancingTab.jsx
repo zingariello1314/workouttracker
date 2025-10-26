@@ -254,6 +254,11 @@ const SmartBalancingTab = () => {
       exercises: {
         total: allExercises.size,
         mostFrequent: mostFrequentExercises,
+        leastFrequent: Object.entries(exerciseFrequency)
+          .sort(([,a], [,b]) => a - b)
+          .slice(0, 5)
+          .map(([name]) => name),
+        frequency: exerciseFrequency,
         optimalRange: [8, 12]
       },
       patterns: {

@@ -3,7 +3,7 @@ import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
 import Input from './ui/Input';
-import { History, ChevronDown, ChevronUp, Calendar, Save, Check, ChevronRight } from 'lucide-react';
+import { History, ChevronDown, ChevronUp, Calendar, Save, Check, ChevronRight, Search } from 'lucide-react';
 import { workoutProgram } from '../data/workoutProgram';
 import { useWorkout } from '../context/WorkoutContext';
 import { typography } from '../styles/typography';
@@ -15,6 +15,7 @@ import './WorkoutHistorySection.css';
 const WorkoutHistorySection = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [collapsedDays, setCollapsedDays] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
   const { data, updateReps, getDateStr, getDayName, getCurrentData, updateTempExerciseData, saveExerciseChanges } = useWorkout();
 
   // Ordre chronologique des jours
@@ -247,6 +248,18 @@ const WorkoutHistorySection = () => {
     return { totalExercises, totalDaysWithWorkouts };
   };
 
+  // Fonction pour filtrer les exercices selon le terme de recherche
+  const filterExercises = (exercises) => {
+    if (!searchTerm.trim()) return exercises;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return exercises.filter(exercise => 
+      exercise.name.toLowerCase().includes(searchLower) ||
+      (exercise.materiel && exercise.materiel.toLowerCase().includes(searchLower)) ||
+      (exercise.notes && exercise.notes.toLowerCase().includes(searchLower))
+    );
+  };
+
   const stats = calculateStats();
 
   return (
@@ -278,6 +291,22 @@ const WorkoutHistorySection = () => {
             </div>
           </div>
         </CardHeader>
+        
+        {/* Champ de recherche */}
+        {isExpanded && (
+          <CardContent className="pt-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+              <Input
+                type="text"
+                placeholder="Rechercher un exercice..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              />
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       {/* Contenu des jours */}
@@ -288,7 +317,13 @@ const WorkoutHistorySection = () => {
             const dayWorkout = workoutProgram[dayKey];
             const isCollapsed = collapsedDays[day];
             const allExercises = getAllExercisesForDay(dayWorkout);
+            const filteredExercises = filterExercises(allExercises);
             const pastDates = generatePastDatesForDay(day);
+
+            // Ne pas afficher le jour s'il n'y a pas d'exercices correspondant à la recherche
+            if (dayWorkout && filteredExercises.length === 0 && searchTerm.trim()) {
+              return null;
+            }
 
             if (!dayWorkout) {
               return (
@@ -324,7 +359,7 @@ const WorkoutHistorySection = () => {
                         {dayWorkout.name}
                       </Badge>
                       <Badge variant="outline" className="border-slate-500 text-slate-400">
-                        {allExercises.length} exercices
+                        {searchTerm.trim() ? `${filteredExercises.length}/${allExercises.length}` : allExercises.length} exercices
                       </Badge>
                     </div>
                     {isCollapsed ? <ChevronRight size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
@@ -361,7 +396,7 @@ const WorkoutHistorySection = () => {
 
                         {/* Corps du tableau pour ce jour */}
                         <tbody>
-                          {allExercises.map((exercise) => (
+                          {filteredExercises.map((exercise) => (
                             <tr key={exercise.id} className={`border-b border-slate-700/50 hover:bg-slate-700/20 ${getExerciseBorderColor(exercise)} border-l-2`}>
                               {/* Colonne exercice */}
                               <td className="p-4 sticky left-0 bg-slate-800/50">

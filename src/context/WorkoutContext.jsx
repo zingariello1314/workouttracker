@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useWorkoutData } from '../hooks/useWorkoutData';
 import { useWorkoutLogic } from '../hooks/useWorkoutLogic';
-import { useWorkoutStats } from '../hooks/useWorkoutStats';
 import { workoutProgram } from '../data/workoutProgram';
+import { findExerciseInDatabase } from '../data/exerciseDatabase';
 import { getDateStr } from '../utils/dateUtils';
 
 const WorkoutContext = createContext();
@@ -453,6 +453,124 @@ const WorkoutProvider = ({ children }) => {
   // CORRECTION: Utiliser toujours les données réelles (data) pour les statistiques et badges
   // Les données temporaires (tempData) ne doivent être utilisées que pour l'édition en cours
   // const workoutStats = useWorkoutStats(); // Commenté temporairement pour éviter l'erreur circulaire
+  
+  // Fonction getWorkoutHistory directement dans le contexte pour éviter la dépendance circulaire
+  // Fonction pour récupérer le nom d'un exercice à partir de son ID
+  const getExerciseNameById = (exerciseId) => {
+    // Chercher dans tous les jours du programme
+    for (const day of Object.values(workoutProgram)) {
+      if (day.exercices) {
+        const exercise = day.exercices.find(ex => ex.id === parseInt(exerciseId));
+        if (exercise) {
+          return exercise.name;
+        }
+      }
+      
+      // Chercher dans les variantes salle
+      if (day.salleVariants) {
+        for (const variant of Object.values(day.salleVariants)) {
+          if (variant.exercices) {
+            const exercise = variant.exercices.find(ex => ex.id === parseInt(exerciseId));
+            if (exercise) {
+              return exercise.name;
+            }
+          }
+        }
+      }
+    }
+    
+    // Si pas trouvé dans le programme, essayer dans la base de données d'exercices
+    // (au cas où l'exercice aurait été ajouté manuellement)
+    return `Exercice ${exerciseId}`;
+  };
+
+  const getWorkoutHistory = () => {
+    console.log('DEBUG: getWorkoutHistory called');
+    const currentData = getCurrentData();
+    console.log('DEBUG: currentData:', currentData);
+    console.log('DEBUG: currentData.reps:', currentData?.reps);
+    console.log('DEBUG: currentData.checkedExercises:', currentData?.checkedExercises);
+    
+    if (!currentData || !currentData.reps || !currentData.checkedExercises) {
+      console.log('DEBUG: No data found, returning empty array');
+      return [];
+    }
+
+    const history = [];
+    
+    // Grouper les données par date
+    const dataByDate = {};
+    
+    Object.keys(currentData.reps).forEach(key => {
+      const reps = parseInt(currentData.reps[key]) || 0;
+      console.log(`DEBUG: Processing key: ${key} reps: ${reps}`);
+      
+      if (reps > 0) {
+        // Extraire la date de la clé (format: YYYY-MM-DD_exerciseId_variant)
+        const parts = key.split('_');
+        if (parts.length >= 2) {
+          const dateStr = parts[0];
+          const exerciseId = parts[1];
+          const variant = parts[2] || '';
+          
+          if (!dataByDate[dateStr]) {
+            dataByDate[dateStr] = {};
+          }
+          
+          dataByDate[dateStr][key] = {
+            exerciseId: exerciseId,
+            reps: reps,
+            completed: currentData.checkedExercises[key] || false,
+            variant: variant
+          };
+        }
+      }
+    });
+    
+    // Traiter chaque date
+    Object.keys(dataByDate).forEach(dateStr => {
+      const date = new Date(dateStr);
+      const dayName = workoutLogic.getDayName(date);
+      
+      console.log(`DEBUG: Processing date: ${dateStr} dayName: ${dayName}`);
+      
+      const dateData = dataByDate[dateStr];
+      const exercises = [];
+      
+      // Créer les exercices à partir des données réelles
+      Object.keys(dateData).forEach(key => {
+        const exerciseData = dateData[key];
+        const exerciseName = getExerciseNameById(exerciseData.exerciseId);
+        
+        exercises.push({
+          id: exerciseData.exerciseId,
+          name: exerciseName,
+          reps: exerciseData.reps,
+          completed: exerciseData.completed
+        });
+      });
+
+      const totalReps = exercises.reduce((sum, ex) => sum + ex.reps, 0);
+      const completedExercises = exercises.filter(ex => ex.completed).length;
+
+      if (totalReps > 0 || completedExercises > 0) {
+        const sessionData = {
+          date: dateStr,
+          dayName: dayName,
+          exercises: exercises,
+          totalReps: totalReps,
+          completedExercises: completedExercises,
+          totalExercises: exercises.length
+        };
+        
+        console.log(`DEBUG: Adding session data for ${dateStr}:`, sessionData);
+        history.push(sessionData);
+      }
+    });
+
+    console.log('DEBUG: Final history result:', history);
+    return history.sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
 
   // Fonction pour ajouter une entrée de progression (métriques, impédancemétrie, etc.)
   const addProgressEntry = async (entryData) => {
@@ -753,8 +871,10 @@ const WorkoutProvider = ({ children }) => {
     
     // Fonctions de données
     // Hooks personnalisés
-    ...workoutLogic
-    // ...workoutStats // Supprimé temporairement pour éviter l'erreur circulaire
+    ...workoutLogic,
+    
+    // Fonctions de statistiques
+    getWorkoutHistory
   };
 
   // Sauvegarde automatique du contexte
