@@ -220,6 +220,7 @@ const DataEntryTab = () => {
     });
   };
 
+
   // Générer les 7 derniers jours pour la saisie en lot
   const getLastSevenDays = () => {
     const days = [];

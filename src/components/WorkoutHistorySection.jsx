@@ -3,7 +3,7 @@ import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
 import Input from './ui/Input';
-import { History, ChevronDown, ChevronUp, Calendar, Save, Check, ChevronRight, Search } from 'lucide-react';
+import { History, ChevronDown, ChevronUp, Calendar, Save, Check, ChevronRight, Search, Activity } from 'lucide-react';
 import { workoutProgram } from '../data/workoutProgram';
 import { useWorkout } from '../context/WorkoutContext';
 import { typography } from '../styles/typography';
@@ -16,7 +16,7 @@ const WorkoutHistorySection = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [collapsedDays, setCollapsedDays] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
-  const { data, updateReps, getDateStr, getDayName, getCurrentData, updateTempExerciseData, saveExerciseChanges } = useWorkout();
+  const { data, updateReps, getDateStr, getDayName, getCurrentData, updateTempExerciseData, saveExerciseChanges, updateTempStretchData, saveStretchChanges } = useWorkout();
 
   // Ordre chronologique des jours
   const daysOrder = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -108,6 +108,20 @@ const WorkoutHistorySection = () => {
     }
     
     return allExercises;
+  };
+
+  // Fonction pour obtenir tous les étirements d'un jour
+  const getAllStretchesForDay = (dayWorkout) => {
+    if (!dayWorkout || !dayWorkout.etirements) return [];
+    
+    const stretchTypes = getStretchTypes(dayWorkout);
+    return stretchTypes.map(stretchType => ({
+      id: `stretch_${stretchType}`,
+      name: `Étirements ${stretchType.charAt(0).toUpperCase() + stretchType.slice(1)}`,
+      type: 'stretch',
+      stretchType: stretchType,
+      description: dayWorkout.etirements[stretchType]
+    }));
   };
 
   // Référence pour le debounce de sauvegarde
@@ -213,11 +227,53 @@ const WorkoutHistorySection = () => {
     return currentData.checkedExercises[key] || false;
   };
 
+  // Fonctions de gestion des étirements
+  const handleStretchToggle = (stretchType, dateStr) => {
+    try {
+      const currentData = getCurrentData();
+      if (!currentData) {
+        console.error('Données actuelles non disponibles');
+        return;
+      }
+
+      const key = `${dateStr}_${stretchType}`;
+      const newData = {
+        ...currentData,
+        checkedStretches: {
+          ...currentData.checkedStretches,
+          [key]: !currentData.checkedStretches[key]
+        }
+      };
+      
+      updateTempStretchData(newData);
+      // Utiliser le système de debounce unifié
+      debouncedSave();
+    } catch (error) {
+      console.error('Erreur dans handleStretchToggle:', error);
+    }
+  };
+
+  // Vérifier si un étirement est marqué comme terminé
+  const isStretchCompleted = (stretchType, dateStr) => {
+    const currentData = getCurrentData();
+    const key = `${dateStr}_${stretchType}`;
+    return currentData.checkedStretches[key] || false;
+  };
+
+  // Obtenir les types d'étirements pour un jour
+  const getStretchTypes = (dayWorkout) => {
+    if (!dayWorkout || !dayWorkout.etirements) return [];
+    return Object.keys(dayWorkout.etirements).filter(key => 
+      dayWorkout.etirements[key] && dayWorkout.etirements[key].trim() !== ''
+    );
+  };
+
   // Obtenir la couleur de bordure selon le type d'exercice
   const getExerciseBorderColor = (exercise) => {
     switch (exercise.type) {
       case 'semaineA': return 'border-l-orange-400';
       case 'semaineB': return 'border-l-purple-400';
+      case 'stretch': return 'border-l-green-400';
       default: return 'border-l-blue-400';
     }
   };
@@ -227,6 +283,7 @@ const WorkoutHistorySection = () => {
     switch (exercise.type) {
       case 'semaineA': return 'bg-orange-600 text-white';
       case 'semaineB': return 'bg-purple-600 text-white';
+      case 'stretch': return 'bg-green-600 text-white';
       default: return 'bg-blue-600 text-white';
     }
   };
@@ -234,6 +291,7 @@ const WorkoutHistorySection = () => {
   // Calculer les statistiques globales
   const calculateStats = () => {
     let totalExercises = 0;
+    let totalStretches = 0;
     let totalDaysWithWorkouts = 0;
 
     daysOrder.forEach(day => {
@@ -242,10 +300,11 @@ const WorkoutHistorySection = () => {
       if (dayWorkout) {
         totalDaysWithWorkouts++;
         totalExercises += getAllExercisesForDay(dayWorkout).length;
+        totalStretches += getAllStretchesForDay(dayWorkout).length;
       }
     });
 
-    return { totalExercises, totalDaysWithWorkouts };
+    return { totalExercises, totalStretches, totalDaysWithWorkouts };
   };
 
   // Fonction pour filtrer les exercices selon le terme de recherche
@@ -256,7 +315,8 @@ const WorkoutHistorySection = () => {
     return exercises.filter(exercise => 
       exercise.name.toLowerCase().includes(searchLower) ||
       (exercise.materiel && exercise.materiel.toLowerCase().includes(searchLower)) ||
-      (exercise.notes && exercise.notes.toLowerCase().includes(searchLower))
+      (exercise.notes && exercise.notes.toLowerCase().includes(searchLower)) ||
+      (exercise.description && exercise.description.toLowerCase().includes(searchLower))
     );
   };
 
@@ -285,7 +345,7 @@ const WorkoutHistorySection = () => {
             <div className="flex items-center gap-4">
               <Badge variant="outline" className="border-blue-500 text-blue-400 flex items-center gap-1">
                 <Calendar size={12} />
-                {stats.totalDaysWithWorkouts} jours • {stats.totalExercises} exercices
+                {stats.totalDaysWithWorkouts} jours • {stats.totalExercises} exercices • {stats.totalStretches} étirements
               </Badge>
               {isExpanded ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
             </div>
@@ -317,11 +377,13 @@ const WorkoutHistorySection = () => {
             const dayWorkout = workoutProgram[dayKey];
             const isCollapsed = collapsedDays[day];
             const allExercises = getAllExercisesForDay(dayWorkout);
-            const filteredExercises = filterExercises(allExercises);
+            const allStretches = getAllStretchesForDay(dayWorkout);
+            const allItems = [...allExercises, ...allStretches];
+            const filteredItems = filterExercises(allItems);
             const pastDates = generatePastDatesForDay(day);
 
-            // Ne pas afficher le jour s'il n'y a pas d'exercices correspondant à la recherche
-            if (dayWorkout && filteredExercises.length === 0 && searchTerm.trim()) {
+            // Ne pas afficher le jour s'il n'y a pas d'éléments correspondant à la recherche
+            if (dayWorkout && filteredItems.length === 0 && searchTerm.trim()) {
               return null;
             }
 
@@ -359,7 +421,7 @@ const WorkoutHistorySection = () => {
                         {dayWorkout.name}
                       </Badge>
                       <Badge variant="outline" className="border-slate-500 text-slate-400">
-                        {searchTerm.trim() ? `${filteredExercises.length}/${allExercises.length}` : allExercises.length} exercices
+                        {searchTerm.trim() ? `${filteredItems.length}/${allItems.length}` : allItems.length} éléments
                       </Badge>
                     </div>
                     {isCollapsed ? <ChevronRight size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
@@ -396,74 +458,109 @@ const WorkoutHistorySection = () => {
 
                         {/* Corps du tableau pour ce jour */}
                         <tbody>
-                          {filteredExercises.map((exercise) => (
-                            <tr key={exercise.id} className={`border-b border-slate-700/50 hover:bg-slate-700/20 ${getExerciseBorderColor(exercise)} border-l-2`}>
-                              {/* Colonne exercice */}
+                          {filteredItems.map((item) => (
+                            <tr key={item.id} className={`border-b border-slate-700/50 hover:bg-slate-700/20 ${getExerciseBorderColor(item)} border-l-2`}>
+                              {/* Colonne exercice/étirement */}
                               <td className="p-4 sticky left-0 bg-slate-800/50">
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-2">
                                     <span className="text-white font-medium text-sm">
-                                      {exercise.name}
+                                      {item.name}
                                     </span>
-                                    <Badge className={`text-xs ${getExerciseBadgeColor(exercise)}`}>
-                                      {exercise.type === 'semaineA' ? 'Sem A' : 
-                                       exercise.type === 'semaineB' ? 'Sem B' : 'Principal'}
+                                    <Badge className={`text-xs ${getExerciseBadgeColor(item)}`}>
+                                      {item.type === 'semaineA' ? 'Sem A' : 
+                                       item.type === 'semaineB' ? 'Sem B' : 
+                                       item.type === 'stretch' ? 'Étirement' : 'Principal'}
                                     </Badge>
                                   </div>
-                                  {exercise.materiel && (
+                                  {item.materiel && (
                                     <span className="text-xs text-slate-500">
-                                      {exercise.materiel}
+                                      {item.materiel}
                                     </span>
                                   )}
-                                  {exercise.notes && (
+                                  {item.notes && (
                                     <span className="text-xs text-slate-400">
-                                      {exercise.notes}
+                                      {item.notes}
+                                    </span>
+                                  )}
+                                  {item.description && (
+                                    <span className="text-xs text-slate-400 max-w-xs truncate">
+                                      {item.description}
                                     </span>
                                   )}
                                 </div>
                               </td>
 
-                              {/* Colonne séries */}
+                              {/* Colonne séries/période */}
                               <td className="p-2 text-center">
                                 <Badge variant="outline" className="border-slate-500 text-slate-300 text-xs">
-                                  {exercise.series || '—'}
+                                  {item.series || item.stretchType || '—'}
                                 </Badge>
                               </td>
 
                               {/* Colonnes de dates passées pour ce jour */}
                               {pastDates.map((dateInfo) => {
-                                const repsValue = getRepsValue(exercise.id, dateInfo.isoDateStr);
-                                const isCompleted = isExerciseCompleted(exercise.id, dateInfo.isoDateStr);
-                                
-                                return (
-                                  <td key={`${exercise.id}_${dateInfo.isoDateStr}`} className="p-3">
-                                    <div className="flex flex-col items-center gap-2">
-                                      {/* Champ de saisie */}
-                                      <Input
-                                        type="number"
-                                        value={repsValue}
-                                        onChange={(e) => handleRepsChange(exercise.id, dateInfo.isoDateStr, e.target.value)}
-                                        placeholder="0"
-                                        className="w-16 h-10 text-center text-sm bg-slate-700 border-slate-600 text-white font-medium focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-                                        min="0"
-                                      />
-                                      
-                                      {/* Case à cocher */}
-                                      <button
-                                        onClick={() => handleCompletedToggle(exercise.id, dateInfo.isoDateStr)}
-                                        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                                          isCompleted 
-                                            ? 'bg-green-500 border-green-500' 
-                                            : 'border-slate-500 hover:border-green-400'
-                                        }`}
-                                      >
+                                if (item.type === 'stretch') {
+                                  // Gestion des étirements
+                                  const isCompleted = isStretchCompleted(item.stretchType, dateInfo.isoDateStr);
+                                  
+                                  return (
+                                    <td key={`${item.id}_${dateInfo.isoDateStr}`} className="p-3">
+                                      <div className="flex flex-col items-center gap-2">
+                                        {/* Case à cocher pour étirement */}
+                                        <button
+                                          onClick={() => handleStretchToggle(item.stretchType, dateInfo.isoDateStr)}
+                                          className={`w-8 h-8 rounded border-2 flex items-center justify-center transition-colors ${
+                                            isCompleted 
+                                              ? 'bg-green-500 border-green-500' 
+                                              : 'border-slate-500 hover:border-green-400'
+                                          }`}
+                                        >
+                                          {isCompleted && (
+                                            <Check size={16} className="text-white" />
+                                          )}
+                                        </button>
                                         {isCompleted && (
-                                          <Check size={14} className="text-white" />
+                                          <div className="text-green-400 text-xs">✓</div>
                                         )}
-                                      </button>
-                                    </div>
-                                  </td>
-                                );
+                                      </div>
+                                    </td>
+                                  );
+                                } else {
+                                  // Gestion des exercices (code existant)
+                                  const repsValue = getRepsValue(item.id, dateInfo.isoDateStr);
+                                  const isCompleted = isExerciseCompleted(item.id, dateInfo.isoDateStr);
+                                  
+                                  return (
+                                    <td key={`${item.id}_${dateInfo.isoDateStr}`} className="p-3">
+                                      <div className="flex flex-col items-center gap-2">
+                                        {/* Champ de saisie */}
+                                        <Input
+                                          type="number"
+                                          value={repsValue}
+                                          onChange={(e) => handleRepsChange(item.id, dateInfo.isoDateStr, e.target.value)}
+                                          placeholder="0"
+                                          className="w-16 h-10 text-center text-sm bg-slate-700 border-slate-600 text-white font-medium focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                                          min="0"
+                                        />
+                                        
+                                        {/* Case à cocher */}
+                                        <button
+                                          onClick={() => handleCompletedToggle(item.id, dateInfo.isoDateStr)}
+                                          className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                                            isCompleted 
+                                              ? 'bg-green-500 border-green-500' 
+                                              : 'border-slate-500 hover:border-green-400'
+                                          }`}
+                                        >
+                                          {isCompleted && (
+                                            <Check size={14} className="text-white" />
+                                          )}
+                                        </button>
+                                      </div>
+                                    </td>
+                                  );
+                                }
                               })}
                             </tr>
                           ))}
@@ -484,7 +581,15 @@ const WorkoutHistorySection = () => {
               onClick={saveExerciseChanges}
             >
               <Save size={16} className="mr-2" />
-              Sauvegarder toutes les saisies
+              Sauvegarder les exercices
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-green-600 text-green-300 hover:bg-green-700"
+              onClick={saveStretchChanges}
+            >
+              <Activity size={16} className="mr-2" />
+              Sauvegarder les étirements
             </Button>
           </div>
         </div>
