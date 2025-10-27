@@ -19,7 +19,7 @@ const useWorkout = () => {
 const WorkoutProvider = ({ children }) => {
   // État principal
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeTab, setActiveTab] = useState('today');
+  const [activeTab, setActiveTab] = useState('home');
   const [weekVariant, setWeekVariant] = useState('A');
   const [statsPeriod, setStatsPeriod] = useState('week');
   const [isGymMode, setIsGymMode] = useState(false);
@@ -697,6 +697,8 @@ const WorkoutProvider = ({ children }) => {
     }
   };
 
+  // Fonctions homepageImages supprimées - maintenant gérées par useHomepageImages indépendant
+
   // Fonctions utilitaires pour calculer les données des défis
   const getWorkoutHistoryFromData = (data) => {
     if (!data || !data.checkedExercises) return [];
@@ -890,6 +892,8 @@ const WorkoutProvider = ({ children }) => {
     addProgressEntry,
     addProgressPhoto,
     deleteProgressPhoto,
+    
+    // Fonctions homepageImages supprimées - maintenant gérées par useHomepageImages indépendant
     
     // Gestion des programmes
     programs,

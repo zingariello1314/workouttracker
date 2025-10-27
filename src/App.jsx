@@ -2,9 +2,11 @@ import React from 'react';
 import { WorkoutProvider } from './context/WorkoutContext';
 import Header from './components/layout/Header';
 import Navigation from './components/layout/Navigation';
+import HomePage from './components/HomePage';
 import TodayTab from './components/tabs/TodayTab';
 import DataEntryTab from './components/tabs/DataEntryTab';
 import ProgressTab from './components/tabs/ProgressTab';
+import EnduranceTab from './components/tabs/EnduranceTab';
 import CalendarTab from './components/tabs/CalendarTab';
 import ProgramTab from './components/tabs/ProgramTab';
 import ChartsTab from './components/tabs/ChartsTab';
@@ -45,12 +47,16 @@ const WorkoutTrackerContent = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'home':
+        return <HomePage />;
       case 'today':
         return <TodayTab />;
       case 'data-entry':
         return <DataEntryTab />;
       case 'progress':
         return <ProgressTab />;
+      case 'endurance':
+        return <EnduranceTab />;
       case 'calendar':
         return <CalendarTab />;
       case 'program':
@@ -70,19 +76,23 @@ const WorkoutTrackerContent = () => {
       case 'settings':
         return <SettingsTab />;
       default:
-        return <TodayTab />;
+        return <HomePage />;
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
-      <Navigation />
+      {activeTab !== 'home' && <Header />}
+      {activeTab !== 'home' && <Navigation />}
       
       <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto px-4 py-6">
-          {renderTabContent()}
-        </div>
+        {activeTab === 'home' ? (
+          <HomePage />
+        ) : (
+          <div className="container mx-auto px-4 py-6">
+            {renderTabContent()}
+          </div>
+        )}
       </main>
 
       {/* Modales */}

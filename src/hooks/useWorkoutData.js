@@ -103,7 +103,8 @@ export const useWorkoutData = () => {
     startDate: null,
     weekVariant: 'A',
     progressPhotos: [],
-    sessionFeedbacks: {} // Nouveau: stockage des feedbacks de session par date
+    sessionFeedbacks: {} // Stockage des feedbacks de session par date
+    // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
   });
 
   // Tous les useRef doivent être déclarés avant les useCallback et useEffect
@@ -221,6 +222,7 @@ export const useWorkoutData = () => {
         weekVariant: newData && newData.weekVariant ? newData.weekVariant : 'A',
         progressPhotos: newData && newData.progressPhotos ? [...newData.progressPhotos] : [],
         sessionFeedbacks: newData && newData.sessionFeedbacks ? { ...newData.sessionFeedbacks } : {},
+        // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
         lastSaved: new Date().toISOString(),
         dataVersion: '1.0' // Ajout d'une version pour la compatibilité future
       };
@@ -258,16 +260,45 @@ export const useWorkoutData = () => {
       
       // Fallback vers localStorage en cas d'erreur critique
       try {
+        // Nettoyer d'abord pour libérer de l'espace
+        cleanupLocalStorage();
+        
         localStorage.setItem('workoutData_backup', JSON.stringify(newData));
         localStorage.setItem('workoutData_lastSaved', new Date().toISOString());
+        console.log('✅ Sauvegarde de secours réussie dans localStorage');
       } catch (localStorageError) {
         console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
-        throw new Error('Impossible de sauvegarder les données - tous les systèmes de sauvegarde ont échoué');
+        
+        // Dernière tentative : sauvegarder seulement les données essentielles
+        try {
+          const essentialData = {
+            checkedExercises: newData.checkedExercises || {},
+            reps: newData.reps || {},
+            checkedStretches: newData.checkedStretches || {},
+            startDate: newData.startDate || null,
+            weekVariant: newData.weekVariant || 'A',
+            progressPhotos: [],
+            sessionFeedbacks: newData.sessionFeedbacks || {},
+            homepageImages: {
+              backgroundImages: [],
+              bannerImages: [],
+              lastUpdated: new Date().toISOString()
+            },
+            lastSaved: new Date().toISOString(),
+            dataVersion: '1.0'
+          };
+          
+          localStorage.setItem('workoutData_essential', JSON.stringify(essentialData));
+          console.log('✅ Sauvegarde des données essentielles réussie');
+        } catch (essentialError) {
+          console.error('❌ Échec de la sauvegarde des données essentielles:', essentialError);
+          throw new Error('Impossible de sauvegarder les données - tous les systèmes de sauvegarde ont échoué');
+        }
       }
     }
   };
 
-  // Fonction de sauvegarde automatique avec debounce optimisé
+  // Fonction de sauvegarde automatique avec debounce optimisé et backup renforcé
   const autoSave = useCallback((newData) => {
     // Annuler le timer précédent s'il existe
     if (debounceTimerRef.current) {
@@ -279,15 +310,74 @@ export const useWorkoutData = () => {
     const newDataString = JSON.stringify(newData);
     
     if (currentDataString === newDataString) {
-
       return;
     }
 
-    // Programmer une nouvelle sauvegarde après 2 secondes d'inactivité (augmenté de 1 à 2 secondes)
-    debounceTimerRef.current = setTimeout(() => {
-      saveToDB(newData);
-    }, 2000); // Augmenté à 2 secondes pour réduire la fréquence
+    // Programmer une nouvelle sauvegarde après 1 seconde d'inactivité
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        // Sauvegarde principale
+        await saveToDB(newData);
+        
+        // Backup supplémentaire pour les images de la page d'accueil
+        if (newData.homepageImages) {
+          const homepageData = {
+            backgroundImages: newData.homepageImages.backgroundImages || [],
+            bannerImages: newData.homepageImages.bannerImages || [],
+            lastUpdated: new Date().toISOString()
+          };
+          
+          // Backup localStorage (seulement si l'espace est disponible)
+          try {
+            localStorage.setItem('homepage_images_backup', JSON.stringify(homepageData));
+          } catch (quotaError) {
+            console.warn('⚠️ localStorage plein, backup ignoré:', quotaError.message);
+            // Nettoyer et réessayer
+            cleanupLocalStorage();
+            try {
+              localStorage.setItem('homepage_images_backup', JSON.stringify(homepageData));
+            } catch (retryError) {
+              console.warn('⚠️ Backup impossible même après nettoyage:', retryError.message);
+            }
+          }
+          
+          // Backup sessionStorage (plus petit)
+          try {
+            sessionStorage.setItem('homepage_images_session', JSON.stringify(homepageData));
+          } catch (quotaError) {
+            console.warn('⚠️ sessionStorage plein, backup ignoré:', quotaError.message);
+          }
+          
+          console.log('✅ Images de la page d\'accueil sauvegardées avec backup renforcé');
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la sauvegarde automatique:', error);
+      }
+    }, 1000);
   }, [data]);
+
+  // Fonction de nettoyage automatique du localStorage
+  const cleanupLocalStorage = () => {
+    try {
+      // Nettoyer les anciens backups volumineux
+      const keysToClean = [
+        'workoutData_backup'
+        // Les clés homepage_* sont maintenant gérées par useHomepageImages indépendant
+      ];
+      
+      keysToClean.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (error) {
+          console.warn(`⚠️ Impossible de nettoyer ${key}:`, error);
+        }
+      });
+      
+      console.log('🧹 Nettoyage automatique du localStorage effectué');
+    } catch (error) {
+      console.warn('⚠️ Erreur lors du nettoyage:', error);
+    }
+  };
 
   const loadFromDB = async () => {
     try {
@@ -413,8 +503,12 @@ export const useWorkoutData = () => {
     }
   };
 
+  // Effet pour le chargement initial des données
   useEffect(() => {
     loadData();
+    
+    // Nettoyage automatique au démarrage
+    cleanupLocalStorage();
   }, []);
 
   // Effet pour la sauvegarde automatique à chaque changement de données

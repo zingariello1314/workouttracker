@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw } from 'lucide-react';
+import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
+import HomePageImageSettings from '../HomePageImageSettings';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB } = useWorkout();
@@ -12,6 +13,7 @@ const SettingsTab = () => {
   const [importData, setImportData] = useState('');
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
+  const [showHomePageSettings, setShowHomePageSettings] = useState(false);
   const fileInputRef = useRef(null);
 
   // Fonction pour exporter toutes les données
@@ -40,6 +42,20 @@ const SettingsTab = () => {
           progressPhotos: (dataToExport.progressPhotos || []).length,
           progressEntries: (dataToExport.progressEntries || []).length,
           bodyTrackingReminders: (dataToExport.bodyTrackingReminders || []).length,
+          
+          // Données de la page d'accueil (maintenant gérées par useHomepageImages indépendant)
+          homepageBackgroundImages: 0, // Système indépendant
+          homepageBannerImages: 0, // Système indépendant
+          homepageLastUpdated: null, // Système indépendant
+          
+          // Données d'endurance
+          endurancePushupSessions: (dataToExport.enduranceData?.pushupSessions || []).length,
+          enduranceBoxingSessions: (dataToExport.enduranceData?.boxingSessions || []).length,
+          enduranceSwimmingSessions: (dataToExport.enduranceData?.swimmingSessions || []).length,
+          enduranceJumpropeSessions: (dataToExport.enduranceData?.jumpropeSessions || []).length,
+          enduranceRunningSessions: (dataToExport.enduranceData?.runningSessions || []).length,
+          enduranceChallenges: (dataToExport.enduranceData?.challenges || []).length,
+          enduranceLastUpdated: dataToExport.enduranceData?.lastUpdated || null,
           
           // Configuration et historique
           startDate: dataToExport.startDate,
@@ -237,6 +253,42 @@ const SettingsTab = () => {
         </h2>
       </div>
 
+      {/* Section Page d'Accueil */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <Image className="mr-2" size={20} />
+            Page d'Accueil
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-gray-300 text-sm">
+              Personnalisez les images de fond et les bannières de votre page d'accueil.
+            </p>
+            
+            <div className="bg-slate-700/50 rounded-lg p-4">
+              <h4 className="font-medium text-white mb-2">Fonctionnalités :</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>• Rotation d'images de fond à chaque interaction</li>
+                <li>• Rotation automatique des bannières toutes les 2 minutes</li>
+                <li>• Import d'images JPG/JPEG depuis vos fichiers</li>
+                <li>• Transitions fluides vers les autres onglets</li>
+                <li>• Stockage local des images dans votre navigateur</li>
+              </ul>
+            </div>
+
+            <Button
+              onClick={() => setShowHomePageSettings(true)}
+              icon={Image}
+              className="w-full bg-purple-600 hover:bg-purple-700"
+            >
+              Configurer les Images de la Page d'Accueil
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Section Export */}
       <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
         <CardHeader>
@@ -269,6 +321,14 @@ const SettingsTab = () => {
                     <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
                     <li>• Entrées de progression : {(data.progressEntries || []).length} entrées</li>
                     <li>• Rappels configurés : {(data.bodyTrackingReminders || []).length} rappels</li>
+                  </ul>
+                </div>
+                <div className="space-y-1">
+                  <h5 className="text-sm font-medium text-purple-300">🏠 Page d'Accueil</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Images de fond : Système indépendant</li>
+                    <li>• Bannières : Système indépendant</li>
+                    <li>• Dernière mise à jour : Système indépendant</li>
                   </ul>
                 </div>
                 <div className="space-y-1">
@@ -536,6 +596,11 @@ const SettingsTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal des paramètres de la page d'accueil */}
+      {showHomePageSettings && (
+        <HomePageImageSettings onClose={() => setShowHomePageSettings(false)} />
+      )}
     </div>
   );
 };

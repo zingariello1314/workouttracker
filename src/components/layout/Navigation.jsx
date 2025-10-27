@@ -5,9 +5,11 @@ const Navigation = () => {
   const { activeTab, setActiveTab } = useWorkout();
 
   const tabs = [
+    { id: 'home', label: 'Accueil', icon: '🏠' },
     { id: 'today', label: "Aujourd'hui", icon: '📅' },
     { id: 'data-entry', label: 'Saisie', icon: '✏️' },
     { id: 'progress', label: 'Suivi Corporel', icon: '📸' },
+    { id: 'endurance', label: 'Endurance', icon: '🏃' },
     { id: 'calendar', label: 'Calendrier', icon: '🗓️' },
     { id: 'program', label: 'Programme', icon: '🎯' },
     { id: 'charts', label: 'Graphiques', icon: '📊' },
