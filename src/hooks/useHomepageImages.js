@@ -1,8 +1,70 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export const useHomepageImages = () => {
   const [backgroundImages, setBackgroundImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const backgroundImagesRef = useRef([]);
+
+  // Mettre à jour la ref quand backgroundImages change
+  useEffect(() => {
+    backgroundImagesRef.current = backgroundImages;
+  }, [backgroundImages]);
+
+  // Fonction pour compresser les images avant sauvegarde
+  const compressImage = (base64String, maxWidth = 1920, quality = 0.8) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Calculer les nouvelles dimensions
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Dessiner l'image redimensionnée
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convertir en base64 avec compression
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedBase64);
+      };
+      
+      img.onerror = () => resolve(base64String); // En cas d'erreur, retourner l'original
+      img.src = base64String;
+    });
+  };
+
+  // Fonction pour nettoyer le localStorage
+  const cleanupLocalStorage = () => {
+    try {
+      // Nettoyer les anciennes clés
+      const keysToClean = [
+        'homepage_backgroundImages_backup',
+        'homepage_bannerImages_backup',
+        'homepage_images_backup_old',
+        'workoutData_backup'
+      ];
+      
+      keysToClean.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (error) {
+          console.warn(`⚠️ Impossible de nettoyer ${key}:`, error);
+        }
+      });
+      
+      console.log('🧹 Nettoyage localStorage effectué');
+    } catch (error) {
+      console.warn('⚠️ Erreur lors du nettoyage:', error);
+    }
+  };
 
   // Clés de stockage simplifiées et fiables
   const STORAGE_KEYS = {
@@ -11,97 +73,152 @@ export const useHomepageImages = () => {
     session: 'homepage_images_session'
   };
 
-  // Fonction pour migrer les images depuis le système principal
-  const migrateFromMainSystem = async () => {
+  // Système de sauvegarde simplifié et ultra-fiable
+  const saveImagesSimple = async (images) => {
     try {
-      // Vérifier si les images existent dans le système principal (localStorage)
-      const mainDataStr = localStorage.getItem('workoutData_backup');
-      if (mainDataStr) {
-        const mainData = JSON.parse(mainDataStr);
-        if (mainData.homepageImages) {
-          console.log('🔄 Migration des images depuis le système principal...');
-          
-          // Migrer les images de fond
-          if (mainData.homepageImages.backgroundImages && mainData.homepageImages.backgroundImages.length > 0) {
-            await saveImages('backgroundImages', mainData.homepageImages.backgroundImages);
-            console.log(`✅ ${mainData.homepageImages.backgroundImages.length} images de fond migrées`);
-          }
-          
-          return true;
-        }
+      // Compresser les images pour économiser l'espace
+      console.log('🗜️ Compression des images...');
+      const compressedImages = await Promise.all(
+        images.map(img => compressImage(img, 1920, 0.8))
+      );
+      
+      const imageData = {
+        images: compressedImages,
+        timestamp: new Date().toISOString(),
+        version: '2.0',
+        compressed: true
+      };
+
+      // Nettoyer le localStorage avant sauvegarde
+      cleanupLocalStorage();
+
+      // Sauvegarde principale (localStorage)
+      try {
+        localStorage.setItem(STORAGE_KEYS.primary, JSON.stringify(imageData));
+      } catch (quotaError) {
+        console.warn('⚠️ localStorage plein, nettoyage et retry...');
+        cleanupLocalStorage();
+        localStorage.setItem(STORAGE_KEYS.primary, JSON.stringify(imageData));
       }
       
-      // Vérifier aussi dans IndexedDB principal
-      const request = indexedDB.open('WorkoutTrackerDB', 1);
-      return new Promise((resolve) => {
-        request.onsuccess = (event) => {
-          const db = event.target.result;
-          if (db.objectStoreNames.contains('workouts')) {
-            const transaction = db.transaction(['workouts'], 'readonly');
-            const store = transaction.objectStore('workouts');
-            const getRequest = store.get('main');
-            
-            getRequest.onsuccess = async () => {
-              if (getRequest.result && getRequest.result.homepageImages) {
-                console.log('🔄 Migration des images depuis IndexedDB principal...');
-                
-                // Migrer les images de fond
-                if (getRequest.result.homepageImages.backgroundImages && getRequest.result.homepageImages.backgroundImages.length > 0) {
-                  await saveImages('backgroundImages', getRequest.result.homepageImages.backgroundImages);
-                  console.log(`✅ ${getRequest.result.homepageImages.backgroundImages.length} images de fond migrées`);
-                }
-                
-                resolve(true);
-              } else {
-                resolve(false);
-              }
-            };
-            
-            getRequest.onerror = () => resolve(false);
-          } else {
-            resolve(false);
-          }
-        };
-        
-        request.onerror = () => resolve(false);
-      });
+      // Sauvegarde de secours (localStorage avec clé différente)
+      try {
+        localStorage.setItem(STORAGE_KEYS.backup, JSON.stringify(imageData));
+      } catch (quotaError) {
+        console.warn('⚠️ Sauvegarde de secours échouée:', quotaError);
+      }
+      
+      // Sauvegarde de session (sessionStorage)
+      try {
+        sessionStorage.setItem(STORAGE_KEYS.session, JSON.stringify(imageData));
+      } catch (quotaError) {
+        console.warn('⚠️ sessionStorage plein:', quotaError);
+      }
+      
+      console.log(`✅ Images sauvegardées: ${compressedImages.length} images (compressées)`);
+      setBackgroundImages(compressedImages);
       
     } catch (error) {
-      console.error('❌ Erreur lors de la migration:', error);
-      return false;
+      console.error('❌ Erreur sauvegarde:', error);
+      
+      // En cas d'erreur, essayer de sauvegarder seulement les métadonnées
+      try {
+        const minimalData = {
+          images: [],
+          timestamp: new Date().toISOString(),
+          version: '2.0',
+          error: 'Images trop volumineuses'
+        };
+        localStorage.setItem(STORAGE_KEYS.primary, JSON.stringify(minimalData));
+        console.log('⚠️ Sauvegarde minimale effectuée');
+      } catch (minimalError) {
+        console.error('❌ Impossible de sauvegarder même les métadonnées:', minimalError);
+      }
+      
+      throw error;
     }
   };
 
   // Charger les images depuis tous les niveaux de sauvegarde
   const loadImages = async () => {
     try {
-      console.log('🔍 Chargement des images depuis tous les niveaux...');
+      console.log('🔍 Chargement des images...');
       
-      // Essayer de charger depuis IndexedDB d'abord
-      let imagesLoaded = await loadFromIndexedDB();
+      // Essayer de charger depuis localStorage principal
+      let images = null;
       
-      // Si pas d'images dans IndexedDB, essayer localStorage
-      if (!imagesLoaded) {
-        console.log('📦 IndexedDB vide, tentative localStorage...');
-        imagesLoaded = await loadFromLocalStorage();
-      }
-      
-      // Si toujours pas d'images, essayer sessionStorage
-      if (!imagesLoaded) {
-        console.log('📦 localStorage vide, tentative sessionStorage...');
-        imagesLoaded = await loadFromSessionStorage();
-      }
-      
-      // Si toujours pas d'images, essayer la migration depuis le système principal
-      if (!imagesLoaded) {
-        console.log('📦 sessionStorage vide, tentative migration système principal...');
-        const migrated = await migrateFromMainSystem();
-        
-        if (migrated) {
-          // Recharger après migration
-          await loadImages();
-          return;
+      // 1. Essayer la sauvegarde principale
+      try {
+        const primaryData = localStorage.getItem(STORAGE_KEYS.primary);
+        if (primaryData) {
+          const parsed = JSON.parse(primaryData);
+          if (parsed.images && parsed.images.length > 0) {
+            images = parsed.images;
+            console.log(`✅ Chargé depuis sauvegarde principale: ${images.length} images`);
+          }
         }
+      } catch (error) {
+        console.warn('⚠️ Erreur sauvegarde principale:', error);
+      }
+      
+      // 2. Si pas d'images, essayer la sauvegarde de secours
+      if (!images) {
+        try {
+          const backupData = localStorage.getItem(STORAGE_KEYS.backup);
+          if (backupData) {
+            const parsed = JSON.parse(backupData);
+            if (parsed.images && parsed.images.length > 0) {
+              images = parsed.images;
+              console.log(`✅ Chargé depuis sauvegarde de secours: ${images.length} images`);
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ Erreur sauvegarde de secours:', error);
+        }
+      }
+      
+      // 3. Si toujours pas d'images, essayer sessionStorage
+      if (!images) {
+        try {
+          const sessionData = sessionStorage.getItem(STORAGE_KEYS.session);
+          if (sessionData) {
+            const parsed = JSON.parse(sessionData);
+            if (parsed.images && parsed.images.length > 0) {
+              images = parsed.images;
+              console.log(`✅ Chargé depuis sessionStorage: ${images.length} images`);
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ Erreur sessionStorage:', error);
+        }
+      }
+      
+      // 4. Si toujours pas d'images, essayer l'ancien système (migration unique)
+      if (!images) {
+        try {
+          const oldData = localStorage.getItem('workoutData_backup');
+          if (oldData) {
+            const parsed = JSON.parse(oldData);
+            if (parsed.homepageImages && parsed.homepageImages.backgroundImages) {
+              images = parsed.homepageImages.backgroundImages;
+              console.log(`✅ Migré depuis ancien système: ${images.length} images`);
+              
+              // Sauvegarder immédiatement dans le nouveau système
+              await saveImagesSimple(images);
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ Erreur migration ancien système:', error);
+        }
+      }
+      
+      // Mettre à jour l'état
+      if (images) {
+        setBackgroundImages(images);
+        console.log(`🎉 ${images.length} images chargées avec succès`);
+      } else {
+        console.log('📭 Aucune image trouvée');
+        setBackgroundImages([]);
       }
       
       setIsLoading(false);
@@ -112,290 +229,17 @@ export const useHomepageImages = () => {
     }
   };
 
-  // Charger depuis IndexedDB
-  const loadFromIndexedDB = async () => {
-    return new Promise((resolve) => {
-      const request = indexedDB.open('HomepageImagesDB', 1);
-      
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('images')) {
-          db.createObjectStore('images', { keyPath: 'type' });
-        }
-      };
-      
-      request.onsuccess = (event) => {
-        const db = event.target.result;
-        const transaction = db.transaction(['images'], 'readonly');
-        const store = transaction.objectStore('images');
-        
-        // Charger les images de fond
-        const backgroundRequest = store.get('backgroundImages');
-        backgroundRequest.onsuccess = () => {
-          if (backgroundRequest.result && backgroundRequest.result.images) {
-            setBackgroundImages(backgroundRequest.result.images);
-            console.log(`✅ IndexedDB: ${backgroundRequest.result.images.length} images de fond chargées`);
-          }
-          
-          const hasImages = backgroundRequest.result && backgroundRequest.result.images && backgroundRequest.result.images.length > 0;
-          resolve(hasImages);
-        };
-      };
-      
-      request.onerror = () => {
-        console.error('❌ IndexedDB: Erreur lors du chargement');
-        resolve(false);
-      };
-    });
-  };
-
-  // Charger depuis localStorage
-  const loadFromLocalStorage = async () => {
-    try {
-      let hasImages = false;
-      
-      // Charger images de fond
-      const backgroundData = localStorage.getItem('homepage_backgroundImages_backup');
-      if (backgroundData) {
-        const parsed = JSON.parse(backgroundData);
-        if (parsed.images && parsed.images.length > 0) {
-          setBackgroundImages(parsed.images);
-          console.log(`✅ localStorage: ${parsed.images.length} images de fond chargées`);
-          hasImages = true;
-        }
-      }
-      
-      return hasImages;
-    } catch (error) {
-      console.error('❌ localStorage: Erreur lors du chargement', error);
-      return false;
-    }
-  };
-
-  // Charger depuis sessionStorage
-  const loadFromSessionStorage = async () => {
-    try {
-      let hasImages = false;
-      
-      // Charger images de fond
-      const backgroundData = sessionStorage.getItem('homepage_backgroundImages_session');
-      if (backgroundData) {
-        const parsed = JSON.parse(backgroundData);
-        if (parsed.images && parsed.images.length > 0) {
-          setBackgroundImages(parsed.images);
-          console.log(`✅ sessionStorage: ${parsed.images.length} images de fond chargées`);
-          hasImages = true;
-        }
-      }
-      
-      return hasImages;
-    } catch (error) {
-      console.error('❌ sessionStorage: Erreur lors du chargement', error);
-      return false;
-    }
-  };
-
-  // Sauvegarder les images dans IndexedDB indépendant avec système multi-niveaux
-  const saveImages = async (imageType, images) => {
-    try {
-      console.log(`💾 Sauvegarde ${imageType} - ${images.length} images`);
-      
-      // Validation des données avant sauvegarde
-      const validatedImages = validateImageData(images);
-      if (validatedImages.length !== images.length) {
-        console.warn(`⚠️ ${images.length - validatedImages.length} images invalides supprimées avant sauvegarde`);
-      }
-      
-      // Niveau 1: IndexedDB principal
-      await saveToIndexedDB(imageType, validatedImages);
-      
-      // Niveau 2: localStorage de secours
-      await saveToLocalStorage(imageType, validatedImages);
-      
-      // Niveau 3: sessionStorage pour la session courante
-      await saveToSessionStorage(imageType, validatedImages);
-      
-      console.log(`✅ Sauvegarde ${imageType} réussie sur tous les niveaux`);
-      
-      // Mettre à jour l'état local
-      if (imageType === 'backgroundImages') {
-        setBackgroundImages(validatedImages);
-      }
-      
-    } catch (error) {
-      console.error('❌ Erreur lors de la sauvegarde des images:', error);
-      throw error;
-    }
-  };
-
-  // Sauvegarde dans IndexedDB
-  const saveToIndexedDB = async (imageType, images) => {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open('HomepageImagesDB', 1);
-      
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('images')) {
-          db.createObjectStore('images', { keyPath: 'type' });
-        }
-      };
-      
-      request.onsuccess = (event) => {
-        const db = event.target.result;
-        const transaction = db.transaction(['images'], 'readwrite');
-        const store = transaction.objectStore('images');
-        
-        const imageData = {
-          type: imageType,
-          images: images,
-          lastUpdated: new Date().toISOString(),
-          version: '2.0'
-        };
-        
-        const putRequest = store.put(imageData);
-        putRequest.onsuccess = () => {
-          console.log(`✅ IndexedDB: ${imageType} sauvegardé`);
-          resolve();
-        };
-        putRequest.onerror = () => {
-          console.error(`❌ IndexedDB: Erreur sauvegarde ${imageType}`);
-          reject(putRequest.error);
-        };
-      };
-      
-      request.onerror = () => {
-        console.error('❌ IndexedDB: Impossible d\'ouvrir la base');
-        reject(request.error);
-      };
-    });
-  };
-
-  // Sauvegarde dans localStorage
-  const saveToLocalStorage = async (imageType, images) => {
-    try {
-      const key = `homepage_${imageType}_backup`;
-      const data = {
-        images: images,
-        lastUpdated: new Date().toISOString(),
-        version: '2.0'
-      };
-      
-      localStorage.setItem(key, JSON.stringify(data));
-      console.log(`✅ localStorage: ${imageType} sauvegardé`);
-    } catch (error) {
-      console.error(`❌ localStorage: Erreur sauvegarde ${imageType}`, error);
-      throw error;
-    }
-  };
-
-  // Sauvegarde dans sessionStorage
-  const saveToSessionStorage = async (imageType, images) => {
-    try {
-      const key = `homepage_${imageType}_session`;
-      const data = {
-        images: images,
-        lastUpdated: new Date().toISOString(),
-        version: '2.0'
-      };
-      
-      sessionStorage.setItem(key, JSON.stringify(data));
-      console.log(`✅ sessionStorage: ${imageType} sauvegardé`);
-    } catch (error) {
-      console.error(`❌ sessionStorage: Erreur sauvegarde ${imageType}`, error);
-      // Ne pas faire échouer la sauvegarde pour sessionStorage
-    }
-  };
-
-  // Système de validation et de cohérence pour garantir la stabilité à long terme
-  const validateImageData = (images) => {
-    if (!Array.isArray(images)) {
-      console.warn('⚠️ Images invalides: doit être un tableau');
-      return [];
-    }
-    
-    return images.filter(image => {
-      if (typeof image !== 'string') {
-        console.warn('⚠️ Image invalide: doit être une chaîne base64');
-        return false;
-      }
-      
-      if (!image.startsWith('data:image/')) {
-        console.warn('⚠️ Image invalide: doit commencer par data:image/');
-        return false;
-      }
-      
-      return true;
-    });
-  };
-
-  // Système de nettoyage automatique pour éviter l'accumulation de données corrompues
-  const cleanupCorruptedData = async () => {
-    try {
-      console.log('🧹 Nettoyage des données corrompues...');
-      
-      // Nettoyer IndexedDB
-      const request = indexedDB.open('HomepageImagesDB', 1);
-      request.onsuccess = (event) => {
-        const db = event.target.result;
-        const transaction = db.transaction(['images'], 'readwrite');
-        const store = transaction.objectStore('images');
-        
-        // Vérifier et nettoyer les données
-        const getAllRequest = store.getAll();
-        getAllRequest.onsuccess = () => {
-          getAllRequest.result.forEach(item => {
-            if (item.images) {
-              const cleanedImages = validateImageData(item.images);
-              if (cleanedImages.length !== item.images.length) {
-                console.log(`🧹 Nettoyé ${item.images.length - cleanedImages.length} images corrompues pour ${item.type}`);
-                store.put({
-                  ...item,
-                  images: cleanedImages,
-                  lastCleaned: new Date().toISOString()
-                });
-              }
-            }
-          });
-        };
-      };
-      
-      // Nettoyer localStorage
-      ['homepage_backgroundImages_backup'].forEach(key => {
-        try {
-          const data = localStorage.getItem(key);
-          if (data) {
-            const parsed = JSON.parse(data);
-            if (parsed.images) {
-              const cleanedImages = validateImageData(parsed.images);
-              if (cleanedImages.length !== parsed.images.length) {
-                console.log(`🧹 Nettoyé ${parsed.images.length - cleanedImages.length} images corrompues dans localStorage`);
-                localStorage.setItem(key, JSON.stringify({
-                  ...parsed,
-                  images: cleanedImages,
-                  lastCleaned: new Date().toISOString()
-                }));
-              }
-            }
-          }
-        } catch (error) {
-          console.warn(`⚠️ Erreur nettoyage ${key}:`, error);
-        }
-      });
-      
-    } catch (error) {
-      console.error('❌ Erreur lors du nettoyage:', error);
-    }
-  };
-
   // Sauvegarde automatique périodique pour garantir la persistance
   const startAutoSave = () => {
     // Sauvegarde automatique toutes les 5 minutes
     const autoSaveInterval = setInterval(async () => {
       try {
-        if (backgroundImages.length > 0) {
-          await saveToLocalStorage('backgroundImages', backgroundImages);
+        // Récupérer les images actuelles depuis la ref
+        const currentImages = backgroundImagesRef.current;
+        if (currentImages.length > 0) {
+          await saveImagesSimple(currentImages);
+          console.log('🔄 Sauvegarde automatique effectuée');
         }
-        console.log('🔄 Sauvegarde automatique effectuée');
       } catch (error) {
         console.error('❌ Erreur sauvegarde automatique:', error);
       }
@@ -404,10 +248,12 @@ export const useHomepageImages = () => {
     // Sauvegarde avant fermeture de la page
     const handleBeforeUnload = async () => {
       try {
-        if (backgroundImages.length > 0) {
-          await saveToLocalStorage('backgroundImages', backgroundImages);
+        // Récupérer les images actuelles depuis la ref
+        const currentImages = backgroundImagesRef.current;
+        if (currentImages.length > 0) {
+          await saveImagesSimple(currentImages);
+          console.log('🔄 Sauvegarde avant fermeture effectuée');
         }
-        console.log('🔄 Sauvegarde avant fermeture effectuée');
       } catch (error) {
         console.error('❌ Erreur sauvegarde avant fermeture:', error);
       }
@@ -424,16 +270,11 @@ export const useHomepageImages = () => {
 
   useEffect(() => {
     const initializeSystem = async () => {
-      // 1. Charger les images
-      await loadImages();
+      // Nettoyer le localStorage au démarrage
+      cleanupLocalStorage();
       
-      // 2. Nettoyer les données corrompues (une fois par session)
-      const lastCleanup = sessionStorage.getItem('homepage_last_cleanup');
-      const today = new Date().toDateString();
-      if (lastCleanup !== today) {
-        await cleanupCorruptedData();
-        sessionStorage.setItem('homepage_last_cleanup', today);
-      }
+      // Charger les images
+      await loadImages();
     };
     
     initializeSystem();
@@ -441,12 +282,12 @@ export const useHomepageImages = () => {
     // Démarrer la sauvegarde automatique
     const cleanup = startAutoSave();
     return cleanup;
-  }, [backgroundImages]);
+  }, []); // Supprimer la dépendance backgroundImages pour éviter le cycle infini
 
   return {
     backgroundImages,
     isLoading,
-    saveImages,
+    saveImages: saveImagesSimple,
     loadImages
   };
 };

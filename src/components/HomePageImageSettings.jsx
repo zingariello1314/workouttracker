@@ -9,17 +9,44 @@ const HomePageImageSettings = ({ onClose }) => {
   const [saveStatus, setSaveStatus] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Système de stockage indépendant pour les images de la page d'accueil
-  const saveImagesIndependently = async (imageType, images) => {
+  // Fonction pour nettoyer le localStorage
+  const cleanupLocalStorage = () => {
+    try {
+      const keysToClean = [
+        'homepage_backgroundImages_backup',
+        'homepage_bannerImages_backup',
+        'homepage_images_backup_old',
+        'workoutData_backup'
+      ];
+      
+      keysToClean.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (error) {
+          console.warn(`⚠️ Impossible de nettoyer ${key}:`, error);
+        }
+      });
+      
+      console.log('🧹 Nettoyage localStorage effectué');
+    } catch (error) {
+      console.warn('⚠️ Erreur lors du nettoyage:', error);
+    }
+  };
+
+  // Système de stockage simplifié et ultra-fiable
+  const saveImagesIndependently = async (images) => {
     setIsSaving(true);
     setSaveStatus('saving');
     
     try {
-      await saveImages(imageType, images);
+      // Nettoyer avant sauvegarde
+      cleanupLocalStorage();
+      
+      await saveImages(images);
       setSaveStatus('success');
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde indépendante:', error);
+      console.error('Erreur lors de la sauvegarde:', error);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus(null), 3000);
     } finally {
@@ -101,8 +128,8 @@ const HomePageImageSettings = ({ onClose }) => {
       // Ajouter les nouvelles images aux existantes
       const updatedImages = [...backgroundImages, ...newImages];
       
-      // Sauvegarde indépendante (pas dans workoutData)
-      await saveImagesIndependently('backgroundImages', updatedImages);
+      // Sauvegarde simplifiée
+      await saveImagesIndependently(updatedImages);
       
     } catch (error) {
       console.error('Erreur lors de l\'upload des images:', error);
@@ -119,8 +146,8 @@ const HomePageImageSettings = ({ onClose }) => {
       // Supprimer l'image du tableau local
       const updatedImages = backgroundImages.filter((_, i) => i !== index);
       
-      // Sauvegarde indépendante (pas dans workoutData)
-      await saveImagesIndependently('backgroundImages', updatedImages);
+      // Sauvegarde simplifiée
+      await saveImagesIndependently(updatedImages);
       
     } catch (error) {
       console.error('Erreur lors de la suppression de l\'image:', error);
@@ -129,9 +156,9 @@ const HomePageImageSettings = ({ onClose }) => {
   };
 
 
-  // Bouton de sauvegarde manuelle indépendante
+  // Bouton de sauvegarde manuelle simplifié
   const handleManualSave = async () => {
-    await saveImagesIndependently('backgroundImages', backgroundImages);
+    await saveImagesIndependently(backgroundImages);
   };
 
   return (
