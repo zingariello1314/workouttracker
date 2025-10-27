@@ -28,7 +28,29 @@ const EvolutionChart = ({ data, colors }) => {
 
   const maxReps = Math.max(...evolutionData.map(d => d.totalReps));
   const minReps = Math.min(...evolutionData.map(d => d.totalReps));
-  const range = maxReps - minReps || 1;
+  const range = Math.max(maxReps - minReps, 1); // Éviter la division par zéro
+  
+  // Fonction utilitaire pour calculer les coordonnées de manière sécurisée
+  const getCoordinates = (data, index) => {
+    if (evolutionData.length <= 1) {
+      return { x: 50, y: 50 };
+    }
+    
+    // Validation stricte des données
+    const totalReps = Number(data.totalReps) || 0;
+    const safeMinReps = Number(minReps) || 0;
+    const safeRange = Number(range) || 1;
+    
+    const x = Math.max(0, Math.min(100, (index / (evolutionData.length - 1)) * 100));
+    const normalizedReps = Math.max(0, Math.min(1, (totalReps - safeMinReps) / safeRange));
+    const y = Math.max(0, Math.min(100, 100 - normalizedReps * 80));
+    
+    // Validation finale des coordonnées
+    return { 
+      x: isNaN(x) ? 50 : x, 
+      y: isNaN(y) ? 50 : y 
+    };
+  };
 
   return (
     <div className="space-y-4">
@@ -69,9 +91,8 @@ const EvolutionChart = ({ data, colors }) => {
           {evolutionData.length > 1 && (
             <path
               d={`M 0,100% ${evolutionData.map((d, i) => {
-                const x = (i / (evolutionData.length - 1)) * 100;
-                const y = 100 - ((d.totalReps - minReps) / range) * 80;
-                return `L ${x}%,${y}%`;
+                const coords = getCoordinates(d, i);
+                return `L ${coords.x}%,${coords.y}%`;
               }).join(' ')} L 100%,100% Z`}
               fill="url(#areaGradient)"
             />
@@ -86,23 +107,21 @@ const EvolutionChart = ({ data, colors }) => {
               strokeLinecap="round"
               strokeLinejoin="round"
               points={evolutionData.map((d, i) => {
-                const x = (i / (evolutionData.length - 1)) * 100;
-                const y = 100 - ((d.totalReps - minReps) / range) * 80;
-                return `${x}%,${y}%`;
+                const coords = getCoordinates(d, i);
+                return `${coords.x}%,${coords.y}%`;
               }).join(' ')}
             />
           )}
           
           {/* Points de données */}
           {evolutionData.map((d, i) => {
-            const x = evolutionData.length > 1 ? (i / (evolutionData.length - 1)) * 100 : 50;
-            const y = 100 - ((d.totalReps - minReps) / range) * 80;
+            const coords = getCoordinates(d, i);
             
             return (
               <circle
                 key={i}
-                cx={`${x}%`}
-                cy={`${y}%`}
+                cx={`${coords.x}%`}
+                cy={`${coords.y}%`}
                 r="6"
                 fill={colors.primary}
                 className="hover:r-8 transition-all duration-300 cursor-pointer"

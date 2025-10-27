@@ -91,6 +91,14 @@ const HistoryTab = () => {
                 Moyenne par séance
               </div>
             </div>
+            <div className="text-center">
+              <div className={`${typography.presets.h3} text-purple-400`}>
+                {history.reduce((sum, session) => sum + (session.completedStretches || 0), 0)}
+              </div>
+              <div className={typography.presets.caption}>
+                Étirements total
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -158,6 +166,30 @@ const HistoryTab = () => {
                               {exercise.weight}kg
                             </span>
                           )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Détails des étirements */}
+              {session.stretches && session.stretches.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className={`${typography.presets.label} mb-2`}>Étirements réalisés:</h4>
+                  <div className="grid gap-2">
+                    {session.stretches.map((stretch, stretchIndex) => (
+                      <div 
+                        key={stretchIndex}
+                        className="flex items-center justify-between p-3 bg-purple-800/20 rounded-lg border border-purple-700/50"
+                      >
+                        <span className={`${typography.presets.bodySmall} text-purple-200`}>
+                          🧘‍♂️ Étirements {stretch.type}
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`${typography.presets.caption} text-purple-400`}>
+                            ✓ Terminé
+                          </span>
                         </div>
                       </div>
                     ))}

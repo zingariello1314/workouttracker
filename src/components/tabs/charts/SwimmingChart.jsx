@@ -69,9 +69,35 @@ const SwimmingChart = ({ data, colors }) => {
     );
   }
 
-  const maxSessions = Math.max(...swimmingData.map(d => d.sessions));
-  const maxDuration = Math.max(...swimmingData.map(d => d.totalDuration));
-  const maxDistance = Math.max(...swimmingData.map(d => d.totalDistance));
+  const maxSessions = Math.max(...swimmingData.map(d => d.sessions), 1);
+  const maxDuration = Math.max(...swimmingData.map(d => d.totalDuration), 1);
+  const maxDistance = Math.max(...swimmingData.map(d => d.totalDistance), 1);
+  
+  // Fonction utilitaire pour calculer les coordonnées de manière sécurisée
+  const getSafeCoordinates = (week, index) => {
+    // Validation stricte des données
+    const safeSessions = Number(week.sessions) || 0;
+    const safeDuration = Number(week.totalDuration) || 0;
+    const safeDistance = Number(week.totalDistance) || 0;
+    const safeMaxSessions = Number(maxSessions) || 1;
+    const safeMaxDuration = Number(maxDuration) || 1;
+    const safeMaxDistance = Number(maxDistance) || 1;
+    
+    const x = swimmingData.length > 1 ? 
+      Math.max(0, Math.min(100, (index / (swimmingData.length - 1)) * 100)) : 50;
+    
+    const sessionsHeight = Math.max(0, Math.min(100, (safeSessions / safeMaxSessions) * 80));
+    const durationHeight = Math.max(0, Math.min(100, (safeDuration / safeMaxDuration) * 60));
+    const distanceHeight = Math.max(0, Math.min(100, (safeDistance / safeMaxDistance) * 40));
+    
+    // Validation finale des coordonnées
+    return { 
+      x: isNaN(x) ? 50 : x,
+      sessionsHeight: isNaN(sessionsHeight) ? 0 : sessionsHeight,
+      durationHeight: isNaN(durationHeight) ? 0 : durationHeight,
+      distanceHeight: isNaN(distanceHeight) ? 0 : distanceHeight
+    };
+  };
 
   return (
     <div className="space-y-4">
@@ -115,40 +141,37 @@ const SwimmingChart = ({ data, colors }) => {
           
           {/* Aires superposées */}
           {swimmingData.slice(-8).map((week, index) => {
-            const x = swimmingData.length > 1 ? (index / (swimmingData.length - 1)) * 100 : 50;
-            const sessionsHeight = maxSessions > 0 ? (week.sessions / maxSessions) * 80 : 0;
-            const durationHeight = maxDuration > 0 ? (week.totalDuration / maxDuration) * 60 : 0;
-            const distanceHeight = maxDistance > 0 ? (week.totalDistance / maxDistance) * 40 : 0;
+            const coords = getSafeCoordinates(week, index);
             
             return (
               <g key={week.week}>
                 {/* Aire des séances */}
                 <rect
-                  x={`${x}%`}
-                  y={`${100 - sessionsHeight}%`}
+                  x={`${coords.x}%`}
+                  y={`${100 - coords.sessionsHeight}%`}
                   width="12%"
-                  height={`${sessionsHeight}%`}
+                  height={`${coords.sessionsHeight}%`}
                   fill="url(#sessionsGradient)"
                   className="transition-all duration-500"
                 />
                 
                 {/* Aire de la durée */}
                 <rect
-                  x={`${x + 1}%`}
-                  y={`${100 - durationHeight}%`}
+                  x={`${coords.x + 1}%`}
+                  y={`${100 - coords.durationHeight}%`}
                   width="10%"
-                  height={`${durationHeight}%`}
+                  height={`${coords.durationHeight}%`}
                   fill="url(#durationGradient)"
                   className="transition-all duration-500"
                 />
                 
                 {/* Aire de la distance */}
-                {distanceHeight > 0 && (
+                {coords.distanceHeight > 0 && (
                   <rect
-                    x={`${x + 2}%`}
-                    y={`${100 - distanceHeight}%`}
+                    x={`${coords.x + 2}%`}
+                    y={`${100 - coords.distanceHeight}%`}
                     width="8%"
-                    height={`${distanceHeight}%`}
+                    height={`${coords.distanceHeight}%`}
                     fill="url(#distanceGradient)"
                     className="transition-all duration-500"
                   />
@@ -156,8 +179,8 @@ const SwimmingChart = ({ data, colors }) => {
                 
                 {/* Points de données */}
                 <circle
-                  cx={`${x + 6}%`}
-                  cy={`${100 - sessionsHeight}%`}
+                  cx={`${coords.x + 6}%`}
+                  cy={`${100 - coords.sessionsHeight}%`}
                   r="4"
                   fill={colors.teal}
                   className="hover:r-6 transition-all duration-300 cursor-pointer"

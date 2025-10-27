@@ -1,20 +1,26 @@
 import React, { useState, useMemo } from 'react';
-import { BarChart3, TrendingUp, Target, Activity, Filter, Download, LineChart, BarChart, Zap, Waves, Calendar } from 'lucide-react';
+import { BarChart3, TrendingUp, Target, Activity, Filter, Download, LineChart, BarChart, Zap, Waves, Calendar, Dumbbell, Flame, Clock, Award, TrendingDown, Minus } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { findExerciseInDatabase } from '../../data/exerciseDatabase';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 
-// Composants modulaires pour les graphiques
-import EvolutionChart from './charts/EvolutionChart';
-import MuscleGroupChart from './charts/MuscleGroupChart';
-import TopExercisesChart from './charts/TopExercisesChart';
-import MetricsChart from './charts/MetricsChart';
-import ObjectivesChart from './charts/ObjectivesChart';
-import CorrelationsChart from './charts/CorrelationsChart';
-import BoxingChart from './charts/BoxingChart';
-import SwimmingChart from './charts/SwimmingChart';
-import ProgressChart from './charts/ProgressChart';
+// Composants modulaires pour les graphiques - NOUVEAUX GRAPHIQUES
+import VolumeRepetitionsChart from './charts/VolumeRepetitionsChart';
+import ActiviteRegulariteChart from './charts/ActiviteRegulariteChart';
+import ObjectifsPerformanceChart from './charts/ObjectifsPerformanceChart';
+import EvolutionVolumeChart from './charts/EvolutionVolumeChart';
+import RepartitionMusculaireChart from './charts/RepartitionMusculaireChart';
+import TopExercicesChart from './charts/TopExercicesChart';
+import CalendrierActiviteChart from './charts/CalendrierActiviteChart';
+import DistributionTemporelleChart from './charts/DistributionTemporelleChart';
+import ProgressionIndividuelleChart from './charts/ProgressionIndividuelleChart';
+import BoxeActiviteChart from './charts/BoxeActiviteChart';
+import NatationPerformanceChart from './charts/NatationPerformanceChart';
+import NatationEvolutionDistanceChart from './charts/NatationEvolutionDistanceChart';
+import NatationTempsAllureChart from './charts/NatationTempsAllureChart';
+import NatationVolumeRegulariteChart from './charts/NatationVolumeRegulariteChart';
+import EtirementsZoneChart from './charts/EtirementsZoneChart';
 
 const ChartsTab = () => {
   const { data, getWorkoutHistory } = useWorkout();
@@ -45,21 +51,6 @@ const ChartsTab = () => {
     }
   };
 
-  // Données communes pour tous les graphiques
-  const chartData = useMemo(() => {
-    const workoutHistory = getWorkoutHistory();
-    const startDate = getStartDate(selectedPeriod);
-    
-    const filteredHistory = workoutHistory.filter(session => new Date(session.date) >= startDate);
-    
-    return {
-      workoutHistory: filteredHistory,
-      startDate,
-      selectedPeriod,
-      data: data // Passer les données complètes pour les graphiques qui en ont besoin
-    };
-  }, [getWorkoutHistory, selectedPeriod, data]);
-
   // Couleurs élégantes dans le thème du site
   const themeColors = {
     primary: '#3B82F6',      // Bleu principal
@@ -74,135 +65,228 @@ const ChartsTab = () => {
     zinc: '#71717A'         // Zinc
   };
 
-  // Configuration des graphiques
+  // Données communes pour tous les graphiques - optimisé
+  const chartData = useMemo(() => {
+    const workoutHistory = getWorkoutHistory();
+    const startDate = getStartDate(selectedPeriod);
+    
+    const filteredHistory = workoutHistory.filter(session => new Date(session.date) >= startDate);
+    
+    return {
+      workoutHistory: filteredHistory,
+      startDate,
+      selectedPeriod,
+      data: data // Passer les données complètes pour les graphiques qui en ont besoin
+    };
+  }, [getWorkoutHistory, selectedPeriod, data]);
+
+  // Configuration des graphiques avec votre design exact
   const chartConfigs = [
+    // ROW 1 - 3 Cartes KPI
     {
-      id: 'evolution',
-      title: 'Évolution des Répétitions',
-      icon: TrendingUp,
-      color: 'blue',
-      component: EvolutionChart,
-      props: { data: chartData, colors: themeColors }
-    },
-    {
-      id: 'muscle-groups',
-      title: 'Groupes Musculaires',
-      icon: Target,
-      color: 'green',
-      component: MuscleGroupChart,
-      props: { data: chartData, colors: themeColors }
-    },
-    {
-      id: 'top-exercises',
-      title: 'Top Exercices',
-      icon: Activity,
+      id: 'volume-repetitions',
+      title: 'Volume & Répétitions',
+      icon: Dumbbell,
       color: 'purple',
-      component: TopExercisesChart,
+      bgColor: 'bg-purple-500/20',
+      textColor: 'text-purple-400',
+      component: VolumeRepetitionsChart,
       props: { data: chartData, colors: themeColors }
     },
     {
-      id: 'metrics',
-      title: 'Évolution des Mesures',
-      icon: LineChart,
-      color: 'teal',
-      component: MetricsChart,
+      id: 'activite-regularite',
+      title: 'Activité & Régularité',
+      icon: Flame,
+      color: 'pink',
+      bgColor: 'bg-pink-500/20',
+      textColor: 'text-pink-400',
+      component: ActiviteRegulariteChart,
       props: { data: chartData, colors: themeColors }
     },
     {
-      id: 'objectives',
-      title: 'Objectifs vs Réalité',
-      icon: BarChart,
-      color: 'orange',
-      component: ObjectivesChart,
+      id: 'objectifs-performance',
+      title: 'Objectifs',
+      icon: Target,
+      color: 'cyan',
+      bgColor: 'bg-cyan-500/20',
+      textColor: 'text-cyan-400',
+      component: ObjectifsPerformanceChart,
+      props: { data: chartData, colors: themeColors }
+    },
+    // ROW 2 - 3 Graphiques
+    {
+      id: 'evolution-volume',
+      title: 'Évolution du Volume',
+      icon: TrendingUp,
+      color: 'purple',
+      bgColor: 'bg-purple-500/20',
+      textColor: 'text-purple-400',
+      component: EvolutionVolumeChart,
       props: { data: chartData, colors: themeColors }
     },
     {
-      id: 'correlations',
-      title: 'Corrélations Métriques',
+      id: 'repartition-musculaire',
+      title: 'Répartition Musculaire',
+      icon: Target,
+      color: 'pink',
+      bgColor: 'bg-pink-500/20',
+      textColor: 'text-pink-400',
+      component: RepartitionMusculaireChart,
+      props: { data: chartData, colors: themeColors }
+    },
+    {
+      id: 'top-exercices',
+      title: 'Top Exercices',
+      icon: Award,
+      color: 'cyan',
+      bgColor: 'bg-cyan-500/20',
+      textColor: 'text-cyan-400',
+      component: TopExercicesChart,
+      props: { data: chartData, colors: themeColors }
+    },
+    // ROW 3 - 3 Graphiques
+    {
+      id: 'calendrier-activite',
+      title: 'Calendrier d\'Activité',
+      icon: Calendar,
+      color: 'purple',
+      bgColor: 'bg-purple-500/20',
+      textColor: 'text-purple-400',
+      component: CalendrierActiviteChart,
+      props: { data: chartData, colors: themeColors }
+    },
+    {
+      id: 'distribution-temporelle',
+      title: 'Distribution',
+      icon: Clock,
+      color: 'cyan',
+      bgColor: 'bg-cyan-500/20',
+      textColor: 'text-cyan-400',
+      component: DistributionTemporelleChart,
+      props: { data: chartData, colors: themeColors }
+    },
+    {
+      id: 'progression-individuelle',
+      title: 'Progression Individuelle',
       icon: TrendingUp,
       color: 'pink',
-      component: CorrelationsChart,
+      bgColor: 'bg-pink-500/20',
+      textColor: 'text-pink-400',
+      component: ProgressionIndividuelleChart,
       props: { data: chartData, colors: themeColors }
     },
+    // Section Activités Complémentaires
     {
-      id: 'boxing',
+      id: 'boxe-activite',
       title: 'Activité Boxe',
       icon: Zap,
       color: 'red',
-      component: BoxingChart,
+      bgColor: 'bg-red-500/20',
+      textColor: 'text-red-400',
+      component: BoxeActiviteChart,
       props: { data: chartData, colors: themeColors }
     },
     {
-      id: 'swimming',
-      title: 'Activité Natation',
+      id: 'natation-performance',
+      title: 'Performance Natation',
       icon: Waves,
       color: 'cyan',
-      component: SwimmingChart,
+      bgColor: 'bg-cyan-500/20',
+      textColor: 'text-cyan-400',
+      component: NatationPerformanceChart,
       props: { data: chartData, colors: themeColors }
     },
     {
-      id: 'progress',
-      title: 'Progression Globale',
+      id: 'natation-evolution-distance',
+      title: 'Évolution Distance',
+      icon: TrendingUp,
+      color: 'blue',
+      bgColor: 'bg-blue-500/20',
+      textColor: 'text-blue-400',
+      component: NatationEvolutionDistanceChart,
+      props: { data: chartData, colors: themeColors }
+    },
+    {
+      id: 'natation-temps-allure',
+      title: 'Temps & Allure',
+      icon: Clock,
+      color: 'blue',
+      bgColor: 'bg-blue-500/20',
+      textColor: 'text-blue-400',
+      component: NatationTempsAllureChart,
+      props: { data: chartData, colors: themeColors }
+    },
+    {
+      id: 'natation-volume-regularite',
+      title: 'Volume & Régularité',
       icon: Calendar,
-      color: 'indigo',
-      component: ProgressChart,
+      color: 'cyan',
+      bgColor: 'bg-cyan-500/20',
+      textColor: 'text-cyan-400',
+      component: NatationVolumeRegulariteChart,
+      props: { data: chartData, colors: themeColors }
+    },
+    {
+      id: 'etirements-zone',
+      title: 'Étirements par Zone',
+      icon: Activity,
+      color: 'purple',
+      bgColor: 'bg-purple-500/20',
+      textColor: 'text-purple-400',
+      component: EtirementsZoneChart,
       props: { data: chartData, colors: themeColors }
     }
   ];
 
+  // Mémorisation des configurations pour éviter les re-rendus
+  const memoizedChartConfigs = useMemo(() => chartConfigs, [chartData, themeColors, selectedPeriod]);
+
   return (
-    <div className="p-6 space-y-6">
-      {/* En-tête */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white flex items-center">
-          <BarChart3 className="mr-3" size={28} />
-          📈 Graphiques & Analyses
-        </h2>
-        
-        {/* Contrôles */}
-        <div className="flex items-center space-x-4">
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="bg-slate-700 text-white px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {periods.map(period => (
-              <option key={period.value} value={period.value}>
-                {period.label}
-              </option>
-            ))}
-          </select>
-          
-          <Button
-            icon={Download}
-            className="bg-green-600 hover:bg-green-700"
-            onClick={() => console.log('Export des données')}
-          >
-            Exporter
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-6">
+      {/* Header avec votre design exact */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+            Graphiques & Analyses
+          </h1>
+          <p className="text-slate-400 mt-1">Vue d'ensemble de vos performances</p>
+        </div>
+        <div className="flex gap-2 bg-slate-900/50 backdrop-blur-sm rounded-lg p-1 border border-purple-500/20">
+          {periods.map(period => (
+            <button
+              key={period.value}
+              onClick={() => setSelectedPeriod(period.value)}
+              className={`px-4 py-2 rounded-md transition-all duration-300 ${
+                selectedPeriod === period.value
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/50'
+                  : 'hover:bg-slate-800/50 text-slate-400'
+              }`}
+            >
+              {period.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Graphiques */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {chartConfigs.map((config) => {
+      {/* Grille 3x3 - Tous les éléments avec votre design exact */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {memoizedChartConfigs.map((config) => {
           const IconComponent = config.icon;
           const ChartComponent = config.component;
           
           return (
-            <Card key={config.id} className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 border-slate-700/50 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center text-white text-xl">
-                  <div className={`p-2 bg-${config.color}-500/20 rounded-lg mr-3`}>
-                    <IconComponent className={`text-${config.color}-400`} size={24} />
-                  </div>
+            <div 
+              key={config.id} 
+              className={`bg-slate-900/40 backdrop-blur-sm rounded-2xl p-6 border ${config.bgColor.replace('bg-', 'border-').replace('/20', '/20')} shadow-xl hover:shadow-${config.color}-500/20 transition-all duration-300`}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <IconComponent className={config.textColor} size={20} />
                   {config.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <ChartComponent {...config.props} />
-              </CardContent>
-            </Card>
+                </h2>
+              </div>
+              <ChartComponent {...config.props} />
+            </div>
           );
         })}
       </div>

@@ -43,6 +43,9 @@ const StatsTab = () => {
     const totalReps = filteredHistory.reduce((sum, session) => 
       sum + (session.exercises?.reduce((reps, ex) => reps + (parseInt(ex.reps) || 0), 0) || 0), 0
     );
+    const totalStretches = filteredHistory.reduce((sum, session) => 
+      sum + (session.completedStretches || 0), 0
+    );
     const activeDays = new Set(filteredHistory.map(session => session.date)).size;
     
     // Calculer les statistiques des activités complémentaires
@@ -68,6 +71,7 @@ const StatsTab = () => {
     return {
       totalWorkouts,
       totalReps,
+      totalStretches,
       activeDays,
       complementaryStats
     };
@@ -198,6 +202,15 @@ const StatsTab = () => {
             <div className="text-sm text-gray-600">Meilleure série</div>
           </Card.Content>
         </Card>
+
+        <Card className="text-center">
+          <Card.Content className="pt-6">
+            <div className="text-3xl font-bold text-purple-600 mb-2">
+              {stats.totalStretches}
+            </div>
+            <div className="text-sm text-gray-600">Étirements</div>
+          </Card.Content>
+        </Card>
       </div>
 
       {/* Statistiques détaillées */}
@@ -225,6 +238,16 @@ const StatsTab = () => {
                 <span className="text-gray-600">Taux de régularité</span>
                 <span className="font-semibold">
                   {stats.activeDays > 0 ? Math.round((stats.activeDays / 30) * 100) : 0}%
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Étirements total</span>
+                <span className="font-semibold">{stats.totalStretches}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Moyenne étirements/séance</span>
+                <span className="font-semibold">
+                  {stats.totalWorkouts > 0 ? Math.round(stats.totalStretches / stats.totalWorkouts) : 0}
                 </span>
               </div>
             </div>

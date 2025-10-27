@@ -490,6 +490,7 @@ const WorkoutProvider = ({ children }) => {
     console.log('DEBUG: currentData:', currentData);
     console.log('DEBUG: currentData.reps:', currentData?.reps);
     console.log('DEBUG: currentData.checkedExercises:', currentData?.checkedExercises);
+    console.log('DEBUG: currentData.checkedStretches:', currentData?.checkedStretches);
     
     if (!currentData || !currentData.reps || !currentData.checkedExercises) {
       console.log('DEBUG: No data found, returning empty array');
@@ -501,6 +502,7 @@ const WorkoutProvider = ({ children }) => {
     // Grouper les données par date
     const dataByDate = {};
     
+    // Traiter les exercices
     Object.keys(currentData.reps).forEach(key => {
       const reps = parseInt(currentData.reps[key]) || 0;
       console.log(`DEBUG: Processing key: ${key} reps: ${reps}`);
@@ -514,10 +516,10 @@ const WorkoutProvider = ({ children }) => {
           const variant = parts[2] || '';
           
           if (!dataByDate[dateStr]) {
-            dataByDate[dateStr] = {};
+            dataByDate[dateStr] = { exercises: {}, stretches: {} };
           }
           
-          dataByDate[dateStr][key] = {
+          dataByDate[dateStr].exercises[key] = {
             exerciseId: exerciseId,
             reps: reps,
             completed: currentData.checkedExercises[key] || false,
@@ -526,6 +528,28 @@ const WorkoutProvider = ({ children }) => {
         }
       }
     });
+
+    // Traiter les étirements
+    if (currentData.checkedStretches) {
+      Object.keys(currentData.checkedStretches).forEach(key => {
+        if (currentData.checkedStretches[key]) {
+          const parts = key.split('_');
+          if (parts.length >= 2) {
+            const dateStr = parts[0];
+            const stretchType = parts[1];
+            
+            if (!dataByDate[dateStr]) {
+              dataByDate[dateStr] = { exercises: {}, stretches: {} };
+            }
+            
+            dataByDate[dateStr].stretches[key] = {
+              stretchType: stretchType,
+              completed: true
+            };
+          }
+        }
+      });
+    }
     
     // Traiter chaque date
     Object.keys(dataByDate).forEach(dateStr => {
@@ -536,10 +560,11 @@ const WorkoutProvider = ({ children }) => {
       
       const dateData = dataByDate[dateStr];
       const exercises = [];
+      const stretches = [];
       
       // Créer les exercices à partir des données réelles
-      Object.keys(dateData).forEach(key => {
-        const exerciseData = dateData[key];
+      Object.keys(dateData.exercises || {}).forEach(key => {
+        const exerciseData = dateData.exercises[key];
         const exerciseName = getExerciseNameById(exerciseData.exerciseId);
         
         exercises.push({
@@ -550,17 +575,31 @@ const WorkoutProvider = ({ children }) => {
         });
       });
 
+      // Créer les étirements à partir des données réelles
+      Object.keys(dateData.stretches || {}).forEach(key => {
+        const stretchData = dateData.stretches[key];
+        
+        stretches.push({
+          type: stretchData.stretchType,
+          completed: stretchData.completed
+        });
+      });
+
       const totalReps = exercises.reduce((sum, ex) => sum + ex.reps, 0);
       const completedExercises = exercises.filter(ex => ex.completed).length;
+      const completedStretches = stretches.filter(stretch => stretch.completed).length;
 
-      if (totalReps > 0 || completedExercises > 0) {
+      if (totalReps > 0 || completedExercises > 0 || completedStretches > 0) {
         const sessionData = {
           date: dateStr,
           dayName: dayName,
           exercises: exercises,
+          stretches: stretches,
           totalReps: totalReps,
           completedExercises: completedExercises,
-          totalExercises: exercises.length
+          completedStretches: completedStretches,
+          totalExercises: exercises.length,
+          totalStretches: stretches.length
         };
         
         console.log(`DEBUG: Adding session data for ${dateStr}:`, sessionData);

@@ -47,6 +47,29 @@ const MetricsChart = ({ data, colors }) => {
     }
   });
 
+  // Fonction utilitaire pour calculer les coordonnées de manière sécurisée
+  const getSafeCoordinates = (value, index, values, min, max) => {
+    if (values.length <= 1) {
+      return { x: 50, y: 50 };
+    }
+    
+    // Validation stricte des données
+    const safeValue = Number(value) || 0;
+    const safeMin = Number(min) || 0;
+    const safeMax = Number(max) || 1;
+    const safeRange = Math.max(safeMax - safeMin, 1);
+    
+    const x = Math.max(0, Math.min(100, (index / (values.length - 1)) * 100));
+    const normalizedValue = Math.max(0, Math.min(1, (safeValue - safeMin) / safeRange));
+    const y = Math.max(0, Math.min(100, 100 - normalizedValue * 80));
+    
+    // Validation finale des coordonnées
+    return { 
+      x: isNaN(x) ? 50 : x, 
+      y: isNaN(y) ? 50 : y 
+    };
+  };
+
   return (
     <div className="space-y-4">
       {/* Graphique multi-lignes */}
@@ -90,9 +113,8 @@ const MetricsChart = ({ data, colors }) => {
                 {/* Zone sous la courbe */}
                 <path
                   d={`M 0,100% ${values.map((value, i) => {
-                    const x = (i / (values.length - 1)) * 100;
-                    const y = 100 - ((value - min) / range) * 80;
-                    return `L ${x}%,${y}%`;
+                    const coords = getSafeCoordinates(value, i, values, min, max);
+                    return `L ${coords.x}%,${coords.y}%`;
                   }).join(' ')} L 100%,100% Z`}
                   fill={`url(#gradient-${metric.key})`}
                 />
@@ -105,22 +127,20 @@ const MetricsChart = ({ data, colors }) => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   points={values.map((value, i) => {
-                    const x = (i / (values.length - 1)) * 100;
-                    const y = 100 - ((value - min) / range) * 80;
-                    return `${x}%,${y}%`;
+                    const coords = getSafeCoordinates(value, i, values, min, max);
+                    return `${coords.x}%,${coords.y}%`;
                   }).join(' ')}
                 />
                 
                 {/* Points */}
                 {values.map((value, i) => {
-                  const x = (i / (values.length - 1)) * 100;
-                  const y = 100 - ((value - min) / range) * 80;
+                  const coords = getSafeCoordinates(value, i, values, min, max);
                   
                   return (
                     <circle
                       key={i}
-                      cx={`${x}%`}
-                      cy={`${y}%`}
+                      cx={`${coords.x}%`}
+                      cy={`${coords.y}%`}
                       r="4"
                       fill={metric.color}
                       className="hover:r-6 transition-all duration-300 cursor-pointer"

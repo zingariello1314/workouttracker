@@ -75,8 +75,28 @@ const CorrelationsChart = ({ data, colors }) => {
   const xMax = Math.max(...xValues);
   const yMin = Math.min(...yValues);
   const yMax = Math.max(...yValues);
-  const xRange = xMax - xMin || 1;
-  const yRange = yMax - yMin || 1;
+  const xRange = Math.max(xMax - xMin, 1);
+  const yRange = Math.max(yMax - yMin, 1);
+  
+  // Fonction utilitaire pour calculer les coordonnées de manière sécurisée
+  const getSafeCoordinates = (point) => {
+    // Validation stricte des données
+    const safeX = Number(point.x) || 0;
+    const safeY = Number(point.y) || 0;
+    const safeXMin = Number(xMin) || 0;
+    const safeYMin = Number(yMin) || 0;
+    const safeXRange = Number(xRange) || 1;
+    const safeYRange = Number(yRange) || 1;
+    
+    const x = Math.max(0, Math.min(100, ((safeX - safeXMin) / safeXRange) * 100));
+    const y = Math.max(0, Math.min(100, 100 - ((safeY - safeYMin) / safeYRange) * 100));
+    
+    // Validation finale des coordonnées
+    return { 
+      x: isNaN(x) ? 50 : x, 
+      y: isNaN(y) ? 50 : y 
+    };
+  };
 
   return (
     <div className="space-y-4">
@@ -143,14 +163,13 @@ const CorrelationsChart = ({ data, colors }) => {
           
           {/* Points de données */}
           {correlationData.map((point, index) => {
-            const x = ((point.x - xMin) / xRange) * 100;
-            const y = 100 - ((point.y - yMin) / yRange) * 100;
+            const coords = getSafeCoordinates(point);
             
             return (
               <circle
                 key={index}
-                cx={`${x}%`}
-                cy={`${y}%`}
+                cx={`${coords.x}%`}
+                cy={`${coords.y}%`}
                 r="6"
                 fill={colors.primary}
                 className="hover:r-8 transition-all duration-300 cursor-pointer"

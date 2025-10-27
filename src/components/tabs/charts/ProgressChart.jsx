@@ -62,9 +62,35 @@ const ProgressChart = ({ data, colors }) => {
     );
   }
 
-  const maxSessions = Math.max(...progressData.map(d => d.sessions));
-  const maxReps = Math.max(...progressData.map(d => d.totalReps));
-  const maxDuration = Math.max(...progressData.map(d => d.totalDuration));
+  const maxSessions = Math.max(...progressData.map(d => d.sessions), 1);
+  const maxReps = Math.max(...progressData.map(d => d.totalReps), 1);
+  const maxDuration = Math.max(...progressData.map(d => d.totalDuration), 1);
+  
+  // Fonction utilitaire pour calculer les coordonnées de manière sécurisée
+  const getSafeCoordinates = (month, index) => {
+    // Validation stricte des données
+    const safeSessions = Number(month.sessions) || 0;
+    const safeReps = Number(month.totalReps) || 0;
+    const safeDuration = Number(month.totalDuration) || 0;
+    const safeMaxSessions = Number(maxSessions) || 1;
+    const safeMaxReps = Number(maxReps) || 1;
+    const safeMaxDuration = Number(maxDuration) || 1;
+    
+    const x = progressData.length > 1 ? 
+      Math.max(0, Math.min(100, (index / (progressData.length - 1)) * 100)) : 50;
+    
+    const sessionsHeight = Math.max(0, Math.min(100, (safeSessions / safeMaxSessions) * 100));
+    const repsHeight = Math.max(0, Math.min(100, (safeReps / safeMaxReps) * 60));
+    const durationHeight = Math.max(0, Math.min(100, (safeDuration / safeMaxDuration) * 40));
+    
+    // Validation finale des coordonnées
+    return { 
+      x: isNaN(x) ? 50 : x,
+      sessionsHeight: isNaN(sessionsHeight) ? 0 : sessionsHeight,
+      repsHeight: isNaN(repsHeight) ? 0 : repsHeight,
+      durationHeight: isNaN(durationHeight) ? 0 : durationHeight
+    };
+  };
 
   return (
     <div className="space-y-4">
@@ -106,47 +132,44 @@ const ProgressChart = ({ data, colors }) => {
           
           {/* Barres empilées pour chaque mois */}
           {progressData.map((month, index) => {
-            const x = progressData.length > 1 ? (index / (progressData.length - 1)) * 100 : 50;
-            const sessionsHeight = maxSessions > 0 ? (month.sessions / maxSessions) * 100 : 0;
-            const repsHeight = maxReps > 0 ? (month.totalReps / maxReps) * 60 : 0;
-            const durationHeight = maxDuration > 0 ? (month.totalDuration / maxDuration) * 40 : 0;
+            const coords = getSafeCoordinates(month, index);
             
             return (
               <g key={month.month}>
                 {/* Barre des séances */}
                 <rect
-                  x={`${Math.max(0, x - 8)}%`}
-                  y={`${100 - sessionsHeight}%`}
+                  x={`${Math.max(0, coords.x - 8)}%`}
+                  y={`${100 - coords.sessionsHeight}%`}
                   width="16%"
-                  height={`${sessionsHeight}%`}
+                  height={`${coords.sessionsHeight}%`}
                   fill="url(#sessionsGradient)"
                   className="transition-all duration-500"
                 />
                 
                 {/* Barre des répétitions */}
                 <rect
-                  x={`${Math.max(0, x - 6)}%`}
-                  y={`${100 - repsHeight}%`}
+                  x={`${Math.max(0, coords.x - 6)}%`}
+                  y={`${100 - coords.repsHeight}%`}
                   width="12%"
-                  height={`${repsHeight}%`}
+                  height={`${coords.repsHeight}%`}
                   fill="url(#repsGradient)"
                   className="transition-all duration-500"
                 />
                 
                 {/* Barre de la durée */}
                 <rect
-                  x={`${Math.max(0, x - 4)}%`}
-                  y={`${100 - durationHeight}%`}
+                  x={`${Math.max(0, coords.x - 4)}%`}
+                  y={`${100 - coords.durationHeight}%`}
                   width="8%"
-                  height={`${durationHeight}%`}
+                  height={`${coords.durationHeight}%`}
                   fill="url(#durationGradient)"
                   className="transition-all duration-500"
                 />
                 
                 {/* Points de données */}
                 <circle
-                  cx={`${x}%`}
-                  cy={`${100 - sessionsHeight}%`}
+                  cx={`${coords.x}%`}
+                  cy={`${100 - coords.sessionsHeight}%`}
                   r="5"
                   fill={colors.primary}
                   className="hover:r-7 transition-all duration-300 cursor-pointer"
