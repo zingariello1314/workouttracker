@@ -144,8 +144,14 @@ const ImpedanceSection = () => {
     
     console.log('Nouvelle mesure d\'impédancemétrie:', entry);
     
+    // Ajouter le type requis pour addProgressEntry
+    const entryWithType = {
+      ...entry,
+      type: 'impedance'
+    };
+    
     // Sauvegarder l'entrée via le contexte (IndexedDB)
-    addProgressEntry(entry);
+    addProgressEntry(entryWithType);
     
     // Réinitialiser le formulaire
     setFormData({

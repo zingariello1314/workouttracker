@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save } from 'lucide-react';
+import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import StarRating from '../ui/StarRating';
 
 const EnduranceTab = () => {
   const { data, updateData, getWorkoutHistory } = useWorkout();
@@ -309,14 +310,24 @@ const EnduranceTab = () => {
     time: new Date().toTimeString().slice(0, 5),
     count: '',
     duration: '',
-    notes: ''
+    notes: '',
+    // Évaluations par étoiles
+    congestion: 0,
+    motivation: 0,
+    sentimentAvant: 0,
+    sentimentApres: 0
   });
 
   const [boxingForm, setBoxingForm] = useState({
     date: new Date().toISOString().split('T')[0],
     time: new Date().toTimeString().slice(0, 5),
     duration: '',
-    notes: ''
+    notes: '',
+    // Évaluations par étoiles
+    congestion: 0,
+    motivation: 0,
+    sentimentAvant: 0,
+    sentimentApres: 0
   });
 
   const [swimmingForm, setSwimmingForm] = useState({
@@ -324,7 +335,12 @@ const EnduranceTab = () => {
     time: new Date().toTimeString().slice(0, 5),
     swimType: 'crawl',
     laps: [{ distance: 25, time: '' }],
-    notes: ''
+    notes: '',
+    // Évaluations par étoiles
+    congestion: 0,
+    motivation: 0,
+    sentimentAvant: 0,
+    sentimentApres: 0
   });
 
   const [jumpropeForm, setJumpropeForm] = useState({
@@ -334,7 +350,12 @@ const EnduranceTab = () => {
     type: 'continue',
     jumps: '',
     sessionNumber: 1,
-    notes: ''
+    notes: '',
+    // Évaluations par étoiles
+    congestion: 0,
+    motivation: 0,
+    sentimentAvant: 0,
+    sentimentApres: 0
   });
 
   const [runningForm, setRunningForm] = useState({
@@ -344,7 +365,12 @@ const EnduranceTab = () => {
     duration: '',
     type: 'endurance',
     elevation: '',
-    notes: ''
+    notes: '',
+    // Évaluations par étoiles
+    congestion: 0,
+    motivation: 0,
+    sentimentAvant: 0,
+    sentimentApres: 0
   });
 
   const [challengeForm, setChallengeForm] = useState({
@@ -552,7 +578,12 @@ const EnduranceTab = () => {
       time: new Date().toTimeString().slice(0, 5),
       count: '',
       duration: '',
-      notes: ''
+      notes: '',
+      // Évaluations par étoiles
+      congestion: 0,
+      motivation: 0,
+      sentimentAvant: 0,
+      sentimentApres: 0
     });
   }, []);
 
@@ -561,7 +592,12 @@ const EnduranceTab = () => {
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().slice(0, 5),
       duration: '',
-      notes: ''
+      notes: '',
+      // Évaluations par étoiles
+      congestion: 0,
+      motivation: 0,
+      sentimentAvant: 0,
+      sentimentApres: 0
     });
   }, []);
 
@@ -569,9 +605,14 @@ const EnduranceTab = () => {
     setSwimmingForm({
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().slice(0, 5),
-      strokeType: 'libre',
+      swimType: 'crawl',
       laps: [{ distance: 25, time: '' }],
-      notes: ''
+      notes: '',
+      // Évaluations par étoiles
+      congestion: 0,
+      motivation: 0,
+      sentimentAvant: 0,
+      sentimentApres: 0
     });
   }, []);
 
@@ -580,9 +621,15 @@ const EnduranceTab = () => {
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().slice(0, 5),
       duration: '',
-      type: 'libre',
+      type: 'continue',
       jumps: '',
-      notes: ''
+      sessionNumber: 1,
+      notes: '',
+      // Évaluations par étoiles
+      congestion: 0,
+      motivation: 0,
+      sentimentAvant: 0,
+      sentimentApres: 0
     });
   }, []);
 
@@ -592,9 +639,14 @@ const EnduranceTab = () => {
       time: new Date().toTimeString().slice(0, 5),
       distance: '',
       duration: '',
-      type: 'extérieur',
+      type: 'endurance',
       elevation: '',
-      notes: ''
+      notes: '',
+      // Évaluations par étoiles
+      congestion: 0,
+      motivation: 0,
+      sentimentAvant: 0,
+      sentimentApres: 0
     });
   }, []);
 
@@ -1287,6 +1339,45 @@ const EnduranceTab = () => {
                       />
                     </div>
                   </div>
+                  
+                  {/* Évaluations par étoiles */}
+                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
+                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-400" />
+                      Évaluation de la session
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Congestion musculaire"
+                          rating={boxingForm.congestion}
+                          onRatingChange={(rating) => setBoxingForm({...boxingForm, congestion: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Motivation"
+                          rating={boxingForm.motivation}
+                          onRatingChange={(rating) => setBoxingForm({...boxingForm, motivation: rating})}
+                          size="md"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Sentiment avant"
+                          rating={boxingForm.sentimentAvant}
+                          onRatingChange={(rating) => setBoxingForm({...boxingForm, sentimentAvant: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Sentiment après"
+                          rating={boxingForm.sentimentApres}
+                          onRatingChange={(rating) => setBoxingForm({...boxingForm, sentimentApres: rating})}
+                          size="md"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       onClick={() => setUI({ showSessionForm: false })}
@@ -1487,6 +1578,45 @@ const EnduranceTab = () => {
                       />
                     </div>
                   </div>
+                  
+                  {/* Évaluations par étoiles */}
+                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
+                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-400" />
+                      Évaluation de la session
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Congestion musculaire"
+                          rating={sessionForm.congestion}
+                          onRatingChange={(rating) => setSessionForm({...sessionForm, congestion: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Motivation"
+                          rating={sessionForm.motivation}
+                          onRatingChange={(rating) => setSessionForm({...sessionForm, motivation: rating})}
+                          size="md"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Sentiment avant"
+                          rating={sessionForm.sentimentAvant}
+                          onRatingChange={(rating) => setSessionForm({...sessionForm, sentimentAvant: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Sentiment après"
+                          rating={sessionForm.sentimentApres}
+                          onRatingChange={(rating) => setSessionForm({...sessionForm, sentimentApres: rating})}
+                          size="md"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       onClick={() => setUI({ showSessionForm: false })}
@@ -1775,6 +1905,44 @@ const EnduranceTab = () => {
                     />
                   </div>
 
+                  {/* Évaluations par étoiles */}
+                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
+                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-400" />
+                      Évaluation de la session
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Congestion musculaire"
+                          rating={swimmingForm.congestion}
+                          onRatingChange={(rating) => setSwimmingForm({...swimmingForm, congestion: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Motivation"
+                          rating={swimmingForm.motivation}
+                          onRatingChange={(rating) => setSwimmingForm({...swimmingForm, motivation: rating})}
+                          size="md"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Sentiment avant"
+                          rating={swimmingForm.sentimentAvant}
+                          onRatingChange={(rating) => setSwimmingForm({...swimmingForm, sentimentAvant: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Sentiment après"
+                          rating={swimmingForm.sentimentApres}
+                          onRatingChange={(rating) => setSwimmingForm({...swimmingForm, sentimentApres: rating})}
+                          size="md"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       onClick={() => setUI({ showSessionForm: false })}
@@ -2058,6 +2226,45 @@ const EnduranceTab = () => {
                       />
                     </div>
                   </div>
+                  
+                  {/* Évaluations par étoiles */}
+                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
+                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-400" />
+                      Évaluation de la session
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Congestion musculaire"
+                          rating={jumpropeForm.congestion}
+                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, congestion: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Motivation"
+                          rating={jumpropeForm.motivation}
+                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, motivation: rating})}
+                          size="md"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Sentiment avant"
+                          rating={jumpropeForm.sentimentAvant}
+                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, sentimentAvant: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Sentiment après"
+                          rating={jumpropeForm.sentimentApres}
+                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, sentimentApres: rating})}
+                          size="md"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       onClick={() => setUI({ showSessionForm: false })}
@@ -2385,6 +2592,44 @@ const EnduranceTab = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Évaluations par étoiles */}
+                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
+                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-400" />
+                      Évaluation de la session
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Congestion musculaire"
+                          rating={runningForm.congestion}
+                          onRatingChange={(rating) => setRunningForm({...runningForm, congestion: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Motivation"
+                          rating={runningForm.motivation}
+                          onRatingChange={(rating) => setRunningForm({...runningForm, motivation: rating})}
+                          size="md"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <StarRating
+                          label="Sentiment avant"
+                          rating={runningForm.sentimentAvant}
+                          onRatingChange={(rating) => setRunningForm({...runningForm, sentimentAvant: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Sentiment après"
+                          rating={runningForm.sentimentApres}
+                          onRatingChange={(rating) => setRunningForm({...runningForm, sentimentApres: rating})}
+                          size="md"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="mt-6 flex justify-end gap-3">
                     <button
