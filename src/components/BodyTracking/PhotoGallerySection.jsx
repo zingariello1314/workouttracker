@@ -86,24 +86,31 @@ const PhotoGallerySection = () => {
             if (prev >= 100) {
               clearInterval(interval);
               
-              // Créer un objet URL pour l'image
-              const imageUrl = URL.createObjectURL(file);
-              
-              // Créer l'entrée photo
-              const photoEntry = {
-                id: Date.now() + Math.random(),
-                url: imageUrl,
-                date: new Date(),
-                angle: 'front', // Par défaut, pourrait être sélectionnable
-                weight: null, // Pourrait être récupéré des dernières métriques
-                notes: '',
-                tags: ['progress'],
-                filename: file.name,
-                type: 'photo'
+              // Convertir le fichier en Base64 pour la persistance
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const base64Image = e.target.result;
+                
+                // Créer l'entrée photo avec Base64
+                const photoEntry = {
+                  id: Date.now() + Math.random(),
+                  url: base64Image, // Utiliser Base64 au lieu de URL.createObjectURL
+                  date: new Date(),
+                  angle: 'front', // Par défaut, pourrait être sélectionnable
+                  weight: null, // Pourrait être récupéré des dernières métriques
+                  notes: '',
+                  tags: ['progress'],
+                  filename: file.name,
+                  type: 'photo'
+                };
+                
+                // Sauvegarder via le contexte (IndexedDB)
+                addProgressPhoto(photoEntry);
               };
-              
-              // Sauvegarder via le contexte (IndexedDB)
-              addProgressPhoto(photoEntry);
+              reader.onerror = () => {
+                console.error('Erreur lors de la lecture du fichier');
+              };
+              reader.readAsDataURL(file);
               
               return 0;
             }

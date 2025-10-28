@@ -4,7 +4,7 @@ import { useHomepageImages } from '../hooks/useHomepageImages';
 
 const HomePage = () => {
   const { setActiveTab } = useWorkout();
-  const { backgroundImages, isLoading } = useHomepageImages();
+  const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [userLocation, setUserLocation] = useState('Localisation...');
@@ -20,7 +20,9 @@ const HomePage = () => {
             .then(response => response.json())
             .then(data => {
               if (data.city && data.countryName) {
-                setUserLocation(`${data.city}, ${data.countryName}`);
+                // Supprimer les préfixes comme "la", "le", "les", "the" du nom du pays
+                const cleanCountryName = data.countryName.replace(/^(la|le|les|the|du|de|des|d'|l')\s+/i, '');
+                setUserLocation(`${data.city}, ${cleanCountryName}`);
               } else {
                 setUserLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
               }
@@ -75,12 +77,12 @@ const HomePage = () => {
 
   return (
     <div 
-      className="relative min-h-screen overflow-hidden"
+      className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-900/20 via-slate-800/10 to-slate-900/20"
       onClick={handleInteraction}
     >
       {/* Indicateur de chargement */}
       {isLoading && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-3xl z-50 flex items-center justify-center">
           <div className="text-white text-center">
             <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
             <p>Chargement des images...</p>
@@ -110,17 +112,15 @@ const HomePage = () => {
       )}
 
       {/* Header */}
-      <header className="relative z-10 flex justify-between items-start p-8">
+      <header className="relative z-10 flex justify-between items-center p-8">
         {/* Logo et informations */}
-        <div className="flex flex-col space-y-2">
+        <div className="flex flex-col items-center space-y-0.5 -ml-8 mr-8 -mt-24">
           <img 
             src="/logo.png" 
             alt="Momentum Logo" 
-            className="w-8 h-8 rounded-sm opacity-90"
+            className="w-24 h-24 rounded-2xl opacity-95 drop-shadow-2xl"
+            style={{ transform: 'translateY(70px)' }}
           />
-          <div className="text-white text-sm font-medium drop-shadow-lg" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.8)' }}>
-            {userLocation}
-          </div>
         </div>
 
         {/* Navigation en une seule ligne */}
@@ -128,85 +128,83 @@ const HomePage = () => {
           <div className="flex space-x-2 text-white text-base font-medium">
             <button 
               onClick={() => navigateToTab('today')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Aujourd'hui
             </button>
             <button 
               onClick={() => navigateToTab('data-entry')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Saisie
             </button>
             <button 
               onClick={() => navigateToTab('program')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Programme
             </button>
             <button 
               onClick={() => navigateToTab('exercises')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Exercices
             </button>
             <button 
               onClick={() => navigateToTab('progress')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Suivi Corporel
             </button>
             <button 
               onClick={() => navigateToTab('endurance')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Endurance
             </button>
             <button 
               onClick={() => navigateToTab('calendar')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Calendrier
             </button>
             <button 
               onClick={() => navigateToTab('history')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Historique
             </button>
             <button 
               onClick={() => navigateToTab('charts')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Graphiques
             </button>
             <button 
               onClick={() => navigateToTab('stats')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Statistiques
             </button>
             <button 
               onClick={() => navigateToTab('predictions')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Prédictions
             </button>
             <button 
               onClick={() => navigateToTab('smart-balancing')}
-              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Équilibrage IA
             </button>
+            <button 
+              onClick={() => navigateToTab('settings')}
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+            >
+              Paramètres
+            </button>
           </div>
-          
-          <button 
-            onClick={() => navigateToTab('settings')}
-            className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 hover:backdrop-blur-lg"
-            style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
-          >
-            PARAMÈTRES
-          </button>
         </nav>
       </header>
 
@@ -223,23 +221,26 @@ const HomePage = () => {
           </h1>
 
           {/* Bouton CTA */}
-          <button 
-            onClick={() => navigateToTab('today')}
-            className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-lg text-lg font-semibold transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:shadow-lg hover:shadow-white/10 hover:scale-105 hover:backdrop-blur-lg"
-            style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
-          >
-            COMMENCER L'ENTRAÎNEMENT
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => navigateToTab('today')}
+              className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl"
+              style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
+            >
+              COMMENCER L'ENTRAÎNEMENT
+            </button>
+            
+          </div>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="relative z-10 flex justify-between items-end p-8 pb-12">
         {/* Section À propos améliorée */}
-        <div className="max-w-2xl bg-black/30 backdrop-blur-md rounded-lg p-6 border border-white/10">
+        <div className="max-w-2xl bg-black/10 backdrop-blur-3xl rounded-3xl p-10 border border-white/5 shadow-2xl">
           <div className="flex items-center mb-6">
             <h3 className="text-white font-bold text-sm tracking-wider mr-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>À PROPOS DE MOMENTUM</h3>
-            <div className="flex-1 h-px bg-white/30"></div>
+            <div className="flex-1 h-px bg-gradient-to-r from-white/20 via-white/40 to-transparent"></div>
           </div>
           <div className="space-y-4">
             <p className="text-white text-sm font-medium leading-relaxed" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
@@ -277,16 +278,15 @@ const HomePage = () => {
             <div>Performance</div>
             <div>Progrès</div>
             <div>Intelligence</div>
-          </div>
-          <div className="text-white text-sm font-medium mt-4 opacity-90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
-            Commencez votre transformation
+            <div>Commencez votre transformation</div>
+            <div>{userLocation}</div>
           </div>
         </div>
       </footer>
 
       {/* Indicateur de transition */}
       {isTransitioning && (
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/10 backdrop-blur-3xl z-50 flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
         </div>
       )}

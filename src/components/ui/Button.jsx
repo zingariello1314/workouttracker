@@ -14,13 +14,13 @@ const Button = ({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-sm hover:shadow-md active:scale-95';
   
   const variants = {
-    primary: 'bg-purple-600 hover:bg-purple-700 text-white focus:ring-purple-500 shadow-purple-500/25',
-    secondary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 shadow-blue-500/25',
-    success: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500 shadow-green-500/25',
-    danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-red-500/25',
-    warning: 'bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500 shadow-yellow-500/25',
-    outline: 'border-2 border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white focus:ring-purple-500 bg-transparent',
-    ghost: 'text-slate-300 hover:bg-slate-700/50 hover:text-white focus:ring-slate-500 bg-transparent shadow-none hover:shadow-sm'
+    primary: 'bg-purple-600/90 backdrop-blur-sm hover:bg-purple-700/90 text-white focus:ring-purple-500 shadow-purple-500/25 border border-purple-500/20',
+    secondary: 'bg-blue-600/90 backdrop-blur-sm hover:bg-blue-700/90 text-white focus:ring-blue-500 shadow-blue-500/25 border border-blue-500/20',
+    success: 'bg-green-600/90 backdrop-blur-sm hover:bg-green-700/90 text-white focus:ring-green-500 shadow-green-500/25 border border-green-500/20',
+    danger: 'bg-red-600/90 backdrop-blur-sm hover:bg-red-700/90 text-white focus:ring-red-500 shadow-red-500/25 border border-red-500/20',
+    warning: 'bg-yellow-600/90 backdrop-blur-sm hover:bg-yellow-700/90 text-white focus:ring-yellow-500 shadow-yellow-500/25 border border-yellow-500/20',
+    outline: 'border-2 border-purple-600/60 backdrop-blur-sm text-purple-400 hover:bg-purple-600/20 hover:text-white focus:ring-purple-500 bg-transparent',
+    ghost: 'text-slate-300 hover:bg-slate-700/50 hover:text-white focus:ring-slate-500 bg-transparent shadow-none hover:shadow-sm backdrop-blur-sm'
   };
   
   const sizes = {

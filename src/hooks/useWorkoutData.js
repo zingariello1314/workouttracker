@@ -113,41 +113,34 @@ export const useWorkoutData = () => {
   const dbConnectionRef = useRef(null);
   const dbConnectionPromiseRef = useRef(null);
 
-  // IndexedDB functions avec gestion d'erreurs renforcée
-  // Fonction pour ouvrir la base de données avec gestion d'erreur améliorée
+  // Fonction pour ouvrir IndexedDB (pour les données workout)
   const openDB = () => {
-    // Si on a déjà une connexion active, la retourner
-    if (dbConnectionRef.current) {
-      return Promise.resolve(dbConnectionRef.current);
-    }
-
-    // Si une connexion est en cours, attendre qu'elle se termine
-    if (dbConnectionPromiseRef.current) {
-      return dbConnectionPromiseRef.current;
-    }
-
-    // Créer une nouvelle connexion
-    dbConnectionPromiseRef.current = new Promise((resolve, reject) => {
-      try {
-        // Vérifier si IndexedDB est disponible
-        if (!window.indexedDB) {
-          console.warn('⚠️ IndexedDB non disponible, utilisation du localStorage uniquement');
-          resolve(null);
-          return;
-        }
-
-        // Utiliser localStorage uniquement pour éviter les problèmes IndexedDB
-        dbConnectionRef.current = null;
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) {
         resolve(null);
-
-      } catch (error) {
-        console.error('❌ Erreur critique dans openDB:', error);
-        dbConnectionRef.current = null;
-        resolve(null);
+        return;
       }
-    });
 
-    return dbConnectionPromiseRef.current;
+      const request = indexedDB.open('WorkoutTrackerDB', 1);
+      
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        
+        if (!db.objectStoreNames.contains('workouts')) {
+          const workoutStore = db.createObjectStore('workouts', { keyPath: 'id' });
+          workoutStore.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+      };
+      
+      request.onsuccess = (event) => {
+        resolve(event.target.result);
+      };
+      
+      request.onerror = (event) => {
+        console.error('❌ Erreur ouverture IndexedDB:', event.target.error);
+        resolve(null);
+      };
+    });
   };
   const saveToDB = async (newData) => {
     try {

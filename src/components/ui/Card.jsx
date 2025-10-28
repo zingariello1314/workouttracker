@@ -39,11 +39,11 @@ const Card = ({
   };
 
   const baseClasses = gradient 
-    ? 'bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm text-white'
-    : 'bg-slate-800/90 backdrop-blur-sm text-white';
+    ? 'bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl text-white'
+    : 'bg-slate-800/90 backdrop-blur-xl text-white';
     
   const borderClasses = border ? 'border border-slate-700/50' : '';
-  const hoverClasses = hover ? 'hover:bg-slate-800/95 hover:shadow-lg transition-all duration-200 cursor-pointer' : '';
+  const hoverClasses = hover ? 'hover:bg-slate-800/95 hover:shadow-2xl hover:backdrop-blur-2xl transition-all duration-300 cursor-pointer' : '';
 
   const classes = `
     ${baseClasses} 

@@ -25,9 +25,9 @@ const Modal = ({
   };
 
   const variants = {
-    default: 'bg-slate-900/95 border-slate-700/50',
-    dark: 'bg-slate-950/95 border-slate-800/50',
-    glass: 'bg-slate-900/80 backdrop-blur-xl border-slate-700/30'
+    default: 'bg-slate-900/95 backdrop-blur-xl border-slate-700/50',
+    dark: 'bg-slate-950/95 backdrop-blur-xl border-slate-800/50',
+    glass: 'bg-slate-900/70 backdrop-blur-2xl border-slate-700/40'
   };
 
   const handleBackdropClick = (e) => {
@@ -38,7 +38,7 @@ const Modal = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/70 backdrop-blur-xl flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
       onClick={handleBackdropClick}
     >
       <div className={`
@@ -57,7 +57,7 @@ const Modal = ({
         ${className}
       `}>
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-slate-700/50 bg-slate-800/50">
+          <div className="flex items-center justify-between p-6 border-b border-slate-700/50 bg-slate-800/60 backdrop-blur-sm">
             {title && (
               <h2 className={`${typography.presets.heading.h2} text-white flex items-center gap-2`}>
                 {title}

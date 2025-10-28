@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import Button from './ui/Button';
 import { useHomepageImages } from '../hooks/useHomepageImages';
+import StorageDiagnostic from './StorageDiagnostic';
 
 const HomePageImageSettings = ({ onClose }) => {
-  const { backgroundImages, saveImages, isLoading } = useHomepageImages();
+  const { backgroundImages, saveImages, isLoading, systemHealth, checkSystemHealth } = useHomepageImages();
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
   const fileInputRef = useRef(null);
 
   // Fonction pour nettoyer le localStorage
@@ -54,63 +56,25 @@ const HomePageImageSettings = ({ onClose }) => {
     }
   };
 
-  // Convertir fichier en base64 avec option de compression désactivable
+  // Convertir fichier en base64 avec QUALITÉ MAXIMALE ABSOLUE
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
-      // Option pour désactiver la compression (décommentez la ligne suivante si vous voulez la qualité maximale)
-      const disableCompression = true; // QUALITÉ MAXIMALE ACTIVÉE
-      // const disableCompression = false;
+      // QUALITÉ MAXIMALE : AUCUNE COMPRESSION, AUCUN REDIMENSIONNEMENT
+      console.log(`📸 Conversion image haute qualité: ${file.name} (${Math.round(file.size / 1024 / 1024 * 100) / 100} MB)`);
       
-      if (disableCompression || !file.type.startsWith('image/')) {
-        // Méthode normale sans compression pour qualité maximale
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-        return;
-      }
-      
-      // Compression intelligente pour les images
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        // Redimensionner seulement si vraiment trop grande (max 2560x1440 pour préserver la qualité)
-        const maxWidth = 2560;
-        const maxHeight = 1440;
-        let { width, height } = img;
-        
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width *= ratio;
-          height *= ratio;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Dessiner l'image redimensionnée
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Convertir en base64 avec qualité élevée (95% au lieu de 80%)
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
-        resolve(compressedDataUrl);
-      };
-      
-      img.onerror = () => {
-        // Fallback vers la méthode normale si la compression échoue
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-      };
-      
+      // Lecture directe sans aucune modification
       reader.readAsDataURL(file);
       reader.onload = () => {
-        img.src = reader.result;
+        const base64 = reader.result;
+        console.log(`✅ Image convertie: ${Math.round(base64.length / 1024 / 1024 * 100) / 100} MB Base64`);
+        resolve(base64);
       };
-      reader.onerror = error => reject(error);
+      reader.onerror = error => {
+        console.error('❌ Erreur conversion image:', error);
+        reject(error);
+      };
     });
   };
 
@@ -174,6 +138,14 @@ const HomePageImageSettings = ({ onClose }) => {
               <span>Sauvegarde automatique active</span>
             </div>
             
+            {/* Bouton de diagnostic */}
+            <Button
+              onClick={() => setShowDiagnostic(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              🔍 Diagnostic
+            </Button>
+            
             {/* Bouton de sauvegarde manuelle */}
             <Button
               onClick={handleManualSave}
@@ -236,7 +208,7 @@ const HomePageImageSettings = ({ onClose }) => {
                 disabled={isUploading}
                 className="w-full"
               >
-                {isUploading ? 'Upload en cours...' : 'Ajouter des Images de Fond (JPG/JPEG)'}
+                {isUploading ? 'Upload haute qualité...' : '📸 Ajouter des Images Haute Qualité (JPG/PNG)'}
               </Button>
 
               {/* Galerie des images de fond */}
@@ -264,16 +236,36 @@ const HomePageImageSettings = ({ onClose }) => {
           </div>
 
 
-          {/* Instructions */}
+          {/* Indicateur de santé du système */}
           <div className="bg-slate-700/50 rounded-lg p-4">
-            <h4 className="text-white font-semibold mb-2">Instructions :</h4>
-            <ul className="text-slate-300 text-sm space-y-1">
-              <li>• Formats acceptés : JPG, JPEG, PNG</li>
-              <li>• Images de fond : Recommandé 2560x1440px ou plus</li>
-              <li>• ✅ Qualité MAXIMALE activée (aucune compression)</li>
-              <li>• Rotation automatique toutes les 2 minutes</li>
-              <li>• Cliquez sur la page d'accueil pour changer l'image de fond</li>
-            </ul>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-white font-semibold">🏥 Santé du Système</h4>
+              <button
+                onClick={checkSystemHealth}
+                className="text-blue-400 hover:text-blue-300 text-sm"
+              >
+                Vérifier
+              </button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${
+                systemHealth === 'excellent' ? 'bg-green-500' :
+                systemHealth === 'good' ? 'bg-yellow-500' :
+                systemHealth === 'poor' ? 'bg-red-500' :
+                'bg-gray-500'
+              }`}></div>
+              <span className="text-slate-300 text-sm">
+                {systemHealth === 'excellent' ? '✅ Excellent - Tous les systèmes fonctionnent' :
+                 systemHealth === 'good' ? '⚠️ Bon - Système de fallback actif' :
+                 systemHealth === 'poor' ? '❌ Problème - Vérification nécessaire' :
+                 '❓ Inconnu - Vérification en cours'}
+              </span>
+            </div>
+            <div className="mt-2 text-xs text-slate-400">
+              <p>• Sauvegarde triple niveau (IndexedDB + localStorage + sessionStorage)</p>
+              <p>• Récupération automatique en cas de problème</p>
+              <p>• Sauvegarde synchrone avant fermeture</p>
+            </div>
           </div>
 
           {/* Système de sauvegarde renforcé */}
@@ -285,26 +277,26 @@ const HomePageImageSettings = ({ onClose }) => {
               Sauvegarde Optimisée Activée
             </h4>
             <div className="text-green-200 text-sm space-y-2">
-              <p><strong>Vos images de fond sont sauvegardées automatiquement dans :</strong></p>
+              <p><strong>Vos images haute qualité sont sauvegardées automatiquement dans :</strong></p>
               <ul className="ml-4 space-y-1">
-                <li>• 💾 Base de données principale (IndexedDB)</li>
-                <li>• 🔄 Sauvegarde locale optimisée (localStorage)</li>
-                <li>• ⚡ Sauvegarde de session (sessionStorage)</li>
-                <li>• 🛡️ Backup IndexedDB séparé</li>
+                <li>• 💾 IndexedDB (stockage illimité, qualité maximale)</li>
+                <li>• 🔄 Métadonnées dans localStorage (léger)</li>
+                <li>• ⚡ Sauvegarde automatique toutes les 10 minutes</li>
+                <li>• 🛡️ Sauvegarde avant fermeture du navigateur</li>
               </ul>
               <div className="bg-blue-900/20 border border-blue-600/30 rounded p-3 mt-3">
-                <h5 className="text-blue-400 font-semibold mb-1">🚀 Optimisations Actives :</h5>
+                <h5 className="text-blue-400 font-semibold mb-1">🚀 QUALITÉ MAXIMALE GARANTIE :</h5>
                 <ul className="text-blue-200 text-xs space-y-1">
-                  <li>• ✅ Compression DÉSACTIVÉE (qualité maximale)</li>
-                  <li>• ✅ Qualité originale préservée à 100%</li>
-                  <li>• ✅ Aucun redimensionnement automatique</li>
-                  <li>• Nettoyage automatique de l'espace de stockage</li>
-                  <li>• Gestion intelligente des erreurs de quota</li>
-                  <li>• Sauvegarde des données essentielles en cas de problème</li>
+                  <li>• ✅ AUCUNE compression (qualité originale 100%)</li>
+                  <li>• ✅ AUCUN redimensionnement (résolution native)</li>
+                  <li>• ✅ Support 4K+ et images très volumineuses</li>
+                  <li>• ✅ Stockage IndexedDB (pas de limite localStorage)</li>
+                  <li>• ✅ Persistance garantie après redémarrage</li>
+                  <li>• ✅ Migration automatique depuis ancien système</li>
                 </ul>
               </div>
               <p className="text-xs text-green-300 mt-2">
-                <strong>Garantie :</strong> Vos images ne peuvent pas être perdues même en cas de problème technique.
+                <strong>Garantie :</strong> Vos images haute qualité ne peuvent pas être perdues et conservent leur qualité originale.
               </p>
             </div>
           </div>
@@ -317,6 +309,11 @@ const HomePageImageSettings = ({ onClose }) => {
           </Button>
         </div>
       </div>
+
+      {/* Modal de diagnostic */}
+      {showDiagnostic && (
+        <StorageDiagnostic onClose={() => setShowDiagnostic(false)} />
+      )}
     </div>
   );
 };
