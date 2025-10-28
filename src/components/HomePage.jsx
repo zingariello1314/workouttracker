@@ -119,7 +119,7 @@ const HomePage = () => {
             src="/logo.png" 
             alt="Momentum Logo" 
             className="w-24 h-24 rounded-2xl opacity-95 drop-shadow-2xl"
-            style={{ transform: 'translateY(70px)' }}
+            style={{ transform: 'translateY(55px)' }}
           />
         </div>
 
