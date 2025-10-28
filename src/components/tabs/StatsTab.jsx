@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, Calendar, Target, Award } from 'lucide-react';
+import { TrendingUp, Calendar, Target, Award, Activity } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -9,12 +9,79 @@ const StatsTab = () => {
     statsPeriod,
     setStatsPeriod,
     getWorkoutHistory,
-    setShowAdvancedStats
+    setShowAdvancedStats,
+    data
   } = useWorkout();
 
   // Utiliser les vraies données de l'historique des entraînements
   const workoutHistory = getWorkoutHistory();
   
+  // Fonction pour calculer les statistiques d'endurance
+  const calculateEnduranceStats = (filteredHistory, period) => {
+    // Récupérer les données d'endurance depuis le contexte
+    const enduranceData = data?.enduranceData || {};
+    const sessions = enduranceData.sessions || {};
+    
+    let totalEnduranceSessions = 0;
+    let totalEnduranceReps = 0;
+    let totalEnduranceDuration = 0;
+    let totalEnduranceDistance = 0;
+    let totalEnduranceJumps = 0;
+    
+    // Parcourir toutes les activités d'endurance
+    Object.values(sessions).forEach(activitySessions => {
+      if (Array.isArray(activitySessions)) {
+        activitySessions.forEach(session => {
+          const sessionDate = new Date(session.date);
+          const startDate = new Date();
+          
+          // Déterminer la période de début
+          switch (period) {
+            case 'week':
+              startDate.setDate(startDate.getDate() - 7);
+              break;
+            case 'month':
+              startDate.setDate(startDate.getDate() - 30);
+              break;
+            case 'year':
+              startDate.setDate(startDate.getDate() - 365);
+              break;
+            default:
+              startDate.setDate(startDate.getDate() - 7);
+          }
+          
+          // Vérifier si la session est dans la période
+          if (sessionDate >= startDate && sessionDate <= new Date()) {
+            totalEnduranceSessions++;
+            
+            // Ajouter les répétitions (pompes, boxe)
+            if (session.count) totalEnduranceReps += parseInt(session.count) || 0;
+            if (session.duration) totalEnduranceDuration += parseInt(session.duration) || 0;
+            
+            // Ajouter la distance (natation, course)
+            if (session.distance) totalEnduranceDistance += parseFloat(session.distance) || 0;
+            if (session.laps && Array.isArray(session.laps)) {
+              session.laps.forEach(lap => {
+                totalEnduranceDistance += parseFloat(lap.distance) || 0;
+              });
+            }
+            
+            // Ajouter les sauts (corde à sauter)
+            if (session.jumps) totalEnduranceJumps += parseInt(session.jumps) || 0;
+          }
+        });
+      }
+    });
+    
+    return {
+      sessions: totalEnduranceSessions,
+      reps: totalEnduranceReps,
+      duration: totalEnduranceDuration,
+      distance: totalEnduranceDistance,
+      jumps: totalEnduranceJumps
+    };
+  };
+
   // Calculer les statistiques à partir des vraies données
   const calculateStats = (period) => {
     const now = new Date();
@@ -68,12 +135,16 @@ const StatsTab = () => {
       natationDuration: 0
     });
     
+    // Calculer les statistiques d'endurance
+    const enduranceStats = calculateEnduranceStats(filteredHistory, period);
+    
     return {
       totalWorkouts,
       totalReps,
       totalStretches,
       activeDays,
-      complementaryStats
+      complementaryStats,
+      enduranceStats
     };
   };
 
@@ -212,6 +283,38 @@ const StatsTab = () => {
           </Card.Content>
         </Card>
       </div>
+
+      {/* Statistiques d'endurance */}
+      {stats.enduranceStats.sessions > 0 && (
+        <div className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-orange-200 mb-4 flex items-center">
+            <Activity className="mr-2" size={20} />
+            Activités d'endurance
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-orange-700/30 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-orange-200">{stats.enduranceStats.sessions}</div>
+              <div className="text-orange-300 text-sm">Sessions</div>
+            </div>
+            <div className="bg-blue-700/30 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-blue-200">{stats.enduranceStats.reps}</div>
+              <div className="text-blue-300 text-sm">Répétitions</div>
+            </div>
+            <div className="bg-green-700/30 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-green-200">{stats.enduranceStats.distance}m</div>
+              <div className="text-green-300 text-sm">Distance</div>
+            </div>
+            <div className="bg-purple-700/30 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-purple-200">{stats.enduranceStats.jumps}</div>
+              <div className="text-purple-300 text-sm">Sauts</div>
+            </div>
+            <div className="bg-red-700/30 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-red-200">{stats.enduranceStats.duration}min</div>
+              <div className="text-red-300 text-sm">Durée</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Statistiques détaillées */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

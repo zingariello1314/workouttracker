@@ -85,15 +85,71 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
     const dayName = getDayName(date);
     const workout = workoutProgram[dayName];
     
-    // Si pas de programme pour ce jour, retourner des valeurs par défaut
-    if (!workout) {
-      return { level: 0, reps: 0, duration: 0, exerciseCount: 0, completedCount: 0, intensityScore: 0 };
+    // Calculer les données d'endurance pour cette date
+    const getEnduranceDataForDate = () => {
+      const enduranceData = allData?.enduranceData || {};
+      const sessions = enduranceData.sessions || {};
+      
+      let enduranceReps = 0;
+      let enduranceDuration = 0;
+      let enduranceDistance = 0;
+      let enduranceJumps = 0;
+      let enduranceSessions = 0;
+      
+      // Parcourir toutes les activités d'endurance
+      Object.values(sessions).forEach(activitySessions => {
+        if (Array.isArray(activitySessions)) {
+          activitySessions.forEach(session => {
+            if (session.date === dateStr) {
+              enduranceSessions++;
+              
+              // Ajouter les répétitions (pompes, boxe)
+              if (session.count) enduranceReps += parseInt(session.count) || 0;
+              if (session.duration) enduranceDuration += parseInt(session.duration) || 0;
+              
+              // Ajouter la distance (natation, course)
+              if (session.distance) enduranceDistance += parseFloat(session.distance) || 0;
+              if (session.laps && Array.isArray(session.laps)) {
+                session.laps.forEach(lap => {
+                  enduranceDistance += parseFloat(lap.distance) || 0;
+                });
+              }
+              
+              // Ajouter les sauts (corde à sauter)
+              if (session.jumps) enduranceJumps += parseInt(session.jumps) || 0;
+            }
+          });
+        }
+      });
+      
+      return {
+        reps: enduranceReps,
+        duration: enduranceDuration,
+        distance: enduranceDistance,
+        jumps: enduranceJumps,
+        sessions: enduranceSessions
+      };
+    };
+    
+    const enduranceData = getEnduranceDataForDate();
+    
+    // Si pas de programme pour ce jour ET pas de données d'endurance, retourner des valeurs par défaut
+    if (!workout && enduranceData.sessions === 0) {
+      return { 
+        level: 0, 
+        reps: 0, 
+        duration: 0, 
+        exerciseCount: 0, 
+        completedCount: 0, 
+        intensityScore: 0,
+        enduranceData: enduranceData
+      };
     }
 
     // Obtenir la liste des exercices - CORRECTION: inclure TOUTES les variantes
     let exercisesList = [];
     
-    if (workout.salleVariants) {
+    if (workout?.salleVariants) {
       // Pour les jours avec variantes de salle, inclure TOUS les exercices possibles
       const semaineA = workout.salleVariants.semaineA?.exercices || [];
       const semaineB = workout.salleVariants.semaineB?.exercices || [];
@@ -101,16 +157,16 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
       
       // Combiner tous les exercices possibles (salle A, salle B, street)
       exercisesList = [...semaineA, ...semaineB, ...streetExercices];
-    } else {
+    } else if (workout?.exercices) {
       // Pour les jours sans variantes, utiliser les exercices de base
       exercisesList = workout.exercices || [];
     }
     
-    let totalReps = 0;
+    let totalReps = enduranceData.reps; // Commencer avec les reps d'endurance
     let completedExercises = 0;
     let totalPlannedExercises = exercisesList.length;
     
-    // Calculer les répétitions réelles et exercices accomplis
+    // Calculer les répétitions réelles et exercices accomplis (exercices classiques)
     exercisesList.forEach(exercise => {
       const baseKey = `${dateStr}_${exercise.id}`;
       
@@ -142,15 +198,15 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
       
       if (isCompleted) {
         completedExercises++;
-        totalReps += reps;
+        totalReps += reps; // Ajouter aux reps d'endurance
       }
     });
 
-    // Calculer la durée réelle basée sur les exercices accomplis
+    // Calculer la durée réelle basée sur les exercices accomplis ET l'endurance
     const calculateRealDuration = () => {
-      if (completedExercises === 0) return 0;
+      let totalDurationMinutes = enduranceData.duration; // Commencer avec la durée d'endurance
       
-      let totalDurationMinutes = 0;
+      if (completedExercises === 0 && enduranceData.sessions === 0) return 0;
       
       exercisesList.forEach(exercise => {
         const baseKey = `${dateStr}_${exercise.id}`;
@@ -237,18 +293,24 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
     };
 
     const realDuration = calculateRealDuration();
+    const totalActivities = completedExercises + enduranceData.sessions;
     const completionRate = totalPlannedExercises > 0 ? completedExercises / totalPlannedExercises : 0;
     
-    // Calculer le niveau d'intensité basé sur le taux de complétion et les répétitions
+    // Calculer le niveau d'intensité basé sur le taux de complétion, les répétitions ET les données d'endurance
     let intensityLevel = 0;
-    if (completedExercises > 0) {
-      if (completionRate >= 0.8 && totalReps >= 100) intensityLevel = 4; // Extrême
-      else if (completionRate >= 0.6 && totalReps >= 60) intensityLevel = 3; // Intense
-      else if (completionRate >= 0.4 && totalReps >= 30) intensityLevel = 2; // Modéré
+    if (totalActivities > 0) {
+      // Considérer les activités d'endurance comme équivalentes aux exercices
+      const effectiveCompletionRate = totalPlannedExercises > 0 ? 
+        (completedExercises + enduranceData.sessions) / Math.max(totalPlannedExercises, enduranceData.sessions) : 
+        enduranceData.sessions > 0 ? 1 : 0;
+      
+      if (effectiveCompletionRate >= 0.8 && totalReps >= 100) intensityLevel = 4; // Extrême
+      else if (effectiveCompletionRate >= 0.6 && totalReps >= 60) intensityLevel = 3; // Intense
+      else if (effectiveCompletionRate >= 0.4 && totalReps >= 30) intensityLevel = 2; // Modéré
       else intensityLevel = 1; // Léger
     }
     
-    const intensityScore = completionRate * 100 + (totalReps * 0.1);
+    const intensityScore = completionRate * 100 + (totalReps * 0.1) + (enduranceData.sessions * 10);
     
     return {
       level: intensityLevel,
@@ -258,6 +320,7 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
       completedCount: completedExercises,
       intensityScore,
       completionRate: Math.round(completionRate * 100),
+      enduranceData: enduranceData,
       // Garder la compatibilité avec l'ancien format
       exercises: completedExercises,
       session: completedExercises > 0 ? { 
@@ -679,11 +742,11 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-slate-700/50 rounded p-2 text-center">
                       <div className="text-white font-bold">{month.totalReps}</div>
-                      <div className="text-slate-400">reps</div>
+                      <div className="text-slate-400">reps + endurance</div>
                     </div>
                     <div className="bg-slate-700/50 rounded p-2 text-center">
                       <div className="text-white font-bold">{month.totalDuration}min</div>
-                      <div className="text-slate-400">temps réel</div>
+                      <div className="text-slate-400">temps total</div>
                     </div>
                   </div>
                 </div>
@@ -739,21 +802,49 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-slate-700/50 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-white">{selectedDate.intensity.reps}</div>
-              <div className="text-slate-400 text-sm">Répétitions</div>
+              <div className="text-slate-400 text-sm">Répétitions totales</div>
             </div>
             <div className="bg-slate-700/50 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-white">{selectedDate.intensity.completedCount}</div>
-              <div className="text-slate-400 text-sm">Exercices</div>
+              <div className="text-slate-400 text-sm">Exercices classiques</div>
             </div>
             <div className="bg-slate-700/50 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-white">{selectedDate.intensity.duration}min</div>
-              <div className="text-slate-400 text-sm">Durée réelle</div>
+              <div className="text-slate-400 text-sm">Durée totale</div>
             </div>
             <div className="bg-slate-700/50 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-white">{getIntensityLabel(selectedDate.intensity.level)}</div>
-              <div className="text-slate-400 text-sm">Intensité</div>
+              <div className="text-slate-400 text-sm">Intensité globale</div>
             </div>
           </div>
+          
+          {/* Données d'endurance détaillées */}
+          {selectedDate.intensity.enduranceData && selectedDate.intensity.enduranceData.sessions > 0 && (
+            <div className="mt-6">
+              <h4 className="text-white font-medium mb-3 flex items-center">
+                <Activity className="mr-2" size={16} />
+                Activités d'endurance
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-orange-700/30 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-orange-200">{selectedDate.intensity.enduranceData.sessions}</div>
+                  <div className="text-orange-300 text-sm">Sessions</div>
+                </div>
+                <div className="bg-blue-700/30 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-blue-200">{selectedDate.intensity.enduranceData.distance}m</div>
+                  <div className="text-blue-300 text-sm">Distance</div>
+                </div>
+                <div className="bg-green-700/30 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-green-200">{selectedDate.intensity.enduranceData.jumps}</div>
+                  <div className="text-green-300 text-sm">Sauts</div>
+                </div>
+                <div className="bg-purple-700/30 rounded-lg p-3 text-center">
+                  <div className="text-lg font-bold text-purple-200">{selectedDate.intensity.enduranceData.duration}min</div>
+                  <div className="text-purple-300 text-sm">Durée endurance</div>
+                </div>
+              </div>
+            </div>
+          )}
           
           {selectedDate.intensity.session && (
             <div className="mt-4">

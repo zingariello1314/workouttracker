@@ -16,6 +16,87 @@ const SettingsTab = () => {
   const [showHomePageSettings, setShowHomePageSettings] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Fonction pour exporter spécifiquement les données de suivi corporel
+  const exportBodyTrackingData = async () => {
+    try {
+      setExportStatus('loading');
+      
+      // Récupérer les données les plus récentes
+      const currentData = await loadFromDB();
+      const dataToExport = currentData || data;
+      
+      // Extraire uniquement les données de suivi corporel
+      const bodyTrackingData = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        exportType: 'Body Tracking Data',
+        appName: 'Workout Tracker - Suivi Corporel',
+        
+        // Données de suivi corporel
+        progressPhotos: dataToExport.progressPhotos || [],
+        progressEntries: dataToExport.progressEntries || [],
+        bodyTrackingReminders: dataToExport.bodyTrackingReminders || [],
+        bodyTrackingLastUpdated: dataToExport.bodyTrackingLastUpdated || null,
+        
+        // Métadonnées spécifiques au suivi corporel
+        metadata: {
+          totalPhotos: (dataToExport.progressPhotos || []).length,
+          totalEntries: (dataToExport.progressEntries || []).length,
+          totalReminders: (dataToExport.bodyTrackingReminders || []).length,
+          lastUpdate: dataToExport.bodyTrackingLastUpdated || null,
+          
+          // Statistiques des photos
+          photosWithWeight: (dataToExport.progressPhotos || []).filter(p => p.weight).length,
+          photosWithNotes: (dataToExport.progressPhotos || []).filter(p => p.notes).length,
+          photosWithMeasurements: (dataToExport.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length,
+          
+          // Statistiques des entrées
+          entriesByType: (dataToExport.progressEntries || []).reduce((acc, entry) => {
+            acc[entry.type] = (acc[entry.type] || 0) + 1;
+            return acc;
+          }, {}),
+          
+          // Période couverte
+          dateRange: {
+            earliest: (dataToExport.progressPhotos || []).concat(dataToExport.progressEntries || [])
+              .map(item => item.date).sort()[0] || null,
+            latest: (dataToExport.progressPhotos || []).concat(dataToExport.progressEntries || [])
+              .map(item => item.date).sort().reverse()[0] || null
+          },
+          
+          // Taille des données
+          exportSize: JSON.stringify({
+            progressPhotos: dataToExport.progressPhotos || [],
+            progressEntries: dataToExport.progressEntries || [],
+            bodyTrackingReminders: dataToExport.bodyTrackingReminders || []
+          }).length
+        }
+      };
+
+      // Créer le fichier JSON
+      const jsonString = JSON.stringify(bodyTrackingData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      // Créer le lien de téléchargement
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `body-tracking-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setExportStatus('success');
+      setTimeout(() => setExportStatus(null), 3000);
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export du suivi corporel:', error);
+      setExportStatus('error');
+      setTimeout(() => setExportStatus(null), 3000);
+    }
+  };
+
   // Fonction pour exporter toutes les données
   const exportAllData = async () => {
     try {
@@ -42,6 +123,24 @@ const SettingsTab = () => {
           progressPhotos: (dataToExport.progressPhotos || []).length,
           progressEntries: (dataToExport.progressEntries || []).length,
           bodyTrackingReminders: (dataToExport.bodyTrackingReminders || []).length,
+          bodyTrackingLastUpdated: dataToExport.bodyTrackingLastUpdated || null,
+          
+          // Statistiques détaillées du suivi corporel
+          bodyTrackingStats: {
+            photosWithWeight: (dataToExport.progressPhotos || []).filter(p => p.weight).length,
+            photosWithNotes: (dataToExport.progressPhotos || []).filter(p => p.notes).length,
+            photosWithMeasurements: (dataToExport.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length,
+            entriesByType: (dataToExport.progressEntries || []).reduce((acc, entry) => {
+              acc[entry.type] = (acc[entry.type] || 0) + 1;
+              return acc;
+            }, {}),
+            dateRange: {
+              earliest: (dataToExport.progressPhotos || []).concat(dataToExport.progressEntries || [])
+                .map(item => item.date).sort()[0] || null,
+              latest: (dataToExport.progressPhotos || []).concat(dataToExport.progressEntries || [])
+                .map(item => item.date).sort().reverse()[0] || null
+            }
+          },
           
           // Données de la page d'accueil (maintenant gérées par useHomepageImages indépendant)
           homepageBackgroundImages: 0, // Système indépendant
@@ -49,11 +148,11 @@ const SettingsTab = () => {
           homepageLastUpdated: null, // Système indépendant
           
           // Données d'endurance
-          endurancePushupSessions: (dataToExport.enduranceData?.pushupSessions || []).length,
-          enduranceBoxingSessions: (dataToExport.enduranceData?.boxingSessions || []).length,
-          enduranceSwimmingSessions: (dataToExport.enduranceData?.swimmingSessions || []).length,
-          enduranceJumpropeSessions: (dataToExport.enduranceData?.jumpropeSessions || []).length,
-          enduranceRunningSessions: (dataToExport.enduranceData?.runningSessions || []).length,
+          endurancePushupSessions: (dataToExport.enduranceData?.sessions?.pushups || dataToExport.enduranceData?.pushupSessions || []).length,
+          enduranceBoxingSessions: (dataToExport.enduranceData?.sessions?.boxing || dataToExport.enduranceData?.boxingSessions || []).length,
+          enduranceSwimmingSessions: (dataToExport.enduranceData?.sessions?.swimming || dataToExport.enduranceData?.swimmingSessions || []).length,
+          enduranceJumpropeSessions: (dataToExport.enduranceData?.sessions?.jumprope || dataToExport.enduranceData?.jumpropeSessions || []).length,
+          enduranceRunningSessions: (dataToExport.enduranceData?.sessions?.running || dataToExport.enduranceData?.runningSessions || []).length,
           enduranceChallenges: (dataToExport.enduranceData?.challenges || []).length,
           enduranceLastUpdated: dataToExport.enduranceData?.lastUpdated || null,
           
@@ -321,6 +420,10 @@ const SettingsTab = () => {
                     <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
                     <li>• Entrées de progression : {(data.progressEntries || []).length} entrées</li>
                     <li>• Rappels configurés : {(data.bodyTrackingReminders || []).length} rappels</li>
+                    <li>• Photos avec poids : {(data.progressPhotos || []).filter(p => p.weight).length}</li>
+                    <li>• Photos avec notes : {(data.progressPhotos || []).filter(p => p.notes).length}</li>
+                    <li>• Photos avec mesures : {(data.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length}</li>
+                    <li>• Dernière mise à jour : {data.bodyTrackingLastUpdated ? new Date(data.bodyTrackingLastUpdated).toLocaleDateString('fr-FR') : 'Jamais'}</li>
                   </ul>
                 </div>
                 <div className="space-y-1">
@@ -329,6 +432,17 @@ const SettingsTab = () => {
                     <li>• Images de fond : Système indépendant</li>
                     <li>• Bannières : Système indépendant</li>
                     <li>• Dernière mise à jour : Système indépendant</li>
+                  </ul>
+                </div>
+                <div className="space-y-1">
+                  <h5 className="text-sm font-medium text-orange-300">🏃 Endurance</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Sessions boxe : {(data.enduranceData?.sessions?.boxing || data.enduranceData?.boxingSessions || []).length} sessions</li>
+                    <li>• Sessions pompes : {(data.enduranceData?.sessions?.pushups || data.enduranceData?.pushupSessions || []).length} sessions</li>
+                    <li>• Sessions natation : {(data.enduranceData?.sessions?.swimming || data.enduranceData?.swimmingSessions || []).length} sessions</li>
+                    <li>• Sessions corde à sauter : {(data.enduranceData?.sessions?.jumprope || data.enduranceData?.jumpropeSessions || []).length} sessions</li>
+                    <li>• Sessions course : {(data.enduranceData?.sessions?.running || data.enduranceData?.runningSessions || []).length} sessions</li>
+                    <li>• Défis actifs : {(data.enduranceData?.challenges || []).length} défis</li>
                   </ul>
                 </div>
                 <div className="space-y-1">
@@ -349,14 +463,25 @@ const SettingsTab = () => {
               </div>
             </div>
 
-            <Button
-              onClick={exportAllData}
-              disabled={exportStatus === 'loading'}
-              icon={Download}
-              className="w-full bg-green-600 hover:bg-green-700"
-            >
-              {exportStatus === 'loading' ? 'Export en cours...' : 'Exporter les données'}
-            </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button
+                onClick={exportAllData}
+                disabled={exportStatus === 'loading'}
+                icon={Download}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                {exportStatus === 'loading' ? 'Export en cours...' : 'Export Complet'}
+              </Button>
+              
+              <Button
+                onClick={exportBodyTrackingData}
+                disabled={exportStatus === 'loading'}
+                icon={FileText}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {exportStatus === 'loading' ? 'Export en cours...' : 'Export Suivi Corporel'}
+              </Button>
+            </div>
 
             {exportStatus === 'success' && (
               <div className="flex items-center text-green-400 text-sm">

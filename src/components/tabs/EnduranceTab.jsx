@@ -1,88 +1,307 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
-import { useWorkoutStats } from '../../hooks/useWorkoutStats';
 
 const EnduranceTab = () => {
-  const { data, updateData } = useWorkout();
-  const { getWorkoutHistory } = useWorkoutStats();
+  const { data, updateData, getWorkoutHistory } = useWorkout();
   
-  const [activeTab, setActiveTab] = useState('boxing');
-  const [pushupSessions, setPushupSessions] = useState([]);
-  const [boxingSessions, setBoxingSessions] = useState([]);
-  const [swimmingSessions, setSwimmingSessions] = useState([]);
-  const [jumpropeSessions, setJumpropeSessions] = useState([]);
-  const [runningSessions, setRunningSessions] = useState([]);
-  const [challenges, setChallenges] = useState([]);
-  const [showChallengeModal, setShowChallengeModal] = useState(false);
-  const [showSessionForm, setShowSessionForm] = useState(false);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedActivityFilter, setSelectedActivityFilter] = useState('all');
-  const [selectedDay, setSelectedDay] = useState(null);
+  // État unifié pour toutes les sessions d'endurance
+  const [enduranceState, setEnduranceState] = useState({
+    activeTab: 'boxing',
+    sessions: {
+      boxing: [],
+      pushups: [],
+      swimming: [],
+      jumprope: [],
+      running: []
+    },
+    challenges: [],
+    ui: {
+      showChallengeModal: false,
+      showSessionForm: false,
+      selectedYear: new Date().getFullYear(),
+      selectedActivityFilter: 'all',
+      selectedDay: null,
+      allowPastDates: false,
+      editingSession: null,
+      editingChallenge: null
+    }
+  });
+
+  // Getters pour faciliter l'accès aux données
+  const activeTab = enduranceState?.activeTab || 'boxing';
+  const sessions = enduranceState?.sessions || {
+    boxing: [],
+    pushups: [],
+    swimming: [],
+    jumprope: [],
+    running: []
+  };
+  const challenges = enduranceState?.challenges || [];
+  const ui = enduranceState?.ui || {
+    showChallengeModal: false,
+    showSessionForm: false,
+    selectedYear: new Date().getFullYear(),
+    selectedActivityFilter: 'all',
+    selectedDay: null,
+    allowPastDates: false,
+    editingSession: null,
+    editingChallenge: null
+  };
+
+  // Setters optimisés
+  const setActiveTab = useCallback((tab) => {
+    setEnduranceState(prev => ({ ...prev, activeTab: tab }));
+  }, []);
+
+  const setSessions = useCallback((activityType, newSessions) => {
+    setEnduranceState(prev => ({
+      ...prev,
+      sessions: {
+        ...prev.sessions,
+        [activityType]: newSessions
+      }
+    }));
+  }, []);
+
+  const setChallenges = useCallback((newChallenges) => {
+    setEnduranceState(prev => ({ ...prev, challenges: newChallenges }));
+  }, []);
+
+  const setUI = useCallback((uiUpdates) => {
+    setEnduranceState(prev => ({
+      ...prev,
+      ui: { ...prev.ui, ...uiUpdates }
+    }));
+  }, []);
+
+  // 🔍 Fonction de diagnostic des données (pour debug)
+  const diagnoseDataState = useCallback(() => {
+    console.log('🔍 DIAGNOSTIC DES DONNÉES:');
+    console.log('📊 Données principales:', data);
+    console.log('🏃 Données d\'endurance:', data?.enduranceData);
+    console.log('📅 Exercices cochés:', Object.keys(data?.checkedExercises || {}).length);
+    console.log('🔢 Répétitions:', Object.keys(data?.reps || {}).length);
+    console.log('📸 Photos de progression:', data?.progressPhotos?.length || 0);
+    console.log('💬 Feedbacks de session:', Object.keys(data?.sessionFeedbacks || {}).length);
+  }, [data]);
 
   // Charger les données d'endurance depuis les données principales
   useEffect(() => {
     loadEnduranceData();
   }, [data]);
 
-  const loadEnduranceData = () => {
-    // Charger depuis les données principales de l'app
+  const loadEnduranceData = useCallback(() => {
+    try {
     const enduranceData = data.enduranceData || {};
     
-    setPushupSessions(enduranceData.pushupSessions || []);
-    setBoxingSessions(enduranceData.boxingSessions || []);
-    setSwimmingSessions(enduranceData.swimmingSessions || []);
-    setJumpropeSessions(enduranceData.jumpropeSessions || []);
-    setRunningSessions(enduranceData.runningSessions || []);
-    setChallenges(enduranceData.challenges || []);
-  };
+      setEnduranceState(prev => ({
+        ...prev,
+        sessions: {
+          boxing: enduranceData.sessions?.boxing || enduranceData.boxingSessions || [],
+          pushups: enduranceData.sessions?.pushups || enduranceData.pushupSessions || [],
+          swimming: enduranceData.sessions?.swimming || enduranceData.swimmingSessions || [],
+          jumprope: enduranceData.sessions?.jumprope || enduranceData.jumpropeSessions || [],
+          running: enduranceData.sessions?.running || enduranceData.runningSessions || []
+        },
+        challenges: enduranceData.challenges || []
+      }));
+    } catch (error) {
+      console.error('Erreur lors du chargement des données d\'endurance:', error);
+    }
+  }, [data.enduranceData]);
 
-  const saveEnduranceData = async (newData) => {
+  const saveEnduranceData = useCallback(async (newData) => {
     try {
-      await updateData({
-        enduranceData: {
-          ...data.enduranceData,
-          ...newData,
-          lastUpdated: new Date().toISOString()
+      // Validation des données avant sauvegarde
+      if (!newData || typeof newData !== 'object') {
+        throw new Error('Données invalides pour la sauvegarde');
+      }
+
+      // Validation des sessions
+      Object.entries(newData).forEach(([key, value]) => {
+        if (key.includes('Sessions') && !Array.isArray(value)) {
+          throw new Error(`Les sessions ${key} doivent être un tableau`);
+        }
+        if (key === 'challenges' && !Array.isArray(value)) {
+          throw new Error('Les défis doivent être un tableau');
         }
       });
-    } catch (error) {
-      console.error('Erreur sauvegarde endurance:', error);
-    }
-  };
 
-  // Récupérer les exercices d'endurance depuis l'historique des séances
-  const getEnduranceExercisesFromHistory = () => {
+      // 🔧 FUSION INTELLIGENTE : Préserver les données existantes
+      const currentData = data || {};
+      const currentEnduranceData = currentData.enduranceData || {};
+      
+      const updatedData = {
+        ...currentData, // Préserver TOUTES les données existantes (JSON importé, etc.)
+        enduranceData: {
+          ...currentEnduranceData, // Préserver les données d'endurance existantes
+          ...newData, // Ajouter les nouvelles données d'endurance
+          lastUpdated: new Date().toISOString()
+        }
+      };
+
+      await updateData(updatedData);
+      console.log('✅ Données d\'endurance sauvegardées avec succès (fusion intelligente)');
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde endurance:', error);
+      throw error; // Re-throw pour permettre la gestion d'erreur dans les composants appelants
+    }
+  }, [data, updateData]);
+
+  // Fonction pour identifier les exercices d'endurance (améliorée)
+  const isEnduranceExercise = useCallback((exerciseName) => {
+    if (!exerciseName || typeof exerciseName !== 'string') return false;
+    
+    const enduranceKeywords = [
+      // Boxe
+      'boxe', 'boxing', 'shadow boxing', 'punching bag', 'sack de frappe',
+      // Natation
+      'natation', 'swimming', 'nage', 'piscine', 'crawl', 'brasse', 'dos', 'papillon',
+      // Pompes et variantes
+      'pompes', 'push-ups', 'push up', 'pushups', 'pompes inclinées', 'pompes déclinées',
+      'diamond push-ups', 'wide push-ups', 'pompes diamant', 'pompes larges',
+      // Corde à sauter
+      'corde à sauter', 'jump rope', 'saut à la corde', 'corde',
+      // Course et cardio
+      'course', 'running', 'jogging', 'sprint', 'course à pied',
+      // Exercices d'endurance spécifiques
+      'burpees', 'mountain climbers', 'jumping jacks', 'high knees', 'jumping squats',
+      'plank', 'planche', 'gainage', 'wall sit', 'chaise murale',
+      // Cardio général
+      'cardio', 'endurance', 'aérobic', 'aerobic'
+    ];
+    
+    const normalizedName = exerciseName.toLowerCase().trim();
+    return enduranceKeywords.some(keyword => normalizedName.includes(keyword.toLowerCase()));
+  }, []);
+
+  // Récupérer les exercices d'endurance depuis l'historique des séances (corrigé)
+  const getEnduranceExercisesFromHistory = useCallback(() => {
+    try {
     const history = getWorkoutHistory();
+      if (!Array.isArray(history)) return [];
+      
     const enduranceExercises = [];
     
     history.forEach(workout => {
-      workout.exercises.forEach(exercise => {
-        // Filtrer les exercices d'endurance selon votre base de données
-        if (isEnduranceExercise(exercise.name)) {
+        if (!workout || !workout.exercises) return;
+        
+        // Correction : workout.exercises est un objet, pas un array
+        Object.entries(workout.exercises).forEach(([key, exercise]) => {
+          if (exercise && exercise.exerciseId) {
+            // Récupérer le nom de l'exercice depuis la base de données
+            const exerciseName = getExerciseName(exercise.exerciseId);
+            
+            if (isEnduranceExercise(exerciseName)) {
           enduranceExercises.push({
-            ...exercise,
+                id: key,
+                exerciseId: exercise.exerciseId,
+                name: exerciseName,
+                reps: exercise.reps || 0,
+                completed: exercise.completed || false,
+                variant: exercise.variant || '',
             date: workout.date,
-            workoutType: workout.type
+                workoutType: workout.type || 'unknown'
           });
+            }
         }
       });
     });
     
-    return enduranceExercises;
-  };
+      return enduranceExercises.sort((a, b) => new Date(b.date) - new Date(a.date));
+    } catch (error) {
+      console.error('Erreur lors de la récupération des exercices d\'endurance:', error);
+      return [];
+    }
+  }, [getWorkoutHistory, isEnduranceExercise]);
 
-  // Fonction pour identifier les exercices d'endurance
-  const isEnduranceExercise = (exerciseName) => {
-    const enduranceKeywords = [
-      'boxe', 'boxing', 'natation', 'swimming', 'nage', 'piscine',
-      'pompes', 'push-ups', 'push up', 'pushups', 'corde à sauter',
-      'jump rope', 'course', 'running', 'jogging', 'cardio'
-    ];
+  // Fonction pour obtenir le nom d'un exercice par son ID
+  const getExerciseName = useCallback((exerciseId) => {
+    // Cette fonction devrait récupérer le nom depuis votre base de données d'exercices
+    // Pour l'instant, on utilise l'ID comme nom (à améliorer avec une vraie base de données)
+    return exerciseId || 'Exercice inconnu';
+  }, []);
+
+  // Système de rappel des défis actifs
+  const getActiveChallenges = useCallback(() => {
+    const now = new Date();
+    return challenges.filter(challenge => {
+      if (challenge.status !== 'active') return false;
+      
+      // Vérifier si le défi est encore valide selon son type
+      switch (challenge.type) {
+        case 'ponctuel':
+          return new Date(challenge.targetDate) > now;
+        case 'periode':
+          return new Date(challenge.endDate) > now;
+        case 'recurrent':
+          return true; // Les défis récurrents sont toujours actifs
+        default:
+          return true;
+      }
+    });
+  }, [challenges]);
+
+  // Fonction pour obtenir les défis urgents (échéance < 24h)
+  const getUrgentChallenges = useCallback(() => {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     
-    const normalizedName = exerciseName.toLowerCase();
-    return enduranceKeywords.some(keyword => normalizedName.includes(keyword));
-  };
+    return getActiveChallenges().filter(challenge => {
+      if (challenge.type === 'ponctuel') {
+        const targetDate = new Date(challenge.targetDate);
+        return targetDate <= tomorrow && targetDate > now;
+      }
+      return false;
+    });
+  }, [getActiveChallenges]);
+
+  // Composant de rappel des défis
+  const ChallengeReminder = useMemo(() => {
+    const activeChallenges = getActiveChallenges();
+    const urgentChallenges = getUrgentChallenges();
+    
+    if (activeChallenges.length === 0) return null;
+    
+    return (
+      <div className="bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 rounded-xl p-4 mb-6 backdrop-blur-sm">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+            <Award className="w-4 h-4 text-white" />
+          </div>
+          <h3 className="text-lg font-semibold text-orange-200">
+            ⚠️ Vous avez {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} à accomplir
+          </h3>
+        </div>
+        
+        <div className="space-y-2">
+          {urgentChallenges.length > 0 && (
+            <div className="text-red-300 text-sm font-medium">
+              🚨 {urgentChallenges.length} défi{urgentChallenges.length > 1 ? 's' : ''} urgent{urgentChallenges.length > 1 ? 's' : ''} (échéance &lt; 24h)
+            </div>
+          )}
+          
+          <div className="flex flex-wrap gap-2">
+            {activeChallenges.slice(0, 3).map(challenge => (
+              <button
+                key={challenge.id}
+                onClick={() => setActiveTab(challenge.activityType)}
+                className="px-3 py-1 bg-orange-500/30 hover:bg-orange-500/50 text-orange-200 rounded-lg text-sm transition-colors"
+              >
+                {challenge.name}
+              </button>
+            ))}
+            {activeChallenges.length > 3 && (
+              <span className="px-3 py-1 text-orange-300 text-sm">
+                +{activeChallenges.length - 3} autres...
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }, [getActiveChallenges, getUrgentChallenges, setActiveTab]);
 
   // Formulaires pour chaque type d'activité
   const [sessionForm, setSessionForm] = useState({
@@ -142,152 +361,350 @@ const EnduranceTab = () => {
     activityType: 'pushups'
   });
 
-  // Fonctions d'ajout de sessions
-  const addPushupSession = async () => {
-    const newSession = {
-      id: Date.now(),
-      ...sessionForm,
-      validatedChallenges: []
-    };
-
+  // Fonction de validation des défis (améliorée)
+  const validateChallenges = useCallback((sessionData, activityType) => {
+    const validatedChallengeIds = [];
     const updatedChallenges = challenges.map(challenge => {
-      if (challenge.activityType === 'pushups' && challenge.status === 'active') {
-        const matchesGoal = 
-          (!challenge.goalCount || parseInt(sessionForm.count) >= challenge.goalCount) &&
-          (!challenge.goalDuration || parseFloat(sessionForm.duration) <= challenge.goalDuration);
-
-        if (matchesGoal) {
-          newSession.validatedChallenges.push(challenge.id);
-          return { ...challenge, status: 'completed', completedAt: new Date().toISOString() };
-        }
+      if (challenge.activityType !== activityType || challenge.status !== 'active') {
+        return challenge;
       }
+
+      let isValid = false;
+      
+      switch (challenge.type) {
+        case 'ponctuel':
+          isValid = validatePonctuelChallenge(challenge, sessionData);
+          break;
+        case 'recurrent':
+          isValid = validateRecurrentChallenge(challenge, sessionData);
+          break;
+        case 'periode':
+          isValid = validatePeriodeChallenge(challenge, sessionData);
+          break;
+        default:
+          isValid = false;
+      }
+
+      if (isValid) {
+        validatedChallengeIds.push(challenge.id);
+        return { 
+          ...challenge, 
+          status: 'completed', 
+          completedAt: new Date().toISOString(),
+          completedSessionId: sessionData.id
+        };
+      }
+      
       return challenge;
     });
 
-    const updatedSessions = [...pushupSessions, newSession];
-    setPushupSessions(updatedSessions);
-    setChallenges(updatedChallenges);
+    return { validatedChallengeIds, updatedChallenges };
+  }, [challenges]);
+
+  // Validation pour défis ponctuels
+  const validatePonctuelChallenge = useCallback((challenge, sessionData) => {
+    const sessionDate = new Date(sessionData.date);
+    const targetDate = new Date(challenge.targetDate);
     
-    await saveEnduranceData({
-      pushupSessions: updatedSessions,
-      challenges: updatedChallenges
-    });
+    // Vérifier si la session est dans la période de validité (permet les dates antérieures)
+    // Pour les défis antérieurs, on vérifie que la session est antérieure ou égale à la date cible
+    if (sessionDate > targetDate) return false;
+    
+    // Vérifier les objectifs selon l'activité
+    switch (challenge.activityType) {
+      case 'pushups':
+        return (!challenge.goalCount || parseInt(sessionData.count) >= challenge.goalCount) &&
+               (!challenge.goalDuration || parseFloat(sessionData.duration) <= challenge.goalDuration);
+      case 'swimming':
+        return (!challenge.goalDistance || parseFloat(sessionData.totalDistance) >= challenge.goalDistance) &&
+               (!challenge.goalDuration || parseFloat(sessionData.totalTime) <= challenge.goalDuration);
+      case 'running':
+        return (!challenge.goalDistance || parseFloat(sessionData.distance) >= challenge.goalDistance) &&
+               (!challenge.goalDuration || parseFloat(sessionData.duration) <= challenge.goalDuration);
+      case 'jumprope':
+        return (!challenge.goalDuration || parseFloat(sessionData.duration) >= challenge.goalDuration) &&
+               (!challenge.goalJumps || parseInt(sessionData.jumps) >= challenge.goalJumps);
+      default:
+        return false;
+    }
+  }, []);
 
-    resetPushupForm();
-    setShowSessionForm(false);
-  };
+  // Validation pour défis récurrents
+  const validateRecurrentChallenge = useCallback((challenge, sessionData) => {
+    // Défis récurrents : vérifier la fréquence et les objectifs
+    const sessionDate = new Date(sessionData.date);
+    
+    // Vérifier si la session est dans la période de validité (permet les dates antérieures)
+    if (challenge.endDate && sessionDate > new Date(challenge.endDate)) return false;
+    if (challenge.startDate && sessionDate < new Date(challenge.startDate)) return false;
+    
+    // Vérifier la fréquence selon le type
+    switch (challenge.frequency) {
+      case 'daily':
+        // Vérifier si c'est le bon moment de la journée
+        if (challenge.timeOfDay && challenge.timeOfDay !== sessionData.timeOfDay) return false;
+        break;
+      case 'weekly':
+        // Vérifier si c'est le bon jour de la semaine
+        if (challenge.dayOfWeek && challenge.dayOfWeek !== sessionDate.getDay()) return false;
+        break;
+    }
+    
+    // Vérifier les objectifs
+    return validatePonctuelChallenge(challenge, sessionData);
+  }, [validatePonctuelChallenge]);
 
-  const addBoxingSession = async () => {
+  // Validation pour défis sur période
+  const validatePeriodeChallenge = useCallback((challenge, sessionData) => {
+    const sessionDate = new Date(sessionData.date);
+    const startDate = new Date(challenge.startDate);
+    const endDate = new Date(challenge.endDate);
+    
+    // Vérifier si la session est dans la période (permet les dates antérieures)
+    if (sessionDate < startDate || sessionDate > endDate) return false;
+    
+    // Pour les défis sur période, on accumule les sessions
+    // Cette fonction sera appelée pour chaque session et la progression sera calculée séparément
+    return validatePonctuelChallenge(challenge, sessionData);
+  }, [validatePonctuelChallenge]);
+
+  // Fonctions d'ajout de sessions (refactorisées)
+  const addSession = useCallback(async (activityType, sessionData) => {
+    try {
     const newSession = {
       id: Date.now(),
-      ...boxingForm
+        ...sessionData,
+      validatedChallenges: []
     };
 
-    const updatedSessions = [...boxingSessions, newSession];
-    setBoxingSessions(updatedSessions);
-    
-    await saveEnduranceData({
-      boxingSessions: updatedSessions
+      // Validation des défis
+      const { validatedChallengeIds, updatedChallenges } = validateChallenges(sessionData, activityType);
+      newSession.validatedChallenges = validatedChallengeIds;
+
+      // Mise à jour des sessions
+      const currentSessions = sessions[activityType] || [];
+      const updatedSessions = [...currentSessions, newSession];
+      
+      setSessions(activityType, updatedSessions);
+      setChallenges(updatedChallenges);
+      
+      // Sauvegarde avec structure cohérente
+      const saveData = {
+        sessions: {
+          ...sessions,
+          [activityType]: updatedSessions
+        },
+        challenges: updatedChallenges
+      };
+      
+      await saveEnduranceData(saveData);
+
+      // Notification de succès
+      if (validatedChallengeIds.length > 0) {
+        console.log(`🎉 ${validatedChallengeIds.length} défi(s) validé(s) !`);
+      }
+
+      return { success: true, validatedChallenges: validatedChallengeIds };
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'ajout de la session ${activityType}:`, error);
+      return { success: false, error: error.message };
+    }
+  }, [sessions, validateChallenges, setSessions, setChallenges, saveEnduranceData]);
+
+  // Fonction de modification des sessions
+  const updateSession = useCallback(async (activityType, sessionId, updatedData) => {
+    try {
+      const currentSessions = sessions[activityType] || [];
+      const updatedSessions = currentSessions.map(session => 
+        session.id === sessionId ? { ...session, ...updatedData } : session
+      );
+      
+      setSessions(activityType, updatedSessions);
+      
+      // Sauvegarde
+      const saveData = {
+        sessions: {
+          ...sessions,
+          [activityType]: updatedSessions
+        }
+      };
+      
+      await saveEnduranceData(saveData);
+      
+      // Fermer le mode édition
+      setUI({ 
+        editingSession: null, 
+        showSessionForm: false,
+        allowPastDates: false
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Erreur lors de la modification de la session:', error);
+      return { success: false, error: error.message };
+    }
+  }, [sessions, setSessions, setUI, saveEnduranceData]);
+
+  // Fonctions de reset des formulaires
+  const resetPushupForm = useCallback(() => {
+    setSessionForm({
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      count: '',
+      duration: '',
+      notes: ''
     });
+  }, []);
 
-    resetBoxingForm();
-    setShowSessionForm(false);
-  };
+  const resetBoxingForm = useCallback(() => {
+    setBoxingForm({
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      duration: '',
+      notes: ''
+    });
+  }, []);
 
-  const addSwimmingSession = async () => {
+  const resetSwimmingForm = useCallback(() => {
+    setSwimmingForm({
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      strokeType: 'libre',
+      laps: [{ distance: 25, time: '' }],
+      notes: ''
+    });
+  }, []);
+
+  const resetJumpropeForm = useCallback(() => {
+    setJumpropeForm({
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      duration: '',
+      type: 'libre',
+      jumps: '',
+      notes: ''
+    });
+  }, []);
+
+  const resetRunningForm = useCallback(() => {
+    setRunningForm({
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      distance: '',
+      duration: '',
+      type: 'extérieur',
+      elevation: '',
+      notes: ''
+    });
+  }, []);
+
+  const resetChallengeForm = useCallback(() => {
+    setChallengeForm({
+      name: '',
+      type: 'ponctuel',
+      targetDate: '',
+      startDate: '',
+      endDate: '',
+      frequency: 'daily',
+      moment: 'matin',
+      goalCount: '',
+      goalDuration: '',
+      goalDistance: '',
+      notes: ''
+    });
+  }, []);
+
+  // Fonctions spécifiques pour chaque activité
+  const addPushupSession = useCallback(async () => {
+    if (ui.editingSession) {
+      // Mode modification
+      const result = await updateSession(ui.editingSession.activityType, ui.editingSession.sessionId, sessionForm);
+      if (result.success) {
+        resetPushupForm();
+      }
+      return result;
+    } else {
+      // Mode création
+      const result = await addSession('pushups', sessionForm);
+      if (result.success) {
+        resetPushupForm();
+        setUI({ showSessionForm: false });
+      }
+      return result;
+    }
+  }, [addSession, updateSession, sessionForm, ui.editingSession, resetPushupForm, setUI]);
+
+  const addBoxingSession = useCallback(async () => {
+    if (ui.editingSession) {
+      // Mode modification
+      const result = await updateSession(ui.editingSession.activityType, ui.editingSession.sessionId, boxingForm);
+      if (result.success) {
+        resetBoxingForm();
+      }
+      return result;
+    } else {
+      // Mode création
+      const result = await addSession('boxing', boxingForm);
+      if (result.success) {
+        resetBoxingForm();
+        setUI({ showSessionForm: false });
+      }
+      return result;
+    }
+  }, [addSession, updateSession, boxingForm, ui.editingSession, resetBoxingForm, setUI]);
+
+  const addSwimmingSession = useCallback(async () => {
     const totalDistance = swimmingForm.laps.reduce((sum, lap) => sum + parseFloat(lap.distance || 0), 0);
     const totalTime = swimmingForm.laps.reduce((sum, lap) => {
       const [min, sec] = (lap.time || '0:0').split(':').map(Number);
       return sum + (min * 60 + sec);
     }, 0);
-    const avgPace = totalDistance > 0 ? (totalTime / (totalDistance / 25)).toFixed(1) : 0;
-
-    const newSession = {
-      id: Date.now(),
-      date: swimmingForm.date,
-      time: swimmingForm.time,
-      swimType: swimmingForm.swimType,
-      laps: swimmingForm.laps,
+    
+    const avgPace = swimmingForm.laps.length > 0 ? totalTime / swimmingForm.laps.length : 0;
+    
+    const sessionData = {
+      ...swimmingForm,
       totalDistance,
-      totalTime,
-      avgPace,
-      notes: swimmingForm.notes,
-      validatedChallenges: []
+      totalTime: totalTime / 60, // Convertir en minutes
+      avgPace: avgPace.toFixed(1) // Allure moyenne en secondes par 25m
     };
-
-    // Vérifier validation défis
-    const updatedChallenges = challenges.map(challenge => {
-      if (challenge.activityType === 'swimming' && challenge.status === 'active') {
-        const matchesGoal = 
-          (!challenge.goalDistance || totalDistance >= challenge.goalDistance) &&
-          (!challenge.goalTime || totalTime <= challenge.goalTime * 60);
-
-        if (matchesGoal) {
-          newSession.validatedChallenges.push(challenge.id);
-          return { ...challenge, status: 'completed', completedAt: new Date().toISOString() };
-        }
-      }
-      return challenge;
-    });
-
-    const updatedSessions = [...swimmingSessions, newSession];
-    setSwimmingSessions(updatedSessions);
-    setChallenges(updatedChallenges);
     
-    await saveEnduranceData({
-      swimmingSessions: updatedSessions,
-      challenges: updatedChallenges
-    });
+    const result = await addSession('swimming', sessionData);
+    if (result.success) {
+      resetSwimmingForm();
+      setUI({ showSessionForm: false });
+    }
+    return result;
+  }, [addSession, swimmingForm]);
 
-    resetSwimmingForm();
-    setShowSessionForm(false);
-  };
+  const addJumpropeSession = useCallback(async () => {
+    const result = await addSession('jumprope', jumpropeForm);
+    if (result.success) {
+      resetJumpropeForm();
+      setUI({ showSessionForm: false });
+    }
+    return result;
+  }, [addSession, jumpropeForm]);
 
-  const addJumpropeSession = async () => {
-    const newSession = {
-      id: Date.now(),
-      ...jumpropeForm
-    };
-
-    const updatedSessions = [...jumpropeSessions, newSession];
-    setJumpropeSessions(updatedSessions);
-    
-    await saveEnduranceData({
-      jumpropeSessions: updatedSessions
-    });
-
-    resetJumpropeForm();
-    setShowSessionForm(false);
-  };
-
-  const addRunningSession = async () => {
-    const distance = parseFloat(runningForm.distance) || 0;
-    const duration = runningForm.duration || '0:00:00';
-    const [hours, minutes, seconds] = duration.split(':').map(Number);
-    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-    const pace = distance > 0 ? (totalSeconds / distance / 60).toFixed(2) : 0; // min/km
-    const speed = distance > 0 ? (distance / (totalSeconds / 3600)).toFixed(2) : 0; // km/h
-
-    const newSession = {
-      id: Date.now(),
-      ...runningForm,
-      pace,
-      speed,
-      totalSeconds
-    };
-
-    const updatedSessions = [...runningSessions, newSession];
-    setRunningSessions(updatedSessions);
-    
-    await saveEnduranceData({
-      runningSessions: updatedSessions
-    });
-
+  const addRunningSession = useCallback(async () => {
+    const result = await addSession('running', runningForm);
+    if (result.success) {
     resetRunningForm();
-    setShowSessionForm(false);
-  };
+      setUI({ showSessionForm: false });
+    }
+    return result;
+  }, [addSession, runningForm]);
 
-  const addChallenge = async () => {
+
+
+  // Fonction d'ajout de défi (améliorée)
+  const addChallenge = useCallback(async () => {
+    try {
+      // Validation des données du défi
+      if (!challengeForm.name || !challengeForm.activityType) {
+        throw new Error('Nom et type d\'activité requis');
+      }
+
     const newChallenge = {
       id: Date.now(),
       ...challengeForm,
@@ -304,54 +721,204 @@ const EnduranceTab = () => {
     });
 
     resetChallengeForm();
-    setShowChallengeModal(false);
-  };
+      setUI({ showChallengeModal: false });
+      
+      console.log('✅ Défi créé avec succès');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Erreur lors de la création du défi:', error);
+      return { success: false, error: error.message };
+    }
+  }, [challengeForm, challenges, setChallenges, saveEnduranceData]);
 
-  // Fonctions de suppression
-  const deletePushupSession = async (id) => {
-    const updatedSessions = pushupSessions.filter(s => s.id !== id);
-    setPushupSessions(updatedSessions);
-    await saveEnduranceData({ pushupSessions: updatedSessions });
-  };
 
-  const deleteBoxingSession = async (id) => {
-    const updatedSessions = boxingSessions.filter(s => s.id !== id);
-    setBoxingSessions(updatedSessions);
-    await saveEnduranceData({ boxingSessions: updatedSessions });
-  };
+  // Fonctions de suppression (refactorisées)
+  const deleteSession = useCallback(async (activityType, id) => {
+    try {
+      const currentSessions = enduranceState?.sessions || {};
+      const activitySessions = currentSessions[activityType] || [];
+      const updatedSessions = activitySessions.filter(s => s.id !== id);
+      
+      setSessions(activityType, updatedSessions);
+      
+      await saveEnduranceData({
+        sessions: {
+          ...currentSessions,
+          [activityType]: updatedSessions
+        }
+      });
+      
+      console.log(`✅ Session ${activityType} supprimée avec succès`);
+      return { success: true };
+    } catch (error) {
+      console.error(`❌ Erreur lors de la suppression de la session ${activityType}:`, error);
+      return { success: false, error: error.message };
+    }
+  }, [enduranceState?.sessions, setSessions, saveEnduranceData]);
 
-  const deleteSwimmingSession = async (id) => {
-    const updatedSessions = swimmingSessions.filter(s => s.id !== id);
-    setSwimmingSessions(updatedSessions);
-    await saveEnduranceData({ swimmingSessions: updatedSessions });
-  };
+  const deleteChallenge = useCallback(async (id) => {
+    try {
+      const updatedChallenges = challenges.filter(c => c.id !== id);
+      setChallenges(updatedChallenges);
+      
+      await saveEnduranceData({
+        challenges: updatedChallenges
+      });
+      
+      console.log('✅ Défi supprimé avec succès');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression du défi:', error);
+      return { success: false, error: error.message };
+    }
+  }, [challenges, setChallenges, saveEnduranceData]);
 
-  const deleteJumpropeSession = async (id) => {
-    const updatedSessions = jumpropeSessions.filter(s => s.id !== id);
-    setJumpropeSessions(updatedSessions);
-    await saveEnduranceData({ jumpropeSessions: updatedSessions });
-  };
+  // Fonctions spécifiques pour chaque activité
+  const deletePushupSession = useCallback((id) => deleteSession('pushups', id), [deleteSession]);
+  const deleteBoxingSession = useCallback((id) => deleteSession('boxing', id), [deleteSession]);
+  const deleteSwimmingSession = useCallback((id) => deleteSession('swimming', id), [deleteSession]);
+  const deleteJumpropeSession = useCallback((id) => deleteSession('jumprope', id), [deleteSession]);
+  const deleteRunningSession = useCallback((id) => deleteSession('running', id), [deleteSession]);
 
-  const deleteRunningSession = async (id) => {
-    const updatedSessions = runningSessions.filter(s => s.id !== id);
-    setRunningSessions(updatedSessions);
-    await saveEnduranceData({ runningSessions: updatedSessions });
-  };
+  // Fonctions de modification des sessions
+  const editSession = useCallback((activityType, sessionId) => {
+    const currentSessions = enduranceState?.sessions || {};
+    const session = currentSessions[activityType]?.find(s => s.id === sessionId);
+    if (session) {
+      setUI({ 
+        editingSession: { activityType, sessionId, session },
+        showSessionForm: true,
+        allowPastDates: true
+      });
+      
+      // Pré-remplir le formulaire selon l'activité
+      switch (activityType) {
+        case 'boxing':
+          setBoxingForm({
+            date: session.date,
+            time: session.time,
+            duration: session.duration,
+            notes: session.notes || ''
+          });
+          break;
+        case 'pushups':
+          setSessionForm({
+            date: session.date,
+            time: session.time,
+            count: session.count,
+            duration: session.duration,
+            notes: session.notes || ''
+          });
+          break;
+        case 'swimming':
+          setSwimmingForm({
+            date: session.date,
+            time: session.time,
+            strokeType: session.strokeType,
+            laps: session.laps || [{ distance: 25, time: '' }],
+            notes: session.notes || ''
+          });
+          break;
+        case 'jumprope':
+          setJumpropeForm({
+            date: session.date,
+            time: session.time,
+            duration: session.duration,
+            type: session.type,
+            jumps: session.jumps || '',
+            notes: session.notes || ''
+          });
+          break;
+        case 'running':
+          setRunningForm({
+            date: session.date,
+            time: session.time,
+            distance: session.distance,
+            duration: session.duration,
+            type: session.type,
+            elevation: session.elevation || '',
+            notes: session.notes || ''
+          });
+          break;
+      }
+    }
+  }, [sessions, setUI]);
+
+  // Fonctions de modification des défis
+  const editChallenge = useCallback((challengeId) => {
+    const challenge = challenges.find(c => c.id === challengeId);
+    if (challenge) {
+      setUI({ 
+        editingChallenge: challengeId,
+        showChallengeModal: true
+      });
+      
+      // Pré-remplir le formulaire de défi
+      setChallengeForm({
+        name: challenge.name,
+        activityType: challenge.activityType,
+        type: challenge.type,
+        targetDate: challenge.targetDate,
+        startDate: challenge.startDate,
+        endDate: challenge.endDate,
+        frequency: challenge.frequency,
+        timeOfDay: challenge.timeOfDay,
+        dayOfWeek: challenge.dayOfWeek,
+        goalCount: challenge.goalCount || '',
+        goalDuration: challenge.goalDuration || '',
+        goalDistance: challenge.goalDistance || '',
+        notes: challenge.notes || ''
+      });
+    }
+  }, [challenges, setUI]);
+
+  const updateChallenge = useCallback(async (challengeId, updatedData) => {
+    try {
+      const updatedChallenges = challenges.map(challenge => 
+        challenge.id === challengeId ? { ...challenge, ...updatedData } : challenge
+      );
+      
+      setChallenges(updatedChallenges);
+      
+      // Sauvegarde
+      const saveData = {
+        challenges: updatedChallenges
+      };
+      
+      await saveEnduranceData(saveData);
+      
+      // Fermer le mode édition
+      setUI({ 
+        editingChallenge: null,
+        showChallengeModal: false
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Erreur lors de la modification du défi:', error);
+      return { success: false, error: error.message };
+    }
+  }, [challenges, setChallenges, setUI, saveEnduranceData]);
 
   // Fonctions pour le calendrier heatmap
-  const getTotalActivities = () => {
-    return boxingSessions.length + pushupSessions.length + swimmingSessions.length + 
-           jumpropeSessions.length + runningSessions.length;
-  };
+  // Fonctions pour le calendrier heatmap (optimisées)
+  const getTotalActivities = useMemo(() => {
+    const currentSessions = enduranceState?.sessions || {};
+    const total = Object.values(currentSessions).reduce((total, activitySessions) => {
+      if (Array.isArray(activitySessions)) {
+        return total + activitySessions.length;
+      }
+      return total;
+    }, 0);
+    console.log('🔍 getTotalActivities calculé:', total, 'sessions:', currentSessions);
+    return total;
+  }, [enduranceState?.sessions]);
 
-  const getCurrentStreak = () => {
-    const allSessions = [
-      ...boxingSessions.map(s => ({ ...s, type: 'boxing' })),
-      ...pushupSessions.map(s => ({ ...s, type: 'pushups' })),
-      ...swimmingSessions.map(s => ({ ...s, type: 'swimming' })),
-      ...jumpropeSessions.map(s => ({ ...s, type: 'jumprope' })),
-      ...runningSessions.map(s => ({ ...s, type: 'running' }))
-    ];
+  const getCurrentStreak = useMemo(() => {
+    const currentSessions = enduranceState?.sessions || {};
+    const allSessions = Object.entries(currentSessions).flatMap(([type, activitySessions]) =>
+      Array.isArray(activitySessions) ? activitySessions.map(s => ({ ...s, type })) : []
+    );
     
     const today = new Date();
     let streak = 0;
@@ -370,16 +937,13 @@ const EnduranceTab = () => {
     }
     
     return streak;
-  };
+  }, [enduranceState?.sessions]);
 
-  const getBestStreak = () => {
-    const allSessions = [
-      ...boxingSessions.map(s => ({ ...s, type: 'boxing' })),
-      ...pushupSessions.map(s => ({ ...s, type: 'pushups' })),
-      ...swimmingSessions.map(s => ({ ...s, type: 'swimming' })),
-      ...jumpropeSessions.map(s => ({ ...s, type: 'jumprope' })),
-      ...runningSessions.map(s => ({ ...s, type: 'running' }))
-    ];
+  const getBestStreak = useMemo(() => {
+    const currentSessions = enduranceState?.sessions || {};
+    const allSessions = Object.entries(currentSessions).flatMap(([type, activitySessions]) =>
+      Array.isArray(activitySessions) ? activitySessions.map(s => ({ ...s, type })) : []
+    );
     
     if (allSessions.length === 0) return 0;
     
@@ -401,20 +965,17 @@ const EnduranceTab = () => {
     }
     
     return Math.max(maxStreak, currentStreak);
-  };
+  }, [enduranceState?.sessions]);
 
-  const getActiveDays = () => {
-    const allSessions = [
-      ...boxingSessions.map(s => ({ ...s, type: 'boxing' })),
-      ...pushupSessions.map(s => ({ ...s, type: 'pushups' })),
-      ...swimmingSessions.map(s => ({ ...s, type: 'swimming' })),
-      ...jumpropeSessions.map(s => ({ ...s, type: 'jumprope' })),
-      ...runningSessions.map(s => ({ ...s, type: 'running' }))
-    ];
+  const getActiveDays = useMemo(() => {
+    const currentSessions = enduranceState?.sessions || {};
+    const allSessions = Object.entries(currentSessions).flatMap(([type, activitySessions]) =>
+      Array.isArray(activitySessions) ? activitySessions.map(s => ({ ...s, type })) : []
+    );
     
     const uniqueDays = new Set(allSessions.map(session => session.date));
     return uniqueDays.size;
-  };
+  }, [enduranceState?.sessions]);
 
   const getMonthLabels = () => {
     const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
@@ -422,7 +983,7 @@ const EnduranceTab = () => {
   };
 
   const getCalendarDays = () => {
-    const year = selectedYear;
+    const year = ui.selectedYear;
     const startDate = new Date(year, 0, 1);
     const endDate = new Date(year, 11, 31);
     const days = [];
@@ -443,42 +1004,42 @@ const EnduranceTab = () => {
     return days;
   };
 
-  const getActivityCountForDay = (day) => {
+  const getActivityCountForDay = useCallback((day) => {
     if (!day) return 0;
     
     const dateStr = day.toISOString().split('T')[0];
     let count = 0;
     
-    if (selectedActivityFilter === 'all' || selectedActivityFilter === 'boxing') {
-      count += boxingSessions.filter(s => s.date === dateStr).length;
+    if (ui.selectedActivityFilter === 'all' || ui.selectedActivityFilter === 'boxing') {
+      count += sessions.boxing.filter(s => s.date === dateStr).length;
     }
-    if (selectedActivityFilter === 'all' || selectedActivityFilter === 'pushups') {
-      count += pushupSessions.filter(s => s.date === dateStr).length;
+    if (ui.selectedActivityFilter === 'all' || ui.selectedActivityFilter === 'pushups') {
+      count += sessions.pushups.filter(s => s.date === dateStr).length;
     }
-    if (selectedActivityFilter === 'all' || selectedActivityFilter === 'swimming') {
-      count += swimmingSessions.filter(s => s.date === dateStr).length;
+    if (ui.selectedActivityFilter === 'all' || ui.selectedActivityFilter === 'swimming') {
+      count += sessions.swimming.filter(s => s.date === dateStr).length;
     }
-    if (selectedActivityFilter === 'all' || selectedActivityFilter === 'jumprope') {
-      count += jumpropeSessions.filter(s => s.date === dateStr).length;
+    if (ui.selectedActivityFilter === 'all' || ui.selectedActivityFilter === 'jumprope') {
+      count += sessions.jumprope.filter(s => s.date === dateStr).length;
     }
-    if (selectedActivityFilter === 'all' || selectedActivityFilter === 'running') {
-      count += runningSessions.filter(s => s.date === dateStr).length;
+    if (ui.selectedActivityFilter === 'all' || ui.selectedActivityFilter === 'running') {
+      count += sessions.running.filter(s => s.date === dateStr).length;
     }
     
     return count;
-  };
+  }, [sessions, ui.selectedActivityFilter]);
 
-  const handleDayClick = (day) => {
-    setSelectedDay(day);
-  };
+  const handleDayClick = useCallback((day) => {
+    setUI({ selectedDay: day });
+  }, []);
 
-  const getActivitiesForDay = (day) => {
+  const getActivitiesForDay = useCallback((day) => {
     if (!day) return [];
     
     const dateStr = day.toISOString().split('T')[0];
     const activities = [];
     
-    boxingSessions.filter(s => s.date === dateStr).forEach(session => {
+    sessions.boxing.filter(s => s.date === dateStr).forEach(session => {
       activities.push({
         type: 'boxing',
         time: session.time,
@@ -487,7 +1048,7 @@ const EnduranceTab = () => {
       });
     });
     
-    pushupSessions.filter(s => s.date === dateStr).forEach(session => {
+    sessions.pushups.filter(s => s.date === dateStr).forEach(session => {
       activities.push({
         type: 'pushups',
         time: session.time,
@@ -496,7 +1057,7 @@ const EnduranceTab = () => {
       });
     });
     
-    swimmingSessions.filter(s => s.date === dateStr).forEach(session => {
+    sessions.swimming.filter(s => s.date === dateStr).forEach(session => {
       activities.push({
         type: 'swimming',
         time: session.time,
@@ -505,7 +1066,7 @@ const EnduranceTab = () => {
       });
     });
     
-    jumpropeSessions.filter(s => s.date === dateStr).forEach(session => {
+    sessions.jumprope.filter(s => s.date === dateStr).forEach(session => {
       activities.push({
         type: 'jumprope',
         time: session.time,
@@ -514,7 +1075,7 @@ const EnduranceTab = () => {
       });
     });
     
-    runningSessions.filter(s => s.date === dateStr).forEach(session => {
+    sessions.running.filter(s => s.date === dateStr).forEach(session => {
       activities.push({
         type: 'running',
         time: session.time,
@@ -524,107 +1085,36 @@ const EnduranceTab = () => {
     });
     
     return activities.sort((a, b) => a.time.localeCompare(b.time));
-  };
+  }, [sessions]);
 
-  const navigateToActivity = (activityType) => {
-    setSelectedDay(null);
+  const navigateToActivity = useCallback((activityType) => {
+    setUI({ selectedDay: null });
     setActiveTab(activityType);
-  };
+  }, [setActiveTab]);
 
-  // Fonctions de reset des formulaires
-  const resetPushupForm = () => {
-    setSessionForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      count: '',
-      duration: '',
-      notes: ''
+  const addLap = useCallback(() => {
+    setSwimmingForm(prev => ({
+      ...prev,
+      laps: [...prev.laps, { distance: 25, time: '' }]
+    }));
+  }, []);
+
+  const removeLap = useCallback((index) => {
+    setSwimmingForm(prev => ({
+      ...prev,
+      laps: prev.laps.filter((_, i) => i !== index)
+    }));
+  }, []);
+
+  const updateLap = useCallback((index, field, value) => {
+    setSwimmingForm(prev => {
+      const newLaps = [...prev.laps];
+      newLaps[index][field] = value;
+      return { ...prev, laps: newLaps };
     });
-  };
+  }, []);
 
-  const resetBoxingForm = () => {
-    setBoxingForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      duration: '',
-      notes: ''
-    });
-  };
-
-  const resetSwimmingForm = () => {
-    setSwimmingForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      swimType: 'crawl',
-      laps: [{ distance: 25, time: '' }],
-      notes: ''
-    });
-  };
-
-  const resetJumpropeForm = () => {
-    setJumpropeForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      duration: '',
-      type: 'continue',
-      jumps: '',
-      sessionNumber: 1,
-      notes: ''
-    });
-  };
-
-  const resetRunningForm = () => {
-    setRunningForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      distance: '',
-      duration: '',
-      type: 'endurance',
-      elevation: '',
-      notes: ''
-    });
-  };
-
-  const resetChallengeForm = () => {
-    setChallengeForm({
-      name: '',
-      type: 'ponctuel',
-      targetDate: '',
-      startDate: '',
-      endDate: '',
-      frequency: 'daily',
-      moment: 'matin',
-      goalCount: '',
-      goalDuration: '',
-      goalDistance: '',
-      activityType: 'pushups'
-    });
-  };
-
-  // Fonctions utilitaires
-  const getActiveChallenges = () => {
-    return challenges.filter(c => c.activityType === activeTab && c.status === 'active');
-  };
-
-  const addLap = () => {
-    setSwimmingForm({
-      ...swimmingForm,
-      laps: [...swimmingForm.laps, { distance: 25, time: '' }]
-    });
-  };
-
-  const removeLap = (index) => {
-    const newLaps = swimmingForm.laps.filter((_, i) => i !== index);
-    setSwimmingForm({ ...swimmingForm, laps: newLaps });
-  };
-
-  const updateLap = (index, field, value) => {
-    const newLaps = [...swimmingForm.laps];
-    newLaps[index][field] = value;
-    setSwimmingForm({ ...swimmingForm, laps: newLaps });
-  };
-
-  const activeChallenges = getActiveChallenges();
+  const activeChallenges = useMemo(() => getActiveChallenges(), [getActiveChallenges]);
 
   const menuItems = [
     { id: 'boxing', label: 'Boxe', icon: Box },
@@ -635,8 +1125,8 @@ const EnduranceTab = () => {
     { id: 'calendar', label: 'Calendrier', icon: Calendar }
   ];
 
-  // Composant pour afficher les exercices d'endurance depuis l'historique
-  const EnduranceHistorySection = () => {
+  // Composant pour afficher les exercices d'endurance depuis l'historique (optimisé)
+  const EnduranceHistorySection = useMemo(() => {
     const enduranceExercises = getEnduranceExercisesFromHistory();
     
     if (enduranceExercises.length === 0) {
@@ -653,7 +1143,7 @@ const EnduranceTab = () => {
         <h3 className="text-xl font-bold text-white mb-4">Exercices d'Endurance depuis vos Séances</h3>
         <div className="space-y-3">
           {enduranceExercises.slice(0, 10).map((exercise, index) => (
-            <div key={index} className="bg-slate-900/50 border border-slate-600/50 rounded-lg p-4">
+            <div key={exercise.id || index} className="bg-slate-900/50 border border-slate-600/50 rounded-lg p-4">
               <div className="flex justify-between items-center">
                 <div>
                   <span className="text-white font-medium">{exercise.name}</span>
@@ -666,7 +1156,7 @@ const EnduranceTab = () => {
         </div>
       </div>
     );
-  };
+  }, [getEnduranceExercisesFromHistory]);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -711,8 +1201,11 @@ const EnduranceTab = () => {
       {/* Contenu principal */}
       <div className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto p-8">
+          {/* Rappel des défis actifs */}
+          {ChallengeReminder}
+          
           {/* Section exercices d'endurance depuis l'historique */}
-          <EnduranceHistorySection />
+          {EnduranceHistorySection}
 
           {/* SECTION BOXE */}
           {activeTab === 'boxing' && (
@@ -722,19 +1215,37 @@ const EnduranceTab = () => {
                   <h2 className="text-4xl font-bold text-white mb-2">Boxe</h2>
                   <p className="text-slate-400">Enregistrez vos sessions d'entraînement</p>
                 </div>
+                <div className="flex gap-3">
                 <button
-                  onClick={() => setShowSessionForm(!showSessionForm)}
+                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
                   className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
                 >
                   <Plus className="w-5 h-5" />
                   Nouvelle session
                 </button>
+                  <button
+                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true })}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105"
+                  >
+                    <Calendar className="w-5 h-5" />
+                    Données antérieures
+                  </button>
+                </div>
               </div>
 
               {/* Formulaire de session boxe */}
-              {showSessionForm && (
+              {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
-                  <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session de boxe</h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-2xl font-bold text-white">
+                      {ui.editingSession ? 'Modifier la session de boxe' : 'Enregistrer une session de boxe'}
+                    </h3>
+                    {ui.allowPastDates && (
+                      <span className="bg-orange-500/20 border border-orange-500/30 text-orange-400 px-3 py-1 rounded-lg text-sm font-medium">
+                        📅 Mode données antérieures
+                      </span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-slate-300 text-sm font-medium mb-2">Date</label>
@@ -778,16 +1289,23 @@ const EnduranceTab = () => {
                   </div>
                   <div className="mt-6 flex justify-end gap-3">
                     <button
-                      onClick={() => setShowSessionForm(false)}
+                      onClick={() => setUI({ showSessionForm: false })}
                       className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
                     >
                       Annuler
                     </button>
                     <button
                       onClick={addBoxingSession}
-                      className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
+                      className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all flex items-center gap-2"
                     >
-                      Enregistrer
+                      {ui.editingSession ? (
+                        <>
+                          <Save className="w-4 h-4" />
+                          Modifier
+                        </>
+                      ) : (
+                        'Enregistrer'
+                      )}
                     </button>
                   </div>
                 </div>
@@ -797,7 +1315,7 @@ const EnduranceTab = () => {
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
-                  {boxingSessions.length === 0 ? (
+                  {sessions.boxing.length === 0 ? (
                     <div className="p-12 text-center">
                       <Box className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                       <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
@@ -816,7 +1334,7 @@ const EnduranceTab = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {boxingSessions.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
+                          {sessions.boxing.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
                             <tr 
                               key={session.id} 
                               className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors"
@@ -828,12 +1346,22 @@ const EnduranceTab = () => {
                               </td>
                               <td className="px-6 py-4 text-slate-400 text-sm">{session.notes || '-'}</td>
                               <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => editSession('boxing', session.id)}
+                                    className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                    title="Modifier la session"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
                                 <button
                                   onClick={() => deleteBoxingSession(session.id)}
                                   className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                    title="Supprimer la session"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -857,14 +1385,21 @@ const EnduranceTab = () => {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowSessionForm(!showSessionForm)}
+                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Plus className="w-5 h-5" />
                     Nouvelle session
                   </button>
                   <button
-                    onClick={() => setShowChallengeModal(true)}
+                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true })}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105"
+                  >
+                    <Calendar className="w-5 h-5" />
+                    Données antérieures
+                  </button>
+                  <button
+                    onClick={() => setUI({ showChallengeModal: true })}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Award className="w-5 h-5" />
@@ -898,7 +1433,7 @@ const EnduranceTab = () => {
               )}
 
               {/* Formulaire de session */}
-              {showSessionForm && (
+              {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
                   <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session</h3>
                   <div className="grid grid-cols-2 gap-6">
@@ -954,7 +1489,7 @@ const EnduranceTab = () => {
                   </div>
                   <div className="mt-6 flex justify-end gap-3">
                     <button
-                      onClick={() => setShowSessionForm(false)}
+                      onClick={() => setUI({ showSessionForm: false })}
                       className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
                     >
                       Annuler
@@ -1004,8 +1539,16 @@ const EnduranceTab = () => {
                               {challenge.status === 'active' ? '🔥 En cours' : '✅ Terminé'}
                             </span>
                             <button
+                              onClick={() => editChallenge(challenge.id)}
+                              className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                              title="Modifier le défi"
+                            >
+                              <Edit className="w-5 h-5" />
+                            </button>
+                            <button
                               onClick={() => deleteChallenge(challenge.id)}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                              title="Supprimer le défi"
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -1021,7 +1564,7 @@ const EnduranceTab = () => {
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
-                  {pushupSessions.length === 0 ? (
+                  {sessions.pushups.length === 0 ? (
                     <div className="p-12 text-center">
                       <Dumbbell className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                       <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
@@ -1041,7 +1584,7 @@ const EnduranceTab = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {pushupSessions.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
+                          {sessions.pushups.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
                             <tr 
                               key={session.id} 
                               className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors"
@@ -1061,8 +1604,16 @@ const EnduranceTab = () => {
                                     </span>
                                   )}
                                   <button
+                                    onClick={() => editSession('pushups', session.id)}
+                                    className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                    title="Modifier la session"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
                                     onClick={() => deletePushupSession(session.id)}
                                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                    title="Supprimer la session"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -1089,14 +1640,14 @@ const EnduranceTab = () => {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowSessionForm(!showSessionForm)}
+                    onClick={() => setShowSessionForm(!ui.showSessionForm)}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Plus className="w-5 h-5" />
                     Nouvelle session
                   </button>
                   <button
-                    onClick={() => setShowChallengeModal(true)}
+                    onClick={() => setUI({ showChallengeModal: true })}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Award className="w-5 h-5" />
@@ -1128,7 +1679,7 @@ const EnduranceTab = () => {
                 </div>
               )}
 
-              {showSessionForm && (
+              {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
                   <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session de natation</h3>
                   <div className="grid grid-cols-2 gap-6 mb-6">
@@ -1226,7 +1777,7 @@ const EnduranceTab = () => {
 
                   <div className="mt-6 flex justify-end gap-3">
                     <button
-                      onClick={() => setShowSessionForm(false)}
+                      onClick={() => setUI({ showSessionForm: false })}
                       className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
                     >
                       Annuler
@@ -1275,8 +1826,16 @@ const EnduranceTab = () => {
                               {challenge.status === 'active' ? '🔥 En cours' : '✅ Terminé'}
                             </span>
                             <button
+                              onClick={() => editChallenge(challenge.id)}
+                              className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                              title="Modifier le défi"
+                            >
+                              <Edit className="w-5 h-5" />
+                            </button>
+                            <button
                               onClick={() => deleteChallenge(challenge.id)}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                              title="Supprimer le défi"
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -1291,7 +1850,7 @@ const EnduranceTab = () => {
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
-                  {swimmingSessions.length === 0 ? (
+                  {sessions.swimming.length === 0 ? (
                     <div className="p-12 text-center">
                       <Waves className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                       <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
@@ -1299,7 +1858,7 @@ const EnduranceTab = () => {
                     </div>
                   ) : (
                     <div className="space-y-4 p-6">
-                      {swimmingSessions.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session) => (
+                      {sessions.swimming.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session) => (
                         <div key={session.id} className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-purple-500/30 transition-all">
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
@@ -1332,8 +1891,16 @@ const EnduranceTab = () => {
                                 </span>
                               )}
                               <button
+                                onClick={() => editSession('swimming', session.id)}
+                                className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                title="Modifier la session"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => deleteSwimmingSession(session.id)}
                                 className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                title="Supprimer la session"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1375,14 +1942,14 @@ const EnduranceTab = () => {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowSessionForm(!showSessionForm)}
+                    onClick={() => setShowSessionForm(!ui.showSessionForm)}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Plus className="w-5 h-5" />
                     Nouvelle session
                   </button>
                   <button
-                    onClick={() => setShowChallengeModal(true)}
+                    onClick={() => setUI({ showChallengeModal: true })}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Award className="w-5 h-5" />
@@ -1416,7 +1983,7 @@ const EnduranceTab = () => {
               )}
 
               {/* Formulaire de session */}
-              {showSessionForm && (
+              {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
                   <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session</h3>
                   <div className="grid grid-cols-2 gap-6">
@@ -1493,7 +2060,7 @@ const EnduranceTab = () => {
                   </div>
                   <div className="mt-6 flex justify-end gap-3">
                     <button
-                      onClick={() => setShowSessionForm(false)}
+                      onClick={() => setUI({ showSessionForm: false })}
                       className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
                     >
                       Annuler
@@ -1552,8 +2119,16 @@ const EnduranceTab = () => {
                           </div>
                           <div className="flex items-center gap-3">
                             <button
+                              onClick={() => editChallenge(challenge.id)}
+                              className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                              title="Modifier le défi"
+                            >
+                              <Edit className="w-5 h-5" />
+                            </button>
+                            <button
                               onClick={() => deleteChallenge(challenge.id)}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                              title="Supprimer le défi"
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -1569,7 +2144,7 @@ const EnduranceTab = () => {
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
-                  {jumpropeSessions.length === 0 ? (
+                  {sessions.jumprope.length === 0 ? (
                     <div className="p-12 text-center">
                       <Activity className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                       <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
@@ -1591,7 +2166,7 @@ const EnduranceTab = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {jumpropeSessions.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
+                          {sessions.jumprope.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
                             <tr 
                               key={session.id} 
                               className={`border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors ${idx % 2 === 0 ? 'bg-slate-800/20' : 'bg-slate-800/10'}`}
@@ -1617,8 +2192,16 @@ const EnduranceTab = () => {
                                     </span>
                                   )}
                                   <button
+                                    onClick={() => editSession('jumprope', session.id)}
+                                    className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                    title="Modifier la session"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
                                     onClick={() => deleteJumpropeSession(session.id)}
                                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                    title="Supprimer la session"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -1645,14 +2228,14 @@ const EnduranceTab = () => {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowSessionForm(!showSessionForm)}
+                    onClick={() => setShowSessionForm(!ui.showSessionForm)}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Plus className="w-5 h-5" />
                     Nouvelle session
                   </button>
                   <button
-                    onClick={() => setShowChallengeModal(true)}
+                    onClick={() => setUI({ showChallengeModal: true })}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Award className="w-5 h-5" />
@@ -1686,7 +2269,7 @@ const EnduranceTab = () => {
               )}
 
               {/* Formulaire de session */}
-              {showSessionForm && (
+              {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
                   <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session</h3>
                   <div className="grid grid-cols-2 gap-6">
@@ -1776,7 +2359,7 @@ const EnduranceTab = () => {
                               const distance = parseFloat(runningForm.distance);
                               const [hours, minutes, seconds] = runningForm.duration.split(':').map(Number);
                               const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-                              const pace = distance > 0 ? (totalSeconds / distance / 60).toFixed(2) : 0;
+                              const pace = distance > 0 ? ((totalSeconds / 60) / distance).toFixed(2) : 0;
                               return `${pace} min/km`;
                             })()}
                           </span>
@@ -1805,7 +2388,7 @@ const EnduranceTab = () => {
 
                   <div className="mt-6 flex justify-end gap-3">
                     <button
-                      onClick={() => setShowSessionForm(false)}
+                      onClick={() => setUI({ showSessionForm: false })}
                       className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
                     >
                       Annuler
@@ -1855,8 +2438,16 @@ const EnduranceTab = () => {
                           </div>
                           <div className="flex items-center gap-3">
                             <button
+                              onClick={() => editChallenge(challenge.id)}
+                              className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                              title="Modifier le défi"
+                            >
+                              <Edit className="w-5 h-5" />
+                            </button>
+                            <button
                               onClick={() => deleteChallenge(challenge.id)}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                              title="Supprimer le défi"
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -1872,7 +2463,7 @@ const EnduranceTab = () => {
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
-                  {runningSessions.length === 0 ? (
+                  {sessions.running.length === 0 ? (
                     <div className="p-12 text-center">
                       <Play className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                       <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
@@ -1880,7 +2471,7 @@ const EnduranceTab = () => {
                     </div>
                   ) : (
                     <div className="space-y-4 p-6">
-                      {runningSessions.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session) => (
+                      {sessions.running.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session) => (
                         <div key={session.id} className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-purple-500/30 transition-all">
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
@@ -1923,8 +2514,16 @@ const EnduranceTab = () => {
                                 </span>
                               )}
                               <button
+                                onClick={() => editSession('running', session.id)}
+                                className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                title="Modifier la session"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => deleteRunningSession(session.id)}
                                 className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                title="Supprimer la session"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1954,16 +2553,16 @@ const EnduranceTab = () => {
                 </div>
                 <div className="flex gap-3">
                   <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    value={ui.selectedYear}
+                    onChange={(e) => setUI({ selectedYear: parseInt(e.target.value) })}
                     className="px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
                   >
                     <option value={2024}>2024</option>
                     <option value={2025}>2025</option>
                   </select>
                   <select
-                    value={selectedActivityFilter}
-                    onChange={(e) => setSelectedActivityFilter(e.target.value)}
+                    value={ui.selectedActivityFilter}
+                    onChange={(e) => setUI({ selectedActivityFilter: e.target.value })}
                     className="px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
                   >
                     <option value="all">Toutes les activités</option>
@@ -1979,26 +2578,36 @@ const EnduranceTab = () => {
               {/* Statistiques rapides */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-white">{getTotalActivities()}</div>
+                  <div className="text-2xl font-bold text-white">{getTotalActivities}</div>
                   <div className="text-slate-400 text-sm">Activités totales</div>
                 </div>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-white">{getCurrentStreak()}</div>
+                  <div className="text-2xl font-bold text-white">{getCurrentStreak}</div>
                   <div className="text-slate-400 text-sm">Jours consécutifs</div>
                 </div>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-white">{getBestStreak()}</div>
+                  <div className="text-2xl font-bold text-white">{getBestStreak}</div>
                   <div className="text-slate-400 text-sm">Meilleure série</div>
                 </div>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-white">{getActiveDays()}</div>
+                  <div className="text-2xl font-bold text-white">{getActiveDays}</div>
                   <div className="text-slate-400 text-sm">Jours actifs</div>
                 </div>
               </div>
 
+              {/* Bouton de diagnostic (temporaire pour debug) */}
+              <div className="mb-6">
+                <button
+                  onClick={diagnoseDataState}
+                  className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 rounded-lg text-blue-300 hover:text-blue-200 transition-all text-sm"
+                >
+                  🔍 Diagnostic des données (Console)
+                </button>
+              </div>
+
               {/* Heatmap */}
               <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 mb-8">
-                <h3 className="text-xl font-bold text-white mb-4">Heatmap d'Activité - {selectedYear}</h3>
+                <h3 className="text-xl font-bold text-white mb-4">Heatmap d'Activité - {ui.selectedYear}</h3>
                 
                 {/* Légende */}
                 <div className="flex items-center gap-2 mb-6">
@@ -2024,8 +2633,8 @@ const EnduranceTab = () => {
                 <div className="space-y-4">
                   {Array.from({ length: 12 }, (_, monthIndex) => {
                     const monthName = getMonthLabels()[monthIndex];
-                    const monthDate = new Date(selectedYear, monthIndex, 1);
-                    const daysInMonth = new Date(selectedYear, monthIndex + 1, 0).getDate();
+                    const monthDate = new Date(ui.selectedYear, monthIndex, 1);
+                    const daysInMonth = new Date(ui.selectedYear, monthIndex + 1, 0).getDate();
                     const firstDayOfWeek = monthDate.getDay();
                     
                     return (
@@ -2047,7 +2656,7 @@ const EnduranceTab = () => {
                           {/* Jours du mois */}
                           {Array.from({ length: daysInMonth }, (_, dayIndex) => {
                             const dayNumber = dayIndex + 1;
-                            const dayDate = new Date(selectedYear, monthIndex, dayNumber);
+                            const dayDate = new Date(ui.selectedYear, monthIndex, dayNumber);
                             const activityCount = getActivityCountForDay(dayDate);
                             const intensity = Math.min(4, Math.floor(activityCount / 2));
                             
@@ -2076,12 +2685,12 @@ const EnduranceTab = () => {
               </div>
 
               {/* Modal des activités du jour */}
-              {selectedDay && (
+              {ui.selectedDay && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                   <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl">
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-2xl font-bold text-white">
-                        Activités du {selectedDay.toLocaleDateString('fr-FR', { 
+                        Activités du {ui.selectedDay.toLocaleDateString('fr-FR', { 
                           weekday: 'long', 
                           year: 'numeric', 
                           month: 'long', 
@@ -2097,7 +2706,7 @@ const EnduranceTab = () => {
                     </div>
                     
                     <div className="space-y-3">
-                      {getActivitiesForDay(selectedDay).map((activity, index) => (
+                      {getActivitiesForDay(ui.selectedDay).map((activity, index) => (
                         <div 
                           key={index}
                           className="bg-slate-900/50 border border-slate-600/50 rounded-xl p-4 hover:border-purple-500/50 transition-all cursor-pointer"
@@ -2133,7 +2742,7 @@ const EnduranceTab = () => {
                         </div>
                       ))}
                       
-                      {getActivitiesForDay(selectedDay).length === 0 && (
+                      {getActivitiesForDay(ui.selectedDay).length === 0 && (
                         <div className="text-center py-8 text-slate-400">
                           Aucune activité enregistrée ce jour
                         </div>
@@ -2148,13 +2757,13 @@ const EnduranceTab = () => {
       </div>
 
       {/* Modal création de défi */}
-      {showChallengeModal && (
+      {ui.showChallengeModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-3xl font-bold text-white">Créer un défi</h3>
               <button
-                onClick={() => setShowChallengeModal(false)}
+                onClick={() => setUI({ showChallengeModal: false })}
                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
               >
                 <X className="w-6 h-6" />
@@ -2295,7 +2904,7 @@ const EnduranceTab = () => {
 
             <div className="mt-8 flex justify-end gap-3">
               <button
-                onClick={() => setShowChallengeModal(false)}
+                onClick={() => setUI({ showChallengeModal: false })}
                 className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
               >
                 Annuler

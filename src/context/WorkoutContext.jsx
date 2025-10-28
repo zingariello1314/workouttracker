@@ -618,12 +618,16 @@ const WorkoutProvider = ({ children }) => {
         throw new Error('Données d\'entrée de progression invalides');
       }
 
-      const newEntry = {
-        id: `entry_${Date.now()}`,
+      // 🔧 Validation renforcée des données
+      const validatedEntry = {
+        id: `entry_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         date: new Date().toISOString(),
         timestamp: entryData.timestamp || Date.now(),
         type: entryData.type,
-        ...entryData
+        ...entryData,
+        // Métadonnées de sauvegarde
+        savedAt: Date.now(),
+        version: '1.0'
       };
 
       const currentData = getCurrentData();
@@ -631,10 +635,15 @@ const WorkoutProvider = ({ children }) => {
       
       const updatedData = {
         ...currentData,
-        progressEntries: [...progressEntries, newEntry]
+        progressEntries: [...progressEntries, validatedEntry],
+        // Marquer la dernière mise à jour du suivi corporel
+        bodyTrackingLastUpdated: new Date().toISOString()
       };
 
       await updateData(updatedData);
+      console.log('✅ Entrée de progression sauvegardée avec succès:', validatedEntry.type);
+      
+      return { success: true, entry: validatedEntry };
     } catch (error) {
       console.error('❌ Erreur lors de l\'ajout de l\'entrée de progression:', error);
       throw error;
@@ -648,22 +657,33 @@ const WorkoutProvider = ({ children }) => {
         throw new Error('Données de photo de progression invalides');
       }
 
-      const newPhoto = {
-        id: `photo_${Date.now()}`,
+      // 🔧 Validation renforcée des données photo
+      const validatedPhoto = {
+        id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         date: new Date().toISOString(),
         weight: parseFloat(photoData.weight),
         notes: photoData.notes,
         photo: photoData.photo || null,
-        measurements: photoData.measurements || {}
+        measurements: photoData.measurements || {},
+        // Métadonnées de sauvegarde
+        savedAt: Date.now(),
+        version: '1.0',
+        filename: photoData.filename || 'progress_photo.jpg',
+        type: photoData.type || 'photo'
       };
 
       const currentData = getCurrentData();
       const updatedData = {
         ...currentData,
-        progressPhotos: [...(currentData.progressPhotos || []), newPhoto]
+        progressPhotos: [...(currentData.progressPhotos || []), validatedPhoto],
+        // Marquer la dernière mise à jour du suivi corporel
+        bodyTrackingLastUpdated: new Date().toISOString()
       };
 
       await updateData(updatedData);
+      console.log('✅ Photo de progression sauvegardée avec succès');
+      
+      return { success: true, photo: validatedPhoto };
     } catch (error) {
       console.error('❌ Erreur lors de l\'ajout de la photo de progression:', error);
       throw error;

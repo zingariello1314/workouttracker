@@ -637,6 +637,90 @@ const TodayTab = () => {
 
 
 
+      {/* Sessions d'endurance du jour */}
+      {(() => {
+        const enduranceData = data?.enduranceData || {};
+        const sessions = enduranceData.sessions || {};
+        const todayEnduranceSessions = [];
+        
+        // Collecter toutes les sessions d'endurance du jour
+        Object.entries(sessions).forEach(([activityType, activitySessions]) => {
+          if (Array.isArray(activitySessions)) {
+            activitySessions.forEach(session => {
+              if (session.date === dateStr) {
+                todayEnduranceSessions.push({
+                  ...session,
+                  activityType,
+                  activityName: {
+                    boxing: 'Boxe',
+                    pushups: 'Pompes',
+                    swimming: 'Natation',
+                    jumprope: 'Corde à sauter',
+                    running: 'Course'
+                  }[activityType] || activityType
+                });
+              }
+            });
+          }
+        });
+        
+        if (todayEnduranceSessions.length === 0) return null;
+        
+        return (
+          <Card className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20">
+            <Card.Header>
+              <Card.Title className="flex items-center text-orange-200">
+                <Zap className="mr-2" size={20} />
+                Sessions d'endurance d'aujourd'hui
+              </Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <div className="space-y-3">
+                {todayEnduranceSessions.map((session, index) => (
+                  <div key={index} className="bg-orange-700/20 rounded-lg p-3 border border-orange-500/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-orange-200">{session.activityName}</h4>
+                      <span className="text-orange-300 text-sm">{session.time}</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                      {session.count && (
+                        <div className="text-center">
+                          <div className="text-orange-200 font-bold">{session.count}</div>
+                          <div className="text-orange-300">Répétitions</div>
+                        </div>
+                      )}
+                      {session.duration && (
+                        <div className="text-center">
+                          <div className="text-orange-200 font-bold">{session.duration}min</div>
+                          <div className="text-orange-300">Durée</div>
+                        </div>
+                      )}
+                      {session.distance && (
+                        <div className="text-center">
+                          <div className="text-orange-200 font-bold">{session.distance}m</div>
+                          <div className="text-orange-300">Distance</div>
+                        </div>
+                      )}
+                      {session.jumps && (
+                        <div className="text-center">
+                          <div className="text-orange-200 font-bold">{session.jumps}</div>
+                          <div className="text-orange-300">Sauts</div>
+                        </div>
+                      )}
+                    </div>
+                    {session.notes && (
+                      <div className="mt-2 text-orange-300 text-sm italic">
+                        "{session.notes}"
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card.Content>
+          </Card>
+        );
+      })()}
+
       {/* Bouton de feedback de session */}
       <div className="text-center">
         <Button

@@ -70,9 +70,13 @@ const ProgressComments = () => {
       workoutFrequency: { current: 4.2, previous: 3.8, target: 5.0, trend: 'increasing' }
     };
 
+    // Calculs communs
+    const weightLoss = metricsData.weight.previous - metricsData.weight.current;
+    const muscleMassGain = metricsData.muscleMass.current - metricsData.muscleMass.previous;
+    const bodyFatReduction = metricsData.bodyFat.previous - metricsData.bodyFat.current;
+
     // Commentaires de réussites
     if (commentTypes.includes('achievements')) {
-      const weightLoss = metricsData.weight.previous - metricsData.weight.current;
       if (weightLoss > 0) {
         comments.push({
           id: 'achievement_weight',
@@ -87,7 +91,6 @@ const ProgressComments = () => {
         });
       }
 
-      const muscleMassGain = metricsData.muscleMass.current - metricsData.muscleMass.previous;
       if (muscleMassGain > 0) {
         comments.push({
           id: 'achievement_muscle',
