@@ -34,45 +34,28 @@ const PhotoGallerySection = () => {
   const [compareMode, setCompareMode] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Données simulées pour la démonstration
-  const mockPhotos = [
-    {
-      id: 1,
-      url: '/api/placeholder/300/400',
-      date: new Date(),
-      angle: 'front',
-      weight: 75.2,
-      notes: 'Après 3 mois d\'entraînement',
-      tags: ['progress', 'front']
-    },
-    {
-      id: 2,
-      url: '/api/placeholder/300/400',
-      date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      angle: 'side',
-      weight: 76.8,
-      notes: 'Vue de profil - début du programme',
-      tags: ['baseline', 'side']
-    },
-    {
-      id: 3,
-      url: '/api/placeholder/300/400',
-      date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-      angle: 'back',
-      weight: 77.5,
-      notes: 'Vue arrière - point de départ',
-      tags: ['baseline', 'back']
-    },
-    {
-      id: 4,
-      url: '/api/placeholder/300/400',
-      date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      angle: 'front',
-      weight: 75.8,
-      notes: 'Progrès visible au niveau des abdos',
-      tags: ['progress', 'front']
+  // Récupérer les vraies photos de progression
+  const getProgressPhotos = () => {
+    if (!data?.progressPhotos || data.progressPhotos.length === 0) {
+      return [];
     }
-  ];
+    
+    return data.progressPhotos
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .map(photo => ({
+        id: photo.id,
+        url: photo.photo || photo.url,
+        date: new Date(photo.date),
+        angle: photo.angle || 'front',
+        weight: photo.weight,
+        notes: photo.notes,
+        tags: photo.tags || ['progress'],
+        filename: photo.filename,
+        type: photo.type
+      }));
+  };
+
+  const progressPhotos = getProgressPhotos();
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -121,7 +104,7 @@ const PhotoGallerySection = () => {
     });
   };
 
-  const filteredPhotos = mockPhotos.filter(photo => {
+  const filteredPhotos = progressPhotos.filter(photo => {
     if (filterBy === 'all') return true;
     return photo.angle === filterBy;
   });
@@ -531,7 +514,7 @@ const PhotoGallerySection = () => {
             <div className="p-4">
               <div className="grid grid-cols-2 gap-6">
                 {selectedPhotos.map((photoId, index) => {
-                  const photo = mockPhotos.find(p => p.id === photoId);
+                  const photo = progressPhotos.find(p => p.id === photoId);
                   return (
                     <div key={photoId} className="text-center">
                       <div className="mb-4">

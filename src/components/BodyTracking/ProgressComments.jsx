@@ -61,19 +61,63 @@ const ProgressComments = () => {
     const comments = [];
     const periodWeeks = parseInt(selectedPeriod.replace('weeks', '')) || 1;
     
-    // Données simulées pour la génération de commentaires
-    const metricsData = {
-      weight: { current: 75.2, previous: 76.8, target: 72.0, trend: 'decreasing' },
-      bodyFat: { current: 18.5, previous: 19.8, target: 15.0, trend: 'decreasing' },
-      muscleMass: { current: 32.8, previous: 32.1, target: 35.0, trend: 'increasing' },
-      waist: { current: 82, previous: 85, target: 78, trend: 'decreasing' },
-      workoutFrequency: { current: 4.2, previous: 3.8, target: 5.0, trend: 'increasing' }
+    // Analyser les vraies données de progression
+    const analyzeProgressData = () => {
+      if (!data?.progressEntries || data.progressEntries.length === 0) {
+        return null;
+      }
+
+      const metricsEntries = data.progressEntries
+        .filter(entry => entry.type === 'metrics')
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (metricsEntries.length < 2) {
+        return null;
+      }
+
+      const current = metricsEntries[0];
+      const previous = metricsEntries[1];
+      
+      // Trouver une entrée d'il y a plusieurs semaines pour les tendances
+      const weeksAgoEntry = metricsEntries.find(entry => {
+        const entryDate = new Date(entry.date);
+        const weeksAgo = new Date();
+        weeksAgo.setDate(weeksAgo.getDate() - (periodWeeks * 7));
+        return entryDate <= weeksAgo;
+      });
+
+      return {
+        current,
+        previous,
+        weeksAgo: weeksAgoEntry,
+        hasEnoughData: metricsEntries.length >= 2
+      };
     };
 
-    // Calculs communs
-    const weightLoss = metricsData.weight.previous - metricsData.weight.current;
-    const muscleMassGain = metricsData.muscleMass.current - metricsData.muscleMass.previous;
-    const bodyFatReduction = metricsData.bodyFat.previous - metricsData.bodyFat.current;
+    const progressData = analyzeProgressData();
+    
+    if (!progressData || !progressData.hasEnoughData) {
+      return [{
+        id: 'no_data',
+        type: 'insights',
+        priority: 'medium',
+        title: '📊 Pas assez de données',
+        content: 'Enregistrez au moins 2 mesures corporelles pour générer des commentaires automatiques.',
+        timestamp: new Date(),
+        metrics: [],
+        sentiment: 'neutral',
+        actionable: true,
+        actions: ['Enregistrer une mesure', 'Ajouter des photos de progression']
+      }];
+    }
+
+    const { current, previous, weeksAgo } = progressData;
+
+    // Calculs basés sur les vraies données
+    const weightLoss = previous.weight ? previous.weight - current.weight : 0;
+    const muscleMassGain = previous.muscleMass ? current.muscleMass - previous.muscleMass : 0;
+    const bodyFatReduction = previous.bodyFat ? previous.bodyFat - current.bodyFat : 0;
+    const waistReduction = previous.waist ? previous.waist - current.waist : 0;
 
     // Commentaires de réussites
     if (commentTypes.includes('achievements')) {
@@ -157,7 +201,7 @@ const ProgressComments = () => {
         type: 'recommendations',
         priority: 'high',
         title: '🥗 Optimisation nutritionnelle',
-        content: `Basé sur vos progrès actuels, vous atteindrez votre objectif de poids dans environ ${Math.ceil((metricsData.weight.current - metricsData.weight.target) / (weightLoss / periodWeeks))} semaines. Maintenez votre déficit calorique actuel.`,
+        content: `Basé sur vos progrès actuels, vous atteindrez votre objectif de poids dans environ ${Math.ceil((current.weight - 72.0) / (weightLoss / periodWeeks))} semaines. Maintenez votre déficit calorique actuel.`,
         timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000),
         metrics: ['weight'],
         sentiment: 'neutral',

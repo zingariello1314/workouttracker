@@ -47,85 +47,123 @@ const StabilityAnalysis = () => {
     { value: '12weeks', label: '12 semaines' }
   ];
 
-  // Analyse de stabilité simulée
+  // Analyse de stabilité basée sur les vraies données
   const stabilityAnalysis = useMemo(() => {
+    if (!data?.progressEntries || data.progressEntries.length === 0) {
+      return [];
+    }
+
+    const metricsEntries = data.progressEntries
+      .filter(entry => entry.type === 'metrics')
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (metricsEntries.length < 2) {
+      return [];
+    }
+
+    const periodWeeks = parseInt(selectedPeriod.replace('weeks', ''));
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - (periodWeeks * 7));
+
+    const relevantEntries = metricsEntries.filter(entry => 
+      new Date(entry.date) >= cutoffDate
+    );
+
+    if (relevantEntries.length < 2) {
+      return [];
+    }
+
     return selectedMetrics.map(metricValue => {
       const metric = analysisMetrics.find(m => m.value === metricValue);
       
-      // Données simulées pour l'analyse
-      const baseValues = {
-        weight: 75.2,
-        bodyFat: 18.5,
-        muscleMass: 32.8,
-        waist: 82,
-        bmi: 23.1,
-        visceralFat: 8,
-        bodyWater: 58.5,
-        metabolicAge: 28
-      };
+      // Calculer la variabilité et la tendance basées sur les vraies données
+      const values = relevantEntries
+        .map(entry => entry[metricValue])
+        .filter(value => value != null && !isNaN(value));
 
-      const currentValue = baseValues[metricValue];
-      const periodWeeks = parseInt(selectedPeriod.replace('weeks', ''));
+      if (values.length < 2) {
+        return {
+          metric: metricValue,
+          label: metric?.label || metricValue,
+          unit: metric?.unit || '',
+          icon: metric?.icon || '📊',
+          currentValue: null,
+          variability: 0,
+          trend: 0,
+          stability: 'insufficient_data',
+          volatility: 'unknown',
+          isStagnant: false,
+          recommendation: 'Pas assez de données pour analyser la stabilité',
+          dataPoints: values.length,
+          periodWeeks: periodWeeks
+        };
+      }
+
+      const currentValue = values[0];
+      const minValue = Math.min(...values);
+      const maxValue = Math.max(...values);
+      const avgValue = values.reduce((sum, val) => sum + val, 0) / values.length;
       
-      // Simulation de la variabilité et tendance
-      const variability = Math.random() * 0.1 + 0.02; // 2-12% de variabilité
-      const trend = (Math.random() - 0.5) * 0.02; // Tendance entre -1% et +1%
-      const stagnationThreshold = 0.05; // 5% de changement minimum pour éviter la stagnation
+      // Calcul de la variabilité (coefficient de variation)
+      const variance = values.reduce((sum, val) => sum + Math.pow(val - avgValue, 2), 0) / values.length;
+      const standardDeviation = Math.sqrt(variance);
+      const variability = avgValue > 0 ? (standardDeviation / avgValue) : 0;
       
-      const totalChange = Math.abs(trend * periodWeeks);
-      const isStagnant = totalChange < stagnationThreshold;
+      // Calcul de la tendance (régression linéaire simple)
+      const n = values.length;
+      const xValues = Array.from({length: n}, (_, i) => i);
+      const sumX = xValues.reduce((sum, x) => sum + x, 0);
+      const sumY = values.reduce((sum, y) => sum + y, 0);
+      const sumXY = xValues.reduce((sum, x, i) => sum + x * values[i], 0);
+      const sumXX = xValues.reduce((sum, x) => sum + x * x, 0);
+      
+      const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+      const trend = slope / avgValue; // Tendance relative
+      
+      // Classification de la stabilité
+      const stagnationThreshold = 0.05; // 5% de changement minimum
+      const isStagnant = Math.abs(trend) < stagnationThreshold;
       const volatility = variability > 0.08 ? 'high' : variability > 0.05 ? 'medium' : 'low';
       
-      // Calcul des métriques de stabilité
-      const stabilityScore = Math.max(0, Math.min(100, 100 - (variability * 1000) - (isStagnant ? 30 : 0)));
-      const consistencyScore = Math.max(0, Math.min(100, 100 - (variability * 800)));
-      const progressScore = isStagnant ? 20 : Math.min(100, 50 + (Math.abs(trend) * 2000));
-
-      // Détection des patterns
-      const patterns = [];
-      if (isStagnant) patterns.push('stagnation');
-      if (volatility === 'high') patterns.push('volatility');
-      if (trend > 0.01) patterns.push('upward_trend');
-      if (trend < -0.01) patterns.push('downward_trend');
-      if (variability < 0.03) patterns.push('stable');
-
-      // Recommandations basées sur l'analyse
-      const recommendations = [];
+      let stability = 'stable';
+      if (volatility === 'high') stability = 'unstable';
+      else if (isStagnant) stability = 'stagnant';
+      else if (Math.abs(trend) > 0.1) stability = 'trending';
+      
+      // Génération de recommandations basées sur l'analyse
+      let recommendation = '';
       if (isStagnant) {
-        recommendations.push('Modifier votre routine pour relancer les progrès');
-        recommendations.push('Revoir vos objectifs et stratégies actuelles');
-      }
-      if (volatility === 'high') {
-        recommendations.push('Améliorer la régularité des mesures');
-        recommendations.push('Identifier les facteurs de variation');
-      }
-      if (patterns.includes('stable')) {
-        recommendations.push('Maintenir votre approche actuelle');
-        recommendations.push('Envisager de nouveaux défis progressifs');
+        recommendation = 'Aucun changement significatif détecté. Considérez ajuster votre approche.';
+      } else if (volatility === 'high') {
+        recommendation = 'Variabilité élevée détectée. Vérifiez la cohérence de vos mesures.';
+      } else if (trend > 0.05) {
+        recommendation = 'Tendance positive détectée. Continuez sur cette lancée !';
+      } else if (trend < -0.05) {
+        recommendation = 'Tendance négative détectée. Revoyez votre stratégie.';
+      } else {
+        recommendation = 'Progression stable et régulière. Excellent travail !';
       }
 
       return {
-        metric,
-        currentValue,
-        stabilityScore,
-        consistencyScore,
-        progressScore,
-        variability: variability * 100,
-        trend: trend * 100,
-        isStagnant,
-        volatility,
-        patterns,
-        recommendations,
-        dataPoints: periodWeeks * 3, // 3 mesures par semaine simulées
-        lastSignificantChange: new Date(Date.now() - Math.random() * periodWeeks * 7 * 24 * 60 * 60 * 1000),
-        analysis: {
-          status: isStagnant ? 'stagnant' : volatility === 'high' ? 'volatile' : 'stable',
-          confidence: Math.random() * 20 + 75, // 75-95% de confiance
-          riskLevel: isStagnant ? 'medium' : volatility === 'high' ? 'high' : 'low'
-        }
+        metric: metricValue,
+        label: metric?.label || metricValue,
+        unit: metric?.unit || '',
+        icon: metric?.icon || '📊',
+        currentValue: currentValue,
+        variability: variability,
+        trend: trend,
+        stability: stability,
+        volatility: volatility,
+        isStagnant: isStagnant,
+        recommendation: recommendation,
+        dataPoints: values.length,
+        periodWeeks: periodWeeks,
+        minValue: minValue,
+        maxValue: maxValue,
+        avgValue: avgValue
       };
     });
-  }, [selectedMetrics, selectedPeriod]);
+  }, [data?.progressEntries, selectedMetrics, selectedPeriod]);
 
   const overallAnalysis = useMemo(() => {
     const totalMetrics = stabilityAnalysis.length;

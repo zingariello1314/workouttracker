@@ -1,17 +1,38 @@
 export const getDateStr = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  if (!date) return '';
+  const dateObj = date instanceof Date ? date : new Date(date);
+  if (isNaN(dateObj.getTime())) return '';
+  
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
 export const getDayName = (date) => {
+  if (!date) return '';
+  const dateObj = date instanceof Date ? date : new Date(date);
+  if (isNaN(dateObj.getTime())) return '';
+  
   const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-  return days[date.getDay()];
+  return days[dateObj.getDay()];
 };
 
 export const formatDate = (date) => {
-  return date.toLocaleDateString('fr-FR', {
+  // Vérifier si la date est valide
+  if (!date) {
+    return 'Date invalide';
+  }
+  
+  // Convertir en objet Date si ce n'est pas déjà le cas
+  const dateObj = date instanceof Date ? date : new Date(date);
+  
+  // Vérifier si la date est valide après conversion
+  if (isNaN(dateObj.getTime())) {
+    return 'Date invalide';
+  }
+  
+  return dateObj.toLocaleDateString('fr-FR', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',

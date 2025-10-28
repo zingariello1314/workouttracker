@@ -19,99 +19,117 @@ const SummaryTableSection = () => {
   const [sortBy, setSortBy] = useState('name');
   const [filterBy, setFilterBy] = useState('all');
 
-  // Données simulées pour la démonstration
-  const mockBodyData = [
-    { 
-      name: 'Poids', 
-      value: '75.2 kg', 
-      date: new Date(), 
-      weekChange: -0.8, 
-      monthChange: -2.3, 
-      category: 'basic',
-      trend: 'down',
-      isGood: true
-    },
-    { 
-      name: 'Taille', 
-      value: '175 cm', 
-      date: new Date('2024-01-01'), 
-      weekChange: 0, 
-      monthChange: 0, 
-      category: 'basic',
-      trend: 'stable',
-      isGood: true
-    },
-    { 
-      name: 'IMC', 
-      value: '24.6', 
-      date: new Date(), 
-      weekChange: -0.3, 
-      monthChange: -0.8, 
-      category: 'calculated',
-      trend: 'down',
-      isGood: true
-    },
-    { 
-      name: 'Masse graisseuse', 
-      value: '12.8 kg', 
-      date: new Date(), 
-      weekChange: -0.5, 
-      monthChange: -1.5, 
-      category: 'impedance',
-      trend: 'down',
-      isGood: true
-    },
-    { 
-      name: 'Indice de masse grasse', 
-      value: '17.0%', 
-      date: new Date(), 
-      weekChange: -0.7, 
-      monthChange: -2.0, 
-      category: 'impedance',
-      trend: 'down',
-      isGood: true
-    },
-    { 
-      name: 'Poids sans graisse', 
-      value: '62.4 kg', 
-      date: new Date(), 
-      weekChange: -0.3, 
-      monthChange: -0.8, 
-      category: 'impedance',
-      trend: 'down',
-      isGood: false
-    },
-    { 
-      name: 'Eau du corps', 
-      value: '58.2%', 
-      date: new Date(), 
-      weekChange: 0.5, 
-      monthChange: 1.2, 
-      category: 'impedance',
-      trend: 'up',
-      isGood: true
-    },
-    { 
-      name: 'Tour de taille', 
-      value: '82 cm', 
-      date: new Date(), 
-      weekChange: -1.0, 
-      monthChange: -3.2, 
-      category: 'measurements',
-      trend: 'down',
-      isGood: true
-    },
-    { 
-      name: 'Tour de bras', 
-      value: '34 cm', 
-      date: new Date(), 
-      weekChange: 0.2, 
-      monthChange: 0.8, 
-      category: 'measurements',
-      trend: 'up',
-      isGood: true
+  // Générer les données réelles basées sur les entrées de progression
+  const generateBodyData = () => {
+    if (!data?.progressEntries || data.progressEntries.length === 0) {
+      return [];
     }
-  ];
+
+    const metricsEntries = data.progressEntries
+      .filter(entry => entry.type === 'metrics')
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (metricsEntries.length === 0) {
+      return [];
+    }
+
+    const latestEntry = metricsEntries[0];
+    const previousEntry = metricsEntries[1] || null;
+    const monthAgoEntry = metricsEntries.find(entry => {
+      const entryDate = new Date(entry.date);
+      const monthAgo = new Date();
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return entryDate <= monthAgo;
+    });
+
+    const bodyData = [];
+
+    // Poids
+    if (latestEntry.weight) {
+      const weekChange = previousEntry ? latestEntry.weight - previousEntry.weight : 0;
+      const monthChange = monthAgoEntry ? latestEntry.weight - monthAgoEntry.weight : 0;
+      
+      bodyData.push({
+        name: 'Poids',
+        value: `${latestEntry.weight} kg`,
+        date: new Date(latestEntry.date),
+        weekChange: weekChange,
+        monthChange: monthChange,
+        category: 'basic',
+        trend: weekChange < 0 ? 'down' : weekChange > 0 ? 'up' : 'stable',
+        isGood: weekChange < 0 || weekChange === 0
+      });
+    }
+
+    // Taille
+    if (latestEntry.height) {
+      bodyData.push({
+        name: 'Taille',
+        value: `${latestEntry.height} cm`,
+        date: new Date(latestEntry.date),
+        weekChange: 0,
+        monthChange: 0,
+        category: 'basic',
+        trend: 'stable',
+        isGood: true
+      });
+    }
+
+    // IMC
+    if (latestEntry.weight && latestEntry.height) {
+      const bmi = latestEntry.weight / Math.pow(latestEntry.height / 100, 2);
+      const previousBMI = previousEntry && previousEntry.height ? 
+        previousEntry.weight / Math.pow(previousEntry.height / 100, 2) : null;
+      const monthAgoBMI = monthAgoEntry && monthAgoEntry.height ? 
+        monthAgoEntry.weight / Math.pow(monthAgoEntry.height / 100, 2) : null;
+      
+      const weekChange = previousBMI ? bmi - previousBMI : 0;
+      const monthChange = monthAgoBMI ? bmi - monthAgoBMI : 0;
+      
+      bodyData.push({
+        name: 'IMC',
+        value: bmi.toFixed(1),
+        date: new Date(latestEntry.date),
+        weekChange: weekChange,
+        monthChange: monthChange,
+        category: 'calculated',
+        trend: weekChange < 0 ? 'down' : weekChange > 0 ? 'up' : 'stable',
+        isGood: bmi >= 18.5 && bmi < 25
+      });
+    }
+
+    // Mensurations
+    const measurements = [
+      { key: 'waist', name: 'Tour de taille', unit: 'cm' },
+      { key: 'chest', name: 'Tour de poitrine', unit: 'cm' },
+      { key: 'arms', name: 'Tour de bras', unit: 'cm' },
+      { key: 'thighs', name: 'Tour de cuisses', unit: 'cm' },
+      { key: 'neck', name: 'Tour de cou', unit: 'cm' },
+      { key: 'hips', name: 'Tour de hanches', unit: 'cm' }
+    ];
+
+    measurements.forEach(measurement => {
+      if (latestEntry[measurement.key]) {
+        const weekChange = previousEntry ? latestEntry[measurement.key] - previousEntry[measurement.key] : 0;
+        const monthChange = monthAgoEntry ? latestEntry[measurement.key] - monthAgoEntry[measurement.key] : 0;
+        
+        bodyData.push({
+          name: measurement.name,
+          value: `${latestEntry[measurement.key]} ${measurement.unit}`,
+          date: new Date(latestEntry.date),
+          weekChange: weekChange,
+          monthChange: monthChange,
+          category: 'measurements',
+          trend: weekChange < 0 ? 'down' : weekChange > 0 ? 'up' : 'stable',
+          isGood: true
+        });
+      }
+    });
+
+    return bodyData;
+  };
+
+  const bodyData = generateBodyData();
 
   const getTrendIcon = (trend, isGood) => {
     if (trend === 'stable') return <Minus className="w-4 h-4 text-gray-400" />;
@@ -141,7 +159,7 @@ const SummaryTableSection = () => {
     return diffDays;
   };
 
-  const filteredData = mockBodyData.filter(item => {
+  const filteredData = bodyData.filter(item => {
     if (filterBy === 'all') return true;
     return item.category === filterBy;
   });
@@ -162,7 +180,7 @@ const SummaryTableSection = () => {
   });
 
   const generateSummary = () => {
-    const significantChanges = mockBodyData.filter(item => Math.abs(item.monthChange) > 0.5);
+    const significantChanges = bodyData.filter(item => Math.abs(item.monthChange) > 0.5);
     const positiveChanges = significantChanges.filter(item => 
       (item.trend === 'up' && item.isGood) || (item.trend === 'down' && !item.isGood)
     );

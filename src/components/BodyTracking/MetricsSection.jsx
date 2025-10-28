@@ -34,18 +34,21 @@ const MetricsSection = () => {
   const [showCalculations, setShowCalculations] = useState(true);
   const [errors, setErrors] = useState({});
 
-  // Données simulées pour l'historique
-  const lastEntry = {
-    weight: 75.2,
-    height: 175,
-    waist: 82,
-    chest: 98,
-    arms: 34,
-    thighs: 58,
-    neck: 38,
-    hips: 95,
-    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  // Récupérer la dernière entrée réelle des données
+  const getLastEntry = () => {
+    if (!data?.progressEntries || data.progressEntries.length === 0) {
+      return null;
+    }
+    
+    // Trouver la dernière entrée de type 'metrics'
+    const metricsEntries = data.progressEntries
+      .filter(entry => entry.type === 'metrics')
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    return metricsEntries.length > 0 ? metricsEntries[0] : null;
   };
+
+  const lastEntry = getLastEntry();
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -125,8 +128,8 @@ const MetricsSection = () => {
   };
 
   const calculateBMI = () => {
-    const weight = parseFloat(formData.weight) || lastEntry.weight;
-    const height = parseFloat(formData.height) || lastEntry.height;
+    const weight = parseFloat(formData.weight) || (lastEntry?.weight || null);
+    const height = parseFloat(formData.height) || (lastEntry?.height || null);
     
     if (weight && height) {
       const heightInM = height / 100;
@@ -136,7 +139,7 @@ const MetricsSection = () => {
   };
 
   const calculateIdealWeight = () => {
-    const height = parseFloat(formData.height) || lastEntry.height;
+    const height = parseFloat(formData.height) || (lastEntry?.height || null);
     
     if (height) {
       // Formule de Lorentz (approximative)
@@ -147,7 +150,7 @@ const MetricsSection = () => {
   };
 
   const getWeightDifference = () => {
-    if (formData.weight && lastEntry.weight) {
+    if (formData.weight && lastEntry?.weight) {
       const diff = parseFloat(formData.weight) - lastEntry.weight;
       return diff.toFixed(1);
     }
@@ -218,7 +221,7 @@ const MetricsSection = () => {
                     {errors.weight}
                   </p>
                 )}
-                {lastEntry.weight && (
+                {lastEntry?.weight && (
                   <p className="text-slate-400 text-sm mt-1">
                     Dernière mesure: {lastEntry.weight} kg ({formatDate(lastEntry.date)})
                   </p>
@@ -246,7 +249,7 @@ const MetricsSection = () => {
                     {errors.height}
                   </p>
                 )}
-                {lastEntry.height && (
+                {lastEntry?.height && (
                   <p className="text-slate-400 text-sm mt-1">
                     Dernière mesure: {lastEntry.height} cm
                   </p>
@@ -261,12 +264,12 @@ const MetricsSection = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { key: 'waist', label: 'Tour de taille', last: lastEntry.waist },
-                  { key: 'chest', label: 'Tour de poitrine', last: lastEntry.chest },
-                  { key: 'arms', label: 'Tour de bras', last: lastEntry.arms },
-                  { key: 'thighs', label: 'Tour de cuisse', last: lastEntry.thighs },
-                  { key: 'neck', label: 'Tour de cou', last: lastEntry.neck },
-                  { key: 'hips', label: 'Tour de hanches', last: lastEntry.hips }
+                  { key: 'waist', label: 'Tour de taille', last: lastEntry?.waist },
+                  { key: 'chest', label: 'Tour de poitrine', last: lastEntry?.chest },
+                  { key: 'arms', label: 'Tour de bras', last: lastEntry?.arms },
+                  { key: 'thighs', label: 'Tour de cuisse', last: lastEntry?.thighs },
+                  { key: 'neck', label: 'Tour de cou', last: lastEntry?.neck },
+                  { key: 'hips', label: 'Tour de hanches', last: lastEntry?.hips }
                 ].map(({ key, label, last }) => (
                   <div key={key}>
                     <label className="block text-sm font-medium text-slate-300 mb-2">

@@ -103,6 +103,9 @@ export const useWorkoutData = () => {
     startDate: null,
     weekVariant: 'A',
     progressPhotos: [],
+    progressEntries: [],
+    bodyTrackingReminders: [],
+    bodyTrackingLastUpdated: null,
     sessionFeedbacks: {} // Stockage des feedbacks de session par date
     // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
   });
@@ -214,6 +217,9 @@ export const useWorkoutData = () => {
         startDate: newData && newData.startDate ? newData.startDate : null,
         weekVariant: newData && newData.weekVariant ? newData.weekVariant : 'A',
         progressPhotos: newData && newData.progressPhotos ? [...newData.progressPhotos] : [],
+        progressEntries: newData && newData.progressEntries ? [...newData.progressEntries] : [],
+        bodyTrackingReminders: newData && newData.bodyTrackingReminders ? [...newData.bodyTrackingReminders] : [],
+        bodyTrackingLastUpdated: newData && newData.bodyTrackingLastUpdated ? newData.bodyTrackingLastUpdated : null,
         sessionFeedbacks: newData && newData.sessionFeedbacks ? { ...newData.sessionFeedbacks } : {},
         // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
         lastSaved: new Date().toISOString(),
@@ -407,6 +413,9 @@ export const useWorkoutData = () => {
               startDate: result.startDate || null,
               weekVariant: result.weekVariant || 'A',
               progressPhotos: Array.isArray(result.progressPhotos) ? result.progressPhotos : [],
+              progressEntries: Array.isArray(result.progressEntries) ? result.progressEntries : [],
+              bodyTrackingReminders: Array.isArray(result.bodyTrackingReminders) ? result.bodyTrackingReminders : [],
+              bodyTrackingLastUpdated: result.bodyTrackingLastUpdated || null,
               sessionFeedbacks: result.sessionFeedbacks || {}
             };
             
