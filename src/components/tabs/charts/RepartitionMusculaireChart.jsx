@@ -5,9 +5,12 @@ import { findExerciseInDatabase } from '../../../data/exerciseDatabase';
 const RepartitionMusculaireChart = ({ data, colors }) => {
   // Calculer les données réelles des groupes musculaires
   const calculateMuscleGroupData = () => {
-    const workoutHistory = data.workoutHistory || [];
+    // Structure : data peut être { data: {...} } ou directement {...}
+    const actualData = data?.data || data || {};
+    const workoutHistory = data?.workoutHistory || [];
     const muscleGroups = {};
     
+    // 1. Compter les exercices normaux
     workoutHistory.forEach(session => {
       session.exercises?.forEach(exercise => {
         const exerciseInfo = findExerciseInDatabase(exercise.name);
@@ -18,7 +21,27 @@ const RepartitionMusculaireChart = ({ data, colors }) => {
       });
     });
     
-    // Utiliser les vraies données même si elles sont faibles
+    // 2. Ajouter la natation de l'onglet Aujourd'hui (seulement la durée, pas les détails)
+    const checkedExercises = actualData?.checkedExercises || {};
+    const reps = actualData?.reps || {};
+    let natationMinutes = 0;
+    
+    Object.keys(checkedExercises).forEach(key => {
+      if (checkedExercises[key] && key.includes('complementary_natation')) {
+        const dateMatch = key.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+          const dateStr = dateMatch[1];
+          const minutesKey = `${dateStr}_complementary_natation_minutes`;
+          const duration = parseInt(reps[minutesKey]) || 90;
+          natationMinutes += duration;
+        }
+      }
+    });
+    
+    // Ajouter la natation comme "Cardio/Endurance" (1 minute = 1 point équivalent)
+    if (natationMinutes > 0) {
+      muscleGroups['Cardio/Endurance'] = (muscleGroups['Cardio/Endurance'] || 0) + natationMinutes;
+    }
     
     // Convertir en tableau avec couleurs
     const colors = ['#8b5cf6', '#06b6d4', '#ec4899', '#6366f1', '#f59e0b', '#10b981'];

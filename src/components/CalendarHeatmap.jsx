@@ -80,12 +80,93 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
     if (totalReps <= thresholds[3]) return 3; // Intense (orange)
     return 4; // Extrême (rouge)
   };
+
+  // Calculer les seuils dynamiques pour la durée (temps)
+  const calculateDynamicTimeThresholds = () => {
+    if (!allData) return { min: 0, max: 0, thresholds: [0, 30, 60, 90] };
+    
+    const durations = [];
+    
+    // Collecter toutes les durées des activités complémentaires et d'endurance
+    Object.keys(allData.checkedExercises || {}).forEach(key => {
+      if (allData.checkedExercises[key]) {
+        const dateMatch = key.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+          const dateStr = dateMatch[1];
+          const dayName = getDayName(new Date(dateStr));
+          const workout = workoutProgram[dayName];
+          
+          if (workout?.complementaryActivity) {
+            const complementaryKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`;
+            if (allData.checkedExercises[complementaryKey]) {
+              const minutesKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`;
+              const manualMinutes = parseInt(allData.reps?.[minutesKey] || 0);
+              const duration = manualMinutes > 0 ? manualMinutes : workout.complementaryActivity.duration || 90;
+              durations.push(duration);
+            }
+          }
+        }
+      }
+    });
+    
+    // Ajouter les durées d'endurance
+    const enduranceData = allData?.enduranceData || {};
+    const enduranceSessions = enduranceData.sessions || {};
+    Object.entries(enduranceSessions).forEach(([activityType, sessions]) => {
+      if (Array.isArray(sessions)) {
+        sessions.forEach(session => {
+          if (session.duration) {
+            durations.push(session.duration);
+          }
+        });
+      }
+    });
+    
+    if (durations.length === 0) {
+      return { min: 0, max: 0, thresholds: [0, 30, 60, 90] };
+    }
+    
+    const min = Math.min(...durations);
+    const max = Math.max(...durations);
+    
+    // Calculer les seuils basés sur les données réelles
+    const thresholds = [
+      min, // Niveau 1 (vert) - minimum
+      min + (max - min) * 0.25, // Niveau 2 (jaune) - 25%
+      min + (max - min) * 0.5,  // Niveau 3 (orange) - 50%
+      min + (max - min) * 0.75  // Niveau 4 (rouge) - 75%
+    ];
+    
+    return { min, max, thresholds };
+  };
+
+  // Calculer le niveau d'intensité basé sur les seuils dynamiques de temps
+  const calculateDynamicTimeIntensityLevel = (duration, thresholds) => {
+    if (duration === 0) return 0;
+    if (duration <= thresholds[1]) return 1; // Léger (vert)
+    if (duration <= thresholds[2]) return 2; // Modéré (jaune)
+    if (duration <= thresholds[3]) return 3; // Intense (orange)
+    return 4; // Extrême (rouge)
+  };
   const getIntensityForDate = (date) => {
     const dateStr = getDateStr(date);
     const dayName = getDayName(date);
     const workout = workoutProgram[dayName];
     
+    // Debug pour le 28 octobre 2025
+    if (dateStr === '2025-10-28') {
+      console.log('🔍 DEBUG CalendarHeatmap - 28 octobre 2025:');
+      console.log('Date string:', dateStr);
+      console.log('Day name:', dayName);
+      console.log('Workout found:', workout?.name);
+      console.log('All data:', allData);
+      console.log('Checked exercises:', allData?.checkedExercises);
+      console.log('Reps data:', allData?.reps);
+    }
+    
     // Calculer les données d'endurance pour cette date
+    // NOTE: Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
+    // Elles servent uniquement à fournir des détails sur ce qui s'est passé
     const getEnduranceDataForDate = () => {
       const enduranceData = allData?.enduranceData || {};
       const sessions = enduranceData.sessions || {};
@@ -96,27 +177,45 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
       let enduranceJumps = 0;
       let enduranceSessions = 0;
       
-      // Parcourir toutes les activités d'endurance
+      // Parcourir toutes les activités d'endurance (pour les détails uniquement)
       Object.values(sessions).forEach(activitySessions => {
         if (Array.isArray(activitySessions)) {
           activitySessions.forEach(session => {
-            if (session.date === dateStr) {
-              enduranceSessions++;
-              
-              // Ajouter les répétitions (pompes, boxe)
-              if (session.count) enduranceReps += parseInt(session.count) || 0;
-              if (session.duration) enduranceDuration += parseInt(session.duration) || 0;
-              
-              // Ajouter la distance (natation, course)
-              if (session.distance) enduranceDistance += parseFloat(session.distance) || 0;
-              if (session.laps && Array.isArray(session.laps)) {
-                session.laps.forEach(lap => {
-                  enduranceDistance += parseFloat(lap.distance) || 0;
-                });
+            // Normaliser la date de la session pour la comparaison
+            let sessionDateStr = session.date;
+            if (sessionDateStr) {
+              // Si la date contient 'T', prendre seulement la partie date
+              if (sessionDateStr.includes('T')) {
+                sessionDateStr = sessionDateStr.split('T')[0];
+              }
+              // Si c'est un format autre, essayer de parser
+              if (sessionDateStr.length > 10) {
+                try {
+                  sessionDateStr = new Date(sessionDateStr).toISOString().split('T')[0];
+                } catch (e) {
+                  // Ignorer si le parsing échoue
+                }
               }
               
-              // Ajouter les sauts (corde à sauter)
-              if (session.jumps) enduranceJumps += parseInt(session.jumps) || 0;
+              // Comparer les dates normalisées
+              if (sessionDateStr === dateStr) {
+                enduranceSessions++;
+                
+                // Ajouter les répétitions (pompes, boxe)
+                if (session.count || session.reps) enduranceReps += parseInt(session.count || session.reps) || 0;
+                if (session.duration) enduranceDuration += parseInt(session.duration) || 0;
+                
+                // Ajouter la distance (natation, course)
+                if (session.distance) enduranceDistance += parseFloat(session.distance) || 0;
+                if (session.laps && Array.isArray(session.laps)) {
+                  session.laps.forEach(lap => {
+                    enduranceDistance += parseFloat(lap.distance) || 0;
+                  });
+                }
+                
+                // Ajouter les sauts (corde à sauter)
+                if (session.jumps) enduranceJumps += parseInt(session.jumps) || 0;
+              }
             }
           });
         }
@@ -206,7 +305,48 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
     const calculateRealDuration = () => {
       let totalDurationMinutes = enduranceData.duration; // Commencer avec la durée d'endurance
       
-      if (completedExercises === 0 && enduranceData.sessions === 0) return 0;
+      // Ajouter la durée des activités complémentaires cochées dans l'onglet Aujourd'hui
+      if (workout?.complementaryActivity) {
+        const complementaryKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`;
+        const isComplementaryChecked = allData?.checkedExercises?.[complementaryKey] || false;
+        
+        // Debug pour le 28 octobre 2025
+        if (dateStr === '2025-10-28') {
+          console.log('🔍 DEBUG Activité complémentaire:');
+          console.log('Complementary key:', complementaryKey);
+          console.log('Is checked:', isComplementaryChecked);
+          console.log('Complementary activity:', workout.complementaryActivity);
+        }
+        
+        if (isComplementaryChecked) {
+          // Vérifier s'il y a des minutes saisies manuellement
+          const minutesKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`;
+          const manualMinutes = parseInt(allData?.reps?.[minutesKey] || 0);
+          
+          // Debug pour le 28 octobre 2025
+          if (dateStr === '2025-10-28') {
+            console.log('🔍 DEBUG Minutes:');
+            console.log('Minutes key:', minutesKey);
+            console.log('Manual minutes:', manualMinutes);
+          }
+          
+          if (manualMinutes > 0) {
+            // Utiliser les minutes saisies manuellement
+            totalDurationMinutes += manualMinutes;
+            if (dateStr === '2025-10-28') {
+              console.log('✅ Utilisation des minutes manuelles:', manualMinutes);
+            }
+          } else {
+            // Utiliser la durée prévue par défaut
+            totalDurationMinutes += workout.complementaryActivity.duration || 90;
+            if (dateStr === '2025-10-28') {
+              console.log('✅ Utilisation de la durée par défaut:', workout.complementaryActivity.duration);
+            }
+          }
+        }
+      }
+      
+      if (completedExercises === 0 && enduranceData.sessions === 0 && totalDurationMinutes === 0) return 0;
       
       exercisesList.forEach(exercise => {
         const baseKey = `${dateStr}_${exercise.id}`;
@@ -293,24 +433,65 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
     };
 
     const realDuration = calculateRealDuration();
-    const totalActivities = completedExercises + enduranceData.sessions;
-    const completionRate = totalPlannedExercises > 0 ? completedExercises / totalPlannedExercises : 0;
     
-    // Calculer le niveau d'intensité basé sur le taux de complétion, les répétitions ET les données d'endurance
-    let intensityLevel = 0;
-    if (totalActivities > 0) {
-      // Considérer les activités d'endurance comme équivalentes aux exercices
-      const effectiveCompletionRate = totalPlannedExercises > 0 ? 
-        (completedExercises + enduranceData.sessions) / Math.max(totalPlannedExercises, enduranceData.sessions) : 
-        enduranceData.sessions > 0 ? 1 : 0;
-      
-      if (effectiveCompletionRate >= 0.8 && totalReps >= 100) intensityLevel = 4; // Extrême
-      else if (effectiveCompletionRate >= 0.6 && totalReps >= 60) intensityLevel = 3; // Intense
-      else if (effectiveCompletionRate >= 0.4 && totalReps >= 30) intensityLevel = 2; // Modéré
-      else intensityLevel = 1; // Léger
-    }
+    // Vérifier si une activité complémentaire est cochée
+    const isComplementaryChecked = workout?.complementaryActivity && 
+      allData?.checkedExercises?.[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`];
     
-    const intensityScore = completionRate * 100 + (totalReps * 0.1) + (enduranceData.sessions * 10);
+        // Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
+        // Seules les activités complémentaires de l'onglet Aujourd'hui comptent
+        const totalActivities = completedExercises + (isComplementaryChecked ? 1 : 0);
+        const completionRate = totalPlannedExercises > 0 ? completedExercises / totalPlannedExercises : 0;
+        
+        // Debug pour le 28 octobre 2025
+        if (dateStr === '2025-10-28') {
+          console.log('🔍 DEBUG Calcul intensité:');
+          console.log('Completed exercises:', completedExercises);
+          console.log('Endurance sessions:', enduranceData.sessions);
+          console.log('Is complementary checked:', isComplementaryChecked);
+          console.log('Total activities:', totalActivities);
+          console.log('Real duration:', realDuration);
+          console.log('Total reps:', totalReps);
+        }
+        
+        // Calculer le niveau d'intensité avec logique hiérarchique et seuils dynamiques
+        let intensityLevel = 0;
+        if (totalActivities > 0) {
+          // LOGIQUE HIÉRARCHIQUE :
+          // 1. Si il y a des reps → priorité aux reps (seuils dynamiques)
+          // 2. Si il y a que du temps → basé sur le temps (seuils dynamiques)
+          // 3. Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
+          
+          if (totalReps > 0) {
+            // PRIORITÉ AUX REPS : Utiliser les seuils dynamiques basés sur les données réelles
+            const { thresholds } = calculateDynamicThresholds();
+            intensityLevel = calculateDynamicIntensityLevel(totalReps, thresholds);
+            
+            // Debug pour le 28 octobre 2025
+            if (dateStr === '2025-10-28') {
+              console.log('🔍 DEBUG Logique REPS DYNAMIQUE:');
+              console.log('Total reps:', totalReps);
+              console.log('Thresholds:', thresholds);
+              console.log('Final intensity level:', intensityLevel);
+            }
+          } else {
+            // BASÉ SUR LE TEMPS : Utiliser des seuils dynamiques pour la durée
+            // Seulement les activités complémentaires de l'onglet Aujourd'hui
+            const { thresholds: timeThresholds } = calculateDynamicTimeThresholds();
+            intensityLevel = calculateDynamicTimeIntensityLevel(realDuration, timeThresholds);
+            
+            // Debug pour le 28 octobre 2025
+            if (dateStr === '2025-10-28') {
+              console.log('🔍 DEBUG Logique TEMPS DYNAMIQUE:');
+              console.log('Real duration:', realDuration);
+              console.log('Time thresholds:', timeThresholds);
+              console.log('Final intensity level:', intensityLevel);
+            }
+          }
+        }
+    
+    // L'intensité ne dépend que des activités complémentaires de l'onglet Aujourd'hui
+    const intensityScore = completionRate * 100 + (totalReps * 0.1) + (isComplementaryChecked ? 50 : 0);
     
     return {
       level: intensityLevel,
@@ -413,8 +594,8 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
     // Générer 6 semaines (42 jours) pour couvrir tout le mois
     for (let i = 0; i < 42; i++) {
       const intensity = getIntensityForDate(currentDay);
-      // Appliquer le système d'intensité dynamique
-      intensity.level = calculateDynamicIntensityLevel(intensity.reps, thresholds);
+      // Ne pas écraser l'intensité calculée par getIntensityForDate
+      // qui prend déjà en compte les activités complémentaires et la durée
       
       days.push({
         date: new Date(currentDay),

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X } from 'lucide-react';
+import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { workoutProgram } from '../../data/workoutProgram';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Checkbox } from '../ui/Input';
+import ChallengeCard from '../ui/ChallengeCard';
 import { typography } from '../../styles/typography';
 import { getAutoWeekVariant } from '../../utils/dateUtils';
 
@@ -34,6 +35,80 @@ const TodayTab = () => {
     updateReps,
     toggleCheck
   } = useWorkout();
+
+  // Récupérer les défis actifs
+  const getActiveChallenges = () => {
+    const challenges = data?.enduranceData?.challenges || [];
+    const now = new Date();
+    
+    return challenges.filter(challenge => {
+      if (challenge.status !== 'active') return false;
+      
+      // Vérifier si le défi est encore valide selon son type
+      switch (challenge.type) {
+        case 'ponctuel':
+          return new Date(challenge.targetDate) > now;
+        case 'periode':
+          return new Date(challenge.endDate) > now;
+        case 'recurrent':
+          return true; // Les défis récurrents sont toujours actifs
+        default:
+          return true;
+      }
+    });
+  };
+
+  // Fonction pour valider un défi
+  const handleChallengeComplete = async (challengeId, completionData) => {
+    try {
+      // Créer une session d'endurance pour valider le défi
+      const sessionData = {
+        id: Date.now(),
+        date: getDateStr(currentDate),
+        time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        ...completionData,
+        validatedChallenges: [challengeId]
+      };
+
+      // Mettre à jour les données d'endurance
+      const enduranceData = data?.enduranceData || {};
+      const currentSessions = enduranceData.sessions || {};
+      const activityType = getActiveChallenges().find(c => c.id === challengeId)?.activityType || 'pushups';
+      
+      const updatedSessions = {
+        ...currentSessions,
+        [activityType]: [...(currentSessions[activityType] || []), sessionData]
+      };
+
+      // Marquer le défi comme complété
+      const updatedChallenges = (enduranceData.challenges || []).map(challenge => 
+        challenge.id === challengeId 
+          ? { 
+              ...challenge, 
+              status: 'completed', 
+              completedAt: new Date().toISOString(),
+              completedSessionId: sessionData.id
+            }
+          : challenge
+      );
+
+      // Sauvegarder
+      await updateData({
+        ...data,
+        enduranceData: {
+          ...enduranceData,
+          sessions: updatedSessions,
+          challenges: updatedChallenges,
+          lastUpdated: new Date().toISOString()
+        }
+      });
+
+      console.log('🎉 Défi validé avec succès !');
+    } catch (error) {
+      console.error('❌ Erreur lors de la validation du défi:', error);
+      throw error;
+    }
+  };
 
   // Script temporaire pour inspecter IndexedDB
   const inspectIndexedDB = async () => {
@@ -532,9 +607,32 @@ const TodayTab = () => {
                   className="text-purple-400"
                   name={`complementary_${workout.complementaryActivity.name.toLowerCase()}`}
                 />
-                <div className="text-purple-300 text-sm font-medium">
-                  {workout.complementaryActivity.duration} min
+                
+                {/* Champ de saisie pour les minutes */}
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={getCurrentData().reps[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`] || ''}
+                    onChange={(e) => updateReps(`complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`, e.target.value, currentDate)}
+                    onFocus={() => handleInputFocus(`complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`, { series: `1×${workout.complementaryActivity.duration}min` })}
+                    className="w-16 text-center"
+                    min="0"
+                    max="300"
+                  />
+                  <span className="text-purple-300 text-sm font-medium">min</span>
                 </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedExercise(workout.complementaryActivity);
+                    setShowExerciseVariations(true);
+                  }}
+                  icon={Zap}
+                  className="bg-purple-600 hover:bg-purple-700"
+                />
               </div>
             </div>
           )}
@@ -714,6 +812,34 @@ const TodayTab = () => {
                       </div>
                     )}
                   </div>
+                ))}
+              </div>
+            </Card.Content>
+          </Card>
+        );
+      })()}
+
+      {/* Section des défis actifs */}
+      {(() => {
+        const activeChallenges = getActiveChallenges();
+        if (activeChallenges.length === 0) return null;
+        
+        return (
+          <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20">
+            <Card.Header>
+              <Card.Title className="flex items-center text-purple-200">
+                <Award className="mr-2" size={20} />
+                Défis actifs ({activeChallenges.length})
+              </Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <div className="space-y-4">
+                {activeChallenges.map(challenge => (
+                  <ChallengeCard
+                    key={challenge.id}
+                    challenge={challenge}
+                    onComplete={handleChallengeComplete}
+                  />
                 ))}
               </div>
             </Card.Content>

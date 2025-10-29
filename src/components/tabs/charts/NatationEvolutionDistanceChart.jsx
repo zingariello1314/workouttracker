@@ -4,20 +4,73 @@ import { TrendingUp } from 'lucide-react';
 const NatationEvolutionDistanceChart = ({ data, colors }) => {
   // Calculer les données réelles d'évolution de distance
   const calculateDistanceEvolution = () => {
-    const workoutHistory = data.workoutHistory || [];
+    // Structure : data peut être { data: {...} } ou directement {...}
+    const actualData = data?.data || data || {};
     
-    // Filtrer les séances de natation
-    const natationSessions = workoutHistory.filter(session => 
-      session.exercises?.some(exercise => 
-        exercise.name.toLowerCase().includes('natation') || 
-        exercise.name.toLowerCase().includes('crawl') ||
-        exercise.name.toLowerCase().includes('brasse')
-      )
-    );
+    // 1. Données de l'onglet Aujourd'hui (activités complémentaires)
+    const complementarySessions = [];
+    const checkedExercises = actualData?.checkedExercises || {};
+    const reps = actualData?.reps || {};
+    
+    Object.keys(checkedExercises).forEach(key => {
+      if (checkedExercises[key] && key.includes('complementary_natation')) {
+        const dateMatch = key.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+          const dateStr = dateMatch[1];
+          const minutesKey = `${dateStr}_complementary_natation_minutes`;
+          const duration = parseInt(reps[minutesKey]) || 90;
+          
+          complementarySessions.push({
+            date: dateStr,
+            duration: duration,
+            distance: 0, // Pas de distance dans l'onglet Aujourd'hui
+            type: 'complementary'
+          });
+        }
+      }
+    });
+    
+    // 2. Données de l'onglet Endurance (sessions détaillées)
+    const enduranceSessions = [];
+    const enduranceData = actualData?.enduranceData || {};
+    const swimmingSessions = enduranceData.sessions?.swimming || [];
+    
+    swimmingSessions.forEach(session => {
+      if (session.date) {
+        let sessionDate = session.date;
+        if (sessionDate.includes('T')) {
+          sessionDate = sessionDate.split('T')[0];
+        }
+        
+        // totalTime est en secondes, convertir en minutes si pas de duration
+        let duration = session.duration || 0;
+        if (!duration && session.totalTime) {
+          duration = typeof session.totalTime === 'number' ? session.totalTime / 60 : parseFloat(session.totalTime) / 60;
+        }
+        
+        enduranceSessions.push({
+          date: sessionDate,
+          duration: duration,
+          distance: session.totalDistance || session.distance || 0,
+          type: 'endurance'
+        });
+      }
+    });
+    
+    // 3. Combiner les données (priorité aux sessions détaillées)
+    const allSessions = [...enduranceSessions];
+    
+    // Ajouter les sessions complémentaires qui n'ont pas de session détaillée
+    complementarySessions.forEach(compSession => {
+      const hasDetailedSession = enduranceSessions.some(endSession => endSession.date === compSession.date);
+      if (!hasDetailedSession) {
+        allSessions.push(compSession);
+      }
+    });
     
     // Grouper par semaine
     const weeklyData = {};
-    natationSessions.forEach(session => {
+    allSessions.forEach(session => {
       const date = new Date(session.date);
       const weekStart = new Date(date);
       weekStart.setDate(date.getDate() - date.getDay());
@@ -27,11 +80,14 @@ const NatationEvolutionDistanceChart = ({ data, colors }) => {
         weeklyData[weekKey] = 0;
       }
       
-      // Distance fixe de 1250m par séance (pas de données réelles de distance)
-      weeklyData[weekKey] += 1250;
+      // Utiliser la distance réelle ou estimer basé sur la durée
+      if (session.distance > 0) {
+        weeklyData[weekKey] += session.distance;
+      } else if (session.duration > 0) {
+        // Estimation : 50m par minute de natation
+        weeklyData[weekKey] += session.duration * 50;
+      }
     });
-    
-    // Utiliser les vraies données même si elles sont faibles
     
     // Convertir en tableau et prendre les 5 dernières semaines
     const weeks = Object.entries(weeklyData)
@@ -39,14 +95,14 @@ const NatationEvolutionDistanceChart = ({ data, colors }) => {
       .slice(-5)
       .map(([week, distance], index) => ({
         week: `S${index + 1}`,
-        distance: Math.max(distance, 2000) // Minimum 2000m
+        distance: distance // Utiliser la distance réelle, pas de minimum artificiel
       }));
     
     return weeks;
   };
 
   const weeklyData = calculateDistanceEvolution();
-  const maxDistance = Math.max(...weeklyData.map(w => w.distance), 3000);
+  const maxDistance = Math.max(...weeklyData.map(w => w.distance), 100); // Minimum 100m au lieu de 3000m
 
   // Fonction utilitaire pour calculer les coordonnées SVG de manière sécurisée
   const getSafeCoordinates = (value, index, values) => {

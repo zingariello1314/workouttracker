@@ -492,7 +492,7 @@ const WorkoutProvider = ({ children }) => {
     console.log('DEBUG: currentData.checkedExercises:', currentData?.checkedExercises);
     console.log('DEBUG: currentData.checkedStretches:', currentData?.checkedStretches);
     
-    if (!currentData || !currentData.reps || !currentData.checkedExercises) {
+    if (!currentData) {
       console.log('DEBUG: No data found, returning empty array');
       return [];
     }
@@ -502,30 +502,70 @@ const WorkoutProvider = ({ children }) => {
     // Grouper les données par date
     const dataByDate = {};
     
-    // Traiter les exercices
-    Object.keys(currentData.reps).forEach(key => {
-      const reps = parseInt(currentData.reps[key]) || 0;
-      console.log(`DEBUG: Processing key: ${key} reps: ${reps}`);
-      
-      if (reps > 0) {
-        // Extraire la date de la clé (format: YYYY-MM-DD_exerciseId_variant)
-        const parts = key.split('_');
-        if (parts.length >= 2) {
-          const dateStr = parts[0];
-          const exerciseId = parts[1];
-          const variant = parts[2] || '';
-          
-          if (!dataByDate[dateStr]) {
-            dataByDate[dateStr] = { exercises: {}, stretches: {} };
+    // Traiter les exercices (si les données existent)
+    if (currentData.reps) {
+      Object.keys(currentData.reps).forEach(key => {
+        const reps = parseInt(currentData.reps[key]) || 0;
+        console.log(`DEBUG: Processing key: ${key} reps: ${reps}`);
+        
+        if (reps > 0) {
+          // Extraire la date de la clé (format: YYYY-MM-DD_exerciseId_variant)
+          const parts = key.split('_');
+          if (parts.length >= 2) {
+            const dateStr = parts[0];
+            const exerciseId = parts[1];
+            const variant = parts[2] || '';
+            
+            if (!dataByDate[dateStr]) {
+              dataByDate[dateStr] = { exercises: {}, stretches: {} };
+            }
+            
+            dataByDate[dateStr].exercises[key] = {
+              exerciseId: exerciseId,
+              reps: reps,
+              completed: currentData.checkedExercises?.[key] || false,
+              variant: variant
+            };
           }
-          
-          dataByDate[dateStr].exercises[key] = {
-            exerciseId: exerciseId,
-            reps: reps,
-            completed: currentData.checkedExercises[key] || false,
-            variant: variant
-          };
         }
+      });
+    }
+    
+    // Traiter les sessions d'endurance
+    const enduranceData = currentData?.enduranceData || {};
+    const enduranceSessions = enduranceData.sessions || {};
+    
+    Object.entries(enduranceSessions).forEach(([activityType, sessions]) => {
+      if (Array.isArray(sessions)) {
+        sessions.forEach(session => {
+          if (session.date) {
+            // Convertir la date au format YYYY-MM-DD si nécessaire
+            let dateStr = session.date;
+            if (session.date.includes('T')) {
+              dateStr = session.date.split('T')[0];
+            }
+            
+            // Vérifier que c'est une date valide
+            if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              if (!dataByDate[dateStr]) {
+                dataByDate[dateStr] = { exercises: {}, stretches: {} };
+              }
+              
+              // Ajouter la session d'endurance comme exercice
+              const enduranceKey = `${dateStr}_endurance_${activityType}_${session.id || Date.now()}`;
+              dataByDate[dateStr].exercises[enduranceKey] = {
+                exerciseId: `endurance_${activityType}`,
+                reps: session.reps || session.jumps || 0,
+                completed: true,
+                variant: '',
+                activityType: activityType,
+                duration: session.duration || 0,
+                distance: session.distance || 0,
+                notes: session.notes || ''
+              };
+            }
+          }
+        });
       }
     });
 

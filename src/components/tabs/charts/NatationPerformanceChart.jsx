@@ -4,30 +4,88 @@ import { TrendingUp, Award } from 'lucide-react';
 const NatationPerformanceChart = ({ data, colors }) => {
   // Calculer les données réelles de natation
   const calculateNatationData = () => {
-    const workoutHistory = data.workoutHistory || [];
+    // Structure : data peut être { data: {...} } ou directement {...}
+    const actualData = data?.data || data || {};
     
-    // Filtrer les séances de natation (simulation basée sur les exercices)
-    const natationSessions = workoutHistory.filter(session => 
-      session.exercises?.some(exercise => 
-        exercise.name.toLowerCase().includes('natation') || 
-        exercise.name.toLowerCase().includes('crawl') ||
-        exercise.name.toLowerCase().includes('brasse')
-      )
-    );
+    // 1. Données de l'onglet Aujourd'hui (activités complémentaires)
+    const complementarySessions = [];
+    const checkedExercises = actualData?.checkedExercises || {};
+    const reps = actualData?.reps || {};
     
-    const sessions = natationSessions.length;
+    // Parcourir les exercices cochés pour trouver la natation
+    Object.keys(checkedExercises).forEach(key => {
+      if (checkedExercises[key] && key.includes('complementary_natation')) {
+        const dateMatch = key.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+          const dateStr = dateMatch[1];
+          const minutesKey = `${dateStr}_complementary_natation_minutes`;
+          const duration = parseInt(reps[minutesKey]) || 90; // 90min par défaut
+          
+          complementarySessions.push({
+            date: dateStr,
+            duration: duration,
+            type: 'complementary'
+          });
+        }
+      }
+    });
     
-    // Utiliser les vraies données même si elles sont faibles
+    // 2. Données de l'onglet Endurance (sessions détaillées)
+    const enduranceSessions = [];
+    const enduranceData = actualData?.enduranceData || {};
+    const swimmingSessions = enduranceData.sessions?.swimming || [];
     
-    const totalDistance = sessions * 1250; // Simulation 1250m par séance (pas de données réelles)
-    const totalTime = sessions * 90; // Utiliser la vraie durée de 90min par séance
+    swimmingSessions.forEach(session => {
+      if (session.date) {
+        let sessionDate = session.date;
+        if (sessionDate.includes('T')) {
+          sessionDate = sessionDate.split('T')[0];
+        }
+        
+        // totalTime est en secondes, convertir en minutes si pas de duration
+        let duration = session.duration || 0;
+        if (!duration && session.totalTime) {
+          duration = typeof session.totalTime === 'number' ? session.totalTime / 60 : parseFloat(session.totalTime) / 60;
+        }
+        
+        enduranceSessions.push({
+          date: sessionDate,
+          duration: duration,
+          distance: session.totalDistance || session.distance || 0,
+          laps: session.laps || [],
+          type: 'endurance'
+        });
+      }
+    });
+    
+    // 3. Combiner les données (priorité aux sessions détaillées)
+    const allSessions = [...enduranceSessions];
+    
+    // Ajouter les sessions complémentaires qui n'ont pas de session détaillée
+    complementarySessions.forEach(compSession => {
+      const hasDetailedSession = enduranceSessions.some(endSession => endSession.date === compSession.date);
+      if (!hasDetailedSession) {
+        allSessions.push(compSession);
+      }
+    });
+    
+    const sessions = allSessions.length;
+    const totalDistance = allSessions.reduce((sum, session) => sum + (session.distance || 0), 0);
+    const totalTime = allSessions.reduce((sum, session) => sum + (session.duration || 0), 0);
     const avgDistance = sessions > 0 ? totalDistance / sessions : 0;
+    
+    // Calculer la meilleure séance (distance maximale)
+    const bestSession = allSessions.reduce((best, session) => {
+      const sessionDistance = session.distance || 0;
+      return sessionDistance > (best.distance || 0) ? session : best;
+    }, { distance: 0 });
     
     return {
       sessions,
-      totalDistance,
-      totalTime,
-      avgDistance: Math.round(avgDistance)
+      totalDistance: Math.round(totalDistance),
+      totalTime: Math.round(totalTime),
+      avgDistance: Math.round(avgDistance),
+      bestSessionDistance: Math.round(bestSession.distance || 0)
     };
   };
 
@@ -70,7 +128,7 @@ const NatationPerformanceChart = ({ data, colors }) => {
       <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-lg p-3 border border-cyan-500/20">
         <div className="text-xs text-cyan-400 flex items-center gap-1">
           <Award className="w-4 h-4" />
-          Meilleure séance: 1,850m
+          Meilleure séance: {natationData.bestSessionDistance > 0 ? `${natationData.bestSessionDistance}m` : 'Aucune'}
         </div>
       </div>
     </div>

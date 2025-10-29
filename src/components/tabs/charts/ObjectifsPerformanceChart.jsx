@@ -1,61 +1,258 @@
 import React from 'react';
 import { Target } from 'lucide-react';
+import { workoutProgram } from '../../../data/workoutProgram';
 
 const ObjectifsPerformanceChart = ({ data, colors }) => {
+  // Récupérer le programme actif depuis les données
+  const activeProgram = data?.activeProgram || null;
+  
+  // Fonctions utilitaires
+  const getPeriodDays = (period) => {
+    switch (period) {
+      case '7days': return 7;
+      case '30days': return 30;
+      case '90days': return 90;
+      case '1year': return 365;
+      default: return 30;
+    }
+  };
+  
+  const convertActiveProgramToFormat = (activeProgram) => {
+    const convertedProgram = {};
+    Object.entries(activeProgram.schedule).forEach(([day, dayData]) => {
+      convertedProgram[day.toLowerCase()] = {
+        exercices: dayData.exercises || [],
+        salleVariants: dayData.salleVariants ? {
+          semaineA: { exercices: dayData.salleVariants.semaineA?.exercises || [] },
+          semaineB: { exercices: dayData.salleVariants.semaineB?.exercises || [] }
+        } : undefined
+      };
+    });
+    return convertedProgram;
+  };
+  
+  const calculateWeeklyRepsFromProgram = (program) => {
+    let totalWeeklyReps = 0;
+    
+    // Parcourir tous les jours de la semaine
+    const days = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+    
+      days.forEach(day => {
+        const dayProgram = program[day];
+        if (dayProgram && dayProgram.exercices) {
+          dayProgram.exercices.forEach(exercise => {
+            // Parser les series (format: "4×4-6", "3×12", "30 sec", "1 min", "20×")
+            const seriesText = exercise.series || '0';
+            
+            // Format 1: "4×4-6" ou "3×12"
+            const repsMatch = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
+            if (repsMatch) {
+              const sets = parseInt(repsMatch[1]);
+              const minReps = parseInt(repsMatch[2]);
+              const maxReps = parseInt(repsMatch[3]) || minReps;
+              const avgReps = (minReps + maxReps) / 2;
+              const totalReps = sets * avgReps;
+              totalWeeklyReps += totalReps;
+              return;
+            }
+            
+            // Format 2: "20×" (répétitions simples)
+            const simpleRepsMatch = seriesText.match(/(\d+)×$/);
+            if (simpleRepsMatch) {
+              const reps = parseInt(simpleRepsMatch[1]);
+              totalWeeklyReps += reps;
+              return;
+            }
+            
+            // Format 3: "30 sec", "1 min" (temps - compter comme 1 rep)
+            const timeMatch = seriesText.match(/(\d+)\s*(sec|min)/);
+            if (timeMatch) {
+              totalWeeklyReps += 1; // Compter comme 1 "rep" pour le temps
+              return;
+            }
+            
+            // Format 4: "5 cycles" (cycles - compter comme 1 rep)
+            const cycleMatch = seriesText.match(/(\d+)\s*cycles/);
+            if (cycleMatch) {
+              totalWeeklyReps += 1; // Compter comme 1 "rep" pour les cycles
+              return;
+            }
+            
+            // Format 5: "12-15" ou "10-12 par bras" (répétitions simples)
+            const simpleRangeMatch = seriesText.match(/(\d+)-(\d+)/);
+            if (simpleRangeMatch) {
+              const minReps = parseInt(simpleRangeMatch[1]);
+              const maxReps = parseInt(simpleRangeMatch[2]);
+              const avgReps = (minReps + maxReps) / 2;
+              totalWeeklyReps += avgReps;
+              return;
+            }
+            
+            // Format 6: "15" (répétitions simples sans plage)
+            const simpleNumberMatch = seriesText.match(/^(\d+)$/);
+            if (simpleNumberMatch) {
+              const reps = parseInt(simpleNumberMatch[1]);
+              totalWeeklyReps += reps;
+              return;
+            }
+          });
+        }
+      });
+    return totalWeeklyReps;
+  };
+  
   // Calculer les données réelles à partir de l'historique et des métriques
   const calculateObjectivesData = () => {
     const workoutHistory = data.workoutHistory || [];
     const progressEntries = data.data?.progressEntries || [];
+    const selectedPeriod = data.selectedPeriod || '30days';
     
-    // Calculer les répétitions totales pour la période
-    const totalReps = workoutHistory.reduce((sum, session) => sum + (session.totalReps || 0), 0);
+    // 1. REPS/SEMAINE - Calcul basé sur le programme actif et la période sélectionnée
+    const calculateRepsObjective = () => {
+      // Obtenir le programme actif ou par défaut
+      const program = activeProgram?.schedule ? 
+        convertActiveProgramToFormat(activeProgram) : 
+        workoutProgram;
+      
+      // Calculer la durée de la période en jours
+      const periodDays = getPeriodDays(selectedPeriod);
+      const periodWeeks = Math.ceil(periodDays / 7);
+      
+      // Calculer les reps prévues par semaine dans le programme
+      const weeklyReps = calculateWeeklyRepsFromProgram(program);
+      
+      // Calculer les reps prévues pour la période
+      const plannedReps = weeklyReps * periodWeeks;
+      
+      // Calculer les reps réalisées dans la période
+      const actualReps = workoutHistory.reduce((sum, session) => sum + (session.totalReps || 0), 0);
+      
+      // Debug optionnel (décommentez pour diagnostiquer)
+      // console.log('🔍 DEBUG ObjectifsPerformanceChart:');
+      // console.log(`  - Période: ${selectedPeriod} (${periodDays} jours)`);
+      // console.log(`  - Sessions dans l'historique: ${workoutHistory.length}`);
+      // console.log(`  - Reps réalisées: ${actualReps}`);
+      // console.log(`  - Programme actif: ${activeProgram ? 'Présent' : 'Absent'}`);
+      // console.log(`  - Programme utilisé: ${program ? 'OK' : 'ERREUR'}`);
+      // console.log(`  - Reps/semaine du programme: ${weeklyReps}`);
+      // console.log(`  - Reps prévues pour la période: ${plannedReps}`);
+      
+      // Objectif basé sur les reps prévues
+      const targetReps = plannedReps;
+      const currentRepsPerWeek = periodWeeks > 0 ? actualReps / periodWeeks : 0;
+      
+      // Calcul de progression correct
+      const progress = plannedReps > 0 ? Math.min(100, (actualReps / plannedReps) * 100) : 0;
+      
+      return {
+        current: Math.round(currentRepsPerWeek),
+        target: Math.round(weeklyReps),
+        actualReps,
+        plannedReps,
+        progress: progress
+      };
+    };
     
-    // Calculer l'objectif reps/semaine basé sur la fréquence réelle
-    const totalSessions = workoutHistory.length;
-    const weeks = Math.max(1, Math.ceil(totalSessions / 3)); // Approximation des semaines
-    const currentRepsPerWeek = weeks > 0 ? totalReps / weeks : 0;
+    // 2. POIDS et TOUR DE TAILLE - Vérifier la liaison avec les métriques
+    const calculateMetricsObjectives = () => {
+      // Récupérer les dernières métriques
+      const latestMetrics = progressEntries
+        .filter(entry => entry.type === 'metrics')
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      
+      // Récupérer les premières métriques pour calculer les objectifs
+      const firstMetrics = progressEntries
+        .filter(entry => entry.type === 'metrics')
+        .sort((a, b) => new Date(a.date) - new Date(a.date))
+        .slice(-1)[0]; // Première entrée (la plus ancienne)
+      
+      // Si pas de métriques, afficher un message
+      if (!latestMetrics) {
+        return {
+          weight: { hasData: false, message: 'Aucune donnée de poids enregistrée' },
+          waist: { hasData: false, message: 'Aucune donnée de tour de taille enregistrée' }
+        };
+      }
+      
+      const currentWeight = latestMetrics.weight;
+      const currentWaist = latestMetrics.measurements?.waist;
+      const firstWeight = firstMetrics?.weight || currentWeight;
+      const firstWaist = firstMetrics?.measurements?.waist || currentWaist;
+      
+      // Objectifs réalistes (5% de réduction)
+      const targetWeight = Math.max(60, Math.round(firstWeight * 0.95));
+      const targetWaist = Math.max(70, Math.round(firstWaist * 0.95));
+      
+      // Calculer les progressions
+      const weightProgress = firstWeight > targetWeight ? 
+        Math.max(0, Math.min(100, ((firstWeight - currentWeight) / (firstWeight - targetWeight)) * 100)) : 0;
+      const waistProgress = firstWaist > targetWaist ? 
+        Math.max(0, Math.min(100, ((firstWaist - currentWaist) / (firstWaist - targetWaist)) * 100)) : 0;
+      
+      return {
+        weight: {
+          hasData: true,
+          current: currentWeight,
+          target: targetWeight,
+          firstValue: firstWeight,
+          progress: weightProgress,
+          achieved: currentWeight <= targetWeight
+        },
+        waist: {
+          hasData: true,
+          current: currentWaist,
+          target: targetWaist,
+          firstValue: firstWaist,
+          progress: waistProgress,
+          achieved: currentWaist <= targetWaist
+        }
+      };
+    };
     
-    // Objectif réaliste basé sur la performance actuelle + 20%
-    const targetRepsPerWeek = Math.max(800, Math.round(currentRepsPerWeek * 1.2));
+    // Calculer les objectifs
+    const repsObjective = calculateRepsObjective();
+    const metricsObjectives = calculateMetricsObjectives();
     
-    // Récupérer les dernières métriques
-    const latestMetrics = progressEntries
-      .filter(entry => entry.type === 'metrics')
-      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-    
-    // Récupérer les premières métriques pour calculer les objectifs
-    const firstMetrics = progressEntries
-      .filter(entry => entry.type === 'metrics')
-      .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
-    
-    const currentWeight = latestMetrics?.weight || 65;
-    const currentWaist = latestMetrics?.measurements?.waist || 77;
-    
-    // Objectifs réalistes basés sur les données actuelles
-    const targetWeight = firstMetrics?.weight ? Math.max(60, firstMetrics.weight - 5) : 65;
-    const targetWaist = firstMetrics?.measurements?.waist ? Math.max(70, firstMetrics.measurements.waist - 7) : 77;
+    // Construire le tableau des objectifs
+    const getRepsLabel = (period) => {
+      switch (period) {
+        case '7days': return 'Reps/semaine';
+        case '30days': return 'Reps/30 jours';
+        case '90days': return 'Reps/90 jours';
+        case '1year': return 'Reps/année';
+        default: return 'Reps/semaine';
+      }
+    };
     
     const objectives = [
       {
-        name: 'Reps/semaine',
-        current: Math.round(currentRepsPerWeek),
-        target: targetRepsPerWeek,
+        name: getRepsLabel(selectedPeriod),
+        current: repsObjective.actualReps, // Afficher les reps totales réalisées
+        target: repsObjective.plannedReps, // Afficher les reps totales prévues
         unit: 'reps',
-        achieved: currentRepsPerWeek >= targetRepsPerWeek
+        achieved: repsObjective.progress >= 100,
+        progress: repsObjective.progress,
+        hasData: true
       },
       {
         name: 'Poids',
-        current: currentWeight,
-        target: targetWeight,
+        current: metricsObjectives.weight.hasData ? metricsObjectives.weight.current : 0,
+        target: metricsObjectives.weight.hasData ? metricsObjectives.weight.target : 0,
         unit: 'kg',
-        achieved: currentWeight <= targetWeight
+        achieved: metricsObjectives.weight.hasData ? metricsObjectives.weight.achieved : false,
+        progress: metricsObjectives.weight.hasData ? metricsObjectives.weight.progress : 0,
+        hasData: metricsObjectives.weight.hasData,
+        message: metricsObjectives.weight.message
       },
       {
         name: 'Tour de taille',
-        current: currentWaist,
-        target: targetWaist,
+        current: metricsObjectives.waist.hasData ? metricsObjectives.waist.current : 0,
+        target: metricsObjectives.waist.hasData ? metricsObjectives.waist.target : 0,
         unit: 'cm',
-        achieved: currentWaist <= targetWaist
+        achieved: metricsObjectives.waist.hasData ? metricsObjectives.waist.achieved : false,
+        progress: metricsObjectives.waist.hasData ? metricsObjectives.waist.progress : 0,
+        hasData: metricsObjectives.waist.hasData,
+        message: metricsObjectives.waist.message
       }
     ];
     
@@ -67,7 +264,23 @@ const ObjectifsPerformanceChart = ({ data, colors }) => {
   return (
     <div className="space-y-4">
       {objectives.map((obj, idx) => {
-        const progress = (obj.current / obj.target) * 100;
+        // Si pas de données, afficher un message
+        if (!obj.hasData) {
+          return (
+            <div 
+              key={idx}
+              className="bg-slate-800/50 rounded-lg p-4 border border-gray-600/20"
+            >
+              <div className="text-xs text-slate-400 mb-2">{obj.name.toUpperCase()}</div>
+              <div className="text-sm text-gray-400 flex items-center gap-2">
+                <span>⚠️</span>
+                <span>{obj.message}</span>
+              </div>
+            </div>
+          );
+        }
+        
+        const progress = obj.progress || (obj.current / obj.target) * 100;
         const isAchieved = obj.achieved || progress >= 100;
         
         return (

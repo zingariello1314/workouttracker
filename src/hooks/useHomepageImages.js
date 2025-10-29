@@ -40,7 +40,8 @@ export const useHomepageImages = () => {
         return;
       }
 
-      const request = indexedDB.open('HomepageImagesDB', 1);
+      // Essayer d'abord d'ouvrir sans spécifier de version pour récupérer la version actuelle
+      const request = indexedDB.open('HomepageImagesDB');
       
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
@@ -77,7 +78,28 @@ export const useHomepageImages = () => {
       
       request.onerror = (event) => {
         console.error('❌ Erreur ouverture IndexedDB:', event.target.error);
-        reject(event.target.error);
+        // En cas d'erreur de version, essayer de supprimer et recréer la DB
+        if (event.target.error.name === 'VersionError') {
+          console.log('🔄 Tentative de réparation de la base de données...');
+          const deleteRequest = indexedDB.deleteDatabase('HomepageImagesDB');
+          deleteRequest.onsuccess = () => {
+            console.log('✅ Ancienne base supprimée, tentative de recréation...');
+            const newRequest = indexedDB.open('HomepageImagesDB', 1);
+            newRequest.onsuccess = (e) => resolve(e.target.result);
+            newRequest.onerror = (e) => reject(e.target.error);
+            newRequest.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              if (!db.objectStoreNames.contains('images')) {
+                const imageStore = db.createObjectStore('images', { keyPath: 'id' });
+                imageStore.createIndex('type', 'type', { unique: false });
+                imageStore.createIndex('timestamp', 'timestamp', { unique: false });
+              }
+            };
+          };
+          deleteRequest.onerror = () => reject(event.target.error);
+        } else {
+          reject(event.target.error);
+        }
       };
       
       request.onblocked = () => {

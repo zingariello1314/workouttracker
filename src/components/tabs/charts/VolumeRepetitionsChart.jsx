@@ -7,32 +7,126 @@ const VolumeRepetitionsChart = ({ data, colors }) => {
     const workoutHistory = data.workoutHistory || [];
     
     const totalReps = workoutHistory.reduce((sum, session) => sum + (session.totalReps || 0), 0);
-    const totalSets = workoutHistory.reduce((sum, session) => sum + (session.exercises?.length || 0), 0);
+    
+    // Calculer le nombre de séries réelles en estimant à partir des reps
+    let totalSets = 0;
+    
+    // Estimation basée sur les reps : si reps > 30, probablement plusieurs séries
+    workoutHistory.forEach(session => {
+      session.exercises?.forEach(exercise => {
+        const repsValue = parseInt(exercise.reps);
+        if (repsValue > 0) {
+          // Estimation : 1 série si reps <= 30, sinon estimer le nombre de séries
+          if (repsValue <= 30) {
+            totalSets += 1;
+          } else {
+            // Estimation : environ 10-15 reps par série
+            const estimatedSets = Math.ceil(repsValue / 12);
+            totalSets += estimatedSets;
+          }
+        }
+      });
+    });
+    
+    // Si pas de données, utiliser le nombre d'exercices comme fallback
+    if (totalSets === 0) {
+      totalSets = workoutHistory.reduce((sum, session) => sum + (session.exercises?.length || 0), 0);
+    }
+    
     const avgRepsPerSet = totalSets > 0 ? (totalReps / totalSets).toFixed(1) : 0;
     
-    // Utiliser les vraies données même si elles sont faibles
+    // Si pas assez de données, retourner des valeurs nulles
+    if (workoutHistory.length < 2) {
+      return {
+        totalReps,
+        totalSets,
+        avgRepsPerSet: parseFloat(avgRepsPerSet),
+        repsTrend: 0,
+        setsTrend: 0,
+        avgRepsTrend: 0
+      };
+    }
     
-    // Calculer la tendance réelle (comparaison avec la période précédente)
-    const currentPeriodReps = totalReps;
-    
-    // Calculer les répétitions de la période précédente
+    // Calculer les tendances réelles (comparaison avec la période précédente)
     const sortedSessions = [...workoutHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const midPoint = Math.floor(sortedSessions.length / 2);
-    const recentSessions = sortedSessions.slice(midPoint);
-    const previousSessions = sortedSessions.slice(0, midPoint);
     
+    // Diviser par période temporelle réelle (mois actuel vs mois précédent)
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    const recentSessions = sortedSessions.filter(session => 
+      new Date(session.date) >= currentMonthStart
+    );
+    const previousSessions = sortedSessions.filter(session => {
+      const sessionDate = new Date(session.date);
+      return sessionDate >= previousMonthStart && sessionDate <= previousMonthEnd;
+    });
+    
+    // Tendance des répétitions
     const recentReps = recentSessions.reduce((sum, session) => sum + (session.totalReps || 0), 0);
     const previousReps = previousSessions.reduce((sum, session) => sum + (session.totalReps || 0), 0);
-    
-    const trend = previousReps > 0 ? 
+    const repsTrend = previousReps > 0 ? 
       Math.round(((recentReps - previousReps) / previousReps) * 100) : 
       (recentReps > 0 ? 100 : 0);
+    
+    // Tendance des séries (estimation basée sur les reps)
+    let recentSets = 0;
+    let previousSets = 0;
+    
+    // Calculer les séries pour la période récente
+    recentSessions.forEach(session => {
+      session.exercises?.forEach(exercise => {
+        const repsValue = parseInt(exercise.reps);
+        if (repsValue > 0) {
+          if (repsValue <= 30) {
+            recentSets += 1;
+          } else {
+            recentSets += Math.ceil(repsValue / 12);
+          }
+        }
+      });
+    });
+    
+    // Calculer les séries pour la période précédente
+    previousSessions.forEach(session => {
+      session.exercises?.forEach(exercise => {
+        const repsValue = parseInt(exercise.reps);
+        if (repsValue > 0) {
+          if (repsValue <= 30) {
+            previousSets += 1;
+          } else {
+            previousSets += Math.ceil(repsValue / 12);
+          }
+        }
+      });
+    });
+    
+    // Si pas de données, utiliser le nombre d'exercices comme fallback
+    if (recentSets === 0 && previousSets === 0) {
+      recentSets = recentSessions.reduce((sum, session) => sum + (session.exercises?.length || 0), 0);
+      previousSets = previousSessions.reduce((sum, session) => sum + (session.exercises?.length || 0), 0);
+    }
+    
+    const setsTrend = previousSets > 0 ? 
+      Math.round(((recentSets - previousSets) / previousSets) * 100) : 
+      (recentSets > 0 ? 100 : 0);
+    
+    // Tendance de la moyenne par série
+    const recentAvgReps = recentSets > 0 ? recentReps / recentSets : 0;
+    const previousAvgReps = previousSets > 0 ? previousReps / previousSets : 0;
+    const avgRepsTrend = previousAvgReps > 0 ? 
+      Math.round(((recentAvgReps - previousAvgReps) / previousAvgReps) * 100) : 
+      (recentAvgReps > 0 ? 100 : 0);
     
     return {
       totalReps,
       totalSets,
       avgRepsPerSet: parseFloat(avgRepsPerSet),
-      trend
+      repsTrend,
+      setsTrend,
+      avgRepsTrend
     };
   };
 
@@ -60,8 +154,10 @@ const VolumeRepetitionsChart = ({ data, colors }) => {
           </span>
           <span className="text-slate-400">reps</span>
           <div className="flex items-center gap-1 ml-auto">
-            <TrendIcon value={volumeData.trend} />
-            <span className={getTrendColor(volumeData.trend)}>+{volumeData.trend}%</span>
+            <TrendIcon value={volumeData.repsTrend} />
+            <span className={getTrendColor(volumeData.repsTrend)}>
+              {volumeData.repsTrend > 0 ? '+' : ''}{volumeData.repsTrend}%
+            </span>
           </div>
         </div>
       </div>
@@ -74,8 +170,10 @@ const VolumeRepetitionsChart = ({ data, colors }) => {
           </span>
           <span className="text-slate-400">séries</span>
           <div className="flex items-center gap-1 ml-auto">
-            <TrendIcon value={15} />
-            <span className={getTrendColor(15)}>+15%</span>
+            <TrendIcon value={volumeData.setsTrend} />
+            <span className={getTrendColor(volumeData.setsTrend)}>
+              {volumeData.setsTrend > 0 ? '+' : ''}{volumeData.setsTrend}%
+            </span>
           </div>
         </div>
       </div>
@@ -87,6 +185,12 @@ const VolumeRepetitionsChart = ({ data, colors }) => {
             {volumeData.avgRepsPerSet}
           </span>
           <span className="text-slate-400">reps/série</span>
+          <div className="flex items-center gap-1 ml-auto">
+            <TrendIcon value={volumeData.avgRepsTrend} />
+            <span className={getTrendColor(volumeData.avgRepsTrend)}>
+              {volumeData.avgRepsTrend > 0 ? '+' : ''}{volumeData.avgRepsTrend}%
+            </span>
+          </div>
         </div>
       </div>
     </div>

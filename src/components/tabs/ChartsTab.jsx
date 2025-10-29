@@ -23,7 +23,7 @@ import NatationVolumeRegulariteChart from './charts/NatationVolumeRegulariteChar
 import EtirementsZoneChart from './charts/EtirementsZoneChart';
 
 const ChartsTab = () => {
-  const { data, getWorkoutHistory } = useWorkout();
+  const { data, getWorkoutHistory, activeProgram } = useWorkout();
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
 
   // Périodes disponibles
@@ -76,9 +76,10 @@ const ChartsTab = () => {
       workoutHistory: filteredHistory,
       startDate,
       selectedPeriod,
-      data: data // Passer les données complètes pour les graphiques qui en ont besoin
+      data: data, // Passer les données complètes pour les graphiques qui en ont besoin
+      activeProgram: activeProgram // Ajouter le programme actif
     };
-  }, [getWorkoutHistory, selectedPeriod, data]);
+  }, [getWorkoutHistory, selectedPeriod, data, activeProgram]);
 
   // Configuration des graphiques avec votre design exact
   const chartConfigs = [

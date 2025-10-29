@@ -8,50 +8,98 @@ const ActiviteRegulariteChart = ({ data, colors }) => {
     
     const sessions = workoutHistory.length;
     
-    // Si pas assez de données, ajouter des données de simulation réalistes
+    // Si pas de sessions, retourner des valeurs nulles
     if (sessions === 0) {
       return {
-        sessions: 12,
-        streak: 4,
-        regularityPercent: 75
+        sessions: 0,
+        streak: 0,
+        maxStreak: 0,
+        regularityPercent: 0
       };
     }
-    
-    // Calculer le streak (série de jours consécutifs avec des séances)
-    let streak = 0;
-    let maxStreak = 0;
-    let currentStreak = 0;
     
     // Trier par date pour calculer le streak
     const sortedSessions = [...workoutHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    for (let i = 0; i < sortedSessions.length; i++) {
-      const currentDate = new Date(sortedSessions[i].date);
-      const previousDate = i > 0 ? new Date(sortedSessions[i - 1].date) : null;
+    // Extraire les dates uniques (par jour)
+    const uniqueDates = new Set();
+    sortedSessions.forEach(session => {
+      const dateStr = session.date.split('T')[0]; // Normaliser la date
+      uniqueDates.add(dateStr);
+    });
+    
+    const datesArray = Array.from(uniqueDates).sort();
+    
+    // Calculer le streak actuel (jours consécutifs depuis la dernière session)
+    let currentStreak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (datesArray.length > 0) {
+      let checkDate = new Date(datesArray[datesArray.length - 1]);
+      checkDate.setHours(0, 0, 0, 0);
       
-      if (previousDate) {
-        const daysDiff = Math.floor((currentDate - previousDate) / (1000 * 60 * 60 * 24));
-        if (daysDiff === 1) {
-          currentStreak++;
-        } else {
-          maxStreak = Math.max(maxStreak, currentStreak);
-          currentStreak = 1;
+      // Vérifier si la dernière session était aujourd'hui ou hier
+      const daysSinceLastSession = Math.floor((today - checkDate) / (1000 * 60 * 60 * 24));
+      if (daysSinceLastSession <= 1) {
+        // Compter les jours consécutifs depuis la dernière session
+        for (let i = datesArray.length - 1; i >= 0; i--) {
+          const sessionDate = new Date(datesArray[i]);
+          sessionDate.setHours(0, 0, 0, 0);
+          
+          if (i === datesArray.length - 1) {
+            // Dernière session
+            currentStreak = 1;
+          } else {
+            // Vérifier si c'est consécutif
+            const prevDate = new Date(datesArray[i + 1]);
+            prevDate.setHours(0, 0, 0, 0);
+            const daysDiff = Math.floor((prevDate - sessionDate) / (1000 * 60 * 60 * 24));
+            
+            if (daysDiff === 1) {
+              currentStreak++;
+            } else {
+              break; // Streak cassé
+            }
+          }
         }
-      } else {
-        currentStreak = 1;
       }
     }
     
-    streak = Math.max(maxStreak, currentStreak);
+    // Calculer le meilleur streak (streak maximum historique)
+    let maxStreak = 0;
+    let tempStreak = 0;
+    
+    for (let i = 0; i < datesArray.length; i++) {
+      if (i === 0) {
+        tempStreak = 1;
+      } else {
+        const currentDate = new Date(datesArray[i]);
+        currentDate.setHours(0, 0, 0, 0);
+        const prevDate = new Date(datesArray[i - 1]);
+        prevDate.setHours(0, 0, 0, 0);
+        const daysDiff = Math.floor((currentDate - prevDate) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff === 1) {
+          tempStreak++;
+        } else {
+          maxStreak = Math.max(maxStreak, tempStreak);
+          tempStreak = 1;
+        }
+      }
+    }
+    maxStreak = Math.max(maxStreak, tempStreak);
     
     // Calculer le pourcentage de régularité réel
-    const totalDays = Math.max(1, Math.floor((new Date() - new Date(sortedSessions[0]?.date || new Date())) / (1000 * 60 * 60 * 24)));
+    const firstSessionDate = new Date(datesArray[0]);
+    const totalDays = Math.max(1, Math.floor((today - firstSessionDate) / (1000 * 60 * 60 * 24)) + 1);
     const expectedSessions = Math.floor(totalDays / 3); // Objectif: 1 séance tous les 3 jours
     const regularityPercent = expectedSessions > 0 ? Math.min((sessions / expectedSessions) * 100, 100) : 0;
     
     return {
       sessions,
-      streak,
+      streak: currentStreak,
+      maxStreak: maxStreak,
       regularityPercent
     };
   };
@@ -87,7 +135,13 @@ const ActiviteRegulariteChart = ({ data, colors }) => {
           </div>
           <span className="text-2xl font-bold text-orange-400">{activityData.streak} jours</span>
         </div>
-        <div className="text-sm text-slate-400">🏆 Meilleur: {Math.max(activityData.streak, 12)} jours</div>
+        <div className="text-sm text-slate-400">
+          {activityData.maxStreak > 0 ? (
+            <>🏆 Meilleur: {activityData.maxStreak} jour{activityData.maxStreak > 1 ? 's' : ''}</>
+          ) : (
+            <>🏆 Meilleur streak: Commencez votre première séance!</>
+          )}
+        </div>
       </div>
     </div>
   );

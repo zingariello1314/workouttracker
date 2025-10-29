@@ -50,8 +50,7 @@ export const workoutProgram = {
       { id: 204, name: "Curl marteau", series: "3×12 par bras", materiel: "haltère" },
       { id: 205, name: "Curl Zottman", series: "3×10 par bras", materiel: "haltère", notes: "montée supination, descente pronation" },
       { id: 206, name: "Pompes serrées diamant", series: "3×12", materiel: "poids du corps" },
-      { id: 207, name: "Planche bras tendus", series: "3×30 sec", materiel: "poids du corps", type: "finisher" },
-      { id: 208, name: "Natation", series: "1×90min", materiel: "Piscine", type: "cardio_endurance", notes: "19h30-21h - cardio, endurance, recovery" }
+      { id: 207, name: "Planche bras tendus", series: "3×30 sec", materiel: "poids du corps", type: "finisher" }
     ],
     duree: "45-55 min",
     complementaryActivity: {

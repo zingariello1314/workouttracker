@@ -142,7 +142,22 @@ const EnduranceTab = () => {
         }
       };
 
+      console.log('🔄 Sauvegarde des données d\'endurance:', newData);
       await updateData(updatedData);
+      
+      // Forcer la mise à jour de l'état local après sauvegarde
+      setEnduranceState(prev => ({
+        ...prev,
+        sessions: {
+          boxing: newData.sessions?.boxing || prev.sessions.boxing,
+          pushups: newData.sessions?.pushups || prev.sessions.pushups,
+          swimming: newData.sessions?.swimming || prev.sessions.swimming,
+          jumprope: newData.sessions?.jumprope || prev.sessions.jumprope,
+          running: newData.sessions?.running || prev.sessions.running
+        },
+        challenges: newData.challenges || prev.challenges
+      }));
+      
       console.log('✅ Données d\'endurance sauvegardées avec succès (fusion intelligente)');
     } catch (error) {
       console.error('❌ Erreur sauvegarde endurance:', error);
@@ -336,6 +351,10 @@ const EnduranceTab = () => {
     swimType: 'crawl',
     laps: [{ distance: 25, time: '' }],
     notes: '',
+    // Nouveaux champs pour la natation
+    heartRate: '', // Fréquence cardiaque moyenne (bpm)
+    calories: '', // Calories dépensées
+    pace100m: '', // Allure moyenne sur 100m (mm:ss)
     // Évaluations par étoiles
     congestion: 0,
     motivation: 0,
@@ -442,8 +461,11 @@ const EnduranceTab = () => {
         return (!challenge.goalCount || parseInt(sessionData.count) >= challenge.goalCount) &&
                (!challenge.goalDuration || parseFloat(sessionData.duration) <= challenge.goalDuration);
       case 'swimming':
+        // totalTime est en secondes, convertir en minutes pour la comparaison
+        const totalTimeMinutes = typeof sessionData.totalTime === 'number' ? 
+          sessionData.totalTime / 60 : parseFloat(sessionData.totalTime || 0) / 60;
         return (!challenge.goalDistance || parseFloat(sessionData.totalDistance) >= challenge.goalDistance) &&
-               (!challenge.goalDuration || parseFloat(sessionData.totalTime) <= challenge.goalDuration);
+               (!challenge.goalDuration || totalTimeMinutes <= challenge.goalDuration);
       case 'running':
         return (!challenge.goalDistance || parseFloat(sessionData.distance) >= challenge.goalDistance) &&
                (!challenge.goalDuration || parseFloat(sessionData.duration) <= challenge.goalDuration);
@@ -608,6 +630,10 @@ const EnduranceTab = () => {
       swimType: 'crawl',
       laps: [{ distance: 25, time: '' }],
       notes: '',
+      // Nouveaux champs pour la natation
+      heartRate: '',
+      calories: '',
+      pace100m: '',
       // Évaluations par étoiles
       congestion: 0,
       motivation: 0,
@@ -714,11 +740,24 @@ const EnduranceTab = () => {
     
     const avgPace = swimmingForm.laps.length > 0 ? totalTime / swimmingForm.laps.length : 0;
     
+    // Calculer l'allure sur 100m si fournie ou estimer
+    let pace100m = swimmingForm.pace100m;
+    if (!pace100m && totalDistance > 0 && totalTime > 0) {
+      // Estimation basée sur la distance totale et le temps
+      const pacePer100m = (totalTime / totalDistance) * 100;
+      const minutes = Math.floor(pacePer100m / 60);
+      const seconds = Math.floor(pacePer100m % 60);
+      pace100m = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
     const sessionData = {
       ...swimmingForm,
       totalDistance,
-      totalTime: totalTime / 60, // Convertir en minutes
-      avgPace: avgPace.toFixed(1) // Allure moyenne en secondes par 25m
+      totalTime: totalTime, // Garder en secondes pour la cohérence
+      avgPace: avgPace.toFixed(1), // Allure moyenne en secondes par 25m
+      pace100m: pace100m, // Allure sur 100m
+      heartRate: swimmingForm.heartRate ? parseInt(swimmingForm.heartRate) : null,
+      calories: swimmingForm.calories ? parseInt(swimmingForm.calories) : null
     };
     
     const result = await addSession('swimming', sessionData);
@@ -1110,10 +1149,15 @@ const EnduranceTab = () => {
     });
     
     sessions.swimming.filter(s => s.date === dateStr).forEach(session => {
+      // totalTime est en secondes, convertir en minutes pour l'affichage
+      const totalTimeSeconds = typeof session.totalTime === 'number' ? 
+        session.totalTime : parseFloat(session.totalTime || 0);
+      const durationMinutes = (totalTimeSeconds / 60).toFixed(1);
+      
       activities.push({
         type: 'swimming',
         time: session.time,
-        duration: session.totalTime,
+        duration: `${durationMinutes} min`,
         distance: `${session.totalDistance}m`
       });
     });
@@ -1770,7 +1814,7 @@ const EnduranceTab = () => {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowSessionForm(!ui.showSessionForm)}
+                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Plus className="w-5 h-5" />
@@ -1891,6 +1935,52 @@ const EnduranceTab = () => {
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Nouveaux champs pour la natation */}
+                  <div className="mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                    <h4 className="text-blue-200 font-semibold mb-4 flex items-center gap-2">
+                      <Activity className="w-4 h-4" />
+                      Métriques avancées
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-slate-300 text-sm font-medium mb-2">Fréquence cardiaque moyenne</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={swimmingForm.heartRate}
+                            onChange={(e) => setSwimmingForm({...swimmingForm, heartRate: e.target.value})}
+                            placeholder="150"
+                            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
+                          />
+                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm">bpm</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 text-sm font-medium mb-2">Calories dépensées</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={swimmingForm.calories}
+                            onChange={(e) => setSwimmingForm({...swimmingForm, calories: e.target.value})}
+                            placeholder="300"
+                            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
+                          />
+                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm">kcal</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 text-sm font-medium mb-2">Allure 100m</label>
+                        <input
+                          type="text"
+                          value={swimmingForm.pace100m}
+                          onChange={(e) => setSwimmingForm({...swimmingForm, pace100m: e.target.value})}
+                          placeholder="1:45"
+                          className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -2037,19 +2127,46 @@ const EnduranceTab = () => {
                                   {session.swimType.charAt(0).toUpperCase() + session.swimType.slice(1)}
                                 </span>
                               </div>
-                              <div className="flex gap-6 text-sm">
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                                 <div>
                                   <span className="text-slate-400">Distance totale:</span>
                                   <span className="text-white font-bold ml-2">{session.totalDistance}m</span>
                                 </div>
                                 <div>
                                   <span className="text-slate-400">Temps total:</span>
-                                  <span className="text-white font-bold ml-2">{Math.floor(session.totalTime / 60)}:{(session.totalTime % 60).toString().padStart(2, '0')}</span>
+                                  <span className="text-white font-bold ml-2">
+                                    {(() => {
+                                      // totalTime est en secondes
+                                      const totalSeconds = typeof session.totalTime === 'number' ? session.totalTime : 
+                                        (typeof session.totalTime === 'string' ? parseFloat(session.totalTime) : 0);
+                                      const minutes = Math.floor(totalSeconds / 60);
+                                      const seconds = Math.floor(totalSeconds % 60);
+                                      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                                    })()}
+                                  </span>
                                 </div>
                                 <div>
                                   <span className="text-slate-400">Allure moy:</span>
                                   <span className="text-white font-bold ml-2">{session.avgPace}s/25m</span>
                                 </div>
+                                {session.heartRate && (
+                                  <div>
+                                    <span className="text-slate-400">FC moyenne:</span>
+                                    <span className="text-white font-bold ml-2">{session.heartRate} bpm</span>
+                                  </div>
+                                )}
+                                {session.calories && (
+                                  <div>
+                                    <span className="text-slate-400">Calories:</span>
+                                    <span className="text-white font-bold ml-2">{session.calories} kcal</span>
+                                  </div>
+                                )}
+                                {session.pace100m && (
+                                  <div>
+                                    <span className="text-slate-400">Allure 100m:</span>
+                                    <span className="text-white font-bold ml-2">{session.pace100m}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -2110,7 +2227,7 @@ const EnduranceTab = () => {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowSessionForm(!ui.showSessionForm)}
+                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Plus className="w-5 h-5" />
@@ -2435,7 +2552,7 @@ const EnduranceTab = () => {
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowSessionForm(!ui.showSessionForm)}
+                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
                     className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
                   >
                     <Plus className="w-5 h-5" />

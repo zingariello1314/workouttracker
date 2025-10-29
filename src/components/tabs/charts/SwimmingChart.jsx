@@ -4,28 +4,56 @@ import { Waves } from 'lucide-react';
 const SwimmingChart = ({ data, colors }) => {
   // Calculer les données de natation
   const swimmingData = React.useMemo(() => {
+    // Structure : data peut être { data: {...} } ou directement {...}
+    const actualData = data?.data || data || {};
     const sessions = [];
     
-    data.workoutHistory.forEach(session => {
-      // Vérifier si la session contient de la natation
-      const hasSwimming = session.exercises?.some(exercise => 
-        exercise.name.toLowerCase().includes('natation') || 
-        exercise.name.toLowerCase().includes('swimming') ||
-        exercise.name.toLowerCase().includes('nage')
-      );
-      
-      if (hasSwimming) {
-        const swimmingExercise = session.exercises.find(exercise => 
-          exercise.name.toLowerCase().includes('natation') || 
-          exercise.name.toLowerCase().includes('swimming') ||
-          exercise.name.toLowerCase().includes('nage')
-        );
+    // 1. Données de l'onglet Aujourd'hui (activités complémentaires)
+    const checkedExercises = actualData?.checkedExercises || {};
+    const reps = actualData?.reps || {};
+    
+    Object.keys(checkedExercises).forEach(key => {
+      if (checkedExercises[key] && key.includes('complementary_natation')) {
+        const dateMatch = key.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (dateMatch) {
+          const dateStr = dateMatch[1];
+          const minutesKey = `${dateStr}_complementary_natation_minutes`;
+          const duration = parseInt(reps[minutesKey]) || 90;
+          
+          sessions.push({
+            date: dateStr,
+            duration: duration,
+            distance: 0, // Pas de distance dans l'onglet Aujourd'hui
+            reps: 0,
+            type: 'complementary'
+          });
+        }
+      }
+    });
+    
+    // 2. Données de l'onglet Endurance (sessions détaillées)
+    const enduranceData = actualData?.enduranceData || {};
+    const swimmingSessions = enduranceData.sessions?.swimming || [];
+    
+    swimmingSessions.forEach(session => {
+      if (session.date) {
+        let sessionDate = session.date;
+        if (sessionDate.includes('T')) {
+          sessionDate = sessionDate.split('T')[0];
+        }
+        
+        // totalTime est en secondes, convertir en minutes si pas de duration
+        let duration = session.duration || 0;
+        if (!duration && session.totalTime) {
+          duration = typeof session.totalTime === 'number' ? session.totalTime / 60 : parseFloat(session.totalTime) / 60;
+        }
         
         sessions.push({
-          date: session.date,
-          duration: swimmingExercise?.duration || 45, // Durée par défaut
-          distance: swimmingExercise?.distance || 0, // Distance si renseignée
-          reps: swimmingExercise?.reps || 0
+          date: sessionDate,
+          duration: duration,
+          distance: session.totalDistance || session.distance || 0,
+          reps: session.reps || 0,
+          type: 'endurance'
         });
       }
     });
@@ -55,7 +83,7 @@ const SwimmingChart = ({ data, colors }) => {
     });
     
     return Object.values(weeklyData).sort((a, b) => new Date(a.week) - new Date(b.week));
-  }, [data.workoutHistory]);
+  }, [data]);
 
   if (swimmingData.length === 0) {
     return (

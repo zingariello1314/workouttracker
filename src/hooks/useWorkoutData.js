@@ -124,7 +124,8 @@ export const useWorkoutData = () => {
         return;
       }
 
-      const request = indexedDB.open('WorkoutTrackerDB', 1);
+      // Essayer d'abord d'ouvrir sans spécifier de version pour récupérer la version actuelle
+      const request = indexedDB.open('WorkoutTrackerDB');
       
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
@@ -141,7 +142,27 @@ export const useWorkoutData = () => {
       
       request.onerror = (event) => {
         console.error('❌ Erreur ouverture IndexedDB:', event.target.error);
-        resolve(null);
+        // En cas d'erreur de version, essayer de supprimer et recréer la DB
+        if (event.target.error.name === 'VersionError') {
+          console.log('🔄 Tentative de réparation de WorkoutTrackerDB...');
+          const deleteRequest = indexedDB.deleteDatabase('WorkoutTrackerDB');
+          deleteRequest.onsuccess = () => {
+            console.log('✅ Ancienne base supprimée, tentative de recréation...');
+            const newRequest = indexedDB.open('WorkoutTrackerDB', 1);
+            newRequest.onsuccess = (e) => resolve(e.target.result);
+            newRequest.onerror = (e) => resolve(null);
+            newRequest.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              if (!db.objectStoreNames.contains('workouts')) {
+                const workoutStore = db.createObjectStore('workouts', { keyPath: 'id' });
+                workoutStore.createIndex('timestamp', 'timestamp', { unique: false });
+              }
+            };
+          };
+          deleteRequest.onerror = () => resolve(null);
+        } else {
+          resolve(null);
+        }
       };
     });
   };
@@ -221,6 +242,17 @@ export const useWorkoutData = () => {
         bodyTrackingReminders: newData && newData.bodyTrackingReminders ? [...newData.bodyTrackingReminders] : [],
         bodyTrackingLastUpdated: newData && newData.bodyTrackingLastUpdated ? newData.bodyTrackingLastUpdated : null,
         sessionFeedbacks: newData && newData.sessionFeedbacks ? { ...newData.sessionFeedbacks } : {},
+        // Données d'endurance - CRUCIAL pour la persistance
+        enduranceData: newData && newData.enduranceData ? { ...newData.enduranceData } : {
+          sessions: {
+            boxing: [],
+            pushups: [],
+            swimming: [],
+            jumprope: [],
+            running: []
+          },
+          challenges: []
+        },
         // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
         lastSaved: new Date().toISOString(),
         dataVersion: '1.0' // Ajout d'une version pour la compatibilité future
@@ -416,7 +448,18 @@ export const useWorkoutData = () => {
               progressEntries: Array.isArray(result.progressEntries) ? result.progressEntries : [],
               bodyTrackingReminders: Array.isArray(result.bodyTrackingReminders) ? result.bodyTrackingReminders : [],
               bodyTrackingLastUpdated: result.bodyTrackingLastUpdated || null,
-              sessionFeedbacks: result.sessionFeedbacks || {}
+              sessionFeedbacks: result.sessionFeedbacks || {},
+              // Données d'endurance - CRUCIAL pour la persistance
+              enduranceData: result.enduranceData || {
+                sessions: {
+                  boxing: [],
+                  pushups: [],
+                  swimming: [],
+                  jumprope: [],
+                  running: []
+                },
+                challenges: []
+              }
             };
             
             resolve(validatedData);
@@ -490,18 +533,27 @@ export const useWorkoutData = () => {
   };
 
   const updateData = async (newData) => {
+    console.log('🔄 updateData appelé avec:', newData);
     setData(newData);
     
     try {
       // Sauvegarde manuelle immédiate (pour les boutons de sauvegarde existants)
       await saveToDB(newData);
+      console.log('✅ Données sauvegardées avec succès');
       
       // Notifier le contexte que des données ont été sauvegardées SEULEMENT si la sauvegarde a réussi
       if (window.workoutContextCallback) {
         window.workoutContextCallback();
       }
     } catch (error) {
-      // console.error('❌ Erreur lors de la sauvegarde dans updateData:', error);
+      console.error('❌ Erreur lors de la sauvegarde dans updateData:', error);
+      // Essayer de sauvegarder en localStorage comme fallback
+      try {
+        localStorage.setItem('workoutData_backup', JSON.stringify(newData));
+        console.log('💾 Sauvegarde de secours en localStorage réussie');
+      } catch (localStorageError) {
+        console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
+      }
     }
   };
 
