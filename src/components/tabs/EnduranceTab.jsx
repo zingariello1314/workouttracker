@@ -369,12 +369,21 @@ const EnduranceTab = () => {
     type: 'continue',
     jumps: '',
     sessionNumber: 1,
+    // Nouveaux champs métriques
+    hrMax: '', // BPM max
+    hrAvg: '', // BPM moyen
+    bestStreak: '', // meilleure série de sauts
+    jumpsPerMin: '', // moyenne sauts/min
+    calories: '', // calories brûlées
     notes: '',
     // Évaluations par étoiles
     congestion: 0,
     motivation: 0,
     sentimentAvant: 0,
-    sentimentApres: 0
+    sentimentApres: 0,
+    // Nouveaux critères
+    fluidite: 0,
+    transpiration: 0
   });
 
   const [runningForm, setRunningForm] = useState({
@@ -432,6 +441,16 @@ const EnduranceTab = () => {
 
       if (isValid) {
         validatedChallengeIds.push(challenge.id);
+        // Pour les défis récurrents, on ne les "termine" pas définitivement
+        if (challenge.type === 'recurrent') {
+          return {
+            ...challenge,
+            status: 'active',
+            lastCompletedDate: sessionData.date, // YYYY-MM-DD
+            completedSessionId: sessionData.id
+          };
+        }
+        // Ponctuels / période → marqués comme complétés
         return { 
           ...challenge, 
           status: 'completed', 
@@ -650,12 +669,19 @@ const EnduranceTab = () => {
       type: 'continue',
       jumps: '',
       sessionNumber: 1,
+      hrMax: '',
+      hrAvg: '',
+      bestStreak: '',
+      jumpsPerMin: '',
+      calories: '',
       notes: '',
       // Évaluations par étoiles
       congestion: 0,
       motivation: 0,
       sentimentAvant: 0,
-      sentimentApres: 0
+      sentimentApres: 0,
+      fluidite: 0,
+      transpiration: 0
     });
   }, []);
 
@@ -769,7 +795,42 @@ const EnduranceTab = () => {
   }, [addSession, swimmingForm]);
 
   const addJumpropeSession = useCallback(async () => {
-    const result = await addSession('jumprope', jumpropeForm);
+    // Calculs sécurisés
+    const parseMmSs = (str) => {
+      if (!str) return 0;
+      const parts = String(str).split(':');
+      if (parts.length === 2) {
+        const m = parseInt(parts[0]) || 0;
+        const s = parseInt(parts[1]) || 0;
+        return m * 60 + s;
+      }
+      const asNum = parseInt(str);
+      return Number.isFinite(asNum) ? asNum : 0;
+    };
+
+    const durationSec = parseMmSs(jumpropeForm.duration);
+    let jumpsPerMin = parseFloat(jumpropeForm.jumpsPerMin);
+    if ((!jumpsPerMin || isNaN(jumpsPerMin)) && durationSec > 0 && jumpropeForm.jumps) {
+      jumpsPerMin = (Number(jumpropeForm.jumps) || 0) / (durationSec / 60);
+    }
+
+    const sessionData = {
+      ...jumpropeForm,
+      durationSec,
+      hrMax: jumpropeForm.hrMax ? parseInt(jumpropeForm.hrMax) : null,
+      hrAvg: jumpropeForm.hrAvg ? parseInt(jumpropeForm.hrAvg) : null,
+      bestStreak: jumpropeForm.bestStreak ? parseInt(jumpropeForm.bestStreak) : null,
+      jumpsPerMin: jumpsPerMin ? Math.round(jumpsPerMin * 10) / 10 : null,
+      calories: jumpropeForm.calories ? parseInt(jumpropeForm.calories) : null,
+      congestion: jumpropeForm.congestion || 0,
+      motivation: jumpropeForm.motivation || 0,
+      sentimentAvant: jumpropeForm.sentimentAvant || 0,
+      sentimentApres: jumpropeForm.sentimentApres || 0,
+      fluidite: jumpropeForm.fluidite || 0,
+      transpiration: jumpropeForm.transpiration || 0
+    };
+
+    const result = await addSession('jumprope', sessionData);
     if (result.success) {
       resetJumpropeForm();
       setUI({ showSessionForm: false });
@@ -2322,6 +2383,57 @@ const EnduranceTab = () => {
                         placeholder="Ex: 500"
                       />
                     </div>
+                  <div>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">BPM max</label>
+                    <input
+                      type="number"
+                      value={jumpropeForm.hrMax}
+                      onChange={(e) => setJumpropeForm({...jumpropeForm, hrMax: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                      placeholder="Ex: 185"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">BPM moyen</label>
+                    <input
+                      type="number"
+                      value={jumpropeForm.hrAvg}
+                      onChange={(e) => setJumpropeForm({...jumpropeForm, hrAvg: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                      placeholder="Ex: 158"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">Meilleure série (sauts)</label>
+                    <input
+                      type="number"
+                      value={jumpropeForm.bestStreak}
+                      onChange={(e) => setJumpropeForm({...jumpropeForm, bestStreak: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                      placeholder="Ex: 220"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">Sauts / minute (moy.)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={jumpropeForm.jumpsPerMin}
+                      onChange={(e) => setJumpropeForm({...jumpropeForm, jumpsPerMin: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                      placeholder="Ex: 120"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">Calories brûlées</label>
+                    <input
+                      type="number"
+                      value={jumpropeForm.calories}
+                      onChange={(e) => setJumpropeForm({...jumpropeForm, calories: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                      placeholder="Ex: 180"
+                    />
+                  </div>
                     <div>
                       <label className="block text-slate-300 text-sm font-medium mb-2">Session #</label>
                       <input
@@ -2364,6 +2476,12 @@ const EnduranceTab = () => {
                           onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, motivation: rating})}
                           size="md"
                         />
+                        <StarRating
+                          label="Fluidité"
+                          rating={jumpropeForm.fluidite}
+                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, fluidite: rating})}
+                          size="md"
+                        />
                       </div>
                       <div className="space-y-4">
                         <StarRating
@@ -2376,6 +2494,12 @@ const EnduranceTab = () => {
                           label="Sentiment après"
                           rating={jumpropeForm.sentimentApres}
                           onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, sentimentApres: rating})}
+                          size="md"
+                        />
+                        <StarRating
+                          label="Transpiration"
+                          rating={jumpropeForm.transpiration}
+                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, transpiration: rating})}
                           size="md"
                         />
                       </div>

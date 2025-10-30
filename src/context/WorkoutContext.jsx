@@ -504,7 +504,7 @@ const WorkoutProvider = ({ children }) => {
     
     // Traiter les exercices (si les données existent)
     if (currentData.reps) {
-      Object.keys(currentData.reps).forEach(key => {
+    Object.keys(currentData.reps).forEach(key => {
         const reps = parseInt(currentData.reps[key]) || 0;
         console.log(`DEBUG: Processing key: ${key} reps: ${reps}`);
         
@@ -515,6 +515,10 @@ const WorkoutProvider = ({ children }) => {
             const dateStr = parts[0];
             const exerciseId = parts[1];
             const variant = parts[2] || '';
+          // Ignorer les clés non-numériques (endurance, complementary, etc.)
+          if (!/^\d+$/.test(exerciseId)) {
+            return; // ne pas compter dans l'historique des exercices
+          }
             
             if (!dataByDate[dateStr]) {
               dataByDate[dateStr] = { exercises: {}, stretches: {} };

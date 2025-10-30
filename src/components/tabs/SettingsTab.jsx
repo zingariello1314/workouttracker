@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useGarminData } from '../../hooks/useGarminData';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -8,12 +9,15 @@ import HomePageImageSettings from '../HomePageImageSettings';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB } = useWorkout();
+  const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
   const [exportStatus, setExportStatus] = useState(null);
   const [importStatus, setImportStatus] = useState(null);
   const [importData, setImportData] = useState('');
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [showHomePageSettings, setShowHomePageSettings] = useState(false);
+  const [garminExportStatus, setGarminExportStatus] = useState(null);
+  const [garminImportStatus, setGarminImportStatus] = useState(null);
   const fileInputRef = useRef(null);
 
   // Fonction pour exporter spécifiquement les données de suivi corporel
@@ -187,6 +191,72 @@ const SettingsTab = () => {
     } catch (error) {
       setExportStatus('error');
       setTimeout(() => setExportStatus(null), 3000);
+    }
+  };
+
+  // Fonction pour exporter les données Garmin
+  const handleExportGarminData = async () => {
+    try {
+      setGarminExportStatus('loading');
+      const garminData = await exportGarminData();
+      
+      const exportObject = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        exportType: 'Garmin Data',
+        appName: 'Workout Tracker - Garmin',
+        data: garminData,
+        metadata: {
+          totalSwimming: (garminData.activities?.swimming || []).length,
+          totalJumpRope: (garminData.activities?.jumpRope || []).length,
+          totalDailyMetrics: Object.keys(garminData.dailyMetrics || {}).length,
+          dateRange: {
+            earliest: Object.keys(garminData.dailyMetrics || {}).sort()[0] || null,
+            latest: Object.keys(garminData.dailyMetrics || {}).sort().reverse()[0] || null
+          }
+        }
+      };
+
+      const jsonString = JSON.stringify(exportObject, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `garmin-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setGarminExportStatus('success');
+      setTimeout(() => setGarminExportStatus(null), 3000);
+    } catch (error) {
+      console.error('❌ Erreur export Garmin:', error);
+      setGarminExportStatus('error');
+      setTimeout(() => setGarminExportStatus(null), 3000);
+    }
+  };
+
+  // Fonction pour importer les données Garmin
+  const handleImportGarminData = async (jsonData) => {
+    try {
+      setGarminImportStatus('loading');
+      const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+      
+      // Vérifier la structure
+      if (!parsed.data || (!parsed.data.activities && !parsed.data.dailyMetrics)) {
+        throw new Error('Format JSON Garmin invalide');
+      }
+
+      await importGarminData(parsed.data);
+      
+      setGarminImportStatus('success');
+      setTimeout(() => setGarminImportStatus(null), 3000);
+    } catch (error) {
+      console.error('❌ Erreur import Garmin:', error);
+      setGarminImportStatus('error');
+      setTimeout(() => setGarminImportStatus(null), 3000);
     }
   };
 
@@ -481,6 +551,15 @@ const SettingsTab = () => {
               >
                 {exportStatus === 'loading' ? 'Export en cours...' : 'Export Suivi Corporel'}
               </Button>
+              
+              <Button
+                onClick={handleExportGarminData}
+                disabled={garminExportStatus === 'loading'}
+                icon={Download}
+                className="w-full bg-purple-600 hover:bg-purple-700"
+              >
+                {garminExportStatus === 'loading' ? 'Export en cours...' : 'Export Garmin'}
+              </Button>
             </div>
 
             {exportStatus === 'success' && (
@@ -494,6 +573,20 @@ const SettingsTab = () => {
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
                 Erreur lors de l'export. Veuillez réessayer.
+              </div>
+            )}
+
+            {garminExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Export Garmin réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
+
+            {garminExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'export Garmin. Veuillez réessayer.
               </div>
             )}
           </div>
@@ -549,7 +642,7 @@ const SettingsTab = () => {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <Button
                 onClick={previewImport}
                 disabled={!importData.trim() || importStatus === 'loading'}
@@ -558,6 +651,16 @@ const SettingsTab = () => {
                 className="flex-1"
               >
                 Prévisualiser
+              </Button>
+              
+              <Button
+                onClick={() => handleImportGarminData(importData)}
+                disabled={!importData.trim() || garminImportStatus === 'loading'}
+                icon={Upload}
+                variant="outline"
+                className="bg-purple-600/20 border-purple-500/50 text-purple-300 hover:bg-purple-600/30"
+              >
+                {garminImportStatus === 'loading' ? 'Import...' : 'Import Garmin'}
               </Button>
               
               {localStorage.getItem('workoutData_preImport_backup') && (
@@ -590,6 +693,20 @@ const SettingsTab = () => {
               <div className="flex items-center text-blue-400 text-sm">
                 <CheckCircle className="mr-2" size={16} />
                 Sauvegarde restaurée avec succès !
+              </div>
+            )}
+
+            {garminImportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Import Garmin réussi ! Les données ont été importées.
+              </div>
+            )}
+
+            {garminImportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'import Garmin. Vérifiez le format JSON.
               </div>
             )}
           </div>

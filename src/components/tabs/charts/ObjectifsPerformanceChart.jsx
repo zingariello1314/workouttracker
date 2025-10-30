@@ -124,8 +124,17 @@ const ObjectifsPerformanceChart = ({ data, colors }) => {
       // Calculer les reps prévues pour la période
       const plannedReps = weeklyReps * periodWeeks;
       
-      // Calculer les reps réalisées dans la période
-      const actualReps = workoutHistory.reduce((sum, session) => sum + (session.totalReps || 0), 0);
+      // Calculer les reps réalisées (hors corde à sauter)
+      const isJumpRope = (name = '') => {
+        const n = String(name).toLowerCase();
+        return n.includes('corde') || n.includes('jump') || n.includes('jumprope');
+      };
+      const actualReps = workoutHistory.reduce((sum, session) => {
+        const reps = (session.exercises || [])
+          .filter(ex => !isJumpRope(ex.name))
+          .reduce((s, ex) => s + (parseInt(ex.reps) || 0), 0);
+        return sum + reps;
+      }, 0);
       
       // Debug optionnel (décommentez pour diagnostiquer)
       // console.log('🔍 DEBUG ObjectifsPerformanceChart:');

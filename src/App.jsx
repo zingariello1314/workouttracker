@@ -16,6 +16,7 @@ import HistoryTab from './components/tabs/HistoryTab';
 import SettingsTab from './components/tabs/SettingsTab';
 import PredictionsTab from './components/PredictionsTab';
 import SmartBalancingTab from './components/SmartBalancingTab';
+import GarminTab from './components/tabs/GraminTab';
 import ExerciseVariations from './components/ExerciseVariations/ExerciseVariations';
 import AdvancedStats from './components/AdvancedStats';
 import SessionFeedback from './components/SessionFeedback';
@@ -73,6 +74,8 @@ const WorkoutTrackerContent = () => {
         return <PredictionsTab />;
       case 'smart-balancing':
         return <SmartBalancingTab />;
+      case 'garmin':
+        return <GarminTab />;
       case 'settings':
         return <SettingsTab />;
       default:

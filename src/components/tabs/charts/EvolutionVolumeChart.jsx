@@ -5,6 +5,10 @@ const EvolutionVolumeChart = ({ data, colors }) => {
   // Calculer les données réelles par semaine (ISO: lundi -> dimanche)
   const calculateWeeklyData = () => {
     const workoutHistory = data.workoutHistory || [];
+    const isJumpRope = (name = '') => {
+      const n = String(name).toLowerCase();
+      return n.includes('corde') || n.includes('jump') || n.includes('jumprope');
+    };
 
     // Grouper par semaine (début lundi)
     const weeklyData = {};
@@ -23,7 +27,10 @@ const EvolutionVolumeChart = ({ data, colors }) => {
       if (!weeklyData[weekKey]) {
         weeklyData[weekKey] = { week: weekKey, reps: 0 };
       }
-      weeklyData[weekKey].reps += Number(session.totalReps) || 0;
+      const filteredReps = (session.exercises || [])
+        .filter(ex => !isJumpRope(ex.name))
+        .reduce((s, ex) => s + (Number(ex.reps) || 0), 0);
+      weeklyData[weekKey].reps += filteredReps;
     });
 
     // Convertir en tableau trié et garder au plus 8 dernières semaines (aucun remplissage)

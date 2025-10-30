@@ -7,12 +7,27 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [reps, setReps] = useState('');
   const [duration, setDuration] = useState('');
+  const [distance, setDistance] = useState('');
   const [notes, setNotes] = useState('');
   const [isCompleting, setIsCompleting] = useState(false);
 
   const handleComplete = async () => {
-    if (!reps && !duration) {
-      alert('Veuillez renseigner au moins les répétitions ou la durée');
+    // Validation minimale en fonction du type d'activité
+    const type = challenge.activityType;
+    const needReps = ['pushups', 'jumprope'].includes(type);
+    const needDuration = ['boxing', 'running', 'jumprope', 'swimming'].includes(type);
+    const needDistance = ['swimming', 'running'].includes(type);
+
+    if (needReps && !reps) {
+      alert('Veuillez renseigner le nombre de répétitions/sauts');
+      return;
+    }
+    if (needDuration && !duration) {
+      alert('Veuillez renseigner la durée (min)');
+      return;
+    }
+    if (needDistance && !distance) {
+      alert('Veuillez renseigner la distance');
       return;
     }
 
@@ -21,6 +36,7 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
       await onComplete(challenge.id, {
         reps: parseInt(reps) || 0,
         duration: parseInt(duration) || 0,
+        distance: parseFloat(distance) || 0,
         notes: notes.trim()
       });
       
@@ -28,6 +44,7 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
       setReps('');
       setDuration('');
       setNotes('');
+      setDistance('');
       setIsExpanded(false);
     } catch (error) {
       console.error('Erreur lors de la validation du défi:', error);
@@ -105,26 +122,43 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
           </h5>
           
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-slate-300 mb-1">Répétitions</label>
-              <Input
-                type="number"
-                value={reps}
-                onChange={(e) => setReps(e.target.value)}
-                placeholder="Nombre de reps"
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-300 mb-1">Durée (min)</label>
-              <Input
-                type="number"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder="Durée en minutes"
-                className="w-full"
-              />
-            </div>
+            {(['pushups','jumprope'].includes(challenge.activityType)) && (
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">{challenge.activityType === 'jumprope' ? 'Sauts' : 'Répétitions'}</label>
+                <Input
+                  type="number"
+                  value={reps}
+                  onChange={(e) => setReps(e.target.value)}
+                  placeholder={challenge.activityType === 'jumprope' ? 'Nombre de sauts' : 'Nombre de reps'}
+                  className="w-full"
+                />
+              </div>
+            )}
+            {(['boxing','running','jumprope','swimming'].includes(challenge.activityType)) && (
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Durée (min)</label>
+                <Input
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="Durée en minutes"
+                  className="w-full"
+                />
+              </div>
+            )}
+            {(['swimming','running'].includes(challenge.activityType)) && (
+              <div>
+                <label className="block text-sm text-slate-300 mb-1">Distance ({challenge.activityType === 'swimming' ? 'm' : 'km'})</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={distance}
+                  onChange={(e) => setDistance(e.target.value)}
+                  placeholder={challenge.activityType === 'swimming' ? 'Distance en mètres' : 'Distance en km'}
+                  className="w-full"
+                />
+              </div>
+            )}
           </div>
 
           <div>

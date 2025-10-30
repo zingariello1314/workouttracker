@@ -5,8 +5,17 @@ const VolumeRepetitionsChart = ({ data, colors }) => {
   // Calculer les données réelles à partir de l'historique
   const calculateVolumeData = () => {
     const workoutHistory = data.workoutHistory || [];
+    const isJumpRope = (name = '') => {
+      const n = String(name).toLowerCase();
+      return n.includes('corde') || n.includes('jump') || n.includes('jumprope');
+    };
     
-    const totalReps = workoutHistory.reduce((sum, session) => sum + (session.totalReps || 0), 0);
+    const totalReps = workoutHistory.reduce((sum, session) => {
+      const sessionReps = (session.exercises || [])
+        .filter(ex => !isJumpRope(ex.name))
+        .reduce((s, ex) => s + (parseInt(ex.reps) || 0), 0);
+      return sum + sessionReps;
+    }, 0);
     
     // Calculer le nombre de séries réelles en estimant à partir des reps
     let totalSets = 0;
@@ -14,6 +23,7 @@ const VolumeRepetitionsChart = ({ data, colors }) => {
     // Estimation basée sur les reps : si reps > 30, probablement plusieurs séries
     workoutHistory.forEach(session => {
       session.exercises?.forEach(exercise => {
+        if (isJumpRope(exercise.name)) return;
         const repsValue = parseInt(exercise.reps);
         if (repsValue > 0) {
           // Estimation : 1 série si reps <= 30, sinon estimer le nombre de séries
@@ -78,6 +88,7 @@ const VolumeRepetitionsChart = ({ data, colors }) => {
     // Calculer les séries pour la période récente
     recentSessions.forEach(session => {
       session.exercises?.forEach(exercise => {
+        if (isJumpRope(exercise.name)) return;
         const repsValue = parseInt(exercise.reps);
         if (repsValue > 0) {
           if (repsValue <= 30) {
@@ -92,6 +103,7 @@ const VolumeRepetitionsChart = ({ data, colors }) => {
     // Calculer les séries pour la période précédente
     previousSessions.forEach(session => {
       session.exercises?.forEach(exercise => {
+        if (isJumpRope(exercise.name)) return;
         const repsValue = parseInt(exercise.reps);
         if (repsValue > 0) {
           if (repsValue <= 30) {

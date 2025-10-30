@@ -39,19 +39,23 @@ const TodayTab = () => {
   // Récupérer les défis actifs
   const getActiveChallenges = () => {
     const challenges = data?.enduranceData?.challenges || [];
+    const todayStr = getDateStr(currentDate);
     const now = new Date();
     
     return challenges.filter(challenge => {
+      // Cas récurrent: afficher si non réalisé aujourd'hui
+      if (challenge.type === 'recurrent') {
+        const doneToday = challenge.lastCompletedDate === todayStr;
+        // Même si le statut a été mis par erreur à 'completed', on le considère actif tant que pas fait aujourd'hui
+        return !doneToday;
+      }
+      // Cas non récurrent: seulement si actif et dans la fenêtre de validité
       if (challenge.status !== 'active') return false;
-      
-      // Vérifier si le défi est encore valide selon son type
       switch (challenge.type) {
         case 'ponctuel':
-          return new Date(challenge.targetDate) > now;
+          return new Date(challenge.targetDate) >= now;
         case 'periode':
-          return new Date(challenge.endDate) > now;
-        case 'recurrent':
-          return true; // Les défis récurrents sont toujours actifs
+          return new Date(challenge.endDate) >= now;
         default:
           return true;
       }
@@ -81,16 +85,24 @@ const TodayTab = () => {
       };
 
       // Marquer le défi comme complété
-      const updatedChallenges = (enduranceData.challenges || []).map(challenge => 
-        challenge.id === challengeId 
-          ? { 
-              ...challenge, 
-              status: 'completed', 
-              completedAt: new Date().toISOString(),
-              completedSessionId: sessionData.id
-            }
-          : challenge
-      );
+      const updatedChallenges = (enduranceData.challenges || []).map(challenge => {
+        if (challenge.id !== challengeId) return challenge;
+        if (challenge.type === 'recurrent') {
+          // Marquer comme réalisé pour aujourd'hui uniquement
+          return {
+            ...challenge,
+            status: 'active',
+            lastCompletedDate: getDateStr(currentDate),
+            completedSessionId: sessionData.id
+          };
+        }
+        return {
+          ...challenge,
+          status: 'completed',
+          completedAt: new Date().toISOString(),
+          completedSessionId: sessionData.id
+        };
+      });
 
       // Sauvegarder
       await updateData({
@@ -455,6 +467,7 @@ const TodayTab = () => {
   };
 
   if (!workout.exercices || workout.exercices.length === 0) {
+    const activeChallenges = getActiveChallenges();
     return (
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="text-center py-12 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700">
@@ -464,6 +477,28 @@ const TodayTab = () => {
             <p>Profitez de votre journée de récupération !</p>
           </div>
         </div>
+        {/* Section des défis actifs, même si jour de repos */}
+        {activeChallenges.length > 0 && (
+          <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 mt-8">
+            <Card.Header>
+              <Card.Title className="flex items-center text-purple-200">
+                <Award className="mr-2" size={20} />
+                Défis actifs ({activeChallenges.length})
+              </Card.Title>
+            </Card.Header>
+            <Card.Content>
+              <div className="space-y-4">
+                {activeChallenges.map(challenge => (
+                  <ChallengeCard
+                    key={challenge.id}
+                    challenge={challenge}
+                    onComplete={handleChallengeComplete}
+                  />
+                ))}
+              </div>
+            </Card.Content>
+          </Card>
+        )}
       </div>
     );
   }
