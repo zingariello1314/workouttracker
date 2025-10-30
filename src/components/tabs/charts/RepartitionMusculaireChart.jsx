@@ -21,30 +21,56 @@ const RepartitionMusculaireChart = ({ data, colors }) => {
       });
     });
     
-    // 2. Ajouter la natation de l'onglet Aujourd'hui (seulement la durée, pas les détails)
+    // 2. Ajouter les activités complémentaires (Aujourd'hui + Endurance)
     const checkedExercises = actualData?.checkedExercises || {};
     const reps = actualData?.reps || {};
-    let natationMinutes = 0;
-    
+    let complementaryMinutes = 0;
+
+    // a) Depuis l'onglet Aujourd'hui (cases cochées)
     Object.keys(checkedExercises).forEach(key => {
-      if (checkedExercises[key] && key.includes('complementary_natation')) {
-        const dateMatch = key.match(/^(\d{4}-\d{2}-\d{2})/);
-        if (dateMatch) {
-          const dateStr = dateMatch[1];
-          const minutesKey = `${dateStr}_complementary_natation_minutes`;
-          const duration = parseInt(reps[minutesKey]) || 90;
-          natationMinutes += duration;
-        }
+      if (!checkedExercises[key]) return;
+      const dateMatch = key.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (!dateMatch) return;
+      const dateStr = dateMatch[1];
+
+      if (key.includes('complementary_natation')) {
+        const minutesKey = `${dateStr}_complementary_natation_minutes`;
+        complementaryMinutes += parseInt(reps[minutesKey]) || 90;
+      }
+      if (key.includes('complementary_boxe')) {
+        const minutesKey = `${dateStr}_complementary_boxe_minutes`;
+        complementaryMinutes += parseInt(reps[minutesKey]) || 90;
+      }
+      if (key.includes('complementary_corde')) {
+        const minutesKey = `${dateStr}_complementary_corde_minutes`;
+        complementaryMinutes += parseInt(reps[minutesKey]) || 20;
       }
     });
-    
-    // Ajouter la natation comme "Cardio/Endurance" (1 minute = 1 point équivalent)
-    if (natationMinutes > 0) {
-      muscleGroups['Cardio/Endurance'] = (muscleGroups['Cardio/Endurance'] || 0) + natationMinutes;
+
+    // b) Depuis l'onglet Endurance (sessions détaillées)
+    const enduranceData = actualData?.enduranceData || {};
+    const swimming = enduranceData.sessions?.swimming || [];
+    const boxing = enduranceData.sessions?.boxing || [];
+    const jumpRope = enduranceData.sessions?.jumpRope || [];
+
+    const toMinutes = (duration, totalTime) => {
+      if (typeof duration === 'number' && duration > 0) return duration;
+      if (typeof totalTime === 'number' && totalTime > 0) return totalTime / 60;
+      const parsed = parseFloat(totalTime);
+      return isNaN(parsed) ? 0 : parsed / 60;
+    };
+
+    swimming.forEach(s => complementaryMinutes += toMinutes(s.duration, s.totalTime));
+    boxing.forEach(s => complementaryMinutes += toMinutes(s.duration, s.totalTime));
+    jumpRope.forEach(s => complementaryMinutes += toMinutes(s.duration, s.totalTime));
+
+    // Enregistrer toutes les activités complémentaires sous une même catégorie
+    if (complementaryMinutes > 0) {
+      muscleGroups['Activités Complémentaires'] = (muscleGroups['Activités Complémentaires'] || 0) + Math.round(complementaryMinutes);
     }
     
     // Convertir en tableau avec couleurs
-    const colors = ['#8b5cf6', '#06b6d4', '#ec4899', '#6366f1', '#f59e0b', '#10b981'];
+    const colors = ['#8b5cf6', '#06b6d4', '#ec4899', '#6366f1', '#f59e0b', '#10b981', '#22c55e', '#eab308'];
     let colorIndex = 0;
     
     return Object.entries(muscleGroups)
