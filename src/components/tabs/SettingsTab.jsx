@@ -209,10 +209,26 @@ const SettingsTab = () => {
         metadata: {
           totalSwimming: (garminData.activities?.swimming || []).length,
           totalJumpRope: (garminData.activities?.jumpRope || []).length,
+          totalCardio: (garminData.activities?.cardio || []).length,
+          totalActivities: (garminData.activities?.swimming || []).length + 
+                          (garminData.activities?.jumpRope || []).length + 
+                          (garminData.activities?.cardio || []).length,
           totalDailyMetrics: Object.keys(garminData.dailyMetrics || {}).length,
           dateRange: {
             earliest: Object.keys(garminData.dailyMetrics || {}).sort()[0] || null,
             latest: Object.keys(garminData.dailyMetrics || {}).sort().reverse()[0] || null
+          },
+          activityDateRange: {
+            earliest: [
+              ...(garminData.activities?.swimming || []).map(a => a.date),
+              ...(garminData.activities?.jumpRope || []).map(a => a.date),
+              ...(garminData.activities?.cardio || []).map(a => a.date)
+            ].sort()[0] || null,
+            latest: [
+              ...(garminData.activities?.swimming || []).map(a => a.date),
+              ...(garminData.activities?.jumpRope || []).map(a => a.date),
+              ...(garminData.activities?.cardio || []).map(a => a.date)
+            ].sort().reverse()[0] || null
           }
         }
       };
@@ -244,19 +260,32 @@ const SettingsTab = () => {
       setGarminImportStatus('loading');
       const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
       
-      // Vérifier la structure
-      if (!parsed.data || (!parsed.data.activities && !parsed.data.dailyMetrics)) {
-        throw new Error('Format JSON Garmin invalide');
+      // Vérifier la structure - supporte à la fois le format d'export (avec .data) et le format brut
+      const garminData = parsed.data || parsed;
+      if (!garminData || (!garminData.activities && !garminData.dailyMetrics)) {
+        throw new Error('Format JSON Garmin invalide. Attendu: { activities: {...}, dailyMetrics: {...} } ou { data: { activities: {...}, dailyMetrics: {...} } }');
       }
 
-      await importGarminData(parsed.data);
+      // Valider la structure des activités et dailyMetrics
+      if (garminData.activities && typeof garminData.activities !== 'object') {
+        throw new Error('activities doit être un objet avec swimming, jumpRope, cardio');
+      }
+      if (garminData.dailyMetrics && typeof garminData.dailyMetrics !== 'object') {
+        throw new Error('dailyMetrics doit être un objet avec dates comme clés');
+      }
+
+      await importGarminData(garminData);
       
       setGarminImportStatus('success');
       setTimeout(() => setGarminImportStatus(null), 3000);
+      
+      // Suggérer de recharger la page pour voir les données importées
+      console.log('[Settings] Garmin data imported successfully. Consider refreshing the Garmin tab to see the new data.');
     } catch (error) {
       console.error('❌ Erreur import Garmin:', error);
       setGarminImportStatus('error');
       setTimeout(() => setGarminImportStatus(null), 3000);
+      throw error; // Re-throw pour permettre l'affichage d'erreur dans l'UI
     }
   };
 

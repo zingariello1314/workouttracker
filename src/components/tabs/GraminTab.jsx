@@ -151,11 +151,26 @@ const GraminTab = () => {
       const json = await tryFetch('/api/garmin/sync', { method: 'POST' });
       setStatus({ lastSync: json.lastSync, ok: json.ok, message: json.ok ? 'Sync OK' : 'Erreur sync', error: json.error });
       if (json.data && json.ok) {
-        setGarminData(json.data);
-        // Sauvegarder dans IndexedDB
+        // Sauvegarder dans IndexedDB AVANT de mettre à jour l'état
         if (dbReady) {
           await saveActivities(json.data.activities || {});
           await saveDailyMetrics(json.data.dailyMetrics || {});
+          // Recharger depuis IndexedDB pour fusionner avec les données existantes
+          const loaded = await loadAllData();
+          if (loaded) {
+            setGarminData({ 
+              activities: {
+                swimming: loaded.activities.swimming || [],
+                jumpRope: loaded.activities.jumpRope || [],
+                cardio: loaded.activities.cardio || []
+              }, 
+              dailyMetrics: loaded.dailyMetrics || {}
+            });
+          } else {
+            setGarminData(json.data);
+          }
+        } else {
+          setGarminData(json.data);
         }
         // Import automatique vers Endurance
         if (json.data.activities && (json.data.activities.swimming?.length > 0 || json.data.activities.jumpRope?.length > 0)) {
@@ -167,10 +182,26 @@ const GraminTab = () => {
         const json = await tryFetch('/api/garmin/sync');
         setStatus({ lastSync: json.lastSync, ok: json.ok !== false, message: 'Sync (GET) OK' });
         if (json.data && json.ok) {
-          setGarminData(json.data);
+          // Sauvegarder dans IndexedDB AVANT de mettre à jour l'état
           if (dbReady) {
             await saveActivities(json.data.activities || {});
             await saveDailyMetrics(json.data.dailyMetrics || {});
+            // Recharger depuis IndexedDB pour fusionner avec les données existantes
+            const loaded = await loadAllData();
+            if (loaded) {
+              setGarminData({ 
+                activities: {
+                  swimming: loaded.activities.swimming || [],
+                  jumpRope: loaded.activities.jumpRope || [],
+                  cardio: loaded.activities.cardio || []
+                }, 
+                dailyMetrics: loaded.dailyMetrics || {}
+              });
+            } else {
+              setGarminData(json.data);
+            }
+          } else {
+            setGarminData(json.data);
           }
           if (json.data.activities && (json.data.activities.swimming?.length > 0 || json.data.activities.jumpRope?.length > 0)) {
             await importToEndurance(json.data);
@@ -192,14 +223,32 @@ const GraminTab = () => {
       const json = await tryFetch(`/api/garmin/sync${query}`, { method: 'POST' });
       setStatus({ lastSync: json.lastSync, ok: json.ok, message: json.ok ? 'Backfill OK' : 'Backfill erreur', error: json.error });
       if (json.data && json.ok) {
-        setGarminData(json.data);
-        // Sélectionner la date la plus récente par défaut
-        const dates = Object.keys(json.data.dailyMetrics || {}).sort();
-        if (dates.length > 0) setSelectedDate(dates[dates.length - 1]);
-        // Sauvegarder dans IndexedDB
+        // Sauvegarder dans IndexedDB AVANT de mettre à jour l'état
         if (dbReady) {
           await saveActivities(json.data.activities || {});
           await saveDailyMetrics(json.data.dailyMetrics || {});
+          // Recharger depuis IndexedDB pour fusionner avec les données existantes
+          const loaded = await loadAllData();
+          if (loaded) {
+            setGarminData({ 
+              activities: {
+                swimming: loaded.activities.swimming || [],
+                jumpRope: loaded.activities.jumpRope || [],
+                cardio: loaded.activities.cardio || []
+              }, 
+              dailyMetrics: loaded.dailyMetrics || {}
+            });
+            const dates = Object.keys(loaded.dailyMetrics || {}).sort();
+            if (dates.length > 0) setSelectedDate(dates[dates.length - 1]);
+          } else {
+            setGarminData(json.data);
+            const dates = Object.keys(json.data.dailyMetrics || {}).sort();
+            if (dates.length > 0) setSelectedDate(dates[dates.length - 1]);
+          }
+        } else {
+          setGarminData(json.data);
+          const dates = Object.keys(json.data.dailyMetrics || {}).sort();
+          if (dates.length > 0) setSelectedDate(dates[dates.length - 1]);
         }
         // Import automatique vers Endurance
         if (json.data.activities && (json.data.activities.swimming?.length > 0 || json.data.activities.jumpRope?.length > 0)) {
@@ -213,16 +262,38 @@ const GraminTab = () => {
     }
   };
 
+  // Charger les données depuis IndexedDB au montage et après chaque changement de dbReady
   React.useEffect(() => {
     fetchStatus();
-    // Charger les données depuis IndexedDB au montage
+  }, []);
+
+  // Charger les données depuis IndexedDB dès que la DB est prête
+  React.useEffect(() => {
     if (dbReady) {
       loadAllData().then((loaded) => {
-        if (loaded && (Object.keys(loaded.dailyMetrics || {}).length > 0 || loaded.activities?.swimming?.length > 0 || loaded.activities?.jumpRope?.length > 0)) {
-          setGarminData({ activities: loaded.activities, dailyMetrics: loaded.dailyMetrics });
+        if (loaded && (Object.keys(loaded.dailyMetrics || {}).length > 0 || 
+            (loaded.activities?.swimming?.length > 0 || 
+             loaded.activities?.jumpRope?.length > 0 || 
+             loaded.activities?.cardio?.length > 0))) {
+          setGarminData({ 
+            activities: {
+              swimming: loaded.activities.swimming || [],
+              jumpRope: loaded.activities.jumpRope || [],
+              cardio: loaded.activities.cardio || []
+            }, 
+            dailyMetrics: loaded.dailyMetrics || {}
+          });
           const dates = Object.keys(loaded.dailyMetrics || {}).sort();
           if (dates.length > 0) setSelectedDate(dates[dates.length - 1]);
+          console.log('[GarminTab] Loaded from IndexedDB:', {
+            swimming: loaded.activities.swimming?.length || 0,
+            jumpRope: loaded.activities.jumpRope?.length || 0,
+            cardio: loaded.activities.cardio?.length || 0,
+            dailyMetrics: Object.keys(loaded.dailyMetrics || {}).length
+          });
         }
+      }).catch(err => {
+        console.error('[GarminTab] Error loading from IndexedDB:', err);
       });
     }
   }, [dbReady, loadAllData]);
@@ -274,28 +345,39 @@ const GraminTab = () => {
         <div className="flex justify-between items-start mb-3">
           <div>
             <h4 className="text-white font-semibold">🏊 Natation - {activity.date} {activity.time}</h4>
+            {/* CORRECTION : Afficher timestamps si disponibles */}
+            {(activity.startTimeLocal || activity.startTimeGMT) && (
+              <div className="text-slate-400 text-xs mt-1">
+                {activity.startTimeLocal && <span>Début (local): {activity.startTimeLocal}</span>}
+                {activity.startTimeGMT && <span className="ml-2">Début (GMT): {activity.startTimeGMT}</span>}
+              </div>
+            )}
           </div>
           <div className="text-slate-400 text-xs">ID: {activity.id}</div>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-          <div><span className="text-slate-400">Distance:</span> <span className="text-white">{activity.distance || 0} km</span></div>
+          <div><span className="text-slate-400">Distance:</span> <span className="text-white">{activity.distance ? activity.distance.toFixed(3) : 0} km</span></div>
           <div><span className="text-slate-400">Durée:</span> <span className="text-white">{Math.floor((activity.duration || 0) / 60)}min {activity.duration % 60}s</span></div>
           <div><span className="text-slate-400">Longueurs:</span> <span className="text-white">{activity.laps || 0}</span></div>
           
           <div><span className="text-slate-400">FC moyenne:</span> <span className="text-white">{activity.avgHR || 0} bpm</span></div>
           <div><span className="text-slate-400">FC max:</span> <span className="text-white">{activity.maxHR || 0} bpm</span></div>
+          {/* CORRECTION : Afficher minHR si disponible */}
+          {activity.minHR && activity.minHR > 0 && (
+            <div><span className="text-slate-400">FC min:</span> <span className="text-white">{activity.minHR} bpm</span></div>
+          )}
           <div><span className="text-slate-400">Calories totales:</span> <span className="text-white">{cal.total || 0} kcal</span></div>
           
-          {cal.resting && <div><span className="text-slate-400">Cal. repos:</span> <span className="text-white">{cal.resting} kcal</span></div>}
-          {cal.active && <div><span className="text-slate-400">Cal. actives:</span> <span className="text-white">{cal.active} kcal</span></div>}
-          {activity.sweatLoss && <div><span className="text-slate-400">Transpiration:</span> <span className="text-white">{activity.sweatLoss} ml</span></div>}
+          {cal.resting && cal.resting > 0 && <div><span className="text-slate-400">Cal. repos:</span> <span className="text-white">{cal.resting} kcal</span></div>}
+          {cal.active && cal.active > 0 && <div><span className="text-slate-400">Cal. actives:</span> <span className="text-white">{cal.active} kcal</span></div>}
+          {activity.sweatLoss && activity.sweatLoss > 0 && <div><span className="text-slate-400">Transpiration:</span> <span className="text-white">{activity.sweatLoss} ml</span></div>}
           
-          {intensity.total && (
+          {(intensity.moderate || intensity.vigorous || intensity.total) && (
             <>
-              <div><span className="text-slate-400">Intensité modérée:</span> <span className="text-white">{intensity.moderate || 0} min</span></div>
-              <div><span className="text-slate-400">Intensité soutenue:</span> <span className="text-white">{intensity.vigorous || 0} min</span></div>
-              <div><span className="text-slate-400">Total intensif:</span> <span className="text-white">{intensity.total} min</span></div>
+              {intensity.moderate !== undefined && intensity.moderate !== null && <div><span className="text-slate-400">Intensité modérée:</span> <span className="text-white">{intensity.moderate} min</span></div>}
+              {intensity.vigorous !== undefined && intensity.vigorous !== null && <div><span className="text-slate-400">Intensité soutenue:</span> <span className="text-white">{intensity.vigorous} min</span></div>}
+              {intensity.total !== undefined && intensity.total !== null && <div><span className="text-slate-400">Total intensif:</span> <span className="text-white">{intensity.total} min</span></div>}
             </>
           )}
         </div>
@@ -325,6 +407,42 @@ const GraminTab = () => {
             {time.elapsedTime && <span className="ml-3">Temps écoulé: {Math.floor(time.elapsedTime / 60)}min {time.elapsedTime % 60}s</span>}
           </div>
         )}
+        
+        {/* CORRECTION : Afficher localisation, élévation, deviceInfo si disponibles */}
+        {(activity.location || activity.elevation || activity.deviceInfo) && (
+          <div className="mt-4 pt-4 border-t border-slate-700">
+            <h5 className="text-slate-300 text-xs mb-2 font-medium">Informations supplémentaires:</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+              {activity.location && (activity.location.start || activity.location.end) && (
+                <div>
+                  <span className="text-slate-400">Localisation:</span>
+                  {activity.location.start && (
+                    <span className="text-white ml-2">Départ: {activity.location.start.lat?.toFixed(4)}, {activity.location.start.lng?.toFixed(4)}</span>
+                  )}
+                  {activity.location.end && (
+                    <span className="text-white ml-2">Arrivée: {activity.location.end.lat?.toFixed(4)}, {activity.location.end.lng?.toFixed(4)}</span>
+                  )}
+                </div>
+              )}
+              {activity.elevation && (activity.elevation.gain || activity.elevation.loss || activity.elevation.max || activity.elevation.min) && (
+                <div>
+                  <span className="text-slate-400">Élévation:</span>
+                  {activity.elevation.gain && <span className="text-white ml-2">Gain: {activity.elevation.gain}m</span>}
+                  {activity.elevation.loss && <span className="text-white ml-2">Perte: {activity.elevation.loss}m</span>}
+                  {activity.elevation.max && <span className="text-white ml-2">Max: {activity.elevation.max.toFixed(1)}m</span>}
+                  {activity.elevation.min && <span className="text-white ml-2">Min: {activity.elevation.min.toFixed(1)}m</span>}
+                </div>
+              )}
+              {activity.deviceInfo && activity.deviceInfo.deviceId && (
+                <div>
+                  <span className="text-slate-400">Appareil:</span>
+                  <span className="text-white ml-2">ID: {activity.deviceInfo.deviceId}</span>
+                  {activity.deviceInfo.deviceTypePk && <span className="text-white ml-2">Type: {activity.deviceInfo.deviceTypePk}</span>}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -333,6 +451,14 @@ const GraminTab = () => {
     const cal = activity.calories || {};
     const connectIQ = activity.connectIQ || {};
     const intensity = activity.intensityMinutes || {};
+    
+    // Formater durée en mm:ss
+    const formatDuration = (seconds) => {
+      if (!seconds) return '00:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    };
     
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4 mb-4">
@@ -344,31 +470,83 @@ const GraminTab = () => {
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+          <div><span className="text-slate-400">Temps total:</span> <span className="text-white">{formatDuration(activity.duration)}</span></div>
           <div><span className="text-slate-400">Durée:</span> <span className="text-white">{Math.floor((activity.duration || 0) / 60)}min {activity.duration % 60}s</span></div>
-          <div><span className="text-slate-400">Sauts:</span> <span className="text-white">{activity.jumps || 0}</span></div>
+          <div><span className="text-slate-400">Sauts:</span> <span className="text-white">{activity.jumps || connectIQ?.jumps || 0}</span></div>
+          
+          {/* CORRECTION : Afficher distance si disponible */}
+          {activity.distance && activity.distance > 0 && (
+            <div><span className="text-slate-400">Distance:</span> <span className="text-white">{activity.distance.toFixed(3)} km</span></div>
+          )}
+          
           <div><span className="text-slate-400">FC moyenne:</span> <span className="text-white">{activity.avgHR || 0} bpm</span></div>
-          
           <div><span className="text-slate-400">FC max:</span> <span className="text-white">{activity.maxHR || 0} bpm</span></div>
+          {/* CORRECTION : Afficher minHR si disponible */}
+          {activity.minHR && activity.minHR > 0 && (
+            <div><span className="text-slate-400">FC min:</span> <span className="text-white">{activity.minHR} bpm</span></div>
+          )}
           <div><span className="text-slate-400">Calories totales:</span> <span className="text-white">{cal.total || 0} kcal</span></div>
-          {cal.resting && <div><span className="text-slate-400">Cal. repos:</span> <span className="text-white">{cal.resting} kcal</span></div>}
           
+          {cal.resting && <div><span className="text-slate-400">Cal. repos:</span> <span className="text-white">{cal.resting} kcal</span></div>}
           {cal.active && <div><span className="text-slate-400">Cal. actives:</span> <span className="text-white">{cal.active} kcal</span></div>}
           {activity.sweatLoss && <div><span className="text-slate-400">Transpiration:</span> <span className="text-white">{activity.sweatLoss} ml</span></div>}
-          {intensity.total && <div><span className="text-slate-400">Intensité total:</span> <span className="text-white">{intensity.total} min</span></div>}
           
-          {intensity.moderate && <div><span className="text-slate-400">Modérée:</span> <span className="text-white">{intensity.moderate} min</span></div>}
-          {intensity.vigorous && <div><span className="text-slate-400">Soutenue:</span> <span className="text-white">{intensity.vigorous} min (x2)</span></div>}
+          {intensity.moderate && <div><span className="text-slate-400">Intensité modérée:</span> <span className="text-white">{intensity.moderate} min</span></div>}
+          {intensity.vigorous && <div><span className="text-slate-400">Intensité soutenue:</span> <span className="text-white">{intensity.vigorous} min (x2)</span></div>}
+          {intensity.total && <div><span className="text-slate-400">Total intensif:</span> <span className="text-white">{intensity.total} min</span></div>}
         </div>
         
         {connectIQ && Object.keys(connectIQ).length > 0 && (
           <div className="mt-4 pt-4 border-t border-slate-700">
             <h5 className="text-slate-300 font-medium mb-2">Connect IQ (JumpJump Pro):</h5>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-              {connectIQ.jumps && <div><span className="text-slate-400">Sauts:</span> <span className="text-white">{connectIQ.jumps}</span></div>}
-              {connectIQ.duration && <div><span className="text-slate-400">Durée:</span> <span className="text-white">{connectIQ.duration}</span></div>}
-              {connectIQ.speed && <div><span className="text-slate-400">Vitesse:</span> <span className="text-white">{connectIQ.speed} sauts/min</span></div>}
-              {connectIQ.interruptions !== undefined && <div><span className="text-slate-400">Interruptions:</span> <span className="text-white">{connectIQ.interruptions}</span></div>}
-              {connectIQ.maxContinuousJumps && <div><span className="text-slate-400">Max continu:</span> <span className="text-white">{connectIQ.maxContinuousJumps} sauts</span></div>}
+              {connectIQ.jumps && connectIQ.jumps > 0 && <div><span className="text-slate-400">Sauts:</span> <span className="text-white">{connectIQ.jumps}</span></div>}
+              {connectIQ.speed && connectIQ.speed > 0 && <div><span className="text-slate-400">Vitesse:</span> <span className="text-white">{typeof connectIQ.speed === 'number' ? connectIQ.speed.toFixed(2) : connectIQ.speed} sauts/min</span></div>}
+              {connectIQ.interruptions !== undefined && connectIQ.interruptions !== null && <div><span className="text-slate-400">Interruptions:</span> <span className="text-white">{connectIQ.interruptions}</span></div>}
+              {connectIQ.maxContinuousJumps && connectIQ.maxContinuousJumps > 0 && <div><span className="text-slate-400">Max continu:</span> <span className="text-white">{connectIQ.maxContinuousJumps} sauts</span></div>}
+              {connectIQ.duration && <div><span className="text-slate-400">Durée Connect IQ:</span> <span className="text-white">{connectIQ.duration}</span></div>}
+            </div>
+          </div>
+        )}
+        
+        {/* CORRECTION : Afficher timestamps, localisation, élévation, deviceInfo si disponibles */}
+        {(activity.startTimeLocal || activity.startTimeGMT || activity.location || activity.elevation || activity.deviceInfo) && (
+          <div className="mt-4 pt-4 border-t border-slate-700">
+            <h5 className="text-slate-300 text-xs mb-2 font-medium">Informations supplémentaires:</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+              {(activity.startTimeLocal || activity.startTimeGMT) && (
+                <div>
+                  <span className="text-slate-400">Timestamps:</span>
+                  {activity.startTimeLocal && <span className="text-white ml-2">Début (local): {activity.startTimeLocal}</span>}
+                  {activity.startTimeGMT && <span className="text-white ml-2">Début (GMT): {activity.startTimeGMT}</span>}
+                </div>
+              )}
+              {activity.location && (activity.location.start || activity.location.end) && (
+                <div>
+                  <span className="text-slate-400">Localisation:</span>
+                  {activity.location.start && (
+                    <span className="text-white ml-2">Départ: {activity.location.start.lat?.toFixed(4)}, {activity.location.start.lng?.toFixed(4)}</span>
+                  )}
+                  {activity.location.end && (
+                    <span className="text-white ml-2">Arrivée: {activity.location.end.lat?.toFixed(4)}, {activity.location.end.lng?.toFixed(4)}</span>
+                  )}
+                </div>
+              )}
+              {activity.elevation && (activity.elevation.gain || activity.elevation.loss || activity.elevation.max || activity.elevation.min) && (
+                <div>
+                  <span className="text-slate-400">Élévation:</span>
+                  {activity.elevation.gain && <span className="text-white ml-2">Gain: {activity.elevation.gain}m</span>}
+                  {activity.elevation.loss && <span className="text-white ml-2">Perte: {activity.elevation.loss}m</span>}
+                  {activity.elevation.max && <span className="text-white ml-2">Max: {activity.elevation.max.toFixed(1)}m</span>}
+                  {activity.elevation.min && <span className="text-white ml-2">Min: {activity.elevation.min.toFixed(1)}m</span>}
+                </div>
+              )}
+              {activity.deviceInfo && activity.deviceInfo.deviceId && (
+                <div>
+                  <span className="text-slate-400">Appareil:</span>
+                  <span className="text-white ml-2">ID: {activity.deviceInfo.deviceId}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -384,26 +562,74 @@ const GraminTab = () => {
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4 mb-4">
         <div className="flex justify-between items-start mb-3">
           <div>
-            <h4 className="text-white font-semibold">💪 Cardio - {activity.date} {activity.time}</h4>
+            <h4 className="text-white font-semibold">💪 {activity.activityName || 'Cardio'} - {activity.date} {activity.time}</h4>
           </div>
           <div className="text-slate-400 text-xs">ID: {activity.id}</div>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-          <div><span className="text-slate-400">Durée:</span> <span className="text-white">{Math.floor((activity.duration || 0) / 60)}min {activity.duration % 60}s</span></div>
+          {activity.activityType && <div><span className="text-slate-400">Type:</span> <span className="text-white">{activity.activityType}</span></div>}
+          <div><span className="text-slate-400">Temps total:</span> <span className="text-white">{Math.floor((activity.duration || 0) / 60)}min {activity.duration % 60}s</span></div>
+          {activity.distance && activity.distance > 0 && <div><span className="text-slate-400">Distance:</span> <span className="text-white">{activity.distance} km</span></div>}
+          
           <div><span className="text-slate-400">FC moyenne:</span> <span className="text-white">{activity.avgHR || 0} bpm</span></div>
           <div><span className="text-slate-400">FC max:</span> <span className="text-white">{activity.maxHR || 0} bpm</span></div>
-          
+          {/* CORRECTION : Afficher minHR si disponible */}
+          {activity.minHR && activity.minHR > 0 && (
+            <div><span className="text-slate-400">FC min:</span> <span className="text-white">{activity.minHR} bpm</span></div>
+          )}
           <div><span className="text-slate-400">Calories totales:</span> <span className="text-white">{cal.total || 0} kcal</span></div>
+          
           {cal.resting && <div><span className="text-slate-400">Cal. repos:</span> <span className="text-white">{cal.resting} kcal</span></div>}
           {cal.active && <div><span className="text-slate-400">Cal. actives:</span> <span className="text-white">{cal.active} kcal</span></div>}
-          
           {activity.sweatLoss && <div><span className="text-slate-400">Transpiration:</span> <span className="text-white">{activity.sweatLoss} ml</span></div>}
-          {intensity.total && <div><span className="text-slate-400">Intensité total:</span> <span className="text-white">{intensity.total} min</span></div>}
           
-          {intensity.moderate && <div><span className="text-slate-400">Modérée:</span> <span className="text-white">{intensity.moderate} min</span></div>}
-          {intensity.vigorous && <div><span className="text-slate-400">Soutenue:</span> <span className="text-white">{intensity.vigorous} min (x2)</span></div>}
+          {intensity.moderate && <div><span className="text-slate-400">Intensité modérée:</span> <span className="text-white">{intensity.moderate} min</span></div>}
+          {intensity.vigorous && <div><span className="text-slate-400">Intensité soutenue:</span> <span className="text-white">{intensity.vigorous} min (x2)</span></div>}
+          {intensity.total && <div><span className="text-slate-400">Total intensif:</span> <span className="text-white">{intensity.total} min</span></div>}
         </div>
+        
+        {/* CORRECTION : Afficher timestamps, localisation, élévation, deviceInfo si disponibles */}
+        {(activity.startTimeLocal || activity.startTimeGMT || activity.location || activity.elevation || activity.deviceInfo) && (
+          <div className="mt-4 pt-4 border-t border-slate-700">
+            <h5 className="text-slate-300 text-xs mb-2 font-medium">Informations supplémentaires:</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+              {(activity.startTimeLocal || activity.startTimeGMT) && (
+                <div>
+                  <span className="text-slate-400">Timestamps:</span>
+                  {activity.startTimeLocal && <span className="text-white ml-2">Début (local): {activity.startTimeLocal}</span>}
+                  {activity.startTimeGMT && <span className="text-white ml-2">Début (GMT): {activity.startTimeGMT}</span>}
+                </div>
+              )}
+              {activity.location && (activity.location.start || activity.location.end) && (
+                <div>
+                  <span className="text-slate-400">Localisation:</span>
+                  {activity.location.start && (
+                    <span className="text-white ml-2">Départ: {activity.location.start.lat?.toFixed(4)}, {activity.location.start.lng?.toFixed(4)}</span>
+                  )}
+                  {activity.location.end && (
+                    <span className="text-white ml-2">Arrivée: {activity.location.end.lat?.toFixed(4)}, {activity.location.end.lng?.toFixed(4)}</span>
+                  )}
+                </div>
+              )}
+              {activity.elevation && (activity.elevation.gain || activity.elevation.loss || activity.elevation.max || activity.elevation.min) && (
+                <div>
+                  <span className="text-slate-400">Élévation:</span>
+                  {activity.elevation.gain && <span className="text-white ml-2">Gain: {activity.elevation.gain}m</span>}
+                  {activity.elevation.loss && <span className="text-white ml-2">Perte: {activity.elevation.loss}m</span>}
+                  {activity.elevation.max && <span className="text-white ml-2">Max: {activity.elevation.max.toFixed(1)}m</span>}
+                  {activity.elevation.min && <span className="text-white ml-2">Min: {activity.elevation.min.toFixed(1)}m</span>}
+                </div>
+              )}
+              {activity.deviceInfo && activity.deviceInfo.deviceId && (
+                <div>
+                  <span className="text-slate-400">Appareil:</span>
+                  <span className="text-white ml-2">ID: {activity.deviceInfo.deviceId}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -447,8 +673,19 @@ const GraminTab = () => {
                   <th className="px-2 py-1 text-left border-b border-slate-700">Calories</th>
                   <th className="px-2 py-1 text-left border-b border-slate-700">FC repos</th>
                   <th className="px-2 py-1 text-left border-b border-slate-700">FC max</th>
-                  <th className="px-2 py-1 text-left border-b border-slate-700">Sommeil</th>
+                  <th className="px-2 py-1 text-left border-b border-slate-700">FC moy</th>
+                  <th className="px-2 py-1 text-left border-b border-b border-slate-700">Sommeil</th>
                   <th className="px-2 py-1 text-left border-b border-slate-700">Intensité</th>
+                  {/* CORRECTION : Ajouter colonnes Body Battery, Stress, SpO2 */}
+                  {(dateKeys.some(dk => dailyMetrics[dk]?.bodyBattery !== undefined && dailyMetrics[dk]?.bodyBattery !== null)) && (
+                    <th className="px-2 py-1 text-left border-b border-slate-700">Body Battery</th>
+                  )}
+                  {(dateKeys.some(dk => dailyMetrics[dk]?.stress !== undefined && dailyMetrics[dk]?.stress !== null)) && (
+                    <th className="px-2 py-1 text-left border-b border-slate-700">Stress</th>
+                  )}
+                  {(dateKeys.some(dk => dailyMetrics[dk]?.spo2 !== undefined && dailyMetrics[dk]?.spo2 !== null)) && (
+                    <th className="px-2 py-1 text-left border-b border-slate-700">SpO2</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -471,8 +708,19 @@ const GraminTab = () => {
                       <td className="px-2 py-1 border-b border-slate-700">{cal.total ?? 0}</td>
                       <td className="px-2 py-1 border-b border-slate-700">{hr.resting ?? 0} bpm</td>
                       <td className="px-2 py-1 border-b border-slate-700">{hr.max ?? 0} bpm</td>
+                      <td className="px-2 py-1 border-b border-slate-700">{hr.avg ?? 0} bpm</td>
                       <td className="px-2 py-1 border-b border-slate-700">{sleepStr}</td>
                       <td className="px-2 py-1 border-b border-slate-700">{intensityStr}</td>
+                      {/* CORRECTION : Afficher Body Battery, Stress, SpO2 dans le tableau */}
+                      {(dateKeys.some(dk => dailyMetrics[dk]?.bodyBattery !== undefined && dailyMetrics[dk]?.bodyBattery !== null)) && (
+                        <td className="px-2 py-1 border-b border-slate-700">{dm.bodyBattery !== undefined && dm.bodyBattery !== null ? `${dm.bodyBattery}/100` : '—'}</td>
+                      )}
+                      {(dateKeys.some(dk => dailyMetrics[dk]?.stress !== undefined && dailyMetrics[dk]?.stress !== null)) && (
+                        <td className="px-2 py-1 border-b border-slate-700">{dm.stress !== undefined && dm.stress !== null ? dm.stress : '—'}</td>
+                      )}
+                      {(dateKeys.some(dk => dailyMetrics[dk]?.spo2 !== undefined && dailyMetrics[dk]?.spo2 !== null)) && (
+                        <td className="px-2 py-1 border-b border-slate-700">{dm.spo2 !== undefined && dm.spo2 !== null ? `${dm.spo2}%` : '—'}</td>
+                      )}
                     </tr>
                   );
                 })}
@@ -604,6 +852,51 @@ const GraminTab = () => {
               </div>
             </div>
           )}
+          {/* CORRECTION : Afficher Body Battery, Stress, SpO2 si disponibles */}
+          {(d.bodyBattery !== undefined && d.bodyBattery !== null) && (
+            <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+              <div className="text-slate-400 text-xs">Body Battery</div>
+              <div className="text-white text-lg">{d.bodyBattery}/100</div>
+              <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full ${
+                    d.bodyBattery >= 70 ? 'bg-green-500' : 
+                    d.bodyBattery >= 50 ? 'bg-yellow-500' : 
+                    d.bodyBattery >= 30 ? 'bg-orange-500' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${d.bodyBattery}%` }}
+                />
+              </div>
+            </div>
+          )}
+          {(d.stress !== undefined && d.stress !== null) && (
+            <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+              <div className="text-slate-400 text-xs">Stress</div>
+              <div className="text-white text-lg">{d.stress}</div>
+              <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full ${
+                    d.stress <= 25 ? 'bg-green-500' : 
+                    d.stress <= 50 ? 'bg-yellow-500' : 
+                    d.stress <= 75 ? 'bg-orange-500' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${Math.min(d.stress * 2, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+          {(d.spo2 !== undefined && d.spo2 !== null) && (
+            <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+              <div className="text-slate-400 text-xs">SpO2 (Saturation O₂)</div>
+              <div className="text-white text-lg">{d.spo2}%</div>
+              <div className={`text-xs mt-1 ${
+                d.spo2 >= 95 ? 'text-green-400' : 
+                d.spo2 >= 90 ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {d.spo2 >= 95 ? 'Normal' : d.spo2 >= 90 ? 'Acceptable' : 'Faible'}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -654,6 +947,121 @@ const GraminTab = () => {
 
         {garminData && (
           <div className="mt-8">
+            {/* CORRECTION : Dashboard avec cartes pour métriques quotidiennes (pour date sélectionnée ou dernière) */}
+            {garminData.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0 && (() => {
+              const dateKeys = Object.keys(garminData.dailyMetrics).sort();
+              const displayDate = selectedDate || dateKeys[dateKeys.length - 1];
+              const d = garminData.dailyMetrics[displayDate] || {};
+              const calories = d.calories || {};
+              const hr = d.heartRate || {};
+              
+              return (
+                <div className="mt-6">
+                  <h3 className="text-white font-semibold mb-4">📊 Dashboard - {displayDate}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    {/* Carte Pas */}
+                    <div className="bg-gradient-to-br from-blue-800/60 to-blue-900/60 border border-blue-700 rounded-lg p-4">
+                      <div className="text-blue-300 text-xs mb-1">Pas</div>
+                      <div className="text-white text-2xl font-bold">{d.steps ?? 0}</div>
+                      <div className="text-blue-400 text-xs mt-2">Distance: {d.distance ?? 0} km</div>
+                    </div>
+                    
+                    {/* Carte Calories */}
+                    <div className="bg-gradient-to-br from-orange-800/60 to-orange-900/60 border border-orange-700 rounded-lg p-4">
+                      <div className="text-orange-300 text-xs mb-1">Calories</div>
+                      <div className="text-white text-2xl font-bold">{calories.total ?? 0}</div>
+                      <div className="text-orange-400 text-xs mt-2">
+                        Actives: {calories.active ?? 0} • Repos: {calories.resting ?? 0}
+                      </div>
+                    </div>
+                    
+                    {/* Carte FC */}
+                    <div className="bg-gradient-to-br from-red-800/60 to-red-900/60 border border-red-700 rounded-lg p-4">
+                      <div className="text-red-300 text-xs mb-1">FC Repos</div>
+                      <div className="text-white text-2xl font-bold">{hr.resting ?? 0}</div>
+                      <div className="text-red-400 text-xs mt-2">
+                        Max: {hr.max ?? 0} • Moy: {hr.avg ?? 0}
+                      </div>
+                    </div>
+                    
+                    {/* Carte Sommeil */}
+                    {d.sleep && d.sleep.duration > 0 && (
+                      <div className="bg-gradient-to-br from-indigo-800/60 to-indigo-900/60 border border-indigo-700 rounded-lg p-4">
+                        <div className="text-indigo-300 text-xs mb-1">Sommeil</div>
+                        <div className="text-white text-2xl font-bold">
+                          {Math.floor(d.sleep.duration)}h{Math.round((d.sleep.duration % 1) * 60)}m
+                        </div>
+                        {d.sleep.quality > 0 && (
+                          <div className="text-indigo-400 text-xs mt-2">Qualité: {d.sleep.quality}/100</div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Carte Body Battery */}
+                    {d.bodyBattery !== undefined && d.bodyBattery !== null && (
+                      <div className="bg-gradient-to-br from-green-800/60 to-green-900/60 border border-green-700 rounded-lg p-4">
+                        <div className="text-green-300 text-xs mb-1">Body Battery</div>
+                        <div className="text-white text-2xl font-bold">{d.bodyBattery}/100</div>
+                        <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              d.bodyBattery >= 70 ? 'bg-green-400' : 
+                              d.bodyBattery >= 50 ? 'bg-yellow-400' : 
+                              d.bodyBattery >= 30 ? 'bg-orange-400' : 'bg-red-400'
+                            }`}
+                            style={{ width: `${d.bodyBattery}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Carte Stress */}
+                    {d.stress !== undefined && d.stress !== null && (
+                      <div className="bg-gradient-to-br from-purple-800/60 to-purple-900/60 border border-purple-700 rounded-lg p-4">
+                        <div className="text-purple-300 text-xs mb-1">Stress</div>
+                        <div className="text-white text-2xl font-bold">{d.stress}</div>
+                        <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              d.stress <= 25 ? 'bg-green-400' : 
+                              d.stress <= 50 ? 'bg-yellow-400' : 
+                              d.stress <= 75 ? 'bg-orange-400' : 'bg-red-400'
+                            }`}
+                            style={{ width: `${Math.min(d.stress * 2, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Carte SpO2 */}
+                    {d.spo2 !== undefined && d.spo2 !== null && (
+                      <div className="bg-gradient-to-br from-cyan-800/60 to-cyan-900/60 border border-cyan-700 rounded-lg p-4">
+                        <div className="text-cyan-300 text-xs mb-1">SpO2</div>
+                        <div className="text-white text-2xl font-bold">{d.spo2}%</div>
+                        <div className={`text-xs mt-2 ${
+                          d.spo2 >= 95 ? 'text-green-400' : 
+                          d.spo2 >= 90 ? 'text-yellow-400' : 'text-red-400'
+                        }`}>
+                          {d.spo2 >= 95 ? 'Normal' : d.spo2 >= 90 ? 'Acceptable' : 'Faible'}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Carte Intensité */}
+                    {d.intensityMinutes && (d.intensityMinutes.total > 0 || d.intensityMinutes.moderate > 0 || d.intensityMinutes.vigorous > 0) && (
+                      <div className="bg-gradient-to-br from-pink-800/60 to-pink-900/60 border border-pink-700 rounded-lg p-4">
+                        <div className="text-pink-300 text-xs mb-1">Intensité</div>
+                        <div className="text-white text-2xl font-bold">{d.intensityMinutes.total ?? 0} min</div>
+                        <div className="text-pink-400 text-xs mt-2">
+                          Modérée: {d.intensityMinutes.moderate ?? 0} • Soutenue: {d.intensityMinutes.vigorous ?? 0}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+            
             {/* Natation - Détails complets */}
             {(garminData.activities?.swimming?.length > 0) && (
               <div className="mt-6">

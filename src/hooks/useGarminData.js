@@ -66,30 +66,59 @@ export const useGarminData = () => {
       const db = await openDB();
       const tx = db.transaction([STORE_ACTIVITIES], 'readwrite');
       const store = tx.objectStore(STORE_ACTIVITIES);
-      const date_type_idx = store.index('date_type');
 
-      // Déduplication par id (activityId Garmin) ou par hash
+      // Déduplication robuste par ID Garmin (activityId)
+      // L'ID Garmin est unique et persiste entre les sync
       for (const type of ['swimming', 'jumpRope', 'cardio']) {
         const items = activities[type] || [];
         for (const item of items) {
           try {
+            // Vérifier si l'activité existe déjà par son ID
             const existing = await new Promise((resolve, reject) => {
-              const req = date_type_idx.get([item.date, type]);
+              const req = store.get(item.id);
               req.onsuccess = () => resolve(req.result);
               req.onerror = () => resolve(null);
             });
-            if (!existing || existing.id !== item.id) {
+            
+            // Si elle n'existe pas, ou si elle existe mais avec un type différent, sauvegarder
+            if (!existing) {
+              // Nouvelle activité, sauvegarder directement
               await new Promise((resolve, reject) => {
-                const req = store.put({ ...item, type });
+                const req = store.put({ ...item, type, source: item.source || 'garmin', lastSynced: new Date().toISOString() });
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+              });
+            } else if (existing.id === item.id) {
+              // Activité existante : fusionner les données (mettre à jour avec les nouvelles valeurs)
+              // IMPORTANT: Forcer le type selon la catégorie du JSON Python (type vient de la boucle)
+              // Si l'activité est dans "swimming", elle DOIT être de type "swimming", pas "cardio"
+              const merged = {
+                ...existing,
+                ...item,
+                type: type, // FORCER le type selon la catégorie du JSON (corrige natation -> cardio)
+                source: item.source || existing.source || 'garmin',
+                lastSynced: new Date().toISOString(),
+                // Fusionner les objets imbriqués (calories, intensityMinutes, etc.)
+                calories: item.calories || existing.calories,
+                intensityMinutes: item.intensityMinutes || existing.intensityMinutes,
+                connectIQ: item.connectIQ || existing.connectIQ,
+                swimmingMetrics: item.swimmingMetrics || existing.swimmingMetrics,
+                timeMetrics: item.timeMetrics || existing.timeMetrics,
+              };
+              await new Promise((resolve, reject) => {
+                const req = store.put(merged);
                 req.onsuccess = () => resolve();
                 req.onerror = () => reject(req.error);
               });
             }
           } catch (e) {
-            // Ignorer doublons
+            console.warn('[GarminData] Error saving activity:', item.id, e);
+            // Continuer même en cas d'erreur pour une activité spécifique
           }
         }
       }
+      
+      console.log('[GarminData] Activities saved successfully');
     } catch (err) {
       console.error('[GarminData] Save activities error:', err);
     }
@@ -103,12 +132,55 @@ export const useGarminData = () => {
       const store = tx.objectStore(STORE_DAILY_METRICS);
 
       for (const [date, metrics] of Object.entries(dailyMetrics)) {
-        await new Promise((resolve, reject) => {
-          const req = store.put({ date, ...metrics });
-          req.onsuccess = () => resolve();
-          req.onerror = () => reject(req.error);
-        });
+        try {
+          // Récupérer les métriques existantes pour cette date
+          const existing = await new Promise((resolve, reject) => {
+            const req = store.get(date);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+          });
+          
+          // Fusionner les métriques : nouvelles valeurs remplacent les anciennes, mais préserver ce qui n'existe pas
+          const merged = existing 
+            ? {
+                ...existing,
+                ...metrics,
+                // Fusionner les objets imbriqués
+                calories: { ...existing.calories, ...(metrics.calories || {}) },
+                heartRate: { 
+                  ...existing.heartRate, 
+                  ...(metrics.heartRate || {}),
+                  // Fusionner timeSeries : concaténer et dédupliquer
+                  timeSeries: [
+                    ...(existing.heartRate?.timeSeries || []),
+                    ...(metrics.heartRate?.timeSeries || [])
+                  ].filter((ts, index, self) => 
+                    index === self.findIndex(t => t.timestamp === ts.timestamp)
+                  ),
+                },
+                respiration: metrics.respiration || existing.respiration,
+                sleep: { ...existing.sleep, ...(metrics.sleep || {}) },
+                intensityMinutes: metrics.intensityMinutes || existing.intensityMinutes,
+                lastSynced: new Date().toISOString(),
+              }
+            : { 
+                date, 
+                ...metrics, 
+                lastSynced: new Date().toISOString() 
+              };
+          
+          await new Promise((resolve, reject) => {
+            const req = store.put(merged);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+          });
+        } catch (e) {
+          console.warn('[GarminData] Error saving daily metrics for', date, e);
+          // Continuer même en cas d'erreur pour une date spécifique
+        }
       }
+      
+      console.log('[GarminData] Daily metrics saved successfully');
     } catch (err) {
       console.error('[GarminData] Save daily metrics error:', err);
     }
