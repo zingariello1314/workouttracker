@@ -107,9 +107,18 @@ const StatsTab = () => {
     });
     
     const totalWorkouts = filteredHistory.length;
-    const totalReps = filteredHistory.reduce((sum, session) => 
-      sum + (session.exercises?.reduce((reps, ex) => reps + (parseInt(ex.reps) || 0), 0) || 0), 0
-    );
+    // CORRECTION CRITIQUE: Exclure les jumps de corde à sauter des calculs de reps
+    const totalReps = filteredHistory.reduce((sum, session) => {
+      if (!session.exercises) return sum;
+      const sessionReps = session.exercises.reduce((reps, ex) => {
+        // Exclure les exercices d'endurance jumprope
+        const isJumprope = (ex.exerciseId || ex.id || '').toString().includes('endurance_jumprope') ||
+                           ex.activityType === 'jumprope';
+        if (isJumprope) return reps; // Ne pas compter les jumps comme reps
+        return reps + (parseInt(ex.reps) || 0);
+      }, 0);
+      return sum + sessionReps;
+    }, 0);
     const totalStretches = filteredHistory.reduce((sum, session) => 
       sum + (session.completedStretches || 0), 0
     );

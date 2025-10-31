@@ -75,8 +75,18 @@ const VolumeRepetitionsChart = ({ data, colors }) => {
     });
     
     // Tendance des répétitions
-    const recentReps = recentSessions.reduce((sum, session) => sum + (session.totalReps || 0), 0);
-    const previousReps = previousSessions.reduce((sum, session) => sum + (session.totalReps || 0), 0);
+    // CORRECTION: Exclure les jumps de corde à sauter
+    const calculateValidReps = (session) => {
+      if (!session || !session.exercises) return session?.totalReps || 0;
+      return session.exercises.reduce((total, ex) => {
+        const isJumprope = (ex.exerciseId || ex.id || '').toString().includes('endurance_jumprope') ||
+                           ex.activityType === 'jumprope';
+        if (isJumprope) return total;
+        return total + (parseInt(ex.reps) || 0);
+      }, 0);
+    };
+    const recentReps = recentSessions.reduce((sum, session) => sum + calculateValidReps(session), 0);
+    const previousReps = previousSessions.reduce((sum, session) => sum + calculateValidReps(session), 0);
     const repsTrend = previousReps > 0 ? 
       Math.round(((recentReps - previousReps) / previousReps) * 100) : 
       (recentReps > 0 ? 100 : 0);

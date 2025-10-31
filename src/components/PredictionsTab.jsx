@@ -3,6 +3,7 @@ import Card, { CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { useWorkout } from '../context/WorkoutContext';
 import { typography } from '../styles/typography';
+import { calculateValidReps } from '../utils/enduranceUtils';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -109,9 +110,10 @@ const PredictionsTab = () => {
       .reverse(); // Ordre chronologique
 
     // Préparation des données pour l'analyse
+    // CORRECTION CRITIQUE: Exclure les jumps de corde à sauter des calculs de reps
     const repsData = recentHistory.map((session, index) => ({
       date: session.date,
-      value: session.totalReps || 0,
+      value: calculateValidReps(session), // Utiliser la fonction qui exclut les jumps
       index
     }));
 

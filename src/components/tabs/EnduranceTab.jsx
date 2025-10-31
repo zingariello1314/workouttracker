@@ -2185,7 +2185,7 @@ const EnduranceTab = () => {
                                 <span className="text-white font-bold text-lg">{session.date}</span>
                                 <span className="text-slate-400">{session.time}</span>
                                 <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg text-sm">
-                                  {session.swimType.charAt(0).toUpperCase() + session.swimType.slice(1)}
+                                  {session.swimType ? (session.swimType.charAt(0).toUpperCase() + session.swimType.slice(1)) : 'Natation'}
                                 </span>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -2219,7 +2219,11 @@ const EnduranceTab = () => {
                                 {session.calories && (
                                   <div>
                                     <span className="text-slate-400">Calories:</span>
-                                    <span className="text-white font-bold ml-2">{session.calories} kcal</span>
+                                    <span className="text-white font-bold ml-2">
+                                      {typeof session.calories === 'object' 
+                                        ? (session.calories.total || session.calories.active || 0) 
+                                        : session.calories} kcal
+                                    </span>
                                   </div>
                                 )}
                                 {session.pace100m && (
@@ -2252,18 +2256,20 @@ const EnduranceTab = () => {
                               </button>
                             </div>
                           </div>
-                          <div className="border-t border-slate-700/50 pt-4">
-                            <h5 className="text-slate-400 text-sm mb-3">Détail des longueurs:</h5>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                              {session.laps.map((lap, idx) => (
-                                <div key={idx} className="bg-slate-800/50 px-3 py-2 rounded-lg">
-                                  <span className="text-slate-500 text-xs">#{idx + 1}</span>
-                                  <span className="text-white font-medium ml-2">{lap.distance}m</span>
-                                  <span className="text-slate-400 ml-2 text-sm">{lap.time}</span>
-                                </div>
-                              ))}
+                          {session.laps && Array.isArray(session.laps) && session.laps.length > 0 && (
+                            <div className="border-t border-slate-700/50 pt-4">
+                              <h5 className="text-slate-400 text-sm mb-3">Détail des longueurs:</h5>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                {session.laps.map((lap, idx) => (
+                                  <div key={idx} className="bg-slate-800/50 px-3 py-2 rounded-lg">
+                                    <span className="text-slate-500 text-xs">#{idx + 1}</span>
+                                    <span className="text-white font-medium ml-2">{lap.distance}m</span>
+                                    <span className="text-slate-400 ml-2 text-sm">{lap.time}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
+                          )}
                           {session.notes && (
                             <div className="mt-4 text-slate-400 text-sm">
                               <span className="font-medium">Notes:</span> {session.notes}
@@ -2626,7 +2632,7 @@ const EnduranceTab = () => {
                               </td>
                               <td className="px-6 py-4">
                                 <span className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg text-xs">
-                                  {session.type.charAt(0).toUpperCase() + session.type.slice(1)}
+                                  {session.type ? (session.type.charAt(0).toUpperCase() + session.type.slice(1)) : 'Corde à sauter'}
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-slate-300">{session.jumps || '-'}</td>
@@ -2965,7 +2971,7 @@ const EnduranceTab = () => {
                                 <span className="text-white font-bold text-lg">{session.date}</span>
                                 <span className="text-slate-400">{session.time}</span>
                                 <span className="px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 rounded-lg text-sm">
-                                  {session.type.charAt(0).toUpperCase() + session.type.slice(1)}
+                                  {session.type ? (session.type.charAt(0).toUpperCase() + session.type.slice(1)) : 'Boxing'}
                                 </span>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

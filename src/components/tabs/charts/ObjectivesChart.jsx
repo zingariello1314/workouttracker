@@ -12,9 +12,19 @@ const ObjectivesChart = ({ data, colors }) => {
     // Calculer les répétitions actuelles de la semaine
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
+    // CORRECTION: Exclure les jumps de corde à sauter
+    const calculateValidReps = (session) => {
+      if (!session || !session.exercises) return session?.totalReps || 0;
+      return session.exercises.reduce((total, ex) => {
+        const isJumprope = (ex.exerciseId || ex.id || '').toString().includes('endurance_jumprope') ||
+                           ex.activityType === 'jumprope';
+        if (isJumprope) return total;
+        return total + (parseInt(ex.reps) || 0);
+      }, 0);
+    };
     const currentWeekReps = data.workoutHistory
       .filter(session => new Date(session.date) >= weekAgo)
-      .reduce((sum, session) => sum + (session.totalReps || 0), 0);
+      .reduce((sum, session) => sum + calculateValidReps(session), 0);
     
     return [
       {

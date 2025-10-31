@@ -165,8 +165,20 @@ const SmartBalancingTab = () => {
       : (avgSessionsPerWeek < 2 ? 3 : avgSessionsPerWeek < 4 ? 4 : 5);
 
     // Analyse de l'intensité
-    const avgRepsPerSession = last30Days.reduce((sum, session) => sum + (session.totalReps || 0), 0) / Math.max(1, last30Days.length);
-    const recentAvgReps = last7Days.reduce((sum, session) => sum + (session.totalReps || 0), 0) / Math.max(1, last7Days.length);
+    // CORRECTION CRITIQUE: Exclure les jumps de corde à sauter des calculs de reps
+    const calculateValidReps = (session) => {
+      if (!session || !session.exercises) return 0;
+      return session.exercises.reduce((total, ex) => {
+        // Exclure les exercices d'endurance jumprope
+        const isJumprope = (ex.exerciseId || ex.id || '').toString().includes('endurance_jumprope') ||
+                           ex.activityType === 'jumprope';
+        if (isJumprope) return total; // Ne pas compter les jumps comme reps
+        return total + (parseInt(ex.reps) || 0);
+      }, 0);
+    };
+    
+    const avgRepsPerSession = last30Days.reduce((sum, session) => sum + calculateValidReps(session), 0) / Math.max(1, last30Days.length);
+    const recentAvgReps = last7Days.reduce((sum, session) => sum + calculateValidReps(session), 0) / Math.max(1, last7Days.length);
     const intensityTrend = ((recentAvgReps - avgRepsPerSession) / Math.max(1, avgRepsPerSession)) * 100;
 
     // Analyse de la variété

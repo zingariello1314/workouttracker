@@ -1,5 +1,6 @@
 import React from 'react';
 import { TrendingUp } from 'lucide-react';
+import { calculateValidReps } from '../../../utils/enduranceUtils';
 
 const EvolutionChart = ({ data, colors }) => {
   // Calculer les données d'évolution
@@ -7,7 +8,7 @@ const EvolutionChart = ({ data, colors }) => {
     return data.workoutHistory
       .map(session => ({
         date: session.date,
-        totalReps: session.totalReps,
+        totalReps: calculateValidReps(session), // CORRECTION: Exclure les jumps
         exercises: session.exercises?.length || 0,
         duration: session.duration || 0
       }))

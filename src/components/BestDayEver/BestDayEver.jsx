@@ -97,9 +97,20 @@ const BestDayEver = ({ isOpen, onClose, workoutHistory = [] }) => {
     };
 
     // Analyse de chaque séance
+    // CORRECTION: Exclure les jumps de corde à sauter
+    const calculateValidReps = (session) => {
+      if (!session || !session.exercises) return session?.totalReps || 0;
+      return session.exercises.reduce((total, ex) => {
+        const isJumprope = (ex.exerciseId || ex.id || '').toString().includes('endurance_jumprope') ||
+                           ex.activityType === 'jumprope';
+        if (isJumprope) return total;
+        return total + (parseInt(ex.reps) || 0);
+      }, 0);
+    };
+    
     workoutHistory.forEach(session => {
       const sessionDate = new Date(session.date);
-      const sessionReps = session.totalReps || session.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0;
+      const sessionReps = calculateValidReps(session);
       const sessionExercises = session.exercises?.length || 0;
       const sessionDuration = session.duration || 0;
       const sessionIntensity = session.feedback?.difficulte || 5;

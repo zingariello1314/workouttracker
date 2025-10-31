@@ -4,6 +4,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { formatDate } from '../../utils/dateUtils';
 import { typography } from '../../styles/typography';
+import { calculateTotalRepsExcludingJumps, calculateValidReps } from '../../utils/enduranceUtils';
 
 const HistoryTab = () => {
   const { getWorkoutHistory } = useWorkout();
@@ -69,7 +70,7 @@ const HistoryTab = () => {
             </div>
             <div className="text-center">
               <div className={`${typography.presets.h3} text-green-400`}>
-                {history.reduce((sum, session) => sum + (session.totalReps || 0), 0)}
+                {calculateTotalRepsExcludingJumps(history)}
               </div>
               <div className={typography.presets.caption}>
                 Répétitions totales
@@ -85,7 +86,7 @@ const HistoryTab = () => {
             </div>
             <div className="text-center">
               <div className={`${typography.presets.h3} text-orange-400`}>
-                {history.length > 0 ? Math.round(history.reduce((sum, session) => sum + (session.totalReps || 0), 0) / history.length) : 0}
+                {history.length > 0 ? Math.round(calculateTotalRepsExcludingJumps(history) / history.length) : 0}
               </div>
               <div className={typography.presets.caption}>
                 Moyenne par séance
@@ -127,7 +128,7 @@ const HistoryTab = () => {
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-4 h-4 text-green-400" />
                   <span className={typography.presets.bodySmall}>
-                    {session.totalReps || 0} répétitions
+                    {calculateValidReps(session)} répétitions
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">

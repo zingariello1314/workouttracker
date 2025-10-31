@@ -556,10 +556,13 @@ const WorkoutProvider = ({ children }) => {
               }
               
               // Ajouter la session d'endurance comme exercice
+              // CORRECTION CRITIQUE: Ne PAS compter les jumps comme reps pour jumprope
+              // Les jumps sont une métrique séparée, pas des répétitions d'exercice
               const enduranceKey = `${dateStr}_endurance_${activityType}_${session.id || Date.now()}`;
               dataByDate[dateStr].exercises[enduranceKey] = {
                 exerciseId: `endurance_${activityType}`,
-                reps: session.reps || session.jumps || 0,
+                reps: activityType === 'jumprope' ? 0 : (session.reps || session.count || 0), // Exclure jumps des reps
+                jumps: activityType === 'jumprope' ? (session.jumps || 0) : undefined, // Garder jumps séparément
                 completed: true,
                 variant: '',
                 activityType: activityType,

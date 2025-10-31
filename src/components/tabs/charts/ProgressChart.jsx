@@ -23,7 +23,13 @@ const ProgressChart = ({ data, colors }) => {
       }
       
       monthlyData[monthKey].sessions += 1;
-      monthlyData[monthKey].totalReps += session.totalReps || 0;
+      // CORRECTION: Exclure les jumps de corde à sauter
+      const validReps = session.exercises?.reduce((total, ex) => {
+        const isJumprope = (ex.exerciseId || ex.id || '').toString().includes('endurance_jumprope') ||
+                           ex.activityType === 'jumprope';
+        return isJumprope ? total : total + (parseInt(ex.reps) || 0);
+      }, 0) || session.totalReps || 0;
+      monthlyData[monthKey].totalReps += validReps;
       monthlyData[monthKey].totalDuration += session.duration || 0;
       
       session.exercises?.forEach(exercise => {
