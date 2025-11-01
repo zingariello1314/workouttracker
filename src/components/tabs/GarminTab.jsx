@@ -5,6 +5,7 @@ import GarminDashboard from './GarminTab/components/GarminDashboard';
 import GarminActivities from './GarminTab/components/GarminActivities';
 import GarminDailyMetrics from './GarminTab/components/GarminDailyMetrics';
 import GarminHeartRateChart from './GarminTab/components/charts/GarminHeartRateChart';
+import GarminHeartRateTimeSeriesChart from './GarminTab/components/charts/GarminHeartRateTimeSeriesChart';
 import GarminBodyBatteryChart from './GarminTab/components/charts/GarminBodyBatteryChart';
 import GarminStressChart from './GarminTab/components/charts/GarminStressChart';
 import GarminSleepChart from './GarminTab/components/charts/GarminSleepChart';
@@ -14,6 +15,8 @@ import GarminCorrelationCharts from './GarminTab/components/charts/GarminCorrela
 import TimeNavigation from './GarminTab/components/TimeNavigation';
 import { useGarminSync } from './GarminTab/hooks/useGarminSync';
 import { useGarminImport } from './GarminTab/hooks/useGarminImport';
+import { useToast } from './GarminTab/components/Toast';
+import { GarminProvider } from './GarminTab/context/GarminContext';
 
 const GarminTab = () => {
   const [status, setStatus] = React.useState(null);
@@ -30,6 +33,13 @@ const GarminTab = () => {
   const [customEndDate, setCustomEndDate] = React.useState('');
   const { loadAllData, dbReady } = useGarminData();
   const { importToEndurance } = useGarminImport();
+  
+  // 🟡 FIX #33: Toast pour feedback visuel
+  const { showToast, ToastContainer } = useToast();
+  
+  // 🟡 FIX #33: Suivre l'état précédent du loading pour détecter la fin de sync
+  const prevLoadingRef = React.useRef(false);
+  const prevGarminDataRef = React.useRef(null);
 
   const { syncNow, backfill, fetchStatus, loading, baseUrl } = useGarminSync(
     setGarminData,
@@ -37,15 +47,27 @@ const GarminTab = () => {
     importToEndurance
   );
 
-  // Charger les données depuis IndexedDB au montage
+  // 🔴 FIX #2: Charger les données depuis IndexedDB au montage avec cleanup
   React.useEffect(() => {
-    fetchStatus();
+    let cancelled = false;
+    if (!cancelled) {
+      fetchStatus();
+    }
+    return () => {
+      cancelled = true;
+    };
   }, [fetchStatus]);
 
-  // Charger les données depuis IndexedDB dès que la DB est prête
+  // 🔴 FIX #2: Charger les données depuis IndexedDB dès que la DB est prête avec cleanup
   React.useEffect(() => {
-    if (dbReady) {
-      loadAllData().then((loaded) => {
+    if (!dbReady) return;
+    
+    let cancelled = false;
+    
+    loadAllData()
+      .then((loaded) => {
+        if (cancelled) return;
+        
         if (loaded && (Object.keys(loaded.dailyMetrics || {}).length > 0 ||
             (loaded.activities?.swimming?.length > 0 ||
              loaded.activities?.jumpRope?.length > 0 ||
@@ -60,26 +82,107 @@ const GarminTab = () => {
           });
           const dates = Object.keys(loaded.dailyMetrics || {}).sort();
           if (dates.length > 0) setSelectedDate(dates[dates.length - 1]);
-          console.log('[GarminTab] Loaded from IndexedDB:', {
-            swimming: loaded.activities.swimming?.length || 0,
-            jumpRope: loaded.activities.jumpRope?.length || 0,
-            cardio: loaded.activities.cardio?.length || 0,
-            dailyMetrics: Object.keys(loaded.dailyMetrics || {}).length,
-            sampleDate: Object.keys(loaded.dailyMetrics || {})[0],
-            sampleMetrics: loaded.dailyMetrics ? loaded.dailyMetrics[Object.keys(loaded.dailyMetrics)[0]] : null,
-            sampleActivity: loaded.activities?.swimming?.[0] || loaded.activities?.jumpRope?.[0] || loaded.activities?.cardio?.[0] || null
-          });
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[GarminTab] Loaded from storage:', {
+              swimming: loaded.activities.swimming?.length || 0,
+              jumpRope: loaded.activities.jumpRope?.length || 0,
+              cardio: loaded.activities.cardio?.length || 0,
+              dailyMetrics: Object.keys(loaded.dailyMetrics || {}).length,
+              sampleDate: Object.keys(loaded.dailyMetrics || {})[0],
+              sampleMetrics: loaded.dailyMetrics ? loaded.dailyMetrics[Object.keys(loaded.dailyMetrics)[0]] : null,
+              sampleActivity: loaded.activities?.swimming?.[0] || loaded.activities?.jumpRope?.[0] || loaded.activities?.cardio?.[0] || null
+            });
+          }
         }
-      }).catch(err => {
-        console.error('[GarminTab] Error loading from IndexedDB:', err);
+      })
+      .catch(err => {
+        if (!cancelled) {
+          console.error('[GarminTab] Error loading from storage:', err);
+        }
       });
-    }
+    
+    return () => {
+      cancelled = true;
+    };
   }, [dbReady, loadAllData]);
 
-  const handleBackfill = React.useCallback(() => {
-    if (startDate && endDate) {
-      backfill(startDate, endDate, setSelectedDate);
+  // 🟡 FIX #33: Détecter fin de sync pour afficher toast
+  React.useEffect(() => {
+    // Si loading passe de true à false, la sync vient de se terminer
+    if (prevLoadingRef.current && !loading) {
+      // Attendre un peu pour que les données soient mises à jour
+      setTimeout(() => {
+        if (garminData && prevGarminDataRef.current) {
+          const prevData = prevGarminDataRef.current;
+          const newActivities = {
+            swimming: (garminData.activities?.swimming?.length || 0) - (prevData.activities?.swimming?.length || 0),
+            jumpRope: (garminData.activities?.jumpRope?.length || 0) - (prevData.activities?.jumpRope?.length || 0),
+            cardio: (garminData.activities?.cardio?.length || 0) - (prevData.activities?.cardio?.length || 0)
+          };
+          const totalNewActivities = newActivities.swimming + newActivities.jumpRope + newActivities.cardio;
+          const newMetrics = Object.keys(garminData.dailyMetrics || {}).length - 
+                            Object.keys(prevData.dailyMetrics || {}).length;
+          
+          if (status?.ok && (totalNewActivities > 0 || newMetrics > 0)) {
+            showToast(
+              <div>
+                <div className="font-semibold mb-1">✅ Synchronisation réussie</div>
+                <div className="text-sm opacity-90">
+                  {totalNewActivities > 0 && `${totalNewActivities} nouvelle${totalNewActivities > 1 ? 's' : ''} activité${totalNewActivities > 1 ? 's' : ''}`}
+                  {totalNewActivities > 0 && newMetrics > 0 && ' • '}
+                  {newMetrics > 0 && `${newMetrics} jour${newMetrics > 1 ? 's' : ''} de métriques`}
+                </div>
+              </div>,
+              'success',
+              4000
+            );
+          } else if (status?.ok) {
+            showToast('✅ Synchronisation réussie (données à jour)', 'success', 3000);
+          } else if (status?.error) {
+            showToast(`❌ Erreur: ${status.error}`, 'error', 5000);
+          }
+        }
+      }, 500);
     }
+    prevLoadingRef.current = loading;
+    if (garminData) {
+      prevGarminDataRef.current = JSON.parse(JSON.stringify(garminData)); // Deep copy
+    }
+  }, [loading, garminData, status, showToast]);
+
+  const handleBackfill = React.useCallback(() => {
+    // 🟡 FIX #28: Validation des entrées backfill
+    if (!startDate || !endDate) {
+      alert('Veuillez sélectionner une plage de dates');
+      return;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    
+    if (start > end) {
+      alert('La date de début doit être avant la date de fin');
+      return;
+    }
+    
+    if (days > 365) {
+      const confirm = window.confirm(
+        `⚠️ Plage très large (${days} jours). Cela peut prendre plusieurs minutes. Continuer?`
+      );
+      if (!confirm) return;
+    }
+    
+    // Avertir si plage > 90 jours mais < 365
+    if (days > 90 && days <= 365) {
+      const confirm = window.confirm(
+        `⚠️ Plage importante (${days} jours). Cela peut prendre 1-2 minutes. Continuer?`
+      );
+      if (!confirm) return;
+    }
+    
+    backfill(startDate, endDate, setSelectedDate);
   }, [startDate, endDate, backfill, setSelectedDate]);
 
   const colors = {
@@ -96,9 +199,39 @@ const GarminTab = () => {
     blue: '#3B82F6'
   };
 
+  // 🟢 FIX #32: Props communes pour Context API
+  const commonChartProps = React.useMemo(() => ({
+    dailyMetrics: garminData?.dailyMetrics || {},
+    selectedDate,
+    periodFilter,
+    customStartDate,
+    customEndDate,
+    colors
+  }), [garminData?.dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors]);
+
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700 p-6">
+    <GarminProvider
+      dailyMetrics={garminData?.dailyMetrics || {}}
+      activities={garminData?.activities || { swimming: [], jumpRope: [], cardio: [] }}
+      selectedDate={selectedDate}
+      setSelectedDate={setSelectedDate}
+      periodFilter={periodFilter}
+      setPeriodFilter={setPeriodFilter}
+      customStartDate={customStartDate}
+      setCustomStartDate={setCustomStartDate}
+      customEndDate={customEndDate}
+      setCustomEndDate={setCustomEndDate}
+      comparisonMode={comparisonMode}
+      setComparisonMode={setComparisonMode}
+      compareDate={compareDate}
+      setCompareDate={setCompareDate}
+      colors={colors}
+    >
+      <div className="max-w-7xl mx-auto p-4">
+        {/* 🟡 FIX #33: Container pour les toasts */}
+        <ToastContainer />
+        
+        <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700 p-6">
         {/* En-tête */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">Garmin Connect</h2>
@@ -124,6 +257,19 @@ const GarminTab = () => {
           setEndDate={setEndDate}
           fetchStatus={fetchStatus}
         />
+
+        {/* 🟡 FIX #15: Loading state visuel pendant la synchronisation */}
+        {loading && (
+          <div className="relative">
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+                <p className="text-white font-medium">Synchronisation en cours...</p>
+                <p className="text-slate-400 text-sm mt-2">Veuillez patienter</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Statut serveur */}
         {baseUrl && (
@@ -230,6 +376,17 @@ const GarminTab = () => {
 
             {activeTab === 'charts' && (
               <div className="space-y-6">
+                {/* 🔴 FIX #8: Heart Rate Time Series Chart avec toutes les props */}
+                {selectedDate && garminData.dailyMetrics[selectedDate]?.heartRate?.timeSeries?.length > 0 && (
+                  <GarminHeartRateTimeSeriesChart
+                    dailyMetrics={garminData.dailyMetrics}
+                    selectedDate={selectedDate}
+                    periodFilter={periodFilter}
+                    customStartDate={customStartDate}
+                    customEndDate={customEndDate}
+                    colors={colors}
+                  />
+                )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <GarminHeartRateChart
                     dailyMetrics={garminData.dailyMetrics}
@@ -308,8 +465,9 @@ const GarminTab = () => {
             <p className="text-sm">Synchronisez vos données Garmin pour commencer.</p>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </GarminProvider>
   );
 };
 

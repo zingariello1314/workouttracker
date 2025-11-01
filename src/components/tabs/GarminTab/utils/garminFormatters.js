@@ -3,6 +3,57 @@
  */
 
 /**
+ * 🔴 FIX #4: Normalise une date Garmin en format YYYY-MM-DD
+ * 🟡 FIX #30: Cache global pour éviter recalculs
+ * Utilisé partout pour éviter les incohérences de format
+ */
+const dateNormalizationCache = new Map();
+
+export function normalizeGarminDate(dateStr) {
+  if (!dateStr) return null;
+  
+  // 🟡 FIX #30: Utiliser le cache
+  if (dateNormalizationCache.has(dateStr)) {
+    return dateNormalizationCache.get(dateStr);
+  }
+  
+  // Si déjà au format YYYY-MM-DD, retourner tel quel
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    dateNormalizationCache.set(dateStr, dateStr);
+    return dateStr;
+  }
+  
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const normalized = d.toISOString().split('T')[0];
+      dateNormalizationCache.set(dateStr, normalized);
+      return normalized;
+    }
+  } catch (e) {
+    // Ignorer erreurs de parsing
+  }
+  
+  dateNormalizationCache.set(dateStr, null);
+  return null;
+}
+
+/**
+ * 🟡 FIX #30: Compare deux dates de manière efficace (utilise timestamps numériques)
+ */
+export function compareGarminDates(dateStr1, dateStr2) {
+  if (!dateStr1 || !dateStr2) return false;
+  
+  const normalized1 = normalizeGarminDate(dateStr1);
+  const normalized2 = normalizeGarminDate(dateStr2);
+  
+  if (!normalized1 || !normalized2) return false;
+  
+  // Comparaison string est rapide pour YYYY-MM-DD
+  return normalized1 === normalized2;
+}
+
+/**
  * Formate une durée en secondes au format "mm:ss" ou "hh:mm:ss"
  */
 export function formatDuration(seconds) {
@@ -19,6 +70,32 @@ export function formatDuration(seconds) {
 }
 
 /**
+ * 🔴 FIX #27: Formate une durée en minutes au format cohérent
+ */
+export function formatDurationMinutes(minutes) {
+  if (!minutes || minutes === 0) return '0min';
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  if (hours > 0) {
+    return `${hours}h${mins > 0 ? `${mins}min` : ''}`;
+  }
+  return `${mins}min`;
+}
+
+/**
+ * 🔴 FIX #27: Formate une durée de sommeil (en heures décimales) au format cohérent "Xh Ym"
+ */
+export function formatSleepDuration(hours) {
+  if (!hours || hours === 0) return '—';
+  const h = Math.floor(hours);
+  const m = Math.round((hours % 1) * 60);
+  if (h > 0) {
+    return `${h}h${m > 0 ? ` ${m}m` : ''}`;
+  }
+  return `${m}m`;
+}
+
+/**
  * Formate une allure (pace) en secondes par 100m au format "mm:ss"
  */
 export function formatPace(secondsPer100m) {
@@ -31,34 +108,56 @@ export function formatPace(secondsPer100m) {
 }
 
 /**
- * Formate une distance en km avec unité
+ * 🔴 FIX #27: Formate une distance en km avec formatage cohérent
+ * Supprime les zéros inutiles après la virgule
  */
 export function formatDistance(km) {
-  if (!km || km <= 0) return '0 km';
-  
+  if (km === null || km === undefined || isNaN(km)) return '0 km';
+  if (km === 0) return '0 km';
   if (km < 1) {
-    return `${Math.round(km * 1000)} m`;
+    const meters = Math.round(km * 1000);
+    return `${meters} m`;
   }
-  
-  return `${km.toFixed(2)} km`.replace(/\.?0+$/, '');
+  // Format avec 1 décimale, mais supprime les zéros inutiles
+  const formatted = km.toFixed(1);
+  return `${parseFloat(formatted)} km`;
 }
 
 /**
- * Formate un timestamp au format "HH:MM" ou "HH:MM:SS"
+ * 🔴 FIX #11: Formate un timestamp au format "HH:MM" ou "HH:MM:SS" en heure locale
+ * Gère les timestamps UTC ISO et les convertit en heure locale
  */
 export function formatTime(timestamp, includeSeconds = false) {
   if (!timestamp) return 'N/A';
   
   try {
-    const date = new Date(timestamp);
-    if (isNaN(date.getTime())) {
-      // Si c'est déjà une string au format "HH:MM" ou "HH:MM:SS"
-      if (typeof timestamp === 'string' && timestamp.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
-        return timestamp;
+    // Si c'est déjà une string au format "HH:MM" ou "HH:MM:SS"
+    if (typeof timestamp === 'string' && timestamp.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+      return timestamp;
+    }
+    
+    // Parser le timestamp (peut être ISO string ou autre)
+    let date;
+    if (typeof timestamp === 'string') {
+      // Si c'est un ISO string UTC (se termine par Z), le parser comme UTC
+      if (timestamp.endsWith('Z')) {
+        date = new Date(timestamp);
+      } else if (timestamp.includes('T')) {
+        // ISO avec timezone ou sans
+        date = new Date(timestamp);
+      } else {
+        // Format date simple
+        date = new Date(timestamp);
       }
+    } else {
+      date = new Date(timestamp);
+    }
+    
+    if (isNaN(date.getTime())) {
       return 'N/A';
     }
     
+    // Convertir en heure locale
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
@@ -139,4 +238,3 @@ export function formatHeartRate(bpm) {
   if (!bpm || bpm <= 0) return 'N/A';
   return `${bpm} bpm`;
 }
-

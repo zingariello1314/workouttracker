@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, Calendar, Target, Award, Activity } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useGarminData } from '../../hooks/useGarminData';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
@@ -12,6 +13,21 @@ const StatsTab = () => {
     setShowAdvancedStats,
     data
   } = useWorkout();
+
+  // PHASE 5.2 : Charger données Garmin
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminData, setGarminData] = useState(null);
+  
+  useEffect(() => {
+    if (dbReady) {
+      loadAllData()
+        .then(setGarminData)
+        .catch(err => {
+          console.error('[StatsTab] Error loading Garmin data:', err);
+          setGarminData(null);
+        });
+    }
+  }, [dbReady, loadAllData]);
 
   // Utiliser les vraies données de l'historique des entraînements
   const workoutHistory = getWorkoutHistory();
@@ -212,9 +228,123 @@ const StatsTab = () => {
     return Math.max(maxStreak, currentStreak);
   };
 
+  // PHASE 5.2 : Calculer les statistiques Garmin
+  const calculateGarminStats = (period) => {
+    if (!garminData || !garminData.dailyMetrics || Object.keys(garminData.dailyMetrics).length === 0) {
+      return null;
+    }
+
+    const now = new Date();
+    let startDate;
+    
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+
+    // Filtrer dailyMetrics par période
+    const filteredMetrics = Object.entries(garminData.dailyMetrics)
+      .filter(([date]) => {
+        const dateObj = new Date(date);
+        return dateObj >= startDate && dateObj <= now;
+      })
+      .map(([, metrics]) => metrics);
+
+    if (filteredMetrics.length === 0) return null;
+
+    // Calculer agrégations
+    const stats = {
+      // Pas
+      totalSteps: filteredMetrics.reduce((sum, m) => sum + (m.steps || 0), 0),
+      avgSteps: Math.round(filteredMetrics.reduce((sum, m) => sum + (m.steps || 0), 0) / filteredMetrics.length),
+      maxSteps: Math.max(...filteredMetrics.map(m => m.steps || 0)),
+      
+      // Distance
+      totalDistance: filteredMetrics.reduce((sum, m) => sum + (m.distance || 0), 0),
+      avgDistance: filteredMetrics.reduce((sum, m) => sum + (m.distance || 0), 0) / filteredMetrics.length,
+      
+      // Calories
+      totalCalories: filteredMetrics.reduce((sum, m) => {
+        const cal = m.calories || {};
+        return sum + (cal.total || cal.active || 0);
+      }, 0),
+      avgCalories: filteredMetrics.reduce((sum, m) => {
+        const cal = m.calories || {};
+        return sum + (cal.total || cal.active || 0);
+      }, 0) / filteredMetrics.length,
+      
+      // FC
+      avgRestingHR: (() => {
+        const hrMetrics = filteredMetrics.filter(m => m.heartRate?.resting);
+        if (hrMetrics.length === 0) return 0;
+        return Math.round(hrMetrics.reduce((sum, m) => sum + (m.heartRate?.resting || 0), 0) / hrMetrics.length);
+      })(),
+      maxHR: Math.max(...filteredMetrics.map(m => {
+        const hr = m.heartRate || {};
+        return hr.max || 0;
+      })),
+      
+      // Body Battery
+      avgBodyBattery: (() => {
+        const bbMetrics = filteredMetrics.filter(m => {
+          const bb = m.bodyBattery;
+          // 🔴 FIX: Vérifier que bb n'est pas null avant d'accéder à ses propriétés
+          return (bb !== null && typeof bb === 'object' && bb.current !== undefined) || typeof bb === 'number';
+        });
+        if (bbMetrics.length === 0) return 0;
+        return Math.round(bbMetrics.reduce((sum, m) => {
+          const bb = m.bodyBattery;
+          // 🔴 FIX: Vérifier que bb n'est pas null avant d'accéder à ses propriétés
+          const value = (bb !== null && typeof bb === 'object' && bb.current !== undefined) 
+            ? bb.current 
+            : (typeof bb === 'number' ? bb : 0);
+          return sum + value;
+        }, 0) / bbMetrics.length);
+      })(),
+      
+      // Sommeil
+      avgSleepDuration: (() => {
+        const sleepMetrics = filteredMetrics.filter(m => m.sleep?.duration);
+        if (sleepMetrics.length === 0) return 0;
+        return sleepMetrics.reduce((sum, m) => sum + (m.sleep?.duration || 0), 0) / sleepMetrics.length;
+      })(),
+      avgSleepQuality: (() => {
+        const sleepMetrics = filteredMetrics.filter(m => m.sleep?.quality);
+        if (sleepMetrics.length === 0) return 0;
+        return Math.round(sleepMetrics.reduce((sum, m) => sum + (m.sleep?.quality || 0), 0) / sleepMetrics.length);
+      })(),
+      
+      // Minutes intensives
+      totalIntensityMinutes: filteredMetrics.reduce((sum, m) => {
+        const intensity = m.intensityMinutes || {};
+        return sum + (intensity.total || 0);
+      }, 0),
+      
+      // Activités
+      totalActivities: (garminData.activities?.swimming?.length || 0) +
+                       (garminData.activities?.jumpRope?.length || 0) +
+                       (garminData.activities?.cardio?.length || 0),
+      
+      // Jours avec données
+      activeDays: filteredMetrics.length
+    };
+
+    return stats;
+  };
+
   const stats = calculateStats(statsPeriod);
   const currentStreak = calculateCurrentStreak();
   const longestStreak = calculateLongestStreak();
+  const garminStats = calculateGarminStats(statsPeriod);
 
   const periods = [
     { key: 'week', label: 'Semaine' },
@@ -292,6 +422,82 @@ const StatsTab = () => {
           </Card.Content>
         </Card>
       </div>
+
+      {/* PHASE 5.2 : Métriques Garmin Connect */}
+      {garminStats && (
+        <Card className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border-green-500/30">
+          <Card.Header>
+            <Card.Title className="flex items-center gap-2 text-white">
+              <Activity className="text-green-400" size={24} />
+              Métriques Garmin Connect
+            </Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Pas */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-1">Total Pas</div>
+                <div className="text-2xl font-bold text-white">{garminStats.totalSteps.toLocaleString()}</div>
+                <div className="text-xs text-slate-500 mt-1">Moy: {garminStats.avgSteps}/jour</div>
+              </div>
+              
+              {/* Distance */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-1">Distance Totale</div>
+                <div className="text-2xl font-bold text-white">{garminStats.totalDistance.toFixed(1)} km</div>
+                <div className="text-xs text-slate-500 mt-1">Moy: {garminStats.avgDistance.toFixed(1)} km/jour</div>
+              </div>
+              
+              {/* Calories */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-1">Calories Totales</div>
+                <div className="text-2xl font-bold text-white">{Math.round(garminStats.totalCalories).toLocaleString()}</div>
+                <div className="text-xs text-slate-500 mt-1">Moy: {Math.round(garminStats.avgCalories)}/jour</div>
+              </div>
+              
+              {/* FC Repos */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-1">FC Repos Moy.</div>
+                <div className="text-2xl font-bold text-white">{garminStats.avgRestingHR} bpm</div>
+                <div className="text-xs text-slate-500 mt-1">FC Max: {garminStats.maxHR} bpm</div>
+              </div>
+              
+              {/* Body Battery */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-1">Body Battery Moy.</div>
+                <div className="text-2xl font-bold text-white">{garminStats.avgBodyBattery}/100</div>
+                <div className="text-xs text-slate-500 mt-1">Moyenne sur période</div>
+              </div>
+              
+              {/* Sommeil */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-1">Sommeil Moy.</div>
+                <div className="text-2xl font-bold text-white">
+                  {garminStats.avgSleepDuration > 0 
+                    ? `${Math.floor(garminStats.avgSleepDuration)}h${Math.round((garminStats.avgSleepDuration % 1) * 60)}m`
+                    : '—'
+                  }
+                </div>
+                <div className="text-xs text-slate-500 mt-1">Qualité: {garminStats.avgSleepQuality}/100</div>
+              </div>
+              
+              {/* Minutes Intensives */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-1">Minutes Intensives</div>
+                <div className="text-2xl font-bold text-white">{garminStats.totalIntensityMinutes} min</div>
+                <div className="text-xs text-slate-500 mt-1">Total sur période</div>
+              </div>
+              
+              {/* Activités */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="text-slate-400 text-sm mb-1">Activités Garmin</div>
+                <div className="text-2xl font-bold text-white">{garminStats.totalActivities}</div>
+                <div className="text-xs text-slate-500 mt-1">Jours actifs: {garminStats.activeDays}</div>
+              </div>
+            </div>
+          </Card.Content>
+        </Card>
+      )}
 
       {/* Statistiques d'endurance */}
       {stats.enduranceStats.sessions > 0 && (

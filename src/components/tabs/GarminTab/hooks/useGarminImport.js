@@ -1,115 +1,214 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useWorkout } from '../../../../context/WorkoutContext';
 
 /**
- * Hook pour gérer l'import automatique vers enduranceData.sessions
+ * 🟡 FIX #21 : Hook pour gérer l'import automatique vers enduranceData.sessions
+ * - Vérification robuste des doublons (garminId, id, date+time)
+ * - Système de retry automatique en cas d'échec
+ * - Logging détaillé pour debugging
  */
 export function useGarminImport() {
   const { data: workoutData, updateData } = useWorkout();
+  const retryCountRef = useRef(0);
+  const MAX_RETRIES = 3;
 
-  const importToEndurance = useCallback(async (garminDataForImport) => {
-    if (!garminDataForImport?.activities) return;
+  /**
+   * 🟡 FIX #21 : Fonction helper pour générer une clé unique d'une activité
+   * Priorité : garminId > id > date+time
+   */
+  const getActivityKey = useCallback((activity) => {
+    if (activity.garminId) return `garmin_${activity.garminId}`;
+    if (activity.id) return `id_${activity.id}`;
+    return `${activity.date}_${activity.time || '00:00:00'}`;
+  }, []);
 
-    const currentEndurance = workoutData?.enduranceData || {};
-    const currentSessions = currentEndurance.sessions || {};
-    const newSessions = { ...currentSessions };
+  /**
+   * 🟡 FIX #21 : Vérifier si une activité existe déjà dans les sessions existantes
+   */
+  const activityExists = useCallback((activity, existingSessions) => {
+    const key = getActivityKey(activity);
+    
+    // Vérifier dans swimming
+    const swimming = existingSessions.swimming || [];
+    if (swimming.some(s => {
+      const sKey = getActivityKey(s);
+      return sKey === key || (s.garminId && s.garminId === activity.garminId);
+    })) return true;
 
-    // Natation
-    if (garminDataForImport.activities.swimming && Array.isArray(garminDataForImport.activities.swimming)) {
-      const existingSwimming = newSessions.swimming || [];
-      const existingIds = new Set(existingSwimming.map(s => s.id || `${s.date}_${s.time}`).filter(Boolean));
+    // Vérifier dans jumprope
+    const jumprope = existingSessions.jumprope || [];
+    if (jumprope.some(s => {
+      const sKey = getActivityKey(s);
+      return sKey === key || (s.garminId && s.garminId === activity.garminId);
+    })) return true;
 
-      garminDataForImport.activities.swimming.forEach(gAct => {
-        const key = gAct.id || `${gAct.date}_${gAct.time}`;
-        if (!existingIds.has(key) && gAct.source === 'garmin') {
-          const session = {
-            id: gAct.id || Date.now() + Math.random(),
-            date: gAct.date,
-            time: gAct.time || '',
-            duration: gAct.duration || 0,
-            distance: gAct.distance || 0,
-            laps: gAct.laps || 0,
-            avgHR: gAct.avgHR || 0,
-            maxHR: gAct.maxHR || 0,
-            calories: gAct.calories || 0,
-            avgPace: gAct.avgPace || 0,
-            source: 'garmin',
-            notes: `Importé depuis Garmin`
-          };
-          existingSwimming.push(session);
-        }
-      });
-      newSessions.swimming = existingSwimming;
+    return false;
+  }, [getActivityKey]);
+
+  const importToEndurance = useCallback(async (garminDataForImport, retryAttempt = 0) => {
+    if (!garminDataForImport?.activities) {
+      console.warn('[useGarminImport] No activities to import');
+      return { success: false, imported: 0, errors: [] };
     }
 
-    // Corde à sauter
-    if (garminDataForImport.activities.jumpRope && Array.isArray(garminDataForImport.activities.jumpRope)) {
-      const existingJumpRope = newSessions.jumprope || [];
-      const existingIds = new Set(existingJumpRope.map(s => s.id || `${s.date}_${s.time}`).filter(Boolean));
+    try {
+      const currentEndurance = workoutData?.enduranceData || {};
+      const currentSessions = currentEndurance.sessions || {};
+      const newSessions = { ...currentSessions };
+      const errors = [];
+      let importedCount = 0;
 
-      garminDataForImport.activities.jumpRope.forEach(gAct => {
-        const key = gAct.id || `${gAct.date}_${gAct.time}`;
-        if (!existingIds.has(key) && gAct.source === 'garmin') {
-          const session = {
-            id: gAct.id || Date.now() + Math.random(),
-            date: gAct.date,
-            time: gAct.time || '',
-            duration: gAct.duration || 0,
-            jumps: gAct.jumps || 0,
-            avgHR: gAct.avgHR || 0,
-            maxHR: gAct.maxHR || 0,
-            calories: gAct.calories || 0,
-            source: 'garmin',
-            notes: `Importé depuis Garmin`
-          };
-          existingJumpRope.push(session);
-        }
-      });
-      newSessions.jumprope = existingJumpRope;
-    }
+      // 🟡 FIX #21 : Natation - Vérification robuste des doublons
+      if (garminDataForImport.activities.swimming && Array.isArray(garminDataForImport.activities.swimming)) {
+        const existingSwimming = [...(newSessions.swimming || [])];
 
-    // Cardio (peut contenir JumpJump Pro ou autres activités)
-    if (garminDataForImport.activities.cardio && Array.isArray(garminDataForImport.activities.cardio)) {
-      const existingJumpRope = newSessions.jumprope || [];
-      const existingIds = new Set(existingJumpRope.map(s => s.id || `${s.date}_${s.time}`).filter(Boolean));
-
-      garminDataForImport.activities.cardio.forEach(gAct => {
-        const key = gAct.id || `${gAct.date}_${gAct.time}`;
-        if (!existingIds.has(key) && gAct.source === 'garmin') {
-          // Si c'est une activité avec sauts (JumpJump Pro), importer comme jumprope
-          if (gAct.jumps && gAct.jumps > 0) {
-            const session = {
-              id: gAct.id || Date.now() + Math.random(),
-              date: gAct.date,
-              time: gAct.time || '',
-              duration: gAct.duration || 0,
-              jumps: gAct.jumps || 0,
-              avgHR: gAct.avgHR || 0,
-              maxHR: gAct.maxHR || 0,
-              calories: gAct.calories?.total || gAct.calories || 0,
-              connectIQ: gAct.connectIQ || null,
-              source: 'garmin',
-              notes: `Importé depuis Garmin (Cardio/JumpJump Pro)`
-            };
-            existingJumpRope.push(session);
+        garminDataForImport.activities.swimming.forEach(gAct => {
+          try {
+            // Vérifier doublons avant import
+            if (!activityExists(gAct, { swimming: existingSwimming, jumprope: [] })) {
+              const session = {
+                id: gAct.id || Date.now() + Math.random(),
+                garminId: gAct.garminId || gAct.id,
+                date: gAct.date,
+                time: gAct.time || '',
+                duration: gAct.duration || 0,
+                distance: gAct.distance || 0,
+                laps: gAct.laps || 0,
+                avgHR: gAct.avgHR || 0,
+                maxHR: gAct.maxHR || 0,
+                calories: typeof gAct.calories === 'object' ? (gAct.calories?.total || 0) : (gAct.calories || 0),
+                avgPace: gAct.avgPace || 0,
+                source: 'garmin',
+                notes: `Importé depuis Garmin le ${new Date().toLocaleDateString()}`
+              };
+              existingSwimming.push(session);
+              importedCount++;
+            }
+          } catch (err) {
+            errors.push({ type: 'swimming', activity: gAct.id, error: err.message });
+            console.error('[useGarminImport] Error importing swimming activity:', err);
           }
-          // Pour autres activités cardio, on pourrait les ajouter dans un type 'cardio' si nécessaire
-        }
-      });
-      newSessions.jumprope = existingJumpRope;
-    }
-
-    // Mettre à jour enduranceData
-    await updateData({
-      ...workoutData,
-      enduranceData: {
-        ...currentEndurance,
-        sessions: newSessions,
-        lastUpdated: new Date().toISOString()
+        });
+        newSessions.swimming = existingSwimming;
       }
-    });
-  }, [workoutData, updateData]);
+
+      // 🟡 FIX #21 : Corde à sauter - Vérification robuste des doublons
+      if (garminDataForImport.activities.jumpRope && Array.isArray(garminDataForImport.activities.jumpRope)) {
+        const existingJumpRope = [...(newSessions.jumprope || [])];
+
+        garminDataForImport.activities.jumpRope.forEach(gAct => {
+          try {
+            // Vérifier doublons avant import
+            if (!activityExists(gAct, { swimming: [], jumprope: existingJumpRope })) {
+              const session = {
+                id: gAct.id || Date.now() + Math.random(),
+                garminId: gAct.garminId || gAct.id,
+                date: gAct.date,
+                time: gAct.time || '',
+                duration: gAct.duration || 0,
+                jumps: gAct.jumps || 0,
+                avgHR: gAct.avgHR || 0,
+                maxHR: gAct.maxHR || 0,
+                calories: typeof gAct.calories === 'object' ? (gAct.calories?.total || 0) : (gAct.calories || 0),
+                source: 'garmin',
+                notes: `Importé depuis Garmin le ${new Date().toLocaleDateString()}`
+              };
+              existingJumpRope.push(session);
+              importedCount++;
+            }
+          } catch (err) {
+            errors.push({ type: 'jumprope', activity: gAct.id, error: err.message });
+            console.error('[useGarminImport] Error importing jumprope activity:', err);
+          }
+        });
+        newSessions.jumprope = existingJumpRope;
+      }
+
+      // 🟡 FIX #21 : Cardio (peut contenir JumpJump Pro) - Vérification robuste des doublons
+      if (garminDataForImport.activities.cardio && Array.isArray(garminDataForImport.activities.cardio)) {
+        const existingJumpRope = [...(newSessions.jumprope || [])];
+
+        garminDataForImport.activities.cardio.forEach(gAct => {
+          try {
+            // Si c'est une activité avec sauts (JumpJump Pro), importer comme jumprope
+            if (gAct.jumps && gAct.jumps > 0) {
+              // Vérifier doublons avant import
+              if (!activityExists(gAct, { swimming: [], jumprope: existingJumpRope })) {
+                const session = {
+                  id: gAct.id || Date.now() + Math.random(),
+                  garminId: gAct.garminId || gAct.id,
+                  date: gAct.date,
+                  time: gAct.time || '',
+                  duration: gAct.duration || 0,
+                  jumps: gAct.jumps || 0,
+                  avgHR: gAct.avgHR || 0,
+                  maxHR: gAct.maxHR || 0,
+                  calories: typeof gAct.calories === 'object' ? (gAct.calories?.total || 0) : (gAct.calories || 0),
+                  connectIQ: gAct.connectIQ || null,
+                  source: 'garmin',
+                  notes: `Importé depuis Garmin (Cardio/JumpJump Pro) le ${new Date().toLocaleDateString()}`
+                };
+                existingJumpRope.push(session);
+                importedCount++;
+              }
+            }
+            // Pour autres activités cardio, on pourrait les ajouter dans un type 'cardio' si nécessaire
+          } catch (err) {
+            errors.push({ type: 'cardio', activity: gAct.id, error: err.message });
+            console.error('[useGarminImport] Error importing cardio activity:', err);
+          }
+        });
+        newSessions.jumprope = existingJumpRope;
+      }
+
+      // 🟡 FIX #21 : Mettre à jour enduranceData avec retry en cas d'échec
+      try {
+        await updateData({
+          ...workoutData,
+          enduranceData: {
+            ...currentEndurance,
+            sessions: newSessions,
+            lastUpdated: new Date().toISOString()
+          }
+        });
+
+        console.log(`[useGarminImport] Successfully imported ${importedCount} activities`);
+        retryCountRef.current = 0; // Reset retry count on success
+        return { success: true, imported: importedCount, errors };
+      } catch (updateError) {
+        console.error('[useGarminImport] Error updating enduranceData:', updateError);
+        
+        // 🟡 FIX #21 : Retry automatique avec backoff exponentiel
+        if (retryAttempt < MAX_RETRIES) {
+          const delay = Math.pow(2, retryAttempt) * 1000; // 1s, 2s, 4s
+          console.log(`[useGarminImport] Retry attempt ${retryAttempt + 1}/${MAX_RETRIES} in ${delay}ms...`);
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return importToEndurance(garminDataForImport, retryAttempt + 1);
+        }
+        
+        errors.push({ type: 'update', error: updateError.message });
+        return { success: false, imported: importedCount, errors };
+      }
+    } catch (err) {
+      console.error('[useGarminImport] Fatal error:', err);
+      
+      // 🟡 FIX #21 : Retry automatique pour erreurs fatales
+      if (retryAttempt < MAX_RETRIES) {
+        const delay = Math.pow(2, retryAttempt) * 1000;
+        console.log(`[useGarminImport] Fatal error retry attempt ${retryAttempt + 1}/${MAX_RETRIES} in ${delay}ms...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return importToEndurance(garminDataForImport, retryAttempt + 1);
+      }
+      
+      return { 
+        success: false, 
+        imported: 0, 
+        errors: [{ type: 'fatal', error: err.message }] 
+      };
+    }
+  }, [workoutData, updateData, activityExists, getActivityKey]);
 
   return { importToEndurance };
 }
-

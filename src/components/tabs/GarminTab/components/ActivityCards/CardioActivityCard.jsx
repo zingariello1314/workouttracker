@@ -99,6 +99,39 @@ export default function CardioActivityCard({ activity }) {
           </div>
         )}
 
+        {/* PHASE 3.3 : Training Effect */}
+        {activity.trainingEffect && (
+          <div className="bg-slate-900/60 rounded p-2 md:col-span-2">
+            <div className="text-slate-400 text-xs mb-1">Training Effect</div>
+            <div className="flex gap-4">
+              {activity.trainingEffect.aerobic !== undefined && (
+                <div>
+                  <div className="text-blue-300 text-xs">Aérobie</div>
+                  <div className="text-white font-semibold">{activity.trainingEffect.aerobic}/5.0</div>
+                </div>
+              )}
+              {activity.trainingEffect.anaerobic !== undefined && (
+                <div>
+                  <div className="text-purple-300 text-xs">Anaérobie</div>
+                  <div className="text-white font-semibold">{activity.trainingEffect.anaerobic}/5.0</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* PHASE 3.3 : Recovery Time */}
+        {activity.recoveryTime && activity.recoveryTime > 0 && (
+          <div className="bg-slate-900/60 rounded p-2">
+            <div className="text-slate-400 text-xs">Temps de récupération</div>
+            <div className="text-white font-semibold">
+              {activity.recoveryTime >= 24 
+                ? `${Math.floor(activity.recoveryTime / 24)}j ${Math.round(activity.recoveryTime % 24)}h`
+                : `${activity.recoveryTime}h`}
+            </div>
+          </div>
+        )}
+
         {/* Sauts (pour activités JumpJump Pro) */}
         {(activity.jumps > 0 || activity.jumpRopeMetrics?.jumps > 0) && (
           <div className="bg-slate-900/60 rounded p-2">

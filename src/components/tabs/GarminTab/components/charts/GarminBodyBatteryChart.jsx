@@ -2,11 +2,14 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ReferenceLine } from 'recharts';
 import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
+import { useChartContainerSize } from './useChartContainerSize';
+import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 
 /**
  * Graphique d'évolution du Body Battery
+ * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-export default function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
     dailyMetrics,
     selectedDate,
@@ -21,9 +24,18 @@ export default function GarminBodyBatteryChart({ dailyMetrics, selectedDate, per
     
     const data = filteredDates.map(date => {
       const dm = dailyMetrics[date] || {};
+      // PHASE 3.1 : Gérer nouveau format (dict avec current + timeSeries) et ancien format (int)
+      let bodyBatteryValue = null;
+      if (dm.bodyBattery !== undefined && dm.bodyBattery !== null) {
+        if (typeof dm.bodyBattery === 'object' && dm.bodyBattery.current !== undefined) {
+          bodyBatteryValue = dm.bodyBattery.current;
+        } else if (typeof dm.bodyBattery === 'number') {
+          bodyBatteryValue = dm.bodyBattery;
+        }
+      }
       return {
         date,
-        bodyBattery: dm.bodyBattery !== undefined && dm.bodyBattery !== null ? dm.bodyBattery : null,
+        bodyBattery: bodyBatteryValue,
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.bodyBattery !== null);
@@ -78,6 +90,9 @@ export default function GarminBodyBatteryChart({ dailyMetrics, selectedDate, per
     return null;
   };
 
+  // 🔴 FIX #5: Vérifier dimensions avant rendu
+  const { containerRef, containerSize } = useChartContainerSize();
+
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
@@ -91,9 +106,27 @@ export default function GarminBodyBatteryChart({ dailyMetrics, selectedDate, per
           )}
         </div>
       </div>
-      <div className="h-80 min-h-[320px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
-          <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+      <div 
+        ref={containerRef} 
+        className="h-80 min-h-[320px]" 
+        style={{ 
+          width: '100%', 
+          height: '320px', 
+          minHeight: '320px', 
+          minWidth: '400px',
+          position: 'relative',
+          display: 'block',
+          boxSizing: 'border-box'
+        }}
+      >
+        {/* containerSize est toujours valide grâce à useChartContainerSize qui garantit minWidth/minHeight */}
+        <ResponsiveContainer 
+          width={Math.max(400, containerSize.width)} 
+          height={Math.max(320, containerSize.height)} 
+          minHeight={320} 
+          minWidth={400}
+        >
+            <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <defs>
               <linearGradient id="batteryGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={colors?.green || '#10B981'} stopOpacity={0.3} />
@@ -150,4 +183,7 @@ export default function GarminBodyBatteryChart({ dailyMetrics, selectedDate, per
     </div>
   );
 }
+
+// 🟡 FIX #13: Memoization avec comparaison optimisée
+export default React.memo(GarminBodyBatteryChart, areChartPropsEqual);
 

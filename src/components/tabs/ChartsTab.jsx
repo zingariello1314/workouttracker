@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { BarChart3, TrendingUp, Target, Activity, Filter, Download, LineChart, BarChart, Zap, Waves, Calendar, Dumbbell, Flame, Clock, Award, TrendingDown, Minus } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { BarChart3, TrendingUp, Target, Activity, Filter, Download, LineChart, BarChart, Zap, Waves, Calendar, Dumbbell, Flame, Clock, Award, TrendingDown, Minus, Heart, Battery, Moon, Wind, Thermometer } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { findExerciseInDatabase } from '../../data/exerciseDatabase';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
+import { useGarminData } from '../../hooks/useGarminData';
 
 // Composants modulaires pour les graphiques - NOUVEAUX GRAPHIQUES
 import VolumeRepetitionsChart from './charts/VolumeRepetitionsChart';
@@ -22,9 +23,35 @@ import NatationTempsAllureChart from './charts/NatationTempsAllureChart';
 import NatationVolumeRegulariteChart from './charts/NatationVolumeRegulariteChart';
 import EtirementsZoneChart from './charts/EtirementsZoneChart';
 
+// PHASE 5.1 : Graphiques Garmin à intégrer
+import GarminHeartRateChart from './GarminTab/components/charts/GarminHeartRateChart';
+import GarminHeartRateTimeSeriesChart from './GarminTab/components/charts/GarminHeartRateTimeSeriesChart';
+import GarminBodyBatteryChart from './GarminTab/components/charts/GarminBodyBatteryChart';
+import GarminStressChart from './GarminTab/components/charts/GarminStressChart';
+import GarminSleepChart from './GarminTab/components/charts/GarminSleepChart';
+import GarminRespirationChart from './GarminTab/components/charts/GarminRespirationChart';
+import GarminActivityHeatmap from './GarminTab/components/charts/GarminActivityHeatmap';
+import GarminCorrelationCharts from './GarminTab/components/charts/GarminCorrelationCharts';
+import { createGarminChartWrapper, createGarminTimeSeriesChartWrapper, createGarminCorrelationChartsWrapper } from './charts/GarminChartWrapper';
+
 const ChartsTab = () => {
   const { data, getWorkoutHistory, activeProgram } = useWorkout();
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
+  
+  // PHASE 5.1 : Charger données Garmin
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminData, setGarminData] = useState(null);
+  
+  useEffect(() => {
+    if (dbReady) {
+      loadAllData()
+        .then(setGarminData)
+        .catch(err => {
+          console.error('[ChartsTab] Error loading Garmin data:', err);
+          setGarminData(null);
+        });
+    }
+  }, [dbReady, loadAllData]);
 
   // Périodes disponibles
   const periods = [
@@ -81,8 +108,130 @@ const ChartsTab = () => {
     };
   }, [getWorkoutHistory, selectedPeriod, data, activeProgram]);
 
+  // PHASE 5.1 : Wrappers pour graphiques Garmin (adaptation selectedPeriod → periodFilter)
+  const GarminHeartRateChartWrapped = React.useMemo(() => 
+    createGarminChartWrapper(GarminHeartRateChart), []
+  );
+  const GarminHeartRateTimeSeriesChartWrapped = React.useMemo(() => 
+    createGarminTimeSeriesChartWrapper(GarminHeartRateTimeSeriesChart), []
+  );
+  const GarminBodyBatteryChartWrapped = React.useMemo(() => 
+    createGarminChartWrapper(GarminBodyBatteryChart), []
+  );
+  const GarminStressChartWrapped = React.useMemo(() => 
+    createGarminChartWrapper(GarminStressChart), []
+  );
+  const GarminSleepChartWrapped = React.useMemo(() => 
+    createGarminChartWrapper(GarminSleepChart), []
+  );
+  const GarminRespirationChartWrapped = React.useMemo(() => 
+    createGarminChartWrapper(GarminRespirationChart), []
+  );
+  const GarminActivityHeatmapWrapped = React.useMemo(() => 
+    createGarminChartWrapper(GarminActivityHeatmap, true), // true = needsActivities
+    []
+  );
+  const GarminCorrelationChartsWrapped = React.useMemo(() => 
+    createGarminCorrelationChartsWrapper(GarminCorrelationCharts), []
+  );
+
   // Configuration des graphiques avec votre design exact
   const chartConfigs = [
+    // ==========================================
+    // SECTION GARMIN (au-dessus des graphiques existants)
+    // ==========================================
+    {
+      id: 'garmin-heart-rate',
+      title: 'Fréquence Cardiaque',
+      icon: Heart,
+      color: 'red',
+      bgColor: 'bg-red-500/20',
+      textColor: 'text-red-400',
+      component: GarminHeartRateChartWrapped,
+      props: { garminData, selectedPeriod, colors: themeColors },
+      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+    },
+    {
+      id: 'garmin-heart-rate-timeseries',
+      title: 'FC 24h (Time Series)',
+      icon: Activity,
+      color: 'red',
+      bgColor: 'bg-red-500/20',
+      textColor: 'text-red-400',
+      component: GarminHeartRateTimeSeriesChartWrapped,
+      props: { garminData, selectedPeriod, colors: themeColors },
+      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+    },
+    {
+      id: 'garmin-body-battery',
+      title: 'Body Battery',
+      icon: Battery,
+      color: 'green',
+      bgColor: 'bg-green-500/20',
+      textColor: 'text-green-400',
+      component: GarminBodyBatteryChartWrapped,
+      props: { garminData, selectedPeriod, colors: themeColors },
+      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+    },
+    {
+      id: 'garmin-stress',
+      title: 'Stress',
+      icon: Thermometer,
+      color: 'purple',
+      bgColor: 'bg-purple-500/20',
+      textColor: 'text-purple-400',
+      component: GarminStressChartWrapped,
+      props: { garminData, selectedPeriod, colors: themeColors },
+      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+    },
+    {
+      id: 'garmin-sleep',
+      title: 'Sommeil',
+      icon: Moon,
+      color: 'indigo',
+      bgColor: 'bg-indigo-500/20',
+      textColor: 'text-indigo-400',
+      component: GarminSleepChartWrapped,
+      props: { garminData, selectedPeriod, colors: themeColors },
+      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+    },
+    {
+      id: 'garmin-respiration',
+      title: 'Respiration',
+      icon: Wind,
+      color: 'cyan',
+      bgColor: 'bg-cyan-500/20',
+      textColor: 'text-cyan-400',
+      component: GarminRespirationChartWrapped,
+      props: { garminData, selectedPeriod, colors: themeColors },
+      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+    },
+    {
+      id: 'garmin-activities-heatmap',
+      title: 'Calendrier Activités',
+      icon: Calendar,
+      color: 'teal',
+      bgColor: 'bg-teal-500/20',
+      textColor: 'text-teal-400',
+      component: GarminActivityHeatmapWrapped,
+      props: { garminData, selectedPeriod, colors: themeColors },
+      condition: garminData?.activities && (garminData.activities.swimming?.length > 0 || garminData.activities.jumpRope?.length > 0 || garminData.activities.cardio?.length > 0)
+    },
+    {
+      id: 'garmin-correlations',
+      title: 'Corrélations',
+      icon: BarChart3,
+      color: 'pink',
+      bgColor: 'bg-pink-500/20',
+      textColor: 'text-pink-400',
+      component: GarminCorrelationChartsWrapped,
+      props: { garminData, selectedPeriod, colors: themeColors },
+      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+    },
+    
+    // ==========================================
+    // GRAPHIQUES WORKOUT EXISTANTS
+    // ==========================================
     // ROW 1 - 3 Cartes KPI
     {
       id: 'volume-repetitions',
@@ -239,8 +388,16 @@ const ChartsTab = () => {
     }
   ];
 
-  // Mémorisation des configurations pour éviter les re-rendus
-  const memoizedChartConfigs = useMemo(() => chartConfigs, [chartData, themeColors, selectedPeriod]);
+  // Mémorisation des configurations pour éviter les re-rendus (avec filtrage conditionnel)
+  const memoizedChartConfigs = useMemo(() => {
+    return chartConfigs.filter(config => {
+      // Si condition est définie et false, exclure le graphique
+      if (config.condition !== undefined && config.condition === false) {
+        return false;
+      }
+      return true;
+    });
+  }, [chartData, themeColors, selectedPeriod, garminData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-6">

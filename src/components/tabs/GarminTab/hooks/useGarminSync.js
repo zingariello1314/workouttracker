@@ -1,7 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useGarminData } from '../../../../hooks/useGarminData';
 
 const BASES = ['http://localhost:3031', 'http://localhost:3001'];
+
+// 🟡 FIX #26: Cache frontend avec TTL (60 secondes)
+const frontendCache = {
+  data: null,
+  timestamp: 0,
+  ttl: 60000 // 60 secondes
+};
 
 /**
  * Hook pour gérer la synchronisation Garmin
@@ -60,9 +67,27 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
   }, [dbReady, saveActivities, saveDailyMetrics, loadAllData, setGarminData, importToEndurance]);
 
   const syncNow = useCallback(async () => {
+    // 🟡 FIX #26: Vérifier cache frontend avant sync
+    const now = Date.now();
+    if (frontendCache.data && (now - frontendCache.timestamp) < frontendCache.ttl) {
+      console.log('[GarminSync] Using cached data (cache valid for', Math.round((frontendCache.ttl - (now - frontendCache.timestamp)) / 1000), 'more seconds)');
+      setStatus({
+        lastSync: frontendCache.data.lastSync,
+        ok: true,
+        message: 'Sync OK (cached)'
+      });
+      await processSyncResponse(frontendCache.data);
+      return;
+    }
+
     try {
       setLoading(true);
       const json = await tryFetch('/api/garmin/sync', { method: 'POST' });
+      
+      // 🟡 FIX #26: Mettre à jour le cache
+      frontendCache.data = json;
+      frontendCache.timestamp = Date.now();
+      
       setStatus({
         lastSync: json.lastSync,
         ok: json.ok,
@@ -73,6 +98,11 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
     } catch (e) {
       try {
         const json = await tryFetch('/api/garmin/sync');
+        
+        // 🟡 FIX #26: Mettre à jour le cache même en cas de fallback GET
+        frontendCache.data = json;
+        frontendCache.timestamp = Date.now();
+        
         setStatus({
           lastSync: json.lastSync,
           ok: json.ok !== false,

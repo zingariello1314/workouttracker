@@ -2,11 +2,14 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ReferenceLine } from 'recharts';
 import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
+import { useChartContainerSize } from './useChartContainerSize';
+import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 
 /**
  * Graphique d'évolution du Stress
+ * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-export default function GarminStressChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminStressChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
     dailyMetrics,
     selectedDate,
@@ -21,9 +24,18 @@ export default function GarminStressChart({ dailyMetrics, selectedDate, periodFi
     
     return filteredDates.map(date => {
       const dm = dailyMetrics[date] || {};
+      // PHASE 3.2 : Gérer nouveau format (dict avec average/max + timeSeries) et ancien format (int)
+      let stressValue = null;
+      if (dm.stress !== undefined && dm.stress !== null) {
+        if (typeof dm.stress === 'object' && dm.stress.average !== undefined) {
+          stressValue = dm.stress.average;
+        } else if (typeof dm.stress === 'number') {
+          stressValue = dm.stress;
+        }
+      }
       return {
         date,
-        stress: dm.stress !== undefined && dm.stress !== null ? dm.stress : null,
+        stress: stressValue,
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.stress !== null);
@@ -81,6 +93,9 @@ export default function GarminStressChart({ dailyMetrics, selectedDate, periodFi
     return null;
   };
 
+  // 🔴 FIX #5: Vérifier dimensions avant rendu
+  const { containerRef, containerSize } = useChartContainerSize();
+
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
@@ -94,8 +109,26 @@ export default function GarminStressChart({ dailyMetrics, selectedDate, periodFi
           )}
         </div>
       </div>
-      <div className="h-80 min-h-[320px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+      <div 
+        ref={containerRef} 
+        className="h-80 min-h-[320px]" 
+        style={{ 
+          width: '100%', 
+          height: '320px', 
+          minHeight: '320px', 
+          minWidth: '400px',
+          position: 'relative',
+          display: 'block',
+          boxSizing: 'border-box'
+        }}
+      >
+        {/* containerSize est toujours valide grâce à useChartContainerSize qui garantit minWidth/minHeight */}
+        <ResponsiveContainer 
+          width={Math.max(400, containerSize.width)} 
+          height={Math.max(320, containerSize.height)} 
+          minHeight={320} 
+          minWidth={400}
+        >
           <AreaChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <defs>
               <linearGradient id="stressGradient" x1="0" y1="0" x2="0" y2="1">
@@ -132,15 +165,19 @@ export default function GarminStressChart({ dailyMetrics, selectedDate, periodFi
               strokeWidth={3}
               fill="url(#stressGradient)"
               name="Stress"
-              dot={(props) => (
-                <CustomDot
-                  {...props}
-                  fill={colors?.purple || '#8B5CF6'}
-                  stroke={colors?.purple || '#8B5CF6'}
-                  strokeWidth={2}
-                  r={4}
-                />
-              )}
+              dot={(props) => {
+                const { key, ...restProps } = props;
+                return (
+                  <CustomDot
+                    key={key}
+                    {...restProps}
+                    fill={colors?.purple || '#8B5CF6'}
+                    stroke={colors?.purple || '#8B5CF6'}
+                    strokeWidth={2}
+                    r={4}
+                  />
+                );
+              }}
               activeDot={{ r: 8, stroke: colors?.purple || '#8B5CF6', strokeWidth: 2 }}
             />
           </AreaChart>
@@ -149,4 +186,7 @@ export default function GarminStressChart({ dailyMetrics, selectedDate, periodFi
     </div>
   );
 }
+
+// 🟡 FIX #13: Memoization avec comparaison optimisée
+export default React.memo(GarminStressChart, areChartPropsEqual);
 

@@ -2,11 +2,14 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
+import { useChartContainerSize } from './useChartContainerSize';
+import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 
 /**
  * Graphique de respiration (éveillé et sommeil)
+ * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-export default function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
     dailyMetrics,
     selectedDate,
@@ -70,6 +73,9 @@ export default function GarminRespirationChart({ dailyMetrics, selectedDate, per
   const hasAwakeData = chartData.some(d => d.awakeAvg !== null);
   const hasSleepData = chartData.some(d => d.sleepAvg !== null);
 
+  // 🔴 FIX #5: Vérifier dimensions avant rendu
+  const { containerRef, containerSize } = useChartContainerSize();
+
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
@@ -78,8 +84,26 @@ export default function GarminRespirationChart({ dailyMetrics, selectedDate, per
           <div className="text-slate-400 text-xs">{displayInfo}</div>
         )}
       </div>
-      <div className="h-80 min-h-[320px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+      <div 
+        ref={containerRef} 
+        className="h-80 min-h-[320px]" 
+        style={{ 
+          width: '100%', 
+          height: '320px', 
+          minHeight: '320px', 
+          minWidth: '400px',
+          position: 'relative',
+          display: 'block',
+          boxSizing: 'border-box'
+        }}
+      >
+        {/* containerSize est toujours valide grâce à useChartContainerSize qui garantit minWidth/minHeight */}
+        <ResponsiveContainer 
+          width={Math.max(400, containerSize.width)} 
+          height={Math.max(320, containerSize.height)} 
+          minHeight={320} 
+          minWidth={400}
+        >
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis
@@ -120,15 +144,19 @@ export default function GarminRespirationChart({ dailyMetrics, selectedDate, per
                 stroke={colors?.green || '#10B981'}
                 strokeWidth={3}
                 name="Éveillé Moy"
-                dot={(props) => (
-                  <CustomDot
-                    {...props}
-                    fill={colors?.green || '#10B981'}
-                    stroke={colors?.green || '#10B981'}
-                    strokeWidth={2}
-                    r={4}
-                  />
-                )}
+                dot={(props) => {
+                  const { key, ...restProps } = props;
+                  return (
+                    <CustomDot
+                      key={key}
+                      {...restProps}
+                      fill={colors?.green || '#10B981'}
+                      stroke={colors?.green || '#10B981'}
+                      strokeWidth={2}
+                      r={4}
+                    />
+                  );
+                }}
                 activeDot={{ r: 7, stroke: colors?.green || '#10B981', strokeWidth: 2 }}
               />
             )}
@@ -161,15 +189,19 @@ export default function GarminRespirationChart({ dailyMetrics, selectedDate, per
                 stroke={colors?.blue || '#3B82F6'}
                 strokeWidth={3}
                 name="Sommeil Moy"
-                dot={(props) => (
-                  <CustomDot
-                    {...props}
-                    fill={colors?.blue || '#3B82F6'}
-                    stroke={colors?.blue || '#3B82F6'}
-                    strokeWidth={2}
-                    r={4}
-                  />
-                )}
+                dot={(props) => {
+                  const { key, ...restProps } = props;
+                  return (
+                    <CustomDot
+                      key={key}
+                      {...restProps}
+                      fill={colors?.blue || '#3B82F6'}
+                      stroke={colors?.blue || '#3B82F6'}
+                      strokeWidth={2}
+                      r={4}
+                    />
+                  );
+                }}
                 activeDot={{ r: 7, stroke: colors?.blue || '#3B82F6', strokeWidth: 2 }}
               />
             )}
@@ -190,4 +222,7 @@ export default function GarminRespirationChart({ dailyMetrics, selectedDate, per
     </div>
   );
 }
+
+// 🟡 FIX #13: Memoization avec comparaison optimisée
+export default React.memo(GarminRespirationChart, areChartPropsEqual);
 

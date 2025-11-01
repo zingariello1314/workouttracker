@@ -37,9 +37,27 @@ export default function SyncControls({
               Dernière sync: {new Date(status.lastSync).toLocaleString('fr-FR')}
             </div>
           )}
+          {/* 🟡 FIX #16: Erreurs affichées clairement avec bouton Réessayer */}
           {status?.error && (
-            <div className="text-red-400 mt-1 text-xs">
-              Erreur: {status.error}
+            <div className="mt-3 bg-red-900/30 border border-red-500/50 rounded-lg p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <p className="text-red-300 font-medium text-sm mb-1">Erreur de synchronisation</p>
+                  <p className="text-red-400 text-xs mb-2">{status.error}</p>
+                  <p className="text-red-400/70 text-xs">
+                    Vérifiez que le serveur Garmin est démarré (port 3031 ou 3001).
+                    <br />
+                    Assurez-vous que les identifiants Garmin sont corrects dans le fichier .env
+                  </p>
+                </div>
+                <button
+                  onClick={syncNow}
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed rounded text-white text-sm font-medium whitespace-nowrap"
+                >
+                  {loading ? 'En cours...' : 'Réessayer'}
+                </button>
+              </div>
             </div>
           )}
         </div>

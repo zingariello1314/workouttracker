@@ -10,13 +10,30 @@ const RepartitionMusculaireChart = ({ data, colors }) => {
     const workoutHistory = data?.workoutHistory || [];
     const muscleGroups = {};
     
-    // 1. Compter les exercices normaux
+    // Fonction helper pour convertir en nombre valide
+    const safeNumber = (value) => {
+      if (typeof value === 'number' && !isNaN(value) && value > 0) return value;
+      const parsed = parseInt(value);
+      return (!isNaN(parsed) && parsed > 0) ? parsed : 0;
+    };
+    
+    // 1. Compter les exercices normaux (exclure jumprope)
     workoutHistory.forEach(session => {
       session.exercises?.forEach(exercise => {
+        // Exclure les exercices de type jumprope (jumps ne comptent pas comme reps)
+        const isJumprope = (exercise.id || exercise.exerciseId || '').toString().includes('endurance_jumprope') ||
+                          exercise.activityType === 'jumprope' ||
+                          exercise.name?.toLowerCase().includes('corde');
+        
+        if (isJumprope) return; // Skip jumprope exercises
+        
         const exerciseInfo = findExerciseInDatabase(exercise.name);
         if (exerciseInfo) {
           const category = exerciseInfo.category;
-          muscleGroups[category] = (muscleGroups[category] || 0) + (exercise.reps || 0);
+          const reps = safeNumber(exercise.reps);
+          if (reps > 0) {
+            muscleGroups[category] = (muscleGroups[category] || 0) + reps;
+          }
         }
       });
     });
@@ -74,17 +91,24 @@ const RepartitionMusculaireChart = ({ data, colors }) => {
     let colorIndex = 0;
     
     return Object.entries(muscleGroups)
-      .map(([group, reps]) => ({
-        name: group,
-        reps: reps,
-        percent: 0, // Sera calculé après
-        color: colors[colorIndex++ % colors.length]
-      }))
+      .map(([group, reps]) => {
+        const safeReps = typeof reps === 'number' ? reps : parseInt(reps) || 0;
+        return {
+          name: group,
+          reps: safeReps,
+          percent: 0, // Sera calculé après
+          color: colors[colorIndex++ % colors.length]
+        };
+      })
+      .filter(group => group.reps > 0) // Exclure les groupes avec 0 reps
       .sort((a, b) => b.reps - a.reps);
   };
 
   const muscleGroups = calculateMuscleGroupData();
-  const totalReps = muscleGroups.reduce((sum, group) => sum + group.reps, 0);
+  const totalReps = muscleGroups.reduce((sum, group) => {
+    const reps = typeof group.reps === 'number' ? group.reps : parseInt(group.reps) || 0;
+    return sum + reps;
+  }, 0);
   
   // Calculer les pourcentages
   muscleGroups.forEach(group => {
@@ -93,11 +117,33 @@ const RepartitionMusculaireChart = ({ data, colors }) => {
 
   // Fonction utilitaire pour calculer les coordonnées SVG de manière sécurisée
   const getSafeCoordinates = (group, index, groups) => {
-    const total = groups.reduce((sum, g) => sum + g.percent, 0);
+    const total = groups.reduce((sum, g) => {
+      const percent = typeof g.percent === 'number' ? g.percent : parseFloat(g.percent) || 0;
+      return sum + percent;
+    }, 0);
+    
+    if (total === 0 || !total || isNaN(total)) {
+      // Si aucun pourcentage, retourner coordonnées par défaut
+      return {
+        x1: 80,
+        y1: 80,
+        x2: 80,
+        y2: 20,
+        largeArc: 0,
+        cx: 80,
+        cy: 80
+      };
+    }
+    
     const startAngle = groups
       .slice(0, index)
-      .reduce((sum, g) => sum + (g.percent / total) * 360, 0);
-    const angle = (group.percent / total) * 360;
+      .reduce((sum, g) => {
+        const percent = typeof g.percent === 'number' ? g.percent : parseFloat(g.percent) || 0;
+        return sum + (percent / total) * 360;
+      }, 0);
+    
+    const groupPercent = typeof group.percent === 'number' ? group.percent : parseFloat(group.percent) || 0;
+    const angle = (groupPercent / total) * 360;
     const radius = 60;
     const cx = 80;
     const cy = 80;
@@ -154,7 +200,9 @@ const RepartitionMusculaireChart = ({ data, colors }) => {
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-2xl font-bold text-white">{totalReps}</div>
+              <div className="text-2xl font-bold text-white">
+                {typeof totalReps === 'number' ? totalReps.toLocaleString() : '0'}
+              </div>
               <div className="text-xs text-slate-400">reps</div>
             </div>
           </div>

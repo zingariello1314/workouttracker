@@ -1,6 +1,7 @@
 import React from 'react';
-import { formatHeartRate } from '../utils/garminFormatters';
+import { formatHeartRate, formatDistance, formatSleepDuration } from '../utils/garminFormatters';
 import { renderMetricsGrid } from './GarminDailyMetricsHelpers';
+import { MissingValue } from './MissingDataTooltip';
 
 /**
  * Composant pour afficher les métriques quotidiennes détaillées
@@ -14,11 +15,64 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
     );
   }
 
-  const dateKeys = Object.keys(dailyMetrics).sort();
-  const displayDate = selectedDate || dateKeys[dateKeys.length - 1];
-  const d = dailyMetrics[displayDate] || {};
-  const calories = d.calories || {};
-  const hr = d.heartRate || {};
+  // 🟡 FIX #22: Memoization des clés de dates triées
+  const dateKeys = React.useMemo(() => Object.keys(dailyMetrics).sort(), [dailyMetrics]);
+  
+  // 🟡 FIX #22: Memoization de la date d'affichage
+  const displayDate = React.useMemo(() => 
+    selectedDate || (dateKeys.length > 0 ? dateKeys[dateKeys.length - 1] : null),
+    [selectedDate, dateKeys]
+  );
+  
+  // 🟡 FIX #22: Memoization des métriques de la date sélectionnée
+  const d = React.useMemo(() => dailyMetrics[displayDate] || {}, [dailyMetrics, displayDate]);
+  const calories = React.useMemo(() => d.calories || {}, [d.calories]);
+  const hr = React.useMemo(() => d.heartRate || {}, [d.heartRate]);
+  
+  // 🟡 FIX #22: Memoization des colonnes conditionnelles (éviter recalculs dans le tableau)
+  const hasBodyBattery = React.useMemo(() => 
+    dateKeys.some(dk => {
+      const bb = dailyMetrics[dk]?.bodyBattery;
+      return bb !== undefined && bb !== null && (typeof bb === 'object' ? bb.current !== undefined : typeof bb === 'number');
+    }),
+    [dateKeys, dailyMetrics]
+  );
+  
+  const hasStress = React.useMemo(() =>
+    dateKeys.some(dk => {
+      const s = dailyMetrics[dk]?.stress;
+      return s !== undefined && s !== null && (typeof s === 'object' ? s.average !== undefined : typeof s === 'number');
+    }),
+    [dateKeys, dailyMetrics]
+  );
+  
+  const hasSpO2 = React.useMemo(() =>
+    dateKeys.some(dk => dailyMetrics[dk]?.spo2 !== undefined && dailyMetrics[dk]?.spo2 !== null),
+    [dateKeys, dailyMetrics]
+  );
+  
+  // 🟡 FIX #22: Memoization des données du tableau historique
+  const tableData = React.useMemo(() => {
+    return dateKeys.map((dk) => {
+      const dm = dailyMetrics[dk] || {};
+      const cal = dm.calories || {};
+      const hrRow = dm.heartRate || {};
+      const sleep = dm.sleep;
+      const sleepStr = sleep && sleep.duration ? formatSleepDuration(sleep.duration) : null;
+      const intensityStr = dm.intensityMinutes ? `${dm.intensityMinutes.total || 0} min` : null;
+      
+      return {
+        date: dk,
+        dm,
+        cal,
+        hrRow,
+        sleep,
+        sleepStr,
+        intensityStr,
+        isSelected: dk === displayDate
+      };
+    });
+  }, [dateKeys, dailyMetrics, displayDate]);
 
   return (
     <div className="mt-6">
@@ -52,52 +106,71 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
                 <th className="px-2 py-2 text-left border-b border-slate-700">FC moy</th>
                 <th className="px-2 py-2 text-left border-b border-slate-700">Sommeil</th>
                 <th className="px-2 py-2 text-left border-b border-slate-700">Intensité</th>
-                {(dateKeys.some(dk => dailyMetrics[dk]?.bodyBattery !== undefined && dailyMetrics[dk]?.bodyBattery !== null)) && (
+                {hasBodyBattery && (
                   <th className="px-2 py-2 text-left border-b border-slate-700">Body Battery</th>
                 )}
-                {(dateKeys.some(dk => dailyMetrics[dk]?.stress !== undefined && dailyMetrics[dk]?.stress !== null)) && (
+                {hasStress && (
                   <th className="px-2 py-2 text-left border-b border-slate-700">Stress</th>
                 )}
-                {(dateKeys.some(dk => dailyMetrics[dk]?.spo2 !== undefined && dailyMetrics[dk]?.spo2 !== null)) && (
+                {hasSpO2 && (
                   <th className="px-2 py-2 text-left border-b border-slate-700">SpO2</th>
                 )}
               </tr>
             </thead>
             <tbody>
-              {dateKeys.map((dk) => {
-                const dm = dailyMetrics[dk] || {};
-                const cal = dm.calories || {};
-                const hr = dm.heartRate || {};
-                const sleep = dm.sleep;
-                const sleepStr = sleep && sleep.duration ? `${Math.floor(sleep.duration)}h${Math.round((sleep.duration % 1) * 60)}m` : '—';
-                const intensityStr = dm.intensityMinutes ? `${dm.intensityMinutes.total || 0} min` : '—';
-                return (
-                  <tr
-                    key={dk}
-                    className={`odd:bg-slate-800/40 cursor-pointer hover:bg-slate-700/40 ${dk === displayDate ? 'bg-blue-900/30' : ''}`}
-                    onClick={() => setSelectedDate(dk)}
-                  >
-                    <td className="px-2 py-1 border-b border-slate-700">{dk}</td>
-                    <td className="px-2 py-1 border-b border-slate-700">{dm.steps ?? 0}</td>
-                    <td className="px-2 py-1 border-b border-slate-700">{dm.distance ?? 0}</td>
-                    <td className="px-2 py-1 border-b border-slate-700">{cal.total ?? 0}</td>
-                    <td className="px-2 py-1 border-b border-slate-700">{hr.resting ?? 0} bpm</td>
-                    <td className="px-2 py-1 border-b border-slate-700">{hr.max ?? 0} bpm</td>
-                    <td className="px-2 py-1 border-b border-slate-700">{hr.avg ?? 0} bpm</td>
-                    <td className="px-2 py-1 border-b border-slate-700">{sleepStr}</td>
-                    <td className="px-2 py-1 border-b border-slate-700">{intensityStr}</td>
-                    {(dateKeys.some(dk => dailyMetrics[dk]?.bodyBattery !== undefined && dailyMetrics[dk]?.bodyBattery !== null)) && (
-                      <td className="px-2 py-1 border-b border-slate-700">{dm.bodyBattery !== undefined && dm.bodyBattery !== null ? `${dm.bodyBattery}/100` : '—'}</td>
-                    )}
-                    {(dateKeys.some(dk => dailyMetrics[dk]?.stress !== undefined && dailyMetrics[dk]?.stress !== null)) && (
-                      <td className="px-2 py-1 border-b border-slate-700">{dm.stress !== undefined && dm.stress !== null ? dm.stress : '—'}</td>
-                    )}
-                    {(dateKeys.some(dk => dailyMetrics[dk]?.spo2 !== undefined && dailyMetrics[dk]?.spo2 !== null)) && (
-                      <td className="px-2 py-1 border-b border-slate-700">{dm.spo2 !== undefined && dm.spo2 !== null ? `${dm.spo2}%` : '—'}</td>
-                    )}
-                  </tr>
-                );
-              })}
+              {tableData.map((row) => (
+                <tr
+                  key={row.date}
+                  className={`odd:bg-slate-800/40 cursor-pointer hover:bg-slate-700/40 ${row.isSelected ? 'bg-blue-900/30' : ''}`}
+                  onClick={() => setSelectedDate(row.date)}
+                >
+                  <td className="px-2 py-1 border-b border-slate-700">{row.date}</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{row.dm.steps ?? 0}</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{formatDistance(row.dm.distance)}</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{row.cal.total ?? 0}</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{row.hrRow.resting ?? 0} bpm</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{row.hrRow.max ?? 0} bpm</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{row.hrRow.avg ?? 0} bpm</td>
+                  <td className="px-2 py-1 border-b border-slate-700">
+                    {row.sleepStr || <MissingValue message="Données de sommeil non disponibles. Cette métrique nécessite une synchronisation avec votre montre Garmin." />}
+                  </td>
+                  <td className="px-2 py-1 border-b border-slate-700">
+                    {row.intensityStr || <MissingValue message="Minutes d'intensité non disponibles. Cette métrique nécessite une synchronisation avec votre montre Garmin." />}
+                  </td>
+                  {hasBodyBattery && (
+                    <td className="px-2 py-1 border-b border-slate-700">
+                      {(() => {
+                        const bb = row.dm.bodyBattery;
+                        if (bb === undefined || bb === null) {
+                          return <MissingValue message="Body Battery non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />;
+                        }
+                        const value = typeof bb === 'object' && bb.current !== undefined ? bb.current : (typeof bb === 'number' ? bb : null);
+                        return value !== null ? `${value}/100` : <MissingValue message="Body Battery non disponible pour cette date." />;
+                      })()}
+                    </td>
+                  )}
+                  {hasStress && (
+                    <td className="px-2 py-1 border-b border-slate-700">
+                      {(() => {
+                        const s = row.dm.stress;
+                        if (s === undefined || s === null) {
+                          return <MissingValue message="Stress non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />;
+                        }
+                        const value = typeof s === 'object' && s.average !== undefined ? s.average : (typeof s === 'number' ? s : null);
+                        return value !== null ? value : <MissingValue message="Stress non disponible pour cette date." />;
+                      })()}
+                    </td>
+                  )}
+                  {hasSpO2 && (
+                    <td className="px-2 py-1 border-b border-slate-700">
+                      {row.dm.spo2 !== undefined && row.dm.spo2 !== null 
+                        ? `${row.dm.spo2}%` 
+                        : <MissingValue message="SpO2 (Saturation en oxygène) non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />
+                      }
+                    </td>
+                  )}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -134,7 +207,7 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
         </div>
         <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
           <div className="text-slate-400 text-xs">Distance (km)</div>
-          <div className="text-white text-lg">{d.distance ?? 0}</div>
+          <div className="text-white text-lg">{formatDistance(d.distance)}</div>
         </div>
         <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
           <div className="text-slate-400 text-xs">Étages</div>
@@ -163,7 +236,9 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
           <div className="bg-slate-800/60 border border-slate-700 rounded p-3 md:col-span-2">
             <div className="text-slate-400 text-xs">Sommeil</div>
             <div className="text-white text-lg">
-              {d.sleep.duration ? `${Math.floor(d.sleep.duration)}h ${Math.round((d.sleep.duration % 1) * 60)}m` : '—'}
+              {d.sleep.duration ? formatSleepDuration(d.sleep.duration) : (
+                <MissingValue message="Durée de sommeil non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />
+              )}
             </div>
             {d.sleep.quality > 0 && (
               <div className="text-slate-400 text-xs mt-1">Qualité: {d.sleep.quality}/100</div>
@@ -249,38 +324,60 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
             </div>
           </div>
         )}
-        {(d.bodyBattery !== undefined && d.bodyBattery !== null) && (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-            <div className="text-slate-400 text-xs">Body Battery</div>
-            <div className="text-white text-lg">{d.bodyBattery}/100</div>
-            <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full ${
-                  d.bodyBattery >= 70 ? 'bg-green-500' :
-                  d.bodyBattery >= 50 ? 'bg-yellow-500' :
-                  d.bodyBattery >= 30 ? 'bg-orange-500' : 'bg-red-500'
-                }`}
-                style={{ width: `${d.bodyBattery}%` }}
-              />
+        {(() => {
+          // PHASE 3.1 : Gérer nouveau format (dict avec current) et ancien format (int)
+          let bodyBatteryValue = null;
+          if (d.bodyBattery !== undefined && d.bodyBattery !== null) {
+            if (typeof d.bodyBattery === 'object' && d.bodyBattery.current !== undefined) {
+              bodyBatteryValue = d.bodyBattery.current;
+            } else if (typeof d.bodyBattery === 'number') {
+              bodyBatteryValue = d.bodyBattery;
+            }
+          }
+          return bodyBatteryValue !== null && (
+            <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+              <div className="text-slate-400 text-xs">Body Battery</div>
+              <div className="text-white text-lg">{bodyBatteryValue}/100</div>
+              <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full ${
+                    bodyBatteryValue >= 70 ? 'bg-green-500' :
+                    bodyBatteryValue >= 50 ? 'bg-yellow-500' :
+                    bodyBatteryValue >= 30 ? 'bg-orange-500' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${bodyBatteryValue}%` }}
+                />
+              </div>
             </div>
-          </div>
-        )}
-        {(d.stress !== undefined && d.stress !== null) && (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-            <div className="text-slate-400 text-xs">Stress</div>
-            <div className="text-white text-lg">{d.stress}</div>
-            <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full ${
-                  d.stress <= 25 ? 'bg-green-500' :
-                  d.stress <= 50 ? 'bg-yellow-500' :
-                  d.stress <= 75 ? 'bg-orange-500' : 'bg-red-500'
-                }`}
-                style={{ width: `${Math.min(d.stress * 2, 100)}%` }}
-              />
+          );
+        })()}
+        {(() => {
+          // PHASE 3.2 : Gérer nouveau format (dict avec average/max) et ancien format (int)
+          let stressValue = null;
+          if (d.stress !== undefined && d.stress !== null) {
+            if (typeof d.stress === 'object' && d.stress.average !== undefined) {
+              stressValue = d.stress.average;
+            } else if (typeof d.stress === 'number') {
+              stressValue = d.stress;
+            }
+          }
+          return stressValue !== null && (
+            <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+              <div className="text-slate-400 text-xs">Stress</div>
+              <div className="text-white text-lg">{stressValue}</div>
+              <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full ${
+                    stressValue <= 25 ? 'bg-green-500' :
+                    stressValue <= 50 ? 'bg-yellow-500' :
+                    stressValue <= 75 ? 'bg-orange-500' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${Math.min(stressValue * 2, 100)}%` }}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
         {(d.spo2 !== undefined && d.spo2 !== null) && (
           <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
             <div className="text-slate-400 text-xs">SpO2 (Saturation O₂)</div>

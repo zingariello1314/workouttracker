@@ -2,11 +2,14 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
+import { useChartContainerSize } from './useChartContainerSize';
+import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 
 /**
  * Graphique de fréquence cardiaque 24h
+ * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-export default function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
     dailyMetrics,
     selectedDate,
@@ -75,6 +78,9 @@ export default function GarminHeartRateChart({ dailyMetrics, selectedDate, perio
     return null;
   };
 
+  // 🔴 FIX #5: Vérifier dimensions avant rendu
+  const { containerRef, containerSize } = useChartContainerSize();
+
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
@@ -83,8 +89,27 @@ export default function GarminHeartRateChart({ dailyMetrics, selectedDate, perio
           <div className="text-slate-400 text-xs">{displayInfo}</div>
         )}
       </div>
-      <div className="h-80 min-h-[320px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+      <div 
+        ref={containerRef} 
+        className="h-80 min-h-[320px]" 
+        style={{ 
+          width: '100%', 
+          height: '320px', 
+          minHeight: '320px', 
+          minWidth: '400px',
+          position: 'relative',
+          display: 'block',
+          boxSizing: 'border-box'
+        }}
+      >
+        {/* containerSize est toujours valide grâce à useChartContainerSize qui garantit minWidth/minHeight */}
+        {/* Utiliser les dimensions garanties pour éviter les warnings Recharts */}
+        <ResponsiveContainer 
+          width={Math.max(400, containerSize.width)} 
+          height={Math.max(320, containerSize.height)} 
+          minHeight={320} 
+          minWidth={400}
+        >
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis
@@ -114,15 +139,19 @@ export default function GarminHeartRateChart({ dailyMetrics, selectedDate, perio
                 stroke={colors?.green || '#10B981'}
                 strokeWidth={2}
                 name="FC Repos"
-                dot={(props) => (
-                  <CustomDot
-                    {...props}
-                    fill={colors?.green || '#10B981'}
-                    stroke={colors?.green || '#10B981'}
-                    strokeWidth={2}
-                    r={4}
-                  />
-                )}
+                dot={(props) => {
+                  const { key, ...restProps } = props;
+                  return (
+                    <CustomDot
+                      key={key}
+                      {...restProps}
+                      fill={colors?.green || '#10B981'}
+                      stroke={colors?.green || '#10B981'}
+                      strokeWidth={2}
+                      r={4}
+                    />
+                  );
+                }}
                 activeDot={{ r: 7, stroke: colors?.green || '#10B981', strokeWidth: 2 }}
               />
             )}
@@ -133,15 +162,19 @@ export default function GarminHeartRateChart({ dailyMetrics, selectedDate, perio
                 stroke={colors?.primary || '#3B82F6'}
                 strokeWidth={2}
                 name="FC Moyenne"
-                dot={(props) => (
-                  <CustomDot
-                    {...props}
-                    fill={colors?.primary || '#3B82F6'}
-                    stroke={colors?.primary || '#3B82F6'}
-                    strokeWidth={2}
-                    r={4}
-                  />
-                )}
+                dot={(props) => {
+                  const { key, ...restProps } = props;
+                  return (
+                    <CustomDot
+                      key={key}
+                      {...restProps}
+                      fill={colors?.primary || '#3B82F6'}
+                      stroke={colors?.primary || '#3B82F6'}
+                      strokeWidth={2}
+                      r={4}
+                    />
+                  );
+                }}
                 activeDot={{ r: 7, stroke: colors?.primary || '#3B82F6', strokeWidth: 2 }}
               />
             )}
@@ -152,15 +185,19 @@ export default function GarminHeartRateChart({ dailyMetrics, selectedDate, perio
                 stroke={colors?.red || '#EF4444'}
                 strokeWidth={2}
                 name="FC Max"
-                dot={(props) => (
-                  <CustomDot
-                    {...props}
-                    fill={colors?.red || '#EF4444'}
-                    stroke={colors?.red || '#EF4444'}
-                    strokeWidth={2}
-                    r={4}
-                  />
-                )}
+                dot={(props) => {
+                  const { key, ...restProps } = props;
+                  return (
+                    <CustomDot
+                      key={key}
+                      {...restProps}
+                      fill={colors?.red || '#EF4444'}
+                      stroke={colors?.red || '#EF4444'}
+                      strokeWidth={2}
+                      r={4}
+                    />
+                  );
+                }}
                 activeDot={{ r: 7, stroke: colors?.red || '#EF4444', strokeWidth: 2 }}
               />
             )}
@@ -170,4 +207,7 @@ export default function GarminHeartRateChart({ dailyMetrics, selectedDate, perio
     </div>
   );
 }
+
+// 🟡 FIX #13: Memoization avec comparaison optimisée des props
+export default React.memo(GarminHeartRateChart, areChartPropsEqual);
 

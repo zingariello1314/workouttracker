@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Calendar, Activity, Target, Flame, Zap, Clock, Dumbbell } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useWorkoutStats } from '../../hooks/useWorkoutStats';
+import { useGarminData } from '../../hooks/useGarminData';
 import CalendarHeatmap from '../CalendarHeatmap';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { getDateStr } from '../../utils/dateUtils';
@@ -12,6 +13,21 @@ const CalendarTab = () => {
   
   // Utiliser getCurrentData() pour inclure les données temporaires non sauvegardées
   const currentData = getCurrentData();
+  
+  // PHASE 5.3 : Charger données Garmin
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminData, setGarminData] = useState(null);
+  
+  useEffect(() => {
+    if (dbReady) {
+      loadAllData()
+        .then(setGarminData)
+        .catch(err => {
+          console.error('[CalendarTab] Error loading Garmin data:', err);
+          setGarminData(null);
+        });
+    }
+  }, [dbReady, loadAllData]);
   
   // Créer une instance du hook avec les données actuelles
   const { getWorkoutHistory } = useWorkoutStats();
@@ -323,7 +339,7 @@ const CalendarTab = () => {
       </Card>
 
       {/* Calendrier existant */}
-      <CalendarHeatmap workoutHistory={workoutHistory} />
+      <CalendarHeatmap workoutHistory={workoutHistory} garminData={garminData} />
     </div>
   );
 };

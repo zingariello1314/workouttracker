@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDistance, formatSleepDuration } from '../utils/garminFormatters';
 
 /**
  * Composant Dashboard pour afficher les métriques quotidiennes principales
@@ -99,7 +100,7 @@ export default function GarminDashboard({ dailyMetrics, selectedDate, comparison
             <h4 className="text-slate-300 font-medium mb-3 text-sm">{displayDate}</h4>
             <div className="grid grid-cols-2 gap-3">
               {renderMetricCard('Pas', d.steps ?? 0, 'blue', compareData?.steps ?? 0)}
-              {renderMetricCard('Distance', `${d.distance ?? 0} km`, 'blue', `${compareData?.distance ?? 0} km`)}
+              {renderMetricCard('Distance', formatDistance(d.distance), 'blue', formatDistance(compareData?.distance))}
               {renderMetricCard('Calories', calories.total ?? 0, 'orange', compareCalories.total ?? 0)}
               {renderMetricCard('FC Repos', hr.resting ?? 0, 'red', compareHR.resting ?? 0)}
             </div>
@@ -109,7 +110,7 @@ export default function GarminDashboard({ dailyMetrics, selectedDate, comparison
             <h4 className="text-slate-300 font-medium mb-3 text-sm">{compareDate}</h4>
             <div className="grid grid-cols-2 gap-3">
               {renderMetricCard('Pas', compareData?.steps ?? 0, 'blue')}
-              {renderMetricCard('Distance', `${compareData?.distance ?? 0} km`, 'blue')}
+              {renderMetricCard('Distance', formatDistance(compareData?.distance), 'blue')}
               {renderMetricCard('Calories', compareCalories.total ?? 0, 'orange')}
               {renderMetricCard('FC Repos', compareHR.resting ?? 0, 'red')}
             </div>
@@ -124,7 +125,7 @@ export default function GarminDashboard({ dailyMetrics, selectedDate, comparison
         <div className="bg-gradient-to-br from-blue-800/60 to-blue-900/60 border border-blue-700 rounded-lg p-4">
           <div className="text-blue-300 text-xs mb-1">Pas</div>
           <div className="text-white text-2xl font-bold">{d.steps ?? 0}</div>
-          <div className="text-blue-400 text-xs mt-2">Distance: {d.distance ?? 0} km</div>
+          <div className="text-blue-400 text-xs mt-2">Distance: {formatDistance(d.distance)}</div>
         </div>
 
         {/* Carte Calories */}
@@ -150,7 +151,7 @@ export default function GarminDashboard({ dailyMetrics, selectedDate, comparison
           <div className="bg-gradient-to-br from-indigo-800/60 to-indigo-900/60 border border-indigo-700 rounded-lg p-4">
             <div className="text-indigo-300 text-xs mb-1">Sommeil</div>
             <div className="text-white text-2xl font-bold">
-              {Math.floor(d.sleep.duration)}h{Math.round((d.sleep.duration % 1) * 60)}m
+              {formatSleepDuration(d.sleep.duration)}
             </div>
             {d.sleep.quality > 0 && (
               <div className="text-indigo-400 text-xs mt-2">Qualité: {d.sleep.quality}/100</div>
@@ -159,40 +160,62 @@ export default function GarminDashboard({ dailyMetrics, selectedDate, comparison
         )}
 
         {/* Carte Body Battery */}
-        {d.bodyBattery !== undefined && d.bodyBattery !== null && (
-          <div className="bg-gradient-to-br from-green-800/60 to-green-900/60 border border-green-700 rounded-lg p-4">
-            <div className="text-green-300 text-xs mb-1">Body Battery</div>
-            <div className="text-white text-2xl font-bold">{d.bodyBattery}/100</div>
-            <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full ${
-                  d.bodyBattery >= 70 ? 'bg-green-400' :
-                  d.bodyBattery >= 50 ? 'bg-yellow-400' :
-                  d.bodyBattery >= 30 ? 'bg-orange-400' : 'bg-red-400'
-                }`}
-                style={{ width: `${d.bodyBattery}%` }}
-              />
+        {(() => {
+          // PHASE 3.1 : Gérer nouveau format (dict avec current) et ancien format (int)
+          let bodyBatteryValue = null;
+          if (d.bodyBattery !== undefined && d.bodyBattery !== null) {
+            if (typeof d.bodyBattery === 'object' && d.bodyBattery.current !== undefined) {
+              bodyBatteryValue = d.bodyBattery.current;
+            } else if (typeof d.bodyBattery === 'number') {
+              bodyBatteryValue = d.bodyBattery;
+            }
+          }
+          return bodyBatteryValue !== null && (
+            <div className="bg-gradient-to-br from-green-800/60 to-green-900/60 border border-green-700 rounded-lg p-4">
+              <div className="text-green-300 text-xs mb-1">Body Battery</div>
+              <div className="text-white text-2xl font-bold">{bodyBatteryValue}/100</div>
+              <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full ${
+                    bodyBatteryValue >= 70 ? 'bg-green-400' :
+                    bodyBatteryValue >= 50 ? 'bg-yellow-400' :
+                    bodyBatteryValue >= 30 ? 'bg-orange-400' : 'bg-red-400'
+                  }`}
+                  style={{ width: `${bodyBatteryValue}%` }}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Carte Stress */}
-        {d.stress !== undefined && d.stress !== null && (
-          <div className="bg-gradient-to-br from-purple-800/60 to-purple-900/60 border border-purple-700 rounded-lg p-4">
-            <div className="text-purple-300 text-xs mb-1">Stress</div>
-            <div className="text-white text-2xl font-bold">{d.stress}</div>
-            <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full ${
-                  d.stress <= 25 ? 'bg-green-400' :
-                  d.stress <= 50 ? 'bg-yellow-400' :
-                  d.stress <= 75 ? 'bg-orange-400' : 'bg-red-400'
-                }`}
-                style={{ width: `${Math.min(d.stress * 2, 100)}%` }}
-              />
+        {(() => {
+          // PHASE 3.2 : Gérer nouveau format (dict avec average/max) et ancien format (int)
+          let stressValue = null;
+          if (d.stress !== undefined && d.stress !== null) {
+            if (typeof d.stress === 'object' && d.stress.average !== undefined) {
+              stressValue = d.stress.average;
+            } else if (typeof d.stress === 'number') {
+              stressValue = d.stress;
+            }
+          }
+          return stressValue !== null && (
+            <div className="bg-gradient-to-br from-purple-800/60 to-purple-900/60 border border-purple-700 rounded-lg p-4">
+              <div className="text-purple-300 text-xs mb-1">Stress</div>
+              <div className="text-white text-2xl font-bold">{stressValue}</div>
+              <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full ${
+                    stressValue <= 25 ? 'bg-green-400' :
+                    stressValue <= 50 ? 'bg-yellow-400' :
+                    stressValue <= 75 ? 'bg-orange-400' : 'bg-red-400'
+                  }`}
+                  style={{ width: `${Math.min(stressValue * 2, 100)}%` }}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Carte SpO2 */}
         {d.spo2 !== undefined && d.spo2 !== null && (

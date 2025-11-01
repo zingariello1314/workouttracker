@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useRef, useCallback, useTransition } from 'react';
+import { useThrottle } from '../../../../hooks/useThrottle';
 
 /**
- * Composant de navigation temporelle avancée avec filtres, boutons et comparaisons
+ * 🟡 FIX #17 : Composant de navigation temporelle avancée avec optimisations
+ * - Throttling pour navigation boutons (200ms)
+ * - useTransition pour navigation non-bloquante
+ * - Debouncing pour sélecteur de date (300ms)
+ * - Mémorisation des calculs de dates
  */
 export default function TimeNavigation({
   selectedDate,
@@ -20,47 +25,94 @@ export default function TimeNavigation({
 }) {
   const [showFilters, setShowFilters] = React.useState(false);
   const [showComparison, setShowComparison] = React.useState(false);
+  
+  // 🟡 FIX #17 : useTransition pour navigation non-bloquante
+  const [isPending, startTransition] = useTransition();
+  
+  // 🟡 FIX #17 : Throttling pour navigation boutons (200ms pour réactivité)
+  const throttledSetSelectedDate = useThrottle(
+    useCallback((date) => {
+      startTransition(() => {
+        setSelectedDate(date);
+      });
+    }, [setSelectedDate]),
+    200
+  );
+
+  // Debouncing pour sélecteur de date (300ms pour éviter re-renders rapides)
+  const debounceTimerRef = useRef(null);
+  const DEBOUNCE_DELAY = 300;
+
+  const debouncedSetSelectedDate = useCallback((date) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      startTransition(() => {
+        setSelectedDate(date);
+      });
+    }, DEBOUNCE_DELAY);
+  }, [setSelectedDate]);
+
+  // Cleanup du timer au démontage
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   // Calculer les dates de comparaison possibles
-  const availableCompareDates = dateKeys.filter(d => d !== selectedDate);
+  const availableCompareDates = React.useMemo(() => 
+    dateKeys.filter(d => d !== selectedDate),
+    [dateKeys, selectedDate]
+  );
 
-  // Navigation entre dates
-  const goToPrevious = () => {
+  // 🟡 FIX #17 : Navigation optimisée avec throttling et transition
+  const goToPrevious = useCallback(() => {
     if (!selectedDate || dateKeys.length === 0) return;
     const currentIndex = dateKeys.indexOf(selectedDate);
     if (currentIndex > 0) {
-      setSelectedDate(dateKeys[currentIndex - 1]);
+      throttledSetSelectedDate(dateKeys[currentIndex - 1]);
     }
-  };
+  }, [selectedDate, dateKeys, throttledSetSelectedDate]);
 
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
     if (!selectedDate || dateKeys.length === 0) return;
     const currentIndex = dateKeys.indexOf(selectedDate);
     if (currentIndex < dateKeys.length - 1) {
-      setSelectedDate(dateKeys[currentIndex + 1]);
+      throttledSetSelectedDate(dateKeys[currentIndex + 1]);
     }
-  };
+  }, [selectedDate, dateKeys, throttledSetSelectedDate]);
 
-  const goToToday = () => {
+  // Actions immédiates avec transition (pas de throttling)
+  const goToToday = useCallback(() => {
     if (dateKeys.length > 0) {
-      setSelectedDate(dateKeys[dateKeys.length - 1]);
+      startTransition(() => {
+        setSelectedDate(dateKeys[dateKeys.length - 1]);
+      });
     }
-  };
+  }, [dateKeys, setSelectedDate]);
 
-  const goToFirst = () => {
+  const goToFirst = useCallback(() => {
     if (dateKeys.length > 0) {
-      setSelectedDate(dateKeys[0]);
+      startTransition(() => {
+        setSelectedDate(dateKeys[0]);
+      });
     }
-  };
+  }, [dateKeys, setSelectedDate]);
 
-  const goToLast = () => {
+  const goToLast = useCallback(() => {
     if (dateKeys.length > 0) {
-      setSelectedDate(dateKeys[dateKeys.length - 1]);
+      startTransition(() => {
+        setSelectedDate(dateKeys[dateKeys.length - 1]);
+      });
     }
-  };
+  }, [dateKeys, setSelectedDate]);
 
-  // Filtres de période
-  const applyPeriodFilter = (period) => {
+  // 🟡 FIX #17 : Filtres de période optimisés (calculs mémorisés)
+  const applyPeriodFilter = useCallback((period) => {
     setPeriodFilter(period);
     if (!dateKeys || dateKeys.length === 0) return;
 
@@ -113,9 +165,11 @@ export default function TimeNavigation({
     }
 
     if (filteredDates.length > 0) {
-      setSelectedDate(filteredDates[filteredDates.length - 1]);
+      startTransition(() => {
+        setSelectedDate(filteredDates[filteredDates.length - 1]);
+      });
     }
-  };
+  }, [dateKeys, customStartDate, customEndDate, setPeriodFilter, setSelectedDate]);
 
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4 mb-6">
@@ -143,13 +197,17 @@ export default function TimeNavigation({
             <span className="text-slate-400 text-sm">Date:</span>
             <select
               value={selectedDate || ''}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-slate-900 border-0 text-white font-semibold text-sm cursor-pointer focus:outline-none"
+              onChange={(e) => debouncedSetSelectedDate(e.target.value)}
+              disabled={isPending}
+              className="bg-slate-900 border-0 text-white font-semibold text-sm cursor-pointer focus:outline-none disabled:opacity-50"
             >
               {dateKeys.map((dk) => (
                 <option key={dk} value={dk}>{dk}</option>
               ))}
             </select>
+            {isPending && (
+              <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+            )}
           </div>
 
           <button

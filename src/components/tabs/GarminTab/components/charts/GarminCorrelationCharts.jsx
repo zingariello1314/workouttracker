@@ -2,11 +2,14 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar, BarChart, ReferenceLine } from 'recharts';
 import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
+import { useChartContainerSize } from './useChartContainerSize';
+import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 
 /**
  * Graphiques de corrélation (sommeil/performance, Body Battery/intensité)
+ * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-export default function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
     dailyMetrics,
     selectedDate,
@@ -60,6 +63,14 @@ export default function GarminCorrelationCharts({ dailyMetrics, selectedDate, pe
     );
   }
 
+  // 🟡 FIX : Hauteur augmentée maintenant que le conteneur n'a plus de limite fixe
+  const chartHeight = 360;
+  const chartMinHeight = 360;
+  
+  // 🔴 FIX #5: Vérifier dimensions avant rendu (pour les 2 graphiques)
+  const { containerRef: containerRef1, containerSize: containerSize1 } = useChartContainerSize(chartMinHeight, 400);
+  const { containerRef: containerRef2, containerSize: containerSize2 } = useChartContainerSize(chartMinHeight, 400);
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -77,19 +88,37 @@ export default function GarminCorrelationCharts({ dailyMetrics, selectedDate, pe
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Corrélation Sommeil / Performance */}
       {sleepPerformanceData.length > 0 && (
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
+        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-white font-semibold">😴 Corrélation Sommeil / Performance</h4>
             {displayInfo && (
               <div className="text-slate-400 text-xs">{displayInfo}</div>
             )}
           </div>
-          <div className="h-80 min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={320}>
-              <ComposedChart data={sleepPerformanceData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <div 
+            ref={containerRef1} 
+            className="w-full min-w-[400px]" 
+            style={{ 
+              width: '100%', 
+              height: `${chartHeight}px`, 
+              minHeight: `${chartMinHeight}px`, 
+              minWidth: '400px',
+              position: 'relative',
+              display: 'block',
+              boxSizing: 'border-box'
+            }}
+          >
+            {/* containerSize1 est toujours valide grâce à useChartContainerSize qui garantit minWidth/minHeight */}
+            <ResponsiveContainer 
+              width={Math.max(400, containerSize1.width)} 
+              height={Math.max(chartMinHeight, containerSize1.height)} 
+              minHeight={chartMinHeight} 
+              minWidth={400}
+            >
+                <ComposedChart data={sleepPerformanceData} margin={{ top: 5, right: 30, left: 20, bottom: 65 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis
                   dataKey="date"
@@ -132,15 +161,19 @@ export default function GarminCorrelationCharts({ dailyMetrics, selectedDate, pe
                     stroke={colors?.purple || '#8B5CF6'}
                     strokeWidth={2}
                     name="Qualité sommeil"
-                    dot={(props) => (
-                      <CustomDot
-                        {...props}
-                        fill={colors?.purple || '#8B5CF6'}
-                        stroke={colors?.purple || '#8B5CF6'}
-                        strokeWidth={2}
-                        r={4}
-                      />
-                    )}
+                    dot={(props) => {
+                      const { key, ...restProps } = props;
+                      return (
+                        <CustomDot
+                          key={key}
+                          {...restProps}
+                          fill={colors?.purple || '#8B5CF6'}
+                          stroke={colors?.purple || '#8B5CF6'}
+                          strokeWidth={2}
+                          r={4}
+                        />
+                      );
+                    }}
                     activeDot={{ r: 7, stroke: colors?.purple || '#8B5CF6', strokeWidth: 2 }}
                   />
                 )}
@@ -152,15 +185,19 @@ export default function GarminCorrelationCharts({ dailyMetrics, selectedDate, pe
                     stroke={colors?.green || '#10B981'}
                     strokeWidth={2}
                     name="Pas"
-                    dot={(props) => (
-                      <CustomDot
-                        {...props}
-                        fill={colors?.green || '#10B981'}
-                        stroke={colors?.green || '#10B981'}
-                        strokeWidth={2}
-                        r={4}
-                      />
-                    )}
+                    dot={(props) => {
+                      const { key, ...restProps } = props;
+                      return (
+                        <CustomDot
+                          key={key}
+                          {...restProps}
+                          fill={colors?.green || '#10B981'}
+                          stroke={colors?.green || '#10B981'}
+                          strokeWidth={2}
+                          r={4}
+                        />
+                      );
+                    }}
                     activeDot={{ r: 7, stroke: colors?.green || '#10B981', strokeWidth: 2 }}
                   />
                 )}
@@ -172,15 +209,19 @@ export default function GarminCorrelationCharts({ dailyMetrics, selectedDate, pe
                     stroke={colors?.orange || '#F59E0B'}
                     strokeWidth={2}
                     name="Minutes intensives"
-                    dot={(props) => (
-                      <CustomDot
-                        {...props}
-                        fill={colors?.orange || '#F59E0B'}
-                        stroke={colors?.orange || '#F59E0B'}
-                        strokeWidth={2}
-                        r={4}
-                      />
-                    )}
+                    dot={(props) => {
+                      const { key, ...restProps } = props;
+                      return (
+                        <CustomDot
+                          key={key}
+                          {...restProps}
+                          fill={colors?.orange || '#F59E0B'}
+                          stroke={colors?.orange || '#F59E0B'}
+                          strokeWidth={2}
+                          r={4}
+                        />
+                      );
+                    }}
                     activeDot={{ r: 7, stroke: colors?.orange || '#F59E0B', strokeWidth: 2 }}
                   />
                 )}
@@ -189,19 +230,37 @@ export default function GarminCorrelationCharts({ dailyMetrics, selectedDate, pe
           </div>
         </div>
       )}
-
+      
       {/* Corrélation Body Battery / Intensité */}
       {batteryIntensityData.length > 0 && (
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
+        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-white font-semibold">🔋 Corrélation Body Battery / Intensité</h4>
             {displayInfo && (
               <div className="text-slate-400 text-xs">{displayInfo}</div>
             )}
           </div>
-          <div className="h-80 min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={320}>
-              <ComposedChart data={batteryIntensityData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <div 
+            ref={containerRef2} 
+            className="w-full min-w-[400px]" 
+            style={{ 
+              width: '100%', 
+              height: `${chartHeight}px`, 
+              minHeight: `${chartMinHeight}px`, 
+              minWidth: '400px',
+              position: 'relative',
+              display: 'block',
+              boxSizing: 'border-box'
+            }}
+          >
+            {/* containerSize2 est toujours valide grâce à useChartContainerSize qui garantit minWidth/minHeight */}
+            <ResponsiveContainer 
+              width={Math.max(400, containerSize2.width)} 
+              height={Math.max(chartMinHeight, containerSize2.height)} 
+              minHeight={chartMinHeight} 
+              minWidth={400}
+            >
+              <ComposedChart data={batteryIntensityData} margin={{ top: 5, right: 30, left: 20, bottom: 65 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis
                   dataKey="date"
@@ -238,15 +297,19 @@ export default function GarminCorrelationCharts({ dailyMetrics, selectedDate, pe
                   stroke={colors?.green || '#10B981'}
                   strokeWidth={3}
                   name="Body Battery"
-                  dot={(props) => (
-                    <CustomDot
-                      {...props}
-                      fill={colors?.green || '#10B981'}
-                      stroke={colors?.green || '#10B981'}
-                      strokeWidth={2}
-                      r={5}
-                    />
-                  )}
+                  dot={(props) => {
+                    const { key, ...restProps } = props;
+                    return (
+                      <CustomDot
+                        key={key}
+                        {...restProps}
+                        fill={colors?.green || '#10B981'}
+                        stroke={colors?.green || '#10B981'}
+                        strokeWidth={2}
+                        r={5}
+                      />
+                    );
+                  }}
                   activeDot={{ r: 9, stroke: colors?.green || '#10B981', strokeWidth: 2 }}
                 />
                 <Bar
@@ -263,4 +326,7 @@ export default function GarminCorrelationCharts({ dailyMetrics, selectedDate, pe
     </div>
   );
 }
+
+// 🟡 FIX #13: Memoization avec comparaison optimisée
+export default React.memo(GarminCorrelationCharts, areChartPropsEqual);
 

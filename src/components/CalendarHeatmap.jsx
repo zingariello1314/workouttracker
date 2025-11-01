@@ -15,8 +15,9 @@ import {
 import { useWorkout } from '../context/WorkoutContext';
 import { getDateStr } from '../utils/dateUtils';
 import { workoutProgram } from '../data/workoutProgram';
+import { calculateDayIntensityWithGarmin, getGarminActivityIcons } from '../utils/garminCalendarUtils';
 
-const CalendarHeatmap = ({ workoutHistory = [] }) => {
+const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('year'); // 'month', 'year', 'streaks'
   const [selectedDate, setSelectedDate] = useState(null);
@@ -206,10 +207,14 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
                 if (session.duration) enduranceDuration += parseInt(session.duration) || 0;
                 
                 // Ajouter la distance (natation, course)
-                if (session.distance) enduranceDistance += parseFloat(session.distance) || 0;
+                if (session.distance) {
+                  const dist = parseFloat(session.distance) || 0;
+                  enduranceDistance += dist;
+                }
                 if (session.laps && Array.isArray(session.laps)) {
                   session.laps.forEach(lap => {
-                    enduranceDistance += parseFloat(lap.distance) || 0;
+                    const lapDist = parseFloat(lap.distance) || 0;
+                    enduranceDistance += lapDist;
                   });
                 }
                 
@@ -220,6 +225,9 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
           });
         }
       });
+      
+      // Arrondir la distance pour éviter les erreurs de précision flottante
+      enduranceDistance = Math.round(enduranceDistance * 10) / 10;
       
       return {
         reps: enduranceReps,
@@ -489,12 +497,37 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
             }
           }
         }
+        
+        // PHASE 5.3 : Appliquer les ajustements Garmin (recalibrage, records, etc.)
+        let adjustedIntensity = intensityLevel;
+        if (garminData && intensityLevel > 0) {
+          const workoutIntensity = {
+            level: intensityLevel,
+            duration: realDuration,
+            reps: totalReps
+          };
+          
+          const garminAdjusted = calculateDayIntensityWithGarmin(dateStr, workoutIntensity, garminData);
+          adjustedIntensity = garminAdjusted.level;
+          
+          // Debug pour le 28 octobre 2025
+          if (dateStr === '2025-10-28' && garminAdjusted.multiplier !== 1.0) {
+            console.log('🔍 DEBUG Ajustements Garmin:');
+            console.log('Niveau original:', intensityLevel);
+            console.log('Niveau ajusté:', adjustedIntensity);
+            console.log('Multiplicateur:', garminAdjusted.multiplier);
+            console.log('Ajustements:', garminAdjusted.adjustments);
+          }
+        }
     
     // L'intensité ne dépend que des activités complémentaires de l'onglet Aujourd'hui
     const intensityScore = completionRate * 100 + (totalReps * 0.1) + (isComplementaryChecked ? 50 : 0);
     
+    // PHASE 5.3 : Récupérer les icônes Garmin pour cette date
+    const garminIcons = garminData ? getGarminActivityIcons(garminData, dateStr) : [];
+    
     return {
-      level: intensityLevel,
+      level: adjustedIntensity, // Utiliser le niveau ajusté par Garmin
       reps: totalReps,
       duration: realDuration,
       exerciseCount: totalPlannedExercises,
@@ -502,6 +535,8 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
       intensityScore,
       completionRate: Math.round(completionRate * 100),
       enduranceData: enduranceData,
+      // PHASE 5.3 : Ajouter les icônes Garmin
+      garminIcons: garminIcons,
       // Garder la compatibilité avec l'ancien format
       exercises: completedExercises,
       session: completedExercises > 0 ? { 
@@ -698,8 +733,8 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
   };
 
   // Données calculées
-  const monthDays = useMemo(() => generateMonthDays(currentDate), [currentDate, allData]);
-  const { months: yearMonths, yearStats } = useMemo(() => generateYearData(currentDate), [currentDate, allData]);
+  const monthDays = useMemo(() => generateMonthDays(currentDate), [currentDate, allData, garminData]);
+  const { months: yearMonths, yearStats } = useMemo(() => generateYearData(currentDate), [currentDate, allData, garminData]);
   const streaks = useMemo(() => calculateStreaks(), [workoutHistory]);
 
   // Constantes pour l'affichage
@@ -810,7 +845,7 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
                 `}
                 title={`${day.date.toLocaleDateString('fr-FR')} - ${getIntensityLabel(day.intensity.level)} (${day.intensity.duration}min)`}
               >
-                <div className="w-full h-full flex flex-col items-center justify-center">
+                <div className="w-full h-full flex flex-col items-center justify-center relative">
                   <span className={`text-sm font-medium ${
                     day.intensity.level > 0 ? 'text-white' : 'text-slate-400'
                   }`}>
@@ -819,6 +854,20 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
                   {day.intensity.level > 0 && (
                     <div className="text-xs text-white/80">
                       {day.intensity.reps}
+                    </div>
+                  )}
+                  {/* PHASE 5.3 : Icônes Garmin (discret, en bas à droite) */}
+                  {day.intensity.garminIcons && day.intensity.garminIcons.length > 0 && (
+                    <div className="absolute bottom-1 right-1 flex gap-0.5">
+                      {day.intensity.garminIcons.map((iconData, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[10px] leading-none"
+                          title={iconData.label}
+                        >
+                          {iconData.icon}
+                        </span>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -961,87 +1010,305 @@ const CalendarHeatmap = ({ workoutHistory = [] }) => {
       )}
 
       {/* Détails de la date sélectionnée */}
-      {selectedDate && (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white">
-              {selectedDate.date.toLocaleDateString('fr-FR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </h3>
-            <button
-              onClick={() => setSelectedDate(null)}
-              className="text-slate-400 hover:text-white"
-            >
-              ×
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{selectedDate.intensity.reps}</div>
-              <div className="text-slate-400 text-sm">Répétitions totales</div>
+      {selectedDate && (() => {
+        const dateStr = getDateStr(selectedDate.date);
+        const dailyMetrics = garminData?.dailyMetrics?.[dateStr];
+        const swimming = (garminData?.activities?.swimming || []).filter(a => a.date === dateStr);
+        const jumpRope = (garminData?.activities?.jumpRope || []).filter(a => a.date === dateStr);
+        const cardio = (garminData?.activities?.cardio || []).filter(a => a.date === dateStr);
+        
+        // Calculer les ajustements Garmin pour cette date
+        let garminAdjustments = null;
+        if (garminData && selectedDate.intensity.level > 0) {
+          const workoutIntensity = {
+            level: selectedDate.intensity.level,
+            duration: selectedDate.intensity.duration,
+            reps: selectedDate.intensity.reps
+          };
+          const adjusted = calculateDayIntensityWithGarmin(dateStr, workoutIntensity, garminData);
+          if (adjusted.multiplier !== 1.0) {
+            garminAdjustments = adjusted;
+          }
+        }
+        
+        return (
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 space-y-6">
+            {/* En-tête */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">
+                {selectedDate.date.toLocaleDateString('fr-FR', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </h3>
+              <button
+                onClick={() => setSelectedDate(null)}
+                className="text-slate-400 hover:text-white text-2xl leading-none"
+              >
+                ×
+              </button>
             </div>
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{selectedDate.intensity.completedCount}</div>
-              <div className="text-slate-400 text-sm">Exercices classiques</div>
-            </div>
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{selectedDate.intensity.duration}min</div>
-              <div className="text-slate-400 text-sm">Durée totale</div>
-            </div>
-            <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">{getIntensityLabel(selectedDate.intensity.level)}</div>
-              <div className="text-slate-400 text-sm">Intensité globale</div>
-            </div>
-          </div>
-          
-          {/* Données d'endurance détaillées */}
-          {selectedDate.intensity.enduranceData && selectedDate.intensity.enduranceData.sessions > 0 && (
-            <div className="mt-6">
+            
+            {/* Statistiques principales */}
+            <div>
               <h4 className="text-white font-medium mb-3 flex items-center">
                 <Activity className="mr-2" size={16} />
-                Activités d'endurance
+                Statistiques d'entraînement
               </h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-orange-700/30 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-orange-200">{selectedDate.intensity.enduranceData.sessions}</div>
-                  <div className="text-orange-300 text-sm">Sessions</div>
+                <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-white">{selectedDate.intensity.reps}</div>
+                  <div className="text-slate-400 text-sm">Répétitions totales</div>
                 </div>
-                <div className="bg-blue-700/30 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-blue-200">{selectedDate.intensity.enduranceData.distance}m</div>
-                  <div className="text-blue-300 text-sm">Distance</div>
+                <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-white">{selectedDate.intensity.completedCount}</div>
+                  <div className="text-slate-400 text-sm">Exercices classiques</div>
                 </div>
-                <div className="bg-green-700/30 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-green-200">{selectedDate.intensity.enduranceData.jumps}</div>
-                  <div className="text-green-300 text-sm">Sauts</div>
+                <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-white">{selectedDate.intensity.duration}min</div>
+                  <div className="text-slate-400 text-sm">Durée totale</div>
                 </div>
-                <div className="bg-purple-700/30 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-purple-200">{selectedDate.intensity.enduranceData.duration}min</div>
-                  <div className="text-purple-300 text-sm">Durée endurance</div>
+                <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-white">{getIntensityLabel(selectedDate.intensity.level)}</div>
+                  <div className="text-slate-400 text-sm">Intensité globale</div>
+                  {garminAdjustments && (
+                    <div className="text-xs text-green-400 mt-1">
+                      {garminAdjustments.multiplier > 1 ? '⬆' : '⬇'} Ajusté Garmin
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          )}
+
+            {/* Ajustements Garmin appliqués */}
+            {garminAdjustments && (
+              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                <h4 className="text-green-400 font-medium mb-2 flex items-center">
+                  <Target className="mr-2" size={16} />
+                  Ajustements Garmin appliqués
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  {garminAdjustments.adjustments.timeReal && (
+                    <div className="bg-slate-800/50 rounded p-2">
+                      <div className="text-slate-300">⏱️ Temps réel</div>
+                      <div className="text-white">
+                        {garminAdjustments.adjustments.timeReal.réel.toFixed(0)}min (prévu: {garminAdjustments.adjustments.timeReal.prévu}min)
+                      </div>
+                    </div>
+                  )}
+                  {garminAdjustments.adjustments.swimmingRecord && garminAdjustments.adjustments.swimmingRecord.distance > garminAdjustments.adjustments.swimmingRecord.record && (
+                    <div className="bg-slate-800/50 rounded p-2">
+                      <div className="text-slate-300">🏊 Record natation</div>
+                      <div className="text-white">
+                        {garminAdjustments.adjustments.swimmingRecord.distance}m (record: {garminAdjustments.adjustments.swimmingRecord.record}m)
+                      </div>
+                    </div>
+                  )}
+                  {garminAdjustments.adjustments.jumpRopeRecord && garminAdjustments.adjustments.jumpRopeRecord.sauts > garminAdjustments.adjustments.jumpRopeRecord.record && (
+                    <div className="bg-slate-800/50 rounded p-2">
+                      <div className="text-slate-300">🪢 Record corde</div>
+                      <div className="text-white">
+                        {garminAdjustments.adjustments.jumpRopeRecord.sauts} sauts (record: {garminAdjustments.adjustments.jumpRopeRecord.record})
+                      </div>
+                    </div>
+                  )}
+                  {garminAdjustments.adjustments.caloriesActive && (
+                    <div className="bg-slate-800/50 rounded p-2">
+                      <div className="text-slate-300">🔥 Calories actives</div>
+                      <div className="text-white">
+                        {Math.round(garminAdjustments.adjustments.caloriesActive.calories)} (moy: {Math.round(garminAdjustments.adjustments.caloriesActive.moyenne)})
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Activités Garmin */}
+            {(swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) && (
+              <div>
+                <h4 className="text-white font-medium mb-3 flex items-center">
+                  <Zap className="mr-2 text-green-400" size={16} />
+                  Données Garmin Connect
+                </h4>
+                <div className="space-y-4">
+                  {/* Natation */}
+                  {swimming.length > 0 && (
+                    <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4">
+                      <div className="text-cyan-400 font-medium mb-2">🏊 Natation ({swimming.length} session{swimming.length > 1 ? 's' : ''})</div>
+                      {swimming.map((act, idx) => (
+                        <div key={idx} className="bg-slate-800/50 rounded p-2 mt-2 text-sm">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-slate-400">Distance:</span>
+                              <span className="text-white ml-2">{act.distance || act.totalDistance || 0}m</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">Durée:</span>
+                              <span className="text-white ml-2">{act.duration || Math.round((act.totalTime || 0) / 60)}min</span>
+                            </div>
+                            {act.avgHR && (
+                              <div>
+                                <span className="text-slate-400">FC moy:</span>
+                                <span className="text-white ml-2">{act.avgHR} bpm</span>
+                              </div>
+                            )}
+                            {act.calories?.active && (
+                              <div>
+                                <span className="text-slate-400">Calories:</span>
+                                <span className="text-white ml-2">{act.calories.active}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Corde à sauter */}
+                  {jumpRope.length > 0 && (
+                    <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                      <div className="text-green-400 font-medium mb-2">🪢 Corde à sauter ({jumpRope.length} session{jumpRope.length > 1 ? 's' : ''})</div>
+                      {jumpRope.map((act, idx) => (
+                        <div key={idx} className="bg-slate-800/50 rounded p-2 mt-2 text-sm">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-slate-400">Sauts:</span>
+                              <span className="text-white ml-2">{act.jumps || 0}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">Durée:</span>
+                              <span className="text-white ml-2">{act.duration || Math.round((act.totalTime || 0) / 60)}min</span>
+                            </div>
+                            {act.speed && (
+                              <div>
+                                <span className="text-slate-400">Vitesse:</span>
+                                <span className="text-white ml-2">{act.speed.toFixed(1)} sauts/min</span>
+                              </div>
+                            )}
+                            {act.maxContinuous && (
+                              <div>
+                                <span className="text-slate-400">Max continu:</span>
+                                <span className="text-white ml-2">{act.maxContinuous}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Cardio */}
+                  {cardio.length > 0 && (
+                    <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                      <div className="text-red-400 font-medium mb-2">❤️ Activités cardio ({cardio.length} session{cardio.length > 1 ? 's' : ''})</div>
+                      {cardio.map((act, idx) => (
+                        <div key={idx} className="bg-slate-800/50 rounded p-2 mt-2 text-sm">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-slate-400">Durée:</span>
+                              <span className="text-white ml-2">{act.duration || Math.round((act.totalTime || 0) / 60)}min</span>
+                            </div>
+                            {act.calories?.active && (
+                              <div>
+                                <span className="text-slate-400">Calories:</span>
+                                <span className="text-white ml-2">{act.calories.active}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Métriques quotidiennes */}
+                  {dailyMetrics && (
+                    <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
+                      <div className="text-purple-400 font-medium mb-2">📊 Métriques quotidiennes</div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        {dailyMetrics.steps > 0 && (
+                          <div className="bg-slate-800/50 rounded p-2">
+                            <div className="text-slate-400">Pas</div>
+                            <div className="text-white font-semibold">{dailyMetrics.steps.toLocaleString()}</div>
+                          </div>
+                        )}
+                        {dailyMetrics.distance > 0 && (
+                          <div className="bg-slate-800/50 rounded p-2">
+                            <div className="text-slate-400">Distance</div>
+                            <div className="text-white font-semibold">{dailyMetrics.distance.toFixed(1)} km</div>
+                          </div>
+                        )}
+                        {dailyMetrics.calories?.active > 0 && (
+                          <div className="bg-slate-800/50 rounded p-2">
+                            <div className="text-slate-400">Calories actives</div>
+                            <div className="text-white font-semibold">{Math.round(dailyMetrics.calories.active)}</div>
+                          </div>
+                        )}
+                        {dailyMetrics.heartRate?.resting > 0 && (
+                          <div className="bg-slate-800/50 rounded p-2">
+                            <div className="text-slate-400">FC repos</div>
+                            <div className="text-white font-semibold">{dailyMetrics.heartRate.resting} bpm</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           
-          {selectedDate.intensity.session && (
-            <div className="mt-4">
-              <h4 className="text-white font-medium mb-2">Exercices réalisés:</h4>
-              <div className="space-y-2">
-                {selectedDate.intensity.session.exercises.map((exercise, index) => (
-                  <div key={index} className="bg-slate-700/30 rounded p-2 flex justify-between">
-                    <span className="text-slate-300">{exercise.name}</span>
-                    <span className="text-white font-medium">{exercise.reps} reps</span>
+            {/* Données d'endurance détaillées */}
+            {selectedDate.intensity.enduranceData && selectedDate.intensity.enduranceData.sessions > 0 && (
+              <div>
+                <h4 className="text-white font-medium mb-3 flex items-center">
+                  <Activity className="mr-2" size={16} />
+                  Activités d'endurance
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-orange-700/30 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-orange-200">{selectedDate.intensity.enduranceData.sessions}</div>
+                    <div className="text-orange-300 text-sm">Sessions</div>
                   </div>
-                ))}
+                  <div className="bg-blue-700/30 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-blue-200">
+                      {selectedDate.intensity.enduranceData.distance % 1 === 0 
+                        ? selectedDate.intensity.enduranceData.distance 
+                        : parseFloat(selectedDate.intensity.enduranceData.distance.toFixed(1))
+                      }m
+                    </div>
+                    <div className="text-blue-300 text-sm">Distance</div>
+                  </div>
+                  <div className="bg-green-700/30 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-green-200">{selectedDate.intensity.enduranceData.jumps}</div>
+                    <div className="text-green-300 text-sm">Sauts</div>
+                  </div>
+                  <div className="bg-purple-700/30 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-purple-200">{selectedDate.intensity.enduranceData.duration}min</div>
+                    <div className="text-purple-300 text-sm">Durée endurance</div>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          
+            {/* Exercices réalisés */}
+            {selectedDate.intensity.session && selectedDate.intensity.session.exercises.length > 0 && (
+              <div>
+                <h4 className="text-white font-medium mb-2">Exercices réalisés</h4>
+                <div className="space-y-2">
+                  {selectedDate.intensity.session.exercises.map((exercise, index) => (
+                    <div key={index} className="bg-slate-700/30 rounded p-2 flex justify-between">
+                      <span className="text-slate-300">{exercise.name}</span>
+                      <span className="text-white font-medium">{exercise.reps} reps</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 };

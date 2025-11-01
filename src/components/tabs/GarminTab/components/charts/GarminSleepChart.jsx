@@ -2,11 +2,15 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, ReferenceLine } from 'recharts';
 import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
+import { useChartContainerSize } from './useChartContainerSize';
+import { areChartPropsEqual } from '../../../../../utils/chartComparison';
+import { formatSleepDuration } from '../../utils/garminFormatters';
 
 /**
  * Graphique de sommeil (durée et phases)
+ * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-export default function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
     dailyMetrics,
     selectedDate,
@@ -56,6 +60,9 @@ export default function GarminSleepChart({ dailyMetrics, selectedDate, periodFil
     );
   }
 
+  // 🔴 FIX #5: Vérifier dimensions avant rendu
+  const { containerRef, containerSize } = useChartContainerSize();
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -101,8 +108,26 @@ export default function GarminSleepChart({ dailyMetrics, selectedDate, periodFil
           )}
         </div>
       </div>
-      <div className="h-80 min-h-[320px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+      <div 
+        ref={containerRef} 
+        className="h-80 min-h-[320px]" 
+        style={{ 
+          width: '100%', 
+          height: '320px', 
+          minHeight: '320px', 
+          minWidth: '400px',
+          position: 'relative',
+          display: 'block',
+          boxSizing: 'border-box'
+        }}
+      >
+        {/* containerSize est toujours valide grâce à useChartContainerSize qui garantit minWidth/minHeight */}
+        <ResponsiveContainer 
+          width={Math.max(400, containerSize.width)} 
+          height={Math.max(320, containerSize.height)} 
+          minHeight={320} 
+          minWidth={400}
+        >
           <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis
@@ -168,15 +193,19 @@ export default function GarminSleepChart({ dailyMetrics, selectedDate, periodFil
                 stroke={colors?.yellow || '#FCD34D'}
                 strokeWidth={2}
                 name="Qualité"
-                dot={(props) => (
-                  <CustomDot
-                    {...props}
-                    fill={colors?.yellow || '#FCD34D'}
-                    stroke={colors?.yellow || '#FCD34D'}
-                    strokeWidth={2}
-                    r={4}
-                  />
-                )}
+                dot={(props) => {
+                  const { key, ...restProps } = props;
+                  return (
+                    <CustomDot
+                      key={key}
+                      {...restProps}
+                      fill={colors?.yellow || '#FCD34D'}
+                      stroke={colors?.yellow || '#FCD34D'}
+                      strokeWidth={2}
+                      r={4}
+                    />
+                  );
+                }}
                 activeDot={{ r: 7, stroke: colors?.yellow || '#FCD34D', strokeWidth: 2 }}
               />
             )}
@@ -186,4 +215,7 @@ export default function GarminSleepChart({ dailyMetrics, selectedDate, periodFil
     </div>
   );
 }
+
+// 🟡 FIX #13: Memoization avec comparaison optimisée
+export default React.memo(GarminSleepChart, areChartPropsEqual);
 

@@ -68,6 +68,32 @@ export default function SwimmingActivityCard({ activity }) {
           </div>
         )}
 
+        {/* CORRECTION : Métriques natation manquantes */}
+        {swimming.avgSpeedMovement > 0 && (
+          <div className="bg-slate-900/60 rounded p-2">
+            <div className="text-slate-400 text-xs">Vitesse déplacement</div>
+            <div className="text-white font-semibold">{formatSpeed(swimming.avgSpeedMovement)}</div>
+          </div>
+        )}
+        {swimming.avgPaceMovement > 0 && (
+          <div className="bg-slate-900/60 rounded p-2">
+            <div className="text-slate-400 text-xs">Allure déplacement</div>
+            <div className="text-white font-semibold">{formatPace(swimming.avgPaceMovement)} /100m</div>
+          </div>
+        )}
+        {swimming.maxSpeed > 0 && (
+          <div className="bg-slate-900/60 rounded p-2">
+            <div className="text-slate-400 text-xs">Vitesse max</div>
+            <div className="text-white font-semibold">{formatSpeed(swimming.maxSpeed)}</div>
+          </div>
+        )}
+        {swimming.poolLength && (
+          <div className="bg-slate-900/60 rounded p-2">
+            <div className="text-slate-400 text-xs">Longueur piscine</div>
+            <div className="text-white font-semibold">{swimming.poolLength}m</div>
+          </div>
+        )}
+
         {/* Allures */}
         {swimming.avgPace > 0 && (
           <div className="bg-slate-900/60 rounded p-2">
@@ -152,6 +178,39 @@ export default function SwimmingActivityCard({ activity }) {
           </div>
         )}
 
+        {/* PHASE 3.3 : Training Effect */}
+        {activity.trainingEffect && (
+          <div className="bg-slate-900/60 rounded p-2 md:col-span-2">
+            <div className="text-slate-400 text-xs mb-1">Training Effect</div>
+            <div className="flex gap-4">
+              {activity.trainingEffect.aerobic !== undefined && (
+                <div>
+                  <div className="text-blue-300 text-xs">Aérobie</div>
+                  <div className="text-white font-semibold">{activity.trainingEffect.aerobic}/5.0</div>
+                </div>
+              )}
+              {activity.trainingEffect.anaerobic !== undefined && (
+                <div>
+                  <div className="text-purple-300 text-xs">Anaérobie</div>
+                  <div className="text-white font-semibold">{activity.trainingEffect.anaerobic}/5.0</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* PHASE 3.3 : Recovery Time */}
+        {activity.recoveryTime && activity.recoveryTime > 0 && (
+          <div className="bg-slate-900/60 rounded p-2">
+            <div className="text-slate-400 text-xs">Temps de récupération</div>
+            <div className="text-white font-semibold">
+              {activity.recoveryTime >= 24 
+                ? `${Math.floor(activity.recoveryTime / 24)}j ${Math.round(activity.recoveryTime % 24)}h`
+                : `${activity.recoveryTime}h`}
+            </div>
+          </div>
+        )}
+
         {/* Localisation */}
         {activity.location && (
           <div className="bg-slate-900/60 rounded p-2 md:col-span-3 text-xs">
@@ -168,6 +227,23 @@ export default function SwimmingActivityCard({ activity }) {
             )}
           </div>
         )}
+
+        {/* CORRECTION : Détail des longueurs (laps) */}
+        {swimming.laps && Array.isArray(swimming.laps) && swimming.laps.length > 0 ? (
+          <div className="bg-slate-900/60 rounded p-2 md:col-span-3 text-xs">
+            <div className="text-slate-400 mb-2 font-semibold">Détail des longueurs</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {swimming.laps.map((lap, idx) => (
+                <div key={idx} className="bg-slate-800/50 px-2 py-1 rounded">
+                  <div className="text-slate-500 text-xs">#{lap.lapNumber}</div>
+                  {lap.time > 0 && <div className="text-white text-sm">{formatDuration(lap.time)}</div>}
+                  {lap.distance > 0 && <div className="text-slate-400 text-xs">{lap.distance}m</div>}
+                  {lap.strokeCount > 0 && <div className="text-slate-400 text-xs">{lap.strokeCount} mouvements</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {/* Élévation */}
         {activity.elevation && (
