@@ -170,22 +170,53 @@ L'application vous propose 3 modes :
 
 Session Complète (Recommandé - 15 photos)
 
-Durée : ~12-15 minutes
+Durée : ~12-15 minutes (webcam) ou ~3-5 minutes (upload)
 Couvre tous les angles et poses
 Analyse la plus précise
+**Mode capture : Webcam (temps réel) OU Upload (photos existantes) OU Mixte**
 
 
 Session Rapide (5 photos essentielles)
 
-Durée : ~5 minutes
+Durée : ~5 minutes (webcam) ou ~2 minutes (upload)
 Poses principales uniquement
 Bon pour suivi régulier
+**Mode capture : Webcam OU Upload OU Mixte**
 
 
 Mode Libre (Photos individuelles)
 
 Pas de guidage structuré
 Pour photos spécifiques
+**Mode capture : Webcam OU Upload**
+
+---
+
+**Mode de Capture Flexible - Webcam OU Upload**
+
+L'application supporte **3 modes de capture** pour chaque session :
+
+**🎥 Mode Webcam (Temps Réel Guidé)**
+- ✅ Capture directe depuis votre webcam
+- ✅ Guidage pose en temps réel avec overlay silhouette
+- ✅ Détection MediaPipe instantanée
+- ✅ Score qualité temps réel
+- ✅ Validation pose avant capture
+- ⏱️ Plus interactif mais plus lent (~12-15 min pour 15 poses)
+
+**📸 Mode Upload (Photos Existantes)**
+- ✅ Télécharger photos prises avec téléphone/appareil photo
+- ✅ Détection automatique de la pose via MediaPipe
+- ✅ Assignation intelligente aux poses manquantes
+- ✅ Validation et réorganisation si nécessaire
+- ⚡ Plus rapide et flexible (~3-5 min pour 15 poses)
+
+**🔄 Mode Mixte (Recommandé)**
+- ✅ Combiner webcam et upload selon vos besoins
+- ✅ Upload photos déjà prises (ex: matin à jeun avec téléphone)
+- ✅ Webcam pour poses manquantes ou à reprendre
+- ✅ Système suggère automatiquement le meilleur mode
+- 💡 Idéal : Upload pour poses simples, Webcam pour poses complexes
 
 
 
@@ -909,9 +940,9 @@ Le système croise TOUTES vos données pour identifier ce qui fonctionne vraimen
 
 **7. INTERFACE & EXPÉRIENCE UTILISATEUR** {#interface}
 
-### 7.1. Workflow Capture Guidée
+### 7.1. Workflow Capture Guidée - Mode Hybride Webcam/Upload
 
-#### A. Mode Session Complète (15 Photos)
+#### A. Mode Session Complète (15 Photos) - Webcam OU Upload
 
 **Étape par étape avec intelligence contextuelle :**
 
@@ -966,12 +997,12 @@ Le système croise TOUTES vos données pour identifier ce qui fonctionne vraimen
 
 **Durée optimisée :** ~5 minutes vs 15 minutes complète
 
-#### C. Mode Libre
+#### F. Mode Libre
 
-- Upload photos existantes
-- Sélection angle manuel
+- Upload photos existantes OU capture webcam
+- Sélection angle/pose manuel (sans validation automatique)
 - Pas de guidage (pour utilisateurs avancés)
-- Analyse complète disponible quand même
+- Analyse complète disponible quand même (mais moins précise sans poses standardisées)
 
 ---
 
@@ -1149,15 +1180,20 @@ Le système croise TOUTES vos données pour identifier ce qui fonctionne vraimen
 
 **Composants principaux :**
 
-1. **PhotoCaptureSession.jsx** (Nouveau composant)
+1. **PhotoCaptureSession.jsx** (Nouveau composant - Mode Hybride)
    ```javascript
-   // Gère workflow complet capture guidée
-   - Webcam preview avec overlay pose
-   - Détection MediaPipe en temps réel
-   - Validation pose automatique
-   - Score qualité temps réel
-   - Timer 3-2-1 optionnel
+   // Gère workflow complet capture guidée (webcam OU upload)
+   - Mode sélection au démarrage (Webcam | Upload | Mixte)
+   - Webcam preview avec overlay pose (si mode webcam)
+   - Zone upload drag & drop avec react-dropzone (si mode upload)
+   - Détection MediaPipe en temps réel (webcam) ou après upload
+   - Validation pose automatique (les deux modes)
+   - Score qualité temps réel (webcam) ou calculé (upload)
+   - Détection automatique pose uploadée (algorithme sophistiqué)
+   - Réorganisation poses uploadées (assignation intelligente)
+   - Timer 3-2-1 optionnel (webcam uniquement)
    - Capture et validation
+   - Mode mixte : Basculer entre webcam et upload selon besoins
    ```
 
 2. **PhotoAnalysisEngine.js** (Nouveau module)
@@ -1192,10 +1228,13 @@ Le système croise TOUTES vos données pour identifier ce qui fonctionne vraimen
     "@mediapipe/pose": "^0.5.1635988167",
     "@tensorflow-models/body-pix": "^2.2.1",
     "opencv-js": "^1.2.1",
-    "react-webcam": "^7.1.1"
+    "react-webcam": "^7.1.1",
+    "react-dropzone": "^14.2.3"
   }
 }
 ```
+
+**Note :** `react-dropzone` pour la zone drag & drop élégante pour upload photos.
 
 #### B. Traitement Local - Modules Sophistiqués
 
@@ -1279,6 +1318,168 @@ class PoseDetectionService {
       confidence,
       matchedAngles: matched,
       totalAngles: Object.keys(expectedAngles).length
+    };
+  }
+  
+  /**
+   * Détecte automatiquement la pose d'une photo uploadée
+   * Compare avec base de données de poses de référence
+   */
+  async detectPoseFromUpload(imageElement) {
+    // Détecter landmarks
+    const { landmarks, confidence: poseConfidence } = await this.detectPose(imageElement);
+    
+    if (poseConfidence < 0.5) {
+      return {
+        detected: false,
+        confidence: 0,
+        reason: 'Pose non détectée (confiance MediaPipe < 50%)'
+      };
+    }
+    
+    // Calculer angles articulaires
+    const angles = this.calculateAngles(landmarks);
+    
+    // Détecter orientation générale (face/profil/dos)
+    const orientation = this.detectOrientation(landmarks);
+    
+    // Comparer avec poses de référence (filtrées par orientation)
+    const poseDatabase = this.getPoseDatabase();
+    const filteredPoses = this.filterPosesByOrientation(poseDatabase, orientation);
+    
+    let bestMatch = null;
+    let maxConfidence = 0;
+    const allMatches = [];
+    
+    for (const [poseId, poseRef] of Object.entries(filteredPoses)) {
+      const matchScore = this.comparePoseAngles(angles, poseRef.expectedAngles);
+      
+      allMatches.push({
+        poseId,
+        poseName: poseRef.name,
+        confidence: matchScore
+      });
+      
+      if (matchScore > maxConfidence) {
+        maxConfidence = matchScore;
+        bestMatch = {
+          poseId,
+          poseName: poseRef.name,
+          confidence: matchScore,
+          angles
+        };
+      }
+    }
+    
+    // Trier toutes les matches par confiance
+    allMatches.sort((a, b) => b.confidence - a.confidence);
+    
+    return {
+      detected: maxConfidence >= 0.6, // Seuil détection: 60%
+      confidence: maxConfidence,
+      detectedPose: bestMatch,
+      topMatches: allMatches.slice(0, 3), // Top 3 matches pour ambiguïté
+      orientation
+    };
+  }
+  
+  /**
+   * Compare angles détectés avec angles attendus d'une pose
+   * Retourne score 0-1 (1 = parfait match)
+   */
+  comparePoseAngles(detectedAngles, expectedAngles) {
+    let totalMatch = 0;
+    let totalWeight = 0;
+    
+    Object.keys(expectedAngles).forEach(key => {
+      const detected = detectedAngles[key];
+      const expected = expectedAngles[key];
+      const weight = expected.weight || 1; // Poids selon importance angle
+      const tolerance = expected.tolerance || 15; // Tolérance par défaut: 15°
+      
+      if (detected !== undefined && expected !== undefined) {
+        const diff = Math.abs(detected - expected.value);
+        
+        // Score: 1 si dans tolérance, décroît linéairement sinon
+        const score = Math.max(0, 1 - (diff / tolerance));
+        totalMatch += score * weight;
+        totalWeight += weight;
+      }
+    });
+    
+    return totalWeight > 0 ? totalMatch / totalWeight : 0;
+  }
+  
+  /**
+   * Détecte orientation générale (face/profil/dos) depuis landmarks
+   */
+  detectOrientation(landmarks) {
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+    const nose = landmarks[0];
+    
+    // Calculer ratio largeur épaules / position nez
+    const shoulderWidth = Math.abs(rightShoulder.x - leftShoulder.x);
+    const noseX = nose.x;
+    const centerX = (leftShoulder.x + rightShoulder.x) / 2;
+    
+    // Si nez proche du centre → Face
+    // Si nez décalé → Profil
+    // Si largeur épaules faible dans image → Dos
+    const noseOffset = Math.abs(noseX - centerX) / shoulderWidth;
+    
+    if (noseOffset < 0.2) {
+      return 'front'; // Face
+    } else if (noseOffset > 0.4) {
+      return 'side'; // Profil
+    } else {
+      // Vérifier visibilité épaules pour différencier dos/profil
+      const shouldersVisible = leftShoulder.visibility > 0.7 && rightShoulder.visibility > 0.7;
+      return shouldersVisible ? 'back' : 'side';
+    }
+  }
+  
+  /**
+   * Filtre poses selon orientation détectée
+   */
+  filterPosesByOrientation(poseDatabase, orientation) {
+    const filtered = {};
+    
+    for (const [poseId, poseRef] of Object.entries(poseDatabase)) {
+      if (poseRef.orientation === orientation || poseRef.orientation === 'any') {
+        filtered[poseId] = poseRef;
+      }
+    }
+    
+    return filtered;
+  }
+  
+  /**
+   * Retourne base de données poses de référence avec angles attendus
+   */
+  getPoseDatabase() {
+    return {
+      'front_relaxed': {
+        name: 'Face - Décontracté',
+        orientation: 'front',
+        expectedAngles: {
+          leftElbow: { value: 180, tolerance: 20, weight: 1 },
+          rightElbow: { value: 180, tolerance: 20, weight: 1 },
+          leftShoulder: { value: 0, tolerance: 15, weight: 1.5 },
+          rightShoulder: { value: 0, tolerance: 15, weight: 1.5 }
+        }
+      },
+      'front_contracted_biceps': {
+        name: 'Face - Contracté Double Biceps',
+        orientation: 'front',
+        expectedAngles: {
+          leftElbow: { value: 90, tolerance: 20, weight: 2 },
+          rightElbow: { value: 90, tolerance: 20, weight: 2 },
+          leftShoulder: { value: 90, tolerance: 20, weight: 1.5 },
+          rightShoulder: { value: 90, tolerance: 20, weight: 1.5 }
+        }
+      },
+      // ... autres 13 poses avec angles attendus et orientation
     };
   }
 }
