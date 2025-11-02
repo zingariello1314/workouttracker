@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
 import { areChartPropsEqual } from '../../../../../utils/chartComparison';
+import { prepareTimeSeriesForDisplay } from '../../../../../utils/garminTimeSeriesUtils';
 
 /**
  * Graphique Heart Rate Time Series 24h (courbe FC minute par minute)
@@ -10,13 +11,20 @@ import { areChartPropsEqual } from '../../../../../utils/chartComparison';
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
 function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+  // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
+  // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
+  const { containerRef, containerSize } = useChartContainerSize();
+
   const timeSeriesData = React.useMemo(() => {
     if (!dailyMetrics || !selectedDate) return [];
     
     const dayMetrics = dailyMetrics[selectedDate];
-    const timeSeries = dayMetrics?.heartRate?.timeSeries || [];
+    const rawTimeSeries = dayMetrics?.heartRate?.timeSeries || [];
     
-    if (timeSeries.length === 0) return [];
+    if (rawTimeSeries.length === 0) return [];
+    
+    // 🔴 FIX #24: Décompresser la time series si elle est compressée
+    const timeSeries = prepareTimeSeriesForDisplay(rawTimeSeries);
     
     // Transformer les données pour le graphique
     return timeSeries.map(ts => {
@@ -36,7 +44,22 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
     });
   }, [dailyMetrics, selectedDate]);
 
-  if (!dailyMetrics || !selectedDate || timeSeriesData.length === 0) {
+  // 🔴 FIX #29: Afficher même avec données partielles - calculer APRÈS tous les hooks
+  const validTimeSeries = React.useMemo(() => {
+    return timeSeriesData.filter(d => d.bpm != null && d.timestamp && d.bpm > 0);
+  }, [timeSeriesData]);
+  
+  // Afficher avec avertissement si données partielles (< 100 points pour une journée complète)
+  const isPartialData = validTimeSeries.length > 0 && validTimeSeries.length < 100;
+
+  // Calculer min/max pour l'axe Y
+  const bpmValues = React.useMemo(() => {
+    return validTimeSeries.map(d => d.bpm).filter(v => v != null);
+  }, [validTimeSeries]);
+  const minBpm = bpmValues.length > 0 ? Math.max(0, Math.min(...bpmValues) - 10) : 50;
+  const maxBpm = bpmValues.length > 0 ? Math.min(220, Math.max(...bpmValues) + 10) : 180;
+
+  if (!dailyMetrics || !selectedDate || validTimeSeries.length === 0) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
         <p>Aucune donnée de fréquence cardiaque (time series) disponible pour {selectedDate}.</p>
@@ -61,57 +84,27 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
     return null;
   };
 
-  // Calculer min/max pour l'axe Y
-  const bpmValues = timeSeriesData.map(d => d.bpm).filter(v => v != null);
-  const minBpm = bpmValues.length > 0 ? Math.max(0, Math.min(...bpmValues) - 10) : 50;
-  const maxBpm = bpmValues.length > 0 ? Math.min(220, Math.max(...bpmValues) + 10) : 180;
-
-  // 🔴 FIX #5: Vérifier dimensions du conteneur avant rendu
-  const containerRef = React.useRef(null);
-  const [containerSize, setContainerSize] = React.useState({ width: 0, height: 320 });
-
-  React.useEffect(() => {
-    if (!containerRef.current) return;
-    
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setContainerSize({ width, height });
-        }
-      }
-    });
-    
-    resizeObserver.observe(containerRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  // 🔴 FIX #29: Afficher même avec données partielles
-  const validTimeSeries = timeSeriesData.filter(d => d.bpm != null && d.timestamp);
-  
-  if (!dailyMetrics || !selectedDate || validTimeSeries.length === 0) {
-    return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        <p>Aucune donnée de fréquence cardiaque (time series) disponible pour {selectedDate}.</p>
-        <p className="text-xs mt-2">Les données time series ne sont disponibles que pour les jours où la FC a été mesurée en continu.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-white font-semibold">❤️ Fréquence Cardiaque - 24h ({selectedDate})</h4>
         <div className="text-slate-400 text-xs">
           {validTimeSeries.length} points
-          {validTimeSeries.length < 100 && (
-            <span className="text-yellow-400 ml-2">⚠️ Données partielles</span>
+          {isPartialData && (
+            <span className="text-yellow-400 ml-2" title="Données partielles : moins de 100 points pour cette journée">
+              ⚠️ Données partielles
+            </span>
           )}
         </div>
       </div>
       <div ref={containerRef} className="h-80 min-h-[320px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={320} minWidth={400}>
-          <AreaChart data={timeSeriesData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <ResponsiveContainer 
+          width={Math.max(400, containerSize.width)} 
+          height={Math.max(320, containerSize.height)} 
+          minHeight={320} 
+          minWidth={400}
+        >
+          <AreaChart data={validTimeSeries} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <defs>
               <linearGradient id="colorBpm" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={colors?.red || '#EF4444'} stopOpacity={0.3}/>

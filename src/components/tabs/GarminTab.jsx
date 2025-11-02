@@ -13,10 +13,14 @@ import GarminRespirationChart from './GarminTab/components/charts/GarminRespirat
 import GarminActivityHeatmap from './GarminTab/components/charts/GarminActivityHeatmap';
 import GarminCorrelationCharts from './GarminTab/components/charts/GarminCorrelationCharts';
 import TimeNavigation from './GarminTab/components/TimeNavigation';
+import AdvancedStatistics from './GarminTab/components/AdvancedStatistics';
+import AutoSyncSettings from './GarminTab/components/AutoSyncSettings';
+import PDFExport from './GarminTab/components/PDFExport';
 import { useGarminSync } from './GarminTab/hooks/useGarminSync';
 import { useGarminImport } from './GarminTab/hooks/useGarminImport';
 import { useToast } from './GarminTab/components/Toast';
 import { GarminProvider } from './GarminTab/context/GarminContext';
+import { ARIA_LABELS } from './GarminTab/constants';
 
 const GarminTab = () => {
   const [status, setStatus] = React.useState(null);
@@ -31,7 +35,7 @@ const GarminTab = () => {
   const [periodFilter, setPeriodFilter] = React.useState('all');
   const [customStartDate, setCustomStartDate] = React.useState('');
   const [customEndDate, setCustomEndDate] = React.useState('');
-  const { loadAllData, dbReady } = useGarminData();
+  const { loadAllData, loadDataForTab, dbReady } = useGarminData();
   const { importToEndurance } = useGarminImport();
   
   // 🟡 FIX #33: Toast pour feedback visuel
@@ -58,40 +62,41 @@ const GarminTab = () => {
     };
   }, [fetchStatus]);
 
-  // 🔴 FIX #2: Charger les données depuis IndexedDB dès que la DB est prête avec cleanup
+  // 🔴 FIX #2 + #5: Charger les données optimisées selon l'onglet actif dès que la DB est prête
   React.useEffect(() => {
     if (!dbReady) return;
     
     let cancelled = false;
     
-    loadAllData()
+    // 🔴 FIX #5: Charger seulement les données nécessaires selon l'onglet actif
+    loadDataForTab(activeTab, selectedDate, periodFilter, customStartDate, customEndDate)
       .then((loaded) => {
         if (cancelled) return;
         
-        if (loaded && (Object.keys(loaded.dailyMetrics || {}).length > 0 ||
-            (loaded.activities?.swimming?.length > 0 ||
-             loaded.activities?.jumpRope?.length > 0 ||
-             loaded.activities?.cardio?.length > 0))) {
+        // Toujours mettre à jour les données, même si vides (pour réinitialiser l'état)
+        if (loaded) {
           setGarminData({
             activities: {
-              swimming: loaded.activities.swimming || [],
-              jumpRope: loaded.activities.jumpRope || [],
-              cardio: loaded.activities.cardio || []
+              swimming: loaded.activities?.swimming || [],
+              jumpRope: loaded.activities?.jumpRope || [],
+              cardio: loaded.activities?.cardio || []
             },
             dailyMetrics: loaded.dailyMetrics || {}
           });
           const dates = Object.keys(loaded.dailyMetrics || {}).sort();
-          if (dates.length > 0) setSelectedDate(dates[dates.length - 1]);
+          if (dates.length > 0 && !selectedDate) {
+            setSelectedDate(dates[dates.length - 1]);
+          }
           
           if (process.env.NODE_ENV === 'development') {
-            console.log('[GarminTab] Loaded from storage:', {
+            console.log('[GarminTab] Loaded optimized data for tab:', {
+              tab: activeTab,
+              selectedDate,
+              periodFilter,
               swimming: loaded.activities.swimming?.length || 0,
               jumpRope: loaded.activities.jumpRope?.length || 0,
               cardio: loaded.activities.cardio?.length || 0,
-              dailyMetrics: Object.keys(loaded.dailyMetrics || {}).length,
-              sampleDate: Object.keys(loaded.dailyMetrics || {})[0],
-              sampleMetrics: loaded.dailyMetrics ? loaded.dailyMetrics[Object.keys(loaded.dailyMetrics)[0]] : null,
-              sampleActivity: loaded.activities?.swimming?.[0] || loaded.activities?.jumpRope?.[0] || loaded.activities?.cardio?.[0] || null
+              dailyMetrics: Object.keys(loaded.dailyMetrics || {}).length
             });
           }
         }
@@ -105,7 +110,7 @@ const GarminTab = () => {
     return () => {
       cancelled = true;
     };
-  }, [dbReady, loadAllData]);
+  }, [dbReady, loadDataForTab, activeTab, selectedDate, periodFilter, customStartDate, customEndDate]);
 
   // 🟡 FIX #33: Détecter fin de sync pour afficher toast
   React.useEffect(() => {
@@ -258,6 +263,18 @@ const GarminTab = () => {
           fetchStatus={fetchStatus}
         />
 
+        {/* 🔴 FIX #81-87: Synchronisation automatique */}
+        <AutoSyncSettings syncFunction={syncNow} />
+
+        {/* 🔴 FIX #81-87: Export PDF */}
+        <PDFExport
+          garminData={garminData}
+          selectedDate={selectedDate}
+          periodFilter={periodFilter}
+          customStartDate={customStartDate}
+          customEndDate={customEndDate}
+        />
+
         {/* 🟡 FIX #15: Loading state visuel pendant la synchronisation */}
         {loading && (
           <div className="relative">
@@ -298,12 +315,19 @@ const GarminTab = () => {
         )}
 
         {/* Onglets de navigation */}
+        {/* 🔴 FIX #39: ARIA labels et navigation clavier pour les tabs */}
         {garminData && (
-          <div className="mt-6 border-b border-slate-700">
+          <div className="mt-6 border-b border-slate-700" role="tablist" aria-label="Navigation principale Garmin">
             <div className="flex gap-4">
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`px-4 py-2 font-medium transition-colors ${
+                role="tab"
+                id="dashboard-tab"
+                aria-selected={activeTab === 'dashboard'}
+                aria-controls="garmin-dashboard-panel"
+                aria-label={ARIA_LABELS.TAB_DASHBOARD}
+                tabIndex={activeTab === 'dashboard' ? 0 : -1}
+                className={`px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   activeTab === 'dashboard'
                     ? 'text-blue-400 border-b-2 border-blue-400'
                     : 'text-slate-400 hover:text-slate-300'
@@ -313,7 +337,13 @@ const GarminTab = () => {
               </button>
               <button
                 onClick={() => setActiveTab('activities')}
-                className={`px-4 py-2 font-medium transition-colors ${
+                role="tab"
+                id="activities-tab"
+                aria-selected={activeTab === 'activities'}
+                aria-controls="garmin-activities-panel"
+                aria-label={ARIA_LABELS.TAB_ACTIVITIES}
+                tabIndex={activeTab === 'activities' ? 0 : -1}
+                className={`px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   activeTab === 'activities'
                     ? 'text-blue-400 border-b-2 border-blue-400'
                     : 'text-slate-400 hover:text-slate-300'
@@ -323,7 +353,13 @@ const GarminTab = () => {
               </button>
               <button
                 onClick={() => setActiveTab('metrics')}
-                className={`px-4 py-2 font-medium transition-colors ${
+                role="tab"
+                id="metrics-tab"
+                aria-selected={activeTab === 'metrics'}
+                aria-controls="garmin-metrics-panel"
+                aria-label={ARIA_LABELS.TAB_METRICS}
+                tabIndex={activeTab === 'metrics' ? 0 : -1}
+                className={`px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   activeTab === 'metrics'
                     ? 'text-blue-400 border-b-2 border-blue-400'
                     : 'text-slate-400 hover:text-slate-300'
@@ -333,7 +369,13 @@ const GarminTab = () => {
               </button>
               <button
                 onClick={() => setActiveTab('charts')}
-                className={`px-4 py-2 font-medium transition-colors ${
+                role="tab"
+                id="charts-tab"
+                aria-selected={activeTab === 'charts'}
+                aria-controls="garmin-charts-panel"
+                aria-label={ARIA_LABELS.TAB_CHARTS}
+                tabIndex={activeTab === 'charts' ? 0 : -1}
+                className={`px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   activeTab === 'charts'
                     ? 'text-blue-400 border-b-2 border-blue-400'
                     : 'text-slate-400 hover:text-slate-300'
@@ -346,36 +388,57 @@ const GarminTab = () => {
         )}
 
         {/* Contenu selon l'onglet actif */}
+        {/* 🔴 FIX #39: ARIA panels pour accessibilité */}
         {garminData && (
           <div className="mt-6">
             {activeTab === 'dashboard' && (
-              <GarminDashboard
-                dailyMetrics={garminData.dailyMetrics}
-                selectedDate={selectedDate}
-                comparisonMode={comparisonMode}
-                compareDate={compareDate}
-              />
+              <div role="tabpanel" id="garmin-dashboard-panel" aria-labelledby="dashboard-tab">
+                <GarminDashboard
+                  dailyMetrics={garminData.dailyMetrics}
+                  selectedDate={selectedDate}
+                  comparisonMode={comparisonMode}
+                  compareDate={compareDate}
+                  activities={garminData.activities}
+                  periodFilter={periodFilter}
+                  customStartDate={customStartDate}
+                  customEndDate={customEndDate}
+                />
+              </div>
             )}
 
             {activeTab === 'activities' && (
-              <GarminActivities
-                activities={garminData.activities}
-                selectedDate={selectedDate}
-              />
+              <div role="tabpanel" id="garmin-activities-panel" aria-labelledby="activities-tab">
+                <GarminActivities
+                  activities={garminData.activities}
+                  selectedDate={selectedDate}
+                />
+              </div>
             )}
 
             {activeTab === 'metrics' && (
-              <GarminDailyMetrics
-                dailyMetrics={garminData.dailyMetrics}
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-                comparisonMode={comparisonMode}
-                compareDate={compareDate}
-              />
+              <div role="tabpanel" id="garmin-metrics-panel" aria-labelledby="metrics-tab">
+                {/* 🔴 FIX #71-80: Statistiques avancées */}
+                <AdvancedStatistics
+                  dailyMetrics={garminData.dailyMetrics}
+                  selectedDate={selectedDate}
+                  periodFilter={periodFilter}
+                  customStartDate={customStartDate}
+                  customEndDate={customEndDate}
+                />
+                <div className="mt-6">
+                  <GarminDailyMetrics
+                    dailyMetrics={garminData.dailyMetrics}
+                    selectedDate={selectedDate}
+                    setSelectedDate={setSelectedDate}
+                    comparisonMode={comparisonMode}
+                    compareDate={compareDate}
+                  />
+                </div>
+              </div>
             )}
 
             {activeTab === 'charts' && (
-              <div className="space-y-6">
+              <div role="tabpanel" id="garmin-charts-panel" aria-labelledby="charts-tab" className="space-y-6">
                 {/* 🔴 FIX #8: Heart Rate Time Series Chart avec toutes les props */}
                 {selectedDate && garminData.dailyMetrics[selectedDate]?.heartRate?.timeSeries?.length > 0 && (
                   <GarminHeartRateTimeSeriesChart

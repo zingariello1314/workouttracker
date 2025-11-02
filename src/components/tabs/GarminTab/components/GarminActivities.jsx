@@ -3,15 +3,32 @@ import SwimmingActivityCard from './ActivityCards/SwimmingActivityCard';
 import JumpRopeActivityCard from './ActivityCards/JumpRopeActivityCard';
 import CardioActivityCard from './ActivityCards/CardioActivityCard';
 import { normalizeGarminDate } from '../utils/garminFormatters';
+import AdvancedFilters from './AdvancedFilters';
+import ActivitySearch from './ActivitySearch';
+import { useAdvancedFilters } from '../hooks/useAdvancedFilters';
+import { PAGINATION } from '../constants';
 
 /**
  * Composant pour afficher toutes les activités Garmin
  * 🟡 FIX #19: Pagination pour éviter lag avec beaucoup d'activités
  */
 export default function GarminActivities({ activities, selectedDate }) {
-  // 🟡 FIX #19: État de pagination
-  const [page, setPage] = React.useState(1);
-  const ITEMS_PER_PAGE = 10;
+  // 🔴 FIX #71-80: État pour filtres avancés et recherche
+  const [filters, setFilters] = React.useState({
+    type: 'all',
+    startDate: null,
+    endDate: null,
+    minDistance: null,
+    maxDistance: null,
+    minDuration: null,
+    maxDuration: null,
+    minCalories: null,
+    maxCalories: null
+  });
+  const [searchTerm, setSearchTerm] = React.useState('');
+
+  // 🟡 FIX #19: État de pagination - utilise constante
+  const [page, setPage] = React.useState(PAGINATION.INITIAL_PAGE);
   // Debug log (seulement en dev)
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
@@ -53,13 +70,15 @@ export default function GarminActivities({ activities, selectedDate }) {
   }, []);
 
   // 🟡 FIX #14: Optimisation du filtrage avec Map pour lookup O(1)
-  const filteredActivities = React.useMemo(() => {
+  // Si selectedDate est null ou vide, afficher toutes les activités
+  const dateFilteredActivities = React.useMemo(() => {
     const normalizedSelectedDate = getNormalizedDate(selectedDate);
-    if (!normalizedSelectedDate) {
+    if (!normalizedSelectedDate || !selectedDate) {
+      // Afficher toutes les activités si aucune date sélectionnée
       return { swimming, jumpRope, cardio };
     }
     
-    // Créer Map pour lookup O(1) si beaucoup d'activités
+    // Filtrer par date si une date est sélectionnée
     return {
       swimming: swimming.filter(act => getNormalizedDate(act.date) === normalizedSelectedDate),
       jumpRope: jumpRope.filter(act => getNormalizedDate(act.date) === normalizedSelectedDate),
@@ -67,45 +86,65 @@ export default function GarminActivities({ activities, selectedDate }) {
     };
   }, [swimming, jumpRope, cardio, selectedDate, getNormalizedDate]);
 
+  // 🔴 FIX #71-80: Appliquer filtres avancés et recherche
+  const { filteredActivities, totalFilteredCount } = useAdvancedFilters(
+    dateFilteredActivities,
+    searchTerm,
+    filters
+  );
+
   const filteredSwimming = filteredActivities.swimming;
   const filteredJumpRope = filteredActivities.jumpRope;
   const filteredCardio = filteredActivities.cardio;
 
+  // 🔴 FIX #71-80: Utiliser les activités filtrées avancées
   // 🟡 FIX #19: Calculer toutes les activités pour pagination
   const allActivities = React.useMemo(() => {
     return [
-      ...filteredSwimming.map(act => ({ ...act, type: 'swimming' })),
-      ...filteredJumpRope.map(act => ({ ...act, type: 'jumpRope' })),
-      ...filteredCardio.map(act => ({ ...act, type: 'cardio' }))
+      ...filteredActivities.swimming.map(act => ({ ...act, type: 'swimming' })),
+      ...filteredActivities.jumpRope.map(act => ({ ...act, type: 'jumpRope' })),
+      ...filteredActivities.cardio.map(act => ({ ...act, type: 'cardio' }))
     ].sort((a, b) => {
       // Trier par date décroissante (plus récent en premier)
       const dateA = new Date(a.date + 'T' + (a.time || '00:00:00'));
       const dateB = new Date(b.date + 'T' + (b.time || '00:00:00'));
       return dateB - dateA;
     });
-  }, [filteredSwimming, filteredJumpRope, filteredCardio]);
+  }, [filteredActivities]);
 
-  // 🟡 FIX #19: Pagination
-  const totalPages = Math.ceil(allActivities.length / ITEMS_PER_PAGE);
-  const startIndex = (page - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedActivities = allActivities.slice(startIndex, endIndex);
-
-  // Réinitialiser à la page 1 si la date sélectionnée change
+  // 🟡 FIX #19: Pagination - utilise constante
+  // 🔴 FIX #71-80: Reset à la page 1 si filtres/recherche changent
   React.useEffect(() => {
-    setPage(1);
-  }, [selectedDate]);
+    setPage(PAGINATION.INITIAL_PAGE);
+  }, [selectedDate, filters, searchTerm]);
+
+  const totalPages = Math.ceil(allActivities.length / PAGINATION.ACTIVITIES_PER_PAGE);
+  const startIndex = (page - 1) * PAGINATION.ACTIVITIES_PER_PAGE;
+  const endIndex = startIndex + PAGINATION.ACTIVITIES_PER_PAGE;
+  const paginatedActivities = allActivities.slice(startIndex, endIndex);
 
   const hasActivities = allActivities.length > 0;
 
   return (
     <div className="mt-6">
+      {/* 🔴 FIX #71-80: Recherche et filtres avancés */}
+      <ActivitySearch 
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchResultsCount={totalFilteredCount}
+      />
+      <AdvancedFilters 
+        filters={filters}
+        onFiltersChange={setFilters}
+        activitiesCount={totalFilteredCount}
+      />
+
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-white font-semibold">
           🏃 Activités{selectedDate ? ` - ${selectedDate}` : ''}
         </h3>
         {/* 🟡 FIX #19: Info pagination */}
-        {allActivities.length > ITEMS_PER_PAGE && (
+        {allActivities.length > PAGINATION.ACTIVITIES_PER_PAGE && (
           <div className="text-slate-400 text-sm">
             {startIndex + 1}-{Math.min(endIndex, allActivities.length)} sur {allActivities.length}
           </div>

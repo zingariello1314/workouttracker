@@ -4,20 +4,26 @@ import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
 import { areChartPropsEqual } from '../../../../../utils/chartComparison';
+import { DATE_RANGE, ARIA_LABELS } from '../../constants';
 
 /**
  * Graphique d'évolution du Body Battery
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
 function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+  // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
+  // 🔴 FIX #51-60: Utiliser constante pour contextDays
   const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
     dailyMetrics,
     selectedDate,
     periodFilter,
     customStartDate,
     customEndDate,
-    7
+    DATE_RANGE.ACTIVITIES_DAYS
   );
+
+  // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
+  const { containerRef, containerSize } = useChartContainerSize();
 
   const chartData = React.useMemo(() => {
     if (!dailyMetrics || filteredDates.length === 0) return [];
@@ -90,13 +96,18 @@ function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, cust
     return null;
   };
 
-  // 🔴 FIX #5: Vérifier dimensions avant rendu
-  const { containerRef, containerSize } = useChartContainerSize();
-
+  // 🔴 FIX #39: ARIA labels pour accessibilité
+  const chartDescription = `Graphique montrant l'évolution du niveau de batterie corporelle (Body Battery) sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s). Valeur moyenne: ${Math.round(avgValue)}/100.`;
+  
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
+    <div 
+      className="bg-slate-800/60 border border-slate-700 rounded-lg p-6"
+      role="region"
+      aria-label={ARIA_LABELS.BODY_BATTERY_CHART}
+      aria-describedby="body-battery-chart-description"
+    >
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-white font-semibold">🔋 Body Battery</h4>
+        <h4 id="body-battery-chart-title" className="text-white font-semibold">🔋 Body Battery</h4>
         <div className="flex items-center gap-3">
           {displayInfo && (
             <div className="text-slate-400 text-xs">{displayInfo}</div>

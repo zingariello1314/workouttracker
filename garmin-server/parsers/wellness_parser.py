@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.helpers import safe_int, safe_float, print_debug, normalize_datetime_to_utc
+from utils.retry import retry_with_backoff, retry_on_rate_limit
 from parsers.validation_ranges import (
     BODY_BATTERY_MIN, BODY_BATTERY_MAX,
     STRESS_MIN, STRESS_MAX,
@@ -17,9 +18,30 @@ from parsers.validation_ranges import (
 )
 
 
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _fetch_body_battery_internal(client: Any, date_str: str) -> Optional[Any]:
+    """
+    Fonction interne pour récupérer Body Battery avec retry automatique
+    """
+    print_debug(f"Fetching Body Battery for {date_str}...")
+    # Essayer plusieurs méthodes possibles pour Body Battery
+    try:
+        return client.get_body_battery(date_str)
+    except AttributeError:
+        try:
+            return client.get_body_battery_data(date_str)
+        except AttributeError:
+            try:
+                return client.get_body_battery_values(date_str)
+            except AttributeError:
+                pass
+    return None
+
+
 def fetch_body_battery(client: Any, date_str: str) -> Optional[Any]:
     """
-    Récupère les données Body Battery depuis Garmin client.
+    🔴 FIX #38: Récupère les données Body Battery depuis Garmin client avec retry automatique.
     Essaie plusieurs méthodes possibles.
     
     Args:
@@ -30,23 +52,10 @@ def fetch_body_battery(client: Any, date_str: str) -> Optional[Any]:
         Body Battery data ou None
     """
     try:
-        print_debug(f"Fetching Body Battery for {date_str}...")
-        # Essayer plusieurs méthodes possibles pour Body Battery
-        try:
-            return client.get_body_battery(date_str)
-        except AttributeError:
-            try:
-                return client.get_body_battery_data(date_str)
-            except AttributeError:
-                try:
-                    return client.get_body_battery_values(date_str)
-                except AttributeError:
-                    pass
+        return _fetch_body_battery_internal(client, date_str)
     except Exception as e:
-        print_debug(f"Failed to get Body Battery for {date_str}: {type(e).__name__}: {e}")
-        pass
-    
-    return None
+        print_debug(f"Failed to get Body Battery for {date_str} after retries: {type(e).__name__}: {e}")
+        return None
 
 
 def parse_body_battery(body_battery_data: Any, date_str: str) -> Optional[Dict]:
@@ -252,9 +261,30 @@ def parse_body_battery(body_battery_data: Any, date_str: str) -> Optional[Dict]:
     return None
 
 
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _fetch_stress_internal(client: Any, date_str: str) -> Optional[Any]:
+    """
+    Fonction interne pour récupérer Stress avec retry automatique
+    """
+    print_debug(f"Fetching Stress for {date_str}...")
+    # Essayer plusieurs méthodes possibles pour Stress
+    try:
+        return client.get_stress_data(date_str)
+    except AttributeError:
+        try:
+            return client.get_stress_values(date_str)
+        except AttributeError:
+            try:
+                return client.get_stress(date_str)
+            except AttributeError:
+                pass
+    return None
+
+
 def fetch_stress(client: Any, date_str: str) -> Optional[Any]:
     """
-    Récupère les données Stress depuis Garmin client.
+    🔴 FIX #38: Récupère les données Stress depuis Garmin client avec retry automatique.
     Essaie plusieurs méthodes possibles.
     
     Args:
@@ -265,23 +295,10 @@ def fetch_stress(client: Any, date_str: str) -> Optional[Any]:
         Stress data ou None
     """
     try:
-        print_debug(f"Fetching Stress for {date_str}...")
-        # Essayer plusieurs méthodes possibles pour Stress
-        try:
-            return client.get_stress_data(date_str)
-        except AttributeError:
-            try:
-                return client.get_stress_values(date_str)
-            except AttributeError:
-                try:
-                    return client.get_stress(date_str)
-                except AttributeError:
-                    pass
+        return _fetch_stress_internal(client, date_str)
     except Exception as e:
-        print_debug(f"Failed to get Stress for {date_str}: {type(e).__name__}: {e}")
-        pass
-    
-    return None
+        print_debug(f"Failed to get Stress for {date_str} after retries: {type(e).__name__}: {e}")
+        return None
 
 
 def parse_stress(stress_data: Any, date_str: str) -> Optional[Dict]:
@@ -466,9 +483,30 @@ def parse_stress(stress_data: Any, date_str: str) -> Optional[Dict]:
     return None
 
 
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _fetch_spo2_internal(client: Any, date_str: str) -> Optional[Any]:
+    """
+    Fonction interne pour récupérer SpO2 avec retry automatique
+    """
+    print_debug(f"Fetching SpO2 for {date_str}...")
+    # Essayer plusieurs méthodes possibles pour SpO2
+    try:
+        return client.get_spo2_data(date_str)
+    except AttributeError:
+        try:
+            return client.get_spo2_values(date_str)
+        except AttributeError:
+            try:
+                return client.get_spo2(date_str)
+            except AttributeError:
+                pass
+    return None
+
+
 def fetch_spo2(client: Any, date_str: str) -> Optional[Any]:
     """
-    Récupère les données SpO2 depuis Garmin client.
+    🔴 FIX #38: Récupère les données SpO2 depuis Garmin client avec retry automatique.
     Essaie plusieurs méthodes possibles.
     
     Args:
@@ -479,23 +517,10 @@ def fetch_spo2(client: Any, date_str: str) -> Optional[Any]:
         SpO2 data ou None
     """
     try:
-        print_debug(f"Fetching SpO2 for {date_str}...")
-        # Essayer plusieurs méthodes possibles pour SpO2
-        try:
-            return client.get_spo2_data(date_str)
-        except AttributeError:
-            try:
-                return client.get_spo2_values(date_str)
-            except AttributeError:
-                try:
-                    return client.get_spo2(date_str)
-                except AttributeError:
-                    pass
+        return _fetch_spo2_internal(client, date_str)
     except Exception as e:
-        print_debug(f"Failed to get SpO2 for {date_str}: {type(e).__name__}: {e}")
-        pass
-    
-    return None
+        print_debug(f"Failed to get SpO2 for {date_str} after retries: {type(e).__name__}: {e}")
+        return None
 
 
 def parse_spo2(spo2_data: Any, date_str: str) -> Optional[int]:

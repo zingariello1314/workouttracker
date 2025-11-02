@@ -5,20 +5,26 @@ import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
 import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 import { formatSleepDuration } from '../../utils/garminFormatters';
+import { DATE_RANGE, ARIA_LABELS } from '../../constants';
 
 /**
  * Graphique de sommeil (durée et phases)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
 function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+  // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
+  // 🔴 FIX #51-60: Utiliser constante pour contextDays
   const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
     dailyMetrics,
     selectedDate,
     periodFilter,
     customStartDate,
     customEndDate,
-    7
+    DATE_RANGE.ACTIVITIES_DAYS
   );
+
+  // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
+  const { containerRef, containerSize } = useChartContainerSize();
 
   const chartData = React.useMemo(() => {
     if (!dailyMetrics || filteredDates.length === 0) return [];
@@ -60,9 +66,6 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
     );
   }
 
-  // 🔴 FIX #5: Vérifier dimensions avant rendu
-  const { containerRef, containerSize } = useChartContainerSize();
-
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -91,13 +94,21 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
     return null;
   };
 
+  // 🔴 FIX #39: ARIA labels pour accessibilité
+  const chartDescription = `Graphique montrant l'évolution du sommeil (durée, phases profondes, légères, REM) sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s). Durée moyenne: ${Math.floor(avgDuration / 60)}h${Math.round(avgDuration % 60)}m.`;
+  
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
+    <div 
+      className="bg-slate-800/60 border border-slate-700 rounded-lg p-6"
+      role="region"
+      aria-label={ARIA_LABELS.SLEEP_CHART}
+      aria-describedby="sleep-chart-description"
+    >
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-white font-semibold">😴 Sommeil</h4>
+        <h4 id="sleep-chart-title" className="text-white font-semibold">😴 Sommeil</h4>
         <div className="flex items-center gap-3">
           {displayInfo && (
-            <div className="text-slate-400 text-xs">{displayInfo}</div>
+            <div className="text-slate-400 text-xs" aria-live="polite">{displayInfo}</div>
           )}
           {avgDuration > 0 && (
             <div className="text-slate-400 text-sm">
@@ -108,9 +119,14 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
           )}
         </div>
       </div>
+      <p id="sleep-chart-description" className="sr-only">{chartDescription}</p>
       <div 
         ref={containerRef} 
-        className="h-80 min-h-[320px]" 
+        className="h-80 min-h-[320px]"
+        role="img"
+        aria-labelledby="sleep-chart-title"
+        aria-describedby="sleep-chart-description"
+        tabIndex={0} 
         style={{ 
           width: '100%', 
           height: '320px', 

@@ -1,10 +1,21 @@
 import React from 'react';
 import { formatDistance, formatSleepDuration } from '../utils/garminFormatters';
+import GanttChart from './GanttChart';
+import AdvancedStatistics from './AdvancedStatistics';
 
 /**
  * Composant Dashboard pour afficher les métriques quotidiennes principales
  */
-export default function GarminDashboard({ dailyMetrics, selectedDate, comparisonMode, compareDate }) {
+export default function GarminDashboard({ 
+  dailyMetrics, 
+  selectedDate, 
+  comparisonMode, 
+  compareDate,
+  activities = { swimming: [], jumpRope: [], cardio: [] }, 
+  periodFilter = 'all', 
+  customStartDate = null, 
+  customEndDate = null 
+}) {
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
@@ -243,6 +254,28 @@ export default function GarminDashboard({ dailyMetrics, selectedDate, comparison
         )}
         </div>
       )}
+
+      {/* 🔴 FIX #81-87: Gantt Chart */}
+      {activities && (
+        <div className="mt-6">
+          <GanttChart
+            activities={activities}
+            startDate={customStartDate}
+            endDate={customEndDate}
+          />
+        </div>
+      )}
+
+      {/* 🔴 FIX #71-80: Statistiques avancées */}
+      <div className="mt-6">
+        <AdvancedStatistics
+          dailyMetrics={dailyMetrics}
+          selectedDate={selectedDate}
+          periodFilter={periodFilter}
+          customStartDate={customStartDate}
+          customEndDate={customEndDate}
+        />
+      </div>
     </div>
   );
 }

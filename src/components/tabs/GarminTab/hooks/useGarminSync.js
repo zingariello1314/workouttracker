@@ -1,13 +1,15 @@
 import { useState, useCallback, useRef } from 'react';
 import { useGarminData } from '../../../../hooks/useGarminData';
+import { SYNC_TIMEOUT_MS, CACHE_TTL_MS, RETRY_BASE_DELAY_MS, RETRY_MAX_ATTEMPTS } from '../constants';
 
 const BASES = ['http://localhost:3031', 'http://localhost:3001'];
 
-// 🟡 FIX #26: Cache frontend avec TTL (60 secondes)
+// 🟡 FIX #26: Cache frontend avec TTL - utilise constante
+// 🔴 FIX #51-60: Utiliser constante pour TTL
 const frontendCache = {
   data: null,
   timestamp: 0,
-  ttl: 60000 // 60 secondes
+  ttl: CACHE_TTL_MS
 };
 
 /**
@@ -18,20 +20,58 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
   const [baseUrl, setBaseUrl] = useState(null);
   const { saveActivities, saveDailyMetrics, loadAllData, dbReady } = useGarminData();
 
-  const tryFetch = useCallback(async (path, options) => {
+  /**
+   * 🔴 FIX #6: tryFetch avec retry automatique, exponential backoff et timeout
+   * Implémente une stratégie robuste de retry pour gérer les erreurs réseau
+   */
+  // 🔴 FIX #51-60: Utiliser constante pour retry max attempts
+  const tryFetch = useCallback(async (path, options = {}, retries = RETRY_MAX_ATTEMPTS) => {
     let lastErr;
-    for (const b of BASES) {
-      try {
-        const res = await fetch(`${b}${path}`, options);
-        if (!res.ok) throw new Error(`${res.status}`);
-        setBaseUrl(b);
-        return await res.json();
-      } catch (e) {
-        lastErr = e;
-        continue;
+    
+    for (let attempt = 0; attempt < retries; attempt++) {
+      for (const b of BASES) {
+        try {
+          // 🔴 FIX #6: Timeout avec AbortController - utilise constante
+          // 🔴 FIX #51-60: Utiliser constante pour timeout
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), SYNC_TIMEOUT_MS);
+          
+          const res = await fetch(`${b}${path}`, { 
+            ...options, 
+            signal: controller.signal 
+          });
+          
+          clearTimeout(timeout);
+          
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          
+          setBaseUrl(b);
+          const json = await res.json();
+          return json;
+        } catch (e) {
+          // Si c'est une erreur d'abort (timeout), la garder comme dernière erreur
+          if (e.name === 'AbortError') {
+            lastErr = new Error(`Timeout après ${SYNC_TIMEOUT_MS / 1000}s pour ${b}${path}`);
+          } else {
+            lastErr = e;
+          }
+          
+          // 🔴 FIX #6: Exponential backoff - utilise constante pour base delay
+          // 🔴 FIX #51-60: Utiliser constante pour base delay
+          if (attempt < retries - 1) {
+            const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt); // 1s, 2s, 4s...
+            console.log(`[GarminSync] Tentative ${attempt + 1}/${retries} échouée pour ${b}${path}, retry dans ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+          continue; // Essayer la prochaine base URL
+        }
       }
     }
-    throw lastErr || new Error('fetch failed');
+    
+    // Toutes les tentatives ont échoué
+    throw new Error(`Échec après ${retries} tentatives: ${lastErr?.message || 'Serveur inaccessible'}`);
   }, []);
 
   const processSyncResponse = useCallback(async (json) => {

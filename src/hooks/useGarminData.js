@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { DATE_RANGE } from '../components/tabs/GarminTab/constants';
 
 const DB_NAME = 'GarminDataDB';
 const DB_VERSION = 1;
@@ -128,6 +129,29 @@ const openDB = () => {
   });
 };
 
+/**
+ * Hook principal pour la gestion des données Garmin dans IndexedDB
+ * Gère la sauvegarde, le chargement, et l'optimisation des données
+ * 🔴 FIX #51-60: Documentation JSDoc complète
+ * 
+ * @returns {Object} Interface du hook
+ * @returns {boolean} returns.dbReady - Si la base de données est prête
+ * @returns {Function} returns.saveActivities - Fonction pour sauvegarder les activités
+ * @returns {Function} returns.saveDailyMetrics - Fonction pour sauvegarder les métriques
+ * @returns {Function} returns.loadAllData - Fonction pour charger toutes les données
+ * @returns {Function} returns.loadDataByRange - Fonction pour charger par plage de dates
+ * @returns {Function} returns.loadDataForTab - Fonction pour charger selon l'onglet
+ * @returns {Function} returns.calculateDateRange - Fonction pour calculer plages de dates
+ * @returns {Function} returns.exportAll - Fonction pour exporter toutes les données
+ * @returns {Function} returns.importAll - Fonction pour importer des données
+ * @returns {Function} returns.purgeOldTimeSeries - Fonction pour purger les vieilles time series
+ * @returns {Function} returns.autoPurge - Fonction pour purge automatique
+ * 
+ * @example
+ * const { saveActivities, loadAllData } = useGarminData();
+ * await saveActivities({ swimming: [...], cardio: [...] });
+ * const data = await loadAllData();
+ */
 export const useGarminData = () => {
   const [dbReady, setDbReady] = useState(false);
 
@@ -147,6 +171,18 @@ export const useGarminData = () => {
       });
   }, []);
 
+  /**
+   * Sauvegarde les activités dans IndexedDB avec gestion de queue
+   * 🔴 FIX #3: Utilise une queue pour éviter les race conditions
+   * 🔴 FIX #51-60: Documentation JSDoc
+   * 
+   * @param {Object} activities - Objet contenant les activités par type
+   * @param {Array} activities.swimming - Liste des activités de natation
+   * @param {Array} activities.jumpRope - Liste des activités de corde à sauter
+   * @param {Array} activities.cardio - Liste des activités cardio
+   * @returns {Promise<void>} Promise résolue quand la sauvegarde est terminée
+   * @throws {Error} Si la sauvegarde échoue
+   */
   const saveActivities = useCallback(async (activities) => {
     if (!dbReady) return;
     
@@ -229,36 +265,47 @@ export const useGarminData = () => {
               req.onerror = () => resolve(null);
             });
             
-            // Si elle n'existe pas, ou si elle existe mais avec un type différent, sauvegarder
+            // 🔴 FIX #7: Comparer timestamps pour garder la version la plus récente
+            const existingSync = existing ? new Date(existing.lastSynced || 0) : null;
+            const newSync = new Date(item.lastSynced || new Date().toISOString());
+            
             if (!existing) {
               // Nouvelle activité, sauvegarder directement
               await new Promise((resolve, reject) => {
-                const req = store.put({ ...item, type, source: item.source || 'garmin', lastSynced: new Date().toISOString() });
+                const req = store.put({ ...item, type, source: item.source || 'garmin', lastSynced: newSync.toISOString() });
                 req.onsuccess = () => resolve();
                 req.onerror = () => reject(req.error);
               });
             } else if (existing.id === item.id) {
-              // Activité existante : fusionner les données (mettre à jour avec les nouvelles valeurs)
-              // IMPORTANT: Forcer le type selon la catégorie du JSON Python (type vient de la boucle)
-              // Si l'activité est dans "swimming", elle DOIT être de type "swimming", pas "cardio"
-              const merged = {
-                ...existing,
-                ...item,
-                type: type, // FORCER le type selon la catégorie du JSON (corrige natation -> cardio)
-                source: item.source || existing.source || 'garmin',
-                lastSynced: new Date().toISOString(),
-                // Fusionner les objets imbriqués (calories, intensityMinutes, etc.)
-                calories: item.calories || existing.calories,
-                intensityMinutes: item.intensityMinutes || existing.intensityMinutes,
-                connectIQ: item.connectIQ || existing.connectIQ,
-                swimmingMetrics: item.swimmingMetrics || existing.swimmingMetrics,
-                timeMetrics: item.timeMetrics || existing.timeMetrics,
-              };
-              await new Promise((resolve, reject) => {
-                const req = store.put(merged);
-                req.onsuccess = () => resolve();
-                req.onerror = () => reject(req.error);
-              });
+              // Activité existante : comparer lastSynced pour garder la version la plus récente
+              // 🔴 FIX #7: Ne fusionner que si nouvelle version plus récente OU si type a changé
+              const shouldUpdate = newSync > existingSync || existing.type !== type;
+              
+              if (shouldUpdate) {
+                // Nouvelle version plus récente ou type changé, fusionner intelligemment
+                // IMPORTANT: Forcer le type selon la catégorie du JSON Python (type vient de la boucle)
+                // Si l'activité est dans "swimming", elle DOIT être de type "swimming", pas "cardio"
+                const merged = {
+                  ...existing,
+                  ...item,
+                  type: type, // FORCER le type selon la catégorie du JSON (corrige natation -> cardio)
+                  source: item.source || existing.source || 'garmin',
+                  lastSynced: newSync.toISOString(),
+                  // Fusionner les objets imbriqués (calories, intensityMinutes, etc.)
+                  // Préférer nouvelles valeurs si plus récentes, sinon garder existantes
+                  calories: (newSync > existingSync ? item.calories : existing.calories) || item.calories || existing.calories,
+                  intensityMinutes: (newSync > existingSync ? item.intensityMinutes : existing.intensityMinutes) || item.intensityMinutes || existing.intensityMinutes,
+                  connectIQ: item.connectIQ || existing.connectIQ,
+                  swimmingMetrics: item.swimmingMetrics || existing.swimmingMetrics,
+                  timeMetrics: item.timeMetrics || existing.timeMetrics,
+                };
+                await new Promise((resolve, reject) => {
+                  const req = store.put(merged);
+                  req.onsuccess = () => resolve();
+                  req.onerror = () => reject(req.error);
+                });
+              }
+              // Sinon, garder la version existante (plus récente)
             }
           } catch (e) {
             console.warn('[GarminData] Error saving activity:', item.id, e);
@@ -434,71 +481,246 @@ export const useGarminData = () => {
     }
   };
 
+  /**
+   * Calcule la plage de dates selon le periodFilter
+   * 🔴 FIX #5: Utilisé pour optimiser le chargement des données
+   * 🔴 FIX #51-60: Documentation JSDoc
+   * 
+   * @param {string} periodFilter - Filtre de période ('all', 'week', 'month', 'year', 'custom')
+   * @param {string|null} customStartDate - Date de début personnalisée (YYYY-MM-DD) pour 'custom'
+   * @param {string|null} customEndDate - Date de fin personnalisée (YYYY-MM-DD) pour 'custom'
+   * @returns {Object} { start, end } - Plage de dates calculée
+   * @returns {string} returns.start - Date de début (YYYY-MM-DD)
+   * @returns {string} returns.end - Date de fin (YYYY-MM-DD)
+   */
+  const calculateDateRange = useCallback((periodFilter, customStartDate, customEndDate) => {
+    if (periodFilter === 'custom' && customStartDate && customEndDate) {
+      return {
+        start: customStartDate,
+        end: customEndDate
+      };
+    }
+    
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    
+    switch (periodFilter) {
+      case 'week':
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - 7);
+        return {
+          start: weekStart.toISOString().split('T')[0],
+          end: today
+        };
+      case 'month':
+        const monthStart = new Date(now);
+        monthStart.setDate(monthStart.getDate() - 30);
+        return {
+          start: monthStart.toISOString().split('T')[0],
+          end: today
+        };
+      case 'year':
+        const yearStart = new Date(now);
+        yearStart.setDate(yearStart.getDate() - 365);
+        return {
+          start: yearStart.toISOString().split('T')[0],
+          end: today
+        };
+      default:
+        return null; // 'all' - charger tout
+    }
+  }, []);
+
   // OPTIMISATION PHASE 2.2 : Charger les données avec pagination/rangées queries
   const loadDataByRange = useCallback(async (startDate, endDate) => {
-    if (!dbReady) return { activities: {}, dailyMetrics: {} };
+    if (!dbReady) return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
+    
+    // Initialiser avec la structure correcte
+    const activities = { swimming: [], jumpRope: [], cardio: [] };
+    const dailyMetrics = {};
+    
+    // Fallback localStorage si IndexedDB indisponible
+    if (useFallback || !window.indexedDB) {
+      try {
+        // Charger activités depuis localStorage dans la plage
+        const activityKeys = getAllStorageKeys(STORE_ACTIVITIES);
+        for (const key of activityKeys) {
+          try {
+            const itemStr = localStorage.getItem(getStorageKey(STORE_ACTIVITIES, key));
+            if (itemStr) {
+              const item = JSON.parse(itemStr);
+              if (item.date && item.date >= startDate && item.date <= endDate) {
+                if (item.type === 'swimming') activities.swimming.push(item);
+                else if (item.type === 'jumpRope') activities.jumpRope.push(item);
+                else if (item.type === 'cardio') activities.cardio.push(item);
+              }
+            }
+          } catch (e) {
+            console.warn('[GarminData] Error loading activity from localStorage:', key, e);
+          }
+        }
+        
+        // Charger métriques depuis localStorage dans la plage
+        const metricsKeys = getAllStorageKeys(STORE_DAILY_METRICS);
+        for (const key of metricsKeys) {
+          try {
+            const itemStr = localStorage.getItem(getStorageKey(STORE_DAILY_METRICS, key));
+            if (itemStr) {
+              const item = JSON.parse(itemStr);
+              if (item.date && item.date >= startDate && item.date <= endDate) {
+                const { date, ...rest } = item;
+                dailyMetrics[date] = rest;
+              }
+            }
+          } catch (e) {
+            console.warn('[GarminData] Error loading metric from localStorage:', key, e);
+          }
+        }
+        
+        return { activities, dailyMetrics };
+      } catch (err) {
+        console.error('[GarminData] Load by range from localStorage error:', err);
+        return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
+      }
+    }
+    
     try {
       const db = await openDB();
-      const activities = {};
-      const dailyMetrics = {};
+      if (!db) {
+        useFallback = true;
+        // Ne pas faire de récursion, charger depuis localStorage directement
+        try {
+          const metricsKeys = getAllStorageKeys(STORE_DAILY_METRICS);
+          for (const key of metricsKeys) {
+            try {
+              const itemStr = localStorage.getItem(getStorageKey(STORE_DAILY_METRICS, key));
+              if (itemStr) {
+                const item = JSON.parse(itemStr);
+                if (item.date && item.date >= startDate && item.date <= endDate) {
+                  const { date, ...rest } = item;
+                  dailyMetrics[date] = rest;
+                }
+              }
+            } catch (e) {
+              console.warn('[GarminData] Error loading metric from localStorage:', key, e);
+            }
+          }
+        } catch (err) {
+          console.error('[GarminData] Fallback localStorage error:', err);
+        }
+        return { activities, dailyMetrics };
+      }
 
       // OPTIMISATION : Range query pour dailyMetrics (index sur 'date')
-      const metricsTx = db.transaction([STORE_DAILY_METRICS], 'readonly');
-      const metricsStore = metricsTx.objectStore(STORE_DAILY_METRICS);
-      const dateIndex = metricsStore.index('date');
-      
-      // Utiliser IDBKeyRange pour les plages de dates
-      const dateRange = IDBKeyRange.bound(startDate, endDate);
-      const metricsRequest = dateIndex.getAll(dateRange);
-      
-      const metricsResults = await new Promise((resolve, reject) => {
-        metricsRequest.onsuccess = () => resolve(metricsRequest.result || []);
-        metricsRequest.onerror = () => reject(metricsRequest.error);
-      });
-
-      // Convertir en objet { date: metrics }
-      metricsResults.forEach(metric => {
-        if (metric && metric.date) {
-          dailyMetrics[metric.date] = metric;
+      try {
+        const metricsTx = db.transaction([STORE_DAILY_METRICS], 'readonly');
+        const metricsStore = metricsTx.objectStore(STORE_DAILY_METRICS);
+        
+        // Vérifier si l'index existe
+        let dateIndex;
+        try {
+          dateIndex = metricsStore.index('date');
+        } catch (idxErr) {
+          // Index n'existe pas, charger tout et filtrer
+          console.warn('[GarminData] Index "date" not found, loading all and filtering');
+          const allMetrics = await new Promise((resolve, reject) => {
+            const req = metricsStore.getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => reject(req.error);
+          });
+          
+          allMetrics.forEach(metric => {
+            if (metric && metric.date && metric.date >= startDate && metric.date <= endDate) {
+              const { date, ...rest } = metric;
+              dailyMetrics[date] = rest;
+            }
+          });
         }
-      });
+        
+        if (dateIndex) {
+          // Utiliser IDBKeyRange pour les plages de dates
+          const dateRange = IDBKeyRange.bound(startDate, endDate);
+          const metricsRequest = dateIndex.getAll(dateRange);
+          
+          const metricsResults = await new Promise((resolve, reject) => {
+            metricsRequest.onsuccess = () => resolve(metricsRequest.result || []);
+            metricsRequest.onerror = () => reject(metricsRequest.error);
+          });
+
+          // Convertir en objet { date: metrics } (sans la clé date dans la valeur)
+          metricsResults.forEach(metric => {
+            if (metric && metric.date) {
+              const { date, ...rest } = metric;
+              dailyMetrics[date] = rest;
+            }
+          });
+        }
+      } catch (metricsErr) {
+        console.error('[GarminData] Error loading metrics by range:', metricsErr);
+      }
 
       // OPTIMISATION : Range query pour activities par date
-      const activitiesTx = db.transaction([STORE_ACTIVITIES], 'readonly');
-      const activitiesStore = activitiesTx.objectStore(STORE_ACTIVITIES);
-      const dateIdx = activitiesStore.index('date');
-      
-      const activitiesRange = IDBKeyRange.bound(startDate, endDate);
-      const activitiesRequest = dateIdx.getAll(activitiesRange);
-      
-      const activitiesResults = await new Promise((resolve, reject) => {
-        activitiesRequest.onsuccess = () => resolve(activitiesRequest.result || []);
-        activitiesRequest.onerror = () => reject(activitiesRequest.error);
-      });
-
-      // Organiser par type
-      activities.swimming = [];
-      activities.jumpRope = [];
-      activities.cardio = [];
-
-      activitiesResults.forEach(activity => {
-        if (!activity || !activity.type) return;
-        if (activity.type === 'swimming') {
-          activities.swimming.push(activity);
-        } else if (activity.type === 'jumpRope') {
-          activities.jumpRope.push(activity);
-        } else {
-          activities.cardio.push(activity);
+      try {
+        const activitiesTx = db.transaction([STORE_ACTIVITIES], 'readonly');
+        const activitiesStore = activitiesTx.objectStore(STORE_ACTIVITIES);
+        
+        let dateIdx;
+        try {
+          dateIdx = activitiesStore.index('date');
+        } catch (idxErr) {
+          // Index n'existe pas, charger tout et filtrer
+          console.warn('[GarminData] Index "date" not found for activities, loading all and filtering');
+          const allActivities = await new Promise((resolve, reject) => {
+            const req = activitiesStore.getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => reject(req.error);
+          });
+          
+          allActivities.forEach(activity => {
+            if (activity && activity.date && activity.date >= startDate && activity.date <= endDate) {
+              if (activity.type === 'swimming') activities.swimming.push(activity);
+              else if (activity.type === 'jumpRope') activities.jumpRope.push(activity);
+              else if (activity.type === 'cardio') activities.cardio.push(activity);
+            }
+          });
         }
-      });
+        
+        if (dateIdx) {
+          const activitiesRange = IDBKeyRange.bound(startDate, endDate);
+          const activitiesRequest = dateIdx.getAll(activitiesRange);
+          
+          const activitiesResults = await new Promise((resolve, reject) => {
+            activitiesRequest.onsuccess = () => resolve(activitiesRequest.result || []);
+            activitiesRequest.onerror = () => reject(activitiesRequest.error);
+          });
+
+          activitiesResults.forEach(activity => {
+            if (!activity || !activity.type) return;
+            if (activity.type === 'swimming') {
+              activities.swimming.push(activity);
+            } else if (activity.type === 'jumpRope') {
+              activities.jumpRope.push(activity);
+            } else if (activity.type === 'cardio') {
+              activities.cardio.push(activity);
+            }
+          });
+        }
+      } catch (activitiesErr) {
+        console.error('[GarminData] Error loading activities by range:', activitiesErr);
+      }
 
       return { activities, dailyMetrics };
     } catch (err) {
       console.error('[GarminData] Load by range error:', err);
-      return { activities: {}, dailyMetrics: {} };
+      useFallback = true;
+      return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
     }
   }, [dbReady]);
 
+  /**
+   * 🔴 FIX #5: Charge toutes les données (utilisé comme fallback par loadDataForTab)
+   * Optimise la mémoire en ne chargeant que ce qui est affiché
+   */
   const loadAllData = useCallback(async () => {
     if (!dbReady) return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
     
@@ -551,7 +773,8 @@ export const useGarminData = () => {
       const db = await openDB();
       if (!db) {
         useFallback = true;
-        return loadAllData();
+        // Retourner données vides plutôt que récursion infinie
+        return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
       }
       
       const activities = { swimming: [], jumpRope: [], cardio: [] };
@@ -592,9 +815,75 @@ export const useGarminData = () => {
     } catch (err) {
       console.error('[GarminData] Load error:', err);
       useFallback = true;
-      return loadAllData(); // Retry avec fallback
+      return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} }; // Retourner vide plutôt que récursion infinie
     }
   }, [dbReady]);
+
+  /**
+   * Charge seulement les données nécessaires selon l'onglet actif
+   * 🔴 FIX #5: Optimise la mémoire en ne chargeant que ce qui est affiché
+   * 🔴 FIX #51-60: Documentation JSDoc
+   * 
+   * @param {string} tab - Onglet actif ('activities', 'metrics', 'charts', 'dashboard')
+   * @param {string|null} selectedDate - Date sélectionnée (YYYY-MM-DD) ou null
+   * @param {string} periodFilter - Filtre de période ('all', 'week', 'month', 'year', 'custom')
+   * @param {string|null} customStartDate - Date de début personnalisée pour 'custom'
+   * @param {string|null} customEndDate - Date de fin personnalisée pour 'custom'
+   * @returns {Promise<Object>} { activities, dailyMetrics }
+   * @returns {Object} returns.activities - Activités par type { swimming, jumpRope, cardio }
+   * @returns {Object} returns.dailyMetrics - Métriques quotidiennes par date (YYYY-MM-DD)
+   */
+  const loadDataForTab = useCallback(async (tab, selectedDate, periodFilter, customStartDate, customEndDate) => {
+    if (!dbReady) {
+      return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
+    }
+
+    // Onglet "activities" : charger les 90 derniers jours pour avoir toutes les activités disponibles
+    // (nécessaire car l'utilisateur peut vouloir voir toutes ses activités, pas seulement celles d'un jour)
+    // 🔴 FIX #51-60: Utiliser constantes pour les plages de dates
+    if (tab === 'activities') {
+      if (selectedDate) {
+        // Si une date est sélectionnée, charger cette date + jours avant/après pour contexte
+        const date = new Date(selectedDate);
+        const startDate = new Date(date);
+        startDate.setDate(startDate.getDate() - DATE_RANGE.ACTIVITIES_DAYS);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + DATE_RANGE.ACTIVITIES_DAYS);
+        return await loadDataByRange(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
+      } else {
+        // Sinon, charger les derniers jours pour métriques
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const daysAgo = new Date(now);
+        daysAgo.setDate(daysAgo.getDate() - DATE_RANGE.METRICS_DAYS);
+        const startDate = daysAgo.toISOString().split('T')[0];
+        return await loadDataByRange(startDate, today);
+      }
+    }
+
+    // Onglet "charts" avec filtre temporel : charger seulement la plage
+    if (tab === 'charts' && periodFilter && periodFilter !== 'all') {
+      const range = calculateDateRange(periodFilter, customStartDate, customEndDate);
+      if (range) {
+        return await loadDataByRange(range.start, range.end);
+      }
+    }
+
+    // 🔴 FIX #51-60: Utiliser constante pour métriques
+    // Onglet "metrics" : charger les derniers jours pour avoir les données complètes
+    // (nécessaire car les composants peuvent afficher des comparaisons/statistiques)
+    if (tab === 'metrics') {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const daysAgo = new Date(now);
+      daysAgo.setDate(daysAgo.getDate() - DATE_RANGE.METRICS_DAYS);
+      const startDate = daysAgo.toISOString().split('T')[0];
+      return await loadDataByRange(startDate, today);
+    }
+
+    // Dashboard ou autres cas : charger tout
+    return await loadAllData();
+  }, [dbReady, loadDataByRange, loadAllData, calculateDateRange]);
 
   // 🟡 FIX #31: Nettoyer automatiquement les données > 90 jours
   const autoPurge = useCallback(async () => {
@@ -716,16 +1005,36 @@ export const useGarminData = () => {
     }
   }, [dbReady, autoPurge]);
 
+  /**
+   * Exporte toutes les données depuis IndexedDB
+   * 🔴 FIX #51-60: Documentation JSDoc
+   * 
+   * @returns {Promise<Object>} Toutes les données (activities, dailyMetrics)
+   */
   const exportAll = useCallback(async () => {
     return await loadAllData();
   }, [loadAllData]);
 
+  /**
+   * Importe des données dans IndexedDB
+   * 🔴 FIX #51-60: Documentation JSDoc
+   * 
+   * @param {Object} data - Données à importer
+   * @param {Object} data.activities - Activités par type (optionnel)
+   * @param {Object} data.dailyMetrics - Métriques quotidiennes par date (optionnel)
+   * @returns {Promise<void>} Promise résolue quand l'import est terminé
+   */
   const importAll = useCallback(async (data) => {
     if (data.activities) await saveActivities(data.activities);
     if (data.dailyMetrics) await saveDailyMetrics(data.dailyMetrics);
   }, [saveActivities, saveDailyMetrics]);
 
-  // Purge time-series > 90 jours (garder pour compatibilité)
+  /**
+   * Purge les time series > 90 jours pour libérer de l'espace
+   * 🔴 FIX #51-60: Documentation JSDoc
+   * 
+   * @returns {Promise<void>} Promise résolue quand la purge est terminée
+   */
   const purgeOldTimeSeries = useCallback(async () => {
     if (!dbReady) return;
     try {
@@ -763,6 +1072,8 @@ export const useGarminData = () => {
     saveDailyMetrics,
     loadAllData,
     loadDataByRange,  // OPTIMISATION PHASE 2.2 : Export pour utilisation avec filtres
+    loadDataForTab,  // 🔴 FIX #5: Charger seulement les données nécessaires selon l'onglet
+    calculateDateRange,  // 🔴 FIX #5: Utilitaire pour calculer plages de dates
     exportAll,
     importAll,
     purgeOldTimeSeries,

@@ -4,20 +4,27 @@ import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
 import { areChartPropsEqual } from '../../../../../utils/chartComparison';
+import { DATE_RANGE, ARIA_LABELS } from '../../constants';
 
 /**
  * Graphique de fréquence cardiaque 24h
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
 function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+  // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
+  // Sinon l'ordre des hooks change entre les rendus
+  // 🔴 FIX #51-60: Utiliser constante pour contextDays
   const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
     dailyMetrics,
     selectedDate,
     periodFilter,
     customStartDate,
     customEndDate,
-    7 // contextDays par défaut
+    DATE_RANGE.ACTIVITIES_DAYS // contextDays par défaut
   );
+
+  // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
+  const { containerRef, containerSize } = useChartContainerSize();
 
   const chartData = React.useMemo(() => {
     if (!dailyMetrics || filteredDates.length === 0) return [];
@@ -78,20 +85,30 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
     return null;
   };
 
-  // 🔴 FIX #5: Vérifier dimensions avant rendu
-  const { containerRef, containerSize } = useChartContainerSize();
-
+  // 🔴 FIX #39: ARIA labels pour accessibilité
+  const chartDescription = `Graphique montrant l'évolution de la fréquence cardiaque (repos, maximum, moyenne) sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s).`;
+  
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
+    <div 
+      className="bg-slate-800/60 border border-slate-700 rounded-lg p-6"
+      role="region"
+      aria-label={ARIA_LABELS.HEART_RATE_CHART}
+      aria-describedby="heart-rate-chart-description"
+    >
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-white font-semibold">❤️ Fréquence Cardiaque</h4>
+        <h4 className="text-white font-semibold" id="heart-rate-chart-title">❤️ Fréquence Cardiaque</h4>
         {displayInfo && (
-          <div className="text-slate-400 text-xs">{displayInfo}</div>
+          <div className="text-slate-400 text-xs" aria-live="polite">{displayInfo}</div>
         )}
       </div>
+      <p id="heart-rate-chart-description" className="sr-only">{chartDescription}</p>
       <div 
         ref={containerRef} 
         className="h-80 min-h-[320px]" 
+        role="img"
+        aria-labelledby="heart-rate-chart-title"
+        aria-describedby="heart-rate-chart-description"
+        tabIndex={0}
         style={{ 
           width: '100%', 
           height: '320px', 
@@ -109,8 +126,13 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
           height={Math.max(320, containerSize.height)} 
           minHeight={320} 
           minWidth={400}
+          aria-label={ARIA_LABELS.HEART_RATE_CHART}
         >
-          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <LineChart 
+            data={chartData} 
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            aria-label={ARIA_LABELS.HEART_RATE_CHART}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis
               dataKey="date"

@@ -139,9 +139,27 @@ def print_debug(message: str) -> None:
     print(f"[DEBUG] {message}", file=sys.stderr)
 
 
+# 🔴 FIX #34: Cache pour les chemins connus afin d'éviter parsing récursif répétitif
+_KNOWN_PATHS_CACHE = {}
+_CACHE_MAX_SIZE = 1000  # Limiter la taille du cache
+
+def _get_cache_key(data, key_patterns):
+    """Génère une clé de cache pour les données et patterns"""
+    import hashlib
+    import json
+    try:
+        # Utiliser un hash des patterns et un hash partiel des données
+        patterns_str = str(sorted(key_patterns))
+        # Prendre seulement les premières clés/éléments pour éviter hash trop lourd
+        data_sample = str(data)[:200] if isinstance(data, (dict, list)) else str(data)
+        cache_key = hashlib.md5(f"{patterns_str}_{data_sample}".encode()).hexdigest()
+        return cache_key
+    except:
+        return None
+
 def recursive_find_value(data: Any, key_patterns: list, visited: set = None) -> list:
     """
-    🔴 FIX : Recherche récursive d'une valeur dans une structure de données.
+    🔴 FIX #34: Recherche récursive d'une valeur dans une structure de données avec cache.
     
     Args:
         data: Structure de données (dict, list, etc.)
@@ -151,6 +169,11 @@ def recursive_find_value(data: Any, key_patterns: list, visited: set = None) -> 
     Returns:
         list: Liste de tuples (chemin, valeur) où la clé correspond
     """
+    # 🔴 FIX #34: Vérifier le cache d'abord
+    cache_key = _get_cache_key(data, key_patterns)
+    if cache_key and cache_key in _KNOWN_PATHS_CACHE:
+        return _KNOWN_PATHS_CACHE[cache_key]
+    
     if visited is None:
         visited = set()
     
@@ -183,6 +206,10 @@ def recursive_find_value(data: Any, key_patterns: list, visited: set = None) -> 
                 sub_results = recursive_find_value(item, key_patterns, visited)
                 for sub_key, sub_value in sub_results:
                     results.append((f"[{i}].{sub_key}", sub_value))
+    
+    # 🔴 FIX #34: Mettre en cache le résultat (limiter la taille)
+    if cache_key and len(_KNOWN_PATHS_CACHE) < _CACHE_MAX_SIZE:
+        _KNOWN_PATHS_CACHE[cache_key] = results
     
     return results
 

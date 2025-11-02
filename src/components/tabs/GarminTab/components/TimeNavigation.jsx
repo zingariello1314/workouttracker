@@ -1,5 +1,6 @@
 import React, { useRef, useCallback, useTransition } from 'react';
 import { useThrottle } from '../../../../hooks/useThrottle';
+import { DEBOUNCE_DELAY_MS, DATE_RANGE, ARIA_LABELS, KEYBOARD } from '../constants';
 
 /**
  * 🟡 FIX #17 : Composant de navigation temporelle avancée avec optimisations
@@ -36,22 +37,22 @@ export default function TimeNavigation({
         setSelectedDate(date);
       });
     }, [setSelectedDate]),
-    200
+    200 // THROTTLE_DELAY_MS - pourrait être ajouté aux constantes si nécessaire
   );
 
-  // Debouncing pour sélecteur de date (300ms pour éviter re-renders rapides)
+  // 🔴 FIX #51-60: Utiliser constante pour debounce delay
   const debounceTimerRef = useRef(null);
-  const DEBOUNCE_DELAY = 300;
 
   const debouncedSetSelectedDate = useCallback((date) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
+    // Mettre à jour rapidement avec transition pour feedback visuel immédiat
     debounceTimerRef.current = setTimeout(() => {
       startTransition(() => {
         setSelectedDate(date);
       });
-    }, DEBOUNCE_DELAY);
+    }, DEBOUNCE_DELAY_MS);
   }, [setSelectedDate]);
 
   // Cleanup du timer au démontage
@@ -121,33 +122,31 @@ export default function TimeNavigation({
 
     switch (period) {
       case 'week':
-        // 7 derniers jours
+        // 🔴 FIX #51-60: Utiliser constante pour période
         const weekAgo = new Date(today);
-        weekAgo.setDate(today.getDate() - 7);
+        weekAgo.setDate(today.getDate() - DATE_RANGE.ACTIVITIES_DAYS);
         filteredDates = dateKeys.filter(d => new Date(d) >= weekAgo);
         break;
       case 'month':
-        // 30 derniers jours
         const monthAgo = new Date(today);
-        monthAgo.setDate(today.getDate() - 30);
+        monthAgo.setDate(today.getDate() - 30); // 30 jours = 1 mois
         filteredDates = dateKeys.filter(d => new Date(d) >= monthAgo);
         break;
       case '3months':
-        // 90 derniers jours
+        // 🔴 FIX #51-60: Utiliser constante pour métriques (90 jours)
         const threeMonthsAgo = new Date(today);
-        threeMonthsAgo.setDate(today.getDate() - 90);
+        threeMonthsAgo.setDate(today.getDate() - DATE_RANGE.METRICS_DAYS);
         filteredDates = dateKeys.filter(d => new Date(d) >= threeMonthsAgo);
         break;
       case '6months':
-        // 180 derniers jours
         const sixMonthsAgo = new Date(today);
-        sixMonthsAgo.setDate(today.getDate() - 180);
+        sixMonthsAgo.setDate(today.getDate() - 180); // 180 jours = 6 mois
         filteredDates = dateKeys.filter(d => new Date(d) >= sixMonthsAgo);
         break;
       case 'year':
-        // 365 derniers jours
+        // 🔴 FIX #51-60: Utiliser constante pour historique max
         const yearAgo = new Date(today);
-        yearAgo.setDate(today.getDate() - 365);
+        yearAgo.setDate(today.getDate() - DATE_RANGE.MAX_HISTORY_DAYS);
         filteredDates = dateKeys.filter(d => new Date(d) >= yearAgo);
         break;
       case 'custom':
@@ -179,7 +178,8 @@ export default function TimeNavigation({
           <button
             onClick={goToFirst}
             disabled={!selectedDate || dateKeys.indexOf(selectedDate) === 0}
-            className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            aria-label="Aller à la première date"
+            className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             title="Première date"
           >
             ««
@@ -199,7 +199,9 @@ export default function TimeNavigation({
               value={selectedDate || ''}
               onChange={(e) => debouncedSetSelectedDate(e.target.value)}
               disabled={isPending}
-              className="bg-slate-900 border-0 text-white font-semibold text-sm cursor-pointer focus:outline-none disabled:opacity-50"
+              aria-label={ARIA_LABELS.DATE_SELECTOR}
+              aria-busy={isPending}
+              className="bg-slate-900 border-0 text-white font-semibold text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {dateKeys.map((dk) => (
                 <option key={dk} value={dk}>{dk}</option>

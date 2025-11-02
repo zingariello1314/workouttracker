@@ -53,6 +53,99 @@ from utils.helpers import (
     print_debug
 )
 from utils.cache import get_cached_parsed, cache_parsed
+from utils.retry import retry_with_backoff, retry_on_rate_limit
+
+
+# 🔴 FIX #38: Wrappers avec retry pour TOUS les appels API Garmin
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_activities_with_retry(client, start_date, end_date):
+    """Helper avec retry pour get_activities_by_date"""
+    return client.get_activities_by_date(start_date, end_date)
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_activity_with_retry(client, act_id):
+    """Helper avec retry pour get_activity"""
+    return client.get_activity(act_id)
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_stats_with_retry(client, date_str):
+    """Helper avec retry pour get_stats"""
+    return client.get_stats(date_str)
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_daily_summary_with_retry(client, date_str):
+    """Helper avec retry pour get_daily_summary"""
+    return client.get_daily_summary(date_str)
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_wellness_summary_with_retry(client, date_str):
+    """Helper avec retry pour get_wellness_summary"""
+    return client.get_wellness_summary(date_str)
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_steps_data_with_retry(client, date_str):
+    """Helper avec retry pour get_steps_data"""
+    return client.get_steps_data(date_str)
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_heart_rates_with_retry(client, date_str):
+    """Helper avec retry pour get_heart_rates"""
+    return client.get_heart_rates(date_str)
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_sleep_data_with_retry(client, date_str):
+    """Helper avec retry pour get_sleep_data"""
+    return client.get_sleep_data(date_str)
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_respiration_data_with_retry(client, date_str):
+    """Helper avec retry pour get_respiration_data"""
+    try:
+        return client.get_respiration_data(date_str)
+    except AttributeError:
+        # Fallback sur get_respiration_values si disponible
+        return client.get_respiration_values(date_str)
+
+
+def _get_intensity_minutes_with_retry(client, date_str):
+    """
+    Helper pour get_intensity_minutes - gère gracieusement si la méthode n'existe pas
+    Note: get_intensity_minutes() n'existe pas dans toutes les versions de l'API Garmin
+    """
+    try:
+        # Essayer d'abord get_intensity_minutes
+        if hasattr(client, 'get_intensity_minutes'):
+            return client.get_intensity_minutes(date_str)
+        # Sinon, essayer get_wellness_intensity_minutes
+        elif hasattr(client, 'get_wellness_intensity_minutes'):
+            return client.get_wellness_intensity_minutes(date_str)
+        # Si aucune méthode n'existe, retourner None (sera parsé depuis stats)
+        else:
+            return None
+    except AttributeError:
+        # Méthode inexistante - retourner None (sera parsé depuis stats)
+        return None
+    except Exception as e:
+        # Autres erreurs - logger mais retourner None
+        print_debug(f"⚠️ Failed to get_intensity_minutes({date_str}): {type(e).__name__}: {e}")
+        return None
 
 # Chargement .env (optionnel)
 try:
@@ -176,6 +269,10 @@ if EMAIL and PASSWORD:
         # Lock pour thread-safety des listes partagées
         activities_lock = threading.Lock()
         
+        # 🔴 FIX #23: Collecte des erreurs de parsing pour remontée au frontend
+        parsing_errors = []
+        parsing_errors_lock = threading.Lock()
+        
         def process_day(d_str: str) -> Dict:
             """Processe les données pour un jour donné"""
             day_swim = []
@@ -195,9 +292,9 @@ if EMAIL and PASSWORD:
             }
             
             try:
-                # Activités - Récupérer liste de base puis détails complets
+                # 🔴 FIX #38: Activités - Récupérer liste de base avec retry automatique
                 print_debug(f"Fetching activities for {d_str}...")
-                activities = client.get_activities_by_date(d_str, d_str)
+                activities = _get_activities_with_retry(client, d_str, d_str)
                 print_debug(f"get_activities_by_date returned: {type(activities)}, length: {len(activities) if isinstance(activities, (list, dict)) else 'N/A'}")
                 if activities:
                     print_debug(f"Found {len(activities) if isinstance(activities, list) else 'unknown'} activities for {d_str}")
@@ -206,98 +303,176 @@ if EMAIL and PASSWORD:
                         if not act_id:
                             continue
                         
-                        # OPTIMISATION : Vérifier le cache avant parsing
-                        cached_parsed = get_cached_parsed(act_id, act_summary)
-                        if cached_parsed:
-                            print_debug(f"✅ Using cached parsed data for activity {act_id}")
-                            activity_type = cached_parsed.get('type') or cached_parsed.get('activityType')
-                            if activity_type == 'swimming' or 'swim' in str(activity_type).lower():
-                                day_swim.append(cached_parsed)
-                            elif activity_type == 'jumpRope' or 'jump' in str(activity_type).lower():
-                                day_jump.append(cached_parsed)
+                        # 🔴 FIX #23: Try-catch pour capturer les erreurs de parsing d'activité
+                        try:
+                            # OPTIMISATION : Vérifier le cache avant parsing
+                            # MAIS vérifier que la classification du cache correspond toujours au type d'activité
+                            act_type_dto_check = act_summary.get('activityTypeDTO', {}) or {}
+                            act_type_key_check = act_type_dto_check.get('typeKey') or act_type_dto_check.get('type') or ''
+                            act_name_check = (act_summary.get('activityName') or '').lower()
+                            is_explicitly_cardio_check = (
+                                'cardio' in act_type_key_check.lower() or
+                                'cardio' in act_name_check or
+                                act_type_dto_check.get('typeId') in (11, 29)
+                            )
+                            
+                            cached_parsed = get_cached_parsed(act_id, act_summary)
+                            if cached_parsed:
+                                cached_type = cached_parsed.get('type') or cached_parsed.get('activityType') or ''
+                                # Si l'activité est explicitement marquée comme cardio mais le cache dit swimming, ignorer le cache
+                                if is_explicitly_cardio_check and cached_type == 'swimming':
+                                    print_debug(f"⚠️ Cache ignored for activity {act_id}: explicitly cardio but cached as swimming")
+                                    cached_parsed = None
+                                else:
+                                    print_debug(f"✅ Using cached parsed data for activity {act_id}")
+                                    activity_type = cached_type
+                                    if activity_type == 'swimming' or 'swim' in str(activity_type).lower():
+                                        day_swim.append(cached_parsed)
+                                    elif activity_type == 'jumpRope' or 'jump' in str(activity_type).lower():
+                                        day_jump.append(cached_parsed)
+                                    else:
+                                        day_cardio.append(cached_parsed)
+                                    continue
+                            
+                            # OPTIMISATION : Parser summary d'abord pour identifier si details nécessaires
+                            is_swimming_preview, is_jump_rope_preview, is_cardio_preview = classify_activity(act_summary, None)
+                            
+                            # Récupérer les détails complets SEULEMENT si nécessaire
+                            act_details = None
+                            needs_details = is_swimming_preview or is_jump_rope_preview
+                            
+                            if needs_details:
+                                try:
+                                    # 🔴 FIX #38: Retry automatique pour get_activity
+                                    act_details = _get_activity_with_retry(client, act_id)
+                                except Exception as e:
+                                    print_debug(f"Failed to get_activity({act_id}) after retries: {e}")
+                                    pass
+                            
+                            # Classification d'activité avec parser modulaire
+                            is_swimming, is_jump_rope, is_cardio = classify_activity(act_summary, act_details)
+                            act = act_details if act_details else act_summary
+                            entry_base, summary_dto, distance_m = parse_common_metrics(act, act_details, act_summary)
+                            
+                            start = act_summary.get('startTimeGMT') or act_summary.get('startTimeLocal')
+                            if start:
+                                entry_base["date"] = (start or d_str).split('T')[0]
+                                entry_base["time"] = start.split('T')[1][:5] if 'T' in start else ""
                             else:
-                                day_cardio.append(cached_parsed)
-                            continue
-                        
-                        # OPTIMISATION : Parser summary d'abord pour identifier si details nécessaires
-                        is_swimming_preview, is_jump_rope_preview, is_cardio_preview = classify_activity(act_summary, None)
-                        
-                        # Récupérer les détails complets SEULEMENT si nécessaire
-                        act_details = None
-                        needs_details = is_swimming_preview or is_jump_rope_preview
-                        
-                        if needs_details:
-                            try:
-                                act_details = client.get_activity(act_id)
-                            except Exception as e:
-                                print_debug(f"Failed to get_activity({act_id}): {e}")
-                                pass
-                        
-                        # Classification d'activité avec parser modulaire
-                        is_swimming, is_jump_rope, is_cardio = classify_activity(act_summary, act_details)
-                        act = act_details if act_details else act_summary
-                        entry_base, summary_dto, distance_m = parse_common_metrics(act, act_details, act_summary)
-                        
-                        start = act_summary.get('startTimeGMT') or act_summary.get('startTimeLocal')
-                        if start:
-                            entry_base["date"] = (start or d_str).split('T')[0]
-                            entry_base["time"] = start.split('T')[1][:5] if 'T' in start else ""
-                        else:
-                            entry_base["date"] = d_str
-                            entry_base["time"] = ""
-                        
-                        duration = entry_base.get("duration", 0)
-                        
-                        # 🟡 FIX #25: Vérification post-parsing pour détecter mal-classifications
-                        originally_swimming = is_swimming
-                        originally_jump_rope = is_jump_rope
-                        originally_cardio = is_cardio
-                        
-                        # Si classé comme cardio mais distance > 0 et durée > 300s (5min), vérifier si natation
-                        if is_cardio and not is_swimming and not is_jump_rope:
-                            if distance_m and distance_m > 0 and duration and duration > 300:
-                                # Distance positive + durée significative = probablement natation
-                                act_name_lower = (act.get('activityName') or act_summary.get('activityName') or '').lower()
-                                if 'swim' in act_name_lower or 'natation' in act_name_lower or 'pool' in act_name_lower:
-                                    print_debug(f"⚠️ Activity {act_id} reclassifiée: cardio → swimming (distance={distance_m}m, duration={duration}s, name={act.get('activityName')})")
-                                    is_swimming = True
-                                    is_cardio = False
-                                # Si distance modérée (50-5000m) et pas de jumps, peut-être natation
-                                elif 50 <= distance_m <= 5000 and duration > 300:
-                                    print_debug(f"⚠️ Activity {act_id} possible natation (distance={distance_m}m, duration={duration}s), vérification manuelle recommandée")
-                        
-                        if is_swimming:
-                            entry_base = parse_swimming_metrics(entry_base, summary_dto, distance_m, act, act_details, act_summary, duration)
-                            entry_base["type"] = "swimming"
-                            if originally_cardio:
-                                print_debug(f"✅ Activity {act_id} reclassifiée: cardio → swimming")
-                            cache_parsed(act_id, act_summary, entry_base)
-                            day_swim.append(entry_base)
-                        elif is_jump_rope:
-                            entry_base, connect_iq = parse_jump_rope_metrics(entry_base, summary_dto, act, act_details, act_summary, duration)
-                            if connect_iq and 'maxContinuousJumps' in connect_iq and 'jumps' in connect_iq:
-                                if connect_iq['maxContinuousJumps'] > connect_iq['jumps']:
-                                    connect_iq['maxContinuousJumps'] = min(connect_iq['maxContinuousJumps'], connect_iq['jumps'])
-                            if connect_iq:
-                                entry_base["connectIQ"] = connect_iq
-                            entry_base["type"] = "jumpRope"
-                            cache_parsed(act_id, act_summary, entry_base)
-                            day_jump.append(entry_base)
-                        else:
-                            activity_name = act.get('activityName') or act_summary.get('activityName') or 'Cardio'
+                                entry_base["date"] = d_str
+                                entry_base["time"] = ""
+                            
+                            duration = entry_base.get("duration", 0)
+                            
+                            # 🔴 FIX #25: Vérification post-parsing robuste pour détecter mal-classifications
+                            originally_swimming = is_swimming
+                            originally_jump_rope = is_jump_rope
+                            originally_cardio = is_cardio
+                            
+                            act_name_lower = (act.get('activityName') or act_summary.get('activityName') or '').lower()
+                            
+                            # Récupérer le type d'activité explicite de Garmin
                             act_type_dto = act_summary.get('activityTypeDTO', {}) or {}
-                            act_type_key = act_type_dto.get('typeKey') or act_type_dto.get('type') or 'indoor_cardio'
-                            entry_base.update({
-                                "jumps": None,
-                                "connectIQ": None,
-                                "activityName": activity_name,
-                                "activityType": act_type_key,
-                                "type": "cardio"
-                            })
-                            cache_parsed(act_id, act_summary, entry_base)
-                            day_cardio.append(entry_base)
+                            act_type_key = act_type_dto.get('typeKey') or act_type_dto.get('type') or ''
+                            act_type_key_lower = act_type_key.lower() if act_type_key else ''
+                            
+                            # 🔴 FIX CRITIQUE : Ne JAMAIS reclassifier si l'utilisateur a explicitement choisi un type
+                            # Vérifier si c'est un type cardio explicite
+                            is_explicitly_cardio = (
+                                'cardio' in act_type_key_lower or
+                                'cardio' in act_name_lower or
+                                act_type_dto.get('typeId') in (11, 29)  # Type IDs pour indoor_cardio
+                            )
+                            
+                            # Vérification 1: Si classé comme cardio mais caractéristiques de natation
+                            # UNIQUEMENT si ce n'est PAS explicitement marqué comme cardio par l'utilisateur
+                            if is_cardio and not is_swimming and not is_jump_rope and not is_explicitly_cardio:
+                                # Critères pour natation:
+                                # - Distance entre 50m et 5000m (distance typique piscine)
+                                # - Durée > 5min (300s)
+                                # - Pas de jumps/sauts
+                                # - Nom contient mots-clés natation OU distance cohérente avec natation
+                                if distance_m and distance_m > 0 and duration and duration > 300:
+                                    # Distance cohérente avec natation (50m-5000m)
+                                    if 50 <= distance_m <= 5000:
+                                        # Si nom contient mots-clés natation → reclassifier immédiatement
+                                        if any(keyword in act_name_lower for keyword in ['swim', 'natation', 'pool', 'laps', 'crawl', 'brasse']):
+                                            print_debug(f"⚠️ Activity {act_id} reclassifiée: cardio → swimming (distance={distance_m}m, duration={duration}s, name keywords)")
+                                            is_swimming = True
+                                            is_cardio = False
+                                        # Sinon, si distance modérée + durée cohérente, probablement natation
+                                        # MAIS seulement si le nom ne contient PAS "cardio"
+                                        elif 100 <= distance_m <= 4000 and 'cardio' not in act_name_lower:
+                                            print_debug(f"⚠️ Activity {act_id} reclassifiée: cardio → swimming (distance={distance_m}m, duration={duration}s, caractéristiques natation)")
+                                            is_swimming = True
+                                            is_cardio = False
+                            
+                            # Vérification 2: Si classé comme natation mais nom ne correspond pas, double-vérification
+                            if is_swimming and not originally_swimming:
+                                # Vérifier cohérence: si distance absente ou très faible, peut-être erreur
+                                if (not distance_m or distance_m < 10) and duration > 300:
+                                    print_debug(f"⚠️ Activity {act_id} classée natation mais distance absente/suspecte, vérification recommandée")
+                            
+                            # Vérification 3: Si natation ET distance très élevée (>5000m), peut-être open water
+                            if is_swimming and distance_m > 5000:
+                                print_debug(f"✅ Activity {act_id} natation open water détectée (distance={distance_m}m)")
+                            
+                            # Vérification 4: Si cardio avec distance modérée mais pas de caractéristiques natation/corde
+                            if is_cardio and distance_m and 100 <= distance_m <= 5000 and duration > 300:
+                                # Vérifier si c'est peut-être une autre activité (vélo, course, etc.)
+                                # Mais ne pas reclassifier automatiquement, juste logger
+                                if 'run' in act_name_lower or 'course' in act_name_lower or 'marathon' in act_name_lower:
+                                    print_debug(f"ℹ️ Activity {act_id} cardio avec distance cohérente course à pied (distance={distance_m}m)")
+                                elif 'bike' in act_name_lower or 'vélo' in act_name_lower or 'cycling' in act_name_lower:
+                                    print_debug(f"ℹ️ Activity {act_id} cardio avec distance cohérente vélo (distance={distance_m}m)")
+                            
+                            if is_swimming:
+                                entry_base = parse_swimming_metrics(entry_base, summary_dto, distance_m, act, act_details, act_summary, duration)
+                                entry_base["type"] = "swimming"
+                                if originally_cardio:
+                                    print_debug(f"✅ Activity {act_id} reclassifiée: cardio → swimming")
+                                cache_parsed(act_id, act_summary, entry_base)
+                                day_swim.append(entry_base)
+                            elif is_jump_rope:
+                                entry_base, connect_iq = parse_jump_rope_metrics(entry_base, summary_dto, act, act_details, act_summary, duration)
+                                if connect_iq and 'maxContinuousJumps' in connect_iq and 'jumps' in connect_iq:
+                                    if connect_iq['maxContinuousJumps'] > connect_iq['jumps']:
+                                        connect_iq['maxContinuousJumps'] = min(connect_iq['maxContinuousJumps'], connect_iq['jumps'])
+                                if connect_iq:
+                                    entry_base["connectIQ"] = connect_iq
+                                entry_base["type"] = "jumpRope"
+                                cache_parsed(act_id, act_summary, entry_base)
+                                day_jump.append(entry_base)
+                            else:
+                                activity_name = act.get('activityName') or act_summary.get('activityName') or 'Cardio'
+                                act_type_dto = act_summary.get('activityTypeDTO', {}) or {}
+                                act_type_key = act_type_dto.get('typeKey') or act_type_dto.get('type') or 'indoor_cardio'
+                                entry_base.update({
+                                    "jumps": None,
+                                    "connectIQ": None,
+                                    "activityName": activity_name,
+                                    "activityType": act_type_key,
+                                    "type": "cardio"
+                                })
+                                cache_parsed(act_id, act_summary, entry_base)
+                                day_cardio.append(entry_base)
+                        except Exception as e:
+                            # 🔴 FIX #23: Capturer et logger les erreurs de parsing d'activité
+                            error_obj = {
+                                "activity_id": act_id,
+                                "date": d_str,
+                                "error": str(e),
+                                "type": type(e).__name__,
+                                "context": "activity_parsing"
+                            }
+                            with parsing_errors_lock:
+                                parsing_errors.append(error_obj)
+                            print_debug(f"⚠️ Erreur parsing activité {act_id} pour {d_str}: {type(e).__name__}: {e}")
+                            import traceback
+                            print_debug(f"Traceback: {traceback.format_exc()}")
+                            continue  # Continuer avec l'activité suivante
             except Exception as e:
-                print_debug(f"Erreur activités {d_str}: {e}")
+                print_debug(f"Erreur général activités {d_str}: {e}")
             
             # Métriques quotidiennes (code existant simplifié)
             try:
@@ -307,18 +482,19 @@ if EMAIL and PASSWORD:
                 sleep = None
                 
                 try:
-                    steps_data = client.get_steps_data(d_str)
-                except Exception:
-                    pass
+                    steps_data = _get_steps_data_with_retry(client, d_str)
+                except Exception as e:
+                    print_debug(f"⚠️ Failed to get_steps_data({d_str}) after retries: {e}")
+                    steps_data = None
                 
                 try:
-                    stats = client.get_stats(d_str)
+                    stats = _get_stats_with_retry(client, d_str)
                     # 🟡 FIX : Si get_stats ne retourne rien pour aujourd'hui, essayer get_daily_summary
                     if not stats or (isinstance(stats, dict) and len(stats) == 0):
                         if d_str == current_date:
                             print_debug(f"⚠️ get_stats({d_str}) returned empty, trying get_daily_summary...")
                             try:
-                                daily_summary = client.get_daily_summary(d_str)
+                                daily_summary = _get_daily_summary_with_retry(client, d_str)
                                 if daily_summary:
                                     print_debug(f"✅ get_daily_summary({d_str}) returned data")
                                     stats = daily_summary
@@ -326,7 +502,7 @@ if EMAIL and PASSWORD:
                                 print_debug(f"get_daily_summary({d_str}) also failed: {e2}")
                                 # Essayer get_wellness_summary si disponible
                                 try:
-                                    wellness_summary = client.get_wellness_summary(d_str)
+                                    wellness_summary = _get_wellness_summary_with_retry(client, d_str)
                                     if wellness_summary:
                                         print_debug(f"✅ get_wellness_summary({d_str}) returned data")
                                         stats = wellness_summary
@@ -340,7 +516,7 @@ if EMAIL and PASSWORD:
                     if d_str == current_date:
                         try:
                             print_debug(f"⚠️ Trying get_daily_summary({d_str}) as fallback...")
-                            stats = client.get_daily_summary(d_str)
+                            stats = _get_daily_summary_with_retry(client, d_str)
                             if stats:
                                 print_debug(f"✅ get_daily_summary({d_str}) succeeded as fallback")
                         except Exception as e2:
@@ -350,34 +526,34 @@ if EMAIL and PASSWORD:
                         stats = None
                 
                 try:
-                    hr_day = client.get_heart_rates(d_str)
-                except Exception:
-                    pass
+                    hr_day = _get_heart_rates_with_retry(client, d_str)
+                except Exception as e:
+                    print_debug(f"⚠️ Failed to get_heart_rates({d_str}) after retries: {e}")
+                    hr_day = None
                 
                 body_battery_data = fetch_body_battery(client, d_str)
                 stress_data = fetch_stress(client, d_str)
                 spo2_data = fetch_spo2(client, d_str)
                 
                 try:
-                    sleep = client.get_sleep_data(d_str)
+                    sleep = _get_sleep_data_with_retry(client, d_str)
                 except Exception as e:
-                    print_debug(f"Failed to get_sleep_data({d_str}): {e}")
-                    pass
+                    print_debug(f"⚠️ Failed to get_sleep_data({d_str}) after retries: {e}")
+                    sleep = None
                 
                 respiration_data = None
                 try:
-                    respiration_data = client.get_respiration_data(d_str)
-                except Exception:
-                    try:
-                        respiration_data = client.get_respiration_values(d_str)
-                    except Exception:
-                        pass
+                    respiration_data = _get_respiration_data_with_retry(client, d_str)
+                except Exception as e:
+                    print_debug(f"⚠️ Failed to get_respiration_data({d_str}) after retries: {e}")
+                    respiration_data = None
                 
                 intensity_data = None
                 try:
-                    intensity_data = client.get_intensity_minutes(d_str)
-                except Exception:
-                    pass
+                    intensity_data = _get_intensity_minutes_with_retry(client, d_str)
+                except Exception as e:
+                    print_debug(f"⚠️ Failed to get_intensity_minutes({d_str}) after retries: {e}")
+                    intensity_data = None
                 
                 # Utiliser parsers modulaires
                 day_daily["steps"] = parse_daily_steps(steps_data, d_str)
@@ -550,6 +726,12 @@ if EMAIL and PASSWORD:
             },
             "dailyMetrics": daily_dict,  # Contient TOUTES les dates
         }
+        
+        # 🔴 FIX #23: Ajouter les erreurs de parsing dans la réponse si présentes
+        if parsing_errors:
+            payload["parsing_errors"] = parsing_errors
+            print_debug(f"⚠️ {len(parsing_errors)} erreur(s) de parsing capturée(s)")
+        
         print_json_ok(payload)
         raise SystemExit(0)
     except Exception as e:

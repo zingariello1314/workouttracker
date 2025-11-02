@@ -60,44 +60,86 @@ def parse_sleep_data(sleep: Any, date_str: str) -> Dict:
     else:
         sleep_duration = sleep_time  # Déjà en heures
     
-    # Phases de sommeil (peut être en secondes)
-    deep_sleep = safe_int(
-        sleep_dto.get('deepSleepSeconds') or
-        sleep.get('deepSleepSeconds') or
-        sleep.get('deepSleep') or
-        sleep.get('deepSleepDuration'),
-        0
-    ) / 3600.0
+    # 🔴 FIX #35: Parser phases de sommeil de manière complète depuis sleepLevelsMap
+    # Chercher dans sleepLevelsMap d'abord (source principale selon le bilan)
+    sleep_levels_map = sleep.get('sleepLevelsMap') or sleep_dto.get('sleepLevelsMap') or {}
     
-    light_sleep = safe_int(
-        sleep_dto.get('lightSleepSeconds') or
-        sleep.get('lightSleepSeconds') or
-        sleep.get('lightSleep') or
-        sleep.get('lightSleepDuration'),
-        0
-    ) / 3600.0
+    deep_sleep_seconds = 0
+    light_sleep_seconds = 0
+    rem_sleep_seconds = 0
     
-    rem_sleep = safe_int(
-        sleep_dto.get('remSleepSeconds') or
-        sleep.get('remSleepSeconds') or
-        sleep.get('remSleep') or
-        sleep.get('remSleepDuration'),
-        0
-    ) / 3600.0
+    # Si sleepLevelsMap existe, extraire les phases
+    if isinstance(sleep_levels_map, dict) and len(sleep_levels_map) > 0:
+        print_debug(f"Parsing sleep phases from sleepLevelsMap for {date_str}: {list(sleep_levels_map.keys())}")
+        for level, duration in sleep_levels_map.items():
+            if isinstance(duration, (int, float)):
+                level_lower = str(level).lower()
+                if 'deep' in level_lower or level_lower == '3' or level_lower == '4':
+                    deep_sleep_seconds += duration
+                elif 'rem' in level_lower or 'dream' in level_lower or level_lower == '5':
+                    rem_sleep_seconds += duration
+                elif 'light' in level_lower or level_lower == '1' or level_lower == '2' or ('awake' not in level_lower and 'wake' not in level_lower):
+                    light_sleep_seconds += duration
+        print_debug(f"Phases extraites depuis sleepLevelsMap: deep={deep_sleep_seconds}s, light={light_sleep_seconds}s, rem={rem_sleep_seconds}s")
     
-    # Heures coucher/lever (timestamps en millisecondes)
+    # Si phases pas trouvées dans sleepLevelsMap, utiliser les champs directs
+    if deep_sleep_seconds == 0 and light_sleep_seconds == 0 and rem_sleep_seconds == 0:
+        deep_sleep_seconds = safe_int(
+            sleep_dto.get('deepSleepSeconds') or
+            sleep.get('deepSleepSeconds') or
+            sleep.get('deepSleep') or
+            sleep.get('deepSleepDuration') or
+            0,
+            0
+        )
+        
+        light_sleep_seconds = safe_int(
+            sleep_dto.get('lightSleepSeconds') or
+            sleep.get('lightSleepSeconds') or
+            sleep.get('lightSleep') or
+            sleep.get('lightSleepDuration') or
+            0,
+            0
+        )
+        
+        rem_sleep_seconds = safe_int(
+            sleep_dto.get('remSleepSeconds') or
+            sleep.get('remSleepSeconds') or
+            sleep.get('rem') or
+            sleep.get('remSleepDuration') or
+            0,
+            0
+        )
+    
+    # Convertir en heures
+    deep_sleep = deep_sleep_seconds / 3600.0 if deep_sleep_seconds > 0 else None
+    light_sleep = light_sleep_seconds / 3600.0 if light_sleep_seconds > 0 else None
+    rem_sleep = rem_sleep_seconds / 3600.0 if rem_sleep_seconds > 0 else None
+    
+    # 🔴 FIX #35: Parser heures coucher/lever de manière complète
+    # Chercher dans plusieurs champs possibles
     bed_time_ts = (
-        sleep_dto.get('sleepStartTimestampLocal') or
         sleep_dto.get('sleepStartTimestampGMT') or
+        sleep_dto.get('sleepStartTimestampLocal') or
+        sleep_dto.get('sleepStartTimestamp') or
+        sleep.get('sleepStartTimestampGMT') or
+        sleep.get('sleepStartTimestampLocal') or
+        sleep.get('sleepStartTimestamp') or
         sleep.get('bedTime') or
-        sleep.get('sleepStart')
+        sleep.get('sleepStart') or
+        None
     )
     
     wake_time_ts = (
-        sleep_dto.get('sleepEndTimestampLocal') or
         sleep_dto.get('sleepEndTimestampGMT') or
+        sleep_dto.get('sleepEndTimestampLocal') or
+        sleep_dto.get('sleepEndTimestamp') or
+        sleep.get('sleepEndTimestampGMT') or
+        sleep.get('sleepEndTimestampLocal') or
+        sleep.get('sleepEndTimestamp') or
         sleep.get('wakeTime') or
-        sleep.get('sleepEnd')
+        sleep.get('sleepEnd') or
+        None
     )
     
     # Convertir timestamps si nécessaire
@@ -131,9 +173,9 @@ def parse_sleep_data(sleep: Any, date_str: str) -> Dict:
             sleep.get('overallSleepScore'),
             0
         ),
-        "deepSleep": round(deep_sleep, 2) if deep_sleep > 0 else None,
-        "lightSleep": round(light_sleep, 2) if light_sleep > 0 else None,
-        "remSleep": round(rem_sleep, 2) if rem_sleep > 0 else None,
+        "deepSleep": round(deep_sleep, 2) if deep_sleep and deep_sleep > 0 else None,
+        "lightSleep": round(light_sleep, 2) if light_sleep and light_sleep > 0 else None,
+        "remSleep": round(rem_sleep, 2) if rem_sleep and rem_sleep > 0 else None,
         "bedTime": bed_time,
         "wakeTime": wake_time
     }
@@ -362,4 +404,3 @@ def extract_respiration_from_sleep(sleep: Dict, date_str: str) -> Dict:
         }
     
     return resp_from_sleep
-

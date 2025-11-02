@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional, List
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.helpers import safe_int, safe_float, print_debug, normalize_datetime_to_utc, recursive_find_value
+from utils.time_series_compression import optimize_time_series, decompress_time_series_delta
 from parsers.validation_ranges import (
     HR_MIN, HR_MAX, HR_RESTING_MIN, HR_RESTING_MAX,
     CALORIES_MIN, CALORIES_MAX,
@@ -19,7 +20,7 @@ from parsers.validation_ranges import (
     STRESS_MIN, STRESS_MAX,
     SPO2_MIN, SPO2_MAX
 )
-from utils.validators import validate_distance_steps_ratio
+from utils.validators import validate_distance_steps_ratio, validate_distance_steps_consistency, validate_heart_rate
 
 
 def parse_daily_steps(steps_data: Any, date_str: str) -> int:
@@ -155,15 +156,20 @@ def parse_daily_distance(stats: Dict, steps_data: Any, date_str: str, swim_list:
             distance_km = round(total_distance_from_activities, 3)
             print_debug(f"Distance daily {date_str} from activities aggregation (fallback): {distance_km} km")
     
-    # CORRECTION CRITIQUE : Valider le ratio distance/steps pour détecter les erreurs
+    # 🔴 FIX #37: Valider le ratio distance/steps même si steps=0 et seuil max
     steps = parse_daily_steps(steps_data, date_str)
-    if not validate_distance_steps_ratio(distance_km, steps, date_str):
+    is_valid, error_msg = validate_distance_steps_consistency(distance_km, steps, date_str)
+    if not is_valid and error_msg:
+        print_debug(f"⚠️ {date_str}: {error_msg}")
         # Si ratio suspect, essayer de recalculer depuis steps
         if steps > 0:
             estimated_distance = steps * 0.75 / 1000  # 0.75m par pas moyen
             if abs(distance_km - estimated_distance) > estimated_distance * 0.5:
                 print_debug(f"⚠️  Correcting distance for {date_str} from {distance_km} km to {estimated_distance} km (based on steps)")
                 distance_km = estimated_distance
+        # Si distance > 100km sans steps, c'est suspect mais on garde la valeur (peut être vélo/natation longue distance)
+        elif distance_km > 100:
+            print_debug(f"⚠️ {date_str}: Distance très élevée ({distance_km}km) sans steps - possiblement vélo/natation longue distance")
     
     return distance_km
 
@@ -304,9 +310,11 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
         "timeSeries": []
     }
     
+    # FC repos - Chercher dans stats d'abord, puis hr_day comme fallback
+    resting_hr_raw = None
+    max_hr_raw = None
+    
     if isinstance(stats, dict):
-        # FC repos - Chercher dans TOUS les champs possibles
-        # CORRECTION CRITIQUE : Gérer None vs 0 explicitement
         resting_hr_raw = (
             stats.get('restingHeartRate') if stats.get('restingHeartRate') is not None else
             stats.get('restingHR') if stats.get('restingHR') is not None else
@@ -316,21 +324,7 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
             stats.get('rhr') if stats.get('rhr') is not None else
             None
         )
-        # 🟡 FIX : Debug pour aujourd'hui
-        if date_str and date_str.endswith(datetime.now().strftime('%Y-%m-%d')):
-            print_debug(f"parse_daily_heart_rate({date_str}): resting_hr_raw={resting_hr_raw}, hr_day keys={list(hr_day.keys())[:10] if isinstance(hr_day, dict) else 'N/A'}")
         
-        # 🔴 FIX #9: Validation de plage pour FC repos
-        heart_rate["resting"] = safe_int(
-            resting_hr_raw, 
-            0,
-            warn_on_fail=True,
-            min_value=HR_RESTING_MIN,
-            max_value=HR_RESTING_MAX,
-            context=f"dailyMetrics.{date_str}.heartRate.resting"
-        )
-        
-        # FC max - Chercher dans TOUS les champs possibles
         max_hr_raw = (
             stats.get('maxHeartRate') if stats.get('maxHeartRate') is not None else
             stats.get('maxHR') if stats.get('maxHR') is not None else
@@ -340,15 +334,50 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
             stats.get('peakBpm') if stats.get('peakBpm') is not None else
             None
         )
-        # 🔴 FIX #9: Validation de plage pour FC max
-        heart_rate["max"] = safe_int(
-            max_hr_raw, 
-            0,
-            warn_on_fail=True,
-            min_value=HR_MIN,
-            max_value=HR_MAX,
-            context=f"dailyMetrics.{date_str}.heartRate.max"
-        )
+    
+    # Fallback : chercher dans hr_day si pas trouvé dans stats
+    if isinstance(hr_day, dict):
+        if resting_hr_raw is None:
+            resting_hr_raw = (
+                hr_day.get('restingHeartRate') if hr_day.get('restingHeartRate') is not None else
+                hr_day.get('restingHR') if hr_day.get('restingHR') is not None else
+                hr_day.get('avgRestingHeartRate') if hr_day.get('avgRestingHeartRate') is not None else
+                None
+            )
+        if max_hr_raw is None:
+            max_hr_raw = (
+                hr_day.get('maxHeartRate') if hr_day.get('maxHeartRate') is not None else
+                hr_day.get('maxHR') if hr_day.get('maxHR') is not None else
+                hr_day.get('peakHeartRate') if hr_day.get('peakHeartRate') is not None else
+                hr_day.get('maximumHeartRate') if hr_day.get('maximumHeartRate') is not None else
+                None
+            )
+    
+    # 🟡 FIX : Debug pour aujourd'hui
+    if date_str and date_str.endswith(datetime.now().strftime('%Y-%m-%d')):
+        print_debug(f"parse_daily_heart_rate({date_str}): resting_hr_raw={resting_hr_raw}, max_hr_raw={max_hr_raw}, hr_day keys={list(hr_day.keys())[:10] if isinstance(hr_day, dict) else 'N/A'}")
+    
+    # 🔴 FIX #9: Validation de plage pour FC repos
+    heart_rate["resting"] = safe_int(
+        resting_hr_raw, 
+        0,
+        warn_on_fail=True,
+        min_value=HR_RESTING_MIN,
+        max_value=HR_RESTING_MAX,
+        context=f"dailyMetrics.{date_str}.heartRate.resting"
+    )
+    
+    # 🔴 FIX #9: Validation de plage pour FC max
+    heart_rate["max"] = safe_int(
+        max_hr_raw, 
+        0,
+        warn_on_fail=True,
+        min_value=HR_MIN,
+        max_value=HR_MAX,
+        context=f"dailyMetrics.{date_str}.heartRate.max"
+    )
+    
+    if isinstance(stats, dict):
         
         # FC moyenne - Chercher dans TOUS les champs possibles
         avg_hr_raw = (
@@ -403,26 +432,22 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
     if heart_rate["avg"] == 0 and count_hr > 0:
         heart_rate["avg"] = round(sum_hr / count_hr)
     
-    # 🟡 FIX #24: Downsampling optimal pour time series
-    # Cible: ~288 points pour 24h (1 point toutes les 5 min)
-    # Si déjà < 300 points, garder tous les points
-    # Sinon, downsampler intelligemment (pas juste [::5])
+    # 🔴 FIX #24: Downsampling optimal avec compression intelligente
     if len(ts) > 0:
-        TARGET_POINTS = 288  # ~288 points pour 24h à 5min d'intervalle
-        MAX_POINTS = 500  # Limite absolue
-        
-        if len(ts) > MAX_POINTS:
-            # Si trop de points, downsampler plus agressivement
-            step = max(1, len(ts) // TARGET_POINTS)
-            ts = ts[::step]
-            print_debug(f"Downsampled HR time series from {len(ts) * step} to {len(ts)} points (step={step})")
-        elif len(ts) > TARGET_POINTS:
-            # Si légèrement au-dessus, downsampler à 5min
-            ts = ts[::5]
-            print_debug(f"Downsampled HR time series from {len(ts) * 5} to {len(ts)} points (5min interval)")
-        # Si <= TARGET_POINTS, garder tous les points (pas besoin de downsampling)
+        try:
+            # Optimiser la time series (downsampling + compression delta)
+            # Cible: 288 points pour 24h (5min d'intervalle)
+            ts = optimize_time_series(ts, target_points=288, use_delta=True)
+        except Exception as e:
+            print_debug(f"⚠️ Error optimizing time series for {date_str}, using raw data: {e}")
+            # En cas d'erreur, utiliser les données brutes sans compression
+            ts = ts[:288] if len(ts) > 288 else ts  # Limiter à 288 points max
     
     heart_rate["timeSeries"] = ts
+    
+    # Debug final pour vérifier les valeurs
+    if date_str and date_str.endswith(datetime.now().strftime('%Y-%m-%d')):
+        print_debug(f"✅ Final heart_rate for {date_str}: resting={heart_rate['resting']}, max={heart_rate['max']}, avg={heart_rate['avg']}, timeSeries_points={len(ts)}")
     
     # 🟡 FIX : Si toujours à 0 et steps_data fourni, essayer de chercher dedans
     if (heart_rate["resting"] == 0 and heart_rate["max"] == 0 and heart_rate["avg"] == 0) and steps_data and isinstance(steps_data, dict):
@@ -441,6 +466,23 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
         if steps_avg is not None and steps_avg > 0:
             heart_rate["avg"] = safe_int(steps_avg, 0, min_value=HR_MIN, max_value=HR_MAX)
             print_debug(f"✅ Found avg HR in steps_data: {heart_rate['avg']}")
+    
+    # 🔴 FIX #10: Validation de cohérence des valeurs FC
+    is_valid, error_msg = validate_heart_rate(
+        heart_rate['resting'],
+        heart_rate['max'],
+        heart_rate['avg'],
+        date_str
+    )
+    if not is_valid and error_msg:
+        print_debug(f"⚠️ Validation FC échouée pour {date_str}: {error_msg}")
+        # Corriger si possible
+        if heart_rate['resting'] > heart_rate['max']:
+            # Échanger si nécessaire
+            temp = heart_rate['resting']
+            heart_rate['resting'] = heart_rate['max']
+            heart_rate['max'] = temp
+            print_debug(f"✅ FC corrigée: resting={heart_rate['resting']}, max={heart_rate['max']}")
     
     print_debug(f"Final HR for {date_str} - resting: {heart_rate['resting']}, max: {heart_rate['max']}, avg: {heart_rate['avg']}, timeSeries length: {len(heart_rate['timeSeries'])}")
     return heart_rate

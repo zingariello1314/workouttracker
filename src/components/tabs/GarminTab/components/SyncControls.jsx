@@ -1,4 +1,5 @@
 import React from 'react';
+import { ARIA_LABELS } from '../constants';
 
 /**
  * Composant pour les contrôles de synchronisation Garmin
@@ -70,6 +71,9 @@ export default function SyncControls({
           <button
             onClick={syncNow}
             disabled={loading}
+            aria-label={ARIA_LABELS.SYNC_BUTTON}
+            aria-busy={loading}
+            aria-disabled={loading}
             className={`px-4 py-2 rounded-md text-white font-medium ${
               loading
                 ? 'bg-slate-600 cursor-not-allowed'
@@ -109,6 +113,9 @@ export default function SyncControls({
         <button
           onClick={backfill}
           disabled={loading || !startDate || !endDate}
+          aria-label={ARIA_LABELS.BACKFILL_BUTTON}
+          aria-busy={loading}
+          aria-disabled={loading || !startDate || !endDate}
           className={`px-4 py-2 rounded-md text-white ${
             loading || !startDate || !endDate
               ? 'bg-slate-600 cursor-not-allowed'

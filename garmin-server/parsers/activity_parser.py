@@ -11,6 +11,7 @@ from typing import Any, Dict, Optional, Tuple
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.helpers import safe_int, safe_float, print_debug, normalize_datetime_to_utc
+from utils.validators import validate_swimming_consistency
 from parsers.validation_ranges import (
     HR_MIN, HR_MAX, HR_RESTING_MIN, HR_RESTING_MAX,
     CALORIES_MIN, CALORIES_MAX,
@@ -119,6 +120,12 @@ def parse_common_metrics(act: Dict[str, Any], act_details: Optional[Dict[str, An
     
     # Utiliser détails si disponibles, sinon summary
     act = act_details if act_details else act_summary
+    
+    # Déterminer le type d'activité pour les messages de contexte
+    activity_type = (act_summary.get('activityTypeDTO', {}).get('typeKey') or 
+                    act_summary.get('activityType') or 
+                    act.get('activityType') or 
+                    'unknown')
     
     # 🔴 FIX #9: Validation de plage pour durée
     duration = safe_int(
@@ -356,9 +363,19 @@ def parse_common_metrics(act: Dict[str, Any], act_details: Optional[Dict[str, An
         intensity_moderate + intensity_vigorous if (intensity_moderate > 0 or intensity_vigorous > 0) else 0
     )
     
-    # CORRECTION : Extraire timestamps, localisation, élévation depuis summaryDTO
-    start_time_local = (summary_dto.get('startTimeLocal') if isinstance(summary_dto, dict) else None) or act.get('startTimeLocal') or act_summary.get('startTimeLocal')
-    start_time_gmt = (summary_dto.get('startTimeGMT') if isinstance(summary_dto, dict) else None) or act.get('startTimeGMT') or act_summary.get('startTimeGMT')
+    # 🔴 FIX #11: Normaliser les timestamps en UTC ISO format
+    start_time_local_raw = (summary_dto.get('startTimeLocal') if isinstance(summary_dto, dict) else None) or act.get('startTimeLocal') or act_summary.get('startTimeLocal')
+    start_time_gmt_raw = (summary_dto.get('startTimeGMT') if isinstance(summary_dto, dict) else None) or act.get('startTimeGMT') or act_summary.get('startTimeGMT')
+    
+    # Normaliser en UTC ISO format
+    start_time_local = normalize_datetime_to_utc(start_time_local_raw) if start_time_local_raw else None
+    start_time_gmt = normalize_datetime_to_utc(start_time_gmt_raw) if start_time_gmt_raw else start_time_local
+    
+    # 🔴 FIX #11: Normaliser les timestamps d'arrivée si disponibles
+    end_time_local_raw = (summary_dto.get('endTimeLocal') if isinstance(summary_dto, dict) else None) or act.get('endTimeLocal') or act_summary.get('endTimeLocal')
+    end_time_gmt_raw = (summary_dto.get('endTimeGMT') if isinstance(summary_dto, dict) else None) or act.get('endTimeGMT') or act_summary.get('endTimeGMT')
+    end_time_local = normalize_datetime_to_utc(end_time_local_raw) if end_time_local_raw else None
+    end_time_gmt = normalize_datetime_to_utc(end_time_gmt_raw) if end_time_gmt_raw else end_time_local
     
     # Localisation (latitude/longitude départ et arrivée)
     start_lat = (summary_dto.get('startLatitude') if isinstance(summary_dto, dict) else None) or act.get('startLatitude')
@@ -514,8 +531,8 @@ def parse_common_metrics(act: Dict[str, Any], act_details: Optional[Dict[str, An
             "total": intensity_total if intensity_total > 0 else None
         },
         # 🔴 FIX #11: Normaliser timestamps en UTC ISO
-        "startTimeLocal": normalize_datetime_to_utc(start_time_local) if start_time_local else None,
-        "startTimeGMT": normalize_datetime_to_utc(start_time_gmt) if start_time_gmt else None,
+        "startTimeLocal": start_time_local,  # Déjà normalisé en UTC ISO format
+        "startTimeGMT": start_time_gmt,  # Déjà normalisé en UTC ISO format
         "location": {
             "start": {"lat": start_lat, "lng": start_lng} if (start_lat and start_lng) else None,
             "end": {"lat": end_lat, "lng": end_lng} if (end_lat and end_lng) else None
@@ -965,6 +982,19 @@ def parse_swimming_metrics(entry_base: Dict[str, Any], summary_dto: Dict[str, An
             "elapsedTime": elapsed_time if elapsed_time != total_time else total_time
         }
     })
+    
+    # 🔴 FIX #10: Validation de cohérence des métriques de natation
+    act_id = act_summary.get('activityId')
+    if distance_swim > 0 and total_time > 0 and avg_pace > 0:
+        is_valid, error_msg = validate_swimming_consistency(
+            distance_swim,  # distance en mètres
+            total_time,     # durée en secondes
+            avg_pace,       # allure en secondes par 100m
+            f"activity.{act_id}"
+        )
+        if not is_valid and error_msg:
+            print_debug(f"⚠️ Validation natation échouée pour activité {act_id}: {error_msg}")
+            # Ne pas bloquer, juste avertir
     
     print_debug(f"Added swimming activity {act_id} to swim_list. Total swimming metrics parsed.")
     
