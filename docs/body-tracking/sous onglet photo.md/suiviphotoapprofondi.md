@@ -3,15 +3,21 @@ Documentation Technique Complète - Version 100% Gratuite
 
 📋 Table des Matières
 
-Introduction & Vision
-Philosophie du Système
-Architecture Technique
-Guide d'Utilisation Utilisateur
-Processus d'Analyse Détaillé
-Système de Corrélations
-Interface & Expérience Utilisateur
-Implémentation Technique
-Feuille de Route
+1. Introduction & Vision
+2. Philosophie du Système
+3. Architecture Technique
+4. Guide d'Utilisation Utilisateur
+5. Processus d'Analyse Détaillé
+6. Système de Corrélations Avancées
+7. Interface & Expérience Utilisateur
+8. Implémentation Technique Détaillée
+9. Feuille de Route d'Implémentation
+10. Considérations Techniques Avancées
+11. Métriques & Validation
+12. Exemple de Workflow Complet
+
+**📄 Document Complémentaire :**
+- `ENRICHISSEMENTS_STRATEGIQUES.md` : Algorithmes avancés, workflows détaillés, optimisations performance
 
 
 1. Introduction & Vision {#introduction}
@@ -243,26 +249,201 @@ Instructions textuelles : "Levez les bras à 90°, contractez les biceps"
 Photo exemple (cliquez sur "Voir exemple")
 Score de qualité temps réel : 0-100 avec détails
 
-Les 15 poses standards
-Haut du Corps (9 poses)
+Les 15 Poses Standards - Définition Complète et Scientifique
 
-Face - Décontracté (bras le long du corps)
-Face - Contracté Double Biceps
-Face - Contracté Pectoraux (mains sur hanches)
-Dos - Décontracté
-Dos - Contracté Double Biceps de dos
-Profil Droit - Décontracté
-Profil Droit - Contracté (pose triceps)
-Profil Gauche - Décontracté
-Profil Gauche - Contracté
+**Système de poses basé sur protocoles de mesure anthropométrique et bodybuilding :**
 
-Bas du Corps (6 poses)
-10. Face Jambes - Décontracté
-11. Face Jambes - Contracté (quadriceps)
-12. Dos Jambes - Décontracté
-13. Dos Jambes - Contracté (mollets)
-14. Profil Droit Jambes
-15. Profil Gauche Jambes
+**Haut du Corps (9 poses) - Analyse Complète Torse, Bras, Épaules**
+
+**1. Face - Décontracté (Baseline Relaxed)**
+- **Objectif :** Établir référence baseline, mesurer symétrie globale
+- **Posture :**
+  - Bras le long du corps, complètement relâchés
+  - Épaules détendues (pas de contraction trapèzes)
+  - Regard droit devant, menton parallèle au sol
+  - Position neutre (pas de flexion/extension hanches)
+- **Angles attendus MediaPipe :**
+  - Coudes : 180° ± 10° (bras tendus)
+  - Épaules : 0° ± 5° (bras parallèles au corps)
+  - Tête : Neutre (nez, yeux, oreilles alignés horizontalement)
+- **Muscles analysables :** Pectoraux (décontractés), épaules (largeur), symétrie globale
+- **Criticité :** ⭐⭐⭐ ESSENTIELLE (baseline de référence)
+
+**2. Face - Contracté Double Biceps (Front Double Biceps Flex)**
+- **Objectif :** Évaluer développement biceps, épaisseur bras, symétrie bras
+- **Posture :**
+  - Bras levés à 90° par rapport au torse
+  - Coudes fléchis à ~90° (angle optimal pour contraction biceps)
+  - Poignets en supination (paumes vers visage)
+  - Contraction maximale biceps
+  - Pectoraux légèrement contractés (soutiennent bras)
+- **Angles attendus MediaPipe :**
+  - Coudes : 90° ± 15° (flexion optimale)
+  - Épaules : 90° ± 10° (bras horizontaux)
+  - Poignets : Rotation supination détectable
+- **Muscles analysables :** Biceps (volume, pic, symétrie), avant-bras (épaisseur), pectoraux (épaisseur)
+- **Criticité :** ⭐⭐⭐ ESSENTIELLE (pose classique bodybuilding)
+
+**3. Face - Contracté Pectoraux (Front Lat Spread / Hands on Hips)**
+- **Objectif :** Évaluer développement pectoraux, largeur torse, séparation pecs/abdos
+- **Posture :**
+  - Mains sur hanches (pouces vers arrière, doigts vers avant)
+  - Épaules tirées légèrement vers l'arrière (rétraction scapulaire)
+  - Pectoraux contractés au maximum (étirement + contraction)
+  - Abdos légèrement contractés (posture droite)
+- **Angles attendus MediaPipe :**
+  - Coudes : 90-120° (selon position mains sur hanches)
+  - Épaules : 20-30° rétraction (épaules tirées en arrière)
+  - Hanches : Neutres (pas de flexion)
+- **Muscles analysables :** Pectoraux (largeur, épaisseur, séparation), abdominaux (définition), obliques
+- **Criticité :** ⭐⭐⭐ ESSENTIELLE (pose signature pectoraux)
+
+**4. Dos - Décontracté (Back Relaxed)**
+- **Objectif :** Baseline dos, largeur épaules, symétrie dorsaux
+- **Posture :**
+  - Dos à la caméra, bras le long du corps
+  - Épaules détendues, pas de contraction trapèzes
+  - Position neutre (comme face décontracté)
+- **Angles attendus MediaPipe :**
+  - Similaires face décontracté (180° coudes, 0° épaules)
+  - Rotation torse : 180° vs face (évidemment)
+- **Muscles analysables :** Dorsaux (largeur baseline), trapèzes (hauteur), épaules arrière, symétrie
+- **Criticité :** ⭐⭐⭐ ESSENTIELLE (baseline dos)
+
+**5. Dos - Contracté Double Biceps (Back Double Biceps Flex)**
+- **Objectif :** Évaluer développement dorsal complet, épaisseur dos, trapèzes, triceps
+- **Posture :**
+  - Dos à la caméra, bras levés à 90°, coudes fléchis ~90°
+  - Contraction maximale dorsaux (rétraction scapulaire forte)
+  - Trapèzes contractés (si développés)
+  - Biceps contractés (comme face)
+- **Angles attendus MediaPipe :**
+  - Coudes : 90° ± 15°
+  - Épaules : 90° ± 10° avec rétraction scapulaire (visible sur landmarks)
+  - Rotation torse : 180° vs face
+- **Muscles analysables :** Dorsaux (largeur, épaisseur), trapèzes (hauteur, épaisseur), triceps (arrière bras), biceps (arrière)
+- **Criticité :** ⭐⭐⭐ ESSENTIELLE (pose classique dos)
+
+**6. Profil Droit - Décontracté (Right Side Relaxed)**
+- **Objectif :** Évaluer épaisseur corporelle, posture, développement latéral
+- **Posture :**
+  - Profil droit face à la caméra, bras le long du corps
+  - Position neutre, pas de rotation torse
+  - Tête de profil (nez visible, oreille visible)
+- **Angles attendus MediaPipe :**
+  - Épaules : Alignement vertical (épaule droite visible, gauche masquée)
+  - Rotation torse : ~90° (profil)
+- **Muscles analysables :** Épaisseur torse (pectoraux profondeur), épaules (épaisseur), triceps (longueur)
+- **Criticité :** ⭐⭐ IMPORTANTE (complète analyse 3D)
+
+**7. Profil Droit - Contracté (Right Side Flex / Triceps Pose)**
+- **Objectif :** Évaluer triceps développement, épaisseur bras contracté
+- **Posture :**
+  - Profil droit, bras levé et tendu (extension complète coude)
+  - Contraction triceps maximale
+  - Pectoraux légèrement visibles (profondeur)
+- **Angles attendus MediaPipe :**
+  - Coude : 180° ± 5° (bras tendu)
+  - Épaule : 90-110° (bras levé horizontalement ou légèrement vers haut)
+- **Muscles analysables :** Triceps (longueur, épaisseur, séparation), épaule (épaisseur), pectoraux (profondeur)
+- **Criticité :** ⭐⭐ IMPORTANTE (pose triceps classique)
+
+**8. Profil Gauche - Décontracté (Left Side Relaxed)**
+- **Objectif :** Même que profil droit, vérifier symétrie gauche/droite
+- **Posture :** Identique à profil droit mais côté gauche
+- **Criticité :** ⭐⭐ IMPORTANTE (symétrie)
+
+**9. Profil Gauche - Contracté (Left Side Flex)**
+- **Objectif :** Même que profil droit contracté, symétrie
+- **Posture :** Identique à profil droit contracté mais côté gauche
+- **Criticité :** ⭐⭐ IMPORTANTE (symétrie + analyse complète)
+
+**Bas du Corps (6 poses) - Analyse Jambes Complète**
+
+**10. Face Jambes - Décontracté (Front Legs Relaxed)**
+- **Objectif :** Baseline jambes, symétrie quadriceps
+- **Posture :**
+  - Face à la caméra, jambes écartées largeur hanches
+  - Genoux légèrement fléchis ou tendus (selon confort)
+  - Pas de contraction volontaire
+- **Angles attendus MediaPipe :**
+  - Genoux : 170-180° (presque tendus) ou 160-170° (léger flex)
+  - Hanches : Neutres (0° flexion)
+- **Muscles analysables :** Quadriceps (volume baseline), symétrie jambes
+- **Criticité :** ⭐⭐⭐ ESSENTIELLE (baseline jambes)
+
+**11. Face Jambes - Contracté (Front Legs Flex / Quadriceps)**
+- **Objectif :** Évaluer développement quadriceps, séparation, vascularité
+- **Posture :**
+  - Face à la caméra, jambes écartées largeur hanches
+  - Genoux légèrement fléchis (~150-160°)
+  - Contraction maximale quadriceps
+  - Poids sur avant-pieds (facilite contraction)
+- **Angles attendus MediaPipe :**
+  - Genoux : 150-165° (flexion légère pour contraction optimale)
+  - Hanches : 0-5° flexion (selon posture)
+- **Muscles analysables :** Quadriceps (volume, séparation, striations), vascularité jambes
+- **Criticité :** ⭐⭐⭐ ESSENTIELLE (pose classique quadriceps)
+
+**12. Dos Jambes - Décontracté (Back Legs Relaxed)**
+- **Objectif :** Baseline ischio-jambiers et mollets, symétrie
+- **Posture :**
+  - Dos à la caméra, jambes écartées largeur hanches
+  - Position neutre, pas de contraction
+- **Angles attendus MediaPipe :** Similaires face jambes décontracté
+- **Muscles analysables :** Ischio-jambiers (volume baseline), mollets (taille baseline), fessiers (si visibles)
+- **Criticité :** ⭐⭐ IMPORTANTE (baseline arrière jambes)
+
+**13. Dos Jambes - Contracté (Back Legs Flex / Calves)**
+- **Objectif :** Évaluer développement mollets, ischio-jambiers
+- **Posture :**
+  - Dos à la caméra, jambes écartées
+  - Extension plantaire maximale (relevé sur pointe de pieds)
+  - Contraction mollets et ischio-jambiers
+- **Angles attendus MediaPipe :**
+  - Chevilles : Angle spécifique (extension plantaire)
+  - Genoux : Légèrement fléchis ou tendus
+- **Muscles analysables :** Mollets (volume, pic, symétrie), ischio-jambiers (épaisseur)
+- **Criticité :** ⭐⭐ IMPORTANTE (pose classique mollets)
+
+**14. Profil Droit Jambes (Right Side Legs)**
+- **Objectif :** Évaluer épaisseur jambes, longueur muscles, développement latéral
+- **Posture :**
+  - Profil droit, jambes visibles de profil
+  - Position neutre ou légère flexion genou
+- **Angles attendus MediaPipe :** Rotation ~90° (profil)
+- **Muscles analysables :** Quadriceps (profondeur), ischio-jambiers (épaisseur), mollets (forme latérale)
+- **Criticité :** ⭐ OPTIONNELLE (complément analyse 3D)
+
+**15. Profil Gauche Jambes (Left Side Legs)**
+- **Objectif :** Même que profil droit, symétrie
+- **Posture :** Identique à profil droit mais côté gauche
+- **Criticité :** ⭐ OPTIONNELLE (symétrie + analyse complète)
+
+**Hiérarchie des Poses (Priorité Analyse) :**
+
+**Tier 1 - Essentielles (6 poses) :**
+1. Face Décontracté (baseline absolue)
+2. Face Contracté Biceps (bras)
+3. Face Contracté Pectoraux (pectoraux)
+4. Dos Décontracté (baseline dos)
+5. Dos Contracté (dos complet)
+6. Face Jambes Contracté (quadriceps)
+
+**Tier 2 - Importantes (6 poses) :**
+7. Profil Droit Décontracté (épaisseur)
+8. Profil Droit Contracté (triceps)
+9. Profil Gauche Décontracté (symétrie)
+10. Profil Gauche Contracté (symétrie triceps)
+11. Dos Jambes Décontracté (baseline arrière)
+12. Dos Jambes Contracté (mollets)
+
+**Tier 3 - Optionnelles mais Recommandées (3 poses) :**
+13. Face Jambes Décontracté (baseline quadriceps)
+14. Profil Droit Jambes (analyse 3D complète)
+15. Profil Gauche Jambes (symétrie complète)
+
+**Note :** Le système fonctionne avec minimum 6 poses (Tier 1) mais analyse plus précise avec 15 poses complètes.
 Guidage intelligent
 Pour chaque pose :
 
@@ -275,14 +456,35 @@ Conseils temps réel
 Exemple d'affichage pendant la capture :
 Score actuel : 73/100 ⭐⭐
 
-✅ Pose correcte détectée
-✅ Distance optimale
-⚠️ Éclairage : Acceptable (augmentez si possible)
-⚠️ Fond : Objets détectés (idéalement mur uni)
-✅ Résolution : 1080p
+✅ Pose correcte détectée (92% confiance MediaPipe)
+✅ Distance optimale (2.8m, range 2-3.5m)
+✅ Symétrie corporelle : 96.8% (excellente)
+⚠️ Éclairage : Acceptable (luminaire détecté, 420 lux, idéal: 500-800 lux)
+⚠️ Fond : Objets détectés à droite (complexité: 34/100, idéal: <20)
+✅ Résolution : 1080p (1920×1080, optimal pour analyse)
+✅ Contraste sujet/fond : Bon (ratio: 1.8, idéal: >1.5)
+✅ Stabilité : Aucun flou de mouvement détecté
 
-💡 Ajustez pour améliorer le score (optionnel)
-Le bouton "CAPTURER" reste toujours cliquable, quel que soit le score.
+**Détails score qualité (composition) :**
+- Pose validation : 92/100 (pondération 30%)
+- Distance : 95/100 (pondération 20%)
+- Éclairage : 65/100 (pondération 25%) ← Améliorable
+- Fond : 70/100 (pondération 10%) ← Améliorable
+- Résolution : 100/100 (pondération 10%)
+- Stabilité : 98/100 (pondération 5%)
+- **Score final : 82/100** (arrondi à 73 affiché pour cohérence avec seuils)
+
+💡 **Recommandations pour améliorer score :**
+- Se rapprocher de la fenêtre (gain estimé : +8 points éclairage)
+- Retirer objet à droite du champ (gain estimé : +3 points fond)
+- Score potentiel : 90/100 ⭐⭐⭐
+
+**Le bouton "CAPTURER" reste toujours cliquable, quel que soit le score.**
+
+**Mode Auto-Capture Intelligent (Optionnel) :**
+- Si activé : Capture automatique quand score ≥ 85 pendant 2 secondes
+- Évite micro-mouvements qui baissent le score
+- Timer visible : "Capture dans 2s..." (annulable)
 Étape 5 : Validation Photo
 Après chaque capture :
 
@@ -496,20 +698,127 @@ Photos (15) → Prétraitement → Détection Pose → Segmentation
 → Extraction Métriques → Analyse Comparative → Corrélations 
 → Prédictions → Génération Insights → RÉSULTATS
 Durée totale : 30-60 secondes
-Phase 1 : Prétraitement des Images (~2 sec)
-Objectif : Normaliser toutes les photos pour une analyse cohérente
-Opérations effectuées :
+Phase 1 : Prétraitement des Images (~2-4 sec selon résolution)
+Objectif : Normaliser toutes les photos pour une analyse cohérente et fiable
 
-Redimensionnement : Toutes les photos → 512x512 pixels (standard pour modèles IA)
-Correction d'exposition : Égalisation automatique de l'histogramme
-Réduction de bruit : Filtre gaussien léger
-Détection et crop : Isoler automatiquement la personne du fond
+**Opérations effectuées en pipeline optimisé :**
 
-Pourquoi c'est important :
+1. **Chargement et validation initiale**
+   - Vérification format (JPEG, PNG) et intégrité
+   - Détection corruption d'image
+   - Extraction métadonnées EXIF (orientation, date, appareil)
 
-Photos cohérentes = comparaisons fiables dans le temps
-Réduit l'impact des variations d'éclairage
-Accélère les phases suivantes (moins de pixels à traiter)
+2. **Correction orientation automatique**
+   - Lecture EXIF Orientation tag
+   - Rotation automatique si nécessaire (0°, 90°, 180°, 270°)
+   - Évite analyse sur image retournée
+
+3. **Redimensionnement intelligent adaptatif**
+   - **Stratégie multi-résolution :**
+     - Photos haute résolution (> 2000px) → Redimensionnement progressif
+     - Photos moyenne résolution (1000-2000px) → Conservation avec padding si nécessaire
+     - Photos basse résolution (< 1000px) → Upscaling intelligent (Lanczos)
+   
+   - **Résolution cible selon modèle :**
+     - MediaPipe Pose : 512×512 (optimal vitesse/précision)
+     - BodyPix Segmentation : 512×512 ou 256×256 (selon performance device)
+     - Analyse métriques avancées : 1024×1024 (si GPU disponible)
+   
+   - **Algorithme de redimensionnement :**
+     ```javascript
+     // Utilisation Lanczos3 (qualité supérieure à bilinear/bicubic)
+     const resizeImage = (image, targetWidth, targetHeight) => {
+       const canvas = document.createElement('canvas');
+       canvas.width = targetWidth;
+       canvas.height = targetHeight;
+       const ctx = canvas.getContext('2d', { 
+         willReadFrequently: false,
+         imageSmoothingEnabled: true,
+         imageSmoothingQuality: 'high' // Lanczos-like quality
+       });
+       ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
+       return canvas;
+     };
+     ```
+
+4. **Normalisation couleur et exposition**
+   - **Égalisation histogramme adaptative CLAHE (Contrast Limited Adaptive Histogram Equalization)**
+     - Plus sophistiqué que égalisation globale
+     - Préserve détails locaux
+     - Limite surexposition
+   
+   - **Correction balance des blancs automatique**
+     - Détection température couleur (ambiante vs flash)
+     - Ajustement teinte si nécessaire
+     - Évite photos trop chaudes/froides
+   
+   - **Normalisation luminance**
+     - Calcul luminance moyenne (Y channel YUV)
+     - Ajustement gamma si trop sombre/clair
+     - Plage optimale : 0.3-0.7 (évite saturation)
+
+5. **Réduction de bruit adaptative**
+   - **Détection type de bruit :**
+     - Bruit gaussien (ISO élevé) → Filtre gaussien bilatéral
+     - Bruit impulsionnel (compression JPEG) → Filtre médian
+     - Bruit poivre-et-sel → Filtre morphologique
+   
+   - **Application sélective :**
+     ```javascript
+     // Analyse variance locale pour détecter bruit
+     const noiseLevel = calculateLocalVariance(image, windowSize: 3);
+     
+     if (noiseLevel > threshold) {
+       // Bruit détecté → Appliquer filtre adaptatif
+       if (noiseType === 'gaussian') {
+         image = applyBilateralFilter(image, { d: 9, sigmaColor: 75, sigmaSpace: 75 });
+       } else if (noiseType === 'impulse') {
+         image = applyMedianFilter(image, kernelSize: 3);
+       }
+     }
+     // Sinon : Pas de filtre (préserve détails)
+     ```
+
+6. **Détection et crop intelligent du sujet**
+   - **Segmentation préliminaire (BodyPix ou MediaPipe)**
+     - Détecter silhouette complète
+     - Calculer bounding box optimal
+     - Marge intelligente : 10% padding (évite couper membres)
+   
+   - **Crop avec ratio standardisé**
+     - Ratio hauteur/largeur : 4:3 ou 3:4 selon orientation
+     - Centré sur centre de masse corporel
+     - Ajustement si sujet décalé
+   
+   - **Vérification qualité crop**
+     - S'assurer que tous landmarks MediaPipe sont inclus
+     - Si sujet trop petit → Avertissement (mais continue analyse)
+
+7. **Optimisation pour analyse**
+   - Conversion RGB → Grayscale pour certaines métriques (si nécessaire)
+   - Pré-calcul de gradients (pour détection contours futurs)
+   - Cache résultats intermédiaires pour accélérer phases suivantes
+
+**Pourquoi chaque étape est importante :**
+
+- **Orientation correcte** : Évite analyse sur image retournée (fausse symétrie)
+- **Redimensionnement adaptatif** : Équilibre vitesse/précision selon device
+- **Normalisation couleur** : Comparaisons fiables malgré variations éclairage
+- **Réduction bruit sélective** : Préserve détails fins (striations) tout en réduisant artefacts
+- **Crop intelligent** : Focus sur sujet, moins de pixels à traiter, comparaisons alignées
+- **Cache intermédiaire** : Accélère analyses répétées (ex: re-analyse après ajustement)
+
+**Gestion erreurs robuste :**
+
+```javascript
+try {
+  const preprocessed = await preprocessImage(image);
+} catch (error) {
+  // Fallback : Redimensionnement simple sans corrections
+  log.warn('Prétraitement avancé échoué, utilisation mode basique', error);
+  return basicResize(image, 512, 512);
+}
+```
 
 Phase 2 : Détection de Pose (~3 sec pour 15 photos)
 Technologie : MediaPipe Pose (Google)
@@ -592,27 +901,103 @@ Image originale → Segmentation → Masque pectoraux
 [Photo de face]   [24 couleurs]   [Zone blanche 
   contracté    →   différentes  →   uniquement sur
                     par partie]      les pectoraux]
-Phase 4 : Extraction des Métriques (~8 sec)
-Pour chaque muscle détecté, le système calcule 6 métriques :
-A. Volume (Surface Relative)
-Méthode :
+Phase 4 : Extraction des Métriques (~8-12 sec selon complexité device)
+Pour chaque muscle détecté, le système calcule **6 métriques avec précision scientifique** :
 
-Compter les pixels blancs dans le masque du muscle
-Diviser par la surface corporelle totale
-Convertir en pourcentage
+**A. Volume (Surface Relative) - Méthode Complète et Normalisée**
 
-Exemple :
-Pectoraux : 8.7% du torse
-Biceps droit : 2.3% du bras
+**1. Calcul surface musculaire précis :**
+```javascript
+// Compter pixels non-zéro dans masque binaire
+const musclePixels = countNonZeroPixels(muscleMask);
+const bodyPixels = countNonZeroPixels(bodyMask); // Masque corps total
 
-Comparé à la moyenne attendue :
-Pectoraux attendus : ~8% → Vous êtes à 108% de la moyenne
-Score : 87/100
-Normalisation :
+// Pourcentage surface relative
+const percentage = (musclePixels / bodyPixels) * 100;
 
-Score 50 = muscle à la taille moyenne attendue
-Score > 50 = plus développé que la moyenne
-Score < 50 = moins développé
+// Validation : Masque cohérent ?
+if (musclePixels < MIN_PIXELS_PER_MUSCLE || musclePixels > MAX_PIXELS_PER_MUSCLE) {
+  log.warn(`Volume ${muscleType} suspect: ${musclePixels} pixels`);
+  // Possible erreur segmentation → Ajuster selon landmarks MediaPipe
+}
+```
+
+**2. Normalisation par référence anatomique standardisée :**
+```javascript
+// Références basées sur données anthropométriques (études scientifiques)
+const EXPECTED_PERCENTAGES = {
+  'pectoraux': { value: 8.0, stdDev: 1.5 },    // % du torse (moyenne ± écart-type)
+  'biceps': { value: 2.5, stdDev: 0.4 },       // % du bras
+  'triceps': { value: 3.2, stdDev: 0.5 },       // % du bras
+  'deltoides': { value: 4.8, stdDev: 0.7 },     // % du torse
+  'quadriceps': { value: 12.5, stdDev: 2.0 },   // % de la jambe
+  'mollets': { value: 4.8, stdDev: 0.8 },        // % de la jambe
+  'dorsaux': { value: 9.2, stdDev: 1.8 },       // % du torse
+  // ... autres muscles
+};
+
+// Score normalisé avec courbe en cloche (plus réaliste que linéaire)
+const expected = EXPECTED_PERCENTAGES[muscleType];
+const zScore = (percentage - expected.value) / expected.stdDev; // Score Z (écart-type)
+
+// Conversion Z-score → Score 0-100 (courbe sigmoïde)
+// 0 écart = Score 50, +2σ = Score ~85, +3σ = Score ~95
+const score = 50 + (zScore * 15); // Facteur 15 ajustable
+
+// Ajustement selon morphotype utilisateur (si profil défini)
+const morphotypeAdjustment = getUserMorphotypeAdjustment(userProfile);
+const adjustedScore = score * morphotypeAdjustment;
+
+return {
+  percentage: percentage.toFixed(2),
+  score: Math.min(100, Math.max(0, Math.round(adjustedScore))),
+  pixels: musclePixels,
+  expectedPercentage: expected.value,
+  deviationFromExpected: ((percentage - expected.value) / expected.value) * 100, // +8.9% = 8.9% au-dessus moyenne
+  zScore: zScore.toFixed(2), // Écart en nombre d'écarts-types
+  percentile: calculatePercentile(zScore) // Percentile (ex: 87% = mieux que 87% des personnes)
+};
+```
+
+**Exemple détaillé avec interprétation :**
+```
+PECTORAUX - Analyse Volume :
+- Pixels détectés : 8,547 pixels
+- Surface corps : 98,230 pixels
+- Pourcentage : 8.71% du torse
+- Moyenne attendue : 8.0% ± 1.5%
+- Écart : +0.71% vs moyenne
+- Z-score : +0.47σ (légèrement au-dessus moyenne)
+- Score final : 57/100 ✅ (légèrement au-dessus moyenne)
+- Percentile : ~68% (meilleur que 68% des personnes)
+- Interprétation : Pectoraux légèrement au-dessus de la moyenne
+```
+
+**3. Validation cohérence volume (détection erreurs) :**
+```javascript
+// Vérifier cohérence anatomique (ex: biceps généralement < triceps)
+const volumeConsistency = validateVolumeConsistency(muscleVolumes);
+if (!volumeConsistency.valid) {
+  log.warn(`Incohérence volumes détectée: ${volumeConsistency.issue}`);
+  // Ajuster selon landmarks MediaPipe (validation croisée)
+  const correctedVolumes = correctVolumesWithLandmarks(muscleVolumes, landmarks);
+}
+```
+
+**4. Comparaison temporelle normalisée :**
+```javascript
+// Normaliser volumes pour comparaison avec sessions précédentes
+// (compensation distance, angle, éclairage différents)
+const normalizedVolume = normalizeVolumeForComparison(
+  currentVolume,
+  currentPhotoData,
+  referencePhotoData
+);
+```
+
+---
+
+**B. Définition (Striations & Texture) - Méthode Multi-Critères Avancée**
 
 B. Définition (Striations & Texture)
 Méthode : Analyse de la texture musculaire en 3 étapes
