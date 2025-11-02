@@ -1,7 +1,11 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { formatDistance, formatSleepDuration } from '../utils/garminFormatters';
 import GanttChart from './GanttChart';
 import AdvancedStatistics from './AdvancedStatistics';
+import logger from '../../../../utils/logger';
+
+const log = logger.component('GarminDashboard');
 
 /**
  * Composant Dashboard pour afficher les métriques quotidiennes principales
@@ -24,9 +28,9 @@ export default function GarminDashboard({
     );
   }
 
-  // Debug log
+  // Debug log (seulement en développement)
   React.useEffect(() => {
-    console.log('[GarminDashboard] Props:', {
+    log.debug('Props:', {
       hasDailyMetrics: !!dailyMetrics,
       dateKeys: dailyMetrics ? Object.keys(dailyMetrics).sort() : [],
       selectedDate,
@@ -40,10 +44,10 @@ export default function GarminDashboard({
   const calories = d.calories || {};
   const hr = d.heartRate || {};
 
-  // Debug log pour calories
+  // Debug log pour calories (seulement en développement)
   React.useEffect(() => {
     if (displayDate && d) {
-      console.log('[GarminDashboard] Metrics for', displayDate, ':', {
+      log.debug(`Metrics for ${displayDate}:`, {
         steps: d.steps,
         distance: d.distance,
         calories: d.calories,
@@ -278,5 +282,23 @@ export default function GarminDashboard({
       </div>
     </div>
   );
+}
+
+// 🔴 FIX : Validation PropTypes (seulement en développement)
+if (process.env.NODE_ENV === 'development') {
+  GarminDashboard.propTypes = {
+    dailyMetrics: PropTypes.objectOf(PropTypes.object).isRequired,
+    selectedDate: PropTypes.string,
+    comparisonMode: PropTypes.bool,
+    compareDate: PropTypes.string,
+    activities: PropTypes.shape({
+      swimming: PropTypes.array,
+      jumpRope: PropTypes.array,
+      cardio: PropTypes.array
+    }),
+    periodFilter: PropTypes.oneOf(['all', 'week', 'month', 'year', 'custom']),
+    customStartDate: PropTypes.string,
+    customEndDate: PropTypes.string
+  };
 }
 

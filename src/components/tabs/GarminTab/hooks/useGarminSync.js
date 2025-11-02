@@ -1,6 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { useGarminData } from '../../../../hooks/useGarminData';
 import { SYNC_TIMEOUT_MS, CACHE_TTL_MS, RETRY_BASE_DELAY_MS, RETRY_MAX_ATTEMPTS } from '../constants';
+import logger from '../../../../utils/logger';
+
+const log = logger.hook('useGarminSync');
 
 const BASES = ['http://localhost:3031', 'http://localhost:3001'];
 
@@ -62,7 +65,7 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
           // 🔴 FIX #51-60: Utiliser constante pour base delay
           if (attempt < retries - 1) {
             const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt); // 1s, 2s, 4s...
-            console.log(`[GarminSync] Tentative ${attempt + 1}/${retries} échouée pour ${b}${path}, retry dans ${delay}ms...`);
+            log.debug(`Tentative ${attempt + 1}/${retries} échouée pour ${b}${path}, retry dans ${delay}ms...`);
             await new Promise(resolve => setTimeout(resolve, delay));
           }
           continue; // Essayer la prochaine base URL
@@ -80,20 +83,10 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
       if (dbReady) {
         await saveActivities(json.data.activities || {});
         await saveDailyMetrics(json.data.dailyMetrics || {});
-        // Recharger depuis IndexedDB pour fusionner avec les données existantes
-        const loaded = await loadAllData();
-        if (loaded) {
-          setGarminData({
-            activities: {
-              swimming: loaded.activities.swimming || [],
-              jumpRope: loaded.activities.jumpRope || [],
-              cardio: loaded.activities.cardio || []
-            },
-            dailyMetrics: loaded.dailyMetrics || {}
-          });
-        } else {
-          setGarminData(json.data);
-        }
+        // 🔴 FIX : Utiliser directement json.data après sauvegarde, pas besoin de reload
+        // Les fonctions save* fusionnent déjà avec les données existantes
+        // Recharger tout depuis IndexedDB est redondant et lent
+        setGarminData(json.data);
       } else {
         setGarminData(json.data);
       }
@@ -104,13 +97,13 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
         }
       }
     }
-  }, [dbReady, saveActivities, saveDailyMetrics, loadAllData, setGarminData, importToEndurance]);
+  }, [dbReady, saveActivities, saveDailyMetrics, setGarminData, importToEndurance]);
 
   const syncNow = useCallback(async () => {
     // 🟡 FIX #26: Vérifier cache frontend avant sync
     const now = Date.now();
     if (frontendCache.data && (now - frontendCache.timestamp) < frontendCache.ttl) {
-      console.log('[GarminSync] Using cached data (cache valid for', Math.round((frontendCache.ttl - (now - frontendCache.timestamp)) / 1000), 'more seconds)');
+      log.debug(`Using cached data (cache valid for ${Math.round((frontendCache.ttl - (now - frontendCache.timestamp)) / 1000)} more seconds)`);
       setStatus({
         lastSync: frontendCache.data.lastSync,
         ok: true,
@@ -174,24 +167,11 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
         if (dbReady) {
           await saveActivities(json.data.activities || {});
           await saveDailyMetrics(json.data.dailyMetrics || {});
-          // Recharger depuis IndexedDB pour fusionner avec les données existantes
-          const loaded = await loadAllData();
-          if (loaded) {
-            setGarminData({
-              activities: {
-                swimming: loaded.activities.swimming || [],
-                jumpRope: loaded.activities.jumpRope || [],
-                cardio: loaded.activities.cardio || []
-              },
-              dailyMetrics: loaded.dailyMetrics || {}
-            });
-            const dates = Object.keys(loaded.dailyMetrics || {}).sort();
-            if (dates.length > 0 && setSelectedDate) setSelectedDate(dates[dates.length - 1]);
-          } else {
-            setGarminData(json.data);
-            const dates = Object.keys(json.data.dailyMetrics || {}).sort();
-            if (dates.length > 0 && setSelectedDate) setSelectedDate(dates[dates.length - 1]);
-          }
+          // 🔴 FIX : Utiliser directement json.data après sauvegarde
+          // Les fonctions save* fusionnent déjà avec les données existantes dans IndexedDB
+          setGarminData(json.data);
+          const dates = Object.keys(json.data.dailyMetrics || {}).sort();
+          if (dates.length > 0 && setSelectedDate) setSelectedDate(dates[dates.length - 1]);
         } else {
           setGarminData(json.data);
           const dates = Object.keys(json.data.dailyMetrics || {}).sort();

@@ -5,6 +5,9 @@ import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
 import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 import { DATE_RANGE, ARIA_LABELS } from '../../constants';
+import logger from '../../../../../utils/logger';
+
+const log = logger.component('GarminHeartRateChart');
 
 /**
  * Graphique de fréquence cardiaque 24h
@@ -43,7 +46,7 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
     
     // Debug log pour identifier les problèmes de données
     if (data.length === 0 && filteredDates.length > 0) {
-      console.warn('[GarminHeartRateChart] No HR data for filtered dates:', filteredDates.map(date => {
+      log.warn('No HR data for filtered dates:', filteredDates.map(date => {
         const dm = dailyMetrics[date] || {};
         const hr = dm.heartRate || {};
         return { date, hasHR: !!hr, resting: hr.resting, max: hr.max, avg: hr.avg };

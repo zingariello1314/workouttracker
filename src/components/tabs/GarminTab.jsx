@@ -16,6 +16,7 @@ import TimeNavigation from './GarminTab/components/TimeNavigation';
 import AdvancedStatistics from './GarminTab/components/AdvancedStatistics';
 import AutoSyncSettings from './GarminTab/components/AutoSyncSettings';
 import PDFExport from './GarminTab/components/PDFExport';
+import GarminErrorBoundary from './GarminTab/components/ErrorBoundary';
 import { useGarminSync } from './GarminTab/hooks/useGarminSync';
 import { useGarminImport } from './GarminTab/hooks/useGarminImport';
 import { useToast } from './GarminTab/components/Toast';
@@ -215,24 +216,25 @@ const GarminTab = () => {
   }), [garminData?.dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors]);
 
   return (
-    <GarminProvider
-      dailyMetrics={garminData?.dailyMetrics || {}}
-      activities={garminData?.activities || { swimming: [], jumpRope: [], cardio: [] }}
-      selectedDate={selectedDate}
-      setSelectedDate={setSelectedDate}
-      periodFilter={periodFilter}
-      setPeriodFilter={setPeriodFilter}
-      customStartDate={customStartDate}
-      setCustomStartDate={setCustomStartDate}
-      customEndDate={customEndDate}
-      setCustomEndDate={setCustomEndDate}
-      comparisonMode={comparisonMode}
-      setComparisonMode={setComparisonMode}
-      compareDate={compareDate}
-      setCompareDate={setCompareDate}
-      colors={colors}
-    >
-      <div className="max-w-7xl mx-auto p-4">
+    <GarminErrorBoundary>
+      <GarminProvider
+        dailyMetrics={garminData?.dailyMetrics || {}}
+        activities={garminData?.activities || { swimming: [], jumpRope: [], cardio: [] }}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        periodFilter={periodFilter}
+        setPeriodFilter={setPeriodFilter}
+        customStartDate={customStartDate}
+        setCustomStartDate={setCustomStartDate}
+        customEndDate={customEndDate}
+        setCustomEndDate={setCustomEndDate}
+        comparisonMode={comparisonMode}
+        setComparisonMode={setComparisonMode}
+        compareDate={compareDate}
+        setCompareDate={setCompareDate}
+        colors={colors}
+      >
+        <div className="max-w-7xl mx-auto p-4">
         {/* 🟡 FIX #33: Container pour les toasts */}
         <ToastContainer />
         
@@ -529,8 +531,9 @@ const GarminTab = () => {
           </div>
         )}
         </div>
-      </div>
-    </GarminProvider>
+        </div>
+      </GarminProvider>
+    </GarminErrorBoundary>
   );
 };
 

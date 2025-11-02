@@ -9,6 +9,8 @@ from .validators import (
     validate_swimming_consistency,
     validate_calories_consistency
 )
+# 🔴 FIX : Exporter logger pour utilisation dans fetch_garmin_data.py
+from .logger import print_debug, debug, info, warn, error
 
 __all__ = [
     'safe_int',
@@ -19,6 +21,11 @@ __all__ = [
     'validate_distance_steps_consistency',
     'validate_heart_rate',
     'validate_swimming_consistency',
-    'validate_calories_consistency'
+    'validate_calories_consistency',
+    'print_debug',
+    'debug',
+    'info',
+    'warn',
+    'error'
 ]
 

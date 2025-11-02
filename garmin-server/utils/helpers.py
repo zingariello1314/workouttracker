@@ -4,6 +4,23 @@ Fonctions utilitaires pour le parsing Garmin
 from datetime import date, timedelta, datetime, timezone
 from typing import Any, Generator, Optional
 
+# 🔴 FIX : Importer logger depuis utils.logger au lieu de définir print_debug ici
+try:
+    from utils.logger import print_debug, debug, info, warn, error
+except ImportError:
+    # Fallback si logger non disponible
+    def print_debug(*args, **kwargs):
+        print(f"[DEBUG] {' '.join(str(a) for a in args)}", file=sys.stderr)
+    def debug(*args, **kwargs):
+        print(f"[DEBUG] {' '.join(str(a) for a in args)}", file=sys.stderr)
+    def info(*args, **kwargs):
+        print(f"[INFO] {' '.join(str(a) for a in args)}", file=sys.stderr)
+    def warn(*args, **kwargs):
+        print(f"[WARN] {' '.join(str(a) for a in args)}", file=sys.stderr)
+    def error(*args, **kwargs):
+        print(f"[ERROR] {' '.join(str(a) for a in args)}", file=sys.stderr)
+    import sys
+
 
 def safe_int(value: Any, default: int = 0, warn_on_fail: bool = True, min_value: int = None, max_value: int = None, context: str = "") -> int:
     """
@@ -126,17 +143,6 @@ def format_duration(seconds: int) -> str:
     mins = seconds // 60
     secs_remain = seconds % 60
     return f"{str(mins).zfill(2)}:{str(secs_remain).zfill(2)}"
-
-
-def print_debug(message: str) -> None:
-    """
-    Imprime un message de debug vers stderr.
-    
-    Args:
-        message: Message à imprimer
-    """
-    import sys
-    print(f"[DEBUG] {message}", file=sys.stderr)
 
 
 # 🔴 FIX #34: Cache pour les chemins connus afin d'éviter parsing récursif répétitif

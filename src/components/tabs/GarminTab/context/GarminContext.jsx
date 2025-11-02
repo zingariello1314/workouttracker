@@ -1,4 +1,7 @@
 import React, { createContext, useContext } from 'react';
+import logger from '../../../../utils/logger';
+
+const log = logger.component('GarminContext');
 
 /**
  * 🟢 FIX #32: Context API pour éviter props drilling
@@ -9,7 +12,7 @@ const GarminContext = createContext(null);
 export const useGarminContext = () => {
   const context = useContext(GarminContext);
   if (!context) {
-    console.warn('[GarminContext] useGarminContext doit être utilisé dans un GarminProvider');
+    log.warn('useGarminContext doit être utilisé dans un GarminProvider');
     return {
       dailyMetrics: {},
       activities: { swimming: [], jumpRope: [], cardio: [] },

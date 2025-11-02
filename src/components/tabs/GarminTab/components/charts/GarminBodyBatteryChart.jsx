@@ -5,6 +5,9 @@ import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
 import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 import { DATE_RANGE, ARIA_LABELS } from '../../constants';
+import logger from '../../../../../utils/logger';
+
+const log = logger.component('GarminBodyBatteryChart');
 
 /**
  * Graphique d'évolution du Body Battery
@@ -48,7 +51,7 @@ function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, cust
     
     // Debug log pour identifier les problèmes de données
     if (data.length === 0 && filteredDates.length > 0) {
-      console.warn('[GarminBodyBatteryChart] No Body Battery data for filtered dates:', filteredDates.map(date => {
+      log.warn('No Body Battery data for filtered dates:', filteredDates.map(date => {
         const dm = dailyMetrics[date] || {};
         return { date, bodyBattery: dm.bodyBattery, hasBodyBattery: dm.bodyBattery !== undefined && dm.bodyBattery !== null };
       }));

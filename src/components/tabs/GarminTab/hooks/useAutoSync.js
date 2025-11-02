@@ -3,6 +3,9 @@
  * Optimisé : utilise les callbacks et évite les re-renders inutiles
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
+import logger from '../../../../utils/logger';
+
+const log = logger.hook('useAutoSync');
 import { SYNC_TIMEOUT_MS } from '../constants';
 
 const STORAGE_KEY = 'garmin_autosync_settings';
@@ -82,7 +85,7 @@ export function useAutoSync(syncFunction, enabled, schedule = 'daily', customTim
     const now = Date.now();
     // Éviter les syncs trop fréquentes (minimum 1 minute)
     if (lastSyncRef.current && (now - lastSyncRef.current) < MIN_INTERVAL_MS) {
-      console.log('[AutoSync] Sync ignorée : trop récente');
+      log.debug('Sync ignorée : trop récente');
       return;
     }
 
@@ -90,7 +93,7 @@ export function useAutoSync(syncFunction, enabled, schedule = 'daily', customTim
       setIsActive(true);
       setError(null);
       
-      console.log('[AutoSync] Synchronisation automatique en cours...');
+      log.debug('Synchronisation automatique en cours...');
       await syncFunction();
       
       const syncTime = new Date();
@@ -101,9 +104,9 @@ export function useAutoSync(syncFunction, enabled, schedule = 'daily', customTim
       const next = calculateNextSync(schedule, customTime);
       setNextSyncTime(next);
       
-      console.log('[AutoSync] Synchronisation réussie', syncTime.toISOString());
+      log.debug(`Synchronisation réussie ${syncTime.toISOString()}`);
     } catch (err) {
-      console.error('[AutoSync] Erreur lors de la synchronisation:', err);
+      log.error('Erreur lors de la synchronisation:', err);
       setError(err.message || 'Erreur de synchronisation');
       
       // En cas d'erreur, retry dans 30 minutes
@@ -175,7 +178,7 @@ export function saveAutoSyncSettings(settings) {
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch (err) {
-    console.error('[AutoSync] Erreur sauvegarde settings:', err);
+    log.error('Erreur sauvegarde settings:', err);
   }
 }
 
@@ -190,7 +193,7 @@ export function getAutoSyncSettings() {
       return JSON.parse(stored);
     }
   } catch (err) {
-    console.error('[AutoSync] Erreur chargement settings:', err);
+    log.error('Erreur chargement settings:', err);
   }
   
   // Valeurs par défaut

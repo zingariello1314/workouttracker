@@ -7,6 +7,9 @@ import AdvancedFilters from './AdvancedFilters';
 import ActivitySearch from './ActivitySearch';
 import { useAdvancedFilters } from '../hooks/useAdvancedFilters';
 import { PAGINATION } from '../constants';
+import logger from '../../../../utils/logger';
+
+const log = logger.component('GarminActivities');
 
 /**
  * Composant pour afficher toutes les activités Garmin
@@ -29,18 +32,16 @@ export default function GarminActivities({ activities, selectedDate }) {
 
   // 🟡 FIX #19: État de pagination - utilise constante
   const [page, setPage] = React.useState(PAGINATION.INITIAL_PAGE);
-  // Debug log (seulement en dev)
+  // Debug log (seulement en développement)
   React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[GarminActivities] Props:', {
-        hasActivities: !!activities,
-        activitiesKeys: activities ? Object.keys(activities) : [],
-        swimmingCount: activities?.swimming?.length || 0,
-        jumpRopeCount: activities?.jumpRope?.length || 0,
-        cardioCount: activities?.cardio?.length || 0,
-        selectedDate
-      });
-    }
+    log.debug('Props:', {
+      hasActivities: !!activities,
+      activitiesKeys: activities ? Object.keys(activities) : [],
+      swimmingCount: activities?.swimming?.length || 0,
+      jumpRopeCount: activities?.jumpRope?.length || 0,
+      cardioCount: activities?.cardio?.length || 0,
+      selectedDate
+    });
   }, [activities, selectedDate]);
 
   if (!activities) {

@@ -3,6 +3,10 @@
  * Génère des rapports PDF avec mise en page moderne, visuels avancés et informations complètes
  */
 
+import logger from '../../../../utils/logger';
+
+const log = logger.component('PDFGenerator');
+
 // Import dynamique pour éviter erreur si jspdf pas installé
 let jsPDF = null;
 
@@ -38,7 +42,7 @@ async function loadJsPDF() {
     }
     return jsPDF;
   } catch (e) {
-    console.error('[PDFGenerator] Erreur chargement jsPDF:', e);
+    log.error('Erreur chargement jsPDF:', e);
     throw new Error(`Impossible de charger jsPDF: ${e.message}`);
   }
 }
@@ -719,7 +723,7 @@ export async function generateDailyPDF(data, date) {
 
     return doc.output('blob');
   } catch (error) {
-    console.error('[PDFGenerator] Erreur génération PDF quotidien:', error);
+    log.error('Erreur génération PDF quotidien:', error);
     throw error;
   }
 }
@@ -981,7 +985,7 @@ export async function generateWeeklyPDF(data, startDate, endDate) {
 
     return doc.output('blob');
   } catch (error) {
-    console.error('[PDFGenerator] Erreur génération PDF hebdomadaire:', error);
+    log.error('Erreur génération PDF hebdomadaire:', error);
     throw error;
   }
 }

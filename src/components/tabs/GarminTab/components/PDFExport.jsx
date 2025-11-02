@@ -5,6 +5,9 @@
 import React from 'react';
 import { generateDailyPDF, generateWeeklyPDF } from '../utils/pdfGenerator';
 import { ARIA_LABELS } from '../constants';
+import logger from '../../../../utils/logger';
+
+const log = logger.component('PDFExport');
 
 export default function PDFExport({ garminData, selectedDate, periodFilter, customStartDate, customEndDate }) {
   const [isGenerating, setIsGenerating] = React.useState(false);
@@ -22,10 +25,8 @@ export default function PDFExport({ garminData, selectedDate, periodFilter, cust
     try {
       let blob = null;
 
-      console.log('[PDFExport] ===== DÉBUT EXPORT PDF =====');
-      console.log('[PDFExport] Type:', type);
-      console.log('[PDFExport] selectedDate:', selectedDate);
-      console.log('[PDFExport] garminData structure:', {
+      log.debug(`Début export PDF - Type: ${type}`);
+      log.debug('Structure garminData:', {
         hasActivities: !!garminData.activities,
         hasDailyMetrics: !!garminData.dailyMetrics,
         dailyMetricsKeys: garminData.dailyMetrics ? Object.keys(garminData.dailyMetrics) : [],
@@ -39,16 +40,16 @@ export default function PDFExport({ garminData, selectedDate, periodFilter, cust
       // Vérifier si la date existe
       if (type === 'daily' && selectedDate) {
         if (garminData.dailyMetrics && garminData.dailyMetrics[selectedDate]) {
-          console.log('[PDFExport] Données trouvées pour', selectedDate, ':', garminData.dailyMetrics[selectedDate]);
+          log.debug(`Données trouvées pour ${selectedDate}`);
         } else {
-          console.warn('[PDFExport] ⚠️ AUCUNE donnée pour la date', selectedDate);
-          console.log('[PDFExport] Dates disponibles:', Object.keys(garminData.dailyMetrics || {}));
+          log.warn(`Aucune donnée pour la date ${selectedDate}`);
+          log.debug('Dates disponibles:', Object.keys(garminData.dailyMetrics || {}));
         }
       }
 
       if (type === 'daily' && selectedDate) {
         blob = await generateDailyPDF(garminData, selectedDate);
-        console.log('[PDFExport] PDF quotidien généré, blob:', blob ? 'OK' : 'NULL');
+        log.debug(`PDF quotidien généré: ${blob ? 'OK' : 'NULL'}`);
       } else if (type === 'weekly' || type === 'custom') {
         const startDate = type === 'custom' ? customStartDate : calculateWeekStart(selectedDate || new Date().toISOString().split('T')[0]);
         const endDate = type === 'custom' ? customEndDate : calculateWeekEnd(selectedDate || new Date().toISOString().split('T')[0]);
@@ -60,11 +61,11 @@ export default function PDFExport({ garminData, selectedDate, periodFilter, cust
         }
 
         blob = await generateWeeklyPDF(garminData, startDate, endDate);
-        console.log('[PDFExport] PDF hebdomadaire généré, blob:', blob ? 'OK' : 'NULL');
+        log.debug(`PDF hebdomadaire généré: ${blob ? 'OK' : 'NULL'}`);
       }
 
       if (!blob) {
-        console.error('[PDFExport] Blob est null - la génération a probablement échoué silencieusement');
+        log.error('Blob est null - la génération a probablement échoué silencieusement');
         alert('Erreur lors de la génération du PDF. Vérifiez la console du navigateur (F12) pour plus de détails.');
         setIsGenerating(false);
         return;
@@ -80,8 +81,7 @@ export default function PDFExport({ garminData, selectedDate, periodFilter, cust
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('[PDFExport] Erreur export:', error);
-      console.error('[PDFExport] Stack:', error.stack);
+      log.error('Erreur export PDF:', error);
       
       let errorMessage = 'Erreur lors de l\'export PDF';
       if (error.message) {

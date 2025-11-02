@@ -1,5 +1,8 @@
 import { useCallback, useRef } from 'react';
 import { useWorkout } from '../../../../context/WorkoutContext';
+import logger from '../../../../utils/logger';
+
+const log = logger.hook('useGarminImport');
 
 /**
  * 🟡 FIX #21 : Hook pour gérer l'import automatique vers enduranceData.sessions
@@ -47,7 +50,7 @@ export function useGarminImport() {
 
   const importToEndurance = useCallback(async (garminDataForImport, retryAttempt = 0) => {
     if (!garminDataForImport?.activities) {
-      console.warn('[useGarminImport] No activities to import');
+      log.warn('No activities to import');
       return { success: false, imported: 0, errors: [] };
     }
 
@@ -86,7 +89,7 @@ export function useGarminImport() {
             }
           } catch (err) {
             errors.push({ type: 'swimming', activity: gAct.id, error: err.message });
-            console.error('[useGarminImport] Error importing swimming activity:', err);
+            log.error('Error importing swimming activity:', err);
           }
         });
         newSessions.swimming = existingSwimming;
@@ -118,7 +121,7 @@ export function useGarminImport() {
             }
           } catch (err) {
             errors.push({ type: 'jumprope', activity: gAct.id, error: err.message });
-            console.error('[useGarminImport] Error importing jumprope activity:', err);
+            log.error('Error importing jumprope activity:', err);
           }
         });
         newSessions.jumprope = existingJumpRope;
@@ -155,7 +158,7 @@ export function useGarminImport() {
             // Pour autres activités cardio, on pourrait les ajouter dans un type 'cardio' si nécessaire
           } catch (err) {
             errors.push({ type: 'cardio', activity: gAct.id, error: err.message });
-            console.error('[useGarminImport] Error importing cardio activity:', err);
+            log.error('Error importing cardio activity:', err);
           }
         });
         newSessions.jumprope = existingJumpRope;
@@ -172,16 +175,16 @@ export function useGarminImport() {
           }
         });
 
-        console.log(`[useGarminImport] Successfully imported ${importedCount} activities`);
+        log.debug(`Successfully imported ${importedCount} activities`);
         retryCountRef.current = 0; // Reset retry count on success
         return { success: true, imported: importedCount, errors };
       } catch (updateError) {
-        console.error('[useGarminImport] Error updating enduranceData:', updateError);
+        log.error('Error updating enduranceData:', updateError);
         
         // 🟡 FIX #21 : Retry automatique avec backoff exponentiel
         if (retryAttempt < MAX_RETRIES) {
           const delay = Math.pow(2, retryAttempt) * 1000; // 1s, 2s, 4s
-          console.log(`[useGarminImport] Retry attempt ${retryAttempt + 1}/${MAX_RETRIES} in ${delay}ms...`);
+          log.debug(`Retry attempt ${retryAttempt + 1}/${MAX_RETRIES} in ${delay}ms...`);
           
           await new Promise(resolve => setTimeout(resolve, delay));
           return importToEndurance(garminDataForImport, retryAttempt + 1);
@@ -191,12 +194,12 @@ export function useGarminImport() {
         return { success: false, imported: importedCount, errors };
       }
     } catch (err) {
-      console.error('[useGarminImport] Fatal error:', err);
+      log.error('Fatal error:', err);
       
       // 🟡 FIX #21 : Retry automatique pour erreurs fatales
       if (retryAttempt < MAX_RETRIES) {
         const delay = Math.pow(2, retryAttempt) * 1000;
-        console.log(`[useGarminImport] Fatal error retry attempt ${retryAttempt + 1}/${MAX_RETRIES} in ${delay}ms...`);
+        log.debug(`Fatal error retry attempt ${retryAttempt + 1}/${MAX_RETRIES} in ${delay}ms...`);
         
         await new Promise(resolve => setTimeout(resolve, delay));
         return importToEndurance(garminDataForImport, retryAttempt + 1);

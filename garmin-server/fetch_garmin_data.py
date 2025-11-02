@@ -52,7 +52,7 @@ from utils.helpers import (
     daterange,
     print_debug
 )
-from utils.cache import get_cached_parsed, cache_parsed
+from utils.cache import get_cached_parsed, cache_parsed, get_classification_hash
 from utils.retry import retry_with_backoff, retry_on_rate_limit
 
 
@@ -305,34 +305,19 @@ if EMAIL and PASSWORD:
                         
                         # 🔴 FIX #23: Try-catch pour capturer les erreurs de parsing d'activité
                         try:
-                            # OPTIMISATION : Vérifier le cache avant parsing
-                            # MAIS vérifier que la classification du cache correspond toujours au type d'activité
-                            act_type_dto_check = act_summary.get('activityTypeDTO', {}) or {}
-                            act_type_key_check = act_type_dto_check.get('typeKey') or act_type_dto_check.get('type') or ''
-                            act_name_check = (act_summary.get('activityName') or '').lower()
-                            is_explicitly_cardio_check = (
-                                'cardio' in act_type_key_check.lower() or
-                                'cardio' in act_name_check or
-                                act_type_dto_check.get('typeId') in (11, 29)
-                            )
-                            
-                            cached_parsed = get_cached_parsed(act_id, act_summary)
+                            # 🔴 FIX : Vérifier le cache avec hash de classification pour invalidation intelligente
+                            current_classification_hash = get_classification_hash(act_summary)
+                            cached_parsed = get_cached_parsed(act_id, act_summary, current_classification_hash)
                             if cached_parsed:
-                                cached_type = cached_parsed.get('type') or cached_parsed.get('activityType') or ''
-                                # Si l'activité est explicitement marquée comme cardio mais le cache dit swimming, ignorer le cache
-                                if is_explicitly_cardio_check and cached_type == 'swimming':
-                                    print_debug(f"⚠️ Cache ignored for activity {act_id}: explicitly cardio but cached as swimming")
-                                    cached_parsed = None
+                                print_debug(f"✅ Using cached parsed data for activity {act_id}")
+                                activity_type = cached_parsed.get('type') or cached_parsed.get('activityType') or ''
+                                if activity_type == 'swimming' or 'swim' in str(activity_type).lower():
+                                    day_swim.append(cached_parsed)
+                                elif activity_type == 'jumpRope' or 'jump' in str(activity_type).lower():
+                                    day_jump.append(cached_parsed)
                                 else:
-                                    print_debug(f"✅ Using cached parsed data for activity {act_id}")
-                                    activity_type = cached_type
-                                    if activity_type == 'swimming' or 'swim' in str(activity_type).lower():
-                                        day_swim.append(cached_parsed)
-                                    elif activity_type == 'jumpRope' or 'jump' in str(activity_type).lower():
-                                        day_jump.append(cached_parsed)
-                                    else:
-                                        day_cardio.append(cached_parsed)
-                                    continue
+                                    day_cardio.append(cached_parsed)
+                                continue
                             
                             # OPTIMISATION : Parser summary d'abord pour identifier si details nécessaires
                             is_swimming_preview, is_jump_rope_preview, is_cardio_preview = classify_activity(act_summary, None)
@@ -431,7 +416,8 @@ if EMAIL and PASSWORD:
                                 entry_base["type"] = "swimming"
                                 if originally_cardio:
                                     print_debug(f"✅ Activity {act_id} reclassifiée: cardio → swimming")
-                                cache_parsed(act_id, act_summary, entry_base)
+                                # 🔴 FIX : Sauvegarder cache avec hash de classification
+                                cache_parsed(act_id, act_summary, entry_base, current_classification_hash)
                                 day_swim.append(entry_base)
                             elif is_jump_rope:
                                 entry_base, connect_iq = parse_jump_rope_metrics(entry_base, summary_dto, act, act_details, act_summary, duration)
@@ -441,7 +427,8 @@ if EMAIL and PASSWORD:
                                 if connect_iq:
                                     entry_base["connectIQ"] = connect_iq
                                 entry_base["type"] = "jumpRope"
-                                cache_parsed(act_id, act_summary, entry_base)
+                                # 🔴 FIX : Sauvegarder cache avec hash de classification
+                                cache_parsed(act_id, act_summary, entry_base, current_classification_hash)
                                 day_jump.append(entry_base)
                             else:
                                 activity_name = act.get('activityName') or act_summary.get('activityName') or 'Cardio'
@@ -454,7 +441,8 @@ if EMAIL and PASSWORD:
                                     "activityType": act_type_key,
                                     "type": "cardio"
                                 })
-                                cache_parsed(act_id, act_summary, entry_base)
+                                # 🔴 FIX : Sauvegarder cache avec hash de classification
+                                cache_parsed(act_id, act_summary, entry_base, current_classification_hash)
                                 day_cardio.append(entry_base)
                         except Exception as e:
                             # 🔴 FIX #23: Capturer et logger les erreurs de parsing d'activité
