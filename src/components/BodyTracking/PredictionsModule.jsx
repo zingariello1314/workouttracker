@@ -29,13 +29,38 @@ import {
   evaluateDataQuality,
   generateScenarios
 } from './utils/predictionUtils';
+import {
+  generateActivityBasedScenarios,
+  adjustPredictionWithActivity
+} from './utils/activityBasedPredictions';
+import { useGarminData } from '../../hooks/useGarminData';
+import logger from '../../utils/logger';
+
+const log = logger.component('PredictionsModule');
 
 const PredictionsModule = () => {
-  const { data } = useWorkout();
+  const { data, getWorkoutHistory } = useWorkout();
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminData, setGarminData] = React.useState(null);
+  const [showActivityScenarios, setShowActivityScenarios] = React.useState(false);
   const [selectedMetric, setSelectedMetric] = useState('weight');
   const [predictionPeriod, setPredictionPeriod] = useState('3months');
   const [confidenceLevel, setConfidenceLevel] = useState('medium');
   const [showDetails, setShowDetails] = useState(false);
+
+  // Charger données Garmin pour prédictions enrichies
+  React.useEffect(() => {
+    if (dbReady && showActivityScenarios) {
+      loadAllData()
+        .then(loaded => {
+          setGarminData(loaded);
+        })
+        .catch(error => {
+          log.error('Erreur chargement données Garmin pour prédictions', error);
+          setGarminData(null);
+        });
+    }
+  }, [dbReady, showActivityScenarios, loadAllData]);
 
   // Métriques disponibles pour les prévisions (avec mapping vers les clés dans progressEntries)
   const availableMetrics = [
@@ -369,6 +394,16 @@ const PredictionsModule = () => {
             
             <div className="flex flex-wrap gap-2">
               <Button
+                variant={showActivityScenarios ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setShowActivityScenarios(!showActivityScenarios)}
+                className={showActivityScenarios ? "bg-blue-600 hover:bg-blue-700" : ""}
+              >
+                <Activity className="w-4 h-4" />
+                Scénarios activité
+              </Button>
+              
+              <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowDetails(!showDetails)}
@@ -536,32 +571,86 @@ const PredictionsModule = () => {
         </CardHeader>
         <CardContent>
           {scenarios.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {scenarios.map((scenario, index) => (
-                <div key={index} className={`p-4 rounded-lg border ${scenario.bgColor} border-slate-600`}>
-                  <div className="flex items-center gap-2 mb-3">
-                    {scenario.icon}
-                    <h4 className={`font-semibold ${scenario.color}`}>{scenario.name}</h4>
-                    <span className="text-xs text-slate-400">({scenario.probability}%)</span>
+            <div className="space-y-4">
+              {showActivityScenarios && scenarios[0]?.isActivityBased && (
+                <div className="mb-4 p-3 bg-blue-600/20 border border-blue-500/50 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm text-blue-300">
+                    <Activity className="w-4 h-4" />
+                    <span>Scénarios basés sur votre historique d'activité réel (History, Endurance, Garmin)</span>
                   </div>
-                  
-                  <div className="mb-3">
-                    <div className={`text-2xl font-bold ${scenario.color}`}>
-                      {scenario.predictedValue != null && !isNaN(scenario.predictedValue) 
-                        ? scenario.predictedValue.toFixed(1)
-                        : 'N/A'}
-                      <span className="text-sm text-slate-400 ml-1">{predictionsData.metric?.unit || ''}</span>
-                    </div>
-                    <div className="text-sm text-slate-400">
-                      {scenario.change != null && !isNaN(scenario.change)
-                        ? `${scenario.change > 0 ? '+' : ''}${scenario.change.toFixed(1)} ${predictionsData.metric?.unit || ''}`
-                        : 'N/A'}
-                    </div>
-                  </div>
-                  
-                  <p className="text-xs text-slate-300">{scenario.description}</p>
                 </div>
-              ))}
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {scenarios.map((scenario, index) => (
+                  <div 
+                    key={index} 
+                    className={`p-4 rounded-lg border ${
+                      scenario.isActivityBased 
+                        ? 'border-blue-500/50 bg-blue-600/10' 
+                        : 'border-slate-600 bg-slate-700/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      {scenario.icon}
+                      <h4 className={`font-semibold ${
+                        scenario.isActivityBased ? 'text-blue-300' : 'text-slate-200'
+                      }`}>
+                        {scenario.name}
+                      </h4>
+                      {scenario.probability != null && (
+                        <span className="text-xs text-slate-400 ml-auto">
+                          {(scenario.probability * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="mb-3">
+                      <div className={`text-2xl font-bold ${
+                        scenario.isActivityBased ? 'text-blue-400' : 'text-slate-300'
+                      }`}>
+                        {scenario.predictedValue != null && !isNaN(scenario.predictedValue) 
+                          ? scenario.predictedValue.toFixed(1)
+                          : 'N/A'}
+                        <span className="text-sm text-slate-400 ml-1">{predictionsData.metric?.unit || ''}</span>
+                      </div>
+                      <div className="text-sm text-slate-400">
+                        {scenario.change != null && !isNaN(scenario.change)
+                          ? `${scenario.change > 0 ? '+' : ''}${scenario.change.toFixed(1)} ${predictionsData.metric?.unit || ''}`
+                          : 'N/A'}
+                        {scenario.changePercentage != null && !isNaN(scenario.changePercentage) && (
+                          <span className="ml-2">
+                            ({scenario.changePercentage > 0 ? '+' : ''}{scenario.changePercentage.toFixed(1)}%)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-slate-300 mb-3">{scenario.description}</p>
+                    
+                    {scenario.recommendations && scenario.recommendations.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-600">
+                        <div className="text-xs font-medium text-slate-400 mb-2">Recommandations:</div>
+                        <ul className="space-y-1">
+                          {scenario.recommendations.slice(0, 2).map((rec, idx) => (
+                            <li key={idx} className="text-xs text-slate-400 flex items-start gap-2">
+                              <CheckCircle className="w-3 h-3 text-blue-400 mt-0.5 flex-shrink-0" />
+                              {rec}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {scenario.isActivityBased && (
+                      <div className="mt-2 pt-2 border-t border-slate-600">
+                        <span className="text-xs px-2 py-0.5 bg-blue-600/30 text-blue-300 rounded border border-blue-500/50">
+                          Basé sur activité
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="text-center py-8 text-slate-400">

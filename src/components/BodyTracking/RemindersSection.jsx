@@ -20,6 +20,17 @@ import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
+import {
+  isNotificationSupported,
+  getNotificationPermission,
+  requestNotificationPermission,
+  scheduleNotifications,
+  registerServiceWorker,
+  calculateNextTriggerForReminder
+} from './utils/notificationService';
+import logger from '../../utils/logger';
+
+const log = logger.component('RemindersSection');
 
 const RemindersSection = () => {
   const { data, updateData } = useWorkout();
@@ -167,6 +178,196 @@ const RemindersSection = () => {
       // L'utilisateur peut créer ses propres reminders
     }
   }, [data?.bodyTrackingReminders]); // Dépendance uniquement sur bodyTrackingReminders
+
+  // 🔔 ÉTAT GESTION NOTIFICATIONS
+  const [notificationPermission, setNotificationPermission] = useState(() => getNotificationPermission());
+  const [notificationSupported, setNotificationSupported] = useState(() => isNotificationSupported());
+  const [serviceWorkerRegistered, setServiceWorkerRegistered] = useState(false);
+
+  // Enregistrer Service Worker au montage
+  useEffect(() => {
+    if (notificationSupported) {
+      registerServiceWorker()
+        .then(registration => {
+          if (registration) {
+            setServiceWorkerRegistered(true);
+            log.info('Service Worker enregistré pour notifications');
+          } else {
+            // Service Worker non disponible (404, etc.) mais notifications Browser API fonctionnent toujours
+            log.debug('Notifications Browser API disponibles sans Service Worker');
+          }
+        })
+        .catch(error => {
+          // Erreur silencieuse - notifications Browser API fonctionnent toujours
+          log.debug('Service Worker non disponible, utilisation notifications Browser API uniquement', error);
+        });
+    }
+  }, [notificationSupported]);
+
+  // Planifier notifications pour rappels actifs
+  useEffect(() => {
+    if (!notificationSupported || notificationPermission !== 'granted') {
+      return;
+    }
+
+    const enabledReminders = reminders.filter(r => r.enabled);
+    
+    if (enabledReminders.length === 0) {
+      return;
+    }
+
+    // Callback quand un rappel est déclenché
+    const onReminderTriggered = (reminder) => {
+      log.info('Rappel déclenché', { reminderId: reminder.id, title: reminder.title });
+      
+      // Mettre à jour lastTriggered et recalculer nextTrigger
+      setReminders(prev => {
+        const updated = prev.map(r => {
+          if (r.id === reminder.id) {
+            const newNextTrigger = calculateNextTriggerForReminder({
+              ...r,
+              lastTriggered: new Date()
+            });
+            
+            return {
+              ...r,
+              lastTriggered: new Date(),
+              nextTrigger: newNextTrigger || r.nextTrigger
+            };
+          }
+          return r;
+        });
+
+        // Sauvegarder dans IndexedDB
+        const remindersForDB = updated.map(r => ({
+          ...r,
+          lastTriggered: r.lastTriggered instanceof Date ? r.lastTriggered.toISOString() : r.lastTriggered,
+          nextTrigger: r.nextTrigger instanceof Date ? r.nextTrigger.toISOString() : r.nextTrigger
+        }));
+        
+        updateData({ ...data, bodyTrackingReminders: remindersForDB });
+
+        return updated;
+      });
+    };
+
+    // Planifier notifications
+    const stopScheduling = scheduleNotifications(enabledReminders, onReminderTriggered);
+
+    // Nettoyer à la destruction
+    return () => {
+      stopScheduling();
+    };
+  }, [reminders, notificationSupported, notificationPermission, data, updateData]);
+
+  // Écouter événements personnalisés pour actions sur notifications
+  useEffect(() => {
+    const handleReminderClick = (event) => {
+      const { reminderId } = event.detail;
+      // Naviguer vers le rappel (ou ouvrir formulaire édition)
+      const reminder = reminders.find(r => r.id === reminderId);
+      if (reminder) {
+        setEditingReminder(reminder);
+        setFormData({
+          type: reminder.type,
+          title: reminder.title,
+          description: reminder.description || '',
+          frequency: reminder.frequency,
+          dayOfWeek: reminder.dayOfWeek || 1,
+          dayOfMonth: reminder.dayOfMonth || 1,
+          time: reminder.time || '08:00',
+          methods: reminder.methods || ['notification']
+        });
+        setShowForm(true);
+        
+        // Scroll vers le formulaire
+        setTimeout(() => {
+          document.querySelector('.border-yellow-500\\/30')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    };
+
+    const handleReminderSnooze = (event) => {
+      const { reminderId, snoozeHours = 1 } = event.detail;
+      setReminders(prev => {
+        const updated = prev.map(r => {
+          if (r.id === reminderId) {
+            const newNextTrigger = new Date(r.nextTrigger);
+            newNextTrigger.setHours(newNextTrigger.getHours() + snoozeHours);
+            
+            return {
+              ...r,
+              nextTrigger: newNextTrigger
+            };
+          }
+          return r;
+        });
+
+        const remindersForDB = updated.map(r => ({
+          ...r,
+          lastTriggered: r.lastTriggered instanceof Date ? r.lastTriggered.toISOString() : r.lastTriggered,
+          nextTrigger: r.nextTrigger instanceof Date ? r.nextTrigger.toISOString() : r.nextTrigger
+        }));
+        
+        updateData({ ...data, bodyTrackingReminders: remindersForDB });
+
+        return updated;
+      });
+    };
+
+    const handleReminderComplete = (event) => {
+      const { reminderId } = event.detail;
+      setReminders(prev => {
+        const updated = prev.map(r => {
+          if (r.id === reminderId) {
+            const newNextTrigger = calculateNextTriggerForReminder({
+              ...r,
+              lastTriggered: new Date()
+            });
+            
+            return {
+              ...r,
+              lastTriggered: new Date(),
+              nextTrigger: newNextTrigger || r.nextTrigger
+            };
+          }
+          return r;
+        });
+
+        const remindersForDB = updated.map(r => ({
+          ...r,
+          lastTriggered: r.lastTriggered instanceof Date ? r.lastTriggered.toISOString() : r.lastTriggered,
+          nextTrigger: r.nextTrigger instanceof Date ? r.nextTrigger.toISOString() : r.nextTrigger
+        }));
+        
+        updateData({ ...data, bodyTrackingReminders: remindersForDB });
+
+        return updated;
+      });
+    };
+
+    window.addEventListener('bodyTracking:reminderClick', handleReminderClick);
+    window.addEventListener('bodyTracking:reminderSnooze', handleReminderSnooze);
+    window.addEventListener('bodyTracking:reminderComplete', handleReminderComplete);
+
+    return () => {
+      window.removeEventListener('bodyTracking:reminderClick', handleReminderClick);
+      window.removeEventListener('bodyTracking:reminderSnooze', handleReminderSnooze);
+      window.removeEventListener('bodyTracking:reminderComplete', handleReminderComplete);
+    };
+  }, [reminders, data, updateData]);
+
+  // Fonction pour demander permission notifications
+  const handleRequestNotificationPermission = async () => {
+    const permission = await requestNotificationPermission();
+    setNotificationPermission(permission);
+    
+    if (permission === 'granted') {
+      log.info('Permission notifications accordée');
+    } else {
+      log.warn('Permission notifications refusée', { permission });
+    }
+  };
 
   const [showForm, setShowForm] = useState(false);
   const [editingReminder, setEditingReminder] = useState(null);
@@ -436,14 +637,42 @@ const RemindersSection = () => {
               <span className="text-sm font-normal text-slate-400">
                 ({reminders.filter(r => r.enabled).length} actifs)
               </span>
+              {notificationSupported && (
+                <span className={`text-xs px-2 py-1 rounded ${
+                  notificationPermission === 'granted' 
+                    ? 'bg-green-600/20 text-green-300 border border-green-500/50' 
+                    : notificationPermission === 'denied'
+                    ? 'bg-red-600/20 text-red-300 border border-red-500/50'
+                    : 'bg-yellow-600/20 text-yellow-300 border border-yellow-500/50'
+                }`}>
+                  {notificationPermission === 'granted' 
+                    ? '🔔 Notifications activées' 
+                    : notificationPermission === 'denied'
+                    ? '🔕 Notifications désactivées'
+                    : '⚠️ Permission requise'}
+                </span>
+              )}
             </CardTitle>
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-yellow-600 hover:bg-yellow-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouveau rappel
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {notificationSupported && notificationPermission !== 'granted' && (
+                <Button
+                  onClick={handleRequestNotificationPermission}
+                  variant="ghost"
+                  size="sm"
+                  className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50"
+                >
+                  <Bell className="w-4 h-4 mr-2" />
+                  {notificationPermission === 'denied' ? 'Réactiver' : 'Activer'} notifications
+                </Button>
+              )}
+              <Button
+                onClick={() => setShowForm(true)}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nouveau rappel
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>

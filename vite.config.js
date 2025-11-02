@@ -7,5 +7,7 @@ export default defineConfig({
   server: {
     port: 3001,
     open: true
-  }
+  },
+  // S'assurer que le Service Worker est servi correctement
+  publicDir: 'public'
 })

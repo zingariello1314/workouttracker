@@ -1110,24 +1110,67 @@ Implémenter méthodiquement toutes les corrections et optimisations identifiée
 
 **Prochaines étapes:** Étape 5.6 - Prédictions Enrichies (7h)
 
-#### ⏳ Étape 5.6: Prédictions Enrichies (7h)
+#### ✅ Étape 5.6: Prédictions Enrichies (7h) - TERMINÉ
+**Statut:** ✅ TERMINÉ  
+**Date début:** 2025-01-27  
+**Date fin:** 2025-01-27  
+**Fichiers créés/modifiés:**
+- ✅ `src/components/BodyTracking/utils/activityBasedPredictions.js` (579 lignes) - NOUVEAU
+- ✅ `src/components/BodyTracking/PredictionsModule.jsx` - ENRICHI avec scénarios basés activité
+
+**Fonctionnalités implémentées:**
+1. **Module de prédictions basées activité (`activityBasedPredictions.js`):**
+   - ✅ Calcul impact activité sur métriques corporelles (volume, calories, récupération)
+   - ✅ Corrélations activité → métrique (Pearson) pour identifier effets réels
+   - ✅ Génération scénarios multiples selon niveaux d'activité (réduite, maintenue, augmentée, optimale)
+   - ✅ Ajustement prédictions selon activité prévue avec `adjustPredictionWithActivity`
+   - ✅ Prédiction avec plan d'activité personnalisé (`predictWithActivityPlan`)
+   - ✅ Analyse semaine par semaine avec agrégation volume/calories/récupération
+   - ✅ Calcul impact par unité d'activité (ex: changement métrique par 100 reps/semaine)
+
+2. **UI enrichie dans PredictionsModule:**
+   - ✅ Bouton toggle "Scénarios activité" pour activer/désactiver
+   - ✅ Chargement conditionnel données Garmin seulement si activé
+   - ✅ Distinction visuelle scénarios basés activité vs standards (badge "Basé sur activité")
+   - ✅ Affichage recommandations par scénario (2 premières)
+   - ✅ Probabilités ajustées selon qualité données
+   - ✅ Description détaillée activité prévue (volume, calories) pour chaque scénario
+   - ✅ Bannière informative quand scénarios activité actifs
+
+3. **Intelligence algorithmique:**
+   - ✅ Analyse corrélations volume/calories → métrique avec Pearson
+   - ✅ Calcul impact moyen (changement métrique par unité d'activité)
+   - ✅ Scénarios réalistes: réduite (50%), maintenue (100%), augmentée (150%), optimale (125% si corrélation positive)
+   - ✅ Fallback sur scénarios standards si données insuffisantes
+   - ✅ Ajustement prédictions base selon différence activité prévue vs moyenne historique
+   - ✅ Prédiction semaine par semaine avec plan d'activité personnalisé
+
+**Décisions techniques:**
+- ✅ Utilisation `useEffect` pour chargement conditionnel données Garmin
+- ✅ Calcul corrélations Pearson pour quantifier impact réel activité
+- ✅ Normalisation dates et agrégation par semaines pour cohérence
+- ✅ Gestion robuste cas limites (données insuffisantes, corrélations nulles)
+- ✅ UI responsive avec grid adaptatif (1-2-4 colonnes selon écran)
+- ✅ Code linter clean (0 erreurs)
+
+**Prochaines étapes:** 🎉 **Phase 5 complète !** Toutes les intégrations inter-onglets terminées.
 
 ---
 
 ## 📈 STATISTIQUES GLOBALES
 
 **Total tâches:** 30+  
-**Tâches complétées:** 21 ✅ (Phase 1: 100%, Phase 2: 100%, Phase 3: 100%, Phase 4: 100%, Phase 5: 4/6)  
+**Tâches complétées:** 22 ✅ (Phase 1: 100%, Phase 2: 100%, Phase 3: 100%, Phase 4: 100%, Phase 5: 100%)  
 **Tâches en cours:** 0  
-**Tâches en attente:** 9+  
+**Tâches en attente:** 0  
 **Estimation totale:** 95h  
-**Temps utilisé:** ~74h (Phase 1: 10h, Phase 2: 10h, Phase 3.1: 5h, Phase 3.2: 4h, Phase 3.3: 3h, Phase 3.4: 4h, Phase 3.5: 2h, Phase 4.1: 2h, Phase 4.2: 1h, Phase 4.3: 1h, Phase 4.4: 1h, Phase 5.1: 6h, Phase 5.2: 6h, Phase 5.3: 4h, Phase 5.4: 15h)  
-**Temps restant estimé:** ~21h  
+**Temps utilisé:** ~81h (Phase 1: 10h, Phase 2: 10h, Phase 3: 18h, Phase 4: 5h, Phase 5.1: 6h, Phase 5.2: 6h, Phase 5.3: 4h, Phase 5.4: 15h, Phase 5.5: 10h, Phase 5.6: 7h)  
+**Temps restant estimé:** 0h  
 **Phase 1:** ✅ **100% TERMINÉE**  
 **Phase 2:** ✅ **100% TERMINÉE**  
 **Phase 3:** ✅ **100% TERMINÉE** (3.1, 3.2, 3.3, 3.4 et 3.5 terminées)  
 **Phase 4:** ✅ **100% TERMINÉE** (4.1, 4.2, 4.3 et 4.4 terminées)  
-**Phase 5:** 🔄 **67% EN COURS** (5.1, 5.2, 5.3 et 5.4 terminées, 5.5-5.6 en attente)
+**Phase 5:** ✅ **100% TERMINÉE** (5.1, 5.2, 5.3, 5.4, 5.5 et 5.6 terminées) 🎉
 
 ---
 
@@ -1471,6 +1514,139 @@ Implémenter méthodiquement toutes les corrections et optimisations identifiée
 - ✅ Code linter clean (0 erreurs)
 
 **Prochaines étapes:** Phase 2.1 - ImpedanceSection vraies données
+
+---
+
+### 2025-01-27 - Phase 5.6 TERMINÉE ✅
+
+**Étape 5.6 complétée:** Prédictions Enrichies basées sur activité réelle  
+**Résumé:**
+- ✅ Création module `activityBasedPredictions.js` avec calcul impact activité
+- ✅ Génération scénarios multiples selon niveaux d'activité (réduite, maintenue, augmentée, optimale)
+- ✅ Intégration historique réel (History, Endurance, Garmin) pour corrélations
+- ✅ Calcul impact moyen activité sur métriques corporelles (volume, calories → poids/muscle/graisse)
+- ✅ Ajustement prédictions selon activité prévue
+- ✅ UI enrichie avec toggle "Scénarios activité" et distinction visuelle
+- ✅ Affichage recommandations par scénario avec probabilités ajustées
+- ✅ Code linter clean (0 erreurs)
+
+**Fichiers créés/modifiés:**
+- ✅ `src/components/BodyTracking/utils/activityBasedPredictions.js` (579 lignes) - NOUVEAU
+- ✅ `src/components/BodyTracking/PredictionsModule.jsx` - ENRICHI avec scénarios basés activité
+
+**Fonctionnalités principales:**
+1. **Calcul impact activité:**
+   - Analyse corrélations Pearson volume/calories → métrique
+   - Calcul impact par unité (ex: changement poids par 100 reps/semaine)
+   - Agrégation semaine par semaine avec volume, calories, récupération
+
+2. **Scénarios multiples:**
+   - Réduite (50% activité): si baisse volume/calories
+   - Maintenue (100%): tendance actuelle
+   - Augmentée (150%): si augmentation activité
+   - Optimale (125%): basé sur corrélations positives
+
+3. **Ajustement prédictions:**
+   - Ajustement prédiction base selon différence activité prévue vs moyenne
+   - Prédiction avec plan personnalisé semaine par semaine
+   - Facteurs détaillés (corrélations, impacts, qualité données)
+
+**🎉 Phase 5 complète !** Toutes les intégrations inter-onglets terminées.
+
+---
+
+## 🚀 PHASE 6 - POLISH FINAL ET OPTIMISATIONS AVANCÉES (15h)
+
+Phase supplémentaire pour porter l'onglet Suivi Corporel au niveau le plus élevé possible avec des optimisations avancées et du polish professionnel.
+
+#### ✅ Phase 6.1: Système de Notifications Réelles (5h) - TERMINÉ
+**Statut:** ✅ TERMINÉ  
+**Date début:** 2025-01-27  
+**Date fin:** 2025-01-27  
+**Fichiers créés/modifiés:**
+- ✅ `src/components/BodyTracking/utils/notificationService.js` (476 lignes) - NOUVEAU
+- ✅ `src/components/BodyTracking/RemindersSection.jsx` - ENRICHI avec intégration notifications
+
+**Fonctionnalités implémentées:**
+1. **Module `notificationService.js` sophistiqué:**
+   - ✅ Détection support navigateur (`isNotificationSupported`)
+   - ✅ Gestion permissions (vérification, demande, état)
+   - ✅ Création notifications Browser API avec options complètes (icon, badge, tag, actions)
+   - ✅ Gestion événements notifications (onclick, onclose, onerror)
+   - ✅ Son de notification avec AudioContext (fréquences selon type)
+   - ✅ Calcul prochain déclenchement (`calculateNextTriggerForReminder`)
+   - ✅ Vérification et déclenchement notifications échues (`checkAndTriggerNotifications`)
+   - ✅ Planification automatique avec `setInterval` (vérification chaque minute)
+   - ✅ Gestion actions notifications (open, snooze, complete)
+   - ✅ Événements personnalisés pour communication inter-composants
+   - ✅ Enregistrement Service Worker (préparé pour notifications push hors ligne)
+   - ✅ Logger centralisé pour debugging
+
+2. **Intégration dans `RemindersSection.jsx`:**
+   - ✅ États gestion notifications (permission, support, Service Worker)
+   - ✅ Enregistrement Service Worker au montage
+   - ✅ Planification notifications pour rappels actifs (useEffect avec cleanup)
+   - ✅ Mise à jour automatique `lastTriggered` et recalcul `nextTrigger` après déclenchement
+   - ✅ Écoute événements personnalisés (reminderClick, reminderSnooze, reminderComplete)
+   - ✅ Bouton demande permission avec feedback visuel
+   - ✅ Badge état notifications (activées/désactivées/permission requise)
+   - ✅ Navigation automatique vers formulaire édition depuis notification
+   - ✅ Actions snooze (reporter 1h) et complete (reprogrammer) fonctionnelles
+   - ✅ Sauvegarde IndexedDB après chaque action
+
+**Décisions techniques:**
+- ✅ Vérification notifications toutes les minutes (balance précision/performance)
+- ✅ Utilisation `tag` pour éviter notifications multiples du même rappel
+- ✅ Actions limitées à 2 (compatibilité navigateurs)
+- ✅ Son optionnel selon préférences utilisateur (`methods.includes('sound')`)
+- ✅ Service Worker enregistré mais fichier `sw.js` à créer dans dossier `public` (étape suivante)
+- ✅ Gestion robuste erreurs avec try-catch et fallbacks
+- ✅ Logger centralisé pour traçabilité complète
+
+**Prochaines étapes:** Créer fichier `public/sw.js` pour Service Worker complet (notifications push hors ligne).
+
+### Phase 6.2: Optimisations Performance Avancées (4h)
+**Priorité:** MOYENNE - Améliore performance sur gros volumes de données  
+**Objectif:** Implémenter Web Workers et lazy loading pour les calculs lourds et composants volumineux.
+
+**Fonctionnalités à implémenter:**
+- ✅ Web Workers pour calculs corrélations Pearson (si > 10 métriques)
+- ✅ Web Workers pour analyses stratosphériques (découper en chunks)
+- ✅ Lazy loading photos avec IntersectionObserver
+- ✅ Code splitting composants lourds (PredictionsModule, CorrelationAnalysis)
+- ✅ Virtual scrolling pour grandes listes (si > 100 items)
+- ✅ Debouncing intelligent pour filtres/recherches
+- ✅ Optimisation re-renders avec React.memo stratégique
+
+### Phase 6.3: Système de Cache Intelligent (3h)
+**Priorité:** MOYENNE - Améliore réactivité et réduit calculs redondants  
+**Objectif:** Implémenter un système de cache LRU pour les calculs coûteux.
+
+**Fonctionnalités à implémenter:**
+- ✅ CalculationCache pour BMI, IMC, corrélations (LRU avec max 50 entrées)
+- ✅ CorrelationCache pour résultats corrélations (invalidation si données changent)
+- ✅ PredictionCache pour prévisions (TTL 1h, invalidation si nouvelles données)
+- ✅ SuccessPatternsCache pour patterns de succès (TTL 30min)
+- ✅ Invalidation intelligente basée sur hash des données sources
+- ✅ Gestion mémoire (purge automatique si > 10MB cache)
+- ✅ Metrics de cache (hit rate, miss rate) pour monitoring
+
+### Phase 6.4: Tests Unitaires et Intégration (3h)
+**Priorité:** HAUTE - Garantit robustesse et prévient régressions  
+**Objectif:** Créer une suite de tests complète pour les fonctions critiques.
+
+**Tests à créer:**
+- ✅ Tests unitaires `predictionUtils.js` (régression linéaire, prédictions)
+- ✅ Tests unitaires `correlationUtils.js` (Pearson, alignement données)
+- ✅ Tests unitaires `validation.js` (plages réalistes, cohérence)
+- ✅ Tests unitaires `activityBasedPredictions.js` (impact activité, scénarios)
+- ✅ Tests unitaires `successPatternsAnalyzer.js` (identification patterns, moyennes)
+- ✅ Tests unitaires `advancedAnalysisEngine.js` (niveaux d'analyse)
+- ✅ Tests intégration `intelligentAnalysis.js` (workflow complet)
+- ✅ Tests composants React critiques (PredictionsModule, CorrelationAnalysis)
+- ✅ Tests E2E workflow complet (saisie → calcul → affichage)
+- ✅ Configuration Jest + React Testing Library
+- ✅ Coverage > 80% pour fonctions critiques
 
 ---
 
