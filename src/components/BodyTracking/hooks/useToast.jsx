@@ -4,17 +4,19 @@
  * Système de notifications toast pour feedback utilisateur
  * dans les composants BodyTracking.
  */
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
-const Toast = ({ id, message, type, onClose }) => {
+const Toast = ({ id, message, type, onClose, detailedFeedback = null }) => {
+  const [showDetails, setShowDetails] = React.useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose(id);
-    }, type === 'error' ? 5000 : 3000); // Erreurs restent plus longtemps
+    }, type === 'error' ? 7000 : (detailedFeedback ? 8000 : 3000)); // Erreurs détaillées restent plus longtemps
 
     return () => clearTimeout(timer);
-  }, [id, onClose, type]);
+  }, [id, onClose, type, detailedFeedback]);
 
   const typeStyles = {
     success: {
@@ -43,14 +45,39 @@ const Toast = ({ id, message, type, onClose }) => {
 
   return (
     <div
-      className={`${style.bg} ${style.border} border rounded-lg shadow-lg p-4 min-w-[300px] max-w-[500px] text-white backdrop-blur-sm animate-slide-in-right`}
+      className={`${style.bg} ${style.border} border rounded-lg shadow-lg p-4 min-w-[300px] max-w-[600px] text-white backdrop-blur-sm animate-slide-in-right`}
       role="alert"
       aria-live="assertive"
     >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">{style.icon}</div>
         <div className="flex-1">
-          <p className="font-medium text-sm">{message}</p>
+          {/* ✅ OPTIMISATION: Message avec titre si feedback détaillé */}
+          {detailedFeedback ? (
+            <>
+              <p className="font-semibold text-sm mb-1">{detailedFeedback.title}</p>
+              <p className="font-medium text-xs opacity-90 mb-2">{detailedFeedback.message}</p>
+              {detailedFeedback.suggestions && detailedFeedback.suggestions.length > 0 && (
+                <>
+                  <button
+                    onClick={() => setShowDetails(!showDetails)}
+                    className="text-xs text-white/80 hover:text-white underline mb-2"
+                  >
+                    {showDetails ? 'Masquer' : 'Voir'} les suggestions ({detailedFeedback.suggestions.length})
+                  </button>
+                  {showDetails && (
+                    <ul className="text-xs space-y-1 mt-2 list-disc list-inside opacity-90">
+                      {detailedFeedback.suggestions.map((suggestion, index) => (
+                        <li key={index}>{suggestion}</li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </>
+          ) : (
+            <p className="font-medium text-sm">{message}</p>
+          )}
         </div>
         <button
           onClick={() => onClose(id)}
@@ -70,9 +97,9 @@ const Toast = ({ id, message, type, onClose }) => {
 export const useToast = () => {
   const [toasts, setToasts] = useState([]);
 
-  const showToast = useCallback((message, type = 'success') => {
+  const showToast = useCallback((message, type = 'success', detailedFeedback = null) => {
     const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts(prev => [...prev, { id, message, type, detailedFeedback }]);
     return id;
   }, []);
 
@@ -81,8 +108,8 @@ export const useToast = () => {
   }, []);
 
   const showSuccess = useCallback((message) => showToast(message, 'success'), [showToast]);
-  const showError = useCallback((message) => showToast(message, 'error'), [showToast]);
-  const showWarning = useCallback((message) => showToast(message, 'warning'), [showToast]);
+  const showError = useCallback((message, detailedFeedback = null) => showToast(message, 'error', detailedFeedback), [showToast]);
+  const showWarning = useCallback((message, detailedFeedback = null) => showToast(message, 'warning', detailedFeedback), [showToast]);
   const showInfo = useCallback((message) => showToast(message, 'info'), [showToast]);
 
   const ToastContainer = () => (
@@ -98,6 +125,7 @@ export const useToast = () => {
             message={toast.message}
             type={toast.type}
             onClose={removeToast}
+            detailedFeedback={toast.detailedFeedback}
           />
         </div>
       ))}

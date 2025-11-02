@@ -10,6 +10,7 @@
  */
 
 import logger from '../../../utils/logger';
+import { getPhotoUrl } from './photoNormalizer';
 
 const log = logger.module('BodyTrackingExportImport');
 
@@ -155,7 +156,7 @@ export const prepareExportData = (bodyTrackingData = {}, options = {}) => {
         date: photo.date || photo.timestamp,
         weight: photo.weight || null,
         notes: photo.notes || '',
-        url: photo.url || photo.photo || null,
+        url: getPhotoUrl(photo) || null, // ✅ NORMALISATION: Utilise helper pour obtenir URL
         measurements: photo.measurements || {},
         angle: photo.angle || 'front',
         tags: photo.tags || [],

@@ -6,6 +6,7 @@
  */
 
 import logger from '../../../utils/logger';
+import { getPhotoUrl } from './photoNormalizer';
 
 const log = logger.module('DataCleanup');
 
@@ -122,10 +123,14 @@ export const cleanupOldPhotos = (photos = [], config = {}) => {
       // Calculer taille supprimée (si métadonnées disponibles)
       if (photo.compression?.originalSize) {
         totalRemovedSize += photo.compression.originalSize;
-      } else if (photo.url) {
-        // Estimation basée sur longueur Base64
-        const base64Length = photo.url.split(',')[1]?.length || 0;
-        totalRemovedSize += Math.ceil((base64Length * 3) / 4);
+      } else {
+        // ✅ NORMALISATION: Utilise helper pour obtenir URL
+        const url = getPhotoUrl(photo);
+        if (url) {
+          // Estimation basée sur longueur Base64
+          const base64Length = url.split(',')[1]?.length || 0;
+          totalRemovedSize += Math.ceil((base64Length * 3) / 4);
+        }
       }
     }
   });

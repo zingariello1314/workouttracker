@@ -802,27 +802,27 @@ const WorkoutProvider = ({ children }) => {
   // Fonction pour ajouter une photo de progression
   const addProgressPhoto = async (photoData) => {
     try {
-      // Validation améliorée : photo ou url requis (weight et notes ne sont pas toujours obligatoires pour photos)
-      if (!photoData || (!photoData.photo && !photoData.url)) {
-        throw new Error('Données de photo de progression invalides : photo ou url requis');
-      }
+      // ✅ NORMALISATION: Importer utilitaire normalisation
+      const { validateAndNormalizePhotoData } = await import('../components/BodyTracking/utils/photoNormalizer');
+      
+      // ✅ Validation et normalisation (garantit structure cohérente avec uniquement `url`)
+      const normalizedPhotoData = validateAndNormalizePhotoData(photoData);
 
-      // 🔧 Validation renforcée des données photo
+      // 🔧 Validation renforcée des données photo (structure normalisée)
       const validatedPhoto = {
-        id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        date: photoData.date ? new Date(photoData.date).toISOString() : new Date().toISOString(),
-        weight: photoData.weight ? parseFloat(photoData.weight) : null,
-        notes: photoData.notes || '',
-        photo: photoData.photo || photoData.url || null,
-        url: photoData.url || photoData.photo || null, // Compatibilité
-        measurements: photoData.measurements || {},
-        angle: photoData.angle || 'front',
-        tags: photoData.tags || ['progress'],
+        id: normalizedPhotoData.id || `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        date: normalizedPhotoData.date || new Date().toISOString(),
+        weight: normalizedPhotoData.weight ? parseFloat(normalizedPhotoData.weight) : null,
+        notes: normalizedPhotoData.notes || '',
+        url: normalizedPhotoData.url, // ✅ UNIQUEMENT `url` (plus de `photo`)
+        measurements: normalizedPhotoData.measurements || {},
+        angle: normalizedPhotoData.angle || 'front',
+        tags: normalizedPhotoData.tags || ['progress'],
         // Métadonnées de sauvegarde
         savedAt: Date.now(),
-        version: '1.0',
-        filename: photoData.filename || 'progress_photo.jpg',
-        type: photoData.type || 'photo'
+        version: '2.0', // Version incrémentée pour marquer normalisation
+        filename: normalizedPhotoData.filename || 'progress_photo.jpg',
+        type: normalizedPhotoData.type || 'photo'
       };
 
       const currentData = getCurrentData();
@@ -1105,6 +1105,44 @@ const WorkoutProvider = ({ children }) => {
       autoSaveContext(contextData);
     }
   }, [programs, activeProgram, programHistory, weekVariant, isGymMode, autoSaveContext]);
+
+  // ✅ NORMALISATION: Migration automatique photos existantes (convertir photo → url)
+  useEffect(() => {
+    const migratePhotos = async () => {
+      if (!data?.progressPhotos || data.progressPhotos.length === 0) {
+        return;
+      }
+
+      // Vérifier si migration nécessaire
+      const needsMigration = data.progressPhotos.some(photo => 
+        photo.photo && (!photo.url || photo.version !== '2.0')
+      );
+
+      if (!needsMigration) {
+        return; // Déjà normalisé
+      }
+
+      try {
+        const { migratePhotoEntries } = await import('../components/BodyTracking/utils/photoNormalizer');
+        const migratedPhotos = migratePhotoEntries(data.progressPhotos);
+
+        // Si photos migrées, sauvegarder
+        if (migratedPhotos.length !== data.progressPhotos.length || 
+            migratedPhotos.some((p, i) => p !== data.progressPhotos[i])) {
+          const updatedData = {
+            ...data,
+            progressPhotos: migratedPhotos
+          };
+          await updateData(updatedData);
+          console.log('✅ Migration photos: structure normalisée (photo → url)');
+        }
+      } catch (error) {
+        console.error('❌ Erreur migration photos:', error);
+      }
+    };
+
+    migratePhotos();
+  }, [data?.progressPhotos, updateData]);
 
   // Initialisation avec le programme par défaut si aucun programme actif
   useEffect(() => {

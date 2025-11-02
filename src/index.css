@@ -108,3 +108,17 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
+
+/* ✅ OPTIMISATION: Animation shimmer pour skeleton loaders */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
