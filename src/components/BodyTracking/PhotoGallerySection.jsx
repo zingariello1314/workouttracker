@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { 
   Camera, 
   Upload, 
@@ -15,15 +15,25 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Info
+  Info,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
+import { validatePhoto } from './utils/validation';
+import { useToast } from './hooks/useToast';
+import { compressImage } from './utils/imageCompression';
+import { usePagination } from './hooks/usePagination';
+import logger from '../../utils/logger';
+
+const log = logger.component('PhotoGallerySection');
 
 const PhotoGallerySection = () => {
   const { data, addProgressPhoto } = useWorkout();
+  const { showSuccess, showError, showWarning, ToastContainer } = useToast();
   const fileInputRef = useRef(null);
   
   const [viewMode, setViewMode] = useState('grid'); // 'grid' ou 'list'
@@ -34,18 +44,22 @@ const PhotoGallerySection = () => {
   const [compareMode, setCompareMode] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Récupérer les vraies photos de progression
-  const getProgressPhotos = () => {
+  // 🔍 Récupérer les vraies photos de progression (MEMOIZED)
+  const progressPhotos = useMemo(() => {
     if (!data?.progressPhotos || data.progressPhotos.length === 0) {
       return [];
     }
     
     return data.progressPhotos
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
+        const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
+        return dateB - dateA; // Plus récent en premier
+      })
       .map(photo => ({
         id: photo.id,
         url: photo.photo || photo.url,
-        date: new Date(photo.date),
+        date: photo.date ? new Date(photo.date) : (photo.timestamp ? new Date(photo.timestamp) : new Date()),
         angle: photo.angle || 'front',
         weight: photo.weight,
         notes: photo.notes,
@@ -53,63 +67,132 @@ const PhotoGallerySection = () => {
         filename: photo.filename,
         type: photo.type
       }));
-  };
-
-  const progressPhotos = getProgressPhotos();
+  }, [data?.progressPhotos]);
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
     
     files.forEach(file => {
+      // 🔍 Validation complète de la photo avant traitement
+      const validation = validatePhoto(file, {
+        maxSizeMB: 10,
+        allowedFormats: ['image/jpeg', 'image/jpg', 'image/png'],
+        maxPhotosPerDay: 5,
+        existingPhotos: progressPhotos
+      });
+      
+      if (validation && validation.error) {
+        // Afficher erreur de validation via toast
+        showError(validation.error);
+        return; // Ne pas traiter ce fichier
+      }
+      
       if (file.type.startsWith('image/')) {
-        // Simulation d'upload avec progress
+        // 🖼️ COMPRESSION INTELLIGENTE AVANT SAUVEGARDE
         setUploadProgress(0);
-        const interval = setInterval(() => {
-          setUploadProgress(prev => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              
-              // Convertir le fichier en Base64 pour la persistance
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                const base64Image = e.target.result;
-                
-                // Créer l'entrée photo avec Base64
-                const photoEntry = {
-                  id: Date.now() + Math.random(),
-                  url: base64Image, // Utiliser Base64 au lieu de URL.createObjectURL
-                  date: new Date(),
-                  angle: 'front', // Par défaut, pourrait être sélectionnable
-                  weight: null, // Pourrait être récupéré des dernières métriques
-                  notes: '',
-                  tags: ['progress'],
-                  filename: file.name,
-                  type: 'photo'
-                };
-                
-                // Sauvegarder via le contexte (IndexedDB)
-                addProgressPhoto(photoEntry);
-              };
-              reader.onerror = () => {
-                console.error('Erreur lors de la lecture du fichier');
-              };
-              reader.readAsDataURL(file);
-              
-              return 0;
+        
+        // Compresser l'image avec progression
+        compressImage(
+          file,
+          {
+            maxWidth: 1200,
+            maxHeight: 1600,
+            maxSizeKB: 500,
+            quality: 0.75,
+            minQuality: 0.3
+          },
+          (progress) => {
+            setUploadProgress(progress);
+          }
+        )
+          .then((compressionResult) => {
+            // Afficher informations de compression
+            const { compressedDataUrl, originalSizeKB, compressedSizeKB, reduction } = compressionResult;
+            
+            // Message informatif si compression significative
+            if (reduction > 10) {
+              showInfo(
+                `Photo compressée: ${originalSizeKB.toFixed(1)}KB → ${compressedSizeKB.toFixed(1)}KB (-${reduction}%)`
+              );
             }
-            return prev + 10;
+            
+            // Créer l'entrée photo avec Base64 compressé
+            const photoEntry = {
+              id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              url: compressedDataUrl,
+              date: new Date(),
+              angle: 'front', // Par défaut, pourrait être sélectionnable
+              weight: null, // Pourrait être récupéré des dernières métriques
+              notes: '',
+              tags: ['progress'],
+              filename: file.name,
+              type: 'photo',
+              // Métadonnées de compression pour traçabilité
+              compression: {
+                originalSize: compressionResult.originalSize,
+                compressedSize: compressionResult.compressedSize,
+                reduction: reduction,
+                quality: compressionResult.quality,
+                dimensions: compressionResult.dimensions
+              }
+            };
+            
+            // Sauvegarder via le contexte (IndexedDB)
+            return addProgressPhoto(photoEntry);
+          })
+          .then(() => {
+            setUploadProgress(0);
+            showSuccess('Photo de progression enregistrée avec succès');
+          })
+          .catch((error) => {
+            log.error('Erreur lors de la compression/sauvegarde de la photo', error);
+            setUploadProgress(0);
+            showError(
+              error.message || 'Erreur lors de l\'enregistrement de la photo. Veuillez réessayer.'
+            );
           });
-        }, 100);
       }
     });
   };
 
-  const filteredPhotos = progressPhotos.filter(photo => {
-    if (filterBy === 'all') return true;
-    return photo.angle === filterBy;
+  // 🔍 Filtrer et trier photos (MEMOIZED)
+  const filteredPhotos = useMemo(() => {
+    return progressPhotos.filter(photo => {
+      if (filterBy === 'all') return true;
+      return photo.angle === filterBy;
+    });
+  }, [progressPhotos, filterBy]);
+
+  const sortedPhotos = useMemo(() => {
+    return [...filteredPhotos].sort((a, b) => {
+      const dateA = a.date instanceof Date ? a.date : new Date(a.date || 0);
+      const dateB = b.date instanceof Date ? b.date : new Date(b.date || 0);
+      return dateB - dateA; // Plus récent en premier
+    });
+  }, [filteredPhotos]);
+
+  // 📄 PAGINATION OPTIMISÉE - Ne charger que les photos nécessaires
+  const itemsPerPage = viewMode === 'grid' ? 12 : 8; // Moins en mode liste (photos plus grandes)
+  const {
+    paginatedItems: paginatedPhotos,
+    currentPage,
+    totalPages,
+    paginationInfo,
+    goToNextPage,
+    goToPrevPage,
+    goToPage,
+    goToFirstPage,
+    goToLastPage,
+    resetPagination
+  } = usePagination(sortedPhotos, {
+    itemsPerPage,
+    initialPage: 1
   });
 
-  const sortedPhotos = [...filteredPhotos].sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Réinitialiser pagination quand le filtre change
+  useEffect(() => {
+    resetPagination();
+  }, [filterBy, resetPagination]);
 
   const handlePhotoSelect = (photoId) => {
     setSelectedPhotos(prev => {
@@ -155,7 +238,9 @@ const PhotoGallerySection = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <ToastContainer />
+      <div className="space-y-6">
       {/* Contrôles d'upload et de vue */}
       <Card>
         <CardHeader>
@@ -163,7 +248,7 @@ const PhotoGallerySection = () => {
             <Camera className="w-5 h-5 text-green-400" />
             Galerie de progression
             <span className="text-sm font-normal text-slate-400">
-              ({sortedPhotos.length} photos)
+              ({sortedPhotos.length} photos{totalPages > 1 && ` - Page ${currentPage}/${totalPages}`})
             </span>
           </CardTitle>
         </CardHeader>
@@ -230,26 +315,37 @@ const PhotoGallerySection = () => {
             </div>
           </div>
 
-          {/* Barre de progression d'upload */}
-          {uploadProgress > 0 && (
+          {/* Barre de progression de compression */}
+          {uploadProgress > 0 && uploadProgress < 100 && (
             <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Upload className="w-4 h-4 text-blue-400" />
-                <span className="text-sm text-slate-300">Upload en cours...</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-blue-400 animate-pulse" />
+                  <span className="text-sm text-slate-300">
+                    Compression en cours... {uploadProgress.toFixed(0)}%
+                  </span>
+                </div>
+                <span className="text-xs text-slate-400">{uploadProgress.toFixed(0)}%</span>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-2">
+              <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Optimisation de la taille et de la qualité pour un stockage efficace
+              </p>
             </div>
           )}
 
-          {/* Galerie */}
+          {/* Galerie avec pagination */}
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {sortedPhotos.map((photo, index) => (
+              {paginatedPhotos.map((photo, index) => {
+                // Index global pour la navigation dans le modal
+                const globalIndex = sortedPhotos.findIndex(p => p.id === photo.id);
+                return (
                 <div
                   key={photo.id}
                   className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
@@ -279,7 +375,7 @@ const PhotoGallerySection = () => {
                           variant="ghost"
                           onClick={(e) => {
                             e.stopPropagation();
-                            openModal(index);
+                            openModal(globalIndex);
                           }}
                           className="p-1 h-auto bg-slate-800/80 hover:bg-slate-700"
                         >
@@ -304,11 +400,15 @@ const PhotoGallerySection = () => {
                     </div>
                   )}
                 </div>
-              ))}
+              );
+              })}
             </div>
           ) : (
             <div className="space-y-4">
-              {sortedPhotos.map((photo, index) => (
+              {paginatedPhotos.map((photo, index) => {
+                // Index global pour la navigation dans le modal
+                const globalIndex = sortedPhotos.findIndex(p => p.id === photo.id);
+                return (
                 <div
                   key={photo.id}
                   className={`flex gap-4 p-4 rounded-lg border transition-all cursor-pointer ${
@@ -358,14 +458,91 @@ const PhotoGallerySection = () => {
                       variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
-                        openModal(index);
+                        openModal(globalIndex);
                       }}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
+            </div>
+          )}
+
+          {/* Contrôles de pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between border-t border-slate-700 pt-4">
+              <div className="text-sm text-slate-400">
+                Affichage {paginationInfo.startIndex}-{paginationInfo.endIndex} sur {sortedPhotos.length} photos
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Première page */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToFirstPage}
+                  disabled={!paginationInfo.hasPrevPage}
+                  className="p-2"
+                  title="Première page"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </Button>
+
+                {/* Page précédente */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToPrevPage}
+                  disabled={!paginationInfo.hasPrevPage}
+                  className="p-2"
+                  title="Page précédente"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                {/* Sélecteur de page */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-300">Page</span>
+                  <select
+                    value={currentPage}
+                    onChange={(e) => goToPage(parseInt(e.target.value))}
+                    className="bg-slate-700 border border-slate-600 rounded px-3 py-1 text-sm text-white min-w-[60px]"
+                  >
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <option key={page} value={page}>
+                        {page}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-sm text-slate-400">sur {totalPages}</span>
+                </div>
+
+                {/* Page suivante */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={!paginationInfo.hasNextPage}
+                  className="p-2"
+                  title="Page suivante"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+
+                {/* Dernière page */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToLastPage}
+                  disabled={!paginationInfo.hasNextPage}
+                  className="p-2"
+                  title="Dernière page"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           )}
 
@@ -539,6 +716,7 @@ const PhotoGallerySection = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

@@ -21,6 +21,9 @@ import CorrelationAnalysis from '../BodyTracking/CorrelationAnalysis';
 import PredictionsModule from '../BodyTracking/PredictionsModule';
 import StabilityAnalysis from '../BodyTracking/StabilityAnalysis';
 import ProgressComments from '../BodyTracking/ProgressComments';
+import BodyActivityInsights from '../BodyTracking/components/BodyActivityInsights';
+import BodyTrackingErrorBoundary from '../BodyTracking/ErrorBoundary';
+import CleanupNotification from '../BodyTracking/components/CleanupNotification';
 
 const ProgressTab = () => {
   const [activeSection, setActiveSection] = useState('metrics');
@@ -34,6 +37,7 @@ const ProgressTab = () => {
     { id: 'correlations', label: 'Corrélations', icon: TrendingUp, description: 'Analyse des relations', category: 'advanced' },
     { id: 'predictions', label: 'Prévisions', icon: Target, description: 'Projections futures', category: 'advanced' },
     { id: 'stability', label: 'Stabilité', icon: Zap, description: 'Détection de stagnations', category: 'advanced' },
+    { id: 'insights', label: 'Analyses Intelligentes', icon: Brain, description: 'Pourquoi j\'ai changé ?', category: 'advanced' },
     { id: 'comments', label: 'Commentaires', icon: MessageSquare, description: 'Analyse automatique', category: 'advanced' }
   ];
 
@@ -58,6 +62,8 @@ const ProgressTab = () => {
         return <PredictionsModule />;
       case 'stability':
         return <StabilityAnalysis />;
+      case 'insights':
+        return <BodyActivityInsights />;
       case 'comments':
         return <ProgressComments />;
       default:
@@ -112,10 +118,13 @@ const ProgressTab = () => {
         </CardContent>
       </Card>
 
-      {/* Contenu de la section active */}
-      <div>
+      {/* Notification de nettoyage (si nécessaire) */}
+      <CleanupNotification />
+
+      {/* Contenu de la section active - Protégé par Error Boundary */}
+      <BodyTrackingErrorBoundary>
         {renderActiveSection()}
-      </div>
+      </BodyTrackingErrorBoundary>
     </div>
   );
 };

@@ -87,6 +87,16 @@ const logger = {
     info: (message, ...args) => logger.info(`[${hookName}] ${message}`, ...args),
     warn: (message, ...args) => logger.warn(`[${hookName}] ${message}`, ...args),
     error: (message, error, ...args) => logger.error(`[${hookName}] ${message}`, error, ...args)
+  }),
+
+  /**
+   * Logger pour module/utilitaire spécifique
+   */
+  module: (moduleName) => ({
+    debug: (message, ...args) => logger.debug(`[${moduleName}] ${message}`, ...args),
+    info: (message, ...args) => logger.info(`[${moduleName}] ${message}`, ...args),
+    warn: (message, ...args) => logger.warn(`[${moduleName}] ${message}`, ...args),
+    error: (message, error, ...args) => logger.error(`[${moduleName}] ${message}`, error, ...args)
   })
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Scale, 
   Ruler, 
@@ -15,9 +15,15 @@ import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
+import { validateMetricsForm } from './utils/validation';
+import { useToast } from './hooks/useToast';
+import logger from '../../utils/logger';
+
+const log = logger.component('MetricsSection');
 
 const MetricsSection = () => {
   const { data, addProgressEntry } = useWorkout();
+  const { showSuccess, showError, showInfo, ToastContainer } = useToast();
   const [formData, setFormData] = useState({
     weight: '',
     height: '',
@@ -34,8 +40,8 @@ const MetricsSection = () => {
   const [showCalculations, setShowCalculations] = useState(true);
   const [errors, setErrors] = useState({});
 
-  // Récupérer la dernière entrée réelle des données
-  const getLastEntry = () => {
+  // 🔍 Récupérer la dernière entrée réelle des données (MEMOIZED)
+  const lastEntry = useMemo(() => {
     if (!data?.progressEntries || data.progressEntries.length === 0) {
       return null;
     }
@@ -43,12 +49,14 @@ const MetricsSection = () => {
     // Trouver la dernière entrée de type 'metrics'
     const metricsEntries = data.progressEntries
       .filter(entry => entry.type === 'metrics')
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
+        const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
+        return dateB - dateA; // Plus récent en premier
+      });
     
     return metricsEntries.length > 0 ? metricsEntries[0] : null;
-  };
-
-  const lastEntry = getLastEntry();
+  }, [data?.progressEntries]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -65,115 +73,151 @@ const MetricsSection = () => {
     }
   };
 
+  // 🔍 Validation complète avec module centralisé
   const validateForm = () => {
-    const newErrors = {};
+    const validation = validateMetricsForm(
+      formData,
+      data?.progressEntries || [],
+      { skipDuplicateCheck: false, skipBMICheck: false }
+    );
     
-    if (!formData.weight || isNaN(formData.weight) || formData.weight <= 0) {
-      newErrors.weight = 'Le poids doit être un nombre positif';
-    }
-    
-    if (formData.height && (isNaN(formData.height) || formData.height <= 0)) {
-      newErrors.height = 'La taille doit être un nombre positif';
-    }
-    
-    // Validation des mensurations
-    const measurements = ['waist', 'chest', 'arms', 'thighs', 'neck', 'hips'];
-    measurements.forEach(field => {
-      if (formData[field] && (isNaN(formData[field]) || formData[field] <= 0)) {
-        newErrors[field] = 'La mesure doit être un nombre positif';
-      }
-    });
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
+      showError('Veuillez corriger les erreurs dans le formulaire');
       return;
     }
     
-    const entry = {
-      ...formData,
-      weight: parseFloat(formData.weight),
-      height: formData.height ? parseFloat(formData.height) : null,
-      waist: formData.waist ? parseFloat(formData.waist) : null,
-      chest: formData.chest ? parseFloat(formData.chest) : null,
-      arms: formData.arms ? parseFloat(formData.arms) : null,
-      thighs: formData.thighs ? parseFloat(formData.thighs) : null,
-      neck: formData.neck ? parseFloat(formData.neck) : null,
-      hips: formData.hips ? parseFloat(formData.hips) : null,
-      timestamp: new Date(formData.date).getTime(),
-      type: 'metrics'
-    };
-    
-    // Sauvegarder l'entrée via le contexte (IndexedDB)
-    addProgressEntry(entry);
-    
-    // Réinitialiser le formulaire
-    setFormData({
-      weight: '',
-      height: '',
-      waist: '',
-      chest: '',
-      arms: '',
-      thighs: '',
-      neck: '',
-      hips: '',
-      notes: '',
-      date: new Date().toISOString().split('T')[0]
-    });
+    try {
+      const entry = {
+        ...formData,
+        weight: parseFloat(formData.weight),
+        height: formData.height ? parseFloat(formData.height) : null,
+        waist: formData.waist ? parseFloat(formData.waist) : null,
+        chest: formData.chest ? parseFloat(formData.chest) : null,
+        arms: formData.arms ? parseFloat(formData.arms) : null,
+        thighs: formData.thighs ? parseFloat(formData.thighs) : null,
+        neck: formData.neck ? parseFloat(formData.neck) : null,
+        hips: formData.hips ? parseFloat(formData.hips) : null,
+        timestamp: new Date(formData.date).getTime(),
+        type: 'metrics'
+      };
+      
+      // Sauvegarder l'entrée via le contexte (IndexedDB)
+      const result = await addProgressEntry(entry);
+      
+      // Afficher message selon action (added, replaced, merged)
+      if (result?.action === 'replaced') {
+        showInfo('Mesure mise à jour (remplacement de l\'entrée existante)');
+      } else if (result?.action === 'merged') {
+        showInfo('Mesure fusionnée avec données existantes');
+      } else {
+        showSuccess('Mesure enregistrée avec succès');
+      }
+      
+      // Réinitialiser le formulaire
+      setFormData({
+        weight: '',
+        height: '',
+        waist: '',
+        chest: '',
+        arms: '',
+        thighs: '',
+        neck: '',
+        hips: '',
+        notes: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      
+      // Réinitialiser les erreurs
+      setErrors({});
+    } catch (error) {
+      log.error('Erreur lors de la sauvegarde des métriques', error);
+      showError(
+        error.message || 'Une erreur s\'est produite lors de l\'enregistrement. Veuillez réessayer.'
+      );
+    }
   };
 
-  const calculateBMI = () => {
+  // 📊 Calculs automatiques memoizés pour performance optimale
+  
+  // Calcul IMC (MEMOIZED)
+  const bmi = useMemo(() => {
     const weight = parseFloat(formData.weight) || (lastEntry?.weight || null);
     const height = parseFloat(formData.height) || (lastEntry?.height || null);
     
-    if (weight && height) {
+    if (weight != null && height != null && !isNaN(weight) && !isNaN(height) && weight > 0 && height > 0) {
       const heightInM = height / 100;
-      return (weight / (heightInM * heightInM)).toFixed(1);
+      const bmiValue = weight / (heightInM * heightInM);
+      return isFinite(bmiValue) ? bmiValue.toFixed(1) : null;
     }
     return null;
-  };
+  }, [formData.weight, formData.height, lastEntry?.weight, lastEntry?.height]);
 
-  const calculateIdealWeight = () => {
+  // Calcul poids idéal (MEMOIZED)
+  const idealWeight = useMemo(() => {
     const height = parseFloat(formData.height) || (lastEntry?.height || null);
     
-    if (height) {
+    if (height != null && !isNaN(height) && height > 0) {
       // Formule de Lorentz (approximative)
-      const idealWeight = height - 100 - ((height - 150) / 4);
-      return Math.max(idealWeight, 45).toFixed(1);
+      const idealWeightValue = height - 100 - ((height - 150) / 4);
+      const clampedWeight = Math.max(idealWeightValue, 45);
+      return isFinite(clampedWeight) ? clampedWeight.toFixed(1) : null;
     }
     return null;
-  };
+  }, [formData.height, lastEntry?.height]);
 
-  const getWeightDifference = () => {
-    if (formData.weight && lastEntry?.weight) {
-      const diff = parseFloat(formData.weight) - lastEntry.weight;
-      return diff.toFixed(1);
+  // Calcul différence poids (MEMOIZED)
+  const weightDiff = useMemo(() => {
+    const currentWeight = parseFloat(formData.weight);
+    const lastWeight = lastEntry?.weight;
+    
+    if (!isNaN(currentWeight) && currentWeight > 0 && lastWeight != null && !isNaN(lastWeight) && lastWeight > 0) {
+      const diff = currentWeight - lastWeight;
+      return isFinite(diff) ? diff.toFixed(1) : null;
     }
     return null;
-  };
+  }, [formData.weight, lastEntry?.weight]);
 
-  const getBMICategory = (bmi) => {
+  // Catégorie IMC (MEMOIZED)
+  const bmiCategory = useMemo(() => {
     if (!bmi) return null;
     const bmiValue = parseFloat(bmi);
+    
+    if (isNaN(bmiValue) || !isFinite(bmiValue)) return null;
     
     if (bmiValue < 18.5) return { category: 'Insuffisance pondérale', color: 'text-blue-400' };
     if (bmiValue < 25) return { category: 'Poids normal', color: 'text-green-400' };
     if (bmiValue < 30) return { category: 'Surpoids', color: 'text-yellow-400' };
     return { category: 'Obésité', color: 'text-red-400' };
-  };
+  }, [bmi]);
 
-  const bmi = calculateBMI();
-  const idealWeight = calculateIdealWeight();
-  const weightDiff = getWeightDifference();
-  const bmiCategory = getBMICategory(bmi);
+  // Conseils personnalisés (MEMOIZED)
+  const personalizedAdvice = useMemo(() => {
+    if (!bmi) return null;
+    const bmiValue = parseFloat(bmi);
+    if (isNaN(bmiValue) || !isFinite(bmiValue)) return null;
+    
+    if (bmiValue < 18.5) {
+      return "Votre IMC indique une insuffisance pondérale. Consultez un professionnel de santé pour un plan nutritionnel adapté.";
+    } else if (bmiValue >= 18.5 && bmiValue < 25) {
+      return "Excellent ! Votre IMC est dans la zone normale. Maintenez vos bonnes habitudes.";
+    } else if (bmiValue >= 25 && bmiValue < 30) {
+      return "Votre IMC indique un léger surpoids. Une activité physique régulière peut vous aider.";
+    } else {
+      return "Votre IMC indique une obésité. Il est recommandé de consulter un professionnel de santé.";
+    }
+  }, [bmi]);
 
   return (
-    <div className="space-y-6">
+    <>
+      <ToastContainer />
+      <div className="space-y-6">
       {/* Formulaire de saisie */}
       <Card>
         <CardHeader>
@@ -418,10 +462,7 @@ const MetricsSection = () => {
                   <div>
                     <h5 className="font-semibold text-blue-200 mb-1">Conseil personnalisé</h5>
                     <p className="text-blue-100 text-sm">
-                      {parseFloat(bmi) < 18.5 && "Votre IMC indique une insuffisance pondérale. Consultez un professionnel de santé pour un plan nutritionnel adapté."}
-                      {parseFloat(bmi) >= 18.5 && parseFloat(bmi) < 25 && "Excellent ! Votre IMC est dans la zone normale. Maintenez vos bonnes habitudes."}
-                      {parseFloat(bmi) >= 25 && parseFloat(bmi) < 30 && "Votre IMC indique un léger surpoids. Une activité physique régulière peut vous aider."}
-                      {parseFloat(bmi) >= 30 && "Votre IMC indique une obésité. Il est recommandé de consulter un professionnel de santé."}
+                      {personalizedAdvice || "Saisissez votre poids et votre taille pour obtenir des conseils personnalisés."}
                     </p>
                   </div>
                 </div>
@@ -431,6 +472,7 @@ const MetricsSection = () => {
         </Card>
       )}
     </div>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Activity, 
   Zap, 
@@ -18,9 +18,15 @@ import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
+import { validateImpedanceForm } from './utils/validation';
+import { useToast } from './hooks/useToast';
+import logger from '../../utils/logger';
+
+const log = logger.component('ImpedanceSection');
 
 const ImpedanceSection = () => {
   const { data, addProgressEntry } = useWorkout();
+  const { showSuccess, showError, showInfo, ToastContainer } = useToast();
   const [formData, setFormData] = useState({
     bodyFatMass: '',
     bodyFatPercentage: '',
@@ -43,24 +49,51 @@ const ImpedanceSection = () => {
   const [errors, setErrors] = useState({});
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Données simulées pour l'historique et les références
-  const lastMeasurement = {
-    bodyFatMass: 12.8,
-    bodyFatPercentage: 17.0,
-    fatFreeWeight: 62.4,
-    skeletalMuscle: 35.2,
-    bodyWater: 58.2,
-    protein: 18.5,
-    minerals: 4.2,
-    visceralFat: 8,
-    subcutaneousFat: 15.8,
-    metabolicAge: 28,
-    basalMetabolism: 1680,
-    muscleQuality: 85,
-    boneMass: 3.1,
-    bodyType: 'Athletic',
-    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  };
+  // 🔍 CHARGER LA DERNIÈRE MESURE D'IMPÉDANCE DEPUIS INDEXEDDB
+  const lastMeasurement = useMemo(() => {
+    if (!data?.progressEntries || data.progressEntries.length === 0) {
+      return null;
+    }
+
+    // Filtrer les entrées de type 'impedance' et trier par date décroissante
+    const impedanceEntries = data.progressEntries
+      .filter(entry => entry.type === 'impedance')
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
+        const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
+        return dateB - dateA; // Plus récent en premier
+      });
+
+    if (impedanceEntries.length === 0) {
+      return null;
+    }
+
+    const lastEntry = impedanceEntries[0];
+    
+    // Normaliser la date (peut être ISO string ou timestamp)
+    const entryDate = lastEntry.date 
+      ? new Date(lastEntry.date) 
+      : (lastEntry.timestamp ? new Date(lastEntry.timestamp) : new Date());
+
+    // Retourner la dernière mesure avec toutes ses propriétés
+    return {
+      bodyFatMass: lastEntry.bodyFatMass || null,
+      bodyFatPercentage: lastEntry.bodyFatPercentage || null,
+      fatFreeWeight: lastEntry.fatFreeWeight || null,
+      skeletalMuscle: lastEntry.skeletalMuscle || null,
+      bodyWater: lastEntry.bodyWater || null,
+      protein: lastEntry.protein || null,
+      minerals: lastEntry.minerals || null,
+      visceralFat: lastEntry.visceralFat || null,
+      subcutaneousFat: lastEntry.subcutaneousFat || null,
+      metabolicAge: lastEntry.metabolicAge || null,
+      basalMetabolism: lastEntry.basalMetabolism || null,
+      muscleQuality: lastEntry.muscleQuality || null,
+      boneMass: lastEntry.boneMass || null,
+      bodyType: lastEntry.bodyType || null,
+      date: entryDate
+    };
+  }, [data?.progressEntries]);
 
   const referenceRanges = {
     bodyFatPercentage: { 
@@ -90,88 +123,88 @@ const ImpedanceSection = () => {
     }
   };
 
+  // 🔍 Validation complète avec module centralisé
   const validateForm = () => {
-    const newErrors = {};
+    const validation = validateImpedanceForm(
+      formData,
+      data?.progressEntries || [],
+      { skipDuplicateCheck: false, skipConsistencyCheck: false }
+    );
     
-    // Validation des champs numériques
-    const numericFields = [
-      'bodyFatMass', 'bodyFatPercentage', 'fatFreeWeight', 'skeletalMuscle',
-      'bodyWater', 'protein', 'minerals', 'visceralFat', 'subcutaneousFat',
-      'metabolicAge', 'basalMetabolism', 'muscleQuality', 'boneMass'
-    ];
-    
-    numericFields.forEach(field => {
-      if (formData[field] && (isNaN(formData[field]) || formData[field] <= 0)) {
-        newErrors[field] = 'Doit être un nombre positif';
-      }
-    });
-    
-    // Validations spécifiques
-    if (formData.bodyFatPercentage && (formData.bodyFatPercentage < 3 || formData.bodyFatPercentage > 50)) {
-      newErrors.bodyFatPercentage = 'Pourcentage de graisse corporelle invalide (3-50%)';
-    }
-    
-    if (formData.bodyWater && (formData.bodyWater < 30 || formData.bodyWater > 80)) {
-      newErrors.bodyWater = 'Pourcentage d\'eau corporelle invalide (30-80%)';
-    }
-    
-    if (formData.visceralFat && formData.visceralFat > 30) {
-      newErrors.visceralFat = 'Niveau de graisse viscérale trop élevé (max 30)';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
+      showError('Veuillez corriger les erreurs dans le formulaire');
       return;
     }
     
-    const entry = {
-      ...formData,
-      timestamp: new Date(formData.date).getTime()
-    };
-    
-    // Convertir les valeurs numériques
-    Object.keys(entry).forEach(key => {
-      if (key !== 'date' && key !== 'notes' && key !== 'bodyType' && key !== 'timestamp' && entry[key]) {
-        entry[key] = parseFloat(entry[key]);
+    try {
+      const entry = {
+        ...formData,
+        timestamp: new Date(formData.date).getTime()
+      };
+      
+      // Convertir les valeurs numériques
+      Object.keys(entry).forEach(key => {
+        if (key !== 'date' && key !== 'notes' && key !== 'bodyType' && key !== 'timestamp' && entry[key]) {
+          entry[key] = parseFloat(entry[key]);
+        }
+      });
+      
+      // Ajouter le type requis pour addProgressEntry
+      const entryWithType = {
+        ...entry,
+        type: 'impedance'
+      };
+      
+      // Sauvegarder l'entrée via le contexte (IndexedDB)
+      // La déduplication est gérée automatiquement dans addProgressEntry
+      const result = await addProgressEntry(entryWithType);
+      
+      // Afficher un message selon l'action effectuée (added, replaced, merged)
+      if (result?.action === 'replaced') {
+        showInfo('Mesure d\'impédancemétrie mise à jour (remplacement de l\'entrée existante)');
+      } else if (result?.action === 'merged') {
+        showInfo('Données fusionnées avec entrée existante');
+      } else {
+        showSuccess('Mesure d\'impédancemétrie enregistrée avec succès');
       }
-    });
-    
-    console.log('Nouvelle mesure d\'impédancemétrie:', entry);
-    
-    // Ajouter le type requis pour addProgressEntry
-    const entryWithType = {
-      ...entry,
-      type: 'impedance'
-    };
-    
-    // Sauvegarder l'entrée via le contexte (IndexedDB)
-    addProgressEntry(entryWithType);
-    
-    // Réinitialiser le formulaire
-    setFormData({
-      bodyFatMass: '',
-      bodyFatPercentage: '',
-      fatFreeWeight: '',
-      skeletalMuscle: '',
-      bodyWater: '',
-      protein: '',
-      minerals: '',
-      visceralFat: '',
-      subcutaneousFat: '',
-      metabolicAge: '',
-      basalMetabolism: '',
-      muscleQuality: '',
-      boneMass: '',
-      bodyType: '',
-      date: new Date().toISOString().split('T')[0],
-      notes: ''
-    });
+      
+      // Réinitialiser le formulaire uniquement si succès
+      setFormData({
+        bodyFatMass: '',
+        bodyFatPercentage: '',
+        fatFreeWeight: '',
+        skeletalMuscle: '',
+        bodyWater: '',
+        protein: '',
+        minerals: '',
+        visceralFat: '',
+        subcutaneousFat: '',
+        metabolicAge: '',
+        basalMetabolism: '',
+        muscleQuality: '',
+        boneMass: '',
+        bodyType: '',
+        date: new Date().toISOString().split('T')[0],
+        notes: ''
+      });
+      
+      // Réinitialiser les erreurs
+      setErrors({});
+    } catch (error) {
+      log.error('Erreur lors de la sauvegarde des données d\'impédance', error);
+      showError(
+        error.message || 'Une erreur s\'est produite lors de l\'enregistrement. Veuillez réessayer.'
+      );
+      // Ne pas réinitialiser le formulaire si erreur
+      // L'utilisateur peut corriger et réessayer
+    }
   };
 
   const getHealthStatus = (value, field, gender = 'male') => {
@@ -190,24 +223,25 @@ const ImpedanceSection = () => {
     }
   };
 
-  const getChangeIndicator = (current, previous) => {
+  const getChangeIndicator = (current, previous, type = 'weight') => {
     if (!current || !previous) return null;
     
     const change = current - previous;
-    const percentage = ((change / previous) * 100).toFixed(1);
+    const changeFormatted = formatChange(change, { type });
+    const changeWithPct = formatChangeWithPercentage(change, previous, { type });
     
-    if (Math.abs(change) < 0.1) {
+    if (changeFormatted.isStable || Math.abs(change) < 0.1) {
       return { icon: <Minus className="w-4 h-4 text-gray-400" />, text: 'Stable', color: 'text-gray-400' };
     } else if (change > 0) {
       return { 
         icon: <TrendingUp className="w-4 h-4 text-red-400" />, 
-        text: `+${change.toFixed(1)} (+${percentage}%)`, 
+        text: `${changeFormatted.formatted} (${changeWithPct.percentage})`, 
         color: 'text-red-400' 
       };
     } else {
       return { 
         icon: <TrendingDown className="w-4 h-4 text-green-400" />, 
-        text: `${change.toFixed(1)} (${percentage}%)`, 
+        text: `${changeFormatted.formatted} (${changeWithPct.percentage})`, 
         color: 'text-green-400' 
       };
     }
@@ -331,7 +365,9 @@ const ImpedanceSection = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <>
+      <ToastContainer />
+      <div className="space-y-6">
       {/* Formulaire de saisie */}
       <Card>
         <CardHeader>
@@ -378,7 +414,7 @@ const ImpedanceSection = () => {
                         className={`w-full bg-slate-700 border rounded-lg px-3 py-2 text-white ${
                           errors[metric.key] ? 'border-red-500' : 'border-slate-600'
                         }`}
-                        placeholder={`Ex: ${lastMeasurement[metric.key] || '0'}`}
+                        placeholder={lastMeasurement?.[metric.key] ? `Ex: ${lastMeasurement[metric.key]}${metric.unit || ''}` : `Entrer ${metric.label.toLowerCase()}...`}
                       />
                       {errors[metric.key] && (
                         <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
@@ -386,9 +422,19 @@ const ImpedanceSection = () => {
                           {errors[metric.key]}
                         </p>
                       )}
-                      {lastMeasurement[metric.key] && (
+                      {lastMeasurement?.[metric.key] != null && (
                         <p className="text-slate-400 text-sm mt-1">
-                          Dernière: {lastMeasurement[metric.key]}{metric.unit} ({formatDate(lastMeasurement.date)})
+                          Dernière: {(() => {
+                            const value = lastMeasurement[metric.key];
+                            const formatted = metric.unit === '%' 
+                              ? formatPercentage(value)
+                              : metric.unit === 'kg'
+                              ? formatWeight(value)
+                              : metric.unit === 'kcal'
+                              ? formatCalories(value)
+                              : `${value}${metric.unit || ''}`;
+                            return `${formatted} (${formatDate(lastMeasurement.date)})`;
+                          })()}
                         </p>
                       )}
                       <p className="text-xs text-slate-500 mt-1">{metric.description}</p>
@@ -441,110 +487,179 @@ const ImpedanceSection = () => {
       </Card>
 
       {/* Analyse des dernières mesures */}
-      <Card className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-purple-400" />
-            Analyse des mesures actuelles
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Indice de masse grasse */}
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                <Target className="w-4 h-4 text-blue-400" />
-                Masse grasse
-              </h4>
-              <div className="text-2xl font-bold text-white mb-1">
-                {lastMeasurement.bodyFatPercentage}%
-              </div>
-              {(() => {
-                const status = getHealthStatus(lastMeasurement.bodyFatPercentage, 'bodyFatPercentage');
-                return status && (
-                  <div className={`text-sm px-2 py-1 rounded ${status.bg} ${status.color}`}>
-                    {status.status}
+      {lastMeasurement ? (
+        <Card className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-purple-400" />
+              Analyse des dernières mesures
+              <span className="text-sm font-normal text-slate-400">
+                ({formatDate(lastMeasurement.date)})
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Indice de masse grasse */}
+              {lastMeasurement.bodyFatPercentage != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-blue-400" />
+                    Masse grasse
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.bodyFatPercentage}%
                   </div>
-                );
-              })()}
-            </div>
+                  {(() => {
+                    const status = getHealthStatus(lastMeasurement.bodyFatPercentage, 'bodyFatPercentage');
+                    return status && (
+                      <div className={`text-sm px-2 py-1 rounded ${status.bg} ${status.color}`}>
+                        {status.status}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
-            {/* Eau corporelle */}
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                <Droplets className="w-4 h-4 text-blue-400" />
-                Hydratation
-              </h4>
-              <div className="text-2xl font-bold text-white mb-1">
-                {lastMeasurement.bodyWater}%
-              </div>
-              {(() => {
-                const status = getHealthStatus(lastMeasurement.bodyWater, 'bodyWater');
-                return status && (
-                  <div className={`text-sm px-2 py-1 rounded ${status.bg} ${status.color}`}>
-                    {status.status}
+              {/* Eau corporelle */}
+              {lastMeasurement.bodyWater != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Droplets className="w-4 h-4 text-blue-400" />
+                    Hydratation
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.bodyWater}%
                   </div>
-                );
-              })()}
-            </div>
+                  {(() => {
+                    const status = getHealthStatus(lastMeasurement.bodyWater, 'bodyWater');
+                    return status && (
+                      <div className={`text-sm px-2 py-1 rounded ${status.bg} ${status.color}`}>
+                        {status.status}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
-            {/* Graisse viscérale */}
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-yellow-400" />
-                Graisse viscérale
-              </h4>
-              <div className="text-2xl font-bold text-white mb-1">
-                {lastMeasurement.visceralFat}
-              </div>
-              {(() => {
-                const status = getHealthStatus(lastMeasurement.visceralFat, 'visceralFat');
-                return status && (
-                  <div className={`text-sm px-2 py-1 rounded ${status.bg} ${status.color}`}>
-                    {status.status}
+              {/* Graisse viscérale */}
+              {lastMeasurement.visceralFat != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                    Graisse viscérale
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.visceralFat}
                   </div>
-                );
-              })()}
-            </div>
+                  {(() => {
+                    const status = getHealthStatus(lastMeasurement.visceralFat, 'visceralFat');
+                    return status && (
+                      <div className={`text-sm px-2 py-1 rounded ${status.bg} ${status.color}`}>
+                        {status.status}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
-            {/* Métabolisme de base */}
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-yellow-400" />
-                Métabolisme
-              </h4>
-              <div className="text-2xl font-bold text-white mb-1">
-                {lastMeasurement.basalMetabolism}
-              </div>
-              <div className="text-sm text-slate-400">kcal/jour</div>
-            </div>
+              {/* Métabolisme de base */}
+              {lastMeasurement.basalMetabolism != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-yellow-400" />
+                    Métabolisme
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.basalMetabolism}
+                  </div>
+                  <div className="text-sm text-slate-400">kcal/jour</div>
+                </div>
+              )}
 
-            {/* Âge métabolique */}
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                <Heart className="w-4 h-4 text-red-400" />
-                Âge métabolique
-              </h4>
-              <div className="text-2xl font-bold text-white mb-1">
-                {lastMeasurement.metabolicAge}
-              </div>
-              <div className="text-sm text-slate-400">ans</div>
-            </div>
+              {/* Âge métabolique */}
+              {lastMeasurement.metabolicAge != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-red-400" />
+                    Âge métabolique
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.metabolicAge}
+                  </div>
+                  <div className="text-sm text-slate-400">ans</div>
+                </div>
+              )}
 
-            {/* Qualité musculaire */}
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-green-400" />
-                Qualité musculaire
-              </h4>
-              <div className="text-2xl font-bold text-white mb-1">
-                {lastMeasurement.muscleQuality}
-              </div>
-              <div className="text-sm text-slate-400">score</div>
+              {/* Qualité musculaire */}
+              {lastMeasurement.muscleQuality != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-green-400" />
+                    Qualité musculaire
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.muscleQuality}
+                  </div>
+                  <div className="text-sm text-slate-400">score</div>
+                </div>
+              )}
+
+              {/* Masse musculaire squelettique */}
+              {lastMeasurement.skeletalMuscle != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-green-400" />
+                    Muscle squelettique
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.skeletalMuscle} kg
+                  </div>
+                  <div className="text-sm text-slate-400">masse musculaire</div>
+                </div>
+              )}
+
+              {/* Masse graisseuse */}
+              {lastMeasurement.bodyFatMass != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-orange-400" />
+                    Masse graisseuse
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.bodyFatMass} kg
+                  </div>
+                  <div className="text-sm text-slate-400">poids total graisse</div>
+                </div>
+              )}
+
+              {/* Poids sans graisse */}
+              {lastMeasurement.fatFreeWeight != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-400" />
+                    Poids sans graisse
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.fatFreeWeight} kg
+                  </div>
+                  <div className="text-sm text-slate-400">masse maigre</div>
+                </div>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+          <CardContent className="p-6 text-center">
+            <Zap className="w-12 h-12 mx-auto mb-4 text-purple-400" />
+            <h4 className="text-lg font-semibold text-white mb-2">Aucune mesure d'impédance enregistrée</h4>
+            <p className="text-slate-400">
+              Enregistrez votre première mesure d'impédancemétrie pour voir les analyses et tendances.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Conseils d'utilisation */}
       <Card className="bg-blue-600/10 border-blue-500/30">
@@ -566,6 +681,7 @@ const ImpedanceSection = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 

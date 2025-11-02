@@ -25,9 +25,7 @@ import { useWorkout } from './context/WorkoutContext';
 const WorkoutTrackerApp = () => {
   return (
     <WorkoutProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <WorkoutTrackerContent />
-      </div>
+      <WorkoutTrackerContent />
     </WorkoutProvider>
   );
 };
@@ -84,47 +82,49 @@ const WorkoutTrackerContent = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {activeTab !== 'home' && <Header />}
-      {activeTab !== 'home' && <Navigation />}
-      
-      <main className="flex-1 overflow-y-auto">
-        {activeTab === 'home' ? (
-          <HomePage />
-        ) : (
-          <div className="container mx-auto px-4 py-6">
-            {renderTabContent()}
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="flex flex-col min-h-screen">
+        {activeTab !== 'home' && <Header />}
+        {activeTab !== 'home' && <Navigation />}
+        
+        <main className="flex-1 overflow-y-auto">
+          {activeTab === 'home' ? (
+            <HomePage />
+          ) : (
+            <div className="container mx-auto px-4 py-6">
+              {renderTabContent()}
+            </div>
+          )}
+        </main>
+
+        {/* Modales */}
+        {showExerciseVariations && (
+          <ExerciseVariations
+            baseExercise={selectedExercise}
+            onClose={() => setShowExerciseVariations(false)}
+          />
         )}
-      </main>
 
-      {/* Modales */}
-      {showExerciseVariations && (
-        <ExerciseVariations
-          baseExercise={selectedExercise}
-          onClose={() => setShowExerciseVariations(false)}
-        />
-      )}
+        {showAdvancedStats && (
+          <AdvancedStats
+            workoutData={getWorkoutHistory()}
+            isOpen={showAdvancedStats}
+            onClose={() => setShowAdvancedStats(false)}
+          />
+        )}
 
-      {showAdvancedStats && (
-        <AdvancedStats
-          workoutData={getWorkoutHistory()}
-          isOpen={showAdvancedStats}
-          onClose={() => setShowAdvancedStats(false)}
-        />
-      )}
-
-      {showSessionFeedback && (
-        <SessionFeedback
-          isOpen={showSessionFeedback}
-          onClose={() => setShowSessionFeedback(false)}
-          onSave={(feedbackData) => {
-            console.log('Session feedback sauvegardé:', feedbackData);
-            setShowSessionFeedback(false);
-          }}
-          sessionData={sessionData}
-        />
-      )}
+        {showSessionFeedback && (
+          <SessionFeedback
+            isOpen={showSessionFeedback}
+            onClose={() => setShowSessionFeedback(false)}
+            onSave={(feedbackData) => {
+              console.log('Session feedback sauvegardé:', feedbackData);
+              setShowSessionFeedback(false);
+            }}
+            sessionData={sessionData}
+          />
+        )}
+      </div>
     </div>
   );
 };

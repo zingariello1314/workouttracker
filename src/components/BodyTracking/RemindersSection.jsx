@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Bell, 
   Clock, 
@@ -23,9 +23,54 @@ import { formatDate } from '../../utils/dateUtils';
 
 const RemindersSection = () => {
   const { data, updateData } = useWorkout();
-  const [reminders, setReminders] = useState([
+  
+  // Fonction helper pour calculer nextTrigger avec format ISO
+  const calculateNextTriggerDefault = (reminder) => {
+    const now = new Date();
+    const [hours, minutes] = reminder.time.split(':').map(Number);
+    
+    let nextDate = new Date();
+    nextDate.setHours(hours, minutes, 0, 0);
+    
+    switch (reminder.frequency) {
+      case 'daily':
+        if (nextDate <= now) {
+          nextDate.setDate(nextDate.getDate() + 1);
+        }
+        break;
+      case 'weekly':
+        const targetDay = reminder.dayOfWeek;
+        const currentDay = nextDate.getDay();
+        let daysUntilTarget = (targetDay - currentDay + 7) % 7;
+        if (daysUntilTarget === 0 && nextDate <= now) {
+          daysUntilTarget = 7;
+        }
+        nextDate.setDate(nextDate.getDate() + daysUntilTarget);
+        break;
+      case 'biweekly':
+        const targetDayBi = reminder.dayOfWeek;
+        const currentDayBi = nextDate.getDay();
+        let daysUntilTargetBi = (targetDayBi - currentDayBi + 7) % 7;
+        if (daysUntilTargetBi === 0 && nextDate <= now) {
+          daysUntilTargetBi = 14;
+        }
+        nextDate.setDate(nextDate.getDate() + daysUntilTargetBi);
+        break;
+      case 'monthly':
+        nextDate.setDate(reminder.dayOfMonth);
+        if (nextDate <= now) {
+          nextDate.setMonth(nextDate.getMonth() + 1);
+        }
+        break;
+    }
+    
+    return nextDate;
+  };
+  
+  // Reminders par défaut pour nouveaux utilisateurs (une seule fois)
+  const defaultReminders = useMemo(() => [
     {
-      id: 1,
+      id: Date.now() + 1,
       type: 'weight',
       title: 'Pesée hebdomadaire',
       description: 'Rappel pour se peser',
@@ -33,12 +78,16 @@ const RemindersSection = () => {
       dayOfWeek: 1, // Lundi
       time: '08:00',
       enabled: true,
-      lastTriggered: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      nextTrigger: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      lastTriggered: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      nextTrigger: calculateNextTriggerDefault({
+        frequency: 'weekly',
+        dayOfWeek: 1,
+        time: '08:00'
+      }).toISOString(),
       methods: ['notification', 'sound']
     },
     {
-      id: 2,
+      id: Date.now() + 2,
       type: 'measurements',
       title: 'Mensurations mensuelles',
       description: 'Prendre les mesures corporelles',
@@ -46,37 +95,78 @@ const RemindersSection = () => {
       dayOfMonth: 1,
       time: '09:00',
       enabled: true,
-      lastTriggered: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-      nextTrigger: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+      lastTriggered: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      nextTrigger: calculateNextTriggerDefault({
+        frequency: 'monthly',
+        dayOfMonth: 1,
+        time: '09:00'
+      }).toISOString(),
       methods: ['notification']
-    },
-    {
-      id: 3,
-      type: 'photos',
-      title: 'Photos de progression',
-      description: 'Prendre des photos de suivi',
-      frequency: 'biweekly',
-      dayOfWeek: 0, // Dimanche
-      time: '10:00',
-      enabled: false,
-      lastTriggered: null,
-      nextTrigger: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      methods: ['notification']
-    },
-    {
-      id: 4,
-      type: 'impedance',
-      title: 'Analyse corporelle complète',
-      description: 'Mesures d\'impédancemétrie',
-      frequency: 'monthly',
-      dayOfMonth: 15,
-      time: '08:30',
-      enabled: true,
-      lastTriggered: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      nextTrigger: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
-      methods: ['notification', 'email']
     }
-  ]);
+  ], []);
+
+  // Normaliser les reminders depuis IndexedDB (convertir strings ISO en Date objets pour affichage)
+  const normalizeReminders = (remindersFromDB) => {
+    if (!Array.isArray(remindersFromDB) || remindersFromDB.length === 0) {
+      return [];
+    }
+    
+    return remindersFromDB.map(reminder => ({
+      ...reminder,
+      // Convertir les dates ISO strings en Date objets si nécessaire
+      lastTriggered: reminder.lastTriggered 
+        ? (reminder.lastTriggered instanceof Date 
+            ? reminder.lastTriggered 
+            : new Date(reminder.lastTriggered))
+        : null,
+      nextTrigger: reminder.nextTrigger 
+        ? (reminder.nextTrigger instanceof Date 
+            ? reminder.nextTrigger 
+            : new Date(reminder.nextTrigger))
+        : new Date()
+    }));
+  };
+
+  // Charger reminders depuis IndexedDB ou utiliser defaults si première fois
+  const [reminders, setReminders] = useState(() => {
+    const savedReminders = data?.bodyTrackingReminders;
+    
+    if (savedReminders && Array.isArray(savedReminders) && savedReminders.length > 0) {
+      return normalizeReminders(savedReminders);
+    }
+    
+    // Première fois : retourner defaults mais ne pas les sauvegarder automatiquement
+    // L'utilisateur pourra les créer manuellement ou ils seront sauvegardés au premier ajout
+    return [];
+  });
+
+  // Synchroniser avec IndexedDB quand data change
+  useEffect(() => {
+    const savedReminders = data?.bodyTrackingReminders;
+    
+    if (savedReminders && Array.isArray(savedReminders)) {
+      if (savedReminders.length > 0) {
+        // Normaliser et mettre à jour uniquement si différents (éviter boucles infinies)
+        const normalized = normalizeReminders(savedReminders);
+        setReminders(prev => {
+          // Comparer par IDs pour éviter re-renders inutiles
+          const prevIds = prev.map(r => r.id).sort().join(',');
+          const newIds = normalized.map(r => r.id).sort().join(',');
+          
+          // Comparaison profonde pour détecter les changements réels
+          const prevStr = JSON.stringify(prev.map(r => ({ ...r, lastTriggered: r.lastTriggered?.toISOString(), nextTrigger: r.nextTrigger?.toISOString() })));
+          const newStr = JSON.stringify(normalized.map(r => ({ ...r, lastTriggered: r.lastTriggered?.toISOString(), nextTrigger: r.nextTrigger?.toISOString() })));
+          
+          if (prevIds !== newIds || prevStr !== newStr) {
+            return normalized;
+          }
+          return prev;
+        });
+      }
+      // Si IndexedDB est vide, on garde l'état local actuel
+      // L'utilisateur peut créer ses propres reminders
+    }
+  }, [data?.bodyTrackingReminders]); // Dépendance uniquement sur bodyTrackingReminders
 
   const [showForm, setShowForm] = useState(false);
   const [editingReminder, setEditingReminder] = useState(null);
@@ -145,18 +235,53 @@ const RemindersSection = () => {
       nextTrigger: calculateNextTrigger(formData)
     };
 
+    // Normaliser les dates pour IndexedDB (ISO strings)
+    const normalizedReminder = {
+      ...newReminder,
+      lastTriggered: newReminder.lastTriggered 
+        ? (newReminder.lastTriggered instanceof Date 
+            ? newReminder.lastTriggered.toISOString() 
+            : newReminder.lastTriggered)
+        : null,
+      nextTrigger: newReminder.nextTrigger 
+        ? (newReminder.nextTrigger instanceof Date 
+            ? newReminder.nextTrigger.toISOString() 
+            : newReminder.nextTrigger)
+        : new Date().toISOString()
+    };
+
     if (editingReminder) {
       setReminders(prev => {
-        const updatedReminders = prev.map(r => r.id === editingReminder.id ? newReminder : r);
+        const updatedReminders = prev.map(r => 
+          r.id === editingReminder.id 
+            ? normalizedReminder 
+            : r
+        );
+        
+        // Normaliser toutes les dates pour IndexedDB
+        const remindersForDB = updatedReminders.map(r => ({
+          ...r,
+          lastTriggered: r.lastTriggered instanceof Date ? r.lastTriggered.toISOString() : r.lastTriggered,
+          nextTrigger: r.nextTrigger instanceof Date ? r.nextTrigger.toISOString() : r.nextTrigger
+        }));
+        
         // Sauvegarder les rappels via IndexedDB
-        updateData({ ...data, bodyTrackingReminders: updatedReminders });
+        updateData({ ...data, bodyTrackingReminders: remindersForDB });
         return updatedReminders;
       });
     } else {
       setReminders(prev => {
-        const updatedReminders = [...prev, newReminder];
+        const updatedReminders = [...prev, normalizedReminder];
+        
+        // Normaliser toutes les dates pour IndexedDB
+        const remindersForDB = updatedReminders.map(r => ({
+          ...r,
+          lastTriggered: r.lastTriggered instanceof Date ? r.lastTriggered.toISOString() : r.lastTriggered,
+          nextTrigger: r.nextTrigger instanceof Date ? r.nextTrigger.toISOString() : r.nextTrigger
+        }));
+        
         // Sauvegarder les rappels via IndexedDB
-        updateData({ ...data, bodyTrackingReminders: updatedReminders });
+        updateData({ ...data, bodyTrackingReminders: remindersForDB });
         return updatedReminders;
       });
     }
@@ -240,8 +365,16 @@ const RemindersSection = () => {
   const handleDelete = (id) => {
     setReminders(prev => {
       const updatedReminders = prev.filter(r => r.id !== id);
+      
+      // Normaliser toutes les dates pour IndexedDB
+      const remindersForDB = updatedReminders.map(r => ({
+        ...r,
+        lastTriggered: r.lastTriggered instanceof Date ? r.lastTriggered.toISOString() : r.lastTriggered,
+        nextTrigger: r.nextTrigger instanceof Date ? r.nextTrigger.toISOString() : r.nextTrigger
+      }));
+      
       // Sauvegarder les rappels via IndexedDB
-      updateData({ ...data, bodyTrackingReminders: updatedReminders });
+      updateData({ ...data, bodyTrackingReminders: remindersForDB });
       return updatedReminders;
     });
   };
@@ -251,8 +384,16 @@ const RemindersSection = () => {
       const updatedReminders = prev.map(r => 
         r.id === id ? { ...r, enabled: !r.enabled } : r
       );
+      
+      // Normaliser toutes les dates pour IndexedDB
+      const remindersForDB = updatedReminders.map(r => ({
+        ...r,
+        lastTriggered: r.lastTriggered instanceof Date ? r.lastTriggered.toISOString() : r.lastTriggered,
+        nextTrigger: r.nextTrigger instanceof Date ? r.nextTrigger.toISOString() : r.nextTrigger
+      }));
+      
       // Sauvegarder les rappels via IndexedDB
-      updateData({ ...data, bodyTrackingReminders: updatedReminders });
+      updateData({ ...data, bodyTrackingReminders: remindersForDB });
       return updatedReminders;
     });
   };

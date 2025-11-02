@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -13,60 +13,118 @@ import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
+import { 
+  formatWeight, 
+  formatHeight, 
+  formatBMI, 
+  formatPercentage,
+  formatMeasurement,
+  formatChange,
+  formatChangeWithPercentage,
+  formatValue
+} from './utils/formatting';
+import logger from '../../utils/logger';
+
+const log = logger.component('SummaryTableSection');
 
 const SummaryTableSection = () => {
   const { data } = useWorkout();
   const [sortBy, setSortBy] = useState('name');
   const [filterBy, setFilterBy] = useState('all');
 
-  // Générer les données réelles basées sur les entrées de progression
-  const generateBodyData = () => {
+  // 🔍 Calculer les dates de référence pour variations 7j et 30j
+  const calculateReferenceDates = () => {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return { now, sevenDaysAgo, thirtyDaysAgo };
+  };
+
+  // 📊 Générer les données réelles basées sur les entrées de progression (MEMOIZED)
+  const bodyData = useMemo(() => {
     if (!data?.progressEntries || data.progressEntries.length === 0) {
       return [];
     }
 
+    const { sevenDaysAgo, thirtyDaysAgo } = calculateReferenceDates();
+
+    // Filtrer et trier entrées métriques (type 'metrics')
     const metricsEntries = data.progressEntries
       .filter(entry => entry.type === 'metrics')
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
+        const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
+        return dateB - dateA; // Plus récent en premier
+      });
 
-    if (metricsEntries.length === 0) {
+    // Filtrer et trier entrées impédance (type 'impedance')
+    const impedanceEntries = data.progressEntries
+      .filter(entry => entry.type === 'impedance')
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
+        const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
+        return dateB - dateA;
+      });
+
+    if (metricsEntries.length === 0 && impedanceEntries.length === 0) {
       return [];
     }
 
-    const latestEntry = metricsEntries[0];
-    const previousEntry = metricsEntries[1] || null;
-    const monthAgoEntry = metricsEntries.find(entry => {
-      const entryDate = new Date(entry.date);
-      const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      return entryDate <= monthAgo;
-    });
+    const latestMetricsEntry = metricsEntries[0] || null;
+    const latestImpedanceEntry = impedanceEntries[0] || null;
+
+    // Trouver entrées de référence pour variations
+    const findReferenceEntry = (entries, referenceDate) => {
+      return entries.find(entry => {
+        const entryDate = entry.date ? new Date(entry.date) : (entry.timestamp ? new Date(entry.timestamp) : new Date(0));
+        return entryDate <= referenceDate;
+      }) || null;
+    };
+
+    const sevenDaysAgoMetricsEntry = findReferenceEntry(metricsEntries, sevenDaysAgo);
+    const thirtyDaysAgoMetricsEntry = findReferenceEntry(metricsEntries, thirtyDaysAgo);
+    const sevenDaysAgoImpedanceEntry = findReferenceEntry(impedanceEntries, sevenDaysAgo);
+    const thirtyDaysAgoImpedanceEntry = findReferenceEntry(impedanceEntries, thirtyDaysAgo);
 
     const bodyData = [];
 
+    // === MÉTRIQUES DE BASE (type 'metrics') ===
+    
     // Poids
-    if (latestEntry.weight) {
-      const weekChange = previousEntry ? latestEntry.weight - previousEntry.weight : 0;
-      const monthChange = monthAgoEntry ? latestEntry.weight - monthAgoEntry.weight : 0;
+    if (latestMetricsEntry?.weight != null && !isNaN(latestMetricsEntry.weight)) {
+      const currentWeight = latestMetricsEntry.weight;
+      const sevenDaysWeight = sevenDaysAgoMetricsEntry?.weight;
+      const thirtyDaysWeight = thirtyDaysAgoMetricsEntry?.weight;
+      
+      const weekChange = sevenDaysWeight != null && !isNaN(sevenDaysWeight) ? currentWeight - sevenDaysWeight : 0;
+      const monthChange = thirtyDaysWeight != null && !isNaN(thirtyDaysWeight) ? currentWeight - thirtyDaysWeight : 0;
+      
+      const entryDate = latestMetricsEntry.date ? new Date(latestMetricsEntry.date) : (latestMetricsEntry.timestamp ? new Date(latestMetricsEntry.timestamp) : new Date());
       
       bodyData.push({
         name: 'Poids',
-        value: `${latestEntry.weight} kg`,
-        date: new Date(latestEntry.date),
+        value: formatWeight(currentWeight),
+        numericValue: currentWeight,
+        date: entryDate,
         weekChange: weekChange,
         monthChange: monthChange,
         category: 'basic',
-        trend: weekChange < 0 ? 'down' : weekChange > 0 ? 'up' : 'stable',
+        trend: weekChange < -0.1 ? 'down' : weekChange > 0.1 ? 'up' : 'stable',
         isGood: weekChange < 0 || weekChange === 0
       });
     }
 
-    // Taille
-    if (latestEntry.height) {
+    // Taille (rarement change, donc pas de calcul variation)
+    if (latestMetricsEntry?.height != null && !isNaN(latestMetricsEntry.height)) {
+      const entryDate = latestMetricsEntry.date ? new Date(latestMetricsEntry.date) : (latestMetricsEntry.timestamp ? new Date(latestMetricsEntry.timestamp) : new Date());
+      
       bodyData.push({
         name: 'Taille',
-        value: `${latestEntry.height} cm`,
-        date: new Date(latestEntry.date),
+        value: formatHeight(latestMetricsEntry.height),
+        numericValue: latestMetricsEntry.height,
+        date: entryDate,
         weekChange: 0,
         monthChange: 0,
         category: 'basic',
@@ -75,61 +133,126 @@ const SummaryTableSection = () => {
       });
     }
 
-    // IMC
-    if (latestEntry.weight && latestEntry.height) {
-      const bmi = latestEntry.weight / Math.pow(latestEntry.height / 100, 2);
-      const previousBMI = previousEntry && previousEntry.height ? 
-        previousEntry.weight / Math.pow(previousEntry.height / 100, 2) : null;
-      const monthAgoBMI = monthAgoEntry && monthAgoEntry.height ? 
-        monthAgoEntry.weight / Math.pow(monthAgoEntry.height / 100, 2) : null;
+    // IMC (calculé depuis weight + height)
+    if (latestMetricsEntry?.weight != null && latestMetricsEntry?.height != null && 
+        !isNaN(latestMetricsEntry.weight) && !isNaN(latestMetricsEntry.height)) {
+      const currentBMI = latestMetricsEntry.weight / Math.pow(latestMetricsEntry.height / 100, 2);
       
-      const weekChange = previousBMI ? bmi - previousBMI : 0;
-      const monthChange = monthAgoBMI ? bmi - monthAgoBMI : 0;
+      let weekChange = 0;
+      let monthChange = 0;
+      
+      if (sevenDaysAgoMetricsEntry?.weight && sevenDaysAgoMetricsEntry?.height &&
+          !isNaN(sevenDaysAgoMetricsEntry.weight) && !isNaN(sevenDaysAgoMetricsEntry.height)) {
+        const sevenDaysBMI = sevenDaysAgoMetricsEntry.weight / Math.pow(sevenDaysAgoMetricsEntry.height / 100, 2);
+        weekChange = currentBMI - sevenDaysBMI;
+      }
+      
+      if (thirtyDaysAgoMetricsEntry?.weight && thirtyDaysAgoMetricsEntry?.height &&
+          !isNaN(thirtyDaysAgoMetricsEntry.weight) && !isNaN(thirtyDaysAgoMetricsEntry.height)) {
+        const thirtyDaysBMI = thirtyDaysAgoMetricsEntry.weight / Math.pow(thirtyDaysAgoMetricsEntry.height / 100, 2);
+        monthChange = currentBMI - thirtyDaysBMI;
+      }
+      
+      const entryDate = latestMetricsEntry.date ? new Date(latestMetricsEntry.date) : (latestMetricsEntry.timestamp ? new Date(latestMetricsEntry.timestamp) : new Date());
       
       bodyData.push({
         name: 'IMC',
-        value: bmi.toFixed(1),
-        date: new Date(latestEntry.date),
+        value: formatBMI(currentBMI),
+        numericValue: currentBMI,
+        date: entryDate,
         weekChange: weekChange,
         monthChange: monthChange,
         category: 'calculated',
-        trend: weekChange < 0 ? 'down' : weekChange > 0 ? 'up' : 'stable',
-        isGood: bmi >= 18.5 && bmi < 25
+        trend: weekChange < -0.1 ? 'down' : weekChange > 0.1 ? 'up' : 'stable',
+        isGood: currentBMI >= 18.5 && currentBMI < 25
       });
     }
 
     // Mensurations
     const measurements = [
-      { key: 'waist', name: 'Tour de taille', unit: 'cm' },
-      { key: 'chest', name: 'Tour de poitrine', unit: 'cm' },
-      { key: 'arms', name: 'Tour de bras', unit: 'cm' },
-      { key: 'thighs', name: 'Tour de cuisses', unit: 'cm' },
-      { key: 'neck', name: 'Tour de cou', unit: 'cm' },
-      { key: 'hips', name: 'Tour de hanches', unit: 'cm' }
+      { key: 'waist', name: 'Tour de taille', unit: 'cm', isGoodDown: true },
+      { key: 'chest', name: 'Tour de poitrine', unit: 'cm', isGoodDown: false },
+      { key: 'arms', name: 'Tour de bras', unit: 'cm', isGoodDown: false },
+      { key: 'thighs', name: 'Tour de cuisses', unit: 'cm', isGoodDown: false },
+      { key: 'neck', name: 'Tour de cou', unit: 'cm', isGoodDown: true },
+      { key: 'hips', name: 'Tour de hanches', unit: 'cm', isGoodDown: true }
     ];
 
     measurements.forEach(measurement => {
-      if (latestEntry[measurement.key]) {
-        const weekChange = previousEntry ? latestEntry[measurement.key] - previousEntry[measurement.key] : 0;
-        const monthChange = monthAgoEntry ? latestEntry[measurement.key] - monthAgoEntry[measurement.key] : 0;
+      if (latestMetricsEntry?.[measurement.key] != null && !isNaN(latestMetricsEntry[measurement.key])) {
+        const currentValue = latestMetricsEntry[measurement.key];
+        const sevenDaysValue = sevenDaysAgoMetricsEntry?.[measurement.key];
+        const thirtyDaysValue = thirtyDaysAgoMetricsEntry?.[measurement.key];
+        
+        const weekChange = sevenDaysValue != null && !isNaN(sevenDaysValue) ? currentValue - sevenDaysValue : 0;
+        const monthChange = thirtyDaysValue != null && !isNaN(thirtyDaysValue) ? currentValue - thirtyDaysValue : 0;
+        
+        const entryDate = latestMetricsEntry.date ? new Date(latestMetricsEntry.date) : (latestMetricsEntry.timestamp ? new Date(latestMetricsEntry.timestamp) : new Date());
         
         bodyData.push({
           name: measurement.name,
-          value: `${latestEntry[measurement.key]} ${measurement.unit}`,
-          date: new Date(latestEntry.date),
+          value: formatMeasurement(currentValue),
+          numericValue: currentValue,
+          date: entryDate,
           weekChange: weekChange,
           monthChange: monthChange,
           category: 'measurements',
-          trend: weekChange < 0 ? 'down' : weekChange > 0 ? 'up' : 'stable',
-          isGood: true
+          trend: weekChange < -0.1 ? 'down' : weekChange > 0.1 ? 'up' : 'stable',
+          isGood: measurement.isGoodDown ? (weekChange <= 0) : true // Tour de taille/cou : baisse = bon
         });
       }
     });
 
-    return bodyData;
-  };
+    // === MÉTRIQUES D'IMPÉDANCEMÉTRIE (type 'impedance') ===
+    
+    if (latestImpedanceEntry) {
+      const impedanceMetrics = [
+        { key: 'bodyFatPercentage', name: 'Masse graisseuse', unit: '%', isGoodDown: true },
+        { key: 'bodyWater', name: 'Eau du corps', unit: '%', isGoodDown: false },
+        { key: 'muscleMass', name: 'Masse musculaire', unit: 'kg', isGoodDown: false },
+        { key: 'visceralFat', name: 'Graisse viscérale', unit: '', isGoodDown: true },
+        { key: 'metabolicAge', name: 'Âge métabolique', unit: 'ans', isGoodDown: true },
+        { key: 'skeletalMuscle', name: 'Muscle squelettique', unit: 'kg', isGoodDown: false },
+        { key: 'boneMass', name: 'Masse osseuse', unit: 'kg', isGoodDown: false }
+      ];
 
-  const bodyData = generateBodyData();
+      impedanceMetrics.forEach(metric => {
+        if (latestImpedanceEntry[metric.key] != null && !isNaN(latestImpedanceEntry[metric.key])) {
+          const currentValue = latestImpedanceEntry[metric.key];
+          const sevenDaysValue = sevenDaysAgoImpedanceEntry?.[metric.key];
+          const thirtyDaysValue = thirtyDaysAgoImpedanceEntry?.[metric.key];
+          
+          const weekChange = sevenDaysValue != null && !isNaN(sevenDaysValue) ? currentValue - sevenDaysValue : 0;
+          const monthChange = thirtyDaysValue != null && !isNaN(thirtyDaysValue) ? currentValue - thirtyDaysValue : 0;
+          
+          const entryDate = latestImpedanceEntry.date ? new Date(latestImpedanceEntry.date) : (latestImpedanceEntry.timestamp ? new Date(latestImpedanceEntry.timestamp) : new Date());
+          
+          // Formater selon type
+          const formattedValue = metric.unit === '%'
+            ? formatPercentage(currentValue)
+            : metric.unit === 'kg'
+            ? formatWeight(currentValue)
+            : metric.unit === 'ans'
+            ? formatValue(currentValue, 'age')
+            : `${currentValue}${metric.unit ? ` ${metric.unit}` : ''}`;
+          
+          bodyData.push({
+            name: metric.name,
+            value: formattedValue,
+            numericValue: currentValue,
+            date: entryDate,
+            weekChange: weekChange,
+            monthChange: monthChange,
+            category: 'impedance',
+            trend: weekChange < -0.1 ? 'down' : weekChange > 0.1 ? 'up' : 'stable',
+            isGood: metric.isGoodDown ? (weekChange <= 0) : (weekChange >= 0)
+          });
+        }
+      });
+    }
+
+    return bodyData;
+  }, [data?.progressEntries]);
 
   const getTrendIcon = (trend, isGood) => {
     if (trend === 'stable') return <Minus className="w-4 h-4 text-gray-400" />;
@@ -159,34 +282,85 @@ const SummaryTableSection = () => {
     return diffDays;
   };
 
-  const filteredData = bodyData.filter(item => {
-    if (filterBy === 'all') return true;
-    return item.category === filterBy;
-  });
+  // 🔍 Filtrer et trier données (MEMOIZED)
+  const filteredData = useMemo(() => {
+    return bodyData.filter(item => {
+      if (filterBy === 'all') return true;
+      return item.category === filterBy;
+    });
+  }, [bodyData, filterBy]);
 
-  const sortedData = [...filteredData].sort((a, b) => {
-    switch (sortBy) {
-      case 'name':
-        return a.name.localeCompare(b.name);
-      case 'date':
-        return new Date(b.date) - new Date(a.date);
-      case 'weekChange':
-        return Math.abs(b.weekChange) - Math.abs(a.weekChange);
-      case 'monthChange':
-        return Math.abs(b.monthChange) - Math.abs(a.monthChange);
-      default:
-        return 0;
+  const sortedData = useMemo(() => {
+    return [...filteredData].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'date':
+          return new Date(b.date) - new Date(a.date);
+        case 'weekChange':
+          return Math.abs(b.weekChange) - Math.abs(a.weekChange);
+        case 'monthChange':
+          return Math.abs(b.monthChange) - Math.abs(a.monthChange);
+        default:
+          return 0;
+      }
+    });
+  }, [filteredData, sortBy]);
+
+  // 📝 Générer résumé dynamique depuis vraies données (MEMOIZED)
+  const summaryText = useMemo(() => {
+    if (bodyData.length === 0) {
+      return "Aucune donnée disponible pour générer un résumé. Commencez par saisir vos métriques corporelles.";
     }
-  });
 
-  const generateSummary = () => {
-    const significantChanges = bodyData.filter(item => Math.abs(item.monthChange) > 0.5);
+    // Filtrer changements significatifs (> 0.1 pour éviter bruit)
+    const significantChanges = bodyData.filter(item => 
+      item.numericValue != null && Math.abs(item.monthChange) > 0.1
+    );
+
+    // Calculer améliorations positives
     const positiveChanges = significantChanges.filter(item => 
       (item.trend === 'up' && item.isGood) || (item.trend === 'down' && !item.isGood)
     );
+
+    // Trouver les métriques clés avec changements réels
+    const weightChange = bodyData.find(item => item.name === 'Poids');
+    const bodyFatChange = bodyData.find(item => item.name === 'Masse graisseuse');
+    const bodyWaterChange = bodyData.find(item => item.name === 'Eau du corps');
+
+    // Construire résumé dynamique
+    const parts = [];
     
-    return `Depuis 30 jours : ${positiveChanges.length} améliorations significatives détectées. Poids -2,3 kg, masse graisseuse -1,5%, eau du corps +1,2%.`;
-  };
+    if (positiveChanges.length > 0) {
+      parts.push(`${positiveChanges.length} amélioration${positiveChanges.length > 1 ? 's' : ''} significative${positiveChanges.length > 1 ? 's' : ''} détectée${positiveChanges.length > 1 ? 's' : ''}`);
+    }
+
+    const details = [];
+    if (weightChange && Math.abs(weightChange.monthChange) > 0.1) {
+      const changeFormatted = formatChange(weightChange.monthChange, { type: 'weight' });
+      details.push(`Poids ${changeFormatted.formatted}`);
+    }
+    
+    if (bodyFatChange && Math.abs(bodyFatChange.monthChange) > 0.1) {
+      const changeFormatted = formatChange(bodyFatChange.monthChange, { type: 'percentage' });
+      details.push(`masse graisseuse ${changeFormatted.formatted}`);
+    }
+    
+    if (bodyWaterChange && Math.abs(bodyWaterChange.monthChange) > 0.1) {
+      const changeFormatted = formatChange(bodyWaterChange.monthChange, { type: 'percentage' });
+      details.push(`eau du corps ${changeFormatted.formatted}`);
+    }
+
+    if (details.length > 0) {
+      parts.push(details.join(', '));
+    }
+
+    if (parts.length === 0) {
+      return "Vos métriques sont stables depuis 30 jours. Continuez votre suivi pour observer des changements significatifs.";
+    }
+
+    return `Depuis 30 jours : ${parts.join('. ')}.`;
+  }, [bodyData]);
 
   return (
     <div className="space-y-6">
@@ -199,7 +373,7 @@ const SummaryTableSection = () => {
             </div>
             <div>
               <h3 className="font-semibold text-white mb-2">Résumé de progression (30 jours)</h3>
-              <p className="text-blue-100">{generateSummary()}</p>
+              <p className="text-blue-100">{summaryText}</p>
             </div>
           </div>
         </CardContent>
@@ -292,22 +466,80 @@ const SummaryTableSection = () => {
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-1">
-                          <span className={`font-medium ${getChangeColor(item.weekChange, item.isGood, item.trend)}`}>
-                            {item.weekChange > 0 ? '+' : ''}{item.weekChange}
-                          </span>
-                          <span className="text-xs text-slate-400">
-                            ({item.weekChange !== 0 ? `${((item.weekChange / parseFloat(item.value)) * 100).toFixed(1)}%` : '0%'})
-                          </span>
+                          {item.weekChange !== 0 ? (
+                            <>
+                              {(() => {
+                                // Déterminer type selon nom métrique
+                                let changeType = 'weight';
+                                if (item.name.includes('%') || item.name.includes('graisseuse') || item.name.includes('eau')) {
+                                  changeType = 'percentage';
+                                } else if (item.name.includes('cm') || item.name.includes('Tour')) {
+                                  changeType = 'measurements';
+                                }
+                                
+                                const changeFormatted = formatChange(item.weekChange, { type: changeType });
+                                const changeWithPct = formatChangeWithPercentage(
+                                  item.weekChange,
+                                  item.numericValue,
+                                  { type: changeType }
+                                );
+                                
+                                return (
+                                  <>
+                                    <span className={`font-medium ${getChangeColor(item.weekChange, item.isGood, item.trend)}`}>
+                                      {changeFormatted.formatted}
+                                    </span>
+                                    {changeWithPct.percentage && (
+                                      <span className="text-xs text-slate-400">
+                                        ({changeWithPct.percentage})
+                                      </span>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
                         </div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-1">
-                          <span className={`font-medium ${getChangeColor(item.monthChange, item.isGood, item.trend)}`}>
-                            {item.monthChange > 0 ? '+' : ''}{item.monthChange}
-                          </span>
-                          <span className="text-xs text-slate-400">
-                            ({item.monthChange !== 0 ? `${((item.monthChange / parseFloat(item.value)) * 100).toFixed(1)}%` : '0%'})
-                          </span>
+                          {item.monthChange !== 0 ? (
+                            <>
+                              {(() => {
+                                // Déterminer type selon nom métrique
+                                let changeType = 'weight';
+                                if (item.name.includes('%') || item.name.includes('graisseuse') || item.name.includes('eau')) {
+                                  changeType = 'percentage';
+                                } else if (item.name.includes('cm') || item.name.includes('Tour')) {
+                                  changeType = 'measurements';
+                                }
+                                
+                                const changeFormatted = formatChange(item.monthChange, { type: changeType });
+                                const changeWithPct = formatChangeWithPercentage(
+                                  item.monthChange,
+                                  item.numericValue,
+                                  { type: changeType }
+                                );
+                                
+                                return (
+                                  <>
+                                    <span className={`font-medium ${getChangeColor(item.monthChange, item.isGood, item.trend)}`}>
+                                      {changeFormatted.formatted}
+                                    </span>
+                                    {changeWithPct.percentage && (
+                                      <span className="text-xs text-slate-400">
+                                        ({changeWithPct.percentage})
+                                      </span>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
                         </div>
                       </td>
                       <td className="py-4 px-4">
@@ -335,21 +567,26 @@ const SummaryTableSection = () => {
         </CardContent>
       </Card>
 
-      {/* Indicateurs de fraîcheur */}
-      <Card className="bg-yellow-600/10 border-yellow-500/30">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-400" />
-            <div>
-              <h4 className="font-semibold text-yellow-200">Données à actualiser</h4>
-              <p className="text-sm text-yellow-300">
-                Certaines métriques n'ont pas été mises à jour récemment. 
-                Pensez à effectuer de nouvelles mesures pour maintenir un suivi précis.
-              </p>
+      {/* Indicateurs de fraîcheur - Afficher seulement si données obsolètes */}
+      {sortedData.some(item => {
+        const daysAgo = getDaysAgo(item.date);
+        return daysAgo > 7;
+      }) && (
+        <Card className="bg-yellow-600/10 border-yellow-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              <div>
+                <h4 className="font-semibold text-yellow-200">Données à actualiser</h4>
+                <p className="text-sm text-yellow-300">
+                  Certaines métriques n'ont pas été mises à jour récemment. 
+                  Pensez à effectuer de nouvelles mesures pour maintenir un suivi précis.
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

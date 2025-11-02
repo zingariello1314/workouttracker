@@ -6,6 +6,12 @@ import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 import HomePageImageSettings from '../HomePageImageSettings';
+import { 
+  prepareExportData, 
+  downloadExportFile, 
+  processImportData,
+  validateBodyTrackingData 
+} from '../BodyTracking/utils/exportImport';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB } = useWorkout();
@@ -20,7 +26,7 @@ const SettingsTab = () => {
   const [garminImportStatus, setGarminImportStatus] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Fonction pour exporter spécifiquement les données de suivi corporel
+  // Fonction pour exporter spécifiquement les données de suivi corporel (OPTIMISÉE)
   const exportBodyTrackingData = async () => {
     try {
       setExportStatus('loading');
@@ -29,68 +35,25 @@ const SettingsTab = () => {
       const currentData = await loadFromDB();
       const dataToExport = currentData || data;
       
-      // Extraire uniquement les données de suivi corporel
+      // Préparer les données avec le module optimisé
       const bodyTrackingData = {
-        version: '1.0',
-        exportDate: new Date().toISOString(),
-        exportType: 'Body Tracking Data',
-        appName: 'Workout Tracker - Suivi Corporel',
-        
-        // Données de suivi corporel
         progressPhotos: dataToExport.progressPhotos || [],
         progressEntries: dataToExport.progressEntries || [],
         bodyTrackingReminders: dataToExport.bodyTrackingReminders || [],
-        bodyTrackingLastUpdated: dataToExport.bodyTrackingLastUpdated || null,
-        
-        // Métadonnées spécifiques au suivi corporel
-        metadata: {
-          totalPhotos: (dataToExport.progressPhotos || []).length,
-          totalEntries: (dataToExport.progressEntries || []).length,
-          totalReminders: (dataToExport.bodyTrackingReminders || []).length,
-          lastUpdate: dataToExport.bodyTrackingLastUpdated || null,
-          
-          // Statistiques des photos
-          photosWithWeight: (dataToExport.progressPhotos || []).filter(p => p.weight).length,
-          photosWithNotes: (dataToExport.progressPhotos || []).filter(p => p.notes).length,
-          photosWithMeasurements: (dataToExport.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length,
-          
-          // Statistiques des entrées
-          entriesByType: (dataToExport.progressEntries || []).reduce((acc, entry) => {
-            acc[entry.type] = (acc[entry.type] || 0) + 1;
-            return acc;
-          }, {}),
-          
-          // Période couverte
-          dateRange: {
-            earliest: (dataToExport.progressPhotos || []).concat(dataToExport.progressEntries || [])
-              .map(item => item.date).sort()[0] || null,
-            latest: (dataToExport.progressPhotos || []).concat(dataToExport.progressEntries || [])
-              .map(item => item.date).sort().reverse()[0] || null
-          },
-          
-          // Taille des données
-          exportSize: JSON.stringify({
-            progressPhotos: dataToExport.progressPhotos || [],
-            progressEntries: dataToExport.progressEntries || [],
-            bodyTrackingReminders: dataToExport.bodyTrackingReminders || []
-          }).length
-        }
+        bodyTrackingLastUpdated: dataToExport.bodyTrackingLastUpdated || null
       };
-
-      // Créer le fichier JSON
-      const jsonString = JSON.stringify(bodyTrackingData, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-
-      // Créer le lien de téléchargement
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `body-tracking-data-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
+      
+      // Utiliser le module d'export optimisé
+      const exportData = prepareExportData(bodyTrackingData, {
+        includePhotos: true,
+        compressPhotos: false, // Photos déjà compressées lors de l'ajout
+        includeMetadata: true,
+        includeReminders: true
+      });
+      
+      // Télécharger le fichier
+      const result = await downloadExportFile(exportData);
+      
       setExportStatus('success');
       setTimeout(() => setExportStatus(null), 3000);
       
@@ -352,55 +315,117 @@ const SettingsTab = () => {
   };
 
   // Fonction pour prévisualiser les données d'import
+  // Prévisualisation de l'import (OPTIMISÉE avec nouveau module)
   const previewImport = () => {
     try {
-      let parsedData;
+      // Traiter les données avec le module optimisé
+      const result = processImportData(importData, {
+        validateData: true,
+        validateVersion: true,
+        createBackup: false // Backup créé lors de confirmImport
+      });
       
-      // Essayer de parser le JSON
-      try {
-        parsedData = JSON.parse(importData);
-      } catch (parseError) {
+      if (!result.valid) {
         setImportStatus('error');
+        console.error('Erreurs de validation:', result.errors);
         return;
       }
-
-      // Si c'est un export complet avec métadonnées, extraire les données
-      const dataToValidate = parsedData.data || parsedData;
       
-      const validation = validateImportData(dataToValidate);
+      // Extraire données Body Tracking si format d'export spécifique
+      let dataToImport = result.data;
       
-      if (validation.isValid) {
-        setPreviewData({
-          data: dataToValidate,
-          stats: validation.stats,
-          isExportFormat: !!parsedData.data
-        });
-        setShowImportPreview(true);
-        setImportStatus('preview');
-      } else {
-        setImportStatus('error');
+      // Si c'est un export Body Tracking spécifique, extraire les données
+      if (dataToImport.exportType === 'Body Tracking Data') {
+        dataToImport = {
+          progressPhotos: dataToImport.progressPhotos || [],
+          progressEntries: dataToImport.progressEntries || [],
+          bodyTrackingReminders: dataToImport.bodyTrackingReminders || [],
+          bodyTrackingLastUpdated: dataToImport.metadata?.lastUpdate || new Date().toISOString()
+        };
+      } else if (dataToImport.data) {
+        // Format export complet - extraire données Body Tracking
+        const fullData = dataToImport.data;
+        dataToImport = {
+          progressPhotos: fullData.progressPhotos || [],
+          progressEntries: fullData.progressEntries || [],
+          bodyTrackingReminders: fullData.bodyTrackingReminders || [],
+          bodyTrackingLastUpdated: fullData.bodyTrackingLastUpdated || null
+        };
       }
       
+      setPreviewData({
+        data: dataToImport,
+        stats: result.stats,
+        warnings: result.warnings,
+        isExportFormat: result.data.exportType === 'Body Tracking Data' || !!result.data.data
+      });
+      setShowImportPreview(true);
+      setImportStatus('preview');
+      
     } catch (error) {
+      console.error('Erreur lors de la prévisualisation:', error);
       setImportStatus('error');
     }
   };
 
-  // Fonction pour confirmer l'import
+  // Fonction pour confirmer l'import (OPTIMISÉE)
   const confirmImport = async () => {
     try {
       setImportStatus('loading');
       
-      // Utiliser les données du contexte plutôt que de recharger depuis la DB
-      // Cela évite les appels multiples à openDB/loadFromDB
-      const currentData = data || {};
+      // Créer backup avant import
+      const currentData = await loadFromDB();
+      const backupData = currentData || data || {};
       localStorage.setItem('workoutData_preImport_backup', JSON.stringify({
-        data: currentData,
+        data: backupData,
         backupDate: new Date().toISOString()
       }));
 
-      // Importer les nouvelles données
-      await updateData(previewData.data);
+      // Re-valider les données avant import (sécurité supplémentaire)
+      const validation = validateBodyTrackingData(previewData.data);
+      
+      if (!validation.valid) {
+        setImportStatus('error');
+        console.error('Validation échouée avant import:', validation.errors);
+        setTimeout(() => setImportStatus(null), 3000);
+        return;
+      }
+      
+      // Fusionner avec données existantes (stratégie merge)
+      const existingData = backupData;
+      const importedData = previewData.data;
+      
+      const mergedData = {
+        ...existingData,
+        // Merge photos (éviter doublons par date)
+        progressPhotos: [
+          ...(existingData.progressPhotos || []).filter(existingPhoto => {
+            const existingDate = existingPhoto.date || existingPhoto.timestamp;
+            return !(importedData.progressPhotos || []).some(importedPhoto => {
+              const importedDate = importedPhoto.date || importedPhoto.timestamp;
+              return existingDate === importedDate;
+            });
+          }),
+          ...(importedData.progressPhotos || [])
+        ],
+        // Merge entrées (éviter doublons par date + type)
+        progressEntries: [
+          ...(existingData.progressEntries || []).filter(existingEntry => {
+            const existingKey = `${existingEntry.date || existingEntry.timestamp}_${existingEntry.type}`;
+            return !(importedData.progressEntries || []).some(importedEntry => {
+              const importedKey = `${importedEntry.date || importedEntry.timestamp}_${importedEntry.type}`;
+              return existingKey === importedKey;
+            });
+          }),
+          ...(importedData.progressEntries || [])
+        ],
+        // Remplacer reminders (configuration utilisateur)
+        bodyTrackingReminders: importedData.bodyTrackingReminders || existingData.bodyTrackingReminders || [],
+        bodyTrackingLastUpdated: new Date().toISOString()
+      };
+
+      // Importer les données fusionnées
+      await updateData(mergedData);
       
       setImportStatus('success');
       setShowImportPreview(false);
@@ -410,6 +435,7 @@ const SettingsTab = () => {
       setTimeout(() => setImportStatus(null), 3000);
       
     } catch (error) {
+      console.error('Erreur lors de l\'import:', error);
       setImportStatus('error');
       setTimeout(() => setImportStatus(null), 3000);
     }

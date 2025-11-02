@@ -65,9 +65,10 @@ const StabilityAnalysis = () => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - (periodWeeks * 7));
 
-    const relevantEntries = metricsEntries.filter(entry => 
-      new Date(entry.date) >= cutoffDate
-    );
+    // Filtrer et trier par date décroissante (plus récent d'abord) pour cohérence
+    const relevantEntries = metricsEntries
+      .filter(entry => new Date(entry.date) >= cutoffDate)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     if (relevantEntries.length < 2) {
       return [];
@@ -77,9 +78,11 @@ const StabilityAnalysis = () => {
       const metric = analysisMetrics.find(m => m.value === metricValue);
       
       // Calculer la variabilité et la tendance basées sur les vraies données
+      // Inverser pour avoir ordre chronologique (ancien → récent) pour calcul tendance
       const values = relevantEntries
         .map(entry => entry[metricValue])
-        .filter(value => value != null && !isNaN(value));
+        .filter(value => value != null && !isNaN(value))
+        .reverse(); // Inverser pour ordre chronologique (ancien → récent)
 
       if (values.length < 2) {
         return {
@@ -132,17 +135,104 @@ const StabilityAnalysis = () => {
       
       // Génération de recommandations basées sur l'analyse
       let recommendation = '';
+      const recommendations = [];
+      
       if (isStagnant) {
         recommendation = 'Aucun changement significatif détecté. Considérez ajuster votre approche.';
+        recommendations.push('Ajuster votre stratégie d\'entraînement ou de nutrition');
+        recommendations.push('Augmenter l\'intensité ou la fréquence des séances');
       } else if (volatility === 'high') {
         recommendation = 'Variabilité élevée détectée. Vérifiez la cohérence de vos mesures.';
+        recommendations.push('Mesurer à la même heure et dans les mêmes conditions');
+        recommendations.push('Vérifier la précision de votre matériel de mesure');
       } else if (trend > 0.05) {
         recommendation = 'Tendance positive détectée. Continuez sur cette lancée !';
+        recommendations.push('Maintenir les bonnes pratiques actuelles');
+        recommendations.push('Continuer la progression actuelle');
       } else if (trend < -0.05) {
         recommendation = 'Tendance négative détectée. Revoyez votre stratégie.';
+        recommendations.push('Analyser les causes possibles de régression');
+        recommendations.push('Adapter votre approche en conséquence');
       } else {
         recommendation = 'Progression stable et régulière. Excellent travail !';
+        recommendations.push('Maintenir la régularité des mesures');
       }
+
+      // Calculer les scores (0-100)
+      // StabilityScore: 100 - (variability * 1000) avec limites
+      const stabilityScore = Math.max(0, Math.min(100, 100 - (variability * 1000)));
+      
+      // ConsistencyScore: basé sur l'inverse de la volatilité
+      const consistencyScore = volatility === 'high' ? 30 : volatility === 'medium' ? 60 : 90;
+      
+      // ProgressScore: basé sur la tendance et la stagnation
+      let progressScore = 50; // Baseline
+      if (isStagnant) {
+        progressScore = 20; // Stagnation = faible progression
+      } else if (trend > 0.05) {
+        progressScore = 80 + Math.min(20, trend * 100); // Progression positive
+      } else if (trend < -0.05) {
+        progressScore = Math.max(0, 50 + (trend * 100)); // Régression
+      } else {
+        progressScore = 60; // Stable
+      }
+      
+      // Calculer riskLevel depuis volatility et isStagnant
+      let riskLevel = 'low';
+      if (volatility === 'high') {
+        riskLevel = 'high';
+      } else if (volatility === 'medium' || isStagnant) {
+        riskLevel = 'medium';
+      }
+      
+      // Calculer confidence depuis dataPoints et periodWeeks
+      // Plus de données = plus de confiance
+      const minDataPoints = periodWeeks * 2; // Au moins 2 mesures par semaine idéalement
+      const confidence = Math.min(100, Math.max(30, (values.length / minDataPoints) * 100));
+      
+      // Calculer lastSignificantChange
+      // Trouver le dernier changement significatif (>5% ou >threshold)
+      // Optimisation: parcourir relevantEntries triés par date décroissante
+      let lastSignificantChange = null;
+      const significantThreshold = avgValue * 0.05; // 5% de la moyenne
+      
+      // Créer un map valeur -> date depuis relevantEntries pour accès O(1)
+      const valueToDateMap = new Map();
+      relevantEntries.forEach(entry => {
+        const value = entry[metricValue];
+        if (value != null && !isNaN(value)) {
+          valueToDateMap.set(value, entry.date);
+        }
+      });
+      
+      // Parcourir values en ordre chronologique inverse (plus récent d'abord)
+      for (let i = 0; i < values.length - 1; i++) {
+        const currentValue = values[i];
+        const previousValue = values[i + 1];
+        const change = Math.abs(currentValue - previousValue);
+        
+        if (change >= significantThreshold) {
+          // Prendre la date du changement le plus récent (currentValue)
+          const entryDate = valueToDateMap.get(currentValue);
+          if (entryDate) {
+            lastSignificantChange = entryDate;
+            break; // Prendre le plus récent
+          }
+        }
+      }
+      
+      // Si aucun changement significatif, prendre la date la plus récente
+      if (!lastSignificantChange && relevantEntries.length > 0) {
+        lastSignificantChange = relevantEntries[0].date;
+      }
+      
+      // Construire patterns array depuis les propriétés
+      const patterns = [];
+      if (isStagnant) patterns.push('stagnation');
+      if (volatility === 'high') patterns.push('volatility');
+      if (volatility === 'low' && !isStagnant) patterns.push('stable');
+      if (trend > 0.05) patterns.push('trending_up');
+      if (trend < -0.05) patterns.push('trending_down');
 
       return {
         metric: metricValue,
@@ -156,11 +246,20 @@ const StabilityAnalysis = () => {
         volatility: volatility,
         isStagnant: isStagnant,
         recommendation: recommendation,
+        recommendations: recommendations, // Array pour le rendu
         dataPoints: values.length,
         periodWeeks: periodWeeks,
         minValue: minValue,
         maxValue: maxValue,
-        avgValue: avgValue
+        avgValue: avgValue,
+        // Propriétés calculées ajoutées
+        stabilityScore: stabilityScore,
+        consistencyScore: consistencyScore,
+        progressScore: progressScore,
+        riskLevel: riskLevel,
+        confidence: confidence,
+        lastSignificantChange: lastSignificantChange,
+        patterns: patterns
       };
     });
   }, [data?.progressEntries, selectedMetrics, selectedPeriod]);
@@ -169,7 +268,7 @@ const StabilityAnalysis = () => {
     const totalMetrics = stabilityAnalysis.length;
     const stagnantMetrics = stabilityAnalysis.filter(m => m.isStagnant).length;
     const volatileMetrics = stabilityAnalysis.filter(m => m.volatility === 'high').length;
-    const stableMetrics = stabilityAnalysis.filter(m => m.patterns.includes('stable')).length;
+    const stableMetrics = stabilityAnalysis.filter(m => m.stability === 'stable').length;
     
     const avgStabilityScore = stabilityAnalysis.reduce((sum, m) => sum + m.stabilityScore, 0) / totalMetrics;
     const avgProgressScore = stabilityAnalysis.reduce((sum, m) => sum + m.progressScore, 0) / totalMetrics;
@@ -376,12 +475,12 @@ const StabilityAnalysis = () => {
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{analysis.metric.icon}</span>
+                  <span className="text-2xl">{analysis.icon}</span>
                   <div>
-                    <h3 className="font-semibold text-white text-lg">{analysis.metric.label}</h3>
+                    <h3 className="font-semibold text-white text-lg">{analysis.label}</h3>
                     <div className="flex items-center gap-2 text-sm text-slate-400">
-                      <span>Valeur actuelle: {analysis.currentValue.toFixed(1)} {analysis.metric.unit}</span>
-                      {getStatusIcon(analysis.analysis.status)}
+                      <span>Valeur actuelle: {analysis.currentValue.toFixed(1)} {analysis.unit}</span>
+                      {getStatusIcon(analysis.stability)}
                       <span className={analysis.isStagnant ? 'text-yellow-400' : 
                                      analysis.volatility === 'high' ? 'text-red-400' : 'text-green-400'}>
                         {analysis.isStagnant ? 'Stagnant' : 
@@ -392,9 +491,9 @@ const StabilityAnalysis = () => {
                 </div>
                 
                 <div className="text-right">
-                  <div className={`px-3 py-1 rounded-full text-sm ${getRiskColor(analysis.analysis.riskLevel)}`}>
-                    Risque {analysis.analysis.riskLevel === 'low' ? 'faible' : 
-                            analysis.analysis.riskLevel === 'medium' ? 'modéré' : 'élevé'}
+                  <div className={`px-3 py-1 rounded-full text-sm ${getRiskColor(analysis.riskLevel)}`}>
+                    Risque {analysis.riskLevel === 'low' ? 'faible' : 
+                            analysis.riskLevel === 'medium' ? 'modéré' : 'élevé'}
                   </div>
                 </div>
               </div>
@@ -454,11 +553,13 @@ const StabilityAnalysis = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Confiance:</span>
-                        <span className="text-blue-400">{analysis.analysis.confidence.toFixed(0)}%</span>
+                        <span className="text-blue-400">{analysis.confidence.toFixed(0)}%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Dernier changement:</span>
-                        <span className="text-white">{formatDate(analysis.lastSignificantChange)}</span>
+                        <span className="text-white">
+                          {analysis.lastSignificantChange ? formatDate(analysis.lastSignificantChange) : 'N/A'}
+                        </span>
                       </div>
                     </div>
                   </div>

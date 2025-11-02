@@ -3,7 +3,7 @@ import { useWorkoutData } from '../hooks/useWorkoutData';
 import { useWorkoutLogic } from '../hooks/useWorkoutLogic';
 import { workoutProgram } from '../data/workoutProgram';
 import { findExerciseInDatabase } from '../data/exerciseDatabase';
-import { getDateStr } from '../utils/dateUtils';
+import { getDateStr, getDayName } from '../utils/dateUtils';
 
 const WorkoutContext = createContext();
 
@@ -601,7 +601,7 @@ const WorkoutProvider = ({ children }) => {
     // Traiter chaque date
     Object.keys(dataByDate).forEach(dateStr => {
       const date = new Date(dateStr);
-      const dayName = workoutLogic.getDayName(date);
+      const dayName = getDayName(date);
       
       console.log(`DEBUG: Processing date: ${dateStr} dayName: ${dayName}`);
       
@@ -666,10 +666,17 @@ const WorkoutProvider = ({ children }) => {
       }
 
       // 🔧 Validation renforcée des données
+      // Utiliser la date fournie ou la date actuelle
+      const entryDate = entryData.date 
+        ? new Date(entryData.date).toISOString()
+        : new Date().toISOString();
+      
+      const entryDateKey = entryDate.split('T')[0]; // YYYY-MM-DD pour comparaison
+
       const validatedEntry = {
         id: `entry_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        date: new Date().toISOString(),
-        timestamp: entryData.timestamp || Date.now(),
+        date: entryDate,
+        timestamp: entryData.timestamp || new Date(entryDate).getTime(),
         type: entryData.type,
         ...entryData,
         // Métadonnées de sauvegarde
@@ -680,17 +687,112 @@ const WorkoutProvider = ({ children }) => {
       const currentData = getCurrentData();
       const progressEntries = currentData.progressEntries || [];
       
+      // 🔍 DÉDUPLICATION INTELLIGENTE
+      // Vérifier si une entrée existe déjà pour la même date (jour) ET le même type
+      const existingEntryIndex = progressEntries.findIndex(entry => {
+        const existingDate = entry.date 
+          ? new Date(entry.date).toISOString().split('T')[0]
+          : entry.timestamp 
+            ? new Date(entry.timestamp).toISOString().split('T')[0]
+            : null;
+        
+        // Comparer date (même jour) et type
+        return existingDate === entryDateKey && entry.type === entryData.type;
+      });
+
+      let updatedEntries;
+      let action = 'added'; // 'added', 'replaced', 'merged'
+      
+      if (existingEntryIndex !== -1) {
+        const existingEntry = progressEntries[existingEntryIndex];
+        
+        // STRATÉGIE: Remplacement par défaut si doublon détecté
+        // La nouvelle entrée remplace l'ancienne (stratégie la plus sûre pour éviter doublons)
+        // On garde l'ID existant pour cohérence, mais on met à jour toutes les données
+        
+        // Option: Vérifier si la nouvelle entrée est plus récente (basé sur savedAt)
+        const isNewer = validatedEntry.savedAt > (existingEntry.savedAt || 0);
+        
+        if (isNewer) {
+          // Remplacement: garder l'ID existant mais mettre à jour toutes les données
+          updatedEntries = [...progressEntries];
+          updatedEntries[existingEntryIndex] = {
+            ...validatedEntry,
+            id: existingEntry.id, // Garder l'ID existant pour cohérence
+            // Conserver certaines métadonnées si pertinentes
+            savedAt: validatedEntry.savedAt
+          };
+          action = 'replaced';
+          
+          console.log(`🔄 Entrée remplacée (même date/type): ${existingEntry.type} du ${entryDateKey} (ID: ${existingEntry.id})`);
+        } else {
+          // L'ancienne entrée est plus récente, on la garde
+          // Mais on met à jour seulement les champs non définis dans l'existante
+          // MERGE: Fusionner les données intelligemment
+          const mergedEntry = {
+            ...existingEntry,
+            // Mettre à jour seulement les champs qui sont définis dans validatedEntry
+            // mais qui sont null/undefined dans existingEntry
+            ...Object.keys(validatedEntry).reduce((acc, key) => {
+              // Ne pas overwrite les métadonnées système (id, savedAt, version)
+              if (['id', 'savedAt', 'version'].includes(key)) {
+                acc[key] = existingEntry[key];
+              } 
+              // Si la valeur existante est null/undefined et la nouvelle a une valeur, utiliser la nouvelle
+              else if ((existingEntry[key] == null || existingEntry[key] === '') && validatedEntry[key] != null && validatedEntry[key] !== '') {
+                acc[key] = validatedEntry[key];
+              }
+              // Sinon garder l'existante
+              else {
+                acc[key] = existingEntry[key];
+              }
+              return acc;
+            }, {}),
+            // Mettre à jour savedAt pour indiquer dernière modification
+            savedAt: Date.now()
+          };
+          
+          updatedEntries = [...progressEntries];
+          updatedEntries[existingEntryIndex] = mergedEntry;
+          action = 'merged';
+          
+          console.log(`🔀 Entrée fusionnée (données existantes plus récentes): ${existingEntry.type} du ${entryDateKey} (ID: ${existingEntry.id})`);
+        }
+      } else {
+        // Aucun doublon, ajouter normalement
+        updatedEntries = [...progressEntries, validatedEntry];
+        action = 'added';
+      }
+      
       const updatedData = {
         ...currentData,
-        progressEntries: [...progressEntries, validatedEntry],
+        progressEntries: updatedEntries,
         // Marquer la dernière mise à jour du suivi corporel
         bodyTrackingLastUpdated: new Date().toISOString()
       };
+      
+      // Note: Cleanup automatique désactivé - système de notification activé à la place
 
       await updateData(updatedData);
-      console.log('✅ Entrée de progression sauvegardée avec succès:', validatedEntry.type);
       
-      return { success: true, entry: validatedEntry };
+      const actionMessage = {
+        added: '✅ Entrée de progression ajoutée avec succès',
+        replaced: '🔄 Entrée de progression remplacée (doublon détecté et remplacé)',
+        merged: '🔀 Entrée de progression fusionnée avec données existantes'
+      };
+      
+      console.log(`${actionMessage[action]}: ${validatedEntry.type} (Date: ${entryDateKey})`);
+      
+      // Retourner l'entrée finale (celle qui a été ajoutée/remplacée/fusionnée)
+      const finalEntry = existingEntryIndex !== -1 
+        ? updatedEntries[existingEntryIndex] 
+        : updatedEntries[updatedEntries.length - 1];
+      
+      return { 
+        success: true, 
+        entry: finalEntry,
+        action: action // Informer l'appelant de l'action effectuée ('added', 'replaced', 'merged')
+      };
     } catch (error) {
       console.error('❌ Erreur lors de l\'ajout de l\'entrée de progression:', error);
       throw error;
@@ -700,18 +802,22 @@ const WorkoutProvider = ({ children }) => {
   // Fonction pour ajouter une photo de progression
   const addProgressPhoto = async (photoData) => {
     try {
-      if (!photoData || !photoData.weight || !photoData.notes) {
-        throw new Error('Données de photo de progression invalides');
+      // Validation améliorée : photo ou url requis (weight et notes ne sont pas toujours obligatoires pour photos)
+      if (!photoData || (!photoData.photo && !photoData.url)) {
+        throw new Error('Données de photo de progression invalides : photo ou url requis');
       }
 
       // 🔧 Validation renforcée des données photo
       const validatedPhoto = {
         id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        date: new Date().toISOString(),
-        weight: parseFloat(photoData.weight),
-        notes: photoData.notes,
-        photo: photoData.photo || null,
+        date: photoData.date ? new Date(photoData.date).toISOString() : new Date().toISOString(),
+        weight: photoData.weight ? parseFloat(photoData.weight) : null,
+        notes: photoData.notes || '',
+        photo: photoData.photo || photoData.url || null,
+        url: photoData.url || photoData.photo || null, // Compatibilité
         measurements: photoData.measurements || {},
+        angle: photoData.angle || 'front',
+        tags: photoData.tags || ['progress'],
         // Métadonnées de sauvegarde
         savedAt: Date.now(),
         version: '1.0',
@@ -728,7 +834,6 @@ const WorkoutProvider = ({ children }) => {
       };
 
       await updateData(updatedData);
-      console.log('✅ Photo de progression sauvegardée avec succès');
       
       return { success: true, photo: validatedPhoto };
     } catch (error) {
@@ -980,8 +1085,8 @@ const WorkoutProvider = ({ children }) => {
     setCustomPrograms,
     
     // Fonctions de données
-    // Hooks personnalisés
-    ...workoutLogic,
+    // Hooks personnalisés (spread seulement si défini)
+    ...(workoutLogic || {}),
     
     // Fonctions de statistiques
     getWorkoutHistory
@@ -1101,12 +1206,37 @@ const WorkoutProvider = ({ children }) => {
   }, [programs, activeProgram]);
   useEffect(() => {
     const initializeContext = async () => {
-      await loadContext();
-      isInitialLoadRef.current = false;
+      try {
+        await loadContext();
+        isInitialLoadRef.current = false;
+      } catch (error) {
+        console.error('❌ Erreur lors de l\'initialisation du contexte:', error);
+        // Continuer même en cas d'erreur pour ne pas bloquer l'application
+        isInitialLoadRef.current = false;
+      }
     };
     
     initializeContext();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Exécuter une seule fois au montage
+
+  // S'assurer que contextValue est toujours défini avant de rendre
+  if (!contextValue) {
+    console.error('❌ Erreur: contextValue non défini dans WorkoutProvider');
+    // Fournir un contexte minimal pour éviter le crash
+    const fallbackValue = {
+      data: {},
+      updateData: async () => {},
+      activeTab: 'home',
+      setActiveTab: () => {},
+      // ... autres valeurs minimales si nécessaire
+    };
+    return (
+      <WorkoutContext.Provider value={fallbackValue}>
+        {children}
+      </WorkoutContext.Provider>
+    );
+  }
 
   return (
     <WorkoutContext.Provider value={contextValue}>

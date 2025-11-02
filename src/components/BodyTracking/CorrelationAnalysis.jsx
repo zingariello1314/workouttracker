@@ -13,182 +13,402 @@ import {
   Filter,
   Download,
   RefreshCw,
-  Zap
+  Zap,
+  Award,
+  Trophy
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
+import {
+  calculatePearsonCorrelation,
+  getCorrelationStrength,
+  generateCorrelationDescription,
+  alignDataByDate
+} from './utils/correlationUtils';
+import {
+  generateInsights,
+  generateRecommendations,
+  determineTrend
+} from './utils/correlationInsights';
+import {
+  analyzeVolumeWeightCorrelation,
+  analyzeVolumeMuscleCorrelation,
+  identifyOptimalFrequency
+} from './utils/historyIntegration';
+import {
+  analyzeEnduranceWeightCorrelation,
+  calculateEnduranceCaloriesForPeriod
+} from './utils/enduranceIntegration';
+import {
+  findSuccessPatterns
+} from './utils/successPatternsAnalyzer';
+import logger from '../../utils/logger';
+import { useGarminData } from '../../hooks/useGarminData';
+
+const log = logger.component('CorrelationAnalysis');
 
 const CorrelationAnalysis = () => {
-  const { data } = useWorkout();
+  const { data, getWorkoutHistory } = useWorkout();
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminData, setGarminData] = React.useState(null);
+  
+  // Obtenir poids moyen pour calculs précis d'endurance
+  const avgWeight = useMemo(() => {
+    if (!data?.progressEntries || data.progressEntries.length === 0) {
+      return 70; // Poids moyen par défaut
+    }
+    
+    const weightEntries = data.progressEntries
+      .filter(entry => entry.type === 'metrics' && entry.weight != null && !isNaN(entry.weight))
+      .map(entry => entry.weight);
+    
+    if (weightEntries.length === 0) {
+      return 70;
+    }
+    
+    return weightEntries.reduce((sum, w) => sum + w, 0) / weightEntries.length;
+  }, [data?.progressEntries]);
   const [selectedTimeframe, setSelectedTimeframe] = useState('3months');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedCorrelations, setSelectedCorrelations] = useState(['strong', 'moderate']);
+  const [showSuccessPatterns, setShowSuccessPatterns] = useState(false);
+  const [successCriteria, setSuccessCriteria] = useState('global');
+  const [successPatternsData, setSuccessPatternsData] = useState(null);
+  
+  // Charger données Garmin pour analyse patterns de succès
+  React.useEffect(() => {
+    if (dbReady && showSuccessPatterns) {
+      loadAllData()
+        .then(loaded => {
+          setGarminData(loaded);
+        })
+        .catch(error => {
+          log.error('Erreur chargement données Garmin pour patterns de succès', error);
+          setGarminData(null);
+        });
+    }
+  }, [dbReady, showSuccessPatterns, loadAllData]);
 
-  // Données simulées pour les corrélations
-  const correlationData = useMemo(() => {
-    const baseData = [
-      {
-        id: 1,
-        variable1: 'Poids',
-        variable2: 'Tour de taille',
-        correlation: 0.87,
-        strength: 'strong',
-        direction: 'positive',
-        significance: 0.001,
-        dataPoints: 45,
-        trend: 'increasing',
-        description: 'Forte corrélation positive entre le poids et le tour de taille',
-        insights: [
-          'Chaque kg de poids perdu correspond à environ 1.2cm de tour de taille en moins',
-          'Cette corrélation est stable sur les 3 derniers mois',
-          'Tendance particulièrement marquée les 4 dernières semaines'
-        ],
-        recommendations: [
-          'Continuer les efforts de perte de poids pour réduire le tour de taille',
-          'Intégrer des exercices ciblés pour la zone abdominale'
-        ]
-      },
-      {
-        id: 2,
-        variable1: 'Masse musculaire',
-        variable2: 'Métabolisme de base',
-        correlation: 0.92,
-        strength: 'strong',
-        direction: 'positive',
-        significance: 0.0001,
-        dataPoints: 38,
-        trend: 'stable',
-        description: 'Très forte corrélation entre masse musculaire et métabolisme',
-        insights: [
-          'Chaque kg de muscle gagné augmente le métabolisme de ~50 kcal/jour',
-          'Corrélation la plus forte observée dans vos données',
-          'Impact direct sur la capacité de brûlage des calories'
-        ],
-        recommendations: [
-          'Maintenir ou augmenter la masse musculaire pour optimiser le métabolisme',
-          'Privilégier les exercices de résistance'
-        ]
-      },
-      {
-        id: 3,
-        variable1: 'Pourcentage de graisse',
-        variable2: 'Graisse viscérale',
-        correlation: 0.78,
-        strength: 'strong',
-        direction: 'positive',
-        significance: 0.002,
-        dataPoints: 42,
-        trend: 'decreasing',
-        description: 'Corrélation forte entre graisse corporelle et viscérale',
-        insights: [
-          'Réduction simultanée des deux types de graisse',
-          'Amélioration constante sur les 2 derniers mois',
-          'Tendance positive pour la santé cardiovasculaire'
-        ],
-        recommendations: [
-          'Continuer le programme actuel de réduction de graisse',
-          'Maintenir l\'activité cardio régulière'
-        ]
-      },
-      {
-        id: 4,
-        variable1: 'Eau corporelle',
-        variable2: 'Masse musculaire',
-        correlation: 0.65,
-        strength: 'moderate',
-        direction: 'positive',
-        significance: 0.01,
-        dataPoints: 40,
-        trend: 'stable',
-        description: 'Corrélation modérée entre hydratation et masse musculaire',
-        insights: [
-          'Bonne hydratation favorise le maintien de la masse musculaire',
-          'Relation stable mais importante pour la performance',
-          'Variation saisonnière observée'
-        ],
-        recommendations: [
-          'Maintenir une hydratation optimale (2-3L/jour)',
-          'Surveiller l\'hydratation les jours d\'entraînement'
-        ]
-      },
-      {
-        id: 5,
-        variable1: 'Âge métabolique',
-        variable2: 'Condition physique',
-        correlation: -0.71,
-        strength: 'strong',
-        direction: 'negative',
-        significance: 0.003,
-        dataPoints: 35,
-        trend: 'improving',
-        description: 'Corrélation négative forte : meilleure forme = âge métabolique plus jeune',
-        insights: [
-          'Amélioration de la condition physique rajeunit l\'âge métabolique',
-          'Progression de 2 ans d\'âge métabolique en 3 mois',
-          'Impact direct de l\'entraînement régulier'
-        ],
-        recommendations: [
-          'Maintenir la régularité de l\'entraînement',
-          'Varier les types d\'exercices pour optimiser les bénéfices'
-        ]
-      },
-      {
-        id: 6,
-        variable1: 'IMC',
-        variable2: 'Tension artérielle',
-        correlation: 0.45,
-        strength: 'moderate',
-        direction: 'positive',
-        significance: 0.05,
-        dataPoints: 28,
-        trend: 'stable',
-        description: 'Corrélation modérée entre IMC et tension artérielle',
-        insights: [
-          'Réduction de l\'IMC tend à améliorer la tension',
-          'Relation moins marquée que prévu',
-          'Autres facteurs influencent également la tension'
-        ],
-        recommendations: [
-          'Continuer la gestion du poids',
-          'Surveiller d\'autres facteurs (stress, sommeil, alimentation)'
-        ]
-      },
-      {
-        id: 7,
-        variable1: 'Masse osseuse',
-        variable2: 'Activité physique',
-        correlation: 0.38,
-        strength: 'weak',
-        direction: 'positive',
-        significance: 0.08,
-        dataPoints: 32,
-        trend: 'stable',
-        description: 'Corrélation faible entre masse osseuse et activité',
-        insights: [
-          'Impact limité de l\'activité sur la masse osseuse à court terme',
-          'Bénéfices probables sur le long terme',
-          'Variation individuelle importante'
-        ],
-        recommendations: [
-          'Maintenir les exercices de résistance pour la santé osseuse',
-          'Surveiller l\'évolution sur une période plus longue'
-        ]
+  // 🏆 ANALYSE DES PATTERNS DE SUCCÈS
+  React.useEffect(() => {
+    if (showSuccessPatterns && data?.progressEntries && data.progressEntries.length >= 4) {
+      try {
+        const workoutHistory = getWorkoutHistory ? getWorkoutHistory() : [];
+        const enduranceData = data?.enduranceData || {};
+        
+        const result = findSuccessPatterns(
+          data.progressEntries,
+          workoutHistory,
+          garminData || {},
+          enduranceData,
+          {
+            period: selectedTimeframe === '1month' ? '1month' : 
+                    selectedTimeframe === '6months' ? '6months' :
+                    selectedTimeframe === '1year' ? '1year' : '3months',
+            minWeeks: 2,
+            successThreshold: 70,
+            criteria: successCriteria
+          }
+        );
+        
+        setSuccessPatternsData(result.success ? result : { success: false, message: result.message || 'Erreur inconnue' });
+      } catch (error) {
+        log.error('Erreur lors de l\'analyse des patterns de succès', error);
+        setSuccessPatternsData({ success: false, message: 'Erreur lors du calcul' });
       }
+    } else if (!showSuccessPatterns) {
+      setSuccessPatternsData(null);
+    }
+  }, [showSuccessPatterns, data?.progressEntries, data?.enduranceData, getWorkoutHistory, garminData, selectedTimeframe, successCriteria]);
+
+  // 🔍 CALCUL RÉEL DES CORRÉLATIONS DEPUIS LES DONNÉES INDEXEDDB
+  const correlationData = useMemo(() => {
+    if (!data?.progressEntries || data.progressEntries.length === 0) {
+      return [];
+    }
+
+    // Définir la période sélectionnée
+    const cutoffDate = new Date();
+    const timeframeMonths = {
+      '1month': 1,
+      '3months': 3,
+      '6months': 6,
+      '1year': 12
+    };
+    const months = timeframeMonths[selectedTimeframe] || 3;
+    cutoffDate.setMonth(cutoffDate.getMonth() - months);
+
+    // Filtrer les entrées dans la période
+    const relevantEntries = data.progressEntries.filter(entry => {
+      const entryDate = entry.date ? new Date(entry.date) : (entry.timestamp ? new Date(entry.timestamp) : null);
+      return entryDate && entryDate >= cutoffDate;
+    });
+
+    if (relevantEntries.length < 3) {
+      // Pas assez de données pour calculer des corrélations
+      return [];
+    }
+
+    // Définir les métriques à analyser (paires pertinentes)
+    const metricPairs = [
+      // Métriques de base (type 'metrics')
+      { key1: 'weight', label1: 'Poids', key2: 'waist', label2: 'Tour de taille', type1: 'metrics', type2: 'metrics' },
+      { key1: 'weight', label1: 'Poids', key2: 'chest', label2: 'Tour de poitrine', type1: 'metrics', type2: 'metrics' },
+      { key1: 'weight', label1: 'Poids', key2: 'hips', label2: 'Tour de hanches', type1: 'metrics', type2: 'metrics' },
+      { key1: 'waist', label1: 'Tour de taille', key2: 'chest', label2: 'Tour de poitrine', type1: 'metrics', type2: 'metrics' },
+      { key1: 'waist', label1: 'Tour de taille', key2: 'hips', label2: 'Tour de hanches', type1: 'metrics', type2: 'metrics' },
+      { key1: 'arms', label1: 'Tour de bras', key2: 'thighs', label2: 'Tour de cuisse', type1: 'metrics', type2: 'metrics' },
+      
+      // Impédancemétrie (type 'impedance')
+      { key1: 'bodyFatPercentage', label1: 'Pourcentage de graisse', key2: 'visceralFat', label2: 'Graisse viscérale', type1: 'impedance', type2: 'impedance' },
+      { key1: 'skeletalMuscle', label1: 'Masse musculaire', key2: 'basalMetabolism', label2: 'Métabolisme de base', type1: 'impedance', type2: 'impedance' },
+      { key1: 'bodyWater', label1: 'Eau corporelle', key2: 'skeletalMuscle', label2: 'Masse musculaire', type1: 'impedance', type2: 'impedance' },
+      { key1: 'bodyFatPercentage', label1: 'Pourcentage de graisse', key2: 'bodyFatMass', label2: 'Masse graisseuse', type1: 'impedance', type2: 'impedance' },
+      { key1: 'metabolicAge', label1: 'Âge métabolique', key2: 'bodyFatPercentage', label2: 'Pourcentage de graisse', type1: 'impedance', type2: 'impedance' },
+      
+      // Cross-type (metrics + impedance)
+      { key1: 'weight', label1: 'Poids', key2: 'bodyFatPercentage', label2: 'Pourcentage de graisse', type1: 'metrics', type2: 'impedance' },
+      { key1: 'weight', label1: 'Poids', key2: 'skeletalMuscle', label2: 'Masse musculaire', type1: 'metrics', type2: 'impedance' },
+      { key1: 'waist', label1: 'Tour de taille', key2: 'visceralFat', label2: 'Graisse viscérale', type1: 'metrics', type2: 'impedance' },
     ];
 
-    // Filtrer selon la période sélectionnée
-    return baseData.map(item => ({
-      ...item,
-      // Ajuster les corrélations selon la période
-      correlation: selectedTimeframe === '1month' 
-        ? item.correlation * 0.9 
-        : selectedTimeframe === '6months' 
-        ? item.correlation * 1.1 
-        : item.correlation
-    }));
-  }, [selectedTimeframe]);
+    // Extraire les séries de données pour chaque métrique
+    const extractMetricSeries = (metricKey, entryType) => {
+      const entries = relevantEntries
+        .filter(entry => entry.type === entryType && entry[metricKey] != null && !isNaN(entry[metricKey]))
+        .map(entry => ({
+          date: entry.date ? new Date(entry.date) : (entry.timestamp ? new Date(entry.timestamp) : new Date()),
+          value: parseFloat(entry[metricKey])
+        }))
+        .filter(entry => isFinite(entry.value));
+
+      return entries;
+    };
+
+    // Calculer les corrélations pour chaque paire
+    const correlations = [];
+    let correlationId = 1;
+
+    for (const pair of metricPairs) {
+      const series1 = extractMetricSeries(pair.key1, pair.type1);
+      const series2 = extractMetricSeries(pair.key2, pair.type2);
+
+      if (series1.length < 3 || series2.length < 3) {
+        continue; // Pas assez de données pour cette paire
+      }
+
+      // Aligner les données par date
+      const aligned = alignDataByDate(series1, series2);
+
+      if (aligned.x.length < 3) {
+        continue; // Pas assez de points communs
+      }
+
+      // Calculer la corrélation
+      const result = calculatePearsonCorrelation(aligned.x, aligned.y);
+
+      if (result.correlation == null || isNaN(result.correlation)) {
+        continue; // Corrélation invalide
+      }
+
+      const strength = getCorrelationStrength(result.correlation);
+      const direction = result.correlation >= 0 ? 'positive' : 'negative';
+      const trend = determineTrend(aligned.dates, aligned.x, aligned.y, result.correlation);
+
+      // Générer description, insights et recommandations
+      const description = generateCorrelationDescription(pair.label1, pair.label2, result.correlation, strength, direction);
+      const insights = generateInsights(pair.label1, pair.label2, result.correlation, strength, direction, result.n, aligned.dates);
+      const recommendations = generateRecommendations(pair.label1, pair.label2, result.correlation, strength, direction);
+
+      correlations.push({
+        id: correlationId++,
+        variable1: pair.label1,
+        variable2: pair.label2,
+        correlation: result.correlation,
+        strength,
+        direction,
+        significance: result.pValue != null ? result.pValue : 0.05,
+        dataPoints: result.n,
+        trend,
+        description,
+        insights,
+        recommendations
+      });
+    }
+
+    // 🔄 NOUVEAU: Ajouter corrélations avec volume d'entraînement (HistoryTab)
+    try {
+      const workoutHistory = getWorkoutHistory ? getWorkoutHistory() : [];
+      
+      if (workoutHistory && workoutHistory.length > 0) {
+        const endDate = new Date();
+        const startDate = new Date(cutoffDate);
+        
+        // Corrélation Volume vs Poids
+        const volumeWeightCorrelation = analyzeVolumeWeightCorrelation(
+          workoutHistory,
+          relevantEntries,
+          startDate,
+          endDate
+        );
+        
+        if (volumeWeightCorrelation && volumeWeightCorrelation.sampleSize >= 2) {
+          const strength = getCorrelationStrength(volumeWeightCorrelation.correlation);
+          const direction = volumeWeightCorrelation.correlation >= 0 ? 'positive' : 'negative';
+          const description = generateCorrelationDescription(
+            'Volume d\'entraînement',
+            'Changement de poids',
+            volumeWeightCorrelation.correlation,
+            strength,
+            direction
+          );
+          const insights = generateInsights(
+            'Volume d\'entraînement',
+            'Changement de poids',
+            volumeWeightCorrelation.correlation,
+            strength,
+            direction,
+            volumeWeightCorrelation.sampleSize,
+            volumeWeightCorrelation.dataPoints.map(dp => new Date(dp.date))
+          );
+          
+          correlations.push({
+            id: correlationId++,
+            variable1: 'Volume d\'entraînement',
+            variable2: 'Changement de poids',
+            correlation: volumeWeightCorrelation.correlation,
+            strength,
+            direction,
+            significance: 0.05,
+            dataPoints: volumeWeightCorrelation.sampleSize,
+            trend: direction === 'negative' ? 'improving' : direction === 'positive' ? 'decreasing' : 'stable',
+            description,
+            insights,
+            recommendations: [
+              volumeWeightCorrelation.interpretation,
+              ...generateRecommendations('Volume d\'entraînement', 'Changement de poids', volumeWeightCorrelation.correlation, strength, direction)
+            ],
+            isActivityCorrelation: true // Flag pour identifier corrélations activité
+          });
+        }
+        
+        // Corrélation Volume vs Masse musculaire
+        const volumeMuscleCorrelation = analyzeVolumeMuscleCorrelation(
+          workoutHistory,
+          relevantEntries,
+          startDate,
+          endDate
+        );
+        
+        if (volumeMuscleCorrelation && volumeMuscleCorrelation.sampleSize >= 2) {
+          const strength = getCorrelationStrength(volumeMuscleCorrelation.correlation);
+          const direction = volumeMuscleCorrelation.correlation >= 0 ? 'positive' : 'negative';
+          const description = generateCorrelationDescription(
+            'Volume d\'entraînement',
+            'Gain de masse musculaire',
+            volumeMuscleCorrelation.correlation,
+            strength,
+            direction
+          );
+          const insights = generateInsights(
+            'Volume d\'entraînement',
+            'Gain de masse musculaire',
+            volumeMuscleCorrelation.correlation,
+            strength,
+            direction,
+            volumeMuscleCorrelation.sampleSize,
+            volumeMuscleCorrelation.dataPoints.map(dp => new Date(dp.date))
+          );
+          
+          correlations.push({
+            id: correlationId++,
+            variable1: 'Volume d\'entraînement',
+            variable2: 'Gain de masse musculaire',
+            correlation: volumeMuscleCorrelation.correlation,
+            strength,
+            direction,
+            significance: 0.05,
+            dataPoints: volumeMuscleCorrelation.sampleSize,
+            trend: direction === 'positive' ? 'improving' : direction === 'negative' ? 'decreasing' : 'stable',
+            description,
+            insights,
+            recommendations: [
+              volumeMuscleCorrelation.interpretation,
+              ...generateRecommendations('Volume d\'entraînement', 'Gain de masse musculaire', volumeMuscleCorrelation.correlation, strength, direction)
+            ],
+            isActivityCorrelation: true // Flag pour identifier corrélations activité
+          });
+        }
+      }
+    } catch (error) {
+      log.error('Erreur lors du calcul des corrélations volume d\'entraînement', error);
+    }
+    
+    // 🔄 NOUVEAU: Ajouter corrélations avec calories endurance (EnduranceTab)
+    try {
+      const enduranceData = data?.enduranceData || {};
+      
+      if (enduranceData.sessions && Object.keys(enduranceData.sessions).some(type => 
+        Array.isArray(enduranceData.sessions[type]) && enduranceData.sessions[type].length > 0
+      )) {
+        // Corrélation Calories Endurance vs Poids
+        const enduranceWeightCorrelation = analyzeEnduranceWeightCorrelation(
+          enduranceData,
+          relevantEntries,
+          cutoffDate,
+          new Date(),
+          avgWeight
+        );
+        
+        if (enduranceWeightCorrelation && enduranceWeightCorrelation.sampleSize >= 2) {
+          const strength = getCorrelationStrength(enduranceWeightCorrelation.correlation);
+          const direction = enduranceWeightCorrelation.correlation >= 0 ? 'positive' : 'negative';
+          const description = generateCorrelationDescription(
+            'Calories endurance',
+            'Changement de poids',
+            enduranceWeightCorrelation.correlation,
+            strength,
+            direction
+          );
+          const insights = generateInsights(
+            'Calories endurance',
+            'Changement de poids',
+            enduranceWeightCorrelation.correlation,
+            strength,
+            direction,
+            enduranceWeightCorrelation.sampleSize,
+            enduranceWeightCorrelation.dataPoints.map(dp => new Date(dp.date))
+          );
+          
+          correlations.push({
+            id: correlationId++,
+            variable1: 'Calories endurance',
+            variable2: 'Changement de poids',
+            correlation: enduranceWeightCorrelation.correlation,
+            strength,
+            direction,
+            significance: 0.05,
+            dataPoints: enduranceWeightCorrelation.sampleSize,
+            trend: direction === 'negative' ? 'improving' : direction === 'positive' ? 'decreasing' : 'stable',
+            description,
+            insights,
+            recommendations: [
+              enduranceWeightCorrelation.interpretation,
+              ...generateRecommendations('Calories endurance', 'Changement de poids', enduranceWeightCorrelation.correlation, strength, direction)
+            ],
+            isActivityCorrelation: true // Flag pour identifier corrélations activité
+          });
+        }
+      }
+    } catch (error) {
+      log.error('Erreur lors du calcul des corrélations calories endurance', error);
+    }
+
+    // Trier par valeur absolue de corrélation (plus fortes en premier)
+    return correlations.sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
+  }, [data?.progressEntries, selectedTimeframe, getWorkoutHistory, avgWeight]);
 
   const timeframes = [
     { value: '1month', label: '1 mois' },
@@ -318,6 +538,16 @@ const CorrelationAnalysis = () => {
                 <Download className="w-4 h-4" />
                 Exporter
               </Button>
+              
+              <Button
+                variant={showSuccessPatterns ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setShowSuccessPatterns(!showSuccessPatterns)}
+                className={showSuccessPatterns ? "bg-purple-600 hover:bg-purple-700" : ""}
+              >
+                <Target className="w-4 h-4" />
+                Patterns de succès
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -387,10 +617,15 @@ const CorrelationAnalysis = () => {
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
                     <h3 className="font-semibold text-white text-lg">
                       {correlation.variable1} ↔ {correlation.variable2}
                     </h3>
+                    {correlation.isActivityCorrelation && (
+                      <span className="px-2 py-0.5 text-xs font-medium bg-blue-600/30 text-blue-300 rounded border border-blue-500/50">
+                        Activité
+                      </span>
+                    )}
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCorrelationBg(correlation.correlation)} ${getCorrelationColor(correlation.correlation)}`}>
                       r = {correlation.correlation.toFixed(3)}
                     </span>

@@ -31,9 +31,27 @@ import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
+import { 
+  loadGarminDataForPeriod, 
+  calculateCaloriesForPeriod,
+  analyzeRecovery,
+  getActivityVolume
+} from './utils/garminIntegration';
+import {
+  calculateWeeklyVolume,
+  identifyOptimalFrequency
+} from './utils/historyIntegration';
+import {
+  calculateEnduranceCaloriesForPeriod,
+  analyzeEnduranceImpactOnBodyComposition,
+  combineDailyCalories
+} from './utils/enduranceIntegration';
+import logger from '../../utils/logger';
+
+const log = logger.component('ProgressComments');
 
 const ProgressComments = () => {
-  const { data } = useWorkout();
+  const { data, getWorkoutHistory } = useWorkout();
   const [selectedPeriod, setSelectedPeriod] = useState('4weeks');
   const [commentTypes, setCommentTypes] = useState(['achievements', 'trends', 'recommendations', 'motivational']);
   const [showSettings, setShowSettings] = useState(false);
@@ -56,10 +74,39 @@ const ProgressComments = () => {
     { value: '12weeks', label: '12 semaines' }
   ];
 
-  // Génération automatique des commentaires
+  // 🔄 Charger données Garmin pour période sélectionnée (MEMOIZED avec useEffect)
+  const [garminData, setGarminData] = React.useState(null);
+  
+  React.useEffect(() => {
+    const loadGarminData = async () => {
+      try {
+        const periodWeeks = parseInt(selectedPeriod.replace('weeks', '')) || 4;
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - (periodWeeks * 7));
+        
+        const loaded = await loadGarminDataForPeriod(startDate, endDate);
+        setGarminData(loaded);
+        log.debug('Données Garmin chargées pour ProgressComments', {
+          period: selectedPeriod,
+          dailyMetrics: Object.keys(loaded.dailyMetrics).length,
+          activities: Object.values(loaded.activities).flat().length
+        });
+      } catch (error) {
+        log.error('Erreur chargement données Garmin pour ProgressComments', error);
+        setGarminData(null);
+      }
+    };
+    
+    loadGarminData();
+  }, [selectedPeriod]);
+
+  // Génération automatique des commentaires avec données Garmin
   const generatedComments = useMemo(() => {
     const comments = [];
     const periodWeeks = parseInt(selectedPeriod.replace('weeks', '')) || 1;
+    
+    // Utiliser garminData dans les dépendances pour forcer le recalcul quand données changent
     
     // Analyser les vraies données de progression
     const analyzeProgressData = () => {
@@ -149,7 +196,7 @@ const ProgressComments = () => {
         });
       }
 
-      const waistReduction = metricsData.waist.previous - metricsData.waist.current;
+      // Utiliser waistReduction déjà calculé ligne 120
       if (waistReduction > 0) {
         comments.push({
           id: 'achievement_waist',
@@ -167,47 +214,383 @@ const ProgressComments = () => {
 
     // Commentaires de tendances
     if (commentTypes.includes('trends')) {
-      comments.push({
-        id: 'trend_composition',
-        type: 'trends',
-        priority: 'medium',
-        title: '📊 Amélioration de la composition corporelle',
-        content: `Tendance positive détectée : votre ratio masse musculaire/masse graisseuse s'améliore constamment depuis ${periodWeeks} semaines. Continuez sur cette lancée !`,
-        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-        metrics: ['bodyFat', 'muscleMass'],
-        sentiment: 'positive',
-        actionable: false
-      });
+      // Calculer amélioration composition corporelle depuis vraies données
+      const hasBodyCompositionImprovement = muscleMassGain > 0 && bodyFatReduction > 0;
+      const hasAnyPositiveTrend = weightLoss > 0 || muscleMassGain > 0 || bodyFatReduction > 0;
+      
+      if (hasBodyCompositionImprovement) {
+        comments.push({
+          id: 'trend_composition',
+          type: 'trends',
+          priority: 'medium',
+          title: '📊 Amélioration de la composition corporelle',
+          content: `Tendance positive détectée : votre ratio masse musculaire/masse graisseuse s'améliore constamment depuis ${periodWeeks} semaine${periodWeeks > 1 ? 's' : ''}. Vous avez gagné ${muscleMassGain.toFixed(1)} kg de muscle tout en perdant ${bodyFatReduction.toFixed(1)}% de graisse. Continuez sur cette lancée !`,
+          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
+          metrics: ['bodyFat', 'muscleMass'],
+          sentiment: 'positive',
+          actionable: false
+        });
+      } else if (hasAnyPositiveTrend && weeksAgo) {
+        // Comparer avec entrée d'il y a plusieurs semaines
+        const weeksAgoWeight = weeksAgo.weight || 0;
+        const weeksAgoMuscleMass = weeksAgo.muscleMass || 0;
+        const weeksAgoBodyFat = weeksAgo.bodyFat || 0;
+        
+        const longTermWeightLoss = weeksAgoWeight > 0 ? weeksAgoWeight - current.weight : 0;
+        const longTermMuscleGain = weeksAgoMuscleMass > 0 ? current.muscleMass - weeksAgoMuscleMass : 0;
+        const longTermBodyFatReduction = weeksAgoBodyFat > 0 ? weeksAgoBodyFat - current.bodyFat : 0;
+        
+        if (longTermWeightLoss > 0 || longTermMuscleGain > 0 || longTermBodyFatReduction > 0) {
+          comments.push({
+            id: 'trend_composition',
+            type: 'trends',
+            priority: 'medium',
+            title: '📊 Amélioration de la composition corporelle',
+            content: `Tendance positive sur ${periodWeeks} semaines : ${longTermWeightLoss > 0 ? `perte de ${longTermWeightLoss.toFixed(1)} kg, ` : ''}${longTermMuscleGain > 0 ? `gain de ${longTermMuscleGain.toFixed(1)} kg de muscle, ` : ''}${longTermBodyFatReduction > 0 ? `réduction de ${longTermBodyFatReduction.toFixed(1)}% de graisse` : ''}. Continuez sur cette lancée !`,
+            timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
+            metrics: ['bodyFat', 'muscleMass'],
+            sentiment: 'positive',
+            actionable: false
+          });
+        }
+      }
 
-      comments.push({
-        id: 'trend_consistency',
-        type: 'trends',
-        priority: 'medium',
-        title: '🔄 Régularité en progression',
-        content: `Votre fréquence d'entraînement est passée de ${metricsData.workoutFrequency.previous} à ${metricsData.workoutFrequency.current} séances par semaine. Cette régularité accrue explique vos excellents résultats.`,
-        timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
-        metrics: ['workoutFrequency'],
-        sentiment: 'positive',
-        actionable: false
-      });
+      // 🔄 NOUVEAU: Analyser volume d'entraînement avec module HistoryTab
+      try {
+        const workoutHistory = getWorkoutHistory ? getWorkoutHistory() : [];
+        
+        if (workoutHistory && workoutHistory.length > 0) {
+          const endDate = new Date();
+          const startDate = new Date();
+          startDate.setDate(startDate.getDate() - (periodWeeks * 7));
+          
+          // Calculer volume hebdomadaire
+          const weeklyVolume = calculateWeeklyVolume(workoutHistory, startDate, endDate);
+          
+          if (weeklyVolume.weeks.length > 0) {
+            // Commentaire sur volume hebdomadaire moyen
+            if (weeklyVolume.averageWeeklyVolume > 0) {
+              const avgWeeklyReps = Math.round(weeklyVolume.averageWeeklyVolume);
+              const avgWeeklySessions = weeklyVolume.averageWeeklySessions.toFixed(1);
+              
+              if (weightLoss > 0 && avgWeeklyReps > 300) {
+                comments.push({
+                  id: 'history_volume_weight_loss',
+                  type: 'trends',
+                  priority: 'high',
+                  title: '💪 Volume d\'entraînement optimal',
+                  content: `Avec ${avgWeeklySessions} séances/semaine et ${avgWeeklyReps} répétitions/semaine en moyenne, votre volume d'entraînement élevé contribue significativement à votre perte de ${weightLoss.toFixed(1)} kg. Excellent équilibre !`,
+                  timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
+                  metrics: ['workoutVolume', 'weight'],
+                  sentiment: 'positive',
+                  actionable: false
+                });
+              }
+              
+              if (muscleMassGain > 0 && avgWeeklyReps > 400) {
+                comments.push({
+                  id: 'history_volume_muscle_gain',
+                  type: 'trends',
+                  priority: 'high',
+                  title: '💪 Volume optimal pour gain musculaire',
+                  content: `Votre volume d'entraînement (${avgWeeklyReps} répétitions/semaine, ${avgWeeklySessions} séances/semaine) est idéal pour la croissance musculaire. Cela explique votre gain de ${muscleMassGain.toFixed(1)} kg de masse musculaire.`,
+                  timestamp: new Date(Date.now() - 9 * 60 * 60 * 1000),
+                  metrics: ['workoutVolume', 'muscleMass'],
+                  sentiment: 'positive',
+                  actionable: false
+                });
+              }
+            }
+            
+            // Identifier fréquence optimale
+            const optimalFrequency = identifyOptimalFrequency(
+              workoutHistory,
+              data.progressEntries || [],
+              startDate,
+              endDate
+            );
+            
+            if (optimalFrequency && optimalFrequency.recommendation) {
+              const currentAvgSessions = weeklyVolume.averageWeeklySessions;
+              const optimalSessions = optimalFrequency.optimalSessionsPerWeek;
+              
+              if (Math.abs(currentAvgSessions - optimalSessions) > 0.5) {
+                comments.push({
+                  id: 'history_optimal_frequency',
+                  type: 'recommendations',
+                  priority: 'medium',
+                  title: '🎯 Fréquence optimale identifiée',
+                  content: optimalFrequency.recommendation,
+                  timestamp: new Date(Date.now() - 11 * 60 * 60 * 1000),
+                  metrics: ['workoutFrequency'],
+                  sentiment: 'neutral',
+                  actionable: true,
+                  actions: [
+                    `Cibler ${optimalSessions.toFixed(1)} séances/semaine`,
+                    'Maintenir régularité',
+                    'Optimiser récupération'
+                  ]
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        log.error('Erreur lors de l\'analyse du volume d\'entraînement', error);
+        // Ne pas bloquer l'affichage des autres commentaires
+      }
+    }
+
+    // 🔄 NOUVEAU: Commentaires enrichis avec données Garmin
+    if (garminData && commentTypes.includes('insights')) {
+      // Analyser calories réelles vs changements de poids
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - (periodWeeks * 7));
+      
+      const calorieStats = calculateCaloriesForPeriod(garminData, startDate, endDate);
+      
+      if (calorieStats.days > 0 && calorieStats.average > 0) {
+        // Si perte de poids ET calories élevées, corrélation positive
+        if (weightLoss > 0 && calorieStats.average > 2000) {
+          comments.push({
+            id: 'garmin_calories_weight_loss',
+            type: 'insights',
+            priority: 'high',
+            title: '🔥 Calories et perte de poids optimales',
+            content: `Vos données Garmin montrent que vous avez brûlé en moyenne ${Math.round(calorieStats.average)} kcal/jour sur ${calorieStats.days} jours. Cette dépense énergétique élevée explique parfaitement votre perte de ${weightLoss.toFixed(1)} kg. Excellent équilibre activité/déficit !`,
+            timestamp: new Date(Date.now() - 18 * 60 * 60 * 1000),
+            metrics: ['calories', 'weight'],
+            sentiment: 'positive',
+            actionable: false
+          });
+        }
+        
+        // Activités Garmin
+        const activityStats = getActivityVolume(garminData, startDate, endDate);
+        if (activityStats.totalActivities > 0) {
+          comments.push({
+            id: 'garmin_activities_summary',
+            type: 'insights',
+            priority: 'medium',
+            title: '🏃 Activités Garmin enregistrées',
+            content: `Vous avez réalisé ${activityStats.totalActivities} activité${activityStats.totalActivities > 1 ? 's' : ''} Garmin (natation: ${activityStats.byType.swimming.count}, cardio: ${activityStats.byType.cardio.count}, saut à la corde: ${activityStats.byType.jumpRope.count}) totalisant ${Math.round(activityStats.totalDuration)} minutes. Ces activités contribuent significativement à vos résultats.`,
+            timestamp: new Date(Date.now() - 20 * 60 * 60 * 1000),
+            metrics: ['activity'],
+            sentiment: 'positive',
+            actionable: false
+          });
+        }
+      }
+      
+      // Analyser récupération moyenne sur la période
+      let recoveryScores = [];
+      if (garminData.dailyMetrics) {
+        Object.keys(garminData.dailyMetrics).forEach(dateStr => {
+          const recovery = analyzeRecovery(garminData, dateStr);
+          if (recovery) {
+            recoveryScores.push(recovery.score);
+          }
+        });
+      }
+      
+      if (recoveryScores.length > 0) {
+        const avgRecovery = recoveryScores.reduce((sum, score) => sum + score, 0) / recoveryScores.length;
+        
+        if (avgRecovery >= 80 && muscleMassGain > 0) {
+          comments.push({
+            id: 'garmin_recovery_muscle_gain',
+            type: 'insights',
+            priority: 'high',
+            title: '💪 Récupération optimale = gain musculaire',
+            content: `Votre récupération moyenne est excellente (${Math.round(avgRecovery)}/100) selon vos données Garmin (Body Battery, Stress, Sommeil). Cette récupération optimale explique votre gain de ${muscleMassGain.toFixed(1)} kg de masse musculaire. Continuez à prioriser le sommeil et la récupération !`,
+            timestamp: new Date(Date.now() - 22 * 60 * 60 * 1000),
+            metrics: ['recovery', 'muscleMass'],
+            sentiment: 'positive',
+            actionable: false
+          });
+        } else if (avgRecovery < 60) {
+          comments.push({
+            id: 'garmin_recovery_low',
+            type: 'warnings',
+            priority: 'medium',
+            title: '⚠️ Récupération insuffisante',
+            content: `Votre récupération moyenne est faible (${Math.round(avgRecovery)}/100). Améliorez votre sommeil, réduisez le stress et planifiez des jours de repos pour optimiser vos performances et votre récupération musculaire.`,
+            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
+            metrics: ['recovery'],
+            sentiment: 'warning',
+            actionable: true,
+            actions: ['Améliorer le sommeil', 'Réduire le stress', 'Planifier des jours de repos']
+          });
+        }
+      }
+    }
+
+    // 🔄 NOUVEAU: Analyser impact endurance sur composition corporelle
+    try {
+      const enduranceData = data?.enduranceData || {};
+      
+      if (enduranceData.sessions && Object.keys(enduranceData.sessions).some(type => 
+        Array.isArray(enduranceData.sessions[type]) && enduranceData.sessions[type].length > 0
+      )) {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - (periodWeeks * 7));
+        
+        // Obtenir poids moyen pour calculs précis
+        const avgWeight = current.weight || 70;
+        
+        // Calculer calories endurance pour la période
+        const enduranceCalories = calculateEnduranceCaloriesForPeriod(
+          enduranceData,
+          startDate,
+          endDate,
+          avgWeight
+        );
+        
+        if (enduranceCalories.total > 0 && enduranceCalories.sessionsCount > 0) {
+          // Analyser impact sur composition corporelle
+          const enduranceImpact = analyzeEnduranceImpactOnBodyComposition(
+            enduranceData,
+            data.progressEntries || [],
+            startDate,
+            endDate,
+            avgWeight
+          );
+          
+          // Commentaires sur calories endurance
+          if (enduranceCalories.total > 1000 && commentTypes.includes('achievements')) {
+            comments.push({
+              id: 'endurance_calories_achievement',
+              type: 'achievements',
+              priority: 'high',
+              title: '🔥 Calories endurance exceptionnelles',
+              content: `Vous avez brûlé ${Math.round(enduranceCalories.total)} kcal grâce à vos activités d'endurance (${enduranceCalories.sessionsCount} sessions) sur cette période. Cela représente en moyenne ${Math.round(enduranceCalories.total / (periodWeeks * 7))} kcal/jour d'endurance. Excellent travail !`,
+              timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000),
+              metrics: ['endurance', 'calories'],
+              sentiment: 'positive',
+              actionable: false
+            });
+          }
+          
+          // Commentaires impact spécifique
+          if (enduranceImpact && enduranceImpact.insights.length > 0) {
+            enduranceImpact.insights.forEach((insight, index) => {
+              if (insight.type === 'positive' && commentTypes.includes('insights')) {
+                comments.push({
+                  id: `endurance_impact_${index}`,
+                  type: 'insights',
+                  priority: insight.type === 'positive' ? 'high' : 'medium',
+                  title: '🏃 Impact endurance sur composition',
+                  content: insight.message,
+                  timestamp: new Date(Date.now() - (14 + index) * 60 * 60 * 1000),
+                  metrics: ['endurance', 'bodyComposition'],
+                  sentiment: insight.type === 'positive' ? 'positive' : 'neutral',
+                  actionable: false
+                });
+              }
+            });
+          }
+          
+          // Recommandations basées sur endurance
+          if (enduranceImpact && enduranceImpact.recommendations.length > 0 && commentTypes.includes('recommendations')) {
+            enduranceImpact.recommendations.forEach((rec, index) => {
+              comments.push({
+                id: `endurance_recommendation_${index}`,
+                type: 'recommendations',
+                priority: rec.priority,
+                title: '💡 Recommandation endurance',
+                content: rec.message,
+                timestamp: new Date(Date.now() - (16 + index) * 60 * 60 * 1000),
+                metrics: ['endurance'],
+                sentiment: 'neutral',
+                actionable: true,
+                actions: [
+                  'Planifier sessions d\'endurance',
+                  'Varier types d\'activités',
+                  'Suivre calories brûlées'
+                ]
+              });
+            });
+          }
+          
+          // Commentaire si endurance contribue à perte de poids
+          if (weightLoss > 0 && enduranceCalories.total > 2000 && commentTypes.includes('trends')) {
+            const enduranceContribution = (enduranceCalories.total / 7700).toFixed(2); // 1 kg = 7700 kcal
+            comments.push({
+              id: 'endurance_weight_loss_contribution',
+              type: 'trends',
+              priority: 'high',
+              title: '🏃 Endurance = perte de poids',
+              content: `Votre activité d'endurance (${Math.round(enduranceCalories.total)} kcal) représente théoriquement ${enduranceContribution} kg de perte de poids sur cette période. Combinée à vos autres activités, cela explique votre perte totale de ${weightLoss.toFixed(1)} kg.`,
+              timestamp: new Date(Date.now() - 13 * 60 * 60 * 1000),
+              metrics: ['endurance', 'weight'],
+              sentiment: 'positive',
+              actionable: false
+            });
+          }
+        }
+      }
+    } catch (error) {
+      log.error('Erreur lors de l\'analyse de l\'impact endurance', error);
+      // Ne pas bloquer l'affichage des autres commentaires
     }
 
     // Recommandations
     if (commentTypes.includes('recommendations')) {
-      const progressToTarget = (metricsData.weight.previous - metricsData.weight.current) / (metricsData.weight.previous - metricsData.weight.target);
-      
-      comments.push({
-        id: 'recommendation_nutrition',
-        type: 'recommendations',
-        priority: 'high',
-        title: '🥗 Optimisation nutritionnelle',
-        content: `Basé sur vos progrès actuels, vous atteindrez votre objectif de poids dans environ ${Math.ceil((current.weight - 72.0) / (weightLoss / periodWeeks))} semaines. Maintenez votre déficit calorique actuel.`,
-        timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000),
-        metrics: ['weight'],
-        sentiment: 'neutral',
-        actionable: true,
-        actions: ['Continuer le déficit calorique', 'Surveiller les protéines', 'Maintenir l\'hydratation']
-      });
+      // Calculer projection vers objectif si perte de poids active
+      if (weightLoss > 0 && current.weight && periodWeeks > 0) {
+        const weeklyLoss = weightLoss / periodWeeks;
+        // Objectif par défaut: 72kg (ou personnalisable via settings)
+        // Pour l'instant, utiliser un objectif raisonnable basé sur IMC 22 (si taille disponible)
+        const targetWeight = current.height ? Math.round((current.height / 100) ** 2 * 22 * 10) / 10 : 72.0;
+        
+        if (current.weight > targetWeight && weeklyLoss > 0) {
+          const weeksToTarget = Math.ceil((current.weight - targetWeight) / weeklyLoss);
+          
+          comments.push({
+            id: 'recommendation_nutrition',
+            type: 'recommendations',
+            priority: 'high',
+            title: '🥗 Optimisation nutritionnelle',
+            content: `Basé sur vos progrès actuels (${weightLoss.toFixed(1)} kg en ${periodWeeks} semaine${periodWeeks > 1 ? 's' : ''}, soit ${weeklyLoss.toFixed(2)} kg/semaine), vous atteindrez votre objectif de poids dans environ ${weeksToTarget} semaine${weeksToTarget > 1 ? 's' : ''}. ${garminData && garminData.dailyMetrics ? 'Vos calories Garmin confirment un déficit optimal.' : 'Maintenez votre déficit calorique actuel.'}`,
+            timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000),
+            metrics: ['weight'],
+            sentiment: 'neutral',
+            actionable: true,
+            actions: ['Continuer le déficit calorique', 'Surveiller les protéines', 'Maintenir l\'hydratation']
+          });
+        } else if (weightLoss > 0) {
+          // Perte de poids active mais pas d'objectif spécifique
+          comments.push({
+            id: 'recommendation_nutrition',
+            type: 'recommendations',
+            priority: 'high',
+            title: '🥗 Progression excellente',
+            content: `Vous avez perdu ${weightLoss.toFixed(1)} kg en ${periodWeeks} semaine${periodWeeks > 1 ? 's' : ''} (${(weightLoss / periodWeeks).toFixed(2)} kg/semaine). C'est un rythme parfait et durable. Continuez sur cette lancée !`,
+            timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000),
+            metrics: ['weight'],
+            sentiment: 'positive',
+            actionable: true,
+            actions: ['Maintenir le déficit calorique', 'Surveiller les protéines', 'Maintenir l\'hydratation']
+          });
+        }
+      } else if (weightLoss <= 0 && current.weight && previous.weight && current.weight > previous.weight) {
+        // Prise de poids détectée
+        const weightGain = current.weight - previous.weight;
+        comments.push({
+          id: 'recommendation_nutrition',
+          type: 'recommendations',
+          priority: 'high',
+          title: '🥗 Ajustement nutritionnel recommandé',
+          content: `Une prise de ${weightGain.toFixed(1)} kg a été détectée sur ${periodWeeks} semaine${periodWeeks > 1 ? 's' : ''}. Si ce n'est pas intentionnel, réévaluez votre apport calorique et votre niveau d'activité.`,
+          timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000),
+          metrics: ['weight'],
+          sentiment: 'warning',
+          actionable: true,
+          actions: ['Réévaluer l\'apport calorique', 'Augmenter l\'activité', 'Consulter un nutritionniste si nécessaire']
+        });
+      }
 
       comments.push({
         id: 'recommendation_training',
@@ -302,7 +685,7 @@ const ProgressComments = () => {
       const priorityOrder = { high: 3, medium: 2, low: 1 };
       return priorityOrder[b.priority] - priorityOrder[a.priority] || b.timestamp - a.timestamp;
     });
-  }, [selectedPeriod, commentTypes]);
+  }, [selectedPeriod, commentTypes, data?.progressEntries, getWorkoutHistory, garminData]);
 
   const commentStats = useMemo(() => {
     const total = generatedComments.length;
