@@ -32,8 +32,9 @@ import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
 import { validatePhoto } from './utils/validation';
 import { useToast } from './hooks/useToast';
-import { compressImage } from './utils/imageCompression';
+import { compressImage, compressImageMultiResolution } from './utils/imageCompression'; // ✅ OPTIMISATION: Compression multi-résolution
 import { usePagination } from './hooks/usePagination';
+import usePhotosPaginated from './hooks/usePhotosPaginated'; // ✅ OPTIMISATION: Pagination avec cache LRU
 import { getPhotoAnalysisOrchestrator } from './services/photoAnalysisOrchestrator';
 import { getModelPreloader } from './services/modelPreloader';
 import { getPhotoUrl } from './utils/photoNormalizer';
@@ -77,9 +78,40 @@ const PhotoGallerySection = () => {
   const [viewType, setViewType] = useState('gallery'); // 'gallery' | 'dashboard' | 'muscle' | 'timeline' | 'correlations'
   const [justCaptured, setJustCaptured] = useState(false); // ✅ OPTIMISATION: Flag pour suggestions intelligentes
 
+  // ✅ OPTIMISATION: Activer pagination avec cache LRU si > 50 photos (réduction mémoire)
+  const USE_PAGINATED_LOADING = (data?.progressPhotos?.length || 0) > 50;
+  
+  // 📄 PAGINATION OPTIMISÉE - Utilisée seulement si pas de virtualisation
+  const itemsPerPage = viewMode === 'grid' ? 12 : 8; // Moins en mode liste (photos plus grandes)
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // ✅ OPTIMISATION: Pagination avec cache LRU (si > 50 photos)
+  const {
+    photos: paginatedPhotosData,
+    loading: paginationLoading,
+    totalPages: paginatedTotalPages,
+    totalPhotos: paginatedTotalPhotos,
+    invalidateCache: invalidatePaginationCache
+  } = usePhotosPaginated(
+    USE_PAGINATED_LOADING ? currentPage : 1,
+    itemsPerPage,
+    {
+      filterBy,
+      enableCache: true,
+      maxCacheSize: 10
+    }
+  );
+
   // 🔍 Récupérer les vraies photos de progression (MEMOIZED avec Deep Compare)
   // ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+  // ✅ OPTIMISATION: Utiliser données paginées si activé, sinon calculer depuis mémoire
   const progressPhotos = useDeepCompareMemo(() => {
+    // ✅ Si pagination activée, utiliser données paginées
+    if (USE_PAGINATED_LOADING) {
+      return paginatedPhotosData;
+    }
+    
+    // ✅ Sinon, comportement classique (mémoire)
     if (!data?.progressPhotos || data.progressPhotos.length === 0) {
       return [];
     }
@@ -92,16 +124,20 @@ const PhotoGallerySection = () => {
       })
       .map(photo => ({
         id: photo.id,
-        url: getPhotoUrl(photo), // ✅ NORMALISATION: Utilise helper pour obtenir URL
+        // ✅ OPTIMISATION: Préserver structure multi-résolution si présente
+        ...(photo.resolutions ? { resolutions: photo.resolutions } : {}),
+        url: getPhotoUrl(photo, 'preview'), // ✅ OPTIMISATION: Utiliser preview par défaut (bon équilibre)
         date: photo.date ? new Date(photo.date) : (photo.timestamp ? new Date(photo.timestamp) : new Date()),
         angle: photo.angle || 'front',
         weight: photo.weight,
         notes: photo.notes,
         tags: photo.tags || ['progress'],
         filename: photo.filename,
-        type: photo.type
+        type: photo.type,
+        // Préserver métadonnées compression si présentes
+        ...(photo.compression ? { compression: photo.compression } : {})
       }));
-  }, [data?.progressPhotos]);
+  }, [USE_PAGINATED_LOADING, paginatedPhotosData, data?.progressPhotos]);
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -122,18 +158,20 @@ const PhotoGallerySection = () => {
       }
       
       if (file.type.startsWith('image/')) {
-        // 🖼️ COMPRESSION INTELLIGENTE AVANT SAUVEGARDE
+        // ✅ OPTIMISATION: COMPRESSION MULTI-RÉSOLUTION AVANT SAUVEGARDE
         setUploadProgress(0);
         
-        // Compresser l'image avec progression
-        compressImage(
+        // Compresser l'image en multi-résolution (thumbnail/preview/full)
+        compressImageMultiResolution(
           file,
           {
-            maxWidth: 1200,
-            maxHeight: 1600,
-            maxSizeKB: 500,
-            quality: 0.75,
-            minQuality: 0.3
+            // Résolutions personnalisées (optionnel, utilise valeurs par défaut sinon)
+            resolutions: [
+              { name: 'thumbnail', width: 150, height: 200, quality: 0.6 },
+              { name: 'preview', width: 400, height: 533, quality: 0.75 },
+              { name: 'full', width: 1200, height: 1600, quality: 0.85 }
+            ],
+            progressive: true // JPEG progressif si fallback
           },
           (progress) => {
             setUploadProgress(progress);
@@ -141,19 +179,26 @@ const PhotoGallerySection = () => {
         )
           .then((compressionResult) => {
             // Afficher informations de compression
-            const { compressedDataUrl, originalSizeKB, compressedSizeKB, reduction } = compressionResult;
+            const { originalSizeKB, totalSizeKB, reduction, format } = compressionResult;
             
             // Message informatif si compression significative
             if (reduction > 10) {
               showInfo(
-                `Photo compressée: ${originalSizeKB.toFixed(1)}KB → ${compressedSizeKB.toFixed(1)}KB (-${reduction}%)`
+                `Photo compressée (${format.toUpperCase()}): ${originalSizeKB.toFixed(1)}KB → ${totalSizeKB.toFixed(1)}KB (-${reduction}%)`
               );
             }
             
-            // Créer l'entrée photo avec Base64 compressé
+            // ✅ OPTIMISATION: Créer l'entrée photo avec structure multi-résolution
             const photoEntry = {
               id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              url: compressedDataUrl,
+              // Structure multi-résolution: { thumbnail, preview, full }
+              resolutions: {
+                thumbnail: compressionResult.thumbnail,
+                preview: compressionResult.preview,
+                full: compressionResult.full
+              },
+              // ✅ Compatibilité: garder url pour fallback (utilise preview)
+              url: compressionResult.preview?.data || compressionResult.full?.data || null,
               date: new Date(),
               angle: 'front', // Par défaut, pourrait être sélectionnable
               weight: null, // Pourrait être récupéré des dernières métriques
@@ -164,9 +209,9 @@ const PhotoGallerySection = () => {
               // Métadonnées de compression pour traçabilité
               compression: {
                 originalSize: compressionResult.originalSize,
-                compressedSize: compressionResult.compressedSize,
+                totalSize: compressionResult.totalSize,
                 reduction: reduction,
-                quality: compressionResult.quality,
+                format: format,
                 dimensions: compressionResult.dimensions
               }
             };
@@ -184,8 +229,10 @@ const PhotoGallerySection = () => {
               setAnalysisProgress({ progress: 0, message: 'Analyse photo en cours...' });
               
               const orchestrator = getPhotoAnalysisOrchestrator();
+              // ✅ OPTIMISATION: Utiliser résolution 'full' pour analyse IA (meilleure précision)
+              const analysisSource = getPhotoUrl(savedPhoto, 'full') || getPhotoUrl(savedPhoto, 'preview') || getPhotoUrl(savedPhoto);
               const analysisInput = {
-                source: getPhotoUrl(savedPhoto),
+                source: analysisSource,
                 photoData: {
                   id: savedPhoto?.id,
                   angle: savedPhoto?.angle || 'front',
@@ -271,32 +318,38 @@ const PhotoGallerySection = () => {
   };
 
   // 🔍 Filtrer et trier photos (MEMOIZED)
+  // ✅ OPTIMISATION: Si pagination activée, photos déjà filtrées/triées par usePhotosPaginated
   const filteredPhotos = useMemo(() => {
+    if (USE_PAGINATED_LOADING) {
+      return progressPhotos; // Déjà filtrées par usePhotosPaginated
+    }
     return progressPhotos.filter(photo => {
       if (filterBy === 'all') return true;
       return photo.angle === filterBy;
     });
-  }, [progressPhotos, filterBy]);
+  }, [progressPhotos, filterBy, USE_PAGINATED_LOADING]);
 
   const sortedPhotos = useMemo(() => {
+    if (USE_PAGINATED_LOADING) {
+      return filteredPhotos; // Déjà triées par usePhotosPaginated
+    }
     return [...filteredPhotos].sort((a, b) => {
       const dateA = a.date instanceof Date ? a.date : new Date(a.date || 0);
       const dateB = b.date instanceof Date ? b.date : new Date(b.date || 0);
       return dateB - dateA; // Plus récent en premier
     });
-  }, [filteredPhotos]);
+  }, [filteredPhotos, USE_PAGINATED_LOADING]);
 
   // ✅ OPTIMISATION: Virtualisation automatique si > 50 photos (seuil performance)
   const shouldVirtualize = useMemo(() => {
     return sortedPhotos.length > 50; // Seuil: virtualisation si > 50 photos
   }, [sortedPhotos.length]);
 
-  // 📄 PAGINATION OPTIMISÉE - Utilisée seulement si pas de virtualisation
-  const itemsPerPage = viewMode === 'grid' ? 12 : 8; // Moins en mode liste (photos plus grandes)
+  // 📄 PAGINATION OPTIMISÉE - Utilisée seulement si pas de virtualisation et pagination non activée
   const {
     paginatedItems: paginatedPhotos,
-    currentPage,
-    totalPages,
+    currentPage: legacyCurrentPage,
+    totalPages: legacyTotalPages,
     paginationInfo,
     goToNextPage,
     goToPrevPage,
@@ -304,18 +357,55 @@ const PhotoGallerySection = () => {
     goToFirstPage,
     goToLastPage,
     resetPagination
-  } = usePagination(sortedPhotos, {
-    itemsPerPage,
-    initialPage: 1
-    // Note: Si virtualisation active, pagination toujours calculée mais non utilisée
-  });
+  } = usePagination(
+    USE_PAGINATED_LOADING ? [] : sortedPhotos, // ✅ Ne pas paginer si déjà paginé
+    {
+      itemsPerPage,
+      initialPage: 1
+      // Note: Si pagination activée, usePagination reçoit tableau vide (pas utilisé)
+    }
+  );
+
+  // ✅ OPTIMISATION: Fonctions navigation pagination avec cache LRU
+  const handlePageChange = useCallback((newPage) => {
+    if (USE_PAGINATED_LOADING) {
+      setCurrentPage(newPage);
+      // ✅ Invalider cache si nécessaire (après ajout/suppression photo)
+      // invalidatePaginationCache(); // Décommenter si besoin
+    } else {
+      goToPage(newPage);
+    }
+  }, [USE_PAGINATED_LOADING, goToPage]);
+
+  const goToNextPageOptimized = useCallback(() => {
+    if (USE_PAGINATED_LOADING) {
+      setCurrentPage(prev => Math.min(prev + 1, paginatedTotalPages));
+    } else {
+      goToNextPage();
+    }
+  }, [USE_PAGINATED_LOADING, paginatedTotalPages, goToNextPage]);
+
+  const goToPrevPageOptimized = useCallback(() => {
+    if (USE_PAGINATED_LOADING) {
+      setCurrentPage(prev => Math.max(prev - 1, 1));
+    } else {
+      goToPrevPage();
+    }
+  }, [USE_PAGINATED_LOADING, goToPrevPage]);
+
+  // ✅ Calculer valeurs pagination finales (selon mode)
+  const finalCurrentPage = USE_PAGINATED_LOADING ? currentPage : legacyCurrentPage;
+  const finalTotalPages = USE_PAGINATED_LOADING ? paginatedTotalPages : legacyTotalPages;
+  const finalLoading = USE_PAGINATED_LOADING ? paginationLoading : false;
 
   // Réinitialiser pagination quand le filtre change (seulement si pagination active)
   useEffect(() => {
-    if (!shouldVirtualize) {
+    if (USE_PAGINATED_LOADING) {
+      setCurrentPage(1); // Reset à page 1 si filtre change
+    } else if (!shouldVirtualize) {
       resetPagination();
     }
-  }, [filterBy, resetPagination, shouldVirtualize]);
+  }, [filterBy, resetPagination, shouldVirtualize, USE_PAGINATED_LOADING]);
 
   const handlePhotoSelect = useCallback((photoId) => {
     setSelectedPhotos(prev => {
@@ -364,7 +454,8 @@ const PhotoGallerySection = () => {
    * Lance analyse IA d'une photo
    */
   const handleAnalyzePhoto = async (photo) => {
-    if (!photo || !photo.url) {
+    // ✅ OPTIMISATION: Vérifier présence URL (multi-résolution ou classique)
+    if (!photo || !getPhotoUrl(photo)) {
       const feedback = errorFeedbackService.analyzeError(
         'Photo invalide pour analyse',
         ERROR_TYPES.ANALYSIS,
@@ -381,9 +472,12 @@ const PhotoGallerySection = () => {
     try {
       const orchestrator = getPhotoAnalysisOrchestrator();
       
+      // ✅ OPTIMISATION: Utiliser résolution 'full' pour analyse IA (meilleure précision)
+      const analysisSource = getPhotoUrl(photo, 'full') || getPhotoUrl(photo, 'preview') || getPhotoUrl(photo);
+      
       // Analyser photo
       const result = await orchestrator.analyzePhoto(
-        photo.url, // Source Base64
+        analysisSource, // Source Base64 (full > preview > fallback)
         {
           id: photo.id,
           poseType: photo.capture?.poseType,
@@ -484,7 +578,8 @@ const PhotoGallerySection = () => {
         const orchestrator = getPhotoAnalysisOrchestrator();
         
         const analysisInputs = unanalyzedPhotos.map(photo => ({
-          source: getPhotoUrl(photo), // ✅ NORMALISATION: Utilise helper pour obtenir URL
+          // ✅ OPTIMISATION: Utiliser résolution 'full' pour analyse IA (meilleure précision)
+          source: getPhotoUrl(photo, 'full') || getPhotoUrl(photo, 'preview') || getPhotoUrl(photo),
           photoData: {
             id: photo.id,
             poseType: photo.capture?.poseType,
@@ -586,11 +681,12 @@ const PhotoGallerySection = () => {
             <CardTitle className="flex items-center gap-2">
               <Camera className="w-5 h-5 text-green-400" />
               {viewType === 'gallery' ? 'Galerie de progression' : 'Dashboard Analyse IA'}
-              {viewType === 'gallery' && (
-                <span className="text-sm font-normal text-slate-400">
-                  ({sortedPhotos.length} photos{totalPages > 1 && ` - Page ${currentPage}/${totalPages}`})
-                </span>
-              )}
+                    {viewType === 'gallery' && (
+                      <span className="text-sm font-normal text-slate-400">
+                        ({sortedPhotos.length} photos{finalTotalPages > 1 && ` - Page ${finalCurrentPage}/${finalTotalPages}`})
+                        {finalLoading && <span className="ml-2 text-purple-400">(Chargement...)</span>}
+                      </span>
+                    )}
             </CardTitle>
           </div>
         </CardHeader>
@@ -795,9 +891,10 @@ const PhotoGallerySection = () => {
                 >
                   <div className="aspect-[3/4] bg-slate-700">
                     <img
-                      src={photo.url}
+                      src={getPhotoUrl(photo, 'thumbnail') || photo.url} // ✅ OPTIMISATION: Utiliser thumbnail pour grille (performance)
                       alt={`Photo ${getAngleLabel(photo.angle)} du ${formatDate(photo.date)}`}
                       className="w-full h-full object-cover"
+                      loading="lazy" // ✅ OPTIMISATION: Lazy loading pour performances
                     />
                   </div>
                   
@@ -870,9 +967,10 @@ const PhotoGallerySection = () => {
                 >
                   <div className="w-20 h-24 bg-slate-700 rounded overflow-hidden flex-shrink-0">
                     <img
-                      src={photo.url}
+                      src={getPhotoUrl(photo, 'thumbnail') || photo.url} // ✅ OPTIMISATION: Utiliser thumbnail pour liste (performance)
                       alt={`Photo ${getAngleLabel(photo.angle)}`}
                       className="w-full h-full object-cover"
+                      loading="lazy" // ✅ OPTIMISATION: Lazy loading
                     />
                   </div>
                   
@@ -921,10 +1019,14 @@ const PhotoGallerySection = () => {
           )}
 
           {/* Contrôles de pagination - Affichés seulement si pas de virtualisation */}
-          {!shouldVirtualize && totalPages > 1 && (
+          {!shouldVirtualize && finalTotalPages > 1 && (
             <div className="mt-6 flex items-center justify-between border-t border-slate-700 pt-4">
               <div className="text-sm text-slate-400">
-                Affichage {paginationInfo.startIndex}-{paginationInfo.endIndex} sur {sortedPhotos.length} photos
+                {USE_PAGINATED_LOADING ? (
+                  <>Affichage {(finalCurrentPage - 1) * itemsPerPage + 1}-{Math.min(finalCurrentPage * itemsPerPage, sortedPhotos.length)} sur {paginatedTotalPhotos} photos</>
+                ) : (
+                  <>Affichage {paginationInfo.startIndex}-{paginationInfo.endIndex} sur {sortedPhotos.length} photos</>
+                )}
               </div>
               
               <div className="flex items-center gap-2">
@@ -932,8 +1034,8 @@ const PhotoGallerySection = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={goToFirstPage}
-                  disabled={!paginationInfo.hasPrevPage}
+                  onClick={() => handlePageChange(1)}
+                  disabled={finalCurrentPage === 1 || finalLoading}
                   className="p-2"
                   title="Première page"
                 >
@@ -944,8 +1046,8 @@ const PhotoGallerySection = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={goToPrevPage}
-                  disabled={!paginationInfo.hasPrevPage}
+                  onClick={goToPrevPageOptimized}
+                  disabled={finalCurrentPage === 1 || finalLoading}
                   className="p-2"
                   title="Page précédente"
                 >
@@ -956,25 +1058,26 @@ const PhotoGallerySection = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-300">Page</span>
                   <select
-                    value={currentPage}
-                    onChange={(e) => goToPage(parseInt(e.target.value))}
-                    className="bg-slate-700 border border-slate-600 rounded px-3 py-1 text-sm text-white min-w-[60px]"
+                    value={finalCurrentPage}
+                    onChange={(e) => handlePageChange(parseInt(e.target.value))}
+                    disabled={finalLoading}
+                    className="bg-slate-700 border border-slate-600 rounded px-3 py-1 text-sm text-white min-w-[60px] disabled:opacity-50"
                   >
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    {Array.from({ length: finalTotalPages }, (_, i) => i + 1).map(page => (
                       <option key={page} value={page}>
                         {page}
                       </option>
                     ))}
                   </select>
-                  <span className="text-sm text-slate-400">sur {totalPages}</span>
+                  <span className="text-sm text-slate-400">sur {finalTotalPages}</span>
                 </div>
 
                 {/* Page suivante */}
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={goToNextPage}
-                  disabled={!paginationInfo.hasNextPage}
+                  onClick={goToNextPageOptimized}
+                  disabled={finalCurrentPage === finalTotalPages || finalLoading}
                   className="p-2"
                   title="Page suivante"
                 >
@@ -985,8 +1088,8 @@ const PhotoGallerySection = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={goToLastPage}
-                  disabled={!paginationInfo.hasNextPage}
+                  onClick={() => handlePageChange(finalTotalPages)}
+                  disabled={finalCurrentPage === finalTotalPages || finalLoading}
                   className="p-2"
                   title="Dernière page"
                 >
@@ -1058,9 +1161,10 @@ const PhotoGallerySection = () => {
               <div className="flex-1 p-4">
                 <div className="relative">
                   <img
-                    src={sortedPhotos[currentPhotoIndex]?.url}
+                    src={getPhotoUrl(sortedPhotos[currentPhotoIndex], 'preview') || sortedPhotos[currentPhotoIndex]?.url} // ✅ OPTIMISATION: Utiliser preview pour modal (bon équilibre qualité/performance)
                     alt="Photo de progression"
                     className="w-full max-h-[60vh] object-contain rounded"
+                    loading="eager" // ✅ Chargement immédiat pour modal (UX)
                   />
                   
                   {/* Navigation */}
@@ -1550,9 +1654,10 @@ const PhotoGallerySection = () => {
                         </div>
                       </div>
                       <img
-                        src={photo.url}
+                        src={getPhotoUrl(photo, 'preview') || photo.url} // ✅ OPTIMISATION: Utiliser preview pour comparaison (bon équilibre qualité/performance)
                         alt={`Photo ${index === 0 ? 'avant' : 'après'}`}
                         className="w-full max-h-[50vh] object-contain rounded"
+                        loading="lazy" // ✅ OPTIMISATION: Lazy loading
                       />
                     </div>
                   );

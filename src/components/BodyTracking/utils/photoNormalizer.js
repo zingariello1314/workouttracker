@@ -57,37 +57,96 @@ export const normalizePhotoEntries = (photos) => {
 };
 
 /**
- * Obtient l'URL d'une photo (normalisée ou non)
- * Utilise `url` en priorité, sinon `photo`
+ * ✅ OPTIMISATION: Obtient l'URL d'une photo avec support multi-résolution
  * 
- * @param {Object} photo - Photo (peut avoir `photo` ou `url`)
- * @returns {string|null} URL de la photo
+ * Résolutions supportées:
+ * - 'thumbnail': 150x200 (galerie grille)
+ * - 'preview': 400x533 (vue détaillée/modal)
+ * - 'full': 1200x1600 (analyse IA, zoom complet)
+ * 
+ * @param {Object} photo - Photo (peut avoir structure classique ou multi-résolution)
+ * @param {string} resolution - Résolution désirée: 'thumbnail' | 'preview' | 'full' (défaut: 'preview')
+ * @returns {string|null} URL de la photo à la résolution demandée
  */
-export const getPhotoUrl = (photo) => {
+export const getPhotoUrl = (photo, resolution = 'preview') => {
   if (!photo) {
     return null;
   }
 
+  // ✅ OPTIMISATION: Support multi-résolution (nouvelle structure)
+  if (photo.resolutions && typeof photo.resolutions === 'object') {
+    // Structure multi-résolution: { resolutions: { thumbnail: {...}, preview: {...}, full: {...} } }
+    const res = photo.resolutions[resolution];
+    if (res && res.data) {
+      return res.data;
+    }
+    
+    // Fallback: Si résolution demandée n'existe pas, essayer preview puis full
+    if (resolution !== 'preview' && photo.resolutions.preview?.data) {
+      return photo.resolutions.preview.data;
+    }
+    if (photo.resolutions.full?.data) {
+      return photo.resolutions.full.data;
+    }
+  }
+  
+  // ✅ Fallback: Structure classique (compatibilité rétroactive)
   // Priorité: `url` > `photo`
   return photo.url || photo.photo || null;
 };
 
 /**
- * Vérifie si une photo a une URL valide
+ * Vérifie si une photo a une URL valide (vérifie toutes résolutions si multi-résolution)
  * 
  * @param {Object} photo - Photo à vérifier
+ * @param {string} resolution - Résolution à vérifier (optionnel, vérifie toutes si omis)
  * @returns {boolean} true si photo a URL valide
  */
-export const hasPhotoUrl = (photo) => {
-  const url = getPhotoUrl(photo);
+export const hasPhotoUrl = (photo, resolution = null) => {
+  if (!photo) return false;
+  
+  // ✅ OPTIMISATION: Support multi-résolution
+  if (photo.resolutions && typeof photo.resolutions === 'object') {
+    if (resolution) {
+      // Vérifier résolution spécifique
+      return !!(photo.resolutions[resolution]?.data);
+    }
+    // Vérifier au moins une résolution disponible
+    return Object.values(photo.resolutions).some(r => r && r.data);
+  }
+  
+  // Fallback: Structure classique
+  const url = getPhotoUrl(photo, resolution);
   return url !== null && url !== undefined && url !== '';
 };
 
 /**
- * Valide et normalise données photo avant sauvegarde
- * Garantit présence de `url` et structure cohérente
+ * ✅ OPTIMISATION: Obtient les métadonnées d'une résolution spécifique
  * 
- * @param {Object} photoData - Données photo brutes (peut avoir `photo` ou `url`)
+ * @param {Object} photo - Photo avec structure multi-résolution
+ * @param {string} resolution - Résolution: 'thumbnail' | 'preview' | 'full'
+ * @returns {Object|null} Métadonnées résolution (width, height, size, format, quality) ou null
+ */
+export const getResolutionMetadata = (photo, resolution = 'preview') => {
+  if (!photo?.resolutions?.[resolution]) {
+    return null;
+  }
+  
+  const res = photo.resolutions[resolution];
+  return {
+    width: res.width,
+    height: res.height,
+    size: res.size,
+    format: res.format,
+    quality: res.quality
+  };
+};
+
+/**
+ * ✅ OPTIMISATION: Valide et normalise données photo avec support multi-résolution
+ * Garantit présence d'au moins une URL (classique ou multi-résolution)
+ * 
+ * @param {Object} photoData - Données photo brutes (peut avoir structure classique ou multi-résolution)
  * @returns {Object} Photo normalisée et validée pour sauvegarde
  */
 export const validateAndNormalizePhotoData = (photoData) => {
@@ -95,11 +154,41 @@ export const validateAndNormalizePhotoData = (photoData) => {
     throw new Error('Données photo invalides : objet vide');
   }
 
+  // ✅ OPTIMISATION: Support structure multi-résolution
+  if (photoData.resolutions && typeof photoData.resolutions === 'object') {
+    // Vérifier au moins une résolution valide
+    const hasValidResolution = Object.values(photoData.resolutions).some(
+      r => r && r.data && typeof r.data === 'string'
+    );
+    
+    if (!hasValidResolution) {
+      throw new Error('Données photo invalides : au moins une résolution avec `data` requis');
+    }
+    
+    // Normaliser structure multi-résolution
+    const normalized = {
+      ...photoData,
+      resolutions: photoData.resolutions // Garder structure multi-résolution
+    };
+    
+    // Validation structure minimale
+    if (!normalized.id) {
+      normalized.id = `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+    
+    if (!normalized.date) {
+      normalized.date = new Date().toISOString();
+    }
+    
+    return normalized;
+  }
+
+  // ✅ Fallback: Structure classique (compatibilité rétroactive)
   // Obtenir URL (priorité: `url` > `photo`)
   const url = photoData.url || photoData.photo;
 
   if (!url) {
-    throw new Error('Données photo invalides : `url` ou `photo` requis');
+    throw new Error('Données photo invalides : `url` ou `photo` requis (ou structure multi-résolution)');
   }
 
   // Normaliser: toujours utiliser `url`, jamais `photo`

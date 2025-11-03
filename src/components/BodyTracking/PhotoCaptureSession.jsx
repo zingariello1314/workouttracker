@@ -30,7 +30,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { useToast } from './hooks/useToast';
-import { compressImage } from './utils/imageCompression';
+import { compressImage, compressImageMultiResolution } from './utils/imageCompression'; // ✅ OPTIMISATION: Compression multi-résolution
 import { getPoseDetectionService } from './services/poseDetectionService';
 import { getPhotoAnalysisOrchestrator } from './services/photoAnalysisOrchestrator';
 import { usePhotoCaptureReducer } from './hooks/usePhotoCaptureReducer';
@@ -38,6 +38,7 @@ import { calculateRealLightingScore, calculateStabilityVariance, calculateQualit
 import { useThrottledCallback } from './hooks/useThrottle';
 import { usePhotoAutoSave } from './hooks/usePhotoAutoSave';
 import { getPhotoUrl } from './utils/photoNormalizer';
+import { getWebcamPreprocessingService } from './services/webcamPreprocessingService'; // ✅ OPTIMISATION: Preprocessing adaptatif webcam
 import logger from '../../utils/logger';
 
 const log = logger.component('PhotoCaptureSession');
@@ -108,6 +109,16 @@ const PhotoCaptureSession = ({
   const isCapturingRef = useRef(false);
   const capturePoseIndexRef = useRef(-1); // Index pose au moment capture (pour éviter race condition)
   
+  // ✅ OPTIMISATION: Canvas Pool réutilisable + throttling adaptatif éclairage
+  const lightingCanvasPool = useRef([]);
+  const lightingCanvasActive = useRef(null);
+  const lastLightingAnalysisRef = useRef(0);
+  const lightingAnalysisIntervalRef = useRef(500); // Adaptatif, initialisé à 500ms
+  const lastImageDataRef = useRef(null); // Cache dernier ImageData pour fallback
+  
+  // ✅ OPTIMISATION: Service preprocessing adaptatif webcam (singleton)
+  const preprocessingServiceRef = useRef(null);
+  
   // ✅ OPTIMISATION: useReducer pour gestion état centralisée (remplace 17 useState)
   const [state, dispatch] = usePhotoCaptureReducer(poses);
   
@@ -146,11 +157,48 @@ const PhotoCaptureSession = ({
   const sessionAnalysisProgress = sessionAnalysisProgressState;
 
   /**
+   * ✅ OPTIMISATION: Initialiser pool canvas au montage (double buffering)
+   */
+  useEffect(() => {
+    // Créer pool de 2 canvas (double buffering)
+    lightingCanvasPool.current = [0, 1].map(() => {
+      const canvas = document.createElement('canvas');
+      // ✅ Downscale 4x pour analyse éclairage (réduction CPU: 160x120 vs 640x480 = 16x moins de pixels)
+      canvas.width = 160;
+      canvas.height = 120;
+      return {
+        canvas,
+        ctx: canvas.getContext('2d', { 
+          willReadFrequently: true, // ✅ Hint navigateur: optimisation pour lectures fréquentes
+          desynchronized: true, // ✅ Hint navigateur: désynchronisation pour meilleure perf
+          alpha: false // Pas besoin d'alpha pour analyse éclairage
+        }),
+        inUse: false
+      };
+    });
+    lightingCanvasActive.current = lightingCanvasPool.current[0];
+    
+    log.debug('Canvas pool initialisé (2 canvas, 160x120)');
+    
+    return () => {
+      // Nettoyage: pas nécessaire (canvas sera garbage collected)
+      lightingCanvasPool.current = [];
+      lightingCanvasActive.current = null;
+    };
+  }, []);
+
+  /**
    * Initialise PoseDetectionService (lazy loading)
    */
   useEffect(() => {
     if (mode === 'webcam' && !poseServiceRef.current) {
       poseServiceRef.current = getPoseDetectionService();
+      
+      // ✅ OPTIMISATION: Initialiser service preprocessing adaptatif
+      if (!preprocessingServiceRef.current) {
+        preprocessingServiceRef.current = getWebcamPreprocessingService();
+        log.debug('Service preprocessing webcam initialisé');
+      }
       // Réinitialiser webcamReady quand on change de mode
       dispatch({ type: 'WEBCAM_READY', payload: false });
     }
@@ -217,7 +265,35 @@ const PhotoCaptureSession = ({
       const poseService = poseServiceRef.current;
       if (!poseService) return;
 
-      const result = await poseService.detectPose(video);
+      // ✅ OPTIMISATION: Preprocessing adaptatif avant détection pose (améliore précision MediaPipe)
+      let processedVideo = video;
+      const preprocessingService = preprocessingServiceRef.current;
+      
+      if (preprocessingService) {
+        try {
+          // ✅ Preprocess frame selon qualité détectée (denoise + sharpen si nécessaire)
+          const processedCanvas = await preprocessingService.preprocessFrame(
+            video,
+            {
+              denoise: true,      // Dénuiser si bruit détecté
+              sharpen: true,      // Sharpener si flou détecté
+              adaptiveBrightness: false, // Pas besoin pour temps réel (coûteux)
+              motionDeblur: false // Pas besoin pour temps réel (coûteux)
+            }
+          );
+          
+          // ✅ Utiliser canvas traité pour détection pose
+          processedVideo = processedCanvas;
+          
+          log.debug('Frame preprocessé (denoise/sharpen adaptatif)');
+        } catch (preprocessError) {
+          // ✅ Fallback: utiliser vidéo originale si preprocessing échoue
+          log.warn('Erreur preprocessing frame, utilisation vidéo originale', preprocessError);
+          processedVideo = video;
+        }
+      }
+
+      const result = await poseService.detectPose(processedVideo);
       
       if (result.detected && result.landmarks) {
         // Valider pose actuelle - Utiliser index sûr
@@ -239,21 +315,12 @@ const PhotoCaptureSession = ({
           if (expectedPose) {
             const validation = poseService.validatePose(result.landmarks, expectedPose);
             
-            // ✅ OPTIMISATION: Extraire ImageData depuis vidéo pour analyse éclairage réelle
+            // ✅ OPTIMISATION: Extraire ImageData avec canvas pool + throttling adaptatif
             let imageData = null;
-            try {
-              // Créer canvas temporaire pour extraire ImageData
-              const tempCanvas = document.createElement('canvas');
-              tempCanvas.width = video.videoWidth || 640;
-              tempCanvas.height = video.videoHeight || 480;
-              const tempCtx = tempCanvas.getContext('2d');
-              tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-              imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-            } catch (error) {
-              log.warn('Impossible d\'extraire ImageData depuis vidéo, utilisation estimation', error);
-            }
+            const now = Date.now();
+            const timeSinceLastAnalysis = now - lastLightingAnalysisRef.current;
             
-            // ✅ OPTIMISATION: Utiliser calculateQualityScore avec éclairage réel
+            // ✅ Calculer stabilité pose pour throttling adaptatif
             const recentValidations = [...stabilityHistory];
             const poseScore = validation.weightedScore || validation.confidence || 0;
             recentValidations.push(poseScore);
@@ -261,11 +328,57 @@ const PhotoCaptureSession = ({
               recentValidations.shift(); // Garder max 30
             }
             
-            // Calculer score qualité complet avec éclairage réel
+            // ✅ Adaptation intervalle selon stabilité pose
+            // Si pose instable → analyser éclairage plus souvent (300ms)
+            // Si pose stable → réduire fréquence (800ms) pour économiser CPU
+            const poseStability = recentValidations.length > 10 
+              ? calculateStabilityVariance(recentValidations)
+              : 0.5; // Default si historique insuffisant
+            
+            // Intervalle adaptatif: 300ms (instable) à 800ms (stable)
+            // Inversion: variance élevée = instable → intervalle court
+            // Variance basse = stable → intervalle long
+            const adaptiveInterval = 300 + (1 - poseStability) * 500;
+            lightingAnalysisIntervalRef.current = adaptiveInterval;
+            
+            // ✅ Extraire ImageData seulement si intervalle respecté
+            if (timeSinceLastAnalysis >= adaptiveInterval) {
+              try {
+                // ✅ Utiliser canvas du pool (pas de création/destruction)
+                const canvasData = lightingCanvasActive.current;
+                
+                if (canvasData && canvasData.ctx && video) {
+                  // ✅ Switch buffer (double buffering)
+                  lightingCanvasActive.current = lightingCanvasPool.current.find(c => c !== lightingCanvasActive.current) || lightingCanvasPool.current[0];
+                  
+                  // ✅ Dessiner frame downscalé (4x plus petit = 16x moins de pixels)
+                  canvasData.ctx.drawImage(video, 0, 0, 160, 120);
+                  
+                  // ✅ Extraire ImageData depuis canvas pool
+                  imageData = canvasData.ctx.getImageData(0, 0, 160, 120);
+                  
+                  // ✅ Mettre en cache pour fallback
+                  lastImageDataRef.current = imageData;
+                  lastLightingAnalysisRef.current = now;
+                  
+                  log.debug(`ImageData extrait (pool, ${timeSinceLastAnalysis.toFixed(0)}ms depuis dernière analyse, intervalle adaptatif: ${adaptiveInterval.toFixed(0)}ms, stabilité: ${(poseStability * 100).toFixed(1)}%)`);
+                }
+              } catch (error) {
+                log.warn('Impossible d\'extraire ImageData depuis vidéo (pool), utilisation cache ou estimation', error);
+                // ✅ Fallback: utiliser dernier ImageData connu
+                imageData = lastImageDataRef.current;
+              }
+            } else {
+              // ✅ Throttlé: utiliser dernier ImageData connu (pas de nouvel extraction)
+              imageData = lastImageDataRef.current;
+            }
+            
+            // ✅ OPTIMISATION: Utiliser calculateQualityScore avec éclairage réel
+            // Calculer score qualité complet avec éclairage réel (ou dernière valeur connue)
             const qualityResult = calculateQualityScore(
               validation,
               recentValidations,
-              imageData, // ✅ ImageData pour analyse histogramme réelle
+              imageData, // ImageData (actuel ou cache) pour analyse histogramme réelle
               {
                 poseWeight: 0.45,      // 45% (légèrement réduit)
                 stabilityWeight: 0.25,  // 25% (augmenté)
@@ -565,7 +678,8 @@ const PhotoCaptureSession = ({
         if (!angle) angle = 'front'; // Défaut final
         
         return {
-          source: getPhotoUrl(photo), // ✅ NORMALISATION: Utilise helper pour obtenir URL
+          // ✅ OPTIMISATION: Utiliser résolution 'full' pour analyse IA (meilleure précision)
+          source: getPhotoUrl(photo, 'full') || getPhotoUrl(photo, 'preview') || getPhotoUrl(photo),
           photoData: {
             id: photo.id,
             poseType: poseType,
@@ -694,26 +808,35 @@ const PhotoCaptureSession = ({
         return;
       }
 
-      // Compresser image directement depuis Data URL
-      const compressionResult = await compressImage(
+      // ✅ OPTIMISATION: Compresser image en multi-résolution directement depuis Data URL
+      const compressionResult = await compressImageMultiResolution(
         imageSrc, // Data URL du screenshot
         {
-          maxWidth: 1200,
-          maxHeight: 1600,
-          maxSizeKB: 500,
-          quality: 0.75
-        }
+          // Résolutions optimisées pour webcam (même que upload)
+          resolutions: [
+            { name: 'thumbnail', width: 150, height: 200, quality: 0.6 },
+            { name: 'preview', width: 400, height: 533, quality: 0.75 },
+            { name: 'full', width: 1200, height: 1600, quality: 0.85 }
+          ],
+          progressive: true // JPEG progressif si fallback
+        },
+        null // Pas de callback progression (capture instantanée)
       );
 
       // ✅ FIX RACE CONDITION: Utiliser capturedPoseIndex (capturé AVANT opérations async)
       const currentPose = poses[capturedPoseIndex];
       
-      // Créer entrée photo enrichie - Structure compatible avec addProgressPhoto
+      // ✅ OPTIMISATION: Créer entrée photo enrichie avec structure multi-résolution
       const photoEntry = {
         id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        // addProgressPhoto attend 'photo' OU 'url' (les deux pour compatibilité)
-        photo: compressionResult.compressedDataUrl, // Pour addProgressPhoto
-        url: compressionResult.compressedDataUrl,   // Pour compatibilité
+        // Structure multi-résolution: { thumbnail, preview, full }
+        resolutions: {
+          thumbnail: compressionResult.thumbnail,
+          preview: compressionResult.preview,
+          full: compressionResult.full
+        },
+        // ✅ Compatibilité: garder url pour fallback (utilise preview)
+        url: compressionResult.preview?.data || compressionResult.full?.data || null,
         date: new Date(),
         angle: getAngleFromPose(currentPose?.id),
         weight: null,
@@ -721,11 +844,13 @@ const PhotoCaptureSession = ({
         tags: ['progress', 'session'],
         filename: `${currentPose?.id || 'photo'}_${Date.now()}.jpg`,
         type: 'photo',
+        // Métadonnées de compression pour traçabilité
         compression: {
           originalSize: compressionResult.originalSize,
-          compressedSize: compressionResult.compressedSize,
+          totalSize: compressionResult.totalSize,
           reduction: compressionResult.reduction,
-          quality: compressionResult.quality
+          format: compressionResult.format,
+          dimensions: compressionResult.dimensions
         },
         // Métadonnées enrichies (Phase 1)
         capture: {

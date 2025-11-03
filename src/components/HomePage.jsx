@@ -9,35 +9,56 @@ const HomePage = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [userLocation, setUserLocation] = useState('Localisation...');
 
-  // Géolocalisation pour obtenir la vraie position
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          // Utiliser une API de géocodage inverse pour obtenir le nom de la ville
-          fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=fr`)
-            .then(response => response.json())
-            .then(data => {
-              if (data.city && data.countryName) {
-                // Supprimer les préfixes comme "la", "le", "les", "the" du nom du pays
-                const cleanCountryName = data.countryName.replace(/^(la|le|les|the|du|de|des|d'|l')\s+/i, '');
-                setUserLocation(`${data.city}, ${cleanCountryName}`);
-              } else {
-                setUserLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
-              }
-            })
-            .catch(() => {
-              setUserLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
-            });
-        },
-        () => {
-          setUserLocation('Position non disponible');
-        }
-      );
-    } else {
+  // ✅ FIX: Géolocalisation uniquement après interaction utilisateur (conformité navigateur)
+  const requestUserLocation = () => {
+    if (!navigator.geolocation) {
       setUserLocation('Géolocalisation non supportée');
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        // Utiliser une API de géocodage inverse pour obtenir le nom de la ville
+        fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=fr`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.city && data.countryName) {
+              // Supprimer les préfixes comme "la", "le", "les", "the" du nom du pays
+              const cleanCountryName = data.countryName.replace(/^(la|le|les|the|du|de|des|d'|l')\s+/i, '');
+              setUserLocation(`${data.city}, ${cleanCountryName}`);
+            } else {
+              setUserLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+            }
+          })
+          .catch(() => {
+            setUserLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+          });
+      },
+      () => {
+        setUserLocation('Position non disponible');
+      }
+    );
+  };
+
+  // ✅ FIX: Demander géolocalisation seulement après premier clic utilisateur
+  useEffect(() => {
+    // Ne pas demander automatiquement - attendre interaction utilisateur
+    // setUserLocation sera mis à jour après le premier clic
+    const handleFirstInteraction = () => {
+      requestUserLocation();
+      // Retirer listeners après premier appel
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction, { once: true });
+    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
   }, []);
 
   // Fonction pour changer l'image de fond

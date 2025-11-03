@@ -207,6 +207,252 @@ export const compressImage = async (input, options = {}, onProgress = null) => {
 };
 
 /**
+ * ✅ OPTIMISATION: Détection support WebP
+ * @returns {Promise<boolean>} - true si WebP supporté
+ */
+export const checkWebPSupport = async () => {
+  return new Promise((resolve) => {
+    const webP = new Image();
+    webP.onload = webP.onerror = () => {
+      resolve(webP.height === 2);
+    };
+    // Image WebP test (2x1 pixels)
+    webP.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
+  });
+};
+
+/**
+ * ✅ OPTIMISATION: Convertit blob en base64
+ * @param {Blob} blob - Blob à convertir
+ * @returns {Promise<string>} - Data URL base64
+ */
+const blobToBase64 = (blob) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+/**
+ * ✅ OPTIMISATION: Compression multi-résolution avec WebP + fallback JPEG
+ * 
+ * Génère 3 résolutions:
+ * - thumbnail: 150x200 (galerie grille)
+ * - preview: 400x533 (vue détaillée)
+ * - full: 1200x1600 (analyse IA)
+ * 
+ * @param {File|string} input - Fichier image ou Data URL Base64
+ * @param {Object} options - Options de compression
+ * @param {Function} onProgress - Callback de progression (0-100)
+ * @returns {Promise<Object>} - { thumbnail, preview, full } avec format, size, etc.
+ */
+export const compressImageMultiResolution = async (input, options = {}, onProgress = null) => {
+  const opts = {
+    resolutions: options.resolutions || [
+      { name: 'thumbnail', width: 150, height: 200, quality: 0.6 },
+      { name: 'preview', width: 400, height: 533, quality: 0.75 },
+      { name: 'full', width: 1200, height: 1600, quality: 0.85 }
+    ],
+    progressive: options.progressive !== false, // JPEG progressif par défaut
+    ...options
+  };
+  
+  return new Promise((resolve, reject) => {
+    try {
+      // Étape 1: Détection support WebP (10% progression)
+      if (onProgress) onProgress(10);
+      
+      checkWebPSupport().then(supportsWebP => {
+        const format = supportsWebP ? 'webp' : 'jpeg';
+        log.debug(`Format détecté: ${format}`);
+        
+        // Étape 2: Charger l'image (20% progression)
+        if (onProgress) onProgress(20);
+        
+        const reader = new FileReader();
+        
+        reader.onload = async (e) => {
+          // Étape 3: Créer objet Image (30% progression)
+          if (onProgress) onProgress(30);
+          
+          const img = new Image();
+          
+          img.onload = async () => {
+            try {
+              const originalSize = input instanceof File ? input.size : getBase64Size(e.target.result);
+              const results = {};
+              
+              // ✅ Étape 4: Générer toutes résolutions en parallèle (40-90% progression)
+              const resolutionPromises = opts.resolutions.map(async (res, index) => {
+                const progressStart = 40 + (index * (50 / opts.resolutions.length));
+                const progressEnd = 40 + ((index + 1) * (50 / opts.resolutions.length));
+                
+                if (onProgress) onProgress(progressStart);
+                
+                // Calculer dimensions redimensionnées
+                const { width, height } = calculateResizedDimensions(
+                  img.width,
+                  img.height,
+                  res.width,
+                  res.height
+                );
+                
+                // Créer canvas pour cette résolution
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d', { 
+                  alpha: false, // Pas besoin alpha pour JPEG/WebP
+                  desynchronized: true // Optimisation navigateur
+                });
+                
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // ✅ Générer blob avec format optimal (WebP ou JPEG)
+                let blob;
+                try {
+                  if (format === 'webp') {
+                    blob = await new Promise((resolveBlob, rejectBlob) => {
+                      canvas.toBlob(
+                        (result) => {
+                          if (result) {
+                            resolveBlob(result);
+                          } else {
+                            // ✅ Fallback JPEG si WebP échoue
+                            canvas.toBlob(
+                              (jpegResult) => resolveBlob(jpegResult || new Blob()),
+                              'image/jpeg',
+                              res.quality
+                            );
+                          }
+                        },
+                        'image/webp',
+                        res.quality
+                      );
+                    });
+                    
+                    // Si blob est vide ou échec, fallback JPEG
+                    if (!blob || blob.size === 0) {
+                      blob = await new Promise(resolveBlob => {
+                        canvas.toBlob(resolveBlob, 'image/jpeg', res.quality);
+                      });
+                    }
+                  } else {
+                    // Format JPEG standard
+                    blob = await new Promise(resolveBlob => {
+                      canvas.toBlob(
+                        resolveBlob,
+                        'image/jpeg',
+                        res.quality,
+                        opts.progressive ? { progressive: true } : undefined
+                      );
+                    });
+                  }
+                } catch (blobError) {
+                  log.warn(`Erreur génération blob ${res.name}, fallback JPEG`, blobError);
+                  // Fallback JPEG si erreur
+                  blob = await new Promise(resolveBlob => {
+                    canvas.toBlob(resolveBlob, 'image/jpeg', res.quality);
+                  });
+                }
+                
+                // Convertir blob en base64
+                const base64 = await blobToBase64(blob);
+                
+                if (onProgress) onProgress(progressEnd);
+                
+                return {
+                  name: res.name,
+                  data: base64,
+                  width,
+                  height,
+                  size: blob.size,
+                  format: blob.type === 'image/webp' ? 'webp' : 'jpeg',
+                  quality: res.quality
+                };
+              });
+              
+              // ✅ Attendre toutes résolutions en parallèle
+              const resolved = await Promise.all(resolutionPromises);
+              resolved.forEach(res => {
+                results[res.name] = res;
+              });
+              
+              // Étape 5: Finalisation (100% progression)
+              if (onProgress) onProgress(100);
+              
+              const totalSize = Object.values(results).reduce((sum, r) => sum + r.size, 0);
+              const reduction = originalSize > 0 
+                ? Math.round(((originalSize - totalSize) / originalSize) * 100)
+                : 0;
+              
+              log.debug(`Compression multi-résolution: ${originalSize} → ${totalSize} bytes (-${reduction}%)`);
+              
+              resolve({
+                ...results,
+                originalSize,
+                totalSize,
+                originalSizeKB: bytesToKB(originalSize),
+                totalSizeKB: bytesToKB(totalSize),
+                reduction,
+                format: format,
+                dimensions: {
+                  original: { width: img.width, height: img.height }
+                }
+              });
+              
+            } catch (error) {
+              log.error('Erreur compression multi-résolution', error);
+              reject(new Error(`Erreur compression multi-résolution: ${error.message}`));
+            }
+          };
+          
+          img.onerror = () => {
+            log.error('Impossible de charger l\'image pour compression multi-résolution', { fileName: input instanceof File ? input.name : 'Data URL' });
+            reject(new Error('Impossible de charger l\'image. Vérifiez que le fichier est une image valide.'));
+          };
+          
+          // Charger l'image
+          if (input instanceof File) {
+            img.src = e.target.result;
+          } else {
+            img.src = input; // Déjà un Data URL
+          }
+        };
+        
+        reader.onerror = () => {
+          log.error('Erreur lecture fichier pour compression multi-résolution', { fileName: input instanceof File ? input.name : 'Data URL' });
+          reject(new Error('Erreur lors de la lecture du fichier image.'));
+        };
+        
+        // Lire le fichier
+        if (input instanceof File) {
+          reader.readAsDataURL(input);
+        } else {
+          // Si c'est déjà un Data URL, simuler le onload
+          reader.onload({ target: { result: input } });
+        }
+      }).catch(error => {
+        log.error('Erreur détection WebP, utilisation JPEG', error);
+        // En cas d'erreur détection, continuer avec JPEG
+        // Relancer la fonction avec format forcé JPEG
+        compressImageMultiResolution(input, { ...opts, format: 'jpeg' }, onProgress)
+          .then(resolve)
+          .catch(reject);
+      });
+    } catch (error) {
+      log.error('Erreur générale compression multi-résolution', error);
+      reject(new Error(`Erreur compression multi-résolution: ${error.message}`));
+    }
+  });
+};
+
+/**
  * Compresse plusieurs images en parallèle avec limite
  * @param {Array<File>} files - Tableau de fichiers images
  * @param {Object} options - Options de compression

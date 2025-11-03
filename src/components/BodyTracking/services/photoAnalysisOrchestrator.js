@@ -15,6 +15,7 @@ import { getPoseDetectionService } from './poseDetectionService';
 import { getBodySegmentationService } from './bodySegmentationService';
 import { getMetricsExtractionService } from './metricsExtractionService';
 import { getAdvancedCache } from './advancedCache';
+import { createAnalysisQueue } from './analysisQueue'; // ✅ OPTIMISATION: Queue batch adaptative
 
 const log = logger.module('PhotoAnalysisOrchestrator');
 
@@ -413,45 +414,106 @@ class PhotoAnalysisOrchestrator {
    */
   async analyzeSession(photos, options = {}, onProgress = null) {
     const sessionId = `session_${Date.now()}`;
-    const results = [];
     const totalPhotos = photos.length;
     
-      try {
+    try {
       this.updateProgress(onProgress, 0, `Analyse session (${totalPhotos} photos)...`, 0, totalPhotos);
       
-      // Option: Parallélisation par lots (3 photos en parallèle)
-      const batchSize = options.batchSize || 3;
+      // ✅ OPTIMISATION: Utiliser queue adaptative au lieu de boucle séquentielle
+      // La queue gère automatiquement:
+      // - BatchSize adaptatif selon hardware
+      // - Parallélisation multi-batches
+      // - Vérification cache avant analyse
+      // - Gestion progression intelligente
       
-      for (let i = 0; i < photos.length; i += batchSize) {
-        const batch = photos.slice(i, i + batchSize);
-        const batchProgress = (i / totalPhotos) * 100;
+      const useAdaptiveQueue = options.useAdaptiveQueue !== false; // Activé par défaut
+      
+      let results = [];
+      
+      if (useAdaptiveQueue && totalPhotos > 1) {
+        // ✅ OPTIMISATION: Queue adaptative pour sessions multiples photos
+        log.info(`Utilisation queue adaptative pour ${totalPhotos} photos`);
         
-        // Analyser lot en parallèle
-        const batchResults = await Promise.all(
-          batch.map(async (photo, batchIndex) => {
-            const photoIndex = i + batchIndex;
-            const photoProgress = batchProgress + ((batchIndex / batch.length) * (batchSize / totalPhotos) * 100);
-            
-            return this.analyzePhoto(
-              photo.source,
-              photo.photoData || {},
-              options,
-              (progress, message) => {
-                // Progression globale session avec current/total
-                const globalProgress = photoProgress + (progress * (batchSize / totalPhotos) / 100);
-                this.updateProgress(
-                  onProgress,
-                  Math.min(100, globalProgress),
-                  message || `Photo ${photoIndex + 1}/${totalPhotos}`,
-                  photoIndex + 1, // current
-                  totalPhotos // total
-                );
-              }
-            );
-          })
+        const queue = createAnalysisQueue(
+          (source, photoData, opts, photoProgressCallback) => {
+            // ✅ Wrapper pour utiliser méthode instance
+            return this.analyzePhoto(source, photoData, opts, photoProgressCallback);
+          },
+          {
+            ...options,
+            cache: this.cache,
+            enableCache: options.enableCache !== false
+          }
         );
         
-        results.push(...batchResults);
+        // ✅ Configurer callbacks queue
+        queue
+          .onProgressCallback((progress, message, current, total) => {
+            this.updateProgress(onProgress, progress, message, current, total);
+          })
+          .onCompleteCallback((queueResults) => {
+            log.debug(`Queue complétée: ${queueResults.length} résultats`);
+          })
+          .onErrorCallback((photoId, error) => {
+            log.warn(`Erreur analyse photo ${photoId} dans queue`, error);
+          });
+        
+        // ✅ Ajouter photos à queue
+        const photosFormatted = photos.map(photo => ({
+          id: photo.id || `photo_${Date.now()}_${Math.random()}`,
+          source: photo.source,
+          photoData: photo.photoData || photo
+        }));
+        
+        queue.enqueue(photosFormatted);
+        
+        // ✅ Traiter queue (parallélisation automatique)
+        const queueResults = await queue.processQueue();
+        
+        // ✅ Mapper résultats queue vers format attendu
+        results = queueResults.map(item => item.result);
+        
+        // ✅ Log statistiques queue
+        const stats = queue.getStats();
+        log.info('Statistiques queue', stats);
+        
+      } else {
+        // ✅ Fallback: Comportement classique (batchSize fixe) pour 1 photo ou si désactivé
+        log.info(`Utilisation méthode classique (queue désactivée ou 1 photo)`);
+        
+        const batchSize = options.batchSize || 3;
+        
+        for (let i = 0; i < photos.length; i += batchSize) {
+          const batch = photos.slice(i, i + batchSize);
+          const batchProgress = (i / totalPhotos) * 100;
+          
+          // Analyser lot en parallèle
+          const batchResults = await Promise.all(
+            batch.map(async (photo, batchIndex) => {
+              const photoIndex = i + batchIndex;
+              const photoProgress = batchProgress + ((batchIndex / batch.length) * (batchSize / totalPhotos) * 100);
+              
+              return this.analyzePhoto(
+                photo.source,
+                photo.photoData || {},
+                options,
+                (progress, message) => {
+                  // Progression globale session avec current/total
+                  const globalProgress = photoProgress + (progress * (batchSize / totalPhotos) / 100);
+                  this.updateProgress(
+                    onProgress,
+                    Math.min(100, globalProgress),
+                    message || `Photo ${photoIndex + 1}/${totalPhotos}`,
+                    photoIndex + 1, // current
+                    totalPhotos // total
+                  );
+                }
+              );
+            })
+          );
+          
+          results.push(...batchResults);
+        }
       }
       
       // Validation cohérence session
@@ -475,7 +537,7 @@ class PhotoAnalysisOrchestrator {
         sessionId,
         success: false,
         error: error.message,
-        photos: results, // Photos analysées avant erreur
+        photos: [], // Résultats partiels non disponibles en cas d'erreur queue
         timestamp: new Date().toISOString()
       };
     }

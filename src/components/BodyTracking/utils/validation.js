@@ -5,6 +5,10 @@
  * Utilise des plages réalistes, des validations croisées, et des messages d'erreur clairs.
  */
 
+import logger from '../../../utils/logger';
+
+const log = logger.module('Validation');
+
 /**
  * Plages de validation réalistes pour chaque métrique
  */
@@ -21,20 +25,21 @@ export const VALIDATION_RANGES = {
   neck: { min: 20, max: 80, step: 0.1, decimals: 1, unit: 'cm' },
   hips: { min: 60, max: 200, step: 0.1, decimals: 1, unit: 'cm' },
   
-  // Impédancemétrie
-  bodyFatMass: { min: 2, max: 150, step: 0.1, decimals: 1, unit: 'kg' },
-  bodyFatPercentage: { min: 3, max: 50, step: 0.1, decimals: 1, unit: '%' },
-  fatFreeWeight: { min: 20, max: 200, step: 0.1, decimals: 1, unit: 'kg' },
-  skeletalMuscle: { min: 10, max: 120, step: 0.1, decimals: 1, unit: 'kg' },
-  bodyWater: { min: 30, max: 80, step: 0.1, decimals: 1, unit: '%' },
-  protein: { min: 5, max: 25, step: 0.1, decimals: 1, unit: '%' },
-  minerals: { min: 3, max: 8, step: 0.1, decimals: 1, unit: '%' },
-  visceralFat: { min: 1, max: 30, step: 1, decimals: 0, unit: '' },
-  subcutaneousFat: { min: 5, max: 50, step: 0.1, decimals: 1, unit: '%' },
-  metabolicAge: { min: 10, max: 100, step: 1, decimals: 0, unit: 'ans' },
-  basalMetabolism: { min: 800, max: 4000, step: 1, decimals: 0, unit: 'kcal' },
-  muscleQuality: { min: 1, max: 10, step: 0.1, decimals: 1, unit: '' },
-  boneMass: { min: 1, max: 15, step: 0.1, decimals: 1, unit: 'kg' }
+  // Impédancemétrie - Champs exacts demandés
+  weight: { min: 30, max: 300, step: 0.1, decimals: 2, unit: 'kg' }, // ✅ 2 décimales pour précision
+  bmi: { min: 10, max: 60, step: 0.1, decimals: 2, unit: '' }, // ✅ 2 décimales pour précision
+  bodyFatPercentage: { min: 3, max: 50, step: 0.1, decimals: 2, unit: '%' }, // ✅ 2 décimales pour précision
+  muscleMass: { min: 10, max: 120, step: 0.1, decimals: 2, unit: 'kg' }, // ✅ 2 décimales pour précision
+  bodyFatMass: { min: 2, max: 150, step: 0.1, decimals: 2, unit: 'kg' }, // ✅ 2 décimales pour précision (7.47 OK)
+  bodyFatIndex: { min: 0, max: 8, step: 0.1, decimals: 2, unit: '/8' }, // ✅ 2 décimales
+  obesityLevel: { min: 0, max: 5, step: 0.1, decimals: 2, unit: '/5' }, // ✅ 2 décimales
+  visceralFatIndex: { min: 0, max: 20, step: 0.1, decimals: 2, unit: '/20' }, // ✅ 2 décimales
+  fatFreeWeight: { min: 20, max: 200, step: 0.1, decimals: 2, unit: 'kg' }, // ✅ 2 décimales pour précision
+  bodyWater: { min: 30, max: 80, step: 0.1, decimals: 2, unit: '%' }, // ✅ 2 décimales pour précision
+  boneMass: { min: 1, max: 15, step: 0.1, decimals: 2, unit: 'kg' }, // ✅ 2 décimales pour précision
+  proteinPercentage: { min: 5, max: 25, step: 0.1, decimals: 2, unit: '%' }, // ✅ 2 décimales pour précision
+  basalMetabolism: { min: 800, max: 4000, step: 1, decimals: 0, unit: 'kcal' }, // ✅ Entier (pas de décimales)
+  metabolicAge: { min: 10, max: 100, step: 1, decimals: 0, unit: 'ans' } // ✅ Entier (pas de décimales)
 };
 
 /**
@@ -61,9 +66,14 @@ export const validateNumericRange = (value, fieldName, range) => {
     };
   }
   
-  // Vérifier décimales
-  if (range.decimals !== undefined) {
-    const decimalPlaces = (numValue.toString().split('.')[1] || '').length;
+  // ✅ Vérifier décimales (validation assouplie)
+  // Avec decimals: 2 → accepte 0, 1 ou 2 décimales (7, 7.4, 7.47 OK, 7.479 pas OK)
+  if (range.decimals !== undefined && range.decimals >= 0) {
+    const valueStr = String(value);
+    const decimalPlaces = (valueStr.split('.')[1] || '').length;
+    
+    // ✅ Erreur seulement si décimales > max autorisé
+    // Exemple: decimals: 2 → accepte jusqu'à 2 décimales inclus
     if (decimalPlaces > range.decimals) {
       return { 
         error: `Maximum ${range.decimals} décimale${range.decimals > 1 ? 's' : ''} pour ${fieldName}` 
@@ -109,27 +119,40 @@ export const validateBMIConsistency = (weight, height) => {
 export const validateImpedanceConsistency = (formData) => {
   const errors = {};
   
-  // Vérifier que bodyFatPercentage + bodyWater + protein + minerals ≈ 100%
-  if (formData.bodyFatPercentage && formData.bodyWater && formData.protein && formData.minerals) {
+  // ✅ Vérifier que bodyFatPercentage + bodyWater + proteinPercentage ≈ 100%
+  // (Note: minerals supprimé de la liste demandée - validation optionnelle)
+  // ✅ DÉSACTIVÉ: Cette validation est trop stricte, les impédancemètres ont des variations normales
+  // Les pourcentages ne totalisent pas toujours exactement 100% (minerals, autres composants)
+  /*
+  if (formData.bodyFatPercentage && formData.bodyWater && formData.proteinPercentage) {
     const total = parseFloat(formData.bodyFatPercentage) +
                   parseFloat(formData.bodyWater) +
-                  parseFloat(formData.protein) +
-                  parseFloat(formData.minerals);
+                  parseFloat(formData.proteinPercentage);
     
-    // Tolérance de 5% (mesures peuvent avoir légères incohérences)
-    if (Math.abs(total - 100) > 5) {
+    // Tolérance de 10% (mesures peuvent avoir légères incohérences sans minerals)
+    if (Math.abs(total - 100) > 10) {
       errors.bodyFatPercentage = 'Les pourcentages ne sont pas cohérents (total ≈ 100%)';
       errors.bodyWater = 'Les pourcentages ne sont pas cohérents (total ≈ 100%)';
-      errors.protein = 'Les pourcentages ne sont pas cohérents (total ≈ 100%)';
-      errors.minerals = 'Les pourcentages ne sont pas cohérents (total ≈ 100%)';
+      errors.proteinPercentage = 'Les pourcentages ne sont pas cohérents (total ≈ 100%)';
     }
   }
+  */
   
-  // Vérifier cohérence bodyFatMass + fatFreeWeight ≈ weight total (si disponible)
-  if (formData.bodyFatMass && formData.fatFreeWeight) {
+  // ✅ Vérifier cohérence bodyFatMass + fatFreeWeight ≈ weight (si disponible)
+  // ✅ Validation optionnelle avec tolérance large (les impédancemètres peuvent avoir des écarts)
+  if (formData.weight && formData.bodyFatMass && formData.fatFreeWeight) {
     const totalMass = parseFloat(formData.bodyFatMass) + parseFloat(formData.fatFreeWeight);
-    // Vérifier si weight est disponible
-    // Note: Cette validation nécessiterait l'accès au poids actuel, peut être ajoutée plus tard
+    const weight = parseFloat(formData.weight);
+    const difference = Math.abs(totalMass - weight);
+    
+    // ✅ Tolérance de 5kg (écarts normaux selon appareils et conditions)
+    // Ne signaler que si écart vraiment anormal (> 5kg)
+    if (difference > 5) {
+      // ✅ Avertissement seulement, pas d'erreur bloquante (écart peut être normal)
+      // Ne pas bloquer la soumission, juste informer
+      log.warn('Écart masse détecté', { weight, totalMass, difference });
+    }
+    // Pas d'erreur bloquante - les écarts sont normaux
   }
   
   return Object.keys(errors).length > 0 ? { errors } : null;
@@ -342,31 +365,38 @@ export const validateImpedanceForm = (formData, existingEntries = [], options = 
   const errors = {};
   const { skipDuplicateCheck = false, skipConsistencyCheck = false } = options;
   
-  // 1. Validation de tous les champs numériques
+  // ✅ 1. Validation de tous les champs numériques (champs exacts demandés)
   const numericFields = [
-    'bodyFatMass', 'bodyFatPercentage', 'fatFreeWeight', 'skeletalMuscle',
-    'bodyWater', 'protein', 'minerals', 'visceralFat', 'subcutaneousFat',
-    'metabolicAge', 'basalMetabolism', 'muscleQuality', 'boneMass'
+    'weight', 'bmi', 'bodyFatPercentage', 'muscleMass', 'bodyFatMass',
+    'bodyFatIndex', 'obesityLevel', 'visceralFatIndex', 'fatFreeWeight',
+    'bodyWater', 'boneMass', 'proteinPercentage', 'basalMetabolism', 'metabolicAge'
   ];
   
   numericFields.forEach(field => {
-    if (formData[field]) {
-      const range = VALIDATION_RANGES[field];
-      if (range) {
-        const validation = validateNumericRange(
-          formData[field],
-          field,
-          range
-        );
-        if (validation) {
-          errors[field] = validation.error;
-        }
-      } else {
-        // Validation basique si pas de range définie
-        const numValue = parseFloat(formData[field]);
-        if (isNaN(numValue) || numValue <= 0) {
-          errors[field] = 'Doit être un nombre positif';
-        }
+    // ✅ Ignorer champs vides/null/undefined (tous les champs sont optionnels)
+    const fieldValue = formData[field];
+    if (fieldValue === '' || fieldValue === null || fieldValue === undefined) {
+      return; // Champ vide = OK (pas de validation)
+    }
+    
+    // ✅ Valider seulement si valeur présente
+    const range = VALIDATION_RANGES[field];
+    if (range) {
+      const validation = validateNumericRange(
+        fieldValue,
+        field,
+        range
+      );
+      if (validation) {
+        errors[field] = validation.error;
+      }
+    } else {
+      // ✅ Validation basique si pas de range définie
+      const numValue = parseFloat(fieldValue);
+      if (isNaN(numValue)) {
+        errors[field] = 'Doit être un nombre valide';
+      } else if (numValue <= 0) {
+        errors[field] = 'Doit être un nombre positif';
       }
     }
   });
@@ -379,11 +409,15 @@ export const validateImpedanceForm = (formData, existingEntries = [], options = 
     }
   }
   
-  // 3. Validation date
-  const dateValidation = validateDate(formData.date);
-  if (dateValidation) {
-    errors.date = dateValidation.error;
+  // ✅ 3. Validation date (seulement si date fournie)
+  // Note: Date n'est pas strictement obligatoire (peut être remplie après)
+  if (formData.date && formData.date !== '') {
+    const dateValidation = validateDate(formData.date);
+    if (dateValidation) {
+      errors.date = dateValidation.error;
+    }
   }
+  // Si date vide, pas d'erreur (l'utilisateur peut la remplir après)
   
   // 4. Vérification doublon
   if (!skipDuplicateCheck && formData.date) {

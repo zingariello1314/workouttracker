@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Activity, 
   Zap, 
@@ -12,13 +12,15 @@ import {
   Info,
   AlertTriangle,
   Target,
-  BarChart3
+  BarChart3,
+  Scale
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useGarminData } from '../../hooks/useGarminData'; // ✅ Pour métabolisme de base Garmin
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
-import { validateImpedanceForm } from './utils/validation';
+import { validateImpedanceForm } from './utils/validation'; // ✅ Déjà importé
 import { useToast } from './hooks/useToast';
 import logger from '../../utils/logger';
 
@@ -27,27 +29,64 @@ const log = logger.component('ImpedanceSection');
 const ImpedanceSection = () => {
   const { data, addProgressEntry } = useWorkout();
   const { showSuccess, showError, showInfo, ToastContainer } = useToast();
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminBasalMetabolism, setGarminBasalMetabolism] = useState(null);
+
+  // ✅ Charger métabolisme de base Garmin (préféré si disponible)
+  useEffect(() => {
+    const loadGarminData = async () => {
+      try {
+        if (dbReady) {
+          const garminData = await loadAllData();
+          // Chercher le métabolisme de base le plus récent dans dailyMetrics
+          if (garminData?.dailyMetrics) {
+            const dates = Object.keys(garminData.dailyMetrics).sort().reverse();
+            for (const dateStr of dates) {
+              const dayData = garminData.dailyMetrics[dateStr];
+              // Chercher basalMetabolicRate ou restingMetabolicRate
+              const bmr = dayData?.basalMetabolicRate || dayData?.restingMetabolicRate || dayData?.bmr;
+              if (bmr) {
+                setGarminBasalMetabolism({
+                  value: bmr,
+                  date: dateStr,
+                  source: 'Garmin'
+                });
+                log.debug('Métabolisme de base Garmin chargé', { value: bmr, date: dateStr });
+                break;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        log.warn('Erreur chargement métabolisme Garmin (non bloquant)', error);
+      }
+    };
+    
+    loadGarminData();
+  }, [dbReady, loadAllData]);
+
+  // ✅ FormData avec exactement les champs demandés
   const [formData, setFormData] = useState({
-    bodyFatMass: '',
-    bodyFatPercentage: '',
-    fatFreeWeight: '',
-    skeletalMuscle: '',
-    bodyWater: '',
-    protein: '',
-    minerals: '',
-    visceralFat: '',
-    subcutaneousFat: '',
-    metabolicAge: '',
-    basalMetabolism: '',
-    muscleQuality: '',
-    boneMass: '',
-    bodyType: '',
+    weight: '',                    // Poids en kg
+    bmi: '',                       // IMC
+    bodyFatPercentage: '',         // Taux de graisse corporel en pourcent
+    muscleMass: '',                // Masse musculaire en kg
+    bodyFatMass: '',               // Graisses corporelles en kg
+    bodyFatIndex: '',              // Indice de masse grasse sur 8
+    obesityLevel: '',             // Niveau d'obésité sur 5
+    visceralFatIndex: '',         // Indice de graisse viscérale sur 20
+    fatFreeWeight: '',            // Poids sans graisse en kg
+    bodyWater: '',                // Eau du corps en pourcentage
+    boneMass: '',                 // Masse osseuse en kilogrammes
+    proteinPercentage: '',        // Taux de protéines en pourcent
+    basalMetabolism: '',          // Taux métabolique basal (préférer Garmin)
+    metabolicAge: '',             // Âge métabolique
+    bodyType: '',                 // Type de corps
     date: new Date().toISOString().split('T')[0],
     notes: ''
   });
 
   const [errors, setErrors] = useState({});
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // 🔍 CHARGER LA DERNIÈRE MESURE D'IMPÉDANCE DEPUIS INDEXEDDB
   const lastMeasurement = useMemo(() => {
@@ -70,44 +109,31 @@ const ImpedanceSection = () => {
 
     const lastEntry = impedanceEntries[0];
     
-    // Normaliser la date (peut être ISO string ou timestamp)
+    // Normaliser la date
     const entryDate = lastEntry.date 
       ? new Date(lastEntry.date) 
       : (lastEntry.timestamp ? new Date(lastEntry.timestamp) : new Date());
 
-    // Retourner la dernière mesure avec toutes ses propriétés
+    // Retourner avec mapping des anciens champs vers nouveaux si nécessaire
     return {
-      bodyFatMass: lastEntry.bodyFatMass || null,
+      weight: lastEntry.weight || null,
+      bmi: lastEntry.bmi || null,
       bodyFatPercentage: lastEntry.bodyFatPercentage || null,
+      muscleMass: lastEntry.muscleMass || lastEntry.skeletalMuscle || null, // Compatibilité
+      bodyFatMass: lastEntry.bodyFatMass || null,
+      bodyFatIndex: lastEntry.bodyFatIndex || null,
+      obesityLevel: lastEntry.obesityLevel || null,
+      visceralFatIndex: lastEntry.visceralFatIndex || lastEntry.visceralFat || null, // Compatibilité
       fatFreeWeight: lastEntry.fatFreeWeight || null,
-      skeletalMuscle: lastEntry.skeletalMuscle || null,
       bodyWater: lastEntry.bodyWater || null,
-      protein: lastEntry.protein || null,
-      minerals: lastEntry.minerals || null,
-      visceralFat: lastEntry.visceralFat || null,
-      subcutaneousFat: lastEntry.subcutaneousFat || null,
-      metabolicAge: lastEntry.metabolicAge || null,
-      basalMetabolism: lastEntry.basalMetabolism || null,
-      muscleQuality: lastEntry.muscleQuality || null,
       boneMass: lastEntry.boneMass || null,
+      proteinPercentage: lastEntry.proteinPercentage || lastEntry.protein || null, // Compatibilité
+      basalMetabolism: lastEntry.basalMetabolism || null,
+      metabolicAge: lastEntry.metabolicAge || null,
       bodyType: lastEntry.bodyType || null,
       date: entryDate
     };
   }, [data?.progressEntries]);
-
-  const referenceRanges = {
-    bodyFatPercentage: { 
-      male: { excellent: [6, 13], good: [14, 17], fair: [18, 24], poor: [25, 100] },
-      female: { excellent: [14, 20], good: [21, 24], fair: [25, 31], poor: [32, 100] }
-    },
-    bodyWater: {
-      male: { excellent: [63, 100], good: [57, 62], fair: [50, 56], poor: [0, 49] },
-      female: { excellent: [58, 100], good: [52, 57], fair: [45, 51], poor: [0, 44] }
-    },
-    visceralFat: {
-      excellent: [1, 9], good: [10, 14], fair: [15, 19], poor: [20, 100]
-    }
-  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -122,6 +148,28 @@ const ImpedanceSection = () => {
       }));
     }
   };
+
+  // ✅ Calcul automatique IMC si poids disponible
+  useEffect(() => {
+    if (formData.weight && data?.userProfile?.height) {
+      const heightInMeters = parseFloat(data.userProfile.height) / 100;
+      const weightInKg = parseFloat(formData.weight);
+      if (heightInMeters > 0 && weightInKg > 0) {
+        const calculatedBMI = (weightInKg / (heightInMeters * heightInMeters)).toFixed(1);
+        if (formData.bmi !== calculatedBMI) {
+          setFormData(prev => ({ ...prev, bmi: calculatedBMI }));
+        }
+      }
+    }
+  }, [formData.weight, data?.userProfile?.height]);
+
+  // ✅ Préremplir métabolisme de base avec valeur Garmin si disponible et champ vide
+  useEffect(() => {
+    if (garminBasalMetabolism && !formData.basalMetabolism) {
+      setFormData(prev => ({ ...prev, basalMetabolism: String(garminBasalMetabolism.value) }));
+      log.debug('Métabolisme Garmin prérempli dans formulaire', { value: garminBasalMetabolism.value });
+    }
+  }, [garminBasalMetabolism]);
 
   // 🔍 Validation complète avec module centralisé
   const validateForm = () => {
@@ -138,8 +186,32 @@ const ImpedanceSection = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      showError('Veuillez corriger les erreurs dans le formulaire');
+    // ✅ Valider et afficher erreurs détaillées si présentes
+    const validationResult = validateImpedanceForm(
+      formData,
+      data?.progressEntries || [],
+      { skipDuplicateCheck: false, skipConsistencyCheck: false }
+    );
+    
+    setErrors(validationResult.errors);
+    
+    if (!validationResult.isValid) {
+      // ✅ Afficher erreurs détaillées pour debugging
+      const errorFields = Object.keys(validationResult.errors);
+      log.warn('Erreurs validation formulaire', { 
+        errors: validationResult.errors,
+        errorFields,
+        formData: Object.keys(formData).reduce((acc, key) => {
+          if (formData[key]) acc[key] = formData[key];
+          return acc;
+        }, {})
+      });
+      
+      if (errorFields.length > 0) {
+        showError(`Erreurs dans les champs: ${errorFields.join(', ')}`);
+      } else {
+        showError('Veuillez corriger les erreurs dans le formulaire');
+      }
       return;
     }
     
@@ -149,24 +221,36 @@ const ImpedanceSection = () => {
         timestamp: new Date(formData.date).getTime()
       };
       
+      // ✅ PRÉFÉRER métabolisme de base Garmin si disponible (plus juste selon utilisateur)
+      // Si Garmin disponible, l'utiliser même si utilisateur a saisi une valeur
+      if (garminBasalMetabolism) {
+        if (entry.basalMetabolism && entry.basalMetabolism !== garminBasalMetabolism.value) {
+          // Utilisateur a saisi une valeur différente -> utiliser Garmin et informer
+          showInfo(`Métabolisme Garmin préféré: ${garminBasalMetabolism.value} kcal (au lieu de ${entry.basalMetabolism} kcal saisie)`);
+        }
+        entry.basalMetabolism = garminBasalMetabolism.value;
+        entry.basalMetabolismSource = 'Garmin';
+      } else if (entry.basalMetabolism) {
+        // Pas de Garmin mais valeur saisie -> OK
+        entry.basalMetabolismSource = 'Manual';
+      }
+      
       // Convertir les valeurs numériques
       Object.keys(entry).forEach(key => {
-        if (key !== 'date' && key !== 'notes' && key !== 'bodyType' && key !== 'timestamp' && entry[key]) {
+        if (key !== 'date' && key !== 'notes' && key !== 'bodyType' && key !== 'timestamp' && key !== 'basalMetabolismSource' && entry[key]) {
           entry[key] = parseFloat(entry[key]);
         }
       });
       
-      // Ajouter le type requis pour addProgressEntry
+      // Ajouter le type requis
       const entryWithType = {
         ...entry,
         type: 'impedance'
       };
       
-      // Sauvegarder l'entrée via le contexte (IndexedDB)
-      // La déduplication est gérée automatiquement dans addProgressEntry
+      // Sauvegarder
       const result = await addProgressEntry(entryWithType);
       
-      // Afficher un message selon l'action effectuée (added, replaced, merged)
       if (result?.action === 'replaced') {
         showInfo('Mesure d\'impédancemétrie mise à jour (remplacement de l\'entrée existante)');
       } else if (result?.action === 'merged') {
@@ -175,97 +259,107 @@ const ImpedanceSection = () => {
         showSuccess('Mesure d\'impédancemétrie enregistrée avec succès');
       }
       
-      // Réinitialiser le formulaire uniquement si succès
+      // Réinitialiser le formulaire
       setFormData({
-        bodyFatMass: '',
+        weight: '',
+        bmi: '',
         bodyFatPercentage: '',
+        muscleMass: '',
+        bodyFatMass: '',
+        bodyFatIndex: '',
+        obesityLevel: '',
+        visceralFatIndex: '',
         fatFreeWeight: '',
-        skeletalMuscle: '',
         bodyWater: '',
-        protein: '',
-        minerals: '',
-        visceralFat: '',
-        subcutaneousFat: '',
-        metabolicAge: '',
-        basalMetabolism: '',
-        muscleQuality: '',
         boneMass: '',
+        proteinPercentage: '',
+        basalMetabolism: '',
+        metabolicAge: '',
         bodyType: '',
         date: new Date().toISOString().split('T')[0],
         notes: ''
       });
       
-      // Réinitialiser les erreurs
       setErrors({});
     } catch (error) {
       log.error('Erreur lors de la sauvegarde des données d\'impédance', error);
       showError(
         error.message || 'Une erreur s\'est produite lors de l\'enregistrement. Veuillez réessayer.'
       );
-      // Ne pas réinitialiser le formulaire si erreur
-      // L'utilisateur peut corriger et réessayer
     }
   };
 
-  const getHealthStatus = (value, field, gender = 'male') => {
-    if (!value || !referenceRanges[field]) return null;
-    
-    const ranges = referenceRanges[field][gender] || referenceRanges[field];
-    
-    if (value >= ranges.excellent[0] && value <= ranges.excellent[1]) {
-      return { status: 'Excellent', color: 'text-green-400', bg: 'bg-green-600/20' };
-    } else if (value >= ranges.good[0] && value <= ranges.good[1]) {
-      return { status: 'Bon', color: 'text-blue-400', bg: 'bg-blue-600/20' };
-    } else if (value >= ranges.fair[0] && value <= ranges.fair[1]) {
-      return { status: 'Moyen', color: 'text-yellow-400', bg: 'bg-yellow-600/20' };
-    } else {
-      return { status: 'À améliorer', color: 'text-red-400', bg: 'bg-red-600/20' };
-    }
-  };
-
-  const getChangeIndicator = (current, previous, type = 'weight') => {
-    if (!current || !previous) return null;
-    
-    const change = current - previous;
-    const changeFormatted = formatChange(change, { type });
-    const changeWithPct = formatChangeWithPercentage(change, previous, { type });
-    
-    if (changeFormatted.isStable || Math.abs(change) < 0.1) {
-      return { icon: <Minus className="w-4 h-4 text-gray-400" />, text: 'Stable', color: 'text-gray-400' };
-    } else if (change > 0) {
-      return { 
-        icon: <TrendingUp className="w-4 h-4 text-red-400" />, 
-        text: `${changeFormatted.formatted} (${changeWithPct.percentage})`, 
-        color: 'text-red-400' 
-      };
-    } else {
-      return { 
-        icon: <TrendingDown className="w-4 h-4 text-green-400" />, 
-        text: `${changeFormatted.formatted} (${changeWithPct.percentage})`, 
-        color: 'text-green-400' 
-      };
-    }
-  };
-
+  // ✅ Métriques avec exactement les champs demandés
   const metrics = [
     {
-      category: 'Composition corporelle de base',
+      category: 'Métriques de base',
       items: [
         {
-          key: 'bodyFatMass',
-          label: 'Masse graisseuse',
+          key: 'weight',
+          label: 'Poids',
           unit: 'kg',
+          icon: <Scale className="w-4 h-4" />,
+          description: 'Poids corporel total'
+        },
+        {
+          key: 'bmi',
+          label: 'IMC',
+          unit: '',
           icon: <Activity className="w-4 h-4" />,
-          description: 'Poids total de la graisse corporelle'
+          description: 'Indice de masse corporelle (calculé automatiquement si taille disponible)'
         },
         {
           key: 'bodyFatPercentage',
-          label: 'Indice de masse grasse',
+          label: 'Taux de graisse corporel',
           unit: '%',
           icon: <Target className="w-4 h-4" />,
-          description: 'Pourcentage de graisse par rapport au poids total',
-          hasHealthStatus: true
+          description: 'Pourcentage de graisse par rapport au poids total'
         },
+        {
+          key: 'muscleMass',
+          label: 'Masse musculaire',
+          unit: 'kg',
+          icon: <Activity className="w-4 h-4" />,
+          description: 'Masse des muscles'
+        },
+        {
+          key: 'bodyFatMass',
+          label: 'Graisses corporelles',
+          unit: 'kg',
+          icon: <Activity className="w-4 h-4" />,
+          description: 'Poids total de la graisse corporelle'
+        }
+      ]
+    },
+    {
+      category: 'Indices et niveaux',
+      items: [
+        {
+          key: 'bodyFatIndex',
+          label: 'Indice de masse grasse',
+          unit: '/8',
+          icon: <Target className="w-4 h-4" />,
+          description: 'Indice de masse grasse sur une échelle de 8'
+        },
+        {
+          key: 'obesityLevel',
+          label: 'Niveau d\'obésité',
+          unit: '/5',
+          icon: <AlertTriangle className="w-4 h-4" />,
+          description: 'Niveau d\'obésité sur une échelle de 5'
+        },
+        {
+          key: 'visceralFatIndex',
+          label: 'Indice de graisse viscérale',
+          unit: '/20',
+          icon: <AlertTriangle className="w-4 h-4" />,
+          description: 'Indice de graisse viscérale sur une échelle de 20'
+        }
+      ]
+    },
+    {
+      category: 'Composition corporelle',
+      items: [
         {
           key: 'fatFreeWeight',
           label: 'Poids sans graisse',
@@ -274,84 +368,11 @@ const ImpedanceSection = () => {
           description: 'Poids total moins la masse graisseuse'
         },
         {
-          key: 'skeletalMuscle',
-          label: 'Muscle squelettique',
-          unit: 'kg',
-          icon: <Activity className="w-4 h-4" />,
-          description: 'Masse des muscles squelettiques'
-        }
-      ]
-    },
-    {
-      category: 'Hydratation et composition',
-      items: [
-        {
           key: 'bodyWater',
           label: 'Eau du corps',
           unit: '%',
           icon: <Droplets className="w-4 h-4" />,
-          description: 'Pourcentage d\'eau dans le corps',
-          hasHealthStatus: true
-        },
-        {
-          key: 'protein',
-          label: 'Protéines',
-          unit: '%',
-          icon: <Activity className="w-4 h-4" />,
-          description: 'Pourcentage de protéines dans le corps'
-        },
-        {
-          key: 'minerals',
-          label: 'Minéraux',
-          unit: '%',
-          icon: <Activity className="w-4 h-4" />,
-          description: 'Pourcentage de minéraux dans le corps'
-        }
-      ]
-    },
-    {
-      category: 'Répartition des graisses',
-      items: [
-        {
-          key: 'visceralFat',
-          label: 'Graisse viscérale',
-          unit: '',
-          icon: <AlertTriangle className="w-4 h-4" />,
-          description: 'Niveau de graisse autour des organes internes',
-          hasHealthStatus: true
-        },
-        {
-          key: 'subcutaneousFat',
-          label: 'Graisse sous-cutanée',
-          unit: '%',
-          icon: <Activity className="w-4 h-4" />,
-          description: 'Graisse située sous la peau'
-        }
-      ]
-    },
-    {
-      category: 'Métriques avancées',
-      items: [
-        {
-          key: 'metabolicAge',
-          label: 'Âge métabolique',
-          unit: 'ans',
-          icon: <Heart className="w-4 h-4" />,
-          description: 'Âge métabolique estimé'
-        },
-        {
-          key: 'basalMetabolism',
-          label: 'Métabolisme de base',
-          unit: 'kcal',
-          icon: <Zap className="w-4 h-4" />,
-          description: 'Calories brûlées au repos'
-        },
-        {
-          key: 'muscleQuality',
-          label: 'Qualité musculaire',
-          unit: '',
-          icon: <BarChart3 className="w-4 h-4" />,
-          description: 'Score de qualité musculaire'
+          description: 'Pourcentage d\'eau dans le corps'
         },
         {
           key: 'boneMass',
@@ -359,9 +380,48 @@ const ImpedanceSection = () => {
           unit: 'kg',
           icon: <Activity className="w-4 h-4" />,
           description: 'Poids estimé des os'
+        },
+        {
+          key: 'proteinPercentage',
+          label: 'Taux de protéines',
+          unit: '%',
+          icon: <Activity className="w-4 h-4" />,
+          description: 'Pourcentage de protéines dans le corps'
+        }
+      ]
+    },
+    {
+      category: 'Métabolisme',
+      items: [
+        {
+          key: 'basalMetabolism',
+          label: 'Taux métabolique basal',
+          unit: 'kcal',
+          icon: <Zap className="w-4 h-4" />,
+          description: garminBasalMetabolism 
+            ? `Préférer valeur Garmin: ${garminBasalMetabolism.value} kcal (${formatDate(garminBasalMetabolism.date)})`
+            : 'Calories brûlées au repos (Garmin disponible si connecté)'
+        },
+        {
+          key: 'metabolicAge',
+          label: 'Âge métabolique',
+          unit: 'ans',
+          icon: <Heart className="w-4 h-4" />,
+          description: 'Âge métabolique estimé'
         }
       ]
     }
+  ];
+
+  // ✅ Types de corps exacts demandés
+  const bodyTypes = [
+    { value: 'mince', label: 'Mince' },
+    { value: 'fin_mince', label: 'Fin mince' },
+    { value: 'standard', label: 'Standard' },
+    { value: 'obese', label: 'Obèse' },
+    { value: 'surpoids', label: 'Surpoids' },
+    { value: 'athletique', label: 'Athlétique' },
+    { value: 'surpoids_cache', label: 'Surpoids caché' }
   ];
 
   return (
@@ -409,12 +469,20 @@ const ImpedanceSection = () => {
                       <input
                         type="number"
                         step="0.1"
+                        min={metric.unit?.includes('/') ? 0 : undefined}
+                        max={metric.unit === '/8' ? 8 : metric.unit === '/5' ? 5 : metric.unit === '/20' ? 20 : undefined}
                         value={formData[metric.key]}
                         onChange={(e) => handleInputChange(metric.key, e.target.value)}
                         className={`w-full bg-slate-700 border rounded-lg px-3 py-2 text-white ${
                           errors[metric.key] ? 'border-red-500' : 'border-slate-600'
                         }`}
-                        placeholder={lastMeasurement?.[metric.key] ? `Ex: ${lastMeasurement[metric.key]}${metric.unit || ''}` : `Entrer ${metric.label.toLowerCase()}...`}
+                        placeholder={
+                          metric.key === 'basalMetabolism' && garminBasalMetabolism
+                            ? `${garminBasalMetabolism.value} (Garmin recommandé)`
+                            : lastMeasurement?.[metric.key] 
+                            ? `Ex: ${lastMeasurement[metric.key]}${metric.unit || ''}` 
+                            : `Entrer ${metric.label.toLowerCase()}...`
+                        }
                       />
                       {errors[metric.key] && (
                         <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
@@ -426,15 +494,26 @@ const ImpedanceSection = () => {
                         <p className="text-slate-400 text-sm mt-1">
                           Dernière: {(() => {
                             const value = lastMeasurement[metric.key];
-                            const formatted = metric.unit === '%' 
-                              ? formatPercentage(value)
-                              : metric.unit === 'kg'
-                              ? formatWeight(value)
-                              : metric.unit === 'kcal'
-                              ? formatCalories(value)
-                              : `${value}${metric.unit || ''}`;
+                            let formatted;
+                            if (metric.unit === '%') {
+                              formatted = `${value}%`;
+                            } else if (metric.unit === 'kg') {
+                              formatted = `${value} kg`;
+                            } else if (metric.unit === 'kcal') {
+                              formatted = `${value} kcal`;
+                            } else if (metric.unit) {
+                              formatted = `${value}${metric.unit}`;
+                            } else {
+                              formatted = String(value);
+                            }
                             return `${formatted} (${formatDate(lastMeasurement.date)})`;
                           })()}
+                        </p>
+                      )}
+                      {metric.key === 'basalMetabolism' && garminBasalMetabolism && (
+                        <p className="text-blue-400 text-sm mt-1 flex items-center gap-1">
+                          <Info className="w-3 h-3" />
+                          Garmin disponible: {garminBasalMetabolism.value} kcal ({formatDate(garminBasalMetabolism.date)})
                         </p>
                       )}
                       <p className="text-xs text-slate-500 mt-1">{metric.description}</p>
@@ -455,12 +534,9 @@ const ImpedanceSection = () => {
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
               >
                 <option value="">Sélectionner...</option>
-                <option value="Underweight">Insuffisance pondérale</option>
-                <option value="Normal">Normal</option>
-                <option value="Overweight">Surpoids</option>
-                <option value="Obese">Obèse</option>
-                <option value="Athletic">Athlétique</option>
-                <option value="Muscular">Musclé</option>
+                {bodyTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
               </select>
             </div>
 
@@ -500,28 +576,55 @@ const ImpedanceSection = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Indice de masse grasse */}
+              {/* Affichage des métriques principales */}
+              {lastMeasurement.weight != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Scale className="w-4 h-4 text-blue-400" />
+                    Poids
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.weight} kg
+                  </div>
+                </div>
+              )}
+              
+              {lastMeasurement.bmi != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-400" />
+                    IMC
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.bmi}
+                  </div>
+                </div>
+              )}
+
               {lastMeasurement.bodyFatPercentage != null && (
                 <div className="bg-slate-800/50 rounded-lg p-4">
                   <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                     <Target className="w-4 h-4 text-blue-400" />
-                    Masse grasse
+                    Graisse corporelle
                   </h4>
                   <div className="text-2xl font-bold text-white mb-1">
                     {lastMeasurement.bodyFatPercentage}%
                   </div>
-                  {(() => {
-                    const status = getHealthStatus(lastMeasurement.bodyFatPercentage, 'bodyFatPercentage');
-                    return status && (
-                      <div className={`text-sm px-2 py-1 rounded ${status.bg} ${status.color}`}>
-                        {status.status}
-                      </div>
-                    );
-                  })()}
                 </div>
               )}
 
-              {/* Eau corporelle */}
+              {lastMeasurement.muscleMass != null && (
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-green-400" />
+                    Masse musculaire
+                  </h4>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {lastMeasurement.muscleMass} kg
+                  </div>
+                </div>
+              )}
+
               {lastMeasurement.bodyWater != null && (
                 <div className="bg-slate-800/50 rounded-lg p-4">
                   <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
@@ -531,39 +634,21 @@ const ImpedanceSection = () => {
                   <div className="text-2xl font-bold text-white mb-1">
                     {lastMeasurement.bodyWater}%
                   </div>
-                  {(() => {
-                    const status = getHealthStatus(lastMeasurement.bodyWater, 'bodyWater');
-                    return status && (
-                      <div className={`text-sm px-2 py-1 rounded ${status.bg} ${status.color}`}>
-                        {status.status}
-                      </div>
-                    );
-                  })()}
                 </div>
               )}
 
-              {/* Graisse viscérale */}
-              {lastMeasurement.visceralFat != null && (
+              {lastMeasurement.visceralFatIndex != null && (
                 <div className="bg-slate-800/50 rounded-lg p-4">
                   <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-yellow-400" />
                     Graisse viscérale
                   </h4>
                   <div className="text-2xl font-bold text-white mb-1">
-                    {lastMeasurement.visceralFat}
+                    {lastMeasurement.visceralFatIndex}/20
                   </div>
-                  {(() => {
-                    const status = getHealthStatus(lastMeasurement.visceralFat, 'visceralFat');
-                    return status && (
-                      <div className={`text-sm px-2 py-1 rounded ${status.bg} ${status.color}`}>
-                        {status.status}
-                      </div>
-                    );
-                  })()}
                 </div>
               )}
 
-              {/* Métabolisme de base */}
               {lastMeasurement.basalMetabolism != null && (
                 <div className="bg-slate-800/50 rounded-lg p-4">
                   <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
@@ -577,7 +662,6 @@ const ImpedanceSection = () => {
                 </div>
               )}
 
-              {/* Âge métabolique */}
               {lastMeasurement.metabolicAge != null && (
                 <div className="bg-slate-800/50 rounded-lg p-4">
                   <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
@@ -588,62 +672,6 @@ const ImpedanceSection = () => {
                     {lastMeasurement.metabolicAge}
                   </div>
                   <div className="text-sm text-slate-400">ans</div>
-                </div>
-              )}
-
-              {/* Qualité musculaire */}
-              {lastMeasurement.muscleQuality != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-green-400" />
-                    Qualité musculaire
-                  </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {lastMeasurement.muscleQuality}
-                  </div>
-                  <div className="text-sm text-slate-400">score</div>
-                </div>
-              )}
-
-              {/* Masse musculaire squelettique */}
-              {lastMeasurement.skeletalMuscle != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-green-400" />
-                    Muscle squelettique
-                  </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {lastMeasurement.skeletalMuscle} kg
-                  </div>
-                  <div className="text-sm text-slate-400">masse musculaire</div>
-                </div>
-              )}
-
-              {/* Masse graisseuse */}
-              {lastMeasurement.bodyFatMass != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-orange-400" />
-                    Masse graisseuse
-                  </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {lastMeasurement.bodyFatMass} kg
-                  </div>
-                  <div className="text-sm text-slate-400">poids total graisse</div>
-                </div>
-              )}
-
-              {/* Poids sans graisse */}
-              {lastMeasurement.fatFreeWeight != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-blue-400" />
-                    Poids sans graisse
-                  </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    {lastMeasurement.fatFreeWeight} kg
-                  </div>
-                  <div className="text-sm text-slate-400">masse maigre</div>
                 </div>
               )}
             </div>
@@ -675,6 +703,9 @@ const ImpedanceSection = () => {
                 <li>• Retirez bijoux et objets métalliques</li>
                 <li>• Restez immobile pendant la mesure</li>
                 <li>• Effectuez les mesures dans les mêmes conditions pour un suivi cohérent</li>
+                {garminBasalMetabolism && (
+                  <li className="text-blue-300">• ⚡ Métabolisme de base Garmin disponible: {garminBasalMetabolism.value} kcal (recommandé)</li>
+                )}
               </ul>
             </div>
           </div>

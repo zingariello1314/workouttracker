@@ -40,22 +40,49 @@ export const useHomepageImages = () => {
         return;
       }
 
-      // Essayer d'abord d'ouvrir sans spécifier de version pour récupérer la version actuelle
-      const request = indexedDB.open('HomepageImagesDB');
+      // ✅ FIX: Forcer upgrade vers version 2 pour garantir présence index
+      // Si base existe en v1, onupgradeneeded sera appelé automatiquement
+      const request = indexedDB.open('HomepageImagesDB', 2);
       
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
-        console.log('🔄 Mise à jour IndexedDB en cours...');
+        const oldVersion = event.oldVersion;
+        console.log(`🔄 Mise à jour IndexedDB de v${oldVersion} à v${db.version}...`);
         
         // Vérifier et créer l'object store 'images' si nécessaire
+        let imageStore;
         if (!db.objectStoreNames.contains('images')) {
           console.log('📦 Création de l\'object store "images"...');
-          const imageStore = db.createObjectStore('images', { keyPath: 'id' });
+          imageStore = db.createObjectStore('images', { keyPath: 'id' });
           imageStore.createIndex('type', 'type', { unique: false });
           imageStore.createIndex('timestamp', 'timestamp', { unique: false });
           console.log('✅ Object store "images" créé avec ses index');
         } else {
           console.log('✅ Object store "images" existe déjà');
+          imageStore = event.target.transaction.objectStore('images');
+          
+          // ✅ FIX: Créer index manquants (upgrade depuis v1)
+          try {
+            const indexNames = imageStore.indexNames;
+            if (!indexNames.contains('type')) {
+              console.log('📦 Création index "type" manquant...');
+              imageStore.createIndex('type', 'type', { unique: false });
+              console.log('✅ Index "type" créé');
+            } else {
+              console.log('✅ Index "type" existe déjà');
+            }
+            
+            if (!indexNames.contains('timestamp')) {
+              console.log('📦 Création index "timestamp" manquant...');
+              imageStore.createIndex('timestamp', 'timestamp', { unique: false });
+              console.log('✅ Index "timestamp" créé');
+            } else {
+              console.log('✅ Index "timestamp" existe déjà');
+            }
+          } catch (indexError) {
+            // Peut échouer si index existe déjà ou transaction fermée, c'est OK
+            console.warn('⚠️ Erreur création index (peut être normal):', indexError.message);
+          }
         }
         
         console.log('✅ IndexedDB mis à jour pour les images');
@@ -78,33 +105,31 @@ export const useHomepageImages = () => {
       
       request.onerror = (event) => {
         console.error('❌ Erreur ouverture IndexedDB:', event.target.error);
-        // En cas d'erreur de version, essayer de supprimer et recréer la DB
+        
+        // En cas d'erreur (ex: VersionError si déjà ouverte ailleurs), fallback
         if (event.target.error.name === 'VersionError') {
-          console.log('🔄 Tentative de réparation de la base de données...');
-          const deleteRequest = indexedDB.deleteDatabase('HomepageImagesDB');
-          deleteRequest.onsuccess = () => {
-            console.log('✅ Ancienne base supprimée, tentative de recréation...');
-            const newRequest = indexedDB.open('HomepageImagesDB', 1);
-            newRequest.onsuccess = (e) => resolve(e.target.result);
-            newRequest.onerror = (e) => reject(e.target.error);
-            newRequest.onupgradeneeded = (e) => {
-              const db = e.target.result;
-              if (!db.objectStoreNames.contains('images')) {
-                const imageStore = db.createObjectStore('images', { keyPath: 'id' });
-                imageStore.createIndex('type', 'type', { unique: false });
-                imageStore.createIndex('timestamp', 'timestamp', { unique: false });
-              }
-            };
+          console.warn('⚠️ VersionError détectée, tentative réouverture...');
+          // Essayer de réouvrir sans spécifier version
+          const fallbackRequest = indexedDB.open('HomepageImagesDB');
+          fallbackRequest.onsuccess = (e) => {
+            const db = e.target.result;
+            console.log(`✅ IndexedDB réouvert: ${db.name} v${db.version}`);
+            resolve(db);
           };
-          deleteRequest.onerror = () => reject(event.target.error);
+          fallbackRequest.onerror = () => reject(event.target.error);
         } else {
           reject(event.target.error);
         }
       };
       
       request.onblocked = () => {
-        console.warn('⚠️ IndexedDB bloqué - fermez les autres onglets');
-        reject(new Error('IndexedDB bloqué'));
+        console.warn('⚠️ IndexedDB bloqué - fermez les autres onglets et rafraîchissez');
+        // Attendre un peu puis réessayer
+        setTimeout(() => {
+          const retryRequest = indexedDB.open('HomepageImagesDB', 2);
+          retryRequest.onsuccess = (e) => resolve(e.target.result);
+          retryRequest.onerror = () => reject(new Error('IndexedDB bloqué'));
+        }, 1000);
       };
     });
   };
@@ -118,21 +143,62 @@ export const useHomepageImages = () => {
       const transaction = db.transaction(['images'], 'readwrite');
       const store = transaction.objectStore('images');
       
-      // Supprimer les anciennes images de fond
-      const deleteRequest = store.index('type').openCursor(IDBKeyRange.only('homepage_background'));
+      // ✅ FIX: Vérifier si index existe, sinon utiliser fallback
+      let hasTypeIndex = false;
+      try {
+        const indexNames = store.indexNames;
+        hasTypeIndex = indexNames.contains('type');
+      } catch (e) {
+        hasTypeIndex = false;
+      }
       
-      await new Promise((resolve, reject) => {
-        deleteRequest.onsuccess = (event) => {
-          const cursor = event.target.result;
-          if (cursor) {
-            store.delete(cursor.primaryKey);
-            cursor.continue();
-          } else {
-            resolve();
-          }
-        };
-        deleteRequest.onerror = () => reject(deleteRequest.error);
-      });
+      // Supprimer les anciennes images de fond
+      let deletePromise;
+      if (hasTypeIndex) {
+        // ✅ Utiliser index si disponible
+        const deleteRequest = store.index('type').openCursor(IDBKeyRange.only('homepage_background'));
+        deletePromise = new Promise((resolve, reject) => {
+          deleteRequest.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor) {
+              store.delete(cursor.primaryKey);
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
+          deleteRequest.onerror = () => reject(deleteRequest.error);
+        });
+      } else {
+        // ✅ FALLBACK: Utiliser getAll() et filtrer manuellement
+        console.warn('⚠️ Index "type" non disponible, utilisation fallback pour suppression');
+        const allRequest = store.getAll();
+        deletePromise = new Promise((resolve, reject) => {
+          allRequest.onsuccess = (event) => {
+            const allItems = event.target.result;
+            const itemsToDelete = allItems.filter(item => item.type === 'homepage_background');
+            
+            if (itemsToDelete.length === 0) {
+              resolve();
+              return;
+            }
+            
+            // Supprimer items filtrés
+            const deletePromises = itemsToDelete.map(item => {
+              return new Promise((res, rej) => {
+                const delRequest = store.delete(item.id);
+                delRequest.onsuccess = () => res();
+                delRequest.onerror = () => rej(delRequest.error);
+              });
+            });
+            
+            Promise.all(deletePromises).then(() => resolve()).catch(reject);
+          };
+          allRequest.onerror = () => reject(allRequest.error);
+        });
+      }
+      
+      await deletePromise;
       
       // Sauvegarder les nouvelles images
       const savePromises = images.map((image, index) => {
@@ -212,10 +278,8 @@ export const useHomepageImages = () => {
   // Sauvegarde synchrone intelligente (métadonnées seulement si IndexedDB fonctionne)
   const saveImagesSync = (images) => {
     try {
-      // Essayer d'abord IndexedDB
-      const request = indexedDB.open('HomepageImagesDB', 1);
-      request.onsuccess = () => {
-        const db = request.result;
+      // ✅ FIX: Utiliser openDB() pour garantir version avec index
+      openDB().then((db) => {
         if (db.objectStoreNames.contains('images')) {
           // IndexedDB fonctionne → Sauvegarde légère des métadonnées
           const metadata = {
@@ -231,12 +295,10 @@ export const useHomepageImages = () => {
             console.warn('⚠️ Impossible de sauvegarder les métadonnées de sync:', error);
           }
           db.close();
-          return;
+        } else {
+          db.close();
         }
-        db.close();
-      };
-      
-      request.onerror = () => {
+      }).catch(() => {
         // IndexedDB échoué → Sauvegarde complète d'urgence
         const data = {
           images: images.slice(0, 3), // Limiter à 3 images max pour l'urgence
@@ -251,7 +313,7 @@ export const useHomepageImages = () => {
         } catch (error) {
           console.error('❌ Erreur sauvegarde d\'urgence:', error);
         }
-      };
+      });
       
       return true;
     } catch (error) {
@@ -340,33 +402,71 @@ export const useHomepageImages = () => {
       const db = await openDB();
       const transaction = db.transaction(['images'], 'readonly');
       const store = transaction.objectStore('images');
-      const index = store.index('type');
       
-      const request = index.getAll(IDBKeyRange.only('homepage_background'));
+      // ✅ FIX: Vérifier si index existe, sinon utiliser fallback avec getAll()
+      let images = [];
       
-      const images = await new Promise((resolve, reject) => {
-        request.onsuccess = (event) => {
-          const results = event.target.result;
-          
-          if (results && results.length > 0) {
-            const sortedImages = results
-              .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-              .map(item => item.data)
-              .filter(validateBase64Image);
-            
-            console.log(`✅ ${sortedImages.length} images chargées depuis IndexedDB`);
-            resolve(sortedImages);
-          } else {
-            console.log('📭 Aucune image trouvée dans IndexedDB');
-            resolve([]);
-          }
-        };
+      try {
+        // Essayer d'utiliser l'index si disponible
+        const index = store.index('type');
+        const request = index.getAll(IDBKeyRange.only('homepage_background'));
         
-        request.onerror = (event) => {
-          console.error('❌ Erreur chargement IndexedDB:', event.target.error);
-          reject(event.target.error);
-        };
-      });
+        images = await new Promise((resolve, reject) => {
+          request.onsuccess = (event) => {
+            const results = event.target.result;
+            
+            if (results && results.length > 0) {
+              const sortedImages = results
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .map(item => item.data)
+                .filter(validateBase64Image);
+              
+              console.log(`✅ ${sortedImages.length} images chargées depuis IndexedDB (avec index)`);
+              resolve(sortedImages);
+            } else {
+              console.log('📭 Aucune image trouvée dans IndexedDB');
+              resolve([]);
+            }
+          };
+          
+          request.onerror = (event) => {
+            console.error('❌ Erreur chargement IndexedDB avec index:', event.target.error);
+            reject(event.target.error);
+          };
+        });
+      } catch (indexError) {
+        // ✅ FALLBACK: Index n'existe pas, utiliser getAll() et filtrer manuellement
+        console.warn('⚠️ Index "type" non disponible, utilisation fallback getAll()');
+        
+        const request = store.getAll();
+        
+        images = await new Promise((resolve, reject) => {
+          request.onsuccess = (event) => {
+            const allResults = event.target.result;
+            
+            // Filtrer manuellement par type
+            const filteredResults = allResults.filter(item => item.type === 'homepage_background');
+            
+            if (filteredResults.length > 0) {
+              const sortedImages = filteredResults
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .map(item => item.data)
+                .filter(validateBase64Image);
+              
+              console.log(`✅ ${sortedImages.length} images chargées depuis IndexedDB (fallback)`);
+              resolve(sortedImages);
+            } else {
+              console.log('📭 Aucune image trouvée dans IndexedDB');
+              resolve([]);
+            }
+          };
+          
+          request.onerror = (event) => {
+            console.error('❌ Erreur chargement IndexedDB (fallback):', event.target.error);
+            reject(event.target.error);
+          };
+        });
+      }
       
       return images;
       
@@ -573,17 +673,12 @@ export const useHomepageImages = () => {
   // Monitoring de santé du système
   const checkSystemHealth = async () => {
     try {
-      // Test simple d'ouverture des bases sans sauvegarde
-      const indexedDBWorking = await new Promise((resolve) => {
-        const request = indexedDB.open('HomepageImagesDB', 1);
-        request.onsuccess = () => {
-          const db = request.result;
-          const hasImagesStore = db.objectStoreNames.contains('images');
-          db.close();
-          resolve(hasImagesStore);
-        };
-        request.onerror = () => resolve(false);
-      });
+      // ✅ FIX: Utiliser openDB() pour garantir version avec index
+      const indexedDBWorking = await openDB().then((db) => {
+        const hasImagesStore = db.objectStoreNames.contains('images');
+        db.close();
+        return hasImagesStore;
+      }).catch(() => false);
       
       const localStorageWorking = (() => {
         try {
