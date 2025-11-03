@@ -17,6 +17,89 @@ import { calculateGlobalCorrelations } from './correlationCalculator';
 const log = logger.module('RecommendationsEngine');
 
 /**
+ * ✅ OPTIMISATION: Calcule seuils adaptatifs basés sur variabilité historique
+ * @param {Object} muscleGains - Gains calculés pour chaque muscle
+ * @param {Array} historicalPhotos - Photos historiques (pour calcul variabilité)
+ * @returns {Object} Seuils adaptatifs par muscle {muscle: {gain, stagnation, regression}}
+ */
+const calculateAdaptiveThresholds = (muscleGains, historicalPhotos = null) => {
+  const thresholds = {};
+  
+  Object.keys(muscleGains).forEach(muscle => {
+    const gain = muscleGains[muscle];
+    const periodDays = gain.periodDays || 30; // Fallback 30 jours
+    
+    // ✅ Priorité 1: Calculer variabilité historique si disponible
+    let noiseLevel = 2.0; // Défaut: 2% si pas d'historique
+    
+    if (historicalPhotos && Array.isArray(historicalPhotos) && historicalPhotos.length >= 5) {
+      // Extraire changements historiques pour ce muscle
+      const historicalChanges = extractHistoricalChanges(historicalPhotos, muscle);
+      
+      if (historicalChanges.length >= 5) {
+        // Calculer écart-type des changements (variabilité)
+        const mean = historicalChanges.reduce((sum, change) => sum + change, 0) / historicalChanges.length;
+        const variance = historicalChanges.reduce((sum, change) => sum + Math.pow(change - mean, 2), 0) / historicalChanges.length;
+        const stdDev = Math.sqrt(variance);
+        noiseLevel = stdDev || 2.0;
+        
+        log.debug(`Seuils adaptatifs ${muscle}: variabilité=${noiseLevel.toFixed(2)}% (écart-type historique ${historicalChanges.length} valeurs)`);
+      }
+    }
+    
+    // ✅ Ajuster selon durée période (plus long = seuils plus stricts)
+    // Normaliser à 30 jours: facteur = √(période / 30)
+    const periodFactor = Math.sqrt(periodDays / 30);
+    
+    // ✅ Seuils = multiple de l'écart-type ajusté par période
+    // Gain significatif = 2.5σ (haut niveau)
+    // Stagnation = 1.0σ (faible variation normale)
+    // Régression = -2.5σ (chute significative)
+    thresholds[muscle] = {
+      gain: noiseLevel * 2.5 * periodFactor,      // Gain = 2.5σ ajusté
+      stagnation: noiseLevel * 1.0 * periodFactor, // Stagnation = 1.0σ ajusté
+      regression: -noiseLevel * 2.5 * periodFactor // Régression = -2.5σ ajusté
+    };
+    
+    log.debug(`Seuils adaptatifs ${muscle}: gain>${thresholds[muscle].gain.toFixed(1)}%, stagnation=[${thresholds[muscle].regression.toFixed(1)}% à ${thresholds[muscle].stagnation.toFixed(1)}%], régression<${thresholds[muscle].regression.toFixed(1)}% (période ${periodDays}j, facteur ${periodFactor.toFixed(2)})`);
+  });
+  
+  return thresholds;
+};
+
+/**
+ * Extrait changements historiques pour un muscle (pour calcul variabilité)
+ * @param {Array} historicalPhotos - Photos historiques
+ * @param {string} muscle - Nom muscle
+ * @returns {Array<number>} Changements en % entre photos consécutives
+ */
+const extractHistoricalChanges = (historicalPhotos, muscle) => {
+  const changes = [];
+  
+  // Trier photos par date
+  const sortedPhotos = historicalPhotos
+    .filter(p => p.analysis?.metrics?.[muscle]?.success)
+    .map(p => ({
+      date: p.date ? new Date(p.date).getTime() : p.timestamp || 0,
+      volume: p.analysis?.metrics?.[muscle]?.metrics?.volume?.score || 0
+    }))
+    .sort((a, b) => a.date - b.date);
+  
+  // Calculer changements entre photos consécutives
+  for (let i = 1; i < sortedPhotos.length; i++) {
+    const prev = sortedPhotos[i - 1];
+    const curr = sortedPhotos[i];
+    
+    if (prev.volume > 0) {
+      const changePercent = ((curr.volume - prev.volume) / prev.volume) * 100;
+      changes.push(changePercent);
+    }
+  }
+  
+  return changes.filter(c => !isNaN(c) && isFinite(c));
+};
+
+/**
  * Calcule gains/stagnations pour chaque muscle
  */
 const calculateMuscleGains = (photos) => {
@@ -212,13 +295,25 @@ const generateCorrelationBasedRecommendations = (correlationsData, workoutHistor
 
 /**
  * Génère recommandations basées sur gains/stagnations
+ * ✅ OPTIMISATION: Utilise seuils adaptatifs basés sur variabilité historique
  */
-const generateProgressBasedRecommendations = (muscleGains, correlationsData, workoutHistory) => {
+const generateProgressBasedRecommendations = (muscleGains, correlationsData, workoutHistory, historicalPhotos = null) => {
   const recommendations = [];
+  
+  // ✅ OPTIMISATION: Calculer seuils adaptatifs pour chaque muscle
+  const adaptiveThresholds = calculateAdaptiveThresholds(muscleGains, historicalPhotos);
 
   Object.entries(muscleGains).forEach(([muscle, gain]) => {
+    // Récupérer seuils adaptatifs pour ce muscle
+    const thresholds = adaptiveThresholds[muscle] || {
+      gain: 5.0,        // Fallback: seuils fixes si non disponibles
+      stagnation: 2.0,
+      regression: -5.0
+    };
+    
+    // ✅ OPTIMISATION: Utiliser seuils adaptatifs (vs fixes >5%, -2% à +2%, <-2%)
     // Fort gain → Maintenir
-    if (gain.percentageChange > 5) {
+    if (gain.percentageChange > thresholds.gain) {
       recommendations.push({
         type: 'maintain',
         muscle,
@@ -230,8 +325,8 @@ const generateProgressBasedRecommendations = (muscleGains, correlationsData, wor
         confidence: 'high'
       });
     }
-    // Stagnation → Optimiser
-    else if (gain.percentageChange > -2 && gain.percentageChange < 2) {
+    // ✅ Stagnation → Optimiser (range adaptatif)
+    else if (gain.percentageChange > thresholds.regression && gain.percentageChange < thresholds.stagnation) {
       // Chercher corrélation pour ce muscle
       const muscleCorr = correlationsData?.muscleCorrelations?.[muscle]?.volume;
       
@@ -264,8 +359,8 @@ const generateProgressBasedRecommendations = (muscleGains, correlationsData, wor
         });
       }
     }
-    // Régression → Action urgente
-    else if (gain.percentageChange < -2) {
+    // ✅ Régression → Action urgente (seuil adaptatif)
+    else if (gain.percentageChange < thresholds.regression) {
       recommendations.push({
         type: 'regression',
         muscle,
@@ -389,7 +484,8 @@ export const generateRecommendations = async (photos, workoutHistory) => {
     }
 
     // 6. Générer recommandations basées sur progression
-    const progressRecs = generateProgressBasedRecommendations(muscleGains, correlationsData, workoutHistory);
+    // ✅ OPTIMISATION: Passer historique pour seuils adaptatifs
+    const progressRecs = generateProgressBasedRecommendations(muscleGains, correlationsData, workoutHistory, photos);
     recommendations.push(...progressRecs);
 
     // 7. Générer recommandations symétrie

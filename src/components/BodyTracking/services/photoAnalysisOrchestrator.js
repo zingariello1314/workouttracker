@@ -201,6 +201,15 @@ class PhotoAnalysisOrchestrator {
 
       // Phase 4: Extraction Métriques (~8-12 sec)
       const metricsService = getMetricsExtractionService();
+      
+      // ✅ OPTIMISATION: Injecter historique utilisateur pour normalisation adaptative
+      // Récupérer photos analysées précédentes depuis cache/options si disponibles
+      const historicalPhotos = options.historicalPhotos || null;
+      if (historicalPhotos && Array.isArray(historicalPhotos)) {
+        metricsService.setHistoricalData(historicalPhotos);
+        log.debug(`Historique injecté pour normalisation adaptative: ${historicalPhotos.length} photos`);
+      }
+      
       const orientation = poseService.detectOrientation(poseResult.landmarks || []);
       
       // Ajuster mapping muscles selon orientation
@@ -245,7 +254,13 @@ class PhotoAnalysisOrchestrator {
           const muscleMask = this.getMuscleMask(muscleType, muscleMapping, segmentationResult.masks);
           
           if (muscleMask) {
-            const symmetryMask = this.getSymmetryMask(muscleType, muscleMapping, segmentationResult.masks);
+            // ✅ OPTIMISATION: Passer landmarks MediaPipe pour détection côté fiable
+            const symmetryMask = this.getSymmetryMask(
+              muscleType, 
+              muscleMapping, 
+              segmentationResult.masks,
+              poseResult.landmarks || null
+            );
             muscleDataBatch.push({
               muscleType,
               muscleMask,
@@ -499,12 +514,15 @@ class PhotoAnalysisOrchestrator {
 
   /**
    * Récupère masque symétrique pour calcul symétrie
-   * @param {string} muscleType 
-   * @param {Object} muscleMapping 
-   * @param {Object} allMasks 
-   * @returns {Object|null} Masque symétrique
+   * ✅ OPTIMISATION: Détection robuste masque opposé avec landmarks MediaPipe
+   * 
+   * @param {string} muscleType - Type muscle (ex: 'biceps', 'triceps')
+   * @param {Object} muscleMapping - Mapping muscles ajustés
+   * @param {Object} allMasks - Tous masques segmentation
+   * @param {Array} landmarks - Landmarks MediaPipe (optionnel, pour détection côté fiable)
+   * @returns {Object|null} Masque symétrique opposé
    */
-  getSymmetryMask(muscleType, muscleMapping, allMasks) {
+  getSymmetryMask(muscleType, muscleMapping, allMasks, landmarks = null) {
     // Muscles avec symétrie gauche/droite
     const symmetricMuscles = ['biceps', 'triceps', 'quadriceps', 'ischio_jambiers', 'mollets', 'deltoides'];
     
@@ -512,31 +530,220 @@ class PhotoAnalysisOrchestrator {
       return null; // Pas de symétrie pour ce muscle
     }
     
-    // Chercher masque opposé
-    const leftKey = `left${muscleType.charAt(0).toUpperCase() + muscleType.slice(1)}`;
-    const rightKey = `right${muscleType.charAt(0).toUpperCase() + muscleType.slice(1)}`;
+    // ✅ Mapping explicite paires symétriques (plus robuste)
+    // Structure: { leftKey: clé masque gauche, rightKey: clé masque droit, bodyPart: partie BodyPix }
+    const symmetryPairs = {
+      'biceps': { 
+        leftKey: 'leftBiceps', 
+        rightKey: 'rightBiceps',
+        leftBodyPart: 'leftUpperArm', 
+        rightBodyPart: 'rightUpperArm' 
+      },
+      'triceps': { 
+        leftKey: 'leftTriceps', 
+        rightKey: 'rightTriceps',
+        leftBodyPart: 'leftUpperArm', 
+        rightBodyPart: 'rightUpperArm' 
+      },
+      'quadriceps': { 
+        leftKey: 'leftQuadriceps', 
+        rightKey: 'rightQuadriceps',
+        leftBodyPart: 'leftUpperLeg', 
+        rightBodyPart: 'rightUpperLeg' 
+      },
+      'ischio_jambiers': { 
+        leftKey: 'leftHamstrings', 
+        rightKey: 'rightHamstrings',
+        leftBodyPart: 'leftUpperLeg', 
+        rightBodyPart: 'rightUpperLeg' 
+      },
+      'mollets': { 
+        leftKey: 'leftCalves', 
+        rightKey: 'rightCalves',
+        leftBodyPart: 'leftLowerLeg', 
+        rightBodyPart: 'rightLowerLeg' 
+      },
+      'deltoides': { 
+        leftKey: 'leftBiceps', // Utilise bras comme proxy (deltoides pas directement segmenté)
+        rightKey: 'rightBiceps',
+        leftBodyPart: 'leftUpperArm', 
+        rightBodyPart: 'rightUpperArm' 
+      }
+    };
+    
+    const pair = symmetryPairs[muscleType];
+    if (!pair) return null;
     
     // Déterminer si muscle actuel est gauche ou droit
     const currentMask = this.getMuscleMask(muscleType, muscleMapping, allMasks);
     if (!currentMask) return null;
     
-    // Chercher masque opposé
-    if (muscleMapping[leftKey] && muscleMapping[rightKey]) {
-      // Retourner celui qui n'est pas le courant
-      // (simplification: on assume left/right dans nom)
-      if (muscleType.includes('left') || currentMask === muscleMapping[leftKey]) {
-        return muscleMapping[rightKey];
+    // ✅ OPTIMISATION: Utiliser landmarks MediaPipe pour détecter côté dominant (plus fiable)
+    let detectedSide = null;
+    if (landmarks && landmarks.length >= 24) {
+      detectedSide = this.detectMuscleSideFromLandmarks(muscleType, landmarks, currentMask, muscleMapping);
+    }
+    
+    // Si landmarks ne donnent pas de résultat, utiliser méthode fallback améliorée
+    if (!detectedSide) {
+      // Comparer positions centroïdes masques gauche/droite
+      const leftMask = muscleMapping[pair.leftKey] || allMasks[pair.leftBodyPart];
+      const rightMask = muscleMapping[pair.rightKey] || allMasks[pair.rightBodyPart];
+      
+      if (leftMask && rightMask) {
+        // Calculer centroïde masque actuel pour déterminer côté
+        const currentCentroid = this.calculateMaskCentroid(currentMask);
+        const leftCentroid = this.calculateMaskCentroid(leftMask);
+        const rightCentroid = this.calculateMaskCentroid(rightMask);
+        
+        // Distance centroïde actuel vs gauche et droite (distance Manhattan normalisée)
+        const distToLeft = Math.abs(currentCentroid.x - leftCentroid.x) + Math.abs(currentCentroid.y - leftCentroid.y);
+        const distToRight = Math.abs(currentCentroid.x - rightCentroid.x) + Math.abs(currentCentroid.y - rightCentroid.y);
+        
+        detectedSide = distToLeft < distToRight ? 'left' : 'right';
       } else {
-        return muscleMapping[leftKey];
+        // Fallback final: comparer par référence masque
+        if (currentMask === leftMask) {
+          detectedSide = 'left';
+        } else if (currentMask === rightMask) {
+          detectedSide = 'right';
+        } else {
+          // Si aucun match, retourner premier disponible (meilleure approximation)
+          return leftMask || rightMask || null;
+        }
       }
     }
     
-    // Fallback: chercher dans allMasks
-    const oppositeKey = allMasks[leftKey] && allMasks[leftKey] === currentMask 
-      ? rightKey 
-      : leftKey;
+    // Retourner masque opposé selon côté détecté
+    if (detectedSide === 'left') {
+      return muscleMapping[pair.rightKey] || allMasks[pair.rightBodyPart] || null;
+    } else if (detectedSide === 'right') {
+      return muscleMapping[pair.leftKey] || allMasks[pair.leftBodyPart] || null;
+    }
     
-    return allMasks[oppositeKey] || null;
+    return null;
+  }
+  
+  /**
+   * Détecte côté muscle (gauche/droite) depuis landmarks MediaPipe
+   * ✅ OPTIMISATION: Utilise position landmarks pour déterminer côté de manière fiable
+   * 
+   * @param {string} muscleType - Type muscle
+   * @param {Array} landmarks - 33 landmarks MediaPipe
+   * @param {Object} currentMask - Masque muscle actuel
+   * @param {Object} muscleMapping - Mapping muscles
+   * @returns {string|null} 'left' | 'right' | null
+   */
+  detectMuscleSideFromLandmarks(muscleType, landmarks, currentMask, muscleMapping) {
+    if (!landmarks || landmarks.length < 24) return null;
+    
+    // Landmarks MediaPipe indices:
+    // 11 = épaule gauche, 12 = épaule droite
+    // 13 = coude gauche, 14 = coude droit
+    // 23 = hanche gauche, 24 = hanche droite
+    // 25 = genou gauche, 26 = genou droit
+    
+    const leftShoulder = landmarks[11];
+    const rightShoulder = landmarks[12];
+    const leftElbow = landmarks[13];
+    const rightElbow = landmarks[14];
+    const leftHip = landmarks[23];
+    const rightHip = landmarks[24];
+    const leftKnee = landmarks[25];
+    const rightKnee = landmarks[26];
+    
+    // Vérifier visibilité landmarks
+    const isLeftShoulderVisible = leftShoulder && (leftShoulder.visibility || 1) > 0.5;
+    const isRightShoulderVisible = rightShoulder && (rightShoulder.visibility || 1) > 0.5;
+    
+    // Déterminer côté selon type muscle et visibilité landmarks
+    if (muscleType === 'biceps' || muscleType === 'triceps' || muscleType === 'deltoides') {
+      // Muscles bras: utiliser coudes/épaules
+      if (isLeftShoulderVisible && leftElbow && (leftElbow.visibility || 1) > 0.5) {
+        // Vérifier si masque actuel correspond à gauche
+        const leftArmMask = muscleMapping.leftBiceps || muscleMapping.leftTriceps || muscleMapping.leftUpperArm;
+        if (leftArmMask === currentMask) return 'left';
+        
+        // Sinon, vérifier droite
+        const rightArmMask = muscleMapping.rightBiceps || muscleMapping.rightTriceps || muscleMapping.rightUpperArm;
+        if (rightArmMask === currentMask) return 'right';
+        
+        // Comparer position centroïde vs position coudes
+        const currentCentroid = this.calculateMaskCentroid(currentMask);
+        const leftElbowX = leftElbow.x;
+        const rightElbowX = rightElbow?.x || 1.0;
+        
+        return currentCentroid.x < (leftElbowX + rightElbowX) / 2 ? 'left' : 'right';
+      }
+    } else if (muscleType === 'quadriceps' || muscleType === 'ischio_jambiers') {
+      // Muscles cuisses: utiliser genoux/hanches
+      if (leftHip && leftKnee && (leftHip.visibility || 1) > 0.5 && (leftKnee.visibility || 1) > 0.5) {
+        const leftLegMask = muscleMapping.leftQuadriceps || muscleMapping.leftHamstrings || muscleMapping.leftUpperLeg;
+        if (leftLegMask === currentMask) return 'left';
+        
+        const rightLegMask = muscleMapping.rightQuadriceps || muscleMapping.rightHamstrings || muscleMapping.rightUpperLeg;
+        if (rightLegMask === currentMask) return 'right';
+        
+        // Comparer position centroïde vs position genoux
+        const currentCentroid = this.calculateMaskCentroid(currentMask);
+        const leftKneeX = leftKnee.x;
+        const rightKneeX = rightKnee?.x || 1.0;
+        
+        return currentCentroid.x < (leftKneeX + rightKneeX) / 2 ? 'left' : 'right';
+      }
+    } else if (muscleType === 'mollets') {
+      // Mollets: utiliser genoux comme référence
+      if (leftKnee && (leftKnee.visibility || 1) > 0.5) {
+        const leftCalfMask = muscleMapping.leftCalves || muscleMapping.leftLowerLeg;
+        if (leftCalfMask === currentMask) return 'left';
+        
+        const rightCalfMask = muscleMapping.rightCalves || muscleMapping.rightLowerLeg;
+        if (rightCalfMask === currentMask) return 'right';
+        
+        // Comparer position
+        const currentCentroid = this.calculateMaskCentroid(currentMask);
+        const leftKneeX = leftKnee.x;
+        const rightKneeX = rightKnee?.x || 1.0;
+        
+        return currentCentroid.x < (leftKneeX + rightKneeX) / 2 ? 'left' : 'right';
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Calcule centroïde (centre de masse) d'un masque binaire
+   * @param {Object} mask - Masque binaire {data: Uint8Array, width, height}
+   * @returns {Object} {x: number, y: number} Coordonnées centroïde normalisées [0-1]
+   */
+  calculateMaskCentroid(mask) {
+    if (!mask || !mask.data || !mask.width || !mask.height) {
+      return { x: 0.5, y: 0.5 }; // Par défaut: centre
+    }
+    
+    let sumX = 0, sumY = 0, count = 0;
+    
+    for (let y = 0; y < mask.height; y++) {
+      for (let x = 0; x < mask.width; x++) {
+        const index = y * mask.width + x;
+        if (mask.data[index] > 128) { // Pixel muscle (non-zéro)
+          sumX += x;
+          sumY += y;
+          count++;
+        }
+      }
+    }
+    
+    if (count === 0) {
+      return { x: 0.5, y: 0.5 };
+    }
+    
+    // Normaliser à [0-1]
+    return {
+      x: sumX / count / mask.width,
+      y: sumY / count / mask.height
+    };
   }
 
   /**
