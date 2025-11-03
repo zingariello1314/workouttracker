@@ -44,9 +44,16 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
     });
   }, [dailyMetrics, selectedDate]);
 
-  // 🔴 FIX #29: Afficher même avec données partielles - calculer APRÈS tous les hooks
+  // ✅ CORRECTION: Afficher même avec données partielles - permettre les espaces vides
   const validTimeSeries = React.useMemo(() => {
-    return timeSeriesData.filter(d => d.bpm != null && d.timestamp && d.bpm > 0);
+    // Filtrer et nettoyer les données valides
+    const validData = timeSeriesData.filter(d => d.bpm != null && d.timestamp && d.bpm > 0);
+    
+    if (validData.length === 0) return [];
+    
+    // ✅ Créer une structure qui permet les gaps : utiliser les données réelles
+    // Recharts gère automatiquement les gaps si on utilise connectNulls={false}
+    return validData;
   }, [timeSeriesData]);
   
   // Afficher avec avertissement si données partielles (< 100 points pour une journée complète)
@@ -59,11 +66,12 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
   const minBpm = bpmValues.length > 0 ? Math.max(0, Math.min(...bpmValues) - 10) : 50;
   const maxBpm = bpmValues.length > 0 ? Math.min(220, Math.max(...bpmValues) + 10) : 180;
 
+  // ✅ CORRECTION: Afficher le graphique même avec peu de données (1 point minimum)
   if (!dailyMetrics || !selectedDate || validTimeSeries.length === 0) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
         <p>Aucune donnée de fréquence cardiaque (time series) disponible pour {selectedDate}.</p>
-        <p className="text-xs mt-2">Les données time series ne sont disponibles que pour les jours où la FC a été mesurée en continu.</p>
+        <p className="text-xs mt-2">Les données time series ne sont disponibles que pour les jours où la FC a été mesurée.</p>
       </div>
     );
   }
@@ -117,6 +125,9 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
               stroke="#9CA3AF"
               tick={{ fill: '#9CA3AF', fontSize: 12 }}
               interval="preserveStartEnd"
+              // ✅ CORRECTION: Permettre l'affichage même avec des gaps temporels
+              // L'axe X s'adapte automatiquement aux données disponibles
+              domain={['dataMin', 'dataMax']}
             />
             <YAxis
               domain={[minBpm, maxBpm]}
@@ -132,12 +143,30 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
               strokeWidth={2}
               fill="url(#colorBpm)"
               name="FC (bpm)"
+              connectNulls={false}
+              // ✅ CORRECTION: Permettre les gaps visuels (espaces vides) dans le graphique
+              // connectNulls={false} empêche de connecter les points s'il y a des null
+              // Mais ici on utilise les données réelles, donc les gaps seront automatiques
               dot={(props) => {
                 const { key, ...restProps } = props;
-                // Afficher un point seulement toutes les heures pour éviter surcharge
+                // ✅ Afficher tous les points si peu de données, sinon seulement toutes les heures
                 const hour = props.payload?.hour;
                 const minute = props.payload?.minute;
-                if (minute !== 0) return null; // Afficher seulement à l'heure pile
+                // Si peu de données (< 10 points), afficher tous les points
+                if (validTimeSeries.length < 10) {
+                  return (
+                    <CustomDot
+                      key={key}
+                      {...restProps}
+                      fill={colors?.red || '#EF4444'}
+                      stroke={colors?.red || '#EF4444'}
+                      strokeWidth={2}
+                      r={4}
+                    />
+                  );
+                }
+                // Sinon, afficher seulement à l'heure pile pour éviter surcharge
+                if (minute !== 0) return null;
                 return (
                   <CustomDot
                     key={key}

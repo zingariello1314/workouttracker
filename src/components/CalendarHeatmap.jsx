@@ -110,14 +110,31 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       }
     });
     
-    // Ajouter les durées d'endurance
+    // ✅ Ajouter les durées d'endurance (parser selon format)
     const enduranceData = allData?.enduranceData || {};
     const enduranceSessions = enduranceData.sessions || {};
     Object.entries(enduranceSessions).forEach(([activityType, sessions]) => {
       if (Array.isArray(sessions)) {
         sessions.forEach(session => {
           if (session.duration) {
-            durations.push(session.duration);
+            let durationMinutes = 0;
+            
+            // Parser selon le format (même logique que dans getEnduranceDataForDate)
+            if (typeof session.duration === 'string' && session.duration.includes(':')) {
+              const parts = session.duration.split(':').map(Number);
+              if (parts.length === 3) {
+                durationMinutes = parts[0] * 60 + parts[1] + parts[2] / 60;
+              } else if (parts.length === 2) {
+                durationMinutes = parts[0] + parts[1] / 60;
+              }
+            } else {
+              const numValue = typeof session.duration === 'number' ? session.duration : parseInt(session.duration) || 0;
+              durationMinutes = numValue > 1000 ? Math.round(numValue / 60) : numValue;
+            }
+            
+            if (durationMinutes > 0) {
+              durations.push(Math.round(durationMinutes));
+            }
           }
         });
       }
@@ -204,7 +221,36 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                 
                 // Ajouter les répétitions (pompes, boxe)
                 if (session.count || session.reps) enduranceReps += parseInt(session.count || session.reps) || 0;
-                if (session.duration) enduranceDuration += parseInt(session.duration) || 0;
+                // ✅ CORRECTION PB 2: Parser la durée selon son format
+                if (session.duration) {
+                  let durationMinutes = 0;
+                  
+                  // Vérifier le type de la durée
+                  if (typeof session.duration === 'string') {
+                    // Format string: peut être "HH:MM:SS", "MM:SS", ou un nombre
+                    if (session.duration.includes(':')) {
+                      // Format temps (HH:MM:SS ou MM:SS)
+                      const parts = session.duration.split(':').map(Number);
+                      if (parts.length === 3) {
+                        // HH:MM:SS
+                        durationMinutes = parts[0] * 60 + parts[1] + parts[2] / 60;
+                      } else if (parts.length === 2) {
+                        // MM:SS
+                        durationMinutes = parts[0] + parts[1] / 60;
+                      }
+                    } else {
+                      // Nombre: vérifier si c'est en secondes (grand) ou minutes (petit)
+                      const numValue = parseInt(session.duration) || 0;
+                      // Si > 1000, probablement en secondes, sinon en minutes
+                      durationMinutes = numValue > 1000 ? Math.round(numValue / 60) : numValue;
+                    }
+                  } else if (typeof session.duration === 'number') {
+                    // Nombre: vérifier si c'est en secondes (grand) ou minutes (petit)
+                    durationMinutes = session.duration > 1000 ? Math.round(session.duration / 60) : session.duration;
+                  }
+                  
+                  enduranceDuration += Math.round(durationMinutes);
+                }
                 
                 // Ajouter la distance (natation, course)
                 if (session.distance) {
@@ -309,9 +355,86 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       }
     });
 
-    // Calculer la durée réelle basée sur les exercices accomplis ET l'endurance
+    // ✅ CORRECTION PB 2: Calculer la durée réelle avec PRIORITÉ Garmin > Programme
+    // Principe: Si Garmin a une durée pour cette date, utiliser Garmin (plus précis), sinon utiliser la durée calculée du programme
     const calculateRealDuration = () => {
-      let totalDurationMinutes = enduranceData.duration; // Commencer avec la durée d'endurance
+      // ✅ PRIORITÉ 1: Vérifier les données Garmin pour cette date
+      if (garminData?.activities) {
+        // Calculer la durée totale des activités Garmin pour cette date
+        let garminDurationMinutes = 0;
+        
+        // Cardio
+        const activitésCardio = (garminData.activities.cardio || []).filter(act => {
+          const actDate = new Date(act.date || act.startTime || act.start);
+          return actDate.toISOString().split('T')[0] === dateStr;
+        });
+        activitésCardio.forEach(act => {
+          // ✅ Parser la durée Garmin selon le format (peut être "HH:MM:SS", secondes, ou minutes)
+          let actDurationMinutes = 0;
+          
+          if (act.duration) {
+            if (typeof act.duration === 'string' && act.duration.includes(':')) {
+              // Format "HH:MM:SS" ou "MM:SS" (ex: "01:41:19" = 1h41m19s = 101.32 minutes)
+              const parts = act.duration.split(':').map(Number);
+              if (parts.length === 3) {
+                // HH:MM:SS
+                actDurationMinutes = parts[0] * 60 + parts[1] + parts[2] / 60;
+              } else if (parts.length === 2) {
+                // MM:SS
+                actDurationMinutes = parts[0] + parts[1] / 60;
+              }
+            } else {
+              const numValue = typeof act.duration === 'number' ? act.duration : parseInt(act.duration) || 0;
+              // Si > 1000, probablement en secondes, sinon en minutes
+              actDurationMinutes = numValue > 1000 ? Math.round(numValue / 60) : numValue;
+            }
+          } else if (act.totalTime) {
+            // totalTime généralement en secondes (convertir en minutes)
+            actDurationMinutes = Math.round((act.totalTime / 60) || 0);
+          } else if (act.elapsedTime) {
+            // elapsedTime généralement en secondes (convertir en minutes)
+            actDurationMinutes = Math.round((act.elapsedTime / 60) || 0);
+          }
+          
+          garminDurationMinutes += actDurationMinutes;
+        });
+        
+        // Natation
+        const activitésNatation = (garminData.activities.swimming || []).filter(act => {
+          const actDate = new Date(act.date || act.startTime || act.start);
+          return actDate.toISOString().split('T')[0] === dateStr;
+        });
+        activitésNatation.forEach(act => {
+          if (act.duration) {
+            const numValue = typeof act.duration === 'number' ? act.duration : parseInt(act.duration) || 0;
+            garminDurationMinutes += numValue > 1000 ? Math.round(numValue / 60) : numValue;
+          } else if (act.totalTime) {
+            garminDurationMinutes += Math.round((act.totalTime / 60) || 0);
+          }
+        });
+        
+        // Corde à sauter
+        const activitésCorde = (garminData.activities.jumpRope || []).filter(act => {
+          const actDate = new Date(act.date || act.startTime || act.start);
+          return actDate.toISOString().split('T')[0] === dateStr;
+        });
+        activitésCorde.forEach(act => {
+          if (act.duration || act.durationSec) {
+            const dur = act.durationSec || act.duration;
+            const numValue = typeof dur === 'number' ? dur : parseInt(dur) || 0;
+            garminDurationMinutes += numValue > 1000 ? Math.round(numValue / 60) : numValue;
+          }
+        });
+        
+        // ✅ Si durée Garmin trouvée, l'utiliser (plus précise que la calculée)
+        if (garminDurationMinutes > 0) {
+          return Math.round(garminDurationMinutes);
+        }
+      }
+      
+      // ✅ PRIORITÉ 2: Durée calculée du programme (exercices + endurance + activités complémentaires)
+      // Commencer avec la durée totale des sessions d'endurance pour cette date
+      let totalDurationMinutes = enduranceData.duration;
       
       // Ajouter la durée des activités complémentaires cochées dans l'onglet Aujourd'hui
       if (workout?.complementaryActivity) {
@@ -628,13 +751,33 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     
     // Générer 6 semaines (42 jours) pour couvrir tout le mois
     for (let i = 0; i < 42; i++) {
-      const intensity = getIntensityForDate(currentDay);
-      // Ne pas écraser l'intensité calculée par getIntensityForDate
-      // qui prend déjà en compte les activités complémentaires et la durée
+      const isCurrentMonthDay = currentDay.getMonth() === month;
+      
+      // ✅ CORRECTION PB 1: Ne calculer l'intensité QUE pour les jours du mois courant
+      // Évite de colorer les jours des mois précédents/suivants
+      let intensity;
+      if (isCurrentMonthDay) {
+        intensity = getIntensityForDate(currentDay);
+      } else {
+        // Pour les jours hors mois, utiliser des valeurs neutres (pas d'intensité)
+        intensity = {
+          level: 0,
+          reps: 0,
+          duration: 0,
+          exerciseCount: 0,
+          completedCount: 0,
+          intensityScore: 0,
+          completionRate: 0,
+          enduranceData: { reps: 0, duration: 0, distance: 0, jumps: 0, sessions: 0 },
+          garminIcons: [],
+          exercises: 0,
+          session: null
+        };
+      }
       
       days.push({
         date: new Date(currentDay),
-        isCurrentMonth: currentDay.getMonth() === month,
+        isCurrentMonth: isCurrentMonthDay,
         isToday: currentDay.toDateString() === new Date().toDateString(),
         intensity
       });
@@ -843,7 +986,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                   }
                   hover:ring-2 hover:ring-purple-300 hover:scale-105
                 `}
-                title={`${day.date.toLocaleDateString('fr-FR')} - ${getIntensityLabel(day.intensity.level)} (${day.intensity.duration}min)`}
+                  title={`${day.date.toLocaleDateString('fr-FR')} - ${getIntensityLabel(day.intensity.level)}${day.intensity.duration > 0 ? ` (${day.intensity.duration}min)` : ''}${day.intensity.reps > 0 ? ` - ${day.intensity.reps} reps` : ''}`}
               >
                 <div className="w-full h-full flex flex-col items-center justify-center relative">
                   <span className={`text-sm font-medium ${
