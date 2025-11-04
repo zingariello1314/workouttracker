@@ -41,25 +41,44 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
     const dates = Object.keys(dailyMetrics).sort();
     const metricsData = dates.map(date => dailyMetrics[date]);
 
+    // 🔴 FIX : Helper pour extraire valeur numérique même si objet
+    const extractNumericFromData = (val, defaultVal = 0) => {
+      if (val === null || val === undefined) return defaultVal;
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') {
+        const parsed = parseFloat(val);
+        return isNaN(parsed) ? defaultVal : parsed;
+      }
+      if (typeof val === 'object') {
+        if ('value' in val) return extractNumericFromData(val.value, defaultVal);
+        if ('average' in val) return extractNumericFromData(val.average, defaultVal);
+        if ('avg' in val) return extractNumericFromData(val.avg, defaultVal);
+        if ('total' in val) return extractNumericFromData(val.total, defaultVal);
+        if ('max' in val) return extractNumericFromData(val.max, defaultVal);
+        if ('min' in val) return extractNumericFromData(val.min, defaultVal);
+      }
+      return defaultVal;
+    };
+    
     // Calculer statistiques globales
     const heartRateData = metricsData
       .map(d => d.heartRate)
       .filter(hr => hr && (hr.resting || hr.max || hr.avg))
       .map(hr => ({
-        resting: hr.resting || 0,
-        max: hr.max || 0,
-        avg: hr.avg || 0
+        resting: extractNumericFromData(hr.resting),
+        max: extractNumericFromData(hr.max),
+        avg: extractNumericFromData(hr.avg)
       }));
 
-    const stepsData = metricsData.map(d => d.steps || 0).filter(s => s > 0);
-    const distanceData = metricsData.map(d => d.distance || 0).filter(d => d > 0);
+    const stepsData = metricsData.map(d => extractNumericFromData(d.steps)).filter(s => s > 0);
+    const distanceData = metricsData.map(d => extractNumericFromData(d.distance)).filter(d => d > 0);
     const caloriesData = metricsData
       .map(d => d.calories)
       .filter(c => c && (c.total || c.active || c.resting))
       .map(c => ({
-        total: c.total || 0,
-        active: c.active || 0,
-        resting: c.resting || 0
+        total: extractNumericFromData(c.total),
+        active: extractNumericFromData(c.active),
+        resting: extractNumericFromData(c.resting)
       }));
 
     const bodyBatteryData = metricsData
@@ -217,25 +236,53 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
     </div>
   );
 
-  const MetricRow = ({ label, avg, min, max, trend, unit = '' }) => (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <span className="text-slate-400 text-sm">{label}</span>
-        <span className="text-white font-medium">{avg.toFixed(1)}{unit}</span>
+  // 🔴 FIX : Helper pour extraire valeur numérique même si objet
+  const extractNumeric = (val, defaultVal = 0) => {
+    if (val === null || val === undefined) return defaultVal;
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+      const parsed = parseFloat(val);
+      return isNaN(parsed) ? defaultVal : parsed;
+    }
+    if (typeof val === 'object') {
+      if ('value' in val) return extractNumeric(val.value, defaultVal);
+      if ('average' in val) return extractNumeric(val.average, defaultVal);
+      if ('avg' in val) return extractNumeric(val.avg, defaultVal);
+      if ('total' in val) return extractNumeric(val.total, defaultVal);
+      if ('max' in val) return extractNumeric(val.max, defaultVal);
+      if ('min' in val) return extractNumeric(val.min, defaultVal);
+      console.warn('[AdvancedStatistics] extractNumeric: objet sans valeur numérique:', val);
+    }
+    return defaultVal;
+  };
+  
+  const MetricRow = ({ label, avg, min, max, trend, unit = '' }) => {
+    // 🔴 FIX : Extraire valeurs numériques pour éviter objets
+    const avgNum = extractNumeric(avg);
+    const minNum = extractNumeric(min);
+    const maxNum = extractNumeric(max);
+    const trendNum = extractNumeric(trend);
+    
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="text-slate-400 text-sm">{label}</span>
+          <span className="text-white font-medium">{avgNum.toFixed(1)}{unit}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="text-slate-500">
+            Min: <span className="text-slate-300">{minNum.toFixed(1)}{unit}</span>
+          </div>
+          <div className="text-slate-500">
+            Max: <span className="text-slate-300">{maxNum.toFixed(1)}{unit}</span>
+          </div>
+          <div className="text-slate-500">
+            {formatTrend(trendNum)}
+          </div>
+        </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <div className="text-slate-500">
-          Min: <span className="text-slate-300">{min.toFixed(1)}{unit}</span>
-        </div>
-        <div className="text-slate-500">
-          Max: <span className="text-slate-300">{max.toFixed(1)}{unit}</span>
-        </div>
-        <div className="text-slate-500">
-          {formatTrend(trend)}
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6" role="region" aria-label="Statistiques avancées Garmin">
@@ -314,23 +361,23 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 text-sm">Moyenne</span>
-                <span className="text-white font-medium">{stats.steps.avg.toFixed(0)}</span>
+                <span className="text-white font-medium">{extractNumeric(stats.steps.avg).toFixed(0)}</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="text-slate-500">
-                  Min: <span className="text-slate-300">{stats.steps.min.toFixed(0)}</span>
+                  Min: <span className="text-slate-300">{extractNumeric(stats.steps.min).toFixed(0)}</span>
                 </div>
                 <div className="text-slate-500">
-                  Max: <span className="text-slate-300">{stats.steps.max.toFixed(0)}</span>
+                  Max: <span className="text-slate-300">{extractNumeric(stats.steps.max).toFixed(0)}</span>
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-slate-700">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400 text-sm">Total période</span>
-                  <span className="text-white font-semibold">{stats.steps.total.toLocaleString()}</span>
+                  <span className="text-white font-semibold">{extractNumeric(stats.steps.total).toLocaleString()}</span>
                 </div>
                 <div className="text-xs text-slate-500 mt-1">
-                  {formatTrend(stats.steps.trend)}
+                  {formatTrend(extractNumeric(stats.steps.trend))}
                 </div>
               </div>
             </div>
@@ -378,12 +425,12 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
                 unit=" kcal"
               />
             </div>
-            <div className="mt-3 pt-3 border-t border-slate-700">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 text-sm">Total période</span>
-                <span className="text-white font-semibold">{stats.calories.total.sum.toLocaleString()} kcal</span>
+              <div className="mt-3 pt-3 border-t border-slate-700">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 text-sm">Total période</span>
+                  <span className="text-white font-semibold">{extractNumeric(stats.calories.total.sum).toLocaleString()} kcal</span>
+                </div>
               </div>
-            </div>
           </StatCard>
         )}
 

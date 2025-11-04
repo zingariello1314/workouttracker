@@ -37,29 +37,79 @@ const EnduranceSessionsToday = memo(({ date }) => {
   const { data } = useWorkout();
   const dateStr = getDateStr(date);
 
+  // 🔴 FIX : Fonction pour détecter les sessions mock
+  const isMockSession = useCallback((session) => {
+    const durationMinutes = session.duration || 0;
+    const distance = session.distance || 0;
+    const jumps = session.jumps || 0;
+    
+    // Pattern 1 : Durée excessive (> 24h = 1440 min, ou exactement 3600 min = 60h, ou 1200 min = 20h)
+    if (durationMinutes >= 1440 || durationMinutes === 3600 || durationMinutes === 1200) {
+      return true;
+    }
+    
+    // Pattern 2 : Distance très faible (1.5m) avec durée très élevée (Natation mock)
+    if (distance === 1.5 && durationMinutes > 60) {
+      return true;
+    }
+    
+    // Pattern 3 : Corde à sauter mock (exactement 1200 jumps ET 1200 min)
+    if (jumps === 1200 && durationMinutes === 1200) {
+      return true;
+    }
+    
+    // Pattern 4 : Date future
+    if (session.date) {
+      const sessionDate = new Date(session.date + 'T00:00:00');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (sessionDate > today) {
+        return true;
+      }
+    }
+    
+    // Pattern 5 : Pas de garminId ET source = 'garmin' avec valeurs suspectes
+    if (session.source === 'garmin' && !session.garminId) {
+      if (durationMinutes >= 1440 || durationMinutes === 3600 || durationMinutes === 1200) {
+        return true;
+      }
+      if (distance === 1.5 && durationMinutes > 60) {
+        return true;
+      }
+      if (jumps === 1200 && durationMinutes === 1200) {
+        return true;
+      }
+    }
+    
+    return false;
+  }, []);
+
   // Memoizer les sessions du jour (dépend de data.enduranceData et dateStr)
   const todayEnduranceSessions = useMemo(() => {
     const enduranceData = data?.enduranceData || {};
     const sessions = enduranceData.sessions || {};
     const todaySessions = [];
     
-    // Collecter toutes les sessions d'endurance du jour
+    // Collecter toutes les sessions d'endurance du jour (FILTRER LES MOCK)
     Object.entries(sessions).forEach(([activityType, activitySessions]) => {
       if (Array.isArray(activitySessions)) {
         activitySessions.forEach(session => {
           if (session.date === dateStr) {
-            todaySessions.push({
-              ...session,
-              activityType,
-              activityName: ACTIVITY_NAMES[activityType] || activityType
-            });
+            // 🔴 FIX : Filtrer les sessions mock
+            if (!isMockSession(session)) {
+              todaySessions.push({
+                ...session,
+                activityType,
+                activityName: ACTIVITY_NAMES[activityType] || activityType
+              });
+            }
           }
         });
       }
     });
     
     return todaySessions;
-  }, [data?.enduranceData?.sessions, dateStr]);
+  }, [data?.enduranceData?.sessions, dateStr, isMockSession]);
 
   // Ne pas afficher si aucune session
   if (todayEnduranceSessions.length === 0) {
@@ -129,4 +179,5 @@ const EnduranceSessionsToday = memo(({ date }) => {
 EnduranceSessionsToday.displayName = 'EnduranceSessionsToday';
 
 export default EnduranceSessionsToday;
+
 

@@ -36,21 +36,35 @@ const GarminTab = () => {
   const [periodFilter, setPeriodFilter] = React.useState('all');
   const [customStartDate, setCustomStartDate] = React.useState('');
   const [customEndDate, setCustomEndDate] = React.useState('');
-  const { loadAllData, loadDataForTab, dbReady } = useGarminData();
-  const { importToEndurance } = useGarminImport();
-  
-  // 🟡 FIX #33: Toast pour feedback visuel
-  const { showToast, ToastContainer } = useToast();
   
   // 🟡 FIX #33: Suivre l'état précédent du loading pour détecter la fin de sync
   const prevLoadingRef = React.useRef(false);
   const prevGarminDataRef = React.useRef(null);
+  const autoSyncExecutedRef = React.useRef(false); // 🟢 NOUVEAU : Éviter auto-sync multiple
 
-  const { syncNow, backfill, fetchStatus, loading, baseUrl } = useGarminSync(
+  // Tous les hooks personnalisés dans un ordre constant
+  const { loadAllData, loadDataForTab, dbReady, getLastSyncDate, deleteMockActivities } = useGarminData();
+  const { importToEndurance } = useGarminImport();
+  const { syncNow, backfill, fetchStatus, loading, baseUrl, clearCache } = useGarminSync(
     setGarminData,
     setStatus,
     importToEndurance
   );
+  
+  // 🔴 FIX : Exposer clearCache globalement pour permettre vidage depuis SyncControls
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.clearFrontendCache = clearCache;
+    }
+    return () => {
+      if (typeof window !== 'undefined' && window.clearFrontendCache) {
+        delete window.clearFrontendCache;
+      }
+    };
+  }, [clearCache]);
+  
+  // 🟡 FIX #33: Toast pour feedback visuel - appelé après tous les autres hooks personnalisés
+  const { showToast, ToastContainer } = useToast();
 
   // 🔴 FIX #2: Charger les données depuis IndexedDB au montage avec cleanup
   React.useEffect(() => {
@@ -84,9 +98,54 @@ const GarminTab = () => {
             },
             dailyMetrics: loaded.dailyMetrics || {}
           });
-          const dates = Object.keys(loaded.dailyMetrics || {}).sort();
+          // 🔴 FIX : Trier les dates chronologiquement (plus ancien → plus récent)
+          const dates = Object.keys(loaded.dailyMetrics || {}).sort((a, b) => {
+            // Comparaison numérique pour garantir tri chronologique correct
+            return a.localeCompare(b);
+          });
+          
           if (dates.length > 0 && !selectedDate) {
-            setSelectedDate(dates[dates.length - 1]);
+            // 🔴 FIX : Obtenir "aujourd'hui" en date locale (pas UTC)
+            // Utiliser la date locale pour éviter problèmes de fuseau horaire
+            const now = new Date();
+            const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            
+            // 🔴 FIX : Filtrer les dates mock potentielles (3 décembre si on est en novembre)
+            // Ne garder que les dates qui sont dans le passé ou aujourd'hui
+            const validDates = dates.filter(date => {
+              const dateObj = new Date(date + 'T00:00:00');
+              const todayObj = new Date(todayLocal + 'T00:00:00');
+              // Ne pas inclure les dates futures (probablement des données mock)
+              return dateObj <= todayObj;
+            });
+            
+            // Utiliser les dates valides si disponibles, sinon toutes les dates
+            const datesToUse = validDates.length > 0 ? validDates : dates;
+            
+            // 🔴 FIX : Toujours privilégier aujourd'hui si disponible, sinon la date la plus récente valide
+            const todayIndex = datesToUse.indexOf(todayLocal);
+            
+            if (todayIndex !== -1) {
+              // Aujourd'hui existe dans les données → le sélectionner
+              setSelectedDate(todayLocal);
+            } else {
+              // 🔴 FIX : Si aujourd'hui n'existe pas, sélectionner quand même aujourd'hui
+              // Cela permettra de déclencher une synchronisation si nécessaire
+              setSelectedDate(todayLocal);
+              
+              // Si aujourd'hui n'est pas dans les dates, déclencher une sync automatique
+              if (datesToUse.length > 0) {
+                // Afficher un message informatif
+                console.log(`[GarminTab] Aujourd'hui (${todayLocal}) n'est pas dans les données disponibles. La date la plus récente est ${datesToUse[datesToUse.length - 1]}. Synchronisation recommandée.`);
+              }
+            }
+          } else if (dates.length === 0 && !selectedDate) {
+            // 🔴 FIX : Si aucune date n'est disponible, sélectionner quand même aujourd'hui
+            // Cela permettra de déclencher une synchronisation
+            const now = new Date();
+            const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            setSelectedDate(todayLocal);
+            console.log(`[GarminTab] Aucune donnée disponible. Sélection de aujourd'hui (${todayLocal}) pour permettre la synchronisation.`);
           }
           
           if (process.env.NODE_ENV === 'development') {
@@ -112,6 +171,64 @@ const GarminTab = () => {
       cancelled = true;
     };
   }, [dbReady, loadDataForTab, activeTab, selectedDate, periodFilter, customStartDate, customEndDate]);
+
+  // 🟢 NOUVEAU : Auto-sync intelligente - données toujours à jour si dernière sync > 1h
+  React.useEffect(() => {
+    if (!dbReady || autoSyncExecutedRef.current || loading) return;
+    
+    const checkAndAutoSync = async () => {
+      try {
+        const lastSyncDate = await getLastSyncDate();
+        
+        if (!lastSyncDate) {
+          // Première fois : pas d'auto-sync, l'utilisateur doit faire un backfill ou sync manuel
+          autoSyncExecutedRef.current = true;
+          return;
+        }
+        
+        // Vérifier si la dernière sync date de plus de 30 minutes
+        // 🟢 NOUVEAU : Sync si > 30min pour avoir TOUTES les données à l'heure exacte
+        // (calories, pas, FC, Body Battery, etc. bougent tout au long de la journée)
+        // Délai minimum de 30min pour éviter les syncs trop fréquentes
+        const lastSync = new Date(lastSyncDate);
+        const now = new Date();
+        const minutesSinceLastSync = (now - lastSync) / (1000 * 60);
+        
+        // 🔴 FIX : Obtenir "aujourd'hui" en date locale
+        const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        
+        // 🔴 FIX : Vérifier si aujourd'hui est dans les données disponibles
+        const hasTodayData = garminData?.dailyMetrics?.[todayLocal];
+        
+        // 🔴 FIX : Auto-sync si :
+        // 1. Dernière sync > 30min
+        // 2. OU si aujourd'hui n'est pas dans les données disponibles (même si dernière sync < 30min)
+        if (minutesSinceLastSync > 30 || !hasTodayData) {
+          if (!hasTodayData) {
+            console.log(`[GarminTab] Auto-sync déclenchée car aujourd'hui (${todayLocal}) n'est pas dans les données disponibles`);
+          } else {
+            console.log(`[GarminTab] Auto-sync déclenchée pour données à jour (dernière sync: ${minutesSinceLastSync.toFixed(0)}min)`);
+          }
+          autoSyncExecutedRef.current = true;
+          await syncNow();
+        } else {
+          // Dernière sync < 30min ET aujourd'hui est disponible : données déjà très fraîches, pas besoin de sync
+          console.log(`[GarminTab] Données déjà fraîches (dernière sync: ${minutesSinceLastSync.toFixed(0)}min)`);
+          autoSyncExecutedRef.current = true;
+        }
+      } catch (err) {
+        console.error('[GarminTab] Error checking auto-sync:', err);
+        autoSyncExecutedRef.current = true; // Ne pas bloquer en cas d'erreur
+      }
+    };
+    
+    // Attendre un peu pour laisser le chargement initial se terminer
+    const timeout = setTimeout(() => {
+      checkAndAutoSync();
+    }, 1000);
+    
+    return () => clearTimeout(timeout);
+  }, [dbReady, getLastSyncDate, syncNow, loading]);
 
   // 🟡 FIX #33: Détecter fin de sync pour afficher toast
   React.useEffect(() => {
@@ -252,34 +369,9 @@ const GarminTab = () => {
           </div>
         </div>
 
-        {/* Contrôles de synchronisation */}
-        <SyncControls
-          status={status}
-          loading={loading}
-          syncNow={syncNow}
-          backfill={handleBackfill}
-          startDate={startDate}
-          setStartDate={setStartDate}
-          endDate={endDate}
-          setEndDate={setEndDate}
-          fetchStatus={fetchStatus}
-        />
-
-        {/* 🔴 FIX #81-87: Synchronisation automatique */}
-        <AutoSyncSettings syncFunction={syncNow} />
-
-        {/* 🔴 FIX #81-87: Export PDF */}
-        <PDFExport
-          garminData={garminData}
-          selectedDate={selectedDate}
-          periodFilter={periodFilter}
-          customStartDate={customStartDate}
-          customEndDate={customEndDate}
-        />
-
         {/* 🟡 FIX #15: Loading state visuel pendant la synchronisation */}
         {loading && (
-          <div className="relative">
+          <div className="relative mb-6">
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
@@ -292,7 +384,7 @@ const GarminTab = () => {
 
         {/* Statut serveur */}
         {baseUrl && (
-          <div className="mt-4 text-sm text-slate-400">
+          <div className="mb-4 text-sm text-slate-400">
             Serveur: {baseUrl}
           </div>
         )}
@@ -530,6 +622,39 @@ const GarminTab = () => {
             <p className="text-sm">Synchronisez vos données Garmin pour commencer.</p>
           </div>
         )}
+
+        {/* Séparateur visuel avant les contrôles de synchronisation */}
+        <div className="mt-12 mb-8 border-t border-slate-700"></div>
+
+        {/* Contrôles de synchronisation - Déplacés en bas */}
+        <div className="space-y-6">
+          {/* Contrôles de synchronisation */}
+          <SyncControls
+            status={status}
+            loading={loading}
+            syncNow={syncNow}
+            backfill={handleBackfill}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
+            fetchStatus={fetchStatus}
+            deleteMockActivities={deleteMockActivities}
+            clearCache={clearCache}
+          />
+
+          {/* 🔴 FIX #81-87: Synchronisation automatique */}
+          <AutoSyncSettings syncFunction={syncNow} />
+
+          {/* 🔴 FIX #81-87: Export PDF */}
+          <PDFExport
+            garminData={garminData}
+            selectedDate={selectedDate}
+            periodFilter={periodFilter}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
+          />
+        </div>
         </div>
         </div>
       </GarminProvider>

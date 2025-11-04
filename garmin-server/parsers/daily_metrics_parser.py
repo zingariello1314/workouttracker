@@ -11,6 +11,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.helpers import safe_int, safe_float, print_debug, normalize_datetime_to_utc, recursive_find_value
 from utils.time_series_compression import optimize_time_series, decompress_time_series_delta
+# 🔴 DÉSACTIVÉ : Interpolation désactivée pour garder uniquement les données réelles de Garmin
+# from utils.heart_rate_interpolation import interpolate_heart_rate_time_series
 from parsers.validation_ranges import (
     HR_MIN, HR_MAX, HR_RESTING_MIN, HR_RESTING_MAX,
     CALORIES_MIN, CALORIES_MAX,
@@ -35,13 +37,21 @@ def parse_daily_steps(steps_data: Any, date_str: str) -> int:
         int: Nombre de pas
     """
     if isinstance(steps_data, dict):
-        # 🔴 FIX #9: Validation de plage pour steps
-        return safe_int(
+        # 🔴 FIX : Chercher les pas dans plusieurs champs possibles, avec priorité
+        # Garmin API peut avoir les pas dans différents champs selon le contexte
+        steps_value = (
             steps_data.get('totalSteps') or
             steps_data.get('steps') or
-            steps_data.get('value'),
+            steps_data.get('value') or
+            steps_data.get('totalStepsValue') or
+            steps_data.get('stepsValue') or
             0
         )
+        # 🔴 FIX #9: Validation de plage pour steps
+        parsed = safe_int(steps_value, 0, warn_on_fail=True, min_value=STEPS_MIN, max_value=STEPS_MAX, context=f"dailyMetrics.steps.{date_str}")
+        if parsed > 0:
+            print_debug(f"✅ Parsed steps for {date_str}: {parsed} (from {steps_value})")
+        return parsed
     elif isinstance(steps_data, list) and len(steps_data) > 0:
         # Parfois c'est une liste d'objets
         total_steps = 0
@@ -291,7 +301,7 @@ def parse_daily_calories(stats: Dict, date_str: str = "", steps_data: Any = None
     return result
 
 
-def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: Any = None) -> Dict:
+def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: Any = None, activity_hr_time_series: Optional[List[Dict[str, Any]]] = None, activities: Optional[List[Dict[str, Any]]] = None) -> Dict:
     """
     Parse la fréquence cardiaque quotidienne depuis stats et time series.
     
@@ -432,6 +442,49 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
     if heart_rate["avg"] == 0 and count_hr > 0:
         heart_rate["avg"] = round(sum_hr / count_hr)
     
+    # 🟢 NOUVEAU : Fusionner time series depuis activités si disponible
+    if activity_hr_time_series and isinstance(activity_hr_time_series, list) and len(activity_hr_time_series) > 0:
+        print_debug(f"🔄 Merging {len(activity_hr_time_series)} HR time series points from activities for {date_str}")
+        
+        # Créer un dict pour déduplication par timestamp
+        ts_dict = {}
+        for point in ts:
+            timestamp = point.get('timestamp')
+            if timestamp:
+                ts_dict[timestamp] = point
+        
+        # Fusionner les points des activités (garder le plus récent en cas de doublon)
+        for activity_point in activity_hr_time_series:
+            if isinstance(activity_point, dict):
+                timestamp = activity_point.get('timestamp')
+                bpm = activity_point.get('bpm')
+                
+                if timestamp and bpm and safe_int(bpm, 0) > 0:
+                    # Normaliser le timestamp
+                    timestamp_normalized = normalize_datetime_to_utc(timestamp)
+                    if timestamp_normalized:
+                        # Si déjà présent, garder celui avec la valeur la plus élevée (probablement plus précis depuis activité)
+                        existing = ts_dict.get(timestamp_normalized)
+                        if existing:
+                            existing_bpm = safe_int(existing.get('bpm'), 0)
+                            new_bpm = safe_int(bpm, 0)
+                            if new_bpm > existing_bpm:
+                                ts_dict[timestamp_normalized] = {
+                                    "timestamp": timestamp_normalized,
+                                    "bpm": new_bpm
+                                }
+                        else:
+                            ts_dict[timestamp_normalized] = {
+                                "timestamp": timestamp_normalized,
+                                "bpm": safe_int(bpm, 0)
+                            }
+        
+        # Reconvertir en liste et trier
+        ts = list(ts_dict.values())
+        ts.sort(key=lambda x: x.get('timestamp', ''))
+        
+        print_debug(f"✅ Merged HR time series: {len(ts)} total points (from daily: {len(ts) - len(activity_hr_time_series)}, from activities: {len(activity_hr_time_series)})")
+    
     # 🔴 FIX #24: Downsampling optimal avec compression intelligente
     if len(ts) > 0:
         try:
@@ -442,6 +495,11 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
             print_debug(f"⚠️ Error optimizing time series for {date_str}, using raw data: {e}")
             # En cas d'erreur, utiliser les données brutes sans compression
             ts = ts[:288] if len(ts) > 288 else ts  # Limiter à 288 points max
+    
+    # 🔴 DÉSACTIVÉ : Interpolation désactivée pour garder uniquement les données réelles de Garmin
+    # On garde uniquement les données réelles provenant de l'API Garmin
+    if len(ts) < 50:
+        print_debug(f"ℹ️ Time series FC pour {date_str}: {len(ts)} points réels (données limitées mais authentiques)")
     
     heart_rate["timeSeries"] = ts
     

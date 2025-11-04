@@ -112,6 +112,13 @@ export function formatPace(secondsPer100m) {
  * Supprime les zéros inutiles après la virgule
  */
 export function formatDistance(km) {
+  // 🔴 FIX : Gérer les objets (cas où distance serait un objet avec average/min/max)
+  if (km !== null && km !== undefined && typeof km === 'object') {
+    // Si c'est un objet, essayer d'extraire une valeur numérique
+    const numericValue = km.value || km.average || km.avg || km.total || km.distance || 0;
+    km = typeof numericValue === 'number' ? numericValue : 0;
+  }
+  
   if (km === null || km === undefined || isNaN(km)) return '0 km';
   if (km === 0) return '0 km';
   if (km < 1) {

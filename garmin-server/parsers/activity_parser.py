@@ -5,7 +5,7 @@ Parse les activités (swimming, jump rope, cardio) depuis les données Garmin
 import sys
 import os
 import json
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 
 # Ajouter le répertoire parent au path pour les imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -430,85 +430,24 @@ def parse_common_metrics(act: Dict[str, Any], act_details: Optional[Dict[str, An
                 "deviceVersionPk": device_meta.get('deviceVersionPk')
             }
     
-    # PHASE 3.3 : Training Effect (Aerobic et Anaerobic) et Recovery Time
-    # Ces métriques sont généralement dans activitySummaryDTO ou metricsDTO
-    training_effect = {}
-    recovery_time = None
+    # 🟢 PRIORITÉ 5 : Utiliser le parser dédié pour toutes les métriques de performance
+    # Ce parser est plus robuste et cherche dans tous les champs possibles
+    from parsers.performance_parser import parse_all_performance_metrics
     
-    # Chercher Training Effect dans summaryDTO (champs possibles)
-    if isinstance(summary_dto, dict):
-        # Training Effect Aerobic (0.0-5.0)
-        aerobic_effect = safe_float(
-            summary_dto.get('aerobicTrainingEffect') or
-            summary_dto.get('aerobicTrainingEffectValue') or
-            summary_dto.get('trainingEffectAerobic') or
-            summary_dto.get('aerobicTE') or
-            act.get('aerobicTrainingEffect') or
-            (act_details.get('aerobicTrainingEffect') if isinstance(act_details, dict) else None),
-            None
-        )
-        
-        # Training Effect Anaerobic (0.0-5.0)
-        anaerobic_effect = safe_float(
-            summary_dto.get('anaerobicTrainingEffect') or
-            summary_dto.get('anaerobicTrainingEffectValue') or
-            summary_dto.get('trainingEffectAnaerobic') or
-            summary_dto.get('anaerobicTE') or
-            act.get('anaerobicTrainingEffect') or
-            (act_details.get('anaerobicTrainingEffect') if isinstance(act_details, dict) else None),
-            None
-        )
-        
-        if aerobic_effect is not None:
-            training_effect["aerobic"] = round(aerobic_effect, 1)
-        if anaerobic_effect is not None:
-            training_effect["anaerobic"] = round(anaerobic_effect, 1)
-        
-        # Recovery Time (en heures)
-        recovery_hours = safe_float(
-            summary_dto.get('recoveryTime') or
-            summary_dto.get('recoveryTimeValue') or
-            summary_dto.get('suggestedRecoveryTime') or
-            summary_dto.get('timeToRecover') or
-            act.get('recoveryTime') or
-            (act_details.get('recoveryTime') if isinstance(act_details, dict) else None),
-            None
-        )
-        if recovery_hours is not None and recovery_hours > 0:
-            recovery_time = round(recovery_hours, 1)
+    performance_metrics = parse_all_performance_metrics(
+        summary_dto=summary_dto,
+        act=act,
+        act_details=act_details,
+        act_id=act_id,
+        date_str=act_date
+    )
     
-    # Si pas trouvé dans summary_dto, chercher dans metricsDTO
-    if not training_effect and not recovery_time:
-        metrics_dto = act.get('metricsDTO') or (act_details.get('metricsDTO') if isinstance(act_details, dict) else {})
-        if isinstance(metrics_dto, dict):
-            aerobic_effect = safe_float(
-                metrics_dto.get('aerobicTrainingEffect') or
-                metrics_dto.get('aerobicTrainingEffectValue') or
-                metrics_dto.get('trainingEffectAerobic'),
-                None
-            )
-            anaerobic_effect = safe_float(
-                metrics_dto.get('anaerobicTrainingEffect') or
-                metrics_dto.get('anaerobicTrainingEffectValue') or
-                metrics_dto.get('trainingEffectAnaerobic'),
-                None
-            )
-            recovery_hours = safe_float(
-                metrics_dto.get('recoveryTime') or
-                metrics_dto.get('recoveryTimeValue'),
-                None
-            )
-            
-            if aerobic_effect is not None:
-                training_effect["aerobic"] = round(aerobic_effect, 1)
-            if anaerobic_effect is not None:
-                training_effect["anaerobic"] = round(anaerobic_effect, 1)
-            if recovery_hours is not None and recovery_hours > 0:
-                recovery_time = round(recovery_hours, 1)
+    # Extraire Training Effect et Recovery Time pour compatibilité avec code existant
+    training_effect = performance_metrics.get("trainingEffect", {})
+    recovery_time = performance_metrics.get("recoveryTime")
     
-    # Debug log si trouvé
-    if training_effect or recovery_time:
-        print_debug(f"✅ Training Effect/Recovery for activity {act_id}: TE={training_effect}, Recovery={recovery_time}h")
+    # 🟢 PRIORITÉ 5 : Ajouter toutes les autres métriques de performance trouvées
+    # Ces métriques seront ajoutées à entry_base plus tard
     
     # Construire entry_base
     entry_base = {
@@ -544,9 +483,14 @@ def parse_common_metrics(act: Dict[str, Any], act_details: Optional[Dict[str, An
             "min": min_elevation if min_elevation else None
         } if (elevation_gain > 0 or elevation_loss > 0 or max_elevation or min_elevation) else None,
         "deviceInfo": device_info if device_info else None,
-        # PHASE 3.3 : Training Effect et Recovery Time
+        # 🟢 PRIORITÉ 5 : Training Effect et Recovery Time (pour compatibilité)
         "trainingEffect": training_effect if training_effect else None,
         "recoveryTime": recovery_time,  # en heures
+        # 🟢 PRIORITÉ 5 : Autres métriques de performance (VO2 max, Training Status, etc.)
+        "vo2Max": performance_metrics.get("vo2Max"),
+        "trainingStatus": performance_metrics.get("trainingStatus"),
+        "trainingLoad": performance_metrics.get("trainingLoad"),
+        "performanceCondition": performance_metrics.get("performanceCondition"),
         "source": "garmin"
     }
     
@@ -1763,5 +1707,108 @@ def parse_jump_rope_metrics(entry_base: Dict[str, Any], summary_dto: Dict[str, A
         print_debug(f"✅ Final jump rope activity {act_id} - jumps: {final_jumps}, connectIQ keys: {list(connect_iq.keys())}")
     else:
         print_debug(f"❌ Final jump rope activity {act_id} - NO JUMPS FOUND after all searches")
+
+
+def extract_activity_heart_rate_time_series(act_details: Optional[Dict[str, Any]], act_summary: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """
+    Extrait la time series de fréquence cardiaque depuis les détails d'activité.
     
-    return entry_base, connect_iq
+    Args:
+        act_details: Détails complets de l'activité (depuis get_activity)
+        act_summary: Résumé de l'activité (depuis get_activities_by_date)
+        
+    Returns:
+        List[Dict]: Time series formatée [{timestamp, bpm}], liste vide si pas de données
+    """
+    time_series = []
+    
+    if not act_details or not isinstance(act_details, dict):
+        return time_series
+    
+    # Chercher dans plusieurs structures possibles
+    hr_dto = (
+        act_details.get('heartRateDTO') or
+        act_details.get('heartRate') or
+        act_details.get('hr') or
+        {}
+    )
+    
+    if not isinstance(hr_dto, dict):
+        hr_dto = {}
+    
+    # Extraire les valeurs depuis plusieurs champs possibles
+    hr_values = (
+        hr_dto.get('heartRateValues') or
+        hr_dto.get('values') or
+        hr_dto.get('data') or
+        hr_dto.get('timeSeries') or
+        []
+    )
+    
+    # Si pas dans hr_dto, chercher directement dans act_details
+    if not hr_values or len(hr_values) == 0:
+        hr_values = (
+            act_details.get('heartRateValues') or
+            act_details.get('hrValues') or
+            act_details.get('heartRateTimeSeries') or
+            []
+        )
+    
+    if not hr_values or not isinstance(hr_values, list):
+        return time_series
+    
+    # Convertir au format standard [{timestamp, bpm}]
+    for point in hr_values:
+        try:
+            # Format 1: [timestamp, bpm] (array)
+            if isinstance(point, list) and len(point) >= 2:
+                timestamp_raw = point[0]
+                bpm_raw = point[1]
+                
+                if bpm_raw is not None and safe_int(bpm_raw, 0) > 0:
+                    timestamp = normalize_datetime_to_utc(timestamp_raw)
+                    bpm = safe_int(bpm_raw, 0)
+                    
+                    if timestamp and bpm > 0:
+                        time_series.append({
+                            "timestamp": timestamp,
+                            "bpm": bpm
+                        })
+            
+            # Format 2: {timestamp, bpm} ou {time, value} ou {timestamp, heartRate} (dict)
+            elif isinstance(point, dict):
+                bpm = (
+                    point.get('bpm') or
+                    point.get('value') or
+                    point.get('heartRate') or
+                    point.get('hr') or
+                    None
+                )
+                
+                timestamp_raw = (
+                    point.get('timestamp') or
+                    point.get('time') or
+                    point.get('startTimeGMT') or
+                    point.get('startTimeLocal') or
+                    None
+                )
+                
+                if bpm is not None and timestamp_raw:
+                    bpm_val = safe_int(bpm, 0)
+                    if bpm_val > 0:
+                        timestamp = normalize_datetime_to_utc(timestamp_raw)
+                        if timestamp:
+                            time_series.append({
+                                "timestamp": timestamp,
+                                "bpm": bpm_val
+                            })
+        except Exception as e:
+            print_debug(f"⚠️ Error parsing HR time series point: {e}")
+            continue
+    
+    if len(time_series) > 0:
+        # Trier par timestamp
+        time_series.sort(key=lambda x: x.get('timestamp', ''))
+        print_debug(f"✅ Extracted {len(time_series)} HR time series points from activity")
+    
+    return time_series

@@ -224,12 +224,21 @@ export const useGarminData = () => {
                 source: item.source || existingData.source || 'garmin',
                 lastSynced: new Date().toISOString(),
                 calories: item.calories || existingData.calories,
-                intensityMinutes: item.intensityMinutes || existingData.intensityMinutes,
-                connectIQ: item.connectIQ || existingData.connectIQ,
-                swimmingMetrics: item.swimmingMetrics || existingData.swimmingMetrics,
-                timeMetrics: item.timeMetrics || existingData.timeMetrics,
-              };
-              localStorage.setItem(key, JSON.stringify(merged));
+                  intensityMinutes: item.intensityMinutes || existingData.intensityMinutes,
+                  connectIQ: item.connectIQ || existingData.connectIQ,
+                  swimmingMetrics: item.swimmingMetrics || existingData.swimmingMetrics,
+                  timeMetrics: item.timeMetrics || existingData.timeMetrics,
+                  // 🟢 PRIORITÉ 3 : Préserver zones de FC
+                  heartRateZones: item.heartRateZones || existingData.heartRateZones,
+                  // 🟢 PRIORITÉ 5 : Préserver métriques de performance
+                  trainingEffect: item.trainingEffect || existingData.trainingEffect,
+                  recoveryTime: item.recoveryTime ?? existingData.recoveryTime,
+                  vo2Max: item.vo2Max ?? existingData.vo2Max,
+                  trainingStatus: item.trainingStatus || existingData.trainingStatus,
+                  trainingLoad: item.trainingLoad ?? existingData.trainingLoad,
+                  performanceCondition: item.performanceCondition || existingData.performanceCondition,
+                };
+                localStorage.setItem(key, JSON.stringify(merged));
             }
           }
         }
@@ -298,6 +307,15 @@ export const useGarminData = () => {
                   connectIQ: item.connectIQ || existing.connectIQ,
                   swimmingMetrics: item.swimmingMetrics || existing.swimmingMetrics,
                   timeMetrics: item.timeMetrics || existing.timeMetrics,
+                  // 🟢 PRIORITÉ 3 : Préserver zones de FC (garder la plus récente)
+                  heartRateZones: (newSync > existingSync ? item.heartRateZones : existing.heartRateZones) || item.heartRateZones || existing.heartRateZones,
+                  // 🟢 PRIORITÉ 5 : Préserver métriques de performance (garder la plus récente)
+                  trainingEffect: (newSync > existingSync ? item.trainingEffect : existing.trainingEffect) || item.trainingEffect || existing.trainingEffect,
+                  recoveryTime: (newSync > existingSync ? item.recoveryTime : existing.recoveryTime) ?? item.recoveryTime ?? existing.recoveryTime,
+                  vo2Max: (newSync > existingSync ? item.vo2Max : existing.vo2Max) ?? item.vo2Max ?? existing.vo2Max,
+                  trainingStatus: (newSync > existingSync ? item.trainingStatus : existing.trainingStatus) || item.trainingStatus || existing.trainingStatus,
+                  trainingLoad: (newSync > existingSync ? item.trainingLoad : existing.trainingLoad) ?? item.trainingLoad ?? existing.trainingLoad,
+                  performanceCondition: (newSync > existingSync ? item.performanceCondition : existing.performanceCondition) || item.performanceCondition || existing.performanceCondition,
                 };
                 await new Promise((resolve, reject) => {
                   const req = store.put(merged);
@@ -367,10 +385,35 @@ export const useGarminData = () => {
               .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
           };
           
+          // 🟢 PRIORITÉ 2 : Fusionner time series pour bodyBattery et stress (localStorage fallback)
           const merged = existing 
             ? {
                 ...existing,
                 ...metrics,
+                // 🔴 FIX : Toujours préférer les nouvelles valeurs pour les métriques simples (steps, distance, floors)
+                // Si metrics.steps existe (défini), l'utiliser pour remplacer existing.steps
+                // Cela garantit que les données les plus récentes remplacent toujours les anciennes
+                // Exception : si metrics.steps = 0 et existing.steps > 0, garder existing.steps (évite d'écraser avec 0)
+                // Mais si metrics.steps > existing.steps, toujours utiliser metrics.steps (données plus récentes)
+                steps: (() => {
+                  // 🔴 DEBUG : Logger la fusion des pas pour déboguer (localStorage)
+                  if (metrics.steps !== undefined && metrics.steps !== null) {
+                    const existingSteps = existing.steps || 0;
+                    const newSteps = metrics.steps;
+                    const finalSteps = (newSteps > 0 && newSteps >= existingSteps) ? newSteps : (existingSteps || newSteps || 0);
+                    if (existingSteps !== finalSteps || newSteps !== existingSteps) {
+                      console.log(`[GarminData] Steps fusion (localStorage) for ${date}: existing=${existingSteps}, new=${newSteps}, final=${finalSteps}`);
+                    }
+                    return finalSteps;
+                  }
+                  return existing.steps || 0;
+                })(),
+                distance: (metrics.distance !== undefined && metrics.distance !== null) 
+                  ? ((metrics.distance > 0 && metrics.distance >= (existing.distance || 0)) ? metrics.distance : (existing.distance || metrics.distance || 0))
+                  : (existing.distance || 0),
+                floors: (metrics.floors !== undefined && metrics.floors !== null) 
+                  ? ((metrics.floors > 0 && metrics.floors >= (existing.floors || 0)) ? metrics.floors : (existing.floors || metrics.floors || 0))
+                  : (existing.floors || 0),
                 calories: { ...existing.calories, ...(metrics.calories || {}) },
                 heartRate: { 
                   ...existing.heartRate, 
@@ -380,7 +423,40 @@ export const useGarminData = () => {
                     ...(metrics.heartRate?.timeSeries || [])
                   ]),
                 },
-                respiration: metrics.respiration || existing.respiration,
+                // 🟢 PRIORITÉ 2 : Fusionner bodyBattery avec time series
+                bodyBattery: metrics.bodyBattery ? {
+                  ...existing.bodyBattery,
+                  ...metrics.bodyBattery,
+                  timeSeries: deduplicateTimeSeries([
+                    ...(existing.bodyBattery?.timeSeries || []),
+                    ...(metrics.bodyBattery?.timeSeries || [])
+                  ]),
+                  current: metrics.bodyBattery.current ?? existing.bodyBattery?.current,
+                } : existing.bodyBattery,
+                // 🟢 PRIORITÉ 2 : Fusionner stress avec time series
+                stress: metrics.stress ? {
+                  ...existing.stress,
+                  ...metrics.stress,
+                  timeSeries: deduplicateTimeSeries([
+                    ...(existing.stress?.timeSeries || []),
+                    ...(metrics.stress?.timeSeries || [])
+                  ]),
+                  average: metrics.stress.average ?? existing.stress?.average,
+                  max: metrics.stress.max ?? existing.stress?.max,
+                } : existing.stress,
+                // 🟢 PRIORITÉ 2 : Fusionner respiration avec time series si disponibles
+                respiration: metrics.respiration ? {
+                  ...existing.respiration,
+                  ...metrics.respiration,
+                  // Fusionner time series si présentes
+                  timeSeries: deduplicateTimeSeries([
+                    ...(existing.respiration?.timeSeries || []),
+                    ...(metrics.respiration?.timeSeries || [])
+                  ]),
+                  // Préserver awake/sleep
+                  awake: metrics.respiration.awake ?? existing.respiration?.awake,
+                  sleep: metrics.respiration.sleep ?? existing.respiration?.sleep,
+                } : existing.respiration,
                 sleep: { ...existing.sleep, ...(metrics.sleep || {}) },
                 intensityMinutes: metrics.intensityMinutes || existing.intensityMinutes,
                 lastSynced: new Date().toISOString(),
@@ -436,10 +512,35 @@ export const useGarminData = () => {
           });
           
           // Fusionner les métriques : nouvelles valeurs remplacent les anciennes, mais préserver ce qui n'existe pas
+          // 🟢 PRIORITÉ 2 : Fusionner time series pour bodyBattery et stress (comme pour heartRate)
           const merged = existing 
             ? {
                 ...existing,
                 ...metrics,
+                // 🔴 FIX : Toujours préférer les nouvelles valeurs pour les métriques simples (steps, distance, floors)
+                // Si metrics.steps existe (défini), l'utiliser pour remplacer existing.steps
+                // Cela garantit que les données les plus récentes remplacent toujours les anciennes
+                // Exception : si metrics.steps = 0 et existing.steps > 0, garder existing.steps (évite d'écraser avec 0)
+                // Mais si metrics.steps > existing.steps, toujours utiliser metrics.steps (données plus récentes)
+                steps: (() => {
+                  // 🔴 DEBUG : Logger la fusion des pas pour déboguer (IndexedDB)
+                  if (metrics.steps !== undefined && metrics.steps !== null) {
+                    const existingSteps = existing.steps || 0;
+                    const newSteps = metrics.steps;
+                    const finalSteps = (newSteps > 0 && newSteps >= existingSteps) ? newSteps : (existingSteps || newSteps || 0);
+                    if (existingSteps !== finalSteps || newSteps !== existingSteps) {
+                      console.log(`[GarminData] Steps fusion (IndexedDB) for ${date}: existing=${existingSteps}, new=${newSteps}, final=${finalSteps}`);
+                    }
+                    return finalSteps;
+                  }
+                  return existing.steps || 0;
+                })(),
+                distance: (metrics.distance !== undefined && metrics.distance !== null) 
+                  ? ((metrics.distance > 0 && metrics.distance >= (existing.distance || 0)) ? metrics.distance : (existing.distance || metrics.distance || 0))
+                  : (existing.distance || 0),
+                floors: (metrics.floors !== undefined && metrics.floors !== null) 
+                  ? ((metrics.floors > 0 && metrics.floors >= (existing.floors || 0)) ? metrics.floors : (existing.floors || metrics.floors || 0))
+                  : (existing.floors || 0),
                 // Fusionner les objets imbriqués
                 calories: { ...existing.calories, ...(metrics.calories || {}) },
                 heartRate: { 
@@ -451,7 +552,48 @@ export const useGarminData = () => {
                     ...(metrics.heartRate?.timeSeries || [])
                   ]),
                 },
-                respiration: metrics.respiration || existing.respiration,
+                // 🟢 PRIORITÉ 3 : Fusionner zones de FC quotidiennes (garder la plus récente)
+                heartRateZones: metrics.heartRateZones || existing.heartRateZones,
+                // 🟢 PRIORITÉ 5 : Fusionner métriques de performance quotidiennes (garder la plus récente)
+                performance: metrics.performance || existing.performance,
+                // 🟢 PRIORITÉ 2 : Fusionner bodyBattery avec time series
+                bodyBattery: metrics.bodyBattery ? {
+                  ...existing.bodyBattery,
+                  ...metrics.bodyBattery,
+                  // Fusionner time series si présentes
+                  timeSeries: deduplicateTimeSeries([
+                    ...(existing.bodyBattery?.timeSeries || []),
+                    ...(metrics.bodyBattery?.timeSeries || [])
+                  ]),
+                  // Garder la valeur current la plus récente
+                  current: metrics.bodyBattery.current ?? existing.bodyBattery?.current,
+                } : existing.bodyBattery,
+                // 🟢 PRIORITÉ 2 : Fusionner stress avec time series
+                stress: metrics.stress ? {
+                  ...existing.stress,
+                  ...metrics.stress,
+                  // Fusionner time series si présentes
+                  timeSeries: deduplicateTimeSeries([
+                    ...(existing.stress?.timeSeries || []),
+                    ...(metrics.stress?.timeSeries || [])
+                  ]),
+                  // Garder les valeurs average/max les plus récentes
+                  average: metrics.stress.average ?? existing.stress?.average,
+                  max: metrics.stress.max ?? existing.stress?.max,
+                } : existing.stress,
+                // 🟢 PRIORITÉ 2 : Fusionner respiration avec time series si disponibles
+                respiration: metrics.respiration ? {
+                  ...existing.respiration,
+                  ...metrics.respiration,
+                  // Fusionner time series si présentes
+                  timeSeries: deduplicateTimeSeries([
+                    ...(existing.respiration?.timeSeries || []),
+                    ...(metrics.respiration?.timeSeries || [])
+                  ]),
+                  // Préserver awake/sleep
+                  awake: metrics.respiration.awake ?? existing.respiration?.awake,
+                  sleep: metrics.respiration.sleep ?? existing.respiration?.sleep,
+                } : existing.respiration,
                 sleep: { ...existing.sleep, ...(metrics.sleep || {}) },
                 intensityMinutes: metrics.intensityMinutes || existing.intensityMinutes,
                 lastSynced: new Date().toISOString(),
@@ -1050,9 +1192,28 @@ export const useGarminData = () => {
         req.onsuccess = (e) => {
           const cursor = e.target.result;
           if (cursor) {
-            if (cursor.value.date < cutoffStr && cursor.value.heartRate?.timeSeries) {
-              cursor.value.heartRate.timeSeries = [];
-              cursor.update(cursor.value);
+            if (cursor.value.date < cutoffStr) {
+              // 🟢 PRIORITÉ 2 : Purger time series pour heartRate, bodyBattery, stress et respiration
+              let updated = false;
+              if (cursor.value.heartRate?.timeSeries) {
+                cursor.value.heartRate.timeSeries = [];
+                updated = true;
+              }
+              if (cursor.value.bodyBattery?.timeSeries) {
+                cursor.value.bodyBattery.timeSeries = [];
+                updated = true;
+              }
+              if (cursor.value.stress?.timeSeries) {
+                cursor.value.stress.timeSeries = [];
+                updated = true;
+              }
+              if (cursor.value.respiration?.timeSeries) {
+                cursor.value.respiration.timeSeries = [];
+                updated = true;
+              }
+              if (updated) {
+                cursor.update(cursor.value);
+              }
             }
             cursor.continue();
           } else {
@@ -1066,6 +1227,341 @@ export const useGarminData = () => {
     }
   }, [dbReady]);
 
+  /**
+   * Récupère la date de dernière synchronisation
+   * 🟢 NOUVEAU : Gestion de la dernière date de sync pour synchronisation incrémentale
+   * 
+   * @returns {Promise<string|null>} Date de dernière sync (YYYY-MM-DD) ou null si jamais sync
+   */
+  const getLastSyncDate = useCallback(async () => {
+    if (!dbReady) return null;
+    
+    try {
+      const db = await openDB();
+      if (!db || useFallback) {
+        // Fallback localStorage
+        const lastSync = localStorage.getItem('garmin_lastSyncDate');
+        return lastSync || null;
+      }
+
+      const tx = db.transaction([STORE_DEVICE_META], 'readonly');
+      const store = tx.objectStore(STORE_DEVICE_META);
+      
+      const meta = await new Promise((resolve, reject) => {
+        const req = store.get('lastSyncDate');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+
+      return meta?.value || null;
+    } catch (err) {
+      console.error('[GarminData] Error getting last sync date:', err);
+      // Fallback localStorage
+      const lastSync = localStorage.getItem('garmin_lastSyncDate');
+      return lastSync || null;
+    }
+  }, [dbReady]);
+
+  /**
+   * 🔴 NOUVEAU : Supprime toutes les données mock (activités + métriques quotidiennes)
+   * Identifie les données mock par leurs caractéristiques spécifiques
+   * Supprime aussi les métriques avec des dates futures (probablement des données mock)
+   * @returns {Promise<{activities: number, metrics: number}>} Nombre d'éléments supprimés
+   */
+  const deleteMockActivities = useCallback(async () => {
+    if (!dbReady) return { activities: 0, metrics: 0 };
+    
+    let deletedActivities = 0;
+    let deletedMetrics = 0;
+    
+    // Caractéristiques des activités mock :
+    // - Swimming: exactement 60 laps, distance 1.5, duration 3600
+    // - JumpRope: exactement 1200 jumps, duration 1200
+    const isMockActivity = (activity) => {
+      if (activity.type === 'swimming') {
+        return activity.laps === 60 && 
+               activity.distance === 1.5 && 
+               activity.duration === 3600 &&
+               activity.avgHR === 145 &&
+               activity.maxHR === 172 &&
+               activity.calories === 450;
+      }
+      if (activity.type === 'jumpRope') {
+        return activity.jumps === 1200 && 
+               activity.duration === 1200 &&
+               activity.avgHR === 132 &&
+               activity.maxHR === 158 &&
+               activity.calories === 180;
+      }
+      return false;
+    };
+    
+    // Caractéristiques des métriques quotidiennes mock :
+    // - Pattern 1 : valeurs exactes (8543 pas, 2340 calories, etc.)
+    // - Pattern 2 : valeurs "rondes" suspectes (7233, 2796 peuvent être d'autres patterns mock)
+    // - Pattern 3 : combinaisons de valeurs qui semblent artificielles
+    const isMockMetric = (metric) => {
+      // Pattern 1 : Valeurs exactes du mock original
+      const isExactMock = metric.steps === 8543 &&
+             metric.distance === 6.2 &&
+             metric.floors === 12 &&
+             metric.calories?.total === 2340 &&
+             metric.calories?.active === 540 &&
+             metric.calories?.resting === 1800 &&
+             metric.heartRate?.resting === 58 &&
+             metric.heartRate?.max === 172 &&
+             metric.heartRate?.avg === 78 &&
+             metric.sleep?.duration === 7.5 &&
+             metric.sleep?.quality === 82 &&
+             metric.stress?.average === 32 &&
+             metric.stress?.max === 65 &&
+             metric.bodyBattery?.current === 67 &&
+             metric.bodyBattery?.max === 95 &&
+             metric.bodyBattery?.min === 12 &&
+             metric.respiration?.average === 14 &&
+             metric.respiration?.max === 22 &&
+             metric.respiration?.min === 11 &&
+             metric.spo2?.average === 97 &&
+             metric.spo2?.min === 94;
+      
+      // Pattern 2 : Détecter des valeurs "trop rondes" ou suspectes
+      // Si toutes les valeurs sont exactement des nombres ronds, c'est suspect
+      const hasSuspiciousPattern = (
+        metric.steps && metric.steps > 0 && metric.steps % 100 === 0 && // Nombre rond (ex: 7200, 7300)
+        metric.distance && metric.distance > 0 && metric.distance % 0.1 === 0 && // Distance ronde
+        metric.calories?.total && metric.calories.total > 0 && metric.calories.total % 100 === 0 // Calories rondes
+      );
+      
+      // Pattern 3 : Vérifier si les valeurs correspondent à un autre pattern mock connu
+      // (par exemple, si on a des valeurs similaires mais légèrement différentes)
+      const isSimilarToMock = (
+        metric.steps >= 7000 && metric.steps <= 9000 && // Dans une plage suspecte
+        metric.distance >= 6.0 && metric.distance <= 6.5 && // Distance similaire
+        metric.calories?.total >= 2300 && metric.calories.total <= 2800 // Calories similaires
+      ) && (
+        // Vérifier que les autres métriques sont aussi dans des plages suspectes
+        (!metric.heartRate?.resting || (metric.heartRate.resting >= 50 && metric.heartRate.resting <= 65)) &&
+        (!metric.sleep?.duration || (metric.sleep.duration >= 6.0 && metric.sleep.duration <= 8.0))
+      );
+      
+      return isExactMock || (hasSuspiciousPattern && isSimilarToMock);
+    };
+    
+    try {
+      if (useFallback || !window.indexedDB) {
+        // Supprimer activités depuis localStorage
+        const activityKeys = getAllStorageKeys(STORE_ACTIVITIES);
+        for (const key of activityKeys) {
+          try {
+            const itemStr = localStorage.getItem(getStorageKey(STORE_ACTIVITIES, key));
+            if (itemStr) {
+              const item = JSON.parse(itemStr);
+              if (isMockActivity(item)) {
+                localStorage.removeItem(getStorageKey(STORE_ACTIVITIES, key));
+                deletedActivities++;
+              }
+            }
+          } catch (e) {
+            console.warn('[GarminData] Error checking mock activity in localStorage:', key, e);
+          }
+        }
+        
+        // Supprimer métriques depuis localStorage
+        // 🔴 FIX : Obtenir "aujourd'hui" en date locale pour filtrer les dates futures
+        const now = new Date();
+        const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        
+        const metricsKeys = getAllStorageKeys(STORE_DAILY_METRICS);
+        for (const key of metricsKeys) {
+          try {
+            const itemStr = localStorage.getItem(getStorageKey(STORE_DAILY_METRICS, key));
+            if (itemStr) {
+              const item = JSON.parse(itemStr);
+              const { date, ...metric } = item;
+              
+              // Supprimer si métrique mock par valeurs
+              const isMock = isMockMetric(metric);
+              
+              // Supprimer aussi si date future (probablement données mock)
+              let isFuture = false;
+              if (date) {
+                const dateObj = new Date(date + 'T00:00:00');
+                const todayObj = new Date(todayLocal + 'T00:00:00');
+                isFuture = dateObj > todayObj;
+              }
+              
+              if (isMock || isFuture) {
+                localStorage.removeItem(getStorageKey(STORE_DAILY_METRICS, key));
+                deletedMetrics++;
+              }
+            }
+          } catch (e) {
+            console.warn('[GarminData] Error checking mock metric in localStorage:', key, e);
+          }
+        }
+        
+        console.log(`[GarminData] Supprimé ${deletedActivities} activités et ${deletedMetrics} métriques mock depuis localStorage`);
+        return { activities: deletedActivities, metrics: deletedMetrics };
+      }
+      
+      const db = await openDB();
+      if (!db) {
+        useFallback = true;
+        return deleteMockActivities(); // Récursion avec fallback
+      }
+      
+      // Supprimer activités
+      const txActivities = db.transaction([STORE_ACTIVITIES], 'readwrite');
+      const activityStore = txActivities.objectStore(STORE_ACTIVITIES);
+      const activityRequest = activityStore.openCursor();
+      
+      await new Promise((resolve, reject) => {
+        activityRequest.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            const activity = cursor.value;
+            if (isMockActivity(activity)) {
+              cursor.delete();
+              deletedActivities++;
+            }
+            cursor.continue();
+          } else {
+            resolve();
+          }
+        };
+        activityRequest.onerror = () => reject(activityRequest.error);
+      });
+      
+      // Supprimer métriques
+      const txMetrics = db.transaction([STORE_DAILY_METRICS], 'readwrite');
+      const metricsStore = txMetrics.objectStore(STORE_DAILY_METRICS);
+      const metricsRequest = metricsStore.openCursor();
+      
+      // 🔴 FIX : Obtenir "aujourd'hui" en date locale pour filtrer les dates futures
+      const now = new Date();
+      const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
+      await new Promise((resolve, reject) => {
+        metricsRequest.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            const metric = cursor.value;
+            const { date, ...metricData } = metric;
+            
+            // Supprimer si métrique mock par valeurs
+            const isMock = isMockMetric(metricData);
+            
+            // Supprimer aussi si date future (probablement données mock)
+            let isFuture = false;
+            if (date) {
+              const dateObj = new Date(date + 'T00:00:00');
+              const todayObj = new Date(todayLocal + 'T00:00:00');
+              isFuture = dateObj > todayObj;
+            }
+            
+            if (isMock || isFuture) {
+              cursor.delete();
+              deletedMetrics++;
+            }
+            cursor.continue();
+          } else {
+            resolve();
+          }
+        };
+        metricsRequest.onerror = () => reject(metricsRequest.error);
+      });
+      
+      console.log(`[GarminData] Supprimé ${deletedActivities} activités et ${deletedMetrics} métriques mock depuis IndexedDB`);
+      return { activities: deletedActivities, metrics: deletedMetrics };
+    } catch (err) {
+      console.error('[GarminData] Error deleting mock data:', err);
+      return { activities: deletedActivities, metrics: deletedMetrics };
+    }
+  }, [dbReady]);
+  
+  /**
+   * Stocke la date de dernière synchronisation
+   * 🟢 NOUVEAU : Gestion de la dernière date de sync pour synchronisation incrémentale
+   * 
+   * @param {string} date - Date de sync (YYYY-MM-DD)
+   * @returns {Promise<void>} Promise résolue quand la sauvegarde est terminée
+   */
+  const setLastSyncDate = useCallback(async (date) => {
+    if (!dbReady || !date) return;
+    
+    try {
+      const db = await openDB();
+      if (!db || useFallback) {
+        // Fallback localStorage
+        localStorage.setItem('garmin_lastSyncDate', date);
+        return;
+      }
+
+      const tx = db.transaction([STORE_DEVICE_META], 'readwrite');
+      const store = tx.objectStore(STORE_DEVICE_META);
+      
+      await new Promise((resolve, reject) => {
+        const req = store.put({ key: 'lastSyncDate', value: date, updatedAt: new Date().toISOString() });
+        req.onsuccess = () => {
+          // Sauvegarder aussi dans localStorage en backup
+          localStorage.setItem('garmin_lastSyncDate', date);
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    } catch (err) {
+      console.error('[GarminData] Error setting last sync date:', err);
+      // Fallback localStorage
+      localStorage.setItem('garmin_lastSyncDate', date);
+    }
+  }, [dbReady]);
+
+  /**
+   * Calcule la date de début pour la synchronisation incrémentale
+   * 🟢 NOUVEAU : Calcule depuis la dernière sync (ou 7 jours si première sync)
+   * 
+   * @returns {Promise<string>} Date de début (YYYY-MM-DD)
+   */
+  const getSyncStartDate = useCallback(async () => {
+    const lastSync = await getLastSyncDate();
+    const today = new Date().toISOString().split('T')[0]; // Aujourd'hui au format YYYY-MM-DD
+    
+    if (!lastSync) {
+      // Première sync : récupérer les 7 derniers jours
+      const date = new Date();
+      date.setDate(date.getDate() - 7);
+      return date.toISOString().split('T')[0];
+    }
+
+    // 🟢 FIX : Synchronisation incrémentale avec validation robuste
+    // Synchronisation incrémentale : depuis la dernière sync + 1 jour
+    const lastSyncDate = new Date(lastSync + 'T00:00:00'); // Ajouter l'heure pour éviter problèmes de timezone
+    const calculatedStart = new Date(lastSyncDate);
+    calculatedStart.setDate(calculatedStart.getDate() + 1);
+    const calculatedStartStr = calculatedStart.toISOString().split('T')[0];
+    
+    // 🟢 FIX : S'assurer que la date calculée ne dépasse pas aujourd'hui
+    // Si la dernière sync est aujourd'hui ou dans le futur, synchroniser depuis aujourd'hui
+    if (calculatedStartStr > today) {
+      // Si la date calculée est après aujourd'hui, utiliser aujourd'hui moins 1 jour
+      // pour récupérer les données d'aujourd'hui et d'hier
+      const adjustedDate = new Date();
+      adjustedDate.setDate(adjustedDate.getDate() - 1);
+      return adjustedDate.toISOString().split('T')[0];
+    }
+    
+    // Si la dernière sync est dans le passé mais que +1 jour dépasse aujourd'hui, utiliser aujourd'hui
+    if (lastSync > today) {
+      // Cas de données corrompues : lastSync est dans le futur, réinitialiser
+      console.warn(`[GarminData] lastSync date (${lastSync}) is in the future, using today - 1 day`);
+      const adjustedDate = new Date();
+      adjustedDate.setDate(adjustedDate.getDate() - 1);
+      return adjustedDate.toISOString().split('T')[0];
+    }
+    
+    return calculatedStartStr;
+  }, [getLastSyncDate]);
+
   return {
     dbReady,
     saveActivities,
@@ -1078,6 +1574,10 @@ export const useGarminData = () => {
     importAll,
     purgeOldTimeSeries,
     autoPurge,  // 🟢 FIX #31: Purge automatique des données obsolètes
+    getLastSyncDate,  // 🟢 NOUVEAU : Récupère la dernière date de sync
+    setLastSyncDate,  // 🟢 NOUVEAU : Stocke la dernière date de sync
+    getSyncStartDate,  // 🟢 NOUVEAU : Calcule la date de début pour sync incrémentale
+    deleteMockActivities,  // 🔴 NOUVEAU : Supprime toutes les activités mock de test
   };
 };
 

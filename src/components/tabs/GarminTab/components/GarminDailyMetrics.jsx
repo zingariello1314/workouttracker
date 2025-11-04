@@ -19,15 +19,78 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
   const dateKeys = React.useMemo(() => Object.keys(dailyMetrics).sort(), [dailyMetrics]);
   
   // 🟡 FIX #22: Memoization de la date d'affichage
-  const displayDate = React.useMemo(() => 
-    selectedDate || (dateKeys.length > 0 ? dateKeys[dateKeys.length - 1] : null),
-    [selectedDate, dateKeys]
-  );
+  // 🔴 FIX : Privilégier aujourd'hui si disponible, sinon la date la plus récente valide (pas future)
+  const displayDate = React.useMemo(() => {
+    if (selectedDate) return selectedDate;
+    
+    if (dateKeys.length > 0) {
+      // 🔴 FIX : Obtenir "aujourd'hui" en date locale (pas UTC)
+      const now = new Date();
+      const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
+      // 🔴 FIX : Filtrer les dates futures (probablement des données mock)
+      const validDates = dateKeys.filter(date => {
+        const dateObj = new Date(date + 'T00:00:00');
+        const todayObj = new Date(todayLocal + 'T00:00:00');
+        return dateObj <= todayObj;
+      });
+      
+      // Utiliser les dates valides si disponibles
+      const datesToUse = validDates.length > 0 ? validDates : dateKeys;
+      
+      // Chercher "aujourd'hui" dans les dates valides
+      const todayIndex = datesToUse.indexOf(todayLocal);
+      
+      if (todayIndex !== -1) {
+        return todayLocal;
+      } else if (datesToUse.length > 0) {
+        // Prendre la date la plus récente valide
+        return datesToUse[datesToUse.length - 1];
+      } else {
+        // Fallback : prendre la première date
+        return dateKeys[0];
+      }
+    }
+    
+    return null;
+  }, [selectedDate, dateKeys]);
   
   // 🟡 FIX #22: Memoization des métriques de la date sélectionnée
+  // 🔴 FIX : Extraire valeurs numériques pour éviter objets avec {average, min}
+  const extractNumericForDisplay = (val, defaultVal = 0) => {
+    if (val === null || val === undefined) return defaultVal;
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+      const parsed = parseFloat(val);
+      return isNaN(parsed) ? defaultVal : parsed;
+    }
+    if (typeof val === 'object') {
+      if ('value' in val) return extractNumericForDisplay(val.value, defaultVal);
+      if ('average' in val) return extractNumericForDisplay(val.average, defaultVal);
+      if ('avg' in val) return extractNumericForDisplay(val.avg, defaultVal);
+      if ('total' in val) return extractNumericForDisplay(val.total, defaultVal);
+      if ('max' in val) return extractNumericForDisplay(val.max, defaultVal);
+      if ('min' in val) return extractNumericForDisplay(val.min, defaultVal);
+    }
+    return defaultVal;
+  };
+  
   const d = React.useMemo(() => dailyMetrics[displayDate] || {}, [dailyMetrics, displayDate]);
-  const calories = React.useMemo(() => d.calories || {}, [d.calories]);
-  const hr = React.useMemo(() => d.heartRate || {}, [d.heartRate]);
+  
+  const rawCalories = d.calories || {};
+  const calories = React.useMemo(() => ({
+    total: extractNumericForDisplay(typeof rawCalories === 'object' && 'total' in rawCalories ? rawCalories.total : rawCalories.total),
+    active: extractNumericForDisplay(typeof rawCalories === 'object' && 'active' in rawCalories ? rawCalories.active : rawCalories.active),
+    resting: extractNumericForDisplay(typeof rawCalories === 'object' && 'resting' in rawCalories ? rawCalories.resting : rawCalories.resting)
+  }), [d.calories]);
+  
+  const rawHR = d.heartRate || {};
+  const hr = React.useMemo(() => ({
+    resting: extractNumericForDisplay(typeof rawHR === 'object' && 'resting' in rawHR ? rawHR.resting : rawHR.resting),
+    max: extractNumericForDisplay(typeof rawHR === 'object' && 'max' in rawHR ? rawHR.max : rawHR.max),
+    avg: extractNumericForDisplay(typeof rawHR === 'object' && 'avg' in rawHR ? rawHR.avg :
+                                 typeof rawHR === 'object' && 'average' in rawHR ? rawHR.average : rawHR.avg)
+  }), [d.heartRate]);
   
   // 🟡 FIX #22: Memoization des colonnes conditionnelles (éviter recalculs dans le tableau)
   const hasBodyBattery = React.useMemo(() => 
@@ -52,14 +115,49 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
   );
   
   // 🟡 FIX #22: Memoization des données du tableau historique
+  // 🔴 FIX : Extraire valeurs numériques pour éviter objets avec {average, min}
+  const extractNumeric = (val, defaultVal = 0) => {
+    if (val === null || val === undefined) return defaultVal;
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+      const parsed = parseFloat(val);
+      return isNaN(parsed) ? defaultVal : parsed;
+    }
+    if (typeof val === 'object') {
+      if ('value' in val) return extractNumeric(val.value, defaultVal);
+      if ('average' in val) return extractNumeric(val.average, defaultVal);
+      if ('avg' in val) return extractNumeric(val.avg, defaultVal);
+      if ('total' in val) return extractNumeric(val.total, defaultVal);
+      if ('max' in val) return extractNumeric(val.max, defaultVal);
+      if ('min' in val) return extractNumeric(val.min, defaultVal);
+    }
+    return defaultVal;
+  };
+  
   const tableData = React.useMemo(() => {
     return dateKeys.map((dk) => {
       const dm = dailyMetrics[dk] || {};
-      const cal = dm.calories || {};
-      const hrRow = dm.heartRate || {};
+      const rawCal = dm.calories || {};
+      const rawHR = dm.heartRate || {};
+      
+      // 🔴 FIX : Extraire valeurs numériques pour éviter objets imbriqués
+      const calRaw = typeof rawCal === 'object' && rawCal !== null ? rawCal : {};
+      const cal = {
+        total: extractNumeric('total' in calRaw ? calRaw.total : calRaw.total),
+        active: extractNumeric('active' in calRaw ? calRaw.active : calRaw.active),
+        resting: extractNumeric('resting' in calRaw ? calRaw.resting : calRaw.resting)
+      };
+      
+      const hrRaw = typeof rawHR === 'object' && rawHR !== null ? rawHR : {};
+      const hrRow = {
+        resting: extractNumeric('resting' in hrRaw ? hrRaw.resting : hrRaw.resting),
+        max: extractNumeric('max' in hrRaw ? hrRaw.max : hrRaw.max),
+        avg: extractNumeric('avg' in hrRaw ? hrRaw.avg : ('average' in hrRaw ? hrRaw.average : hrRaw.avg))
+      };
+      
       const sleep = dm.sleep;
       const sleepStr = sleep && sleep.duration ? formatSleepDuration(sleep.duration) : null;
-      const intensityStr = dm.intensityMinutes ? `${dm.intensityMinutes.total || 0} min` : null;
+      const intensityStr = dm.intensityMinutes ? `${extractNumeric(dm.intensityMinutes.total)} min` : null;
       
       return {
         date: dk,
@@ -125,12 +223,12 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
                   onClick={() => setSelectedDate(row.date)}
                 >
                   <td className="px-2 py-1 border-b border-slate-700">{row.date}</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{row.dm.steps ?? 0}</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{formatDistance(row.dm.distance)}</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{row.cal.total ?? 0}</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{row.hrRow.resting ?? 0} bpm</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{row.hrRow.max ?? 0} bpm</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{row.hrRow.avg ?? 0} bpm</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.dm.steps)}</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{formatDistance(extractNumeric(row.dm.distance))}</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.cal.total)}</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.hrRow.resting)} bpm</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.hrRow.max)} bpm</td>
+                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.hrRow.avg)} bpm</td>
                   <td className="px-2 py-1 border-b border-slate-700">
                     {row.sleepStr || <MissingValue message="Données de sommeil non disponibles. Cette métrique nécessite une synchronisation avec votre montre Garmin." />}
                   </td>
@@ -144,8 +242,8 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
                         if (bb === undefined || bb === null) {
                           return <MissingValue message="Body Battery non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />;
                         }
-                        const value = typeof bb === 'object' && bb.current !== undefined ? bb.current : (typeof bb === 'number' ? bb : null);
-                        return value !== null ? `${value}/100` : <MissingValue message="Body Battery non disponible pour cette date." />;
+                        const value = typeof bb === 'object' && bb.current !== undefined ? extractNumeric(bb.current) : (typeof bb === 'number' ? extractNumeric(bb) : null);
+                        return value !== null && typeof value === 'number' ? `${value}/100` : <MissingValue message="Body Battery non disponible pour cette date." />;
                       })()}
                     </td>
                   )}
@@ -156,15 +254,15 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
                         if (s === undefined || s === null) {
                           return <MissingValue message="Stress non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />;
                         }
-                        const value = typeof s === 'object' && s.average !== undefined ? s.average : (typeof s === 'number' ? s : null);
-                        return value !== null ? value : <MissingValue message="Stress non disponible pour cette date." />;
+                        const value = typeof s === 'object' && s.average !== undefined ? extractNumeric(s.average) : (typeof s === 'number' ? extractNumeric(s) : null);
+                        return value !== null && typeof value === 'number' ? value : <MissingValue message="Stress non disponible pour cette date." />;
                       })()}
                     </td>
                   )}
                   {hasSpO2 && (
                     <td className="px-2 py-1 border-b border-slate-700">
                       {row.dm.spo2 !== undefined && row.dm.spo2 !== null 
-                        ? `${row.dm.spo2}%` 
+                        ? `${extractNumeric(row.dm.spo2)}%` 
                         : <MissingValue message="SpO2 (Saturation en oxygène) non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />
                       }
                     </td>
@@ -203,33 +301,33 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
           <div className="text-slate-400 text-xs">Pas</div>
-          <div className="text-white text-lg">{d.steps ?? 0}</div>
+          <div className="text-white text-lg">{extractNumericForDisplay(d.steps)}</div>
         </div>
         <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
           <div className="text-slate-400 text-xs">Distance (km)</div>
-          <div className="text-white text-lg">{formatDistance(d.distance)}</div>
+          <div className="text-white text-lg">{formatDistance(extractNumericForDisplay(d.distance))}</div>
         </div>
         <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
           <div className="text-slate-400 text-xs">Étages</div>
-          <div className="text-white text-lg">{d.floors ?? 0}</div>
+          <div className="text-white text-lg">{extractNumericForDisplay(d.floors)}</div>
         </div>
         <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
           <div className="text-slate-400 text-xs">Calories totales</div>
-          <div className="text-white text-lg">{calories.total ?? 0}</div>
-          <div className="text-slate-400 text-xs mt-1">Actives: {calories.active ?? 0} • Repos: {calories.resting ?? 0}</div>
+          <div className="text-white text-lg">{extractNumericForDisplay(calories.total)}</div>
+          <div className="text-slate-400 text-xs mt-1">Actives: {extractNumericForDisplay(calories.active)} • Repos: {extractNumericForDisplay(calories.resting)}</div>
         </div>
         <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
           <div className="text-slate-400 text-xs">FC repos</div>
-          <div className="text-white text-lg">{hr.resting ?? 0} bpm</div>
+          <div className="text-white text-lg">{extractNumericForDisplay(hr.resting)} bpm</div>
         </div>
         <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
           <div className="text-slate-400 text-xs">FC max</div>
-          <div className="text-white text-lg">{hr.max ?? 0} bpm</div>
+          <div className="text-white text-lg">{extractNumericForDisplay(hr.max)} bpm</div>
         </div>
-        {(hr.avg || hr.avg === 0) && (
+        {(extractNumericForDisplay(hr.avg) || extractNumericForDisplay(hr.avg) === 0) && (
           <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
             <div className="text-slate-400 text-xs">FC moyenne</div>
-            <div className="text-white text-lg">{hr.avg ?? 0} bpm</div>
+            <div className="text-white text-lg">{extractNumericForDisplay(hr.avg)} bpm</div>
           </div>
         )}
         {d.sleep && (
@@ -240,16 +338,24 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
                 <MissingValue message="Durée de sommeil non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />
               )}
             </div>
-            {d.sleep.quality > 0 && (
-              <div className="text-slate-400 text-xs mt-1">Qualité: {d.sleep.quality}/100</div>
-            )}
-            {(d.sleep.deepSleep || d.sleep.lightSleep || d.sleep.remSleep) && (
-              <div className="text-slate-400 text-xs mt-1">
-                {d.sleep.deepSleep && <span>Profond: {Math.floor(d.sleep.deepSleep)}h{Math.round((d.sleep.deepSleep % 1) * 60)}m</span>}
-                {d.sleep.lightSleep && <span className="ml-2">Léger: {Math.floor(d.sleep.lightSleep)}h{Math.round((d.sleep.lightSleep % 1) * 60)}m</span>}
-                {d.sleep.remSleep && <span className="ml-2">REM: {Math.floor(d.sleep.remSleep)}h{Math.round((d.sleep.remSleep % 1) * 60)}m</span>}
-              </div>
-            )}
+            {(() => {
+              const quality = extractNumericForDisplay(d.sleep.quality);
+              return quality > 0 && (
+                <div className="text-slate-400 text-xs mt-1">Qualité: {quality}/100</div>
+              );
+            })()}
+            {(() => {
+              const deepSleep = extractNumericForDisplay(d.sleep.deepSleep);
+              const lightSleep = extractNumericForDisplay(d.sleep.lightSleep);
+              const remSleep = extractNumericForDisplay(d.sleep.remSleep);
+              return (deepSleep > 0 || lightSleep > 0 || remSleep > 0) && (
+                <div className="text-slate-400 text-xs mt-1">
+                  {deepSleep > 0 && <span>Profond: {Math.floor(deepSleep)}h{Math.round((deepSleep % 1) * 60)}m</span>}
+                  {lightSleep > 0 && <span className="ml-2">Léger: {Math.floor(lightSleep)}h{Math.round((lightSleep % 1) * 60)}m</span>}
+                  {remSleep > 0 && <span className="ml-2">REM: {Math.floor(remSleep)}h{Math.round((remSleep % 1) * 60)}m</span>}
+                </div>
+              );
+            })()}
             {(d.sleep.bedTime || d.sleep.wakeTime) && (
               <div className="text-slate-400 text-xs mt-1">
                 {d.sleep.bedTime && <span>Coucher: {d.sleep.bedTime}</span>}
@@ -262,68 +368,83 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
           <div className="bg-slate-800/60 border border-slate-700 rounded p-3 md:col-span-2">
             <div className="text-slate-400 text-xs mb-3 font-semibold">Respiration (resp/min)</div>
             <div className="space-y-3">
-              {d.respiration.awake && (d.respiration.awake.min || d.respiration.awake.max || d.respiration.awake.avg) && (
-                <div>
-                  <div className="text-slate-300 text-xs mb-2 font-medium">Éveillé</div>
-                  <div className="flex gap-3 flex-wrap">
-                    {d.respiration.awake.min && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Min</span>
-                        <div className="text-white text-sm font-semibold">{d.respiration.awake.min}</div>
-                      </div>
-                    )}
-                    {d.respiration.awake.avg && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Moy</span>
-                        <div className="text-white text-sm font-semibold">{d.respiration.awake.avg}</div>
-                      </div>
-                    )}
-                    {d.respiration.awake.max && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Max</span>
-                        <div className="text-white text-sm font-semibold">{d.respiration.awake.max}</div>
-                      </div>
-                    )}
+              {d.respiration.awake && (() => {
+                const awakeMin = extractNumericForDisplay(d.respiration.awake.min);
+                const awakeMax = extractNumericForDisplay(d.respiration.awake.max);
+                const awakeAvg = extractNumericForDisplay(d.respiration.awake.avg);
+                return (awakeMin > 0 || awakeMax > 0 || awakeAvg > 0) && (
+                  <div>
+                    <div className="text-slate-300 text-xs mb-2 font-medium">Éveillé</div>
+                    <div className="flex gap-3 flex-wrap">
+                      {awakeMin > 0 && (
+                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                          <span className="text-slate-400 text-xs">Min</span>
+                          <div className="text-white text-sm font-semibold">{awakeMin}</div>
+                        </div>
+                      )}
+                      {awakeAvg > 0 && (
+                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                          <span className="text-slate-400 text-xs">Moy</span>
+                          <div className="text-white text-sm font-semibold">{awakeAvg}</div>
+                        </div>
+                      )}
+                      {awakeMax > 0 && (
+                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                          <span className="text-slate-400 text-xs">Max</span>
+                          <div className="text-white text-sm font-semibold">{awakeMax}</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-              {d.respiration.sleep && (d.respiration.sleep.min || d.respiration.sleep.max || d.respiration.sleep.avg) && (
-                <div>
-                  <div className="text-slate-300 text-xs mb-2 font-medium">Sommeil</div>
-                  <div className="flex gap-3 flex-wrap">
-                    {d.respiration.sleep.min && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Min</span>
-                        <div className="text-white text-sm font-semibold">{d.respiration.sleep.min}</div>
-                      </div>
-                    )}
-                    {d.respiration.sleep.avg && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Moy</span>
-                        <div className="text-white text-sm font-semibold">{d.respiration.sleep.avg}</div>
-                      </div>
-                    )}
-                    {d.respiration.sleep.max && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Max</span>
-                        <div className="text-white text-sm font-semibold">{d.respiration.sleep.max}</div>
-                      </div>
-                    )}
+                );
+              })()}
+              {d.respiration.sleep && (() => {
+                const sleepMin = extractNumericForDisplay(d.respiration.sleep.min);
+                const sleepMax = extractNumericForDisplay(d.respiration.sleep.max);
+                const sleepAvg = extractNumericForDisplay(d.respiration.sleep.avg);
+                return (sleepMin > 0 || sleepMax > 0 || sleepAvg > 0) && (
+                  <div>
+                    <div className="text-slate-300 text-xs mb-2 font-medium">Sommeil</div>
+                    <div className="flex gap-3 flex-wrap">
+                      {sleepMin > 0 && (
+                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                          <span className="text-slate-400 text-xs">Min</span>
+                          <div className="text-white text-sm font-semibold">{sleepMin}</div>
+                        </div>
+                      )}
+                      {sleepAvg > 0 && (
+                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                          <span className="text-slate-400 text-xs">Moy</span>
+                          <div className="text-white text-sm font-semibold">{sleepAvg}</div>
+                        </div>
+                      )}
+                      {sleepMax > 0 && (
+                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                          <span className="text-slate-400 text-xs">Max</span>
+                          <div className="text-white text-sm font-semibold">{sleepMax}</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
         )}
-        {d.intensityMinutes && (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-            <div className="text-slate-400 text-xs">Minutes intensives</div>
-            <div className="text-white text-lg">{d.intensityMinutes.total ?? 0} min</div>
-            <div className="text-slate-400 text-xs mt-1">
-              Modérée: {d.intensityMinutes.moderate ?? 0} • Soutenue: {d.intensityMinutes.vigorous ?? 0} (x2)
+        {d.intensityMinutes && (() => {
+          const total = extractNumericForDisplay(d.intensityMinutes.total);
+          const moderate = extractNumericForDisplay(d.intensityMinutes.moderate);
+          const vigorous = extractNumericForDisplay(d.intensityMinutes.vigorous);
+          return (total > 0 || moderate > 0 || vigorous > 0) ? (
+            <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+              <div className="text-slate-400 text-xs">Minutes intensives</div>
+              <div className="text-white text-lg">{total} min</div>
+              <div className="text-slate-400 text-xs mt-1">
+                Modérée: {moderate} • Soutenue: {vigorous} (x2)
+              </div>
             </div>
-          </div>
-        )}
+          ) : null;
+        })()}
         {(() => {
           // PHASE 3.1 : Gérer nouveau format (dict avec current) et ancien format (int)
           let bodyBatteryValue = null;

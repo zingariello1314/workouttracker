@@ -174,8 +174,16 @@ def parse_body_battery(body_battery_data: Any, date_str: str) -> Optional[Dict]:
     
     # Si c'est un dict, chercher dans plusieurs champs
     if isinstance(body_battery_data, dict):
-        # PHASE 3.1 : Vérifier si dict contient time series
-        time_series_data = body_battery_data.get('timeSeries') or body_battery_data.get('values') or body_battery_data.get('data')
+        # 🟢 PRIORITÉ 2 : Vérifier si dict contient time series (chercher dans tous les champs possibles)
+        # Chercher dans l'ordre de priorité : bodyBatteryValuesArray (API Garmin), timeSeries, values, data
+        time_series_data = (
+            body_battery_data.get('bodyBatteryValuesArray') or  # 🟢 PRIORITÉ 2 : Champ principal de l'API Garmin
+            body_battery_data.get('timeSeries') or
+            body_battery_data.get('values') or
+            body_battery_data.get('data') or
+            body_battery_data.get('bodyBatteryValues') or
+            body_battery_data.get('batteryValues')
+        )
         
         if time_series_data and isinstance(time_series_data, list):
             # Dict avec time series intégrée
@@ -394,8 +402,17 @@ def parse_stress(stress_data: Any, date_str: str) -> Optional[Dict]:
                 }
     
     if isinstance(stress_data, dict):
-        # PHASE 3.2 : Vérifier si dict contient time series
-        time_series_data = stress_data.get('timeSeries') or stress_data.get('values') or stress_data.get('data') or stress_data.get('stressValues')
+        # 🟢 PRIORITÉ 2 : Vérifier si dict contient time series (chercher dans tous les champs possibles)
+        # Chercher dans l'ordre de priorité : stressValuesArray (API Garmin), timeSeries, values, data, stressValues
+        time_series_data = (
+            stress_data.get('stressValuesArray') or  # 🟢 PRIORITÉ 2 : Champ principal de l'API Garmin
+            stress_data.get('timeSeries') or
+            stress_data.get('values') or
+            stress_data.get('data') or
+            stress_data.get('stressValues') or
+            stress_data.get('stressLevels') or
+            stress_data.get('stressData')
+        )
         
         if time_series_data and isinstance(time_series_data, list):
             # Dict avec time series intégrée

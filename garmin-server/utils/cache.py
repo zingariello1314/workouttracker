@@ -240,3 +240,213 @@ def get_cache_size() -> int:
     return total_size
 
 
+# 🟢 NOUVEAU : Cache pour métriques quotidiennes parsées
+# Durée de vie différente selon si c'est aujourd'hui ou une date passée
+DAILY_METRICS_CACHE_TTL_TODAY = 3600  # 1 heure pour aujourd'hui (données dynamiques)
+DAILY_METRICS_CACHE_TTL_PAST = 7 * 24 * 60 * 60  # 7 jours pour dates passées (données statiques)
+
+def get_daily_metrics_cache_key(date_str: str, raw_data_hash: str) -> str:
+    """
+    Génère une clé de cache pour les métriques quotidiennes parsées.
+    
+    Args:
+        date_str: Date au format YYYY-MM-DD
+        raw_data_hash: Hash des données brutes (stats, steps_data, etc.)
+        
+    Returns:
+        str: Clé de cache (nom de fichier)
+    """
+    return f"daily_metrics_{date_str}_{raw_data_hash}_v{CACHE_VERSION}.json"
+
+
+def get_raw_data_hash(stats: Any, steps_data: Any, hr_day: Any, sleep: Any, 
+                      body_battery_data: Any, stress_data: Any, spo2_data: Any,
+                      respiration_data: Any, intensity_data: Any, date_str: str = "") -> str:
+    """
+    Génère un hash des données brutes pour détecter les changements.
+    Optimisé : ne hash que les champs essentiels pour performance.
+    
+    Args:
+        stats, steps_data, hr_day, sleep, etc.: Données brutes de l'API
+        
+    Returns:
+        str: Hash MD5 des données brutes (16 caractères)
+    """
+    try:
+        # Extraire seulement les champs essentiels pour le hash (éviter hash trop lourd)
+        essential_data = {}
+        
+        # Stats : champs clés pour calories, FC, etc.
+        if isinstance(stats, dict):
+            essential_data['stats'] = {
+                k: v for k, v in stats.items() 
+                if k in ['totalKilocalories', 'activeKilocalories', 'bmrKilocalories',
+                         'restingHeartRate', 'maxHeartRate', 'averageHeartRate',
+                         'totalDistanceMeters', 'totalSteps', 'totalFloors',
+                         'moderateIntensityMinutes', 'vigorousIntensityMinutes']
+            }
+        
+        # Steps data : champs clés
+        if isinstance(steps_data, dict):
+            essential_data['steps'] = {
+                k: v for k, v in steps_data.items()
+                if k in ['totalSteps', 'totalKilocalories', 'distanceInMeters']
+            }
+        
+        # HR day : seulement quelques points pour détecter changements
+        if isinstance(hr_day, dict):
+            hr_values = hr_day.get('heartRateValues', []) or hr_day.get('values', [])
+            if hr_values:
+                # Prendre seulement les 10 premiers points (suffisant pour détecter changements)
+                essential_data['hr'] = hr_values[:10]
+        
+        # Sleep : timestamp et durée principales
+        if isinstance(sleep, dict):
+            essential_data['sleep'] = {
+                k: v for k, v in sleep.items()
+                if k in ['sleepStartTimestampGMT', 'sleepEndTimestampGMT', 'sleepTimeSeconds']
+            }
+        
+        # Body Battery, Stress, SpO2 : valeurs principales
+        if isinstance(body_battery_data, dict):
+            essential_data['bodyBattery'] = body_battery_data.get('bodyBatteryValuesArray', [])[:5]
+        if isinstance(stress_data, dict):
+            essential_data['stress'] = stress_data.get('stressValuesArray', [])[:5]
+        if isinstance(spo2_data, dict):
+            essential_data['spo2'] = spo2_data.get('spo2ValuesArray', [])[:5]
+        
+        # Hash des données essentielles
+        data_str = json.dumps(essential_data, sort_keys=True, default=str)
+        return hashlib.md5(data_str.encode()).hexdigest()
+    except Exception:
+        # Fallback : hash simple avec date (si fournie) ou timestamp
+        import time
+        if date_str:
+            return hashlib.md5(date_str.encode()).hexdigest()
+        return hashlib.md5(str(time.time()).encode()).hexdigest()
+
+
+def get_cached_daily_metrics(date_str: str, raw_data_hash: str) -> Optional[Dict]:
+    """
+    Récupère les métriques quotidiennes parsées depuis le cache.
+    
+    Args:
+        date_str: Date au format YYYY-MM-DD
+        raw_data_hash: Hash des données brutes
+        
+    Returns:
+        dict: Métriques parsées en cache, ou None si non trouvé/invalide
+    """
+    try:
+        from datetime import datetime, date
+        cache_key = get_daily_metrics_cache_key(date_str, raw_data_hash)
+        cache_file = CACHE_DIR / cache_key
+        
+        if not cache_file.exists():
+            return None
+        
+        # Déterminer TTL selon si c'est aujourd'hui ou une date passée
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        today = date.today()
+        is_today = date_obj == today
+        
+        cache_ttl = DAILY_METRICS_CACHE_TTL_TODAY if is_today else DAILY_METRICS_CACHE_TTL_PAST
+        
+        # Vérifier l'âge du cache
+        file_age = time.time() - cache_file.stat().st_mtime
+        if file_age > cache_ttl:
+            # Cache expiré, le supprimer
+            try:
+                cache_file.unlink()
+            except Exception:
+                pass
+            return None
+        
+        # Charger le cache
+        with open(cache_file, 'r', encoding='utf-8') as f:
+            cached = json.load(f)
+            
+            # Vérifier que le cache est valide
+            if not isinstance(cached, dict) or 'date' not in cached:
+                return None
+            
+            # Vérifier que la date correspond
+            if cached.get('date') != date_str:
+                return None
+            
+            # Vérifier la version du cache
+            if cached.get('_cache_version') != CACHE_VERSION:
+                return None
+            
+            return cached
+    except Exception:
+        # En cas d'erreur, ignorer le cache
+        pass
+    return None
+
+
+def cache_daily_metrics(date_str: str, raw_data_hash: str, parsed_metrics: Dict) -> None:
+    """
+    Sauvegarde les métriques quotidiennes parsées dans le cache.
+    
+    Args:
+        date_str: Date au format YYYY-MM-DD
+        raw_data_hash: Hash des données brutes
+        parsed_metrics: Métriques parsées à sauvegarder
+    """
+    try:
+        from datetime import datetime, date
+        
+        # Ajouter métadonnées au cache
+        parsed_metrics['_cached_at'] = time.time()
+        parsed_metrics['_cache_version'] = CACHE_VERSION
+        parsed_metrics['_raw_data_hash'] = raw_data_hash
+        
+        cache_key = get_daily_metrics_cache_key(date_str, raw_data_hash)
+        cache_file = CACHE_DIR / cache_key
+        
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump(parsed_metrics, f, indent=2, default=str)
+        
+        # Purge automatique des anciens caches (une fois par jour max)
+        if int(time.time()) % 86400 < 3600:  # Une fois par jour (dans la première heure)
+            purge_old_daily_metrics_cache()
+    except Exception:
+        # En cas d'erreur, ignorer (cache n'est pas critique)
+        pass
+
+
+def purge_old_daily_metrics_cache() -> None:
+    """
+    Purge automatique des caches de métriques quotidiennes expirés.
+    """
+    try:
+        from datetime import datetime, date
+        current_time = time.time()
+        today = date.today()
+        purged_count = 0
+        
+        for cache_file in CACHE_DIR.glob('daily_metrics_*.json'):
+            try:
+                # Extraire la date du nom de fichier
+                parts = cache_file.stem.split('_')
+                if len(parts) >= 3:
+                    date_str = parts[2]  # Format: daily_metrics_YYYY-MM-DD_hash_v2
+                    date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    is_today = date_obj == today
+                    
+                    cache_ttl = DAILY_METRICS_CACHE_TTL_TODAY if is_today else DAILY_METRICS_CACHE_TTL_PAST
+                    file_age = current_time - cache_file.stat().st_mtime
+                    
+                    if file_age > cache_ttl:
+                        cache_file.unlink()
+                        purged_count += 1
+            except Exception:
+                continue
+        
+        if purged_count > 0:
+            pass  # Optionnel : logger si nécessaire
+    except Exception:
+        pass
+
+

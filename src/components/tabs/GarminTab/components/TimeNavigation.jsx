@@ -87,12 +87,21 @@ export default function TimeNavigation({
     }
   }, [selectedDate, dateKeys, throttledSetSelectedDate]);
 
-  // Actions immédiates avec transition (pas de throttling)
+  // 🔴 FIX : goToToday doit vraiment chercher "aujourd'hui", et le sélectionner même s'il n'existe pas encore
   const goToToday = useCallback(() => {
-    if (dateKeys.length > 0) {
-      startTransition(() => {
-        setSelectedDate(dateKeys[dateKeys.length - 1]);
-      });
+    // Obtenir "aujourd'hui" en date locale (pas UTC)
+    const now = new Date();
+    const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
+    // 🔴 FIX : Toujours sélectionner aujourd'hui, même s'il n'est pas dans les dates disponibles
+    // Cela permettra de voir qu'il n'y a pas de données et de déclencher une sync si nécessaire
+    startTransition(() => {
+      setSelectedDate(todayLocal);
+    });
+    
+    // Afficher un message si la date n'est pas disponible
+    if (dateKeys.length > 0 && !dateKeys.includes(todayLocal)) {
+      console.log(`[TimeNavigation] Aujourd'hui (${todayLocal}) n'est pas dans les données disponibles. Synchronisation recommandée.`);
     }
   }, [dateKeys, setSelectedDate]);
 
@@ -195,20 +204,43 @@ export default function TimeNavigation({
           
           <div className="flex items-center gap-2 px-3 py-1 bg-slate-900 rounded">
             <span className="text-slate-400 text-sm">Date:</span>
-            <select
+            {/* 🔴 FIX : Sélecteur de date libre pour permettre de choisir n'importe quelle date */}
+            <input
+              type="date"
               value={selectedDate || ''}
-              onChange={(e) => debouncedSetSelectedDate(e.target.value)}
+              onChange={(e) => {
+                const newDate = e.target.value;
+                if (newDate) {
+                  // Vérifier si la date est disponible dans dateKeys
+                  if (dateKeys.includes(newDate)) {
+                    debouncedSetSelectedDate(newDate);
+                  } else {
+                    // Si la date n'est pas disponible, la sélectionner quand même
+                    // (elle sera synchronisée si nécessaire)
+                    startTransition(() => {
+                      setSelectedDate(newDate);
+                    });
+                  }
+                }
+              }}
               disabled={isPending}
               aria-label={ARIA_LABELS.DATE_SELECTOR}
               aria-busy={isPending}
               className="bg-slate-900 border-0 text-white font-semibold text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {dateKeys.map((dk) => (
-                <option key={dk} value={dk}>{dk}</option>
-              ))}
-            </select>
+              max={(() => {
+                // Limiter aux dates jusqu'à aujourd'hui
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+              })()}
+            />
             {isPending && (
               <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+            )}
+            {/* 🔴 FIX : Afficher un indicateur si la date sélectionnée n'est pas dans les données disponibles */}
+            {selectedDate && !dateKeys.includes(selectedDate) && (
+              <span className="text-yellow-400 text-xs" title="Cette date n'a pas encore de données. Synchronisez pour récupérer les données.">
+                ⚠️ Pas de données
+              </span>
             )}
           </div>
 

@@ -209,3 +209,4 @@ export const isGymExerciseKey = (key) => {
   return key.includes('_semaineA') || key.includes('_semaineB');
 };
 
+

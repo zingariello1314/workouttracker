@@ -13,8 +13,47 @@ export default function SyncControls({
   setStartDate,
   endDate,
   setEndDate,
-  fetchStatus
+  fetchStatus,
+  deleteMockActivities, // 🔴 NOUVEAU : Fonction pour supprimer les activités mock
+  clearCache // 🔴 NOUVEAU : Fonction pour vider le cache frontend
 }) {
+  const [deletingMocks, setDeletingMocks] = React.useState(false);
+  
+  const handleDeleteMocks = async () => {
+    if (!window.confirm('Supprimer toutes les données de test (mock) : activités ET métriques quotidiennes ? Cette action est irréversible.\n\nAprès suppression, une synchronisation sera effectuée pour récupérer vos vraies données.')) {
+      return;
+    }
+    setDeletingMocks(true);
+    try {
+      const result = await deleteMockActivities();
+      const total = result.activities + result.metrics;
+      
+      // 🔴 FIX : Vider le cache frontend après suppression
+      if (window.clearFrontendCache) {
+        window.clearFrontendCache();
+      }
+      
+      // 🔴 FIX : Forcer une synchronisation après suppression pour récupérer les vraies données
+      if (total > 0) {
+        alert(`✅ ${result.activities} activité(s) et ${result.metrics} métrique(s) mock supprimée(s) (${total} au total).\n\nSynchronisation en cours pour récupérer vos vraies données...`);
+        // Forcer une sync sans cache
+        if (syncNow) {
+          await syncNow(true); // forceRefresh = true
+        }
+      } else {
+        alert('ℹ️ Aucune donnée mock trouvée. Vos données sont déjà propres.');
+      }
+      
+      // Recharger la page pour voir les changements
+      window.location.reload();
+    } catch (err) {
+      console.error('Error deleting mock data:', err);
+      alert('❌ Erreur lors de la suppression des données mock');
+    } finally {
+      setDeletingMocks(false);
+    }
+  };
+  
   return (
     <div className="mb-6 space-y-4">
       {/* Statut */}
@@ -125,6 +164,47 @@ export default function SyncControls({
           Backfill
         </button>
       </div>
+
+      {/* 🔴 NOUVEAU : Nettoyage des données mock */}
+      {deleteMockActivities && (
+        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+          <h3 className="text-white font-semibold mb-3">Nettoyage des données</h3>
+          <p className="text-slate-400 text-xs mb-3">
+            Supprime toutes les données de test (mock) : activités ET métriques quotidiennes qui ont pu être créées lors de tests sans identifiants Garmin configurés.
+            <br />
+            <span className="text-yellow-400">⚠️ Après suppression, une synchronisation sera effectuée pour récupérer vos vraies données.</span>
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDeleteMocks}
+              disabled={deletingMocks || loading}
+              className={`px-4 py-2 rounded-md text-white text-sm ${
+                deletingMocks || loading
+                  ? 'bg-slate-600 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700'
+              }`}
+            >
+              {deletingMocks ? 'Suppression...' : 'Supprimer toutes les données mock'}
+            </button>
+            {clearCache && (
+              <button
+                onClick={() => {
+                  clearCache();
+                  alert('✅ Cache frontend vidé. Une nouvelle synchronisation récupérera les données fraîches.');
+                }}
+                disabled={loading}
+                className={`px-4 py-2 rounded-md text-white text-sm ${
+                  loading
+                    ? 'bg-slate-600 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                Vider le cache
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

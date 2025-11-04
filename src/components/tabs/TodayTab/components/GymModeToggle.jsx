@@ -72,3 +72,4 @@ GymModeToggle.displayName = 'GymModeToggle';
 
 export default GymModeToggle;
 
+

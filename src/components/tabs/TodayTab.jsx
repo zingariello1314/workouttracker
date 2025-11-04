@@ -9,7 +9,7 @@ import { Input, Checkbox } from '../ui/Input';
 import ChallengeCard from '../ui/ChallengeCard';
 import { typography } from '../../styles/typography';
 import { getAutoWeekVariant } from '../../utils/dateUtils';
-import { calculateAutoReps } from '../../utils/exerciseCalculations';
+import { calculateAutoReps, detectExerciseUnit } from '../../utils/exerciseCalculations';
 import { useTodayExercises } from '../../hooks/useTodayExercises';
 import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
 
@@ -710,15 +710,33 @@ const TodayTab = () => {
                     className="text-green-400"
                     name={`exercise_${exercise.id}`}
                   />
-                  <Input
-                    type="number"
-                    placeholder="Reps"
-                    value={reps}
-                    onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
-                    onFocus={() => handleInputFocus(exercise.id, exercise)}
-                    className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
-                    size="sm"
-                  />
+                  {/* 🔴 FIX : Détecter l'unité de l'exercice pour afficher le bon placeholder */}
+                  {(() => {
+                    const exerciseUnit = detectExerciseUnit(exercise);
+                    const inputPlaceholder = exerciseUnit?.unit === 'sec' ? 'Sec' : 
+                                             exerciseUnit?.unit === 'min' ? 'Min' : 
+                                             'Reps';
+                    const inputLabel = exerciseUnit?.unit === 'sec' ? 'sec' : 
+                                      exerciseUnit?.unit === 'min' ? 'min' : 
+                                      'Reps';
+                    
+                    return (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          placeholder={inputPlaceholder}
+                          value={reps}
+                          onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
+                          onFocus={() => handleInputFocus(exercise.id, exercise)}
+                          className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+                          size="sm"
+                        />
+                        <span className="text-slate-400 text-xs min-w-[35px]">
+                          {inputLabel}
+                        </span>
+                      </div>
+                    );
+                  })()}
                   {isChecked && (
                     <div className="text-green-400 text-sm font-medium">✓ Fait</div>
                   )}
@@ -1014,22 +1032,72 @@ const TodayTab = () => {
         const sessions = enduranceData.sessions || {};
         const todayEnduranceSessions = [];
         
-        // Collecter toutes les sessions d'endurance du jour
+        // 🔴 FIX : Fonction pour détecter les sessions mock
+        const isMockSession = (session) => {
+          const durationMinutes = session.duration || 0;
+          const distance = session.distance || 0;
+          const jumps = session.jumps || 0;
+          
+          // Pattern 1 : Durée excessive (> 24h, 3600 min = 60h, ou 1200 min = 20h)
+          if (durationMinutes >= 1440 || durationMinutes === 3600 || durationMinutes === 1200) {
+            return true;
+          }
+          
+          // Pattern 2 : Distance très faible (1.5m) avec durée élevée (Natation mock)
+          if (distance === 1.5 && durationMinutes > 60) {
+            return true;
+          }
+          
+          // Pattern 3 : Corde à sauter mock (exactement 1200 jumps ET 1200 min)
+          if (jumps === 1200 && durationMinutes === 1200) {
+            return true;
+          }
+          
+          // Pattern 4 : Date future
+          if (session.date) {
+            const sessionDate = new Date(session.date + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (sessionDate > today) {
+              return true;
+            }
+          }
+          
+          // Pattern 5 : Pas de garminId ET source = 'garmin' avec valeurs suspectes
+          if (session.source === 'garmin' && !session.garminId) {
+            if (durationMinutes >= 1440 || durationMinutes === 3600 || durationMinutes === 1200) {
+              return true;
+            }
+            if (distance === 1.5 && durationMinutes > 60) {
+              return true;
+            }
+            if (jumps === 1200 && durationMinutes === 1200) {
+              return true;
+            }
+          }
+          
+          return false;
+        };
+        
+        // Collecter toutes les sessions d'endurance du jour (FILTRER LES MOCK)
         Object.entries(sessions).forEach(([activityType, activitySessions]) => {
           if (Array.isArray(activitySessions)) {
             activitySessions.forEach(session => {
               if (session.date === dateStr) {
-                todayEnduranceSessions.push({
-                  ...session,
-                  activityType,
-                  activityName: {
-                    boxing: 'Boxe',
-                    pushups: 'Pompes',
-                    swimming: 'Natation',
-                    jumprope: 'Corde à sauter',
-                    running: 'Course'
-                  }[activityType] || activityType
-                });
+                // 🔴 FIX : Filtrer les sessions mock
+                if (!isMockSession(session)) {
+                  todayEnduranceSessions.push({
+                    ...session,
+                    activityType,
+                    activityName: {
+                      boxing: 'Boxe',
+                      pushups: 'Pompes',
+                      swimming: 'Natation',
+                      jumprope: 'Corde à sauter',
+                      running: 'Course'
+                    }[activityType] || activityType
+                  });
+                }
               }
             });
           }

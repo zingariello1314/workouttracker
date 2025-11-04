@@ -547,3 +547,4 @@ Les autres problèmes sont **moins critiques** ou **déjà partiellement résolu
 **Analyse basée sur :** Code réel de l'application (TodayTab.jsx, WorkoutContext.jsx, useWorkoutData.js, etc.)  
 **Méthodologie :** Vérification ligne par ligne de chaque assertion du document critique
 
+

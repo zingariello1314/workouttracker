@@ -8,25 +8,27 @@ from typing import Any, Dict, Optional
 # Ajouter le répertoire parent au path pour les imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.helpers import safe_int, safe_float, print_debug
+from utils.helpers import safe_int, safe_float, print_debug, normalize_datetime_to_utc
 
 
 def parse_respiration_data(respiration_data: Any, sleep: Optional[Dict], date_str: str) -> Optional[Dict]:
     """
     Parse les données de respiration depuis Garmin.
     
+    🟢 PRIORITÉ 2 : Retourne maintenant aussi les time series si disponibles.
+    
     CORRECTION CRITIQUE : Fusionne données depuis plusieurs sources:
     - respiration_data (client.get_respiration_data())
     - sleep.dailySleepDTO (avgWakingRespirationValue, avgSleepRespirationValue, etc.)
-    - sleep.wellnessEpochRespirationDataDTOList (epoch data)
+    - sleep.wellnessEpochRespirationDataDTOList (epoch data pour time series)
     
     Args:
         respiration_data: Données de respiration brutes depuis client.get_respiration_data()
-        sleep: Données de sommeil (pour fallback)
+        sleep: Données de sommeil (pour fallback et time series epoch)
         date_str: Date pour les logs
         
     Returns:
-        dict: Données de respiration avec awake/sleep min/max/avg ou None
+        dict: Données de respiration avec awake/sleep min/max/avg et timeSeries si disponible
     """
     # CORRECTION : Si respiration_data est None, utiliser avgWakingRespirationValue depuis sleep.dailySleepDTO
     if respiration_data is None:
@@ -262,6 +264,54 @@ def parse_respiration_data(respiration_data: Any, sleep: Optional[Dict], date_st
         print_debug(f"WARNING: has_resp_data=True but all final values are None for {date_str}!")
         return None
     
+    # 🟢 PRIORITÉ 2 : Extraire time series depuis epoch data si disponible
+    time_series = []
+    if isinstance(sleep, dict):
+        resp_epoch_data = sleep.get('wellnessEpochRespirationDataDTOList', []) or []
+        if resp_epoch_data:
+            print_debug(f"Extracting respiration time series from {len(resp_epoch_data)} epochs for {date_str}")
+            for epoch in resp_epoch_data:
+                if isinstance(epoch, dict):
+                    value = (
+                        epoch.get('value') or
+                        epoch.get('respiration') or
+                        epoch.get('respirationValue') or
+                        epoch.get('respirationRate')
+                    )
+                    timestamp = epoch.get('timestamp') or epoch.get('time') or epoch.get('ts')
+                    
+                    if value and isinstance(value, (int, float)) and value > 0:
+                        # Normaliser timestamp en UTC
+                        ts_str = normalize_datetime_to_utc(timestamp) if timestamp else None
+                        
+                        time_series.append({
+                            "timestamp": ts_str,
+                            "value": safe_float(value, 0)
+                        })
+            
+            # Downsampling : 1 point par heure (max 24 points/jour) si trop de points
+            if len(time_series) > 24:
+                from datetime import datetime
+                downsampled = []
+                last_hour = None
+                for ts_item in time_series:
+                    if ts_item.get('timestamp'):
+                        try:
+                            ts_str = ts_item['timestamp'].replace('Z', '+00:00')
+                            ts_dt = datetime.fromisoformat(ts_str) if '+' in ts_str else datetime.fromisoformat(ts_str + '+00:00')
+                            hour = ts_dt.hour
+                            if hour != last_hour:
+                                downsampled.append(ts_item)
+                                last_hour = hour
+                        except:
+                            if len(downsampled) < 24:
+                                downsampled.append(ts_item)
+                    else:
+                        if len(downsampled) < 24:
+                            downsampled.append(ts_item)
+                time_series = downsampled
+                print_debug(f"Downsampled respiration time series to {len(time_series)} points for {date_str}")
+    
     result = {
         "awake": {
             "min": resp_awake_min_final,
@@ -275,7 +325,12 @@ def parse_respiration_data(respiration_data: Any, sleep: Optional[Dict], date_st
         } if (resp_sleep_avg_final is not None or resp_sleep_min_final is not None or resp_sleep_max_final is not None) else None
     }
     
-    print_debug(f"Final respiration for {date_str} - Awake: min={resp_awake_min_final}, max={resp_awake_max_final}, avg={resp_awake_avg_final} | Sleep: min={resp_sleep_min_final}, max={resp_sleep_max_final}, avg={resp_sleep_avg_final}")
+    # 🟢 PRIORITÉ 2 : Ajouter time series si disponible
+    if time_series:
+        result["timeSeries"] = time_series
+        print_debug(f"Added {len(time_series)} respiration time series points for {date_str}")
+    
+    print_debug(f"Final respiration for {date_str} - Awake: min={resp_awake_min_final}, max={resp_awake_max_final}, avg={resp_awake_avg_final} | Sleep: min={resp_sleep_min_final}, max={resp_sleep_max_final}, avg={resp_sleep_avg_final} | TimeSeries: {len(time_series) if time_series else 0} points")
     
     return result
 

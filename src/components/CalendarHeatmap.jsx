@@ -356,9 +356,45 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     });
 
     // ✅ CORRECTION PB 2: Calculer la durée réelle avec PRIORITÉ Garmin > Programme
-    // Principe: Si Garmin a une durée pour cette date, utiliser Garmin (plus précis), sinon utiliser la durée calculée du programme
+    // Principe: Si Garmin a une durée pour cette date, utiliser Garmin (plus précis), sinon utiliser la durée prévue du programme
     const calculateRealDuration = () => {
-      // ✅ PRIORITÉ 1: Vérifier les données Garmin pour cette date
+      // ✅ PRIORITÉ 1.1: Vérifier les dailyMetrics Garmin (durée totale d'activité de la journée)
+      if (garminData?.dailyMetrics && typeof garminData.dailyMetrics === 'object') {
+        // dailyMetrics est un objet avec clés de date: { "YYYY-MM-DD": {...metrics} }
+        const dailyMetric = garminData.dailyMetrics[dateStr];
+        
+        if (dailyMetric) {
+          let metricsDurationMinutes = 0;
+          
+          // Vérifier activeTime (durée d'activité active en minutes)
+          if (dailyMetric.activeTime !== undefined && dailyMetric.activeTime !== null) {
+            metricsDurationMinutes = typeof dailyMetric.activeTime === 'number' 
+              ? dailyMetric.activeTime 
+              : parseInt(dailyMetric.activeTime) || 0;
+          }
+          // Sinon vérifier activeDurationMinutes
+          else if (dailyMetric.activeDurationMinutes !== undefined && dailyMetric.activeDurationMinutes !== null) {
+            metricsDurationMinutes = typeof dailyMetric.activeDurationMinutes === 'number'
+              ? dailyMetric.activeDurationMinutes
+              : parseInt(dailyMetric.activeDurationMinutes) || 0;
+          }
+          // Sinon vérifier totalActivityDuration (en secondes généralement)
+          else if (dailyMetric.totalActivityDuration !== undefined && dailyMetric.totalActivityDuration !== null) {
+            const totalActivityDuration = typeof dailyMetric.totalActivityDuration === 'number'
+              ? dailyMetric.totalActivityDuration
+              : parseInt(dailyMetric.totalActivityDuration) || 0;
+            // Si > 1000, probablement en secondes, sinon en minutes
+            metricsDurationMinutes = totalActivityDuration > 1000 ? Math.round(totalActivityDuration / 60) : totalActivityDuration;
+          }
+          
+          // Si durée trouvée dans dailyMetrics, l'utiliser (plus précise)
+          if (metricsDurationMinutes > 0) {
+            return Math.round(metricsDurationMinutes);
+          }
+        }
+      }
+      
+      // ✅ PRIORITÉ 1.2: Vérifier les activités Garmin détaillées pour cette date
       if (garminData?.activities) {
         // Calculer la durée totale des activités Garmin pour cette date
         let garminDurationMinutes = 0;
@@ -432,134 +468,78 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
         }
       }
       
-      // ✅ PRIORITÉ 2: Durée calculée du programme (exercices + endurance + activités complémentaires)
-      // Commencer avec la durée totale des sessions d'endurance pour cette date
-      let totalDurationMinutes = enduranceData.duration;
+            // ✅ PRIORITÉ 2: Utiliser la durée prévue du programme (pas calculée de tous les exercices)
+      // Commencer avec la durée prévue du programme d'entraînement pour ce jour
+      let totalDurationMinutes = 0;
       
+      // Parser la durée prévue du programme (workout.duration ou workout.duree)
+      if (workout) {
+        // Priorité 1: workout.duration (nombre en minutes)
+        if (workout.duration && typeof workout.duration === 'number') {
+          totalDurationMinutes = workout.duration;
+        }
+        // Priorité 2: workout.estimatedDuration (nombre en minutes)
+        else if (workout.estimatedDuration && typeof workout.estimatedDuration === 'number') {
+          totalDurationMinutes = workout.estimatedDuration;
+        }
+        // Priorité 3: parser workout.duree (format texte comme "1h", "45-55 min", etc.)
+        else if (workout.duree && typeof workout.duree === 'string') {
+          const dureeStr = workout.duree.trim();
+          
+          // Parser différents formats
+          // Format "1h" ou "~1 h"
+          const hourMatch = dureeStr.match(/(\d+)\s*h/);
+          if (hourMatch) {
+            totalDurationMinutes = parseInt(hourMatch[1]) * 60;
+          }
+          // Format "45-55 min" ou "45 min"
+          else {
+            const minMatch = dureeStr.match(/(\d+)(?:\s*-\s*(\d+))?\s*min/);
+            if (minMatch) {
+              const minMin = parseInt(minMatch[1]);
+              const minMax = minMatch[2] ? parseInt(minMatch[2]) : minMin;
+              totalDurationMinutes = Math.round((minMin + minMax) / 2); // Moyenne si plage
+            }
+            // Sinon essayer de parser un nombre simple
+            else {
+              const simpleNum = parseInt(dureeStr);
+              if (!isNaN(simpleNum) && simpleNum > 0 && simpleNum < 300) {
+                totalDurationMinutes = simpleNum; // Assumons que c'est en minutes si raisonnable
+              }
+            }
+          }
+        }
+      }
+      
+      // Ajouter la durée totale des sessions d'endurance pour cette date
+      totalDurationMinutes += enduranceData.duration;
+
       // Ajouter la durée des activités complémentaires cochées dans l'onglet Aujourd'hui
       if (workout?.complementaryActivity) {
         const complementaryKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`;
         const isComplementaryChecked = allData?.checkedExercises?.[complementaryKey] || false;
-        
-        // Debug pour le 28 octobre 2025
-        if (dateStr === '2025-10-28') {
-          console.log('🔍 DEBUG Activité complémentaire:');
-          console.log('Complementary key:', complementaryKey);
-          console.log('Is checked:', isComplementaryChecked);
-          console.log('Complementary activity:', workout.complementaryActivity);
-        }
         
         if (isComplementaryChecked) {
           // Vérifier s'il y a des minutes saisies manuellement
           const minutesKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`;
           const manualMinutes = parseInt(allData?.reps?.[minutesKey] || 0);
           
-          // Debug pour le 28 octobre 2025
-          if (dateStr === '2025-10-28') {
-            console.log('🔍 DEBUG Minutes:');
-            console.log('Minutes key:', minutesKey);
-            console.log('Manual minutes:', manualMinutes);
-          }
-          
           if (manualMinutes > 0) {
             // Utiliser les minutes saisies manuellement
             totalDurationMinutes += manualMinutes;
-            if (dateStr === '2025-10-28') {
-              console.log('✅ Utilisation des minutes manuelles:', manualMinutes);
-            }
           } else {
             // Utiliser la durée prévue par défaut
             totalDurationMinutes += workout.complementaryActivity.duration || 90;
-            if (dateStr === '2025-10-28') {
-              console.log('✅ Utilisation de la durée par défaut:', workout.complementaryActivity.duration);
-            }
           }
         }
       }
+
+      // Si aucune durée n'a été trouvée, retourner 0
+      if (totalDurationMinutes === 0 && completedExercises === 0 && enduranceData.sessions === 0) {
+        return 0;
+      }
       
-      if (completedExercises === 0 && enduranceData.sessions === 0 && totalDurationMinutes === 0) return 0;
-      
-      exercisesList.forEach(exercise => {
-        const baseKey = `${dateStr}_${exercise.id}`;
-        
-        // Utiliser la même logique de recherche de clé que pour les répétitions
-        let actualKey = baseKey;
-        let isCompleted = false;
-        
-        // Vérifier d'abord la clé de base
-        if (allData?.checkedExercises?.[baseKey] !== undefined) {
-          actualKey = baseKey;
-        } else {
-          // Chercher avec les suffixes
-          const possibleKeys = [
-            `${baseKey}_semaineA`,
-            `${baseKey}_semaineB`
-          ];
-          
-          for (const possibleKey of possibleKeys) {
-            if (allData?.checkedExercises?.[possibleKey] !== undefined) {
-              actualKey = possibleKey;
-              break;
-            }
-          }
-        }
-        
-        isCompleted = allData?.checkedExercises?.[actualKey] || false;
-        
-        if (isCompleted && exercise.series) {
-          // Calculer le temps pour cet exercice
-          let exerciseDuration = 0;
-          
-          // Extraire le nombre de séries et répétitions
-          const seriesMatch = exercise.series.match(/(\d+)×(\d+)(?:-(\d+))?/);
-          if (seriesMatch) {
-            const sets = parseInt(seriesMatch[1]);
-            const minReps = parseInt(seriesMatch[2]);
-            const maxReps = seriesMatch[3] ? parseInt(seriesMatch[3]) : minReps;
-            const avgReps = (minReps + maxReps) / 2;
-            
-            // Temps par répétition (en secondes) selon le type d'exercice
-            let timePerRep = 3; // défaut 3 secondes par rep
-            
-            if (exercise.name.toLowerCase().includes('planche') || 
-                exercise.name.toLowerCase().includes('gainage')) {
-              // Exercices isométriques : temps en secondes directement
-              if (exercise.series.includes('sec') || exercise.series.includes('min')) {
-                const timeMatch = exercise.series.match(/(\d+)\s*(sec|min)/);
-                if (timeMatch) {
-                  const timeValue = parseInt(timeMatch[1]);
-                  const timeUnit = timeMatch[2];
-                  exerciseDuration = timeUnit === 'min' ? timeValue * 60 : timeValue;
-                }
-              } else {
-                exerciseDuration = avgReps; // Pour les planches en secondes
-              }
-            } else {
-              // Exercices dynamiques
-              exerciseDuration = sets * avgReps * timePerRep; // en secondes
-              
-              // Ajouter le temps de repos entre séries
-              const restTime = exercise.rest || 90; // repos par défaut 90s
-              exerciseDuration += (sets - 1) * restTime;
-            }
-            
-            totalDurationMinutes += exerciseDuration / 60; // convertir en minutes
-          } else if (exercise.series.includes('sec')) {
-            // Exercices en secondes (circuits, etc.)
-            const timeMatch = exercise.series.match(/(\d+)\s*sec/);
-            if (timeMatch) {
-              totalDurationMinutes += parseInt(timeMatch[1]) / 60;
-            }
-          } else if (exercise.series.includes('min')) {
-            // Exercices en minutes
-            const timeMatch = exercise.series.match(/(\d+)\s*min/);
-            if (timeMatch) {
-              totalDurationMinutes += parseInt(timeMatch[1]);
-            }
-          }
-        }
-      });
-      
+            // ✅ RETOURNER la durée totale (prévue du programme + endurance + complémentaire)
       return Math.round(totalDurationMinutes);
     };
 

@@ -7,13 +7,13 @@
  * @module ExerciseItem
  */
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Zap } from 'lucide-react';
 import { Checkbox } from '../../ui/Input';
 import { Input } from '../../ui/Input';
 import Button from '../../ui/Button';
 import { useExerciseTracking } from '../hooks/useExerciseTracking';
-import { calculateAutoReps } from '../../../../utils/exerciseCalculations';
+import { calculateAutoReps, detectExerciseUnit } from '../../../../utils/exerciseCalculations';
 
 /**
  * Composant pour afficher un exercice individuel
@@ -40,15 +40,51 @@ const ExerciseItem = memo(({ exercise, date, isGymMode, onShowVariations }) => {
 
   const { isChecked, reps } = getExerciseStatus(exercise.id);
 
+  // 🔴 FIX : Détecter l'unité de l'exercice (sec, min, ou reps)
+  const exerciseUnit = useMemo(() => {
+    const unit = detectExerciseUnit(exercise);
+    // 🔴 DEBUG : Logger pour vérifier la détection (toujours pour debug)
+    console.log(`[ExerciseItem] ${exercise.name || 'Unknown'} - series: "${exercise.series}" - unit:`, unit);
+    return unit;
+  }, [exercise]);
+
+  // Déterminer le placeholder et le label selon l'unité
+  const inputPlaceholder = useMemo(() => {
+    if (!exerciseUnit) {
+      console.warn(`[ExerciseItem] No unit detected for ${exercise.name}, defaulting to Reps`);
+      return 'Reps';
+    }
+    const placeholder = exerciseUnit.unit === 'sec' ? 'Sec' : 
+                        exerciseUnit.unit === 'min' ? 'Min' : 
+                        'Reps';
+    console.log(`[ExerciseItem] ${exercise.name} - placeholder: "${placeholder}", unit:`, exerciseUnit);
+    return placeholder;
+  }, [exerciseUnit, exercise.name]);
+
+  const inputLabel = useMemo(() => {
+    if (!exerciseUnit) return 'Reps';
+    const label = exerciseUnit.unit === 'sec' ? 'sec' : 
+                   exerciseUnit.unit === 'min' ? 'min' : 
+                   'Reps';
+    console.log(`[ExerciseItem] ${exercise.name} - label: "${label}"`);
+    return label;
+  }, [exerciseUnit, exercise.name]);
+
   // Handler pour auto-remplissage au focus
   const handleInputFocus = useCallback(() => {
     if (!reps && exercise.series) {
+      // Pour les exercices basés sur le temps, ne pas auto-remplir
+      // L'utilisateur doit saisir manuellement le temps
+      if (exerciseUnit?.isTimeBased) {
+        return;
+      }
+      
       const autoReps = calculateAutoReps(exercise.series, { round: true });
       if (autoReps !== null) {
         updateReps(exercise.id, autoReps.toString());
       }
     }
-  }, [exercise.series, exercise.id, reps, updateReps]);
+  }, [exercise.series, exercise.id, reps, updateReps, exerciseUnit]);
 
   // Handler pour toggle
   const handleToggle = useCallback(() => {
@@ -86,16 +122,21 @@ const ExerciseItem = memo(({ exercise, date, isGymMode, onShowVariations }) => {
           name={`exercise_${exercise.id}`}
           aria-label={`Marquer ${exercise.name} comme complété`}
         />
-        <Input
-          type="number"
-          placeholder="Reps"
-          value={reps}
-          onChange={handleRepsChange}
-          onFocus={handleInputFocus}
-          className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
-          size="sm"
-          aria-label={`Répétitions pour ${exercise.name}`}
-        />
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            placeholder={inputPlaceholder}
+            value={reps}
+            onChange={handleRepsChange}
+            onFocus={handleInputFocus}
+            className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+            size="sm"
+            aria-label={`${exerciseUnit?.isTimeBased ? 'Temps' : 'Répétitions'} pour ${exercise.name}`}
+          />
+          <span className="text-slate-400 text-xs min-w-[35px]">
+            {inputLabel}
+          </span>
+        </div>
         {isChecked && (
           <div className="text-green-400 text-sm font-medium" aria-label="Exercice complété">
             ✓ Fait
@@ -119,4 +160,5 @@ const ExerciseItem = memo(({ exercise, date, isGymMode, onShowVariations }) => {
 ExerciseItem.displayName = 'ExerciseItem';
 
 export default ExerciseItem;
+
 

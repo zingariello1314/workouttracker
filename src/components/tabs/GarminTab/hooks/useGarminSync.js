@@ -9,10 +9,20 @@ const BASES = ['http://localhost:3031', 'http://localhost:3001'];
 
 // 🟡 FIX #26: Cache frontend avec TTL - utilise constante
 // 🔴 FIX #51-60: Utiliser constante pour TTL
+// 🔴 FIX : Fonction pour vider le cache (utile après suppression des données mock)
 const frontendCache = {
   data: null,
   timestamp: 0,
-  ttl: CACHE_TTL_MS
+  ttl: CACHE_TTL_MS,
+  cacheKey: null
+};
+
+// 🔴 FIX : Fonction pour vider le cache frontend
+export const clearFrontendCache = () => {
+  frontendCache.data = null;
+  frontendCache.timestamp = 0;
+  frontendCache.cacheKey = null;
+  log.debug('Frontend cache cleared');
 };
 
 /**
@@ -21,7 +31,16 @@ const frontendCache = {
 export function useGarminSync(setGarminData, setStatus, importToEndurance) {
   const [loading, setLoading] = useState(false);
   const [baseUrl, setBaseUrl] = useState(null);
-  const { saveActivities, saveDailyMetrics, loadAllData, dbReady } = useGarminData();
+  const { 
+    saveActivities, 
+    saveDailyMetrics, 
+    loadAllData, 
+    dbReady,
+    getLastSyncDate,
+    setLastSyncDate,
+    getSyncStartDate,
+    loadDataForTab
+  } = useGarminData();
 
   /**
    * 🔴 FIX #6: tryFetch avec retry automatique, exponential backoff et timeout
@@ -77,18 +96,35 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
     throw new Error(`Échec après ${retries} tentatives: ${lastErr?.message || 'Serveur inaccessible'}`);
   }, []);
 
-  const processSyncResponse = useCallback(async (json) => {
+  const processSyncResponse = useCallback(async (json, syncDateRange = null) => {
     if (json.data && json.ok) {
       // Sauvegarder dans IndexedDB AVANT de mettre à jour l'état
       if (dbReady) {
         await saveActivities(json.data.activities || {});
         await saveDailyMetrics(json.data.dailyMetrics || {});
-        // 🔴 FIX : Utiliser directement json.data après sauvegarde, pas besoin de reload
-        // Les fonctions save* fusionnent déjà avec les données existantes
-        // Recharger tout depuis IndexedDB est redondant et lent
-        setGarminData(json.data);
+        
+        // 🟢 NOUVEAU : Mettre à jour la date de dernière sync
+        if (syncDateRange && syncDateRange.endDate) {
+          await setLastSyncDate(syncDateRange.endDate);
+        } else {
+          // Par défaut, utiliser aujourd'hui
+          const today = new Date().toISOString().split('T')[0];
+          await setLastSyncDate(today);
+        }
+        
+        // 🟢 NOUVEAU : Recharger les données depuis IndexedDB pour avoir les données complètes (fusionnées)
+        // Cela garantit qu'on affiche toutes les données, pas seulement celles de la sync actuelle
+        const allData = await loadAllData();
+        setGarminData(allData);
       } else {
         setGarminData(json.data);
+        // Sauvegarder aussi la date de sync en fallback
+        if (syncDateRange && syncDateRange.endDate) {
+          await setLastSyncDate(syncDateRange.endDate);
+        } else {
+          const today = new Date().toISOString().split('T')[0];
+          await setLastSyncDate(today);
+        }
       }
       // Import automatique vers Endurance
       if (json.data.activities && (json.data.activities.swimming?.length > 0 || json.data.activities.jumpRope?.length > 0)) {
@@ -97,58 +133,113 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
         }
       }
     }
-  }, [dbReady, saveActivities, saveDailyMetrics, setGarminData, importToEndurance]);
+  }, [dbReady, saveActivities, saveDailyMetrics, setGarminData, importToEndurance, setLastSyncDate, loadAllData]);
 
-  const syncNow = useCallback(async () => {
-    // 🟡 FIX #26: Vérifier cache frontend avant sync
+  const syncNow = useCallback(async (forceRefresh = false) => {
+    if (!dbReady) {
+      setStatus({ ok: false, message: 'Base de données non prête', error: 'IndexedDB non initialisé' });
+      return;
+    }
+
+    // 🔴 FIX : Si forceRefresh, vider le cache frontend
+    if (forceRefresh) {
+      clearFrontendCache();
+    }
+
+    // 🟢 NOUVEAU : Synchronisation incrémentale - calculer la plage depuis la dernière sync
+    const startDate = await getSyncStartDate();
+    // 🔴 FIX : Utiliser date locale au lieu de UTC
+    const nowDate = new Date();
+    const endDate = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(nowDate.getDate()).padStart(2, '0')}`;
+    
+    // 🟢 FIX : Validation robuste de la plage de dates (déjà gérée dans getSyncStartDate, mais double vérification)
+    // getSyncStartDate devrait maintenant toujours retourner une date <= aujourd'hui, mais on garde cette vérification
+    // pour sécurité absolue et cas limites (timezone, etc.)
+    if (startDate > endDate) {
+      // Ce cas ne devrait plus arriver grâce au fix dans getSyncStartDate, mais on le garde pour sécurité
+      log.warn(`[useGarminSync] Start date (${startDate}) after end date (${endDate}), adjusting to today - 1 day`);
+      const adjustedStart = new Date();
+      adjustedStart.setDate(adjustedStart.getDate() - 1);
+      const adjustedStartStr = `${adjustedStart.getFullYear()}-${String(adjustedStart.getMonth() + 1).padStart(2, '0')}-${String(adjustedStart.getDate()).padStart(2, '0')}`;
+      
+      try {
+        setLoading(true);
+        const query = `?start=${encodeURIComponent(adjustedStartStr)}&end=${encodeURIComponent(endDate)}`;
+        const json = await tryFetch(`/api/garmin/sync${query}`, { method: 'POST' });
+        
+        setStatus({
+          lastSync: json.lastSync,
+          ok: json.ok,
+          message: json.ok ? 'Sync OK' : 'Erreur sync',
+          error: json.error
+        });
+        await processSyncResponse(json, { startDate: adjustedStartStr, endDate });
+      } catch (e) {
+        setStatus({ ok: false, message: 'Erreur sync', error: e.message });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    log.debug(`Synchronisation incrémentale depuis ${startDate} jusqu'à ${endDate}`);
+
+    // 🟡 FIX #26: Vérifier cache frontend avant sync (mais seulement si la plage correspond)
     const now = Date.now();
-    if (frontendCache.data && (now - frontendCache.timestamp) < frontendCache.ttl) {
+    const cacheKey = `sync_${startDate}_${endDate}`;
+    if (frontendCache.data && frontendCache.cacheKey === cacheKey && (now - frontendCache.timestamp) < frontendCache.ttl) {
       log.debug(`Using cached data (cache valid for ${Math.round((frontendCache.ttl - (now - frontendCache.timestamp)) / 1000)} more seconds)`);
       setStatus({
         lastSync: frontendCache.data.lastSync,
         ok: true,
         message: 'Sync OK (cached)'
       });
-      await processSyncResponse(frontendCache.data);
+      await processSyncResponse(frontendCache.data, { startDate, endDate });
       return;
     }
 
     try {
       setLoading(true);
-      const json = await tryFetch('/api/garmin/sync', { method: 'POST' });
+      // 🟢 NOUVEAU : Passer les dates pour synchronisation incrémentale
+      const query = `?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`;
+      const json = await tryFetch(`/api/garmin/sync${query}`, { method: 'POST' });
       
-      // 🟡 FIX #26: Mettre à jour le cache
+      // 🟡 FIX #26: Mettre à jour le cache avec la clé de plage
       frontendCache.data = json;
       frontendCache.timestamp = Date.now();
+      frontendCache.cacheKey = cacheKey;
       
       setStatus({
         lastSync: json.lastSync,
         ok: json.ok,
-        message: json.ok ? 'Sync OK' : 'Erreur sync',
+        message: json.ok ? `Sync OK (${startDate} → ${endDate})` : 'Erreur sync',
         error: json.error
       });
-      await processSyncResponse(json);
+      await processSyncResponse(json, { startDate, endDate });
     } catch (e) {
       try {
-        const json = await tryFetch('/api/garmin/sync');
+        // Fallback GET avec dates
+        const query = `?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`;
+        const json = await tryFetch(`/api/garmin/sync${query}`);
         
         // 🟡 FIX #26: Mettre à jour le cache même en cas de fallback GET
         frontendCache.data = json;
         frontendCache.timestamp = Date.now();
+        frontendCache.cacheKey = cacheKey;
         
         setStatus({
           lastSync: json.lastSync,
           ok: json.ok !== false,
-          message: 'Sync (GET) OK'
+          message: `Sync (GET) OK (${startDate} → ${endDate})`
         });
-        await processSyncResponse(json);
+        await processSyncResponse(json, { startDate, endDate });
       } catch (e2) {
         setStatus({ ok: false, message: 'Erreur sync', error: e2.message });
       }
     } finally {
       setLoading(false);
     }
-  }, [tryFetch, setStatus, processSyncResponse]);
+  }, [tryFetch, setStatus, processSyncResponse, dbReady, getSyncStartDate, setLastSyncDate]);
 
   const backfill = useCallback(async (startDate, endDate, setSelectedDate) => {
     if (!startDate || !endDate) return;
@@ -159,7 +250,7 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
       setStatus({
         lastSync: json.lastSync,
         ok: json.ok,
-        message: json.ok ? 'Backfill OK' : 'Backfill erreur',
+        message: json.ok ? `Backfill OK (${startDate} → ${endDate})` : 'Backfill erreur',
         error: json.error
       });
       if (json.data && json.ok) {
@@ -167,15 +258,65 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
         if (dbReady) {
           await saveActivities(json.data.activities || {});
           await saveDailyMetrics(json.data.dailyMetrics || {});
-          // 🔴 FIX : Utiliser directement json.data après sauvegarde
-          // Les fonctions save* fusionnent déjà avec les données existantes dans IndexedDB
-          setGarminData(json.data);
-          const dates = Object.keys(json.data.dailyMetrics || {}).sort();
-          if (dates.length > 0 && setSelectedDate) setSelectedDate(dates[dates.length - 1]);
+          
+          // 🟢 NOUVEAU : Backfill ne met PAS à jour la date de dernière sync
+          // (car c'est pour récupérer des données passées, pas pour la sync normale)
+          // Recharger les données complètes depuis IndexedDB pour afficher tout
+          const allData = await loadAllData();
+          setGarminData(allData);
+          
+          const dates = Object.keys(allData.dailyMetrics || {}).sort((a, b) => a.localeCompare(b));
+          // 🔴 FIX : Privilégier aujourd'hui si disponible, sinon la date la plus récente valide (pas future)
+          if (dates.length > 0 && setSelectedDate) {
+            // Obtenir "aujourd'hui" en date locale (pas UTC)
+            const now = new Date();
+            const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            
+            // Filtrer les dates futures (probablement des données mock)
+            const validDates = dates.filter(date => {
+              const dateObj = new Date(date + 'T00:00:00');
+              const todayObj = new Date(todayLocal + 'T00:00:00');
+              return dateObj <= todayObj;
+            });
+            
+            const datesToUse = validDates.length > 0 ? validDates : dates;
+            const todayIndex = datesToUse.indexOf(todayLocal);
+            
+            if (todayIndex !== -1) {
+              setSelectedDate(todayLocal);
+            } else if (datesToUse.length > 0) {
+              setSelectedDate(datesToUse[datesToUse.length - 1]);
+            } else if (dates.length > 0) {
+              setSelectedDate(dates[0]);
+            }
+          }
         } else {
           setGarminData(json.data);
-          const dates = Object.keys(json.data.dailyMetrics || {}).sort();
-          if (dates.length > 0 && setSelectedDate) setSelectedDate(dates[dates.length - 1]);
+          const dates = Object.keys(json.data.dailyMetrics || {}).sort((a, b) => a.localeCompare(b));
+          // 🔴 FIX : Privilégier aujourd'hui si disponible, sinon la date la plus récente valide (pas future)
+          if (dates.length > 0 && setSelectedDate) {
+            // Obtenir "aujourd'hui" en date locale (pas UTC)
+            const now = new Date();
+            const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            
+            // Filtrer les dates futures (probablement des données mock)
+            const validDates = dates.filter(date => {
+              const dateObj = new Date(date + 'T00:00:00');
+              const todayObj = new Date(todayLocal + 'T00:00:00');
+              return dateObj <= todayObj;
+            });
+            
+            const datesToUse = validDates.length > 0 ? validDates : dates;
+            const todayIndex = datesToUse.indexOf(todayLocal);
+            
+            if (todayIndex !== -1) {
+              setSelectedDate(todayLocal);
+            } else if (datesToUse.length > 0) {
+              setSelectedDate(datesToUse[datesToUse.length - 1]);
+            } else if (dates.length > 0) {
+              setSelectedDate(dates[0]);
+            }
+          }
         }
         // Import automatique vers Endurance
         if (json.data.activities && (json.data.activities.swimming?.length > 0 || json.data.activities.jumpRope?.length > 0)) {
@@ -205,7 +346,8 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
     backfill,
     fetchStatus,
     loading,
-    baseUrl
+    baseUrl,
+    clearCache: clearFrontendCache // 🔴 NOUVEAU : Exposer la fonction pour vider le cache
   };
 }
 
