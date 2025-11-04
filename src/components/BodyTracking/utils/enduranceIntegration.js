@@ -417,8 +417,15 @@ export const analyzeEnduranceImpactOnBodyComposition = (
     ? lastEntry.weight - firstEntry.weight
     : null;
   
-  const muscleChange = (firstEntry.type === 'impedance' && lastEntry.type === 'impedance' && firstEntry.skeletalMuscle && lastEntry.skeletalMuscle)
-    ? lastEntry.skeletalMuscle - firstEntry.skeletalMuscle
+  // ✅ CORRIGÉ : Gestion des fallbacks pour compatibilité (muscleMass → skeletalMuscle)
+  const firstMuscle = firstEntry.type === 'impedance' 
+    ? (firstEntry.muscleMass || firstEntry.skeletalMuscle)
+    : null;
+  const lastMuscle = lastEntry.type === 'impedance'
+    ? (lastEntry.muscleMass || lastEntry.skeletalMuscle)
+    : null;
+  const muscleChange = (firstMuscle != null && lastMuscle != null)
+    ? lastMuscle - firstMuscle
     : null;
   
   const bodyFatChange = (firstEntry.type === 'impedance' && lastEntry.type === 'impedance' && firstEntry.bodyFatPercentage && lastEntry.bodyFatPercentage)

@@ -108,36 +108,63 @@ const ProgressComments = () => {
     
     // Utiliser garminData dans les dépendances pour forcer le recalcul quand données changent
     
-    // Analyser les vraies données de progression
+    // ✅ ANALYSE REFACTORÉE : Séparer clairement metrics et impedance
     const analyzeProgressData = () => {
       if (!data?.progressEntries || data.progressEntries.length === 0) {
         return null;
       }
 
+      // ✅ SÉPARER LES DEUX TYPES D'ENTRÉES
       const metricsEntries = data.progressEntries
         .filter(entry => entry.type === 'metrics')
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
+        .sort((a, b) => {
+          const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
+          const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
+          return dateB - dateA; // Plus récent en premier
+        });
 
-      if (metricsEntries.length < 2) {
+      const impedanceEntries = data.progressEntries
+        .filter(entry => entry.type === 'impedance')
+        .sort((a, b) => {
+          const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
+          const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
+          return dateB - dateA; // Plus récent en premier
+        });
+
+      // Vérifier qu'on a au moins 2 entrées dans au moins un type
+      if (metricsEntries.length < 2 && impedanceEntries.length < 2) {
         return null;
       }
 
-      const current = metricsEntries[0];
-      const previous = metricsEntries[1];
+      // ✅ SÉLECTIONNER LES ENTRÉES LES PLUS RÉCENTES POUR CHAQUE TYPE
+      const currentMetrics = metricsEntries[0] || null;
+      const previousMetrics = metricsEntries[1] || null;
+      const currentImpedance = impedanceEntries[0] || null;
+      const previousImpedance = impedanceEntries[1] || null;
       
-      // Trouver une entrée d'il y a plusieurs semaines pour les tendances
-      const weeksAgoEntry = metricsEntries.find(entry => {
-        const entryDate = new Date(entry.date);
-        const weeksAgo = new Date();
-        weeksAgo.setDate(weeksAgo.getDate() - (periodWeeks * 7));
-        return entryDate <= weeksAgo;
-      });
+      // ✅ TROUVER ENTRIÉES D'IL Y A PLUSIEURS SEMAINES POUR LES TENDANCES
+      const weeksAgoDate = new Date();
+      weeksAgoDate.setDate(weeksAgoDate.getDate() - (periodWeeks * 7));
+      
+      const weeksAgoMetrics = metricsEntries.find(entry => {
+        const entryDate = entry.date ? new Date(entry.date) : (entry.timestamp ? new Date(entry.timestamp) : new Date(0));
+        return entryDate <= weeksAgoDate;
+      }) || null;
+      
+      const weeksAgoImpedance = impedanceEntries.find(entry => {
+        const entryDate = entry.date ? new Date(entry.date) : (entry.timestamp ? new Date(entry.timestamp) : new Date(0));
+        return entryDate <= weeksAgoDate;
+      }) || null;
 
       return {
-        current,
-        previous,
-        weeksAgo: weeksAgoEntry,
-        hasEnoughData: metricsEntries.length >= 2
+        // ✅ SÉPARER CL AIREMENT LES DEUX TYPES
+        currentMetrics,
+        previousMetrics,
+        weeksAgoMetrics,
+        currentImpedance,
+        previousImpedance,
+        weeksAgoImpedance,
+        hasEnoughData: metricsEntries.length >= 2 || impedanceEntries.length >= 2
       };
     };
 
@@ -158,13 +185,39 @@ const ProgressComments = () => {
       }];
     }
 
-    const { current, previous, weeksAgo } = progressData;
+    const { 
+      currentMetrics, 
+      previousMetrics, 
+      weeksAgoMetrics,
+      currentImpedance, 
+      previousImpedance, 
+      weeksAgoImpedance 
+    } = progressData;
 
-    // Calculs basés sur les vraies données
-    const weightLoss = previous.weight ? previous.weight - current.weight : 0;
-    const muscleMassGain = previous.muscleMass ? current.muscleMass - previous.muscleMass : 0;
-    const bodyFatReduction = previous.bodyFat ? previous.bodyFat - current.bodyFat : 0;
-    const waistReduction = previous.waist ? previous.waist - current.waist : 0;
+    // ✅ CALCULS CORRIGÉS : Utiliser les bonnes sources pour chaque métrique
+    // Poids : depuis metrics ou impedance (priorité metrics)
+    const weightLoss = (previousMetrics?.weight && currentMetrics?.weight)
+      ? previousMetrics.weight - currentMetrics.weight
+      : (previousImpedance?.weight && currentImpedance?.weight)
+      ? previousImpedance.weight - currentImpedance.weight
+      : 0;
+    
+    // Masse musculaire : uniquement depuis impedance (avec fallback)
+    const muscleMassGain = (previousImpedance && currentImpedance) ? (() => {
+      const previousMuscle = previousImpedance.muscleMass || previousImpedance.skeletalMuscle;
+      const currentMuscle = currentImpedance.muscleMass || currentImpedance.skeletalMuscle;
+      return (previousMuscle && currentMuscle) ? currentMuscle - previousMuscle : 0;
+    })() : 0;
+    
+    // Graisse corporelle : uniquement depuis impedance (bodyFatPercentage)
+    const bodyFatReduction = (previousImpedance?.bodyFatPercentage && currentImpedance?.bodyFatPercentage)
+      ? previousImpedance.bodyFatPercentage - currentImpedance.bodyFatPercentage
+      : 0;
+    
+    // Tour de taille : uniquement depuis metrics
+    const waistReduction = (previousMetrics?.waist && currentMetrics?.waist)
+      ? previousMetrics.waist - currentMetrics.waist
+      : 0;
 
     // Commentaires de réussites
     if (commentTypes.includes('achievements')) {
@@ -230,15 +283,25 @@ const ProgressComments = () => {
           sentiment: 'positive',
           actionable: false
         });
-      } else if (hasAnyPositiveTrend && weeksAgo) {
+      } else if (hasAnyPositiveTrend && (weeksAgoMetrics || weeksAgoImpedance)) {
         // Comparer avec entrée d'il y a plusieurs semaines
-        const weeksAgoWeight = weeksAgo.weight || 0;
-        const weeksAgoMuscleMass = weeksAgo.muscleMass || 0;
-        const weeksAgoBodyFat = weeksAgo.bodyFat || 0;
+        // ✅ CORRIGÉ : Utiliser les bonnes sources pour weeksAgo
+        const weeksAgoWeight = weeksAgoMetrics?.weight || weeksAgoImpedance?.weight || 0;
+        const weeksAgoMuscleMass = weeksAgoImpedance 
+          ? (weeksAgoImpedance.muscleMass || weeksAgoImpedance.skeletalMuscle || 0)
+          : 0;
+        const weeksAgoBodyFat = weeksAgoImpedance?.bodyFatPercentage || 0;
         
-        const longTermWeightLoss = weeksAgoWeight > 0 ? weeksAgoWeight - current.weight : 0;
-        const longTermMuscleGain = weeksAgoMuscleMass > 0 ? current.muscleMass - weeksAgoMuscleMass : 0;
-        const longTermBodyFatReduction = weeksAgoBodyFat > 0 ? weeksAgoBodyFat - current.bodyFat : 0;
+        // ✅ CORRIGÉ : Utiliser les bonnes sources pour current
+        const currentWeight = currentMetrics?.weight || currentImpedance?.weight || 0;
+        const currentMuscle = currentImpedance 
+          ? (currentImpedance.muscleMass || currentImpedance.skeletalMuscle || 0)
+          : 0;
+        const currentBodyFat = currentImpedance?.bodyFatPercentage || 0;
+        
+        const longTermWeightLoss = weeksAgoWeight > 0 ? weeksAgoWeight - currentWeight : 0;
+        const longTermMuscleGain = weeksAgoMuscleMass > 0 ? currentMuscle - weeksAgoMuscleMass : 0;
+        const longTermBodyFatReduction = weeksAgoBodyFat > 0 ? weeksAgoBodyFat - currentBodyFat : 0;
         
         if (longTermWeightLoss > 0 || longTermMuscleGain > 0 || longTermBodyFatReduction > 0) {
           comments.push({
@@ -438,9 +501,49 @@ const ProgressComments = () => {
         startDate.setDate(startDate.getDate() - (periodWeeks * 7));
         
         // Obtenir poids moyen pour calculs précis
-        const avgWeight = current.weight || 70;
+        // ✅ CORRIGÉ : Utiliser la bonne source pour current
+        const avgWeight = currentMetrics?.weight || currentImpedance?.weight || 70;
         
-        // Calculer calories endurance pour la période
+        // ✅ DÉDUPLICATION : Utiliser combineDailyCalories pour éviter double comptage
+        // Si Garmin existe pour certaines dates, ne pas compter Endurance pour ces dates
+        let combinedCaloriesTotal = 0;
+        let combinedEnduranceOnly = 0; // Calories Endurance uniquement (hors Garmin)
+        const currentDate = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        const enduranceSessionsCount = new Set(); // Pour compter sessions uniques (sans doublons Garmin)
+        
+        while (currentDate <= endDateObj) {
+          const dailyCombined = combineDailyCalories(garminData || {}, enduranceData, currentDate, avgWeight);
+          combinedCaloriesTotal += dailyCombined.total;
+          
+          // Si pas de Garmin pour ce jour, compter Endurance séparément
+          if (dailyCombined.garmin === 0 && dailyCombined.endurance > 0) {
+            combinedEnduranceOnly += dailyCombined.endurance;
+          }
+          
+          // Compter sessions Endurance (si pas déjà trackées par Garmin)
+          if (dailyCombined.endurance > 0) {
+            // Identifier sessions Endurance pour ce jour (sans doublons Garmin)
+            Object.entries(enduranceData.sessions || {}).forEach(([type, sessions]) => {
+              if (Array.isArray(sessions)) {
+                sessions.forEach(session => {
+                  const sessionDate = new Date(session.date);
+                  if (sessionDate.toDateString() === currentDate.toDateString()) {
+                    // Vérifier si Garmin a déjà tracké cette activité
+                    const hasGarminForDate = garminData?.dailyMetrics?.[currentDate.toISOString().split('T')[0]] != null;
+                    if (!hasGarminForDate) {
+                      enduranceSessionsCount.add(`${session.date}_${type}_${session.id || Date.now()}`);
+                    }
+                  }
+                });
+              }
+            });
+          }
+          
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        // ✅ CONSERVER enduranceCalories pour référence (calcul séparé pour affichage)
         const enduranceCalories = calculateEnduranceCaloriesForPeriod(
           enduranceData,
           startDate,
@@ -448,7 +551,14 @@ const ProgressComments = () => {
           avgWeight
         );
         
-        if (enduranceCalories.total > 0 && enduranceCalories.sessionsCount > 0) {
+        // ✅ UTILISER COMBINED CALORIES (dédupliquées) pour commentaires
+        const effectiveEnduranceCalories = {
+          total: combinedEnduranceOnly, // Calories Endurance uniquement (hors Garmin)
+          sessionsCount: enduranceSessionsCount.size, // Sessions Endurance uniquement (hors Garmin)
+          combinedTotal: combinedCaloriesTotal // Total Garmin + Endurance (dédupliqué)
+        };
+        
+        if (effectiveEnduranceCalories.total > 0 && effectiveEnduranceCalories.sessionsCount > 0) {
           // Analyser impact sur composition corporelle
           const enduranceImpact = analyzeEnduranceImpactOnBodyComposition(
             enduranceData,
@@ -458,14 +568,15 @@ const ProgressComments = () => {
             avgWeight
           );
           
-          // Commentaires sur calories endurance
-          if (enduranceCalories.total > 1000 && commentTypes.includes('achievements')) {
+          // ✅ Commentaires sur calories endurance (utilisant données dédupliquées)
+          if (effectiveEnduranceCalories.total > 1000 && commentTypes.includes('achievements')) {
+            const avgDailyEndurance = effectiveEnduranceCalories.total / (periodWeeks * 7);
             comments.push({
               id: 'endurance_calories_achievement',
               type: 'achievements',
               priority: 'high',
               title: '🔥 Calories endurance exceptionnelles',
-              content: `Vous avez brûlé ${Math.round(enduranceCalories.total)} kcal grâce à vos activités d'endurance (${enduranceCalories.sessionsCount} sessions) sur cette période. Cela représente en moyenne ${Math.round(enduranceCalories.total / (periodWeeks * 7))} kcal/jour d'endurance. Excellent travail !`,
+              content: `Vous avez brûlé ${Math.round(effectiveEnduranceCalories.total)} kcal grâce à vos activités d'endurance (${effectiveEnduranceCalories.sessionsCount} sessions${garminData ? ', hors activités déjà trackées par Garmin' : ''}) sur cette période. Cela représente en moyenne ${Math.round(avgDailyEndurance)} kcal/jour d'endurance. ${effectiveEnduranceCalories.combinedTotal > effectiveEnduranceCalories.total ? `Total combiné (Garmin + Endurance): ${Math.round(effectiveEnduranceCalories.combinedTotal)} kcal.` : ''} Excellent travail !`,
               timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000),
               metrics: ['endurance', 'calories'],
               sentiment: 'positive',
@@ -539,14 +650,18 @@ const ProgressComments = () => {
     // Recommandations
     if (commentTypes.includes('recommendations')) {
       // Calculer projection vers objectif si perte de poids active
-      if (weightLoss > 0 && current.weight && periodWeeks > 0) {
+      // ✅ CORRIGÉ : Utiliser la bonne source pour current
+      const currentWeightForCalc = currentMetrics?.weight || currentImpedance?.weight || null;
+      if (weightLoss > 0 && currentWeightForCalc && periodWeeks > 0) {
         const weeklyLoss = weightLoss / periodWeeks;
         // Objectif par défaut: 72kg (ou personnalisable via settings)
         // Pour l'instant, utiliser un objectif raisonnable basé sur IMC 22 (si taille disponible)
-        const targetWeight = current.height ? Math.round((current.height / 100) ** 2 * 22 * 10) / 10 : 72.0;
+        // ✅ CORRIGÉ : Utiliser la bonne source pour height
+        const currentHeight = currentMetrics?.height || currentImpedance?.height || null;
+        const targetWeight = currentHeight ? Math.round((currentHeight / 100) ** 2 * 22 * 10) / 10 : 72.0;
         
-        if (current.weight > targetWeight && weeklyLoss > 0) {
-          const weeksToTarget = Math.ceil((current.weight - targetWeight) / weeklyLoss);
+        if (currentWeightForCalc > targetWeight && weeklyLoss > 0) {
+          const weeksToTarget = Math.ceil((currentWeightForCalc - targetWeight) / weeklyLoss);
           
           comments.push({
             id: 'recommendation_nutrition',
@@ -575,9 +690,10 @@ const ProgressComments = () => {
             actions: ['Maintenir le déficit calorique', 'Surveiller les protéines', 'Maintenir l\'hydratation']
           });
         }
-      } else if (weightLoss <= 0 && current.weight && previous.weight && current.weight > previous.weight) {
-        // Prise de poids détectée
-        const weightGain = current.weight - previous.weight;
+      } else if (weightLoss <= 0 && currentWeightForCalc && (previousMetrics?.weight || previousImpedance?.weight)) {
+        // ✅ CORRIGÉ : Prise de poids détectée
+        const previousWeight = previousMetrics?.weight || previousImpedance?.weight || 0;
+        const weightGain = currentWeightForCalc - previousWeight;
         comments.push({
           id: 'recommendation_nutrition',
           type: 'recommendations',

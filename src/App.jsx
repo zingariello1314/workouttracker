@@ -1,5 +1,6 @@
 import React from 'react';
 import { WorkoutProvider } from './context/WorkoutContext';
+import { ToastProvider } from './components/ui/Toast';
 import Header from './components/layout/Header';
 import Navigation from './components/layout/Navigation';
 import HomePage from './components/HomePage';
@@ -24,9 +25,11 @@ import { useWorkout } from './context/WorkoutContext';
 
 const WorkoutTrackerApp = () => {
   return (
-    <WorkoutProvider>
-      <WorkoutTrackerContent />
-    </WorkoutProvider>
+    <ToastProvider>
+      <WorkoutProvider>
+        <WorkoutTrackerContent />
+      </WorkoutProvider>
+    </ToastProvider>
   );
 };
 

@@ -98,7 +98,12 @@ const calculateDataQualityScore = (progressEntries, dateRange, requiredMetrics =
   requiredMetrics.forEach(metric => {
     const hasMetric = relevantEntries.some(entry => {
       if (metric === 'weight') return entry.type === 'metrics' && entry.weight != null;
-      if (metric === 'muscle') return entry.type === 'impedance' && entry.skeletalMuscle != null;
+      // ✅ CORRIGÉ : Gestion des fallbacks pour compatibilité (muscleMass → skeletalMuscle)
+      if (metric === 'muscle') {
+        if (entry.type !== 'impedance') return false;
+        const muscle = entry.muscleMass || entry.skeletalMuscle;
+        return muscle != null;
+      }
       if (metric === 'bodyFat') return entry.type === 'impedance' && entry.bodyFatPercentage != null;
       return entry[metric] != null;
     });
@@ -540,8 +545,10 @@ export const performStratosphericAnalysis = async (
           timeSeries.waist.push({ date: entryDate, value: entry.waist });
         }
       } else if (entry.type === 'impedance') {
-        if (entry.skeletalMuscle != null) {
-          timeSeries.muscle.push({ date: entryDate, value: entry.skeletalMuscle });
+        // ✅ CORRIGÉ : Gestion des fallbacks pour compatibilité (muscleMass → skeletalMuscle)
+        const muscle = entry.muscleMass || entry.skeletalMuscle;
+        if (muscle != null) {
+          timeSeries.muscle.push({ date: entryDate, value: muscle });
         }
         if (entry.bodyFatPercentage != null) {
           timeSeries.bodyFat.push({ date: entryDate, value: entry.bodyFatPercentage });

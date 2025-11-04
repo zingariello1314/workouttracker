@@ -1,5 +1,6 @@
 import { workoutProgram } from '../data/workoutProgram';
 import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
+import { calculateAutoReps } from '../utils/exerciseCalculations';
 
 export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData) => {
   // Utiliser getCurrentData si disponible, sinon data
@@ -41,47 +42,9 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     };
   };
 
-  // Fonction pour calculer les répétitions totales à partir du format "NxX-Y" ou "NxX"
+  // Alias pour compatibilité : calculateAverageReps utilise calculateAutoReps avec arrondi
   const calculateAverageReps = (seriesText) => {
-    if (!seriesText) return null;
-    
-    // Rechercher le pattern "nombre×nombre-nombre" (ex: "4×10-12")
-    const fullRangeMatch = seriesText.match(/(\d+)×(\d+)-(\d+)/);
-    if (fullRangeMatch) {
-      const series = parseInt(fullRangeMatch[1]);
-      const minReps = parseInt(fullRangeMatch[2]);
-      const maxReps = parseInt(fullRangeMatch[3]);
-      const averageReps = (minReps + maxReps) / 2;
-      
-      // Retourner le total : nombre de séries × répétitions moyennes
-      return Math.round(series * averageReps);
-    }
-    
-    // Rechercher le pattern "nombre×nombre" (ex: "4×10")
-    const seriesMatch = seriesText.match(/(\d+)×(\d+)/);
-    if (seriesMatch) {
-      const series = parseInt(seriesMatch[1]);
-      const reps = parseInt(seriesMatch[2]);
-      return series * reps;
-    }
-    
-    // Rechercher le pattern "nombre-nombre" sans séries (ex: "10-12")
-    const rangeMatch = seriesText.match(/(\d+)-(\d+)/);
-    if (rangeMatch) {
-      const min = parseInt(rangeMatch[1]);
-      const max = parseInt(rangeMatch[2]);
-      const average = (min + max) / 2;
-      
-      return Math.round(average);
-    }
-    
-    // Si pas de range trouvé, essayer de trouver un nombre simple
-    const singleMatch = seriesText.match(/(\d+)/);
-    if (singleMatch) {
-      return parseInt(singleMatch[1]);
-    }
-    
-    return null;
+    return calculateAutoReps(seriesText, { round: true });
   };
 
   const toggleCheck = (exerciseId, date, autoReps = null) => {
@@ -288,6 +251,7 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
     toggleEtirement,
     changeWeekVariant,
     startProgram,
-    resetAll
+    resetAll,
+    calculateAverageReps // Exporter pour compatibilité
   };
 };

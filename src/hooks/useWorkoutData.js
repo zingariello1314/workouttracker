@@ -106,7 +106,10 @@ export const useWorkoutData = () => {
     progressEntries: [],
     bodyTrackingReminders: [],
     bodyTrackingLastUpdated: null,
-    sessionFeedbacks: {} // Stockage des feedbacks de session par date
+    sessionFeedbacks: {}, // Stockage des feedbacks de session par date
+    // ✅ NOUVEAU : Système de variations journalières pour l'onglet "Aujourd'hui"
+    dailyVariations: {}, // Format: { "YYYY-MM-DD": DailyVariation }
+    dailyVariationsVersion: '1.0' // Version du schéma pour migrations futures
     // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
   });
 
@@ -115,6 +118,78 @@ export const useWorkoutData = () => {
   const isInitialLoadRef = useRef(true);
   const dbConnectionRef = useRef(null);
   const dbConnectionPromiseRef = useRef(null);
+
+  // ✅ Migration automatique des dailyVariations depuis ancien format
+  // DOIT être définie AVANT loadFromDB qui l'utilise
+  const migrateDailyVariations = (rawData) => {
+    // Si dailyVariations n'existe pas, initialiser vide
+    if (!rawData.dailyVariations) {
+      return {
+        ...rawData,
+        dailyVariations: {},
+        dailyVariationsVersion: '1.0'
+      };
+    }
+    
+    // ✅ Migration depuis ancien format (si version < 1.0 ou absente)
+    const migratedVariations = {};
+    let migrationNeeded = false;
+    
+    Object.entries(rawData.dailyVariations || {}).forEach(([dateStr, variation]) => {
+      // ✅ Vérifier si migration nécessaire
+      if (!variation.version || parseFloat(variation.version || '0') < 1.0) {
+        migrationNeeded = true;
+        
+        // Migration depuis format ancien vers format 1.0
+        migratedVariations[dateStr] = {
+          ...variation,
+          date: variation.date || dateStr, // S'assurer que date existe
+          suppressedExercises: Array.isArray(variation.suppressedExercises) 
+            ? variation.suppressedExercises.filter(id => typeof id === 'number' && !isNaN(id))
+            : [],
+          additionalExercises: Array.isArray(variation.additionalExercises)
+            ? variation.additionalExercises.map(ex => ({
+                ...ex,
+                version: '1.0',
+                schemaVersion: 1,
+                // ✅ S'assurer que completed existe
+                completed: ex.completed !== undefined ? ex.completed : false,
+                // ✅ S'assurer que isExceptional est true
+                isExceptional: true,
+                // ✅ Initialiser métadonnées si absentes
+                modificationCount: ex.modificationCount || 0,
+                lastModifiedAt: ex.lastModifiedAt || ex.addedAt || new Date(),
+                // ✅ Valider que le type est correct
+                type: ex.type && ['reps', 'duration'].includes(ex.type) ? ex.type : 'reps'
+              }))
+            : [],
+          version: '1.0',
+          schemaVersion: 1,
+          // ✅ Initialiser compteur si absent
+          lastExceptionalIdCounter: variation.lastExceptionalIdCounter || 
+            (variation.additionalExercises?.length || 0),
+          // ✅ Initialiser métadonnées si absentes
+          modificationCount: variation.modificationCount || 0,
+          lastModifiedAt: variation.lastModifiedAt || variation.createdAt || new Date(),
+          createdAt: variation.createdAt || new Date()
+        };
+      } else {
+        // ✅ Déjà à jour, garder tel quel
+        migratedVariations[dateStr] = variation;
+      }
+    });
+    
+    // ✅ Log si migration effectuée
+    if (migrationNeeded) {
+      console.log('🔄 Migration dailyVariations effectuée (format 1.0)');
+    }
+    
+    return {
+      ...rawData,
+      dailyVariations: migratedVariations,
+      dailyVariationsVersion: rawData.dailyVariationsVersion || '1.0'
+    };
+  };
 
   // Fonction pour ouvrir IndexedDB (pour les données workout)
   const openDB = () => {
@@ -242,6 +317,11 @@ export const useWorkoutData = () => {
         bodyTrackingReminders: newData && newData.bodyTrackingReminders ? [...newData.bodyTrackingReminders] : [],
         bodyTrackingLastUpdated: newData && newData.bodyTrackingLastUpdated ? newData.bodyTrackingLastUpdated : null,
         sessionFeedbacks: newData && newData.sessionFeedbacks ? { ...newData.sessionFeedbacks } : {},
+        // ✅ NOUVEAU : dailyVariations avec validation
+        dailyVariations: newData && newData.dailyVariations && typeof newData.dailyVariations === 'object' 
+          ? { ...newData.dailyVariations } 
+          : {},
+        dailyVariationsVersion: newData && newData.dailyVariationsVersion ? newData.dailyVariationsVersion : '1.0',
         // Données d'endurance - CRUCIAL pour la persistance
         enduranceData: newData && newData.enduranceData ? { ...newData.enduranceData } : {
           sessions: {
@@ -310,6 +390,8 @@ export const useWorkoutData = () => {
             weekVariant: newData.weekVariant || 'A',
             progressPhotos: [],
             sessionFeedbacks: newData.sessionFeedbacks || {},
+            dailyVariations: newData.dailyVariations || {},
+            dailyVariationsVersion: newData.dailyVariationsVersion || '1.0',
             homepageImages: {
               backgroundImages: [],
               bannerImages: [],
@@ -437,20 +519,26 @@ export const useWorkoutData = () => {
           const result = request.result;
           
           if (result) {
+            // ✅ Migration automatique : Initialiser dailyVariations si absent
+            const migratedData = migrateDailyVariations(result.data || result);
+            
             // Validation des données chargées
             const validatedData = {
-              checkedExercises: result.checkedExercises || {},
-              reps: result.reps || {},
-              checkedStretches: result.checkedStretches || {},
-              startDate: result.startDate || null,
-              weekVariant: result.weekVariant || 'A',
-              progressPhotos: Array.isArray(result.progressPhotos) ? result.progressPhotos : [],
-              progressEntries: Array.isArray(result.progressEntries) ? result.progressEntries : [],
-              bodyTrackingReminders: Array.isArray(result.bodyTrackingReminders) ? result.bodyTrackingReminders : [],
-              bodyTrackingLastUpdated: result.bodyTrackingLastUpdated || null,
-              sessionFeedbacks: result.sessionFeedbacks || {},
+              checkedExercises: migratedData.checkedExercises || {},
+              reps: migratedData.reps || {},
+              checkedStretches: migratedData.checkedStretches || {},
+              startDate: migratedData.startDate || null,
+              weekVariant: migratedData.weekVariant || 'A',
+              progressPhotos: Array.isArray(migratedData.progressPhotos) ? migratedData.progressPhotos : [],
+              progressEntries: Array.isArray(migratedData.progressEntries) ? migratedData.progressEntries : [],
+              bodyTrackingReminders: Array.isArray(migratedData.bodyTrackingReminders) ? migratedData.bodyTrackingReminders : [],
+              bodyTrackingLastUpdated: migratedData.bodyTrackingLastUpdated || null,
+              sessionFeedbacks: migratedData.sessionFeedbacks || {},
+              // ✅ NOUVEAU : dailyVariations avec migration automatique
+              dailyVariations: migratedData.dailyVariations || {},
+              dailyVariationsVersion: migratedData.dailyVariationsVersion || '1.0',
               // Données d'endurance - CRUCIAL pour la persistance
-              enduranceData: result.enduranceData || {
+              enduranceData: migratedData.enduranceData || result.enduranceData || {
                 sessions: {
                   boxing: [],
                   pushups: [],
@@ -469,7 +557,9 @@ export const useWorkoutData = () => {
               const backupData = localStorage.getItem('workoutData_backup');
               if (backupData) {
                 const parsedBackup = JSON.parse(backupData);
-                resolve(parsedBackup);
+                // ✅ Migration automatique des données localStorage
+                const migratedBackup = migrateDailyVariations(parsedBackup);
+                resolve(migratedBackup);
               } else {
                 resolve(null);
               }
@@ -488,7 +578,9 @@ export const useWorkoutData = () => {
             const backupData = localStorage.getItem('workoutData_backup');
             if (backupData) {
               const parsedBackup = JSON.parse(backupData);
-              resolve(parsedBackup);
+              // ✅ Migration automatique des données localStorage
+              const migratedBackup = migrateDailyVariations(parsedBackup);
+              resolve(migratedBackup);
             } else {
               resolve(null);
             }
@@ -506,7 +598,8 @@ export const useWorkoutData = () => {
         const backupData = localStorage.getItem('workoutData_backup');
         if (backupData) {
           const parsedBackup = JSON.parse(backupData);
-          return parsedBackup;
+          // ✅ Migration automatique des données localStorage
+          return migrateDailyVariations(parsedBackup);
         }
       } catch (backupError) {
         console.error('❌ Erreur lors de la récupération du backup après erreur critique:', backupError);

@@ -93,11 +93,18 @@ const getMuscleMassAtDate = (progressEntries = [], targetDate) => {
     return null;
   }
   
+  // ✅ CORRIGÉ : Gestion des fallbacks pour compatibilité (muscleMass → skeletalMuscle)
   const muscleEntries = progressEntries
-    .filter(entry => entry.type === 'impedance' && entry.skeletalMuscle != null && !isNaN(entry.skeletalMuscle))
+    .filter(entry => {
+      if (entry.type !== 'impedance') return false;
+      // ✅ GESTION INTELLIGENTE DES FALLBACKS : muscleMass (nouveau) ou skeletalMuscle (ancien)
+      const muscle = entry.muscleMass || entry.skeletalMuscle;
+      return muscle != null && !isNaN(muscle);
+    })
     .map(entry => ({
       date: normalizeDate(entry.date || entry.timestamp),
-      muscleMass: parseFloat(entry.skeletalMuscle)
+      // ✅ UTILISER muscleMass en priorité, fallback sur skeletalMuscle
+      muscleMass: parseFloat(entry.muscleMass || entry.skeletalMuscle)
     }))
     .filter(entry => entry.date && entry.date <= normalizedTarget)
     .sort((a, b) => b.date.localeCompare(a.date));

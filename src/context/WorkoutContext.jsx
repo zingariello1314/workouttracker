@@ -499,160 +499,339 @@ const WorkoutProvider = ({ children }) => {
 
     const history = [];
     
-    // Grouper les données par date
+    // ✅ Grouper les données par date (structure enrichie pour variations)
     const dataByDate = {};
     
-    // Traiter les exercices (si les données existent)
-    if (currentData.reps) {
-    Object.keys(currentData.reps).forEach(key => {
-        const reps = parseInt(currentData.reps[key]) || 0;
-        console.log(`DEBUG: Processing key: ${key} reps: ${reps}`);
-        
-        if (reps > 0) {
-          // Extraire la date de la clé (format: YYYY-MM-DD_exerciseId_variant)
-          const parts = key.split('_');
-          if (parts.length >= 2) {
-            const dateStr = parts[0];
-            const exerciseId = parts[1];
-            const variant = parts[2] || '';
-          // Ignorer les clés non-numériques (endurance, complementary, etc.)
-          if (!/^\d+$/.test(exerciseId)) {
-            return; // ne pas compter dans l'historique des exercices
-          }
-            
-            if (!dataByDate[dateStr]) {
-              dataByDate[dateStr] = { exercises: {}, stretches: {} };
-            }
-            
-            dataByDate[dateStr].exercises[key] = {
-              exerciseId: exerciseId,
-              reps: reps,
-              completed: currentData.checkedExercises?.[key] || false,
-              variant: variant
-            };
-          }
-        }
-      });
-    }
-    
-    // Traiter les sessions d'endurance
-    const enduranceData = currentData?.enduranceData || {};
-    const enduranceSessions = enduranceData.sessions || {};
-    
-    Object.entries(enduranceSessions).forEach(([activityType, sessions]) => {
-      if (Array.isArray(sessions)) {
-        sessions.forEach(session => {
-          if (session.date) {
-            // Convertir la date au format YYYY-MM-DD si nécessaire
-            let dateStr = session.date;
-            if (session.date.includes('T')) {
-              dateStr = session.date.split('T')[0];
-            }
-            
-            // Vérifier que c'est une date valide
-            if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-              if (!dataByDate[dateStr]) {
-                dataByDate[dateStr] = { exercises: {}, stretches: {} };
+    // ✅ ============================================
+    // PHASE 1 : TRAITER LES EXERCICES NORMAUX (code existant préservé)
+    // ============================================
+    try {
+      if (currentData.reps) {
+        Object.keys(currentData.reps).forEach(key => {
+          const reps = parseInt(currentData.reps[key]) || 0;
+          console.log(`DEBUG: Processing key: ${key} reps: ${reps}`);
+          
+          if (reps > 0) {
+            // Extraire la date de la clé (format: YYYY-MM-DD_exerciseId_variant)
+            const parts = key.split('_');
+            if (parts.length >= 2) {
+              const dateStr = parts[0];
+              const exerciseId = parts[1];
+              const variant = parts[2] || '';
+              
+              // ✅ Ignorer les clés non-numériques (endurance, complementary, etc.)
+              if (!/^\d+$/.test(exerciseId)) {
+                return; // ne pas compter dans l'historique des exercices
               }
               
-              // Ajouter la session d'endurance comme exercice
-              // CORRECTION CRITIQUE: Ne PAS compter les jumps comme reps pour jumprope
-              // Les jumps sont une métrique séparée, pas des répétitions d'exercice
-              const enduranceKey = `${dateStr}_endurance_${activityType}_${session.id || Date.now()}`;
-              dataByDate[dateStr].exercises[enduranceKey] = {
-                exerciseId: `endurance_${activityType}`,
-                reps: activityType === 'jumprope' ? 0 : (session.reps || session.count || 0), // Exclure jumps des reps
-                jumps: activityType === 'jumprope' ? (session.jumps || 0) : undefined, // Garder jumps séparément
-                completed: true,
-                variant: '',
-                activityType: activityType,
-                duration: session.duration || 0,
-                distance: session.distance || 0,
-                notes: session.notes || ''
+              if (!dataByDate[dateStr]) {
+                dataByDate[dateStr] = { exercises: {}, stretches: {}, variations: null };
+              }
+              
+              dataByDate[dateStr].exercises[key] = {
+                exerciseId: exerciseId,
+                reps: reps,
+                completed: currentData.checkedExercises?.[key] || false,
+                variant: variant
               };
             }
           }
         });
       }
-    });
-
-    // Traiter les étirements
-    if (currentData.checkedStretches) {
-      Object.keys(currentData.checkedStretches).forEach(key => {
-        if (currentData.checkedStretches[key]) {
-          const parts = key.split('_');
-          if (parts.length >= 2) {
-            const dateStr = parts[0];
-            const stretchType = parts[1];
-            
-            if (!dataByDate[dateStr]) {
-              dataByDate[dateStr] = { exercises: {}, stretches: {} };
-            }
-            
-            dataByDate[dateStr].stretches[key] = {
-              stretchType: stretchType,
-              completed: true
-            };
-          }
-        }
-      });
+    } catch (error) {
+      console.error('❌ Erreur Phase 1 (Exercices normaux):', error);
+      // Continuer même en cas d'erreur (fallback gracieux)
     }
     
-    // Traiter chaque date
-    Object.keys(dataByDate).forEach(dateStr => {
-      const date = new Date(dateStr);
-      const dayName = getDayName(date);
-      
-      console.log(`DEBUG: Processing date: ${dateStr} dayName: ${dayName}`);
-      
-      const dateData = dataByDate[dateStr];
-      const exercises = [];
-      const stretches = [];
-      
-      // Créer les exercices à partir des données réelles
-      Object.keys(dateData.exercises || {}).forEach(key => {
-        const exerciseData = dateData.exercises[key];
-        const exerciseName = getExerciseNameById(exerciseData.exerciseId);
+    // ✅ ============================================
+    // PHASE 2 : TRAITER LES DAILY VARIATIONS (NOUVEAU)
+    // ============================================
+    try {
+      Object.entries(currentData.dailyVariations || {}).forEach(([dateStr, variation]) => {
+        // ✅ Validation stricte de la variation
+        if (!variation || typeof variation !== 'object') {
+          console.warn(`⚠️ Variation invalide pour ${dateStr}:`, variation);
+          return;
+        }
         
-        exercises.push({
-          id: exerciseData.exerciseId,
-          name: exerciseName,
-          reps: exerciseData.reps,
-          completed: exerciseData.completed
+        // ✅ Initialiser dataByDate si pas déjà fait
+        if (!dataByDate[dateStr]) {
+          dataByDate[dateStr] = { exercises: {}, stretches: {}, variations: variation };
+        } else {
+          dataByDate[dateStr].variations = variation;
+        }
+        
+        // ✅ Traiter les exercices exceptionnels (SEULEMENT complétés)
+        const additionalExercises = Array.isArray(variation.additionalExercises) 
+          ? variation.additionalExercises 
+          : [];
+        
+        additionalExercises.forEach(ex => {
+          // ✅ Validation stricte de l'exercice exceptionnel
+          if (!ex || typeof ex !== 'object' || !ex.id) {
+            console.warn(`⚠️ Exercice exceptionnel invalide pour ${dateStr}:`, ex);
+            return;
+          }
+          
+          // ✅ SEULEMENT les exercices complétés vont dans l'historique
+          if (ex.completed === true) {
+            const exerciseKey = `exceptional_${ex.id}`;
+            
+            // ✅ Priorité données réelles : actualReps > totalReps > repsPerSeries
+            let reps = 0;
+            let actualReps = null;
+            let totalReps = null;
+            
+            if (ex.type === 'reps') {
+              // Priorité 1 : actualReps (données réelles)
+              if (Array.isArray(ex.actualReps) && ex.actualReps.length > 0) {
+                actualReps = ex.actualReps;
+                totalReps = ex.actualReps.reduce((sum, r) => sum + (typeof r === 'number' ? r : 0), 0);
+                reps = totalReps;
+              }
+              // Priorité 2 : totalReps (calculé)
+              else if (ex.totalReps && typeof ex.totalReps === 'number' && ex.totalReps > 0) {
+                totalReps = ex.totalReps;
+                reps = totalReps;
+              }
+              // Priorité 3 : repsPerSeries (planifiées)
+              else if (Array.isArray(ex.repsPerSeries) && ex.repsPerSeries.length > 0) {
+                actualReps = ex.repsPerSeries;
+                totalReps = ex.repsPerSeries.reduce((sum, r) => sum + (typeof r === 'number' ? r : 0), 0);
+                reps = totalReps;
+              }
+            }
+            
+            // ✅ Durée pour type 'duration'
+            let duration = null;
+            if (ex.type === 'duration') {
+              // Priorité : actualDuration > duration
+              duration = ex.actualDuration || ex.duration || null;
+            }
+            
+            dataByDate[dateStr].exercises[exerciseKey] = {
+              exerciseId: ex.id, // ID complet pour référence
+              name: ex.name || 'Exercice exceptionnel', // Nom directement disponible
+              reps: reps,
+              duration: duration,
+              completed: true,
+              isExceptional: true, // ✅ Flag pour distinction
+              type: ex.type,
+              actualReps: actualReps, // Détails par série si disponible
+              totalReps: totalReps, // Total calculé
+              materiel: ex.materiel,
+              notes: ex.notes
+            };
+          }
         });
       });
-
-      // Créer les étirements à partir des données réelles
-      Object.keys(dateData.stretches || {}).forEach(key => {
-        const stretchData = dateData.stretches[key];
-        
-        stretches.push({
-          type: stretchData.stretchType,
-          completed: stretchData.completed
+    } catch (error) {
+      console.error('❌ Erreur Phase 2 (DailyVariations):', error);
+      // Continuer même en cas d'erreur (fallback gracieux)
+    }
+    
+    // ✅ ============================================
+    // PHASE 3 : TRAITER LES ÉTIREMENTS (code existant préservé)
+    // ============================================
+    try {
+      if (currentData.checkedStretches) {
+        Object.keys(currentData.checkedStretches).forEach(key => {
+          if (currentData.checkedStretches[key]) {
+            const parts = key.split('_');
+            if (parts.length >= 2) {
+              const dateStr = parts[0];
+              const stretchType = parts[1];
+              
+              if (!dataByDate[dateStr]) {
+                dataByDate[dateStr] = { exercises: {}, stretches: {}, variations: null };
+              }
+              
+              dataByDate[dateStr].stretches[key] = {
+                stretchType: stretchType,
+                completed: true
+              };
+            }
+          }
         });
-      });
-
-      const totalReps = exercises.reduce((sum, ex) => sum + ex.reps, 0);
-      const completedExercises = exercises.filter(ex => ex.completed).length;
-      const completedStretches = stretches.filter(stretch => stretch.completed).length;
-
-      if (totalReps > 0 || completedExercises > 0 || completedStretches > 0) {
-        const sessionData = {
-          date: dateStr,
-          dayName: dayName,
-          exercises: exercises,
-          stretches: stretches,
-          totalReps: totalReps,
-          completedExercises: completedExercises,
-          completedStretches: completedStretches,
-          totalExercises: exercises.length,
-          totalStretches: stretches.length
-        };
-        
-        console.log(`DEBUG: Adding session data for ${dateStr}:`, sessionData);
-        history.push(sessionData);
       }
-    });
+    } catch (error) {
+      console.error('❌ Erreur Phase 3 (Étirements):', error);
+      // Continuer même en cas d'erreur (fallback gracieux)
+    }
+    
+    // ✅ ============================================
+    // PHASE 4 : TRAITER LES SESSIONS D'ENDURANCE (code existant préservé)
+    // ============================================
+    try {
+      const enduranceData = currentData?.enduranceData || {};
+      const enduranceSessions = enduranceData.sessions || {};
+      
+      Object.entries(enduranceSessions).forEach(([activityType, sessions]) => {
+        if (Array.isArray(sessions)) {
+          sessions.forEach(session => {
+            if (session.date) {
+              // Convertir la date au format YYYY-MM-DD si nécessaire
+              let dateStr = session.date;
+              if (session.date.includes('T')) {
+                dateStr = session.date.split('T')[0];
+              }
+              
+              // Vérifier que c'est une date valide
+              if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                if (!dataByDate[dateStr]) {
+                  dataByDate[dateStr] = { exercises: {}, stretches: {}, variations: null };
+                }
+                
+                // Ajouter la session d'endurance comme exercice
+                // CORRECTION CRITIQUE: Ne PAS compter les jumps comme reps pour jumprope
+                // Les jumps sont une métrique séparée, pas des répétitions d'exercice
+                const enduranceKey = `${dateStr}_endurance_${activityType}_${session.id || Date.now()}`;
+                dataByDate[dateStr].exercises[enduranceKey] = {
+                  exerciseId: `endurance_${activityType}`,
+                  reps: activityType === 'jumprope' ? 0 : (session.reps || session.count || 0), // Exclure jumps des reps
+                  jumps: activityType === 'jumprope' ? (session.jumps || 0) : undefined, // Garder jumps séparément
+                  completed: true,
+                  variant: '',
+                  activityType: activityType,
+                  duration: session.duration || 0,
+                  distance: session.distance || 0,
+                  notes: session.notes || ''
+                };
+              }
+            }
+          });
+        }
+      });
+    } catch (error) {
+      console.error('❌ Erreur Phase 4 (Endurance):', error);
+      // Continuer même en cas d'erreur (fallback gracieux)
+    }
+    
+    // ✅ ============================================
+    // PHASE 5 : FUSION INTELLIGENTE AVEC MÉTADONNÉES ENRICHIES
+    // ============================================
+    try {
+      Object.keys(dataByDate).forEach(dateStr => {
+        const date = new Date(dateStr);
+        const dayName = getDayName(date);
+        
+        console.log(`DEBUG: Processing date: ${dateStr} dayName: ${dayName}`);
+        
+        const dateData = dataByDate[dateStr];
+        const variation = dateData.variations;
+        const exercises = [];
+        const stretches = [];
+        
+        // ✅ Créer les exercices depuis les données normales ET exceptionnelles
+        Object.keys(dateData.exercises || {}).forEach(key => {
+          const exerciseData = dateData.exercises[key];
+          
+          // ✅ Si exercice exceptionnel, utiliser les données complètes
+          if (exerciseData.isExceptional) {
+            exercises.push({
+              id: exerciseData.exerciseId,
+              name: exerciseData.name || 'Exercice exceptionnel',
+              reps: exerciseData.reps || 0,
+              duration: exerciseData.duration || null,
+              completed: true,
+              isExceptional: true, // ✅ Flag pour distinction
+              type: exerciseData.type,
+              actualReps: exerciseData.actualReps, // Détails par série si disponible
+              totalReps: exerciseData.totalReps, // Total calculé
+              materiel: exerciseData.materiel,
+              notes: exerciseData.notes
+            });
+          } else {
+            // ✅ Exercice normal (programme ou endurance)
+            const exerciseName = getExerciseNameById(exerciseData.exerciseId);
+            exercises.push({
+              id: exerciseData.exerciseId,
+              name: exerciseName,
+              reps: exerciseData.reps || 0,
+              completed: exerciseData.completed || false,
+              variant: exerciseData.variant || '',
+              // ✅ Données spécifiques endurance si présentes
+              ...(exerciseData.activityType && {
+                activityType: exerciseData.activityType,
+                jumps: exerciseData.jumps,
+                duration: exerciseData.duration,
+                distance: exerciseData.distance,
+                notes: exerciseData.notes
+              })
+            });
+          }
+        });
+
+        // ✅ Créer les étirements à partir des données réelles
+        Object.keys(dateData.stretches || {}).forEach(key => {
+          const stretchData = dateData.stretches[key];
+          
+          stretches.push({
+            type: stretchData.stretchType,
+            completed: stretchData.completed
+          });
+        });
+
+        // ✅ Ajouter les exercices supprimés comme entrées spéciales (pour traçabilité)
+        if (variation && Array.isArray(variation.suppressedExercises) && variation.suppressedExercises.length > 0) {
+          variation.suppressedExercises.forEach(exId => {
+            // ✅ Validation ID
+            if (typeof exId !== 'number' || isNaN(exId) || exId <= 0) {
+              console.warn(`⚠️ ID d'exercice supprimé invalide: ${exId}`);
+              return;
+            }
+            
+            const exerciseName = getExerciseNameById(exId.toString());
+            exercises.push({
+              id: exId.toString(),
+              name: exerciseName,
+              reps: 0,
+              completed: false,
+              isSuppressed: true, // ✅ Flag pour distinction
+              suppressionReason: variation.reason || null
+            });
+          });
+        }
+
+        // ✅ Calculer totalReps (EXCLURE les supprimés et non-complétés)
+        const totalReps = exercises
+          .filter(ex => !ex.isSuppressed && ex.completed) // ✅ Exclure supprimés et non-complétés
+          .reduce((sum, ex) => sum + (ex.reps || 0), 0);
+        
+        const completedExercises = exercises.filter(ex => ex.completed).length;
+        const completedStretches = stretches.filter(stretch => stretch.completed).length;
+
+        // ✅ Inclure dans l'historique si au moins une activité
+        if (totalReps > 0 || completedExercises > 0 || completedStretches > 0 || exercises.length > 0) {
+          const sessionData = {
+            date: dateStr,
+            dayName: dayName,
+            exercises: exercises,
+            stretches: stretches,
+            totalReps: totalReps,
+            completedExercises: completedExercises,
+            completedStretches: completedStretches,
+            totalExercises: exercises.length,
+            totalStretches: stretches.length,
+            // ✅ Métadonnées enrichies pour analytics
+            hasVariations: !!variation,
+            suppressedCount: variation && Array.isArray(variation.suppressedExercises) 
+              ? variation.suppressedExercises.length 
+              : 0,
+            exceptionalCount: variation && Array.isArray(variation.additionalExercises)
+              ? variation.additionalExercises.filter(ex => ex && ex.completed === true).length
+              : 0,
+            variationReason: variation?.reason || null
+          };
+          
+          console.log(`DEBUG: Adding session data for ${dateStr}:`, sessionData);
+          history.push(sessionData);
+        }
+      });
+    } catch (error) {
+      console.error('❌ Erreur Phase 5 (Fusion):', error);
+      // Continuer même en cas d'erreur (fallback gracieux)
+    }
 
     console.log('DEBUG: Final history result:', history);
     return history.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -795,6 +974,124 @@ const WorkoutProvider = ({ children }) => {
       };
     } catch (error) {
       console.error('❌ Erreur lors de l\'ajout de l\'entrée de progression:', error);
+      throw error;
+    }
+  };
+
+  // Fonction pour mettre à jour une entrée de progression
+  const updateProgressEntry = async (entryId, updates) => {
+    try {
+      if (!entryId) {
+        throw new Error('ID d\'entrée de progression invalide');
+      }
+
+      const currentData = getCurrentData();
+      const progressEntries = currentData.progressEntries || [];
+      const entryIndex = progressEntries.findIndex(entry => entry.id === entryId);
+
+      if (entryIndex === -1) {
+        throw new Error('Entrée de progression non trouvée');
+      }
+
+      const existingEntry = progressEntries[entryIndex];
+      const updatedEntry = {
+        ...existingEntry,
+        ...updates,
+        // Mettre à jour la date si elle est fournie
+        date: updates.date ? new Date(updates.date).toISOString() : existingEntry.date,
+        timestamp: updates.date ? new Date(updates.date).getTime() : (updates.timestamp || existingEntry.timestamp),
+        // Métadonnées de sauvegarde
+        savedAt: Date.now()
+      };
+
+      const updatedEntries = [...progressEntries];
+      updatedEntries[entryIndex] = updatedEntry;
+
+      const updatedData = {
+        ...currentData,
+        progressEntries: updatedEntries,
+        bodyTrackingLastUpdated: new Date().toISOString()
+      };
+
+      await updateData(updatedData);
+      
+      console.log(`✅ Entrée de progression mise à jour: ${entryId}`);
+      return { success: true, entry: updatedEntry };
+    } catch (error) {
+      console.error('❌ Erreur lors de la mise à jour de l\'entrée de progression:', error);
+      throw error;
+    }
+  };
+
+  // Fonction pour supprimer une entrée de progression
+  const deleteProgressEntry = async (entryId) => {
+    try {
+      if (!entryId) {
+        throw new Error('ID d\'entrée de progression invalide');
+      }
+
+      const currentData = getCurrentData();
+      const progressEntries = currentData.progressEntries || [];
+      const entryIndex = progressEntries.findIndex(entry => entry.id === entryId);
+
+      if (entryIndex === -1) {
+        throw new Error('Entrée de progression non trouvée');
+      }
+
+      const updatedEntries = progressEntries.filter((_, index) => index !== entryIndex);
+      const updatedData = {
+        ...currentData,
+        progressEntries: updatedEntries,
+        bodyTrackingLastUpdated: new Date().toISOString()
+      };
+
+      await updateData(updatedData);
+      
+      console.log(`✅ Entrée de progression supprimée: ${entryId}`);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression de l\'entrée de progression:', error);
+      throw error;
+    }
+  };
+
+  // Fonction pour supprimer un champ spécifique d'une entrée
+  const deleteProgressEntryField = async (entryId, fieldName) => {
+    try {
+      if (!entryId || !fieldName) {
+        throw new Error('ID d\'entrée ou nom de champ invalide');
+      }
+
+      const currentData = getCurrentData();
+      const progressEntries = currentData.progressEntries || [];
+      const entryIndex = progressEntries.findIndex(entry => entry.id === entryId);
+
+      if (entryIndex === -1) {
+        throw new Error('Entrée de progression non trouvée');
+      }
+
+      const existingEntry = progressEntries[entryIndex];
+      const updatedEntry = {
+        ...existingEntry,
+        [fieldName]: null, // Supprimer le champ en le mettant à null
+        savedAt: Date.now()
+      };
+
+      const updatedEntries = [...progressEntries];
+      updatedEntries[entryIndex] = updatedEntry;
+
+      const updatedData = {
+        ...currentData,
+        progressEntries: updatedEntries,
+        bodyTrackingLastUpdated: new Date().toISOString()
+      };
+
+      await updateData(updatedData);
+      
+      console.log(`✅ Champ ${fieldName} supprimé de l'entrée: ${entryId}`);
+      return { success: true, entry: updatedEntry };
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression du champ:', error);
       throw error;
     }
   };
@@ -994,6 +1291,667 @@ const WorkoutProvider = ({ children }) => {
     return workoutHistory.reduce((sum, session) => sum + session.totalReps, 0);
   };
 
+  // ✅ ============================================
+  // PHASE 1.2 : ACTIONS CONTEXT - DAILY VARIATIONS
+  // ============================================
+  // Fonctions pour gérer les variations journalières (suppression, ajout, modification d'exercices)
+  // Toutes ces fonctions sauvegardent immédiatement (pas de système temp pour variations)
+
+  /**
+   * Supprime un exercice du programme pour aujourd'hui uniquement
+   * @param {number} exerciseId - ID de l'exercice à supprimer
+   * @param {string} [reason] - Raison optionnelle de la suppression
+   * @returns {Promise<{success: boolean, variation: object}>}
+   */
+  const suppressExerciseForToday = async (exerciseId, reason) => {
+    try {
+      // ✅ Validation stricte de l'entrée
+      if (typeof exerciseId !== 'number' || isNaN(exerciseId) || exerciseId <= 0) {
+        throw new Error('ID d\'exercice invalide');
+      }
+
+      const dateStr = getDateStr(new Date());
+      const currentData = getCurrentData();
+      
+      // ✅ Vérifier que l'exercice existe dans le programme
+      const exerciseExists = Object.values(workoutProgram).some(day => {
+        if (day.exercices) {
+          return day.exercices.some(ex => ex.id === exerciseId);
+        }
+        if (day.salleVariants) {
+          return Object.values(day.salleVariants).some(variant =>
+            variant.exercices && variant.exercices.some(ex => ex.id === exerciseId)
+          );
+        }
+        return false;
+      });
+
+      if (!exerciseExists) {
+        throw new Error(`Exercice ${exerciseId} non trouvé dans le programme`);
+      }
+
+      // ✅ Récupérer ou créer la variation pour aujourd'hui
+      const existingVariation = currentData.dailyVariations?.[dateStr];
+      const suppressedExercises = existingVariation?.suppressedExercises || [];
+
+      // ✅ Vérifier si déjà supprimé (idempotence)
+      if (suppressedExercises.includes(exerciseId)) {
+        console.log(`⚠️ Exercice ${exerciseId} déjà supprimé pour aujourd'hui`);
+        return {
+          success: true,
+          variation: existingVariation,
+          message: 'Exercice déjà supprimé'
+        };
+      }
+
+      // ✅ Créer ou mettre à jour la variation
+      const updatedVariation = {
+        date: dateStr,
+        suppressedExercises: [...suppressedExercises, exerciseId],
+        additionalExercises: existingVariation?.additionalExercises || [],
+        reason: reason || existingVariation?.reason,
+        createdAt: existingVariation?.createdAt || new Date(),
+        lastModifiedAt: new Date(),
+        modificationCount: (existingVariation?.modificationCount || 0) + 1,
+        version: '1.0',
+        schemaVersion: 1,
+        lastExceptionalIdCounter: existingVariation?.lastExceptionalIdCounter || 0
+      };
+
+      // ✅ Sauvegarder immédiatement (action critique)
+      const updatedData = {
+        ...currentData,
+        dailyVariations: {
+          ...(currentData.dailyVariations || {}),
+          [dateStr]: updatedVariation
+        }
+      };
+
+      await updateData(updatedData);
+
+      console.log(`✅ Exercice ${exerciseId} supprimé pour aujourd'hui`);
+      return {
+        success: true,
+        variation: updatedVariation,
+        message: 'Exercice supprimé avec succès'
+      };
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression de l\'exercice:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Restaure un exercice supprimé pour aujourd'hui
+   * @param {number} exerciseId - ID de l'exercice à restaurer
+   * @returns {Promise<{success: boolean, variation: object}>}
+   */
+  const restoreExerciseForToday = async (exerciseId) => {
+    try {
+      // ✅ Validation stricte de l'entrée
+      if (typeof exerciseId !== 'number' || isNaN(exerciseId) || exerciseId <= 0) {
+        throw new Error('ID d\'exercice invalide');
+      }
+
+      const dateStr = getDateStr(new Date());
+      const currentData = getCurrentData();
+      const existingVariation = currentData.dailyVariations?.[dateStr];
+
+      // ✅ Vérifier si variation existe
+      if (!existingVariation) {
+        throw new Error('Aucune variation trouvée pour aujourd\'hui');
+      }
+
+      const suppressedExercises = existingVariation.suppressedExercises || [];
+
+      // ✅ Vérifier si exercice est bien supprimé
+      if (!suppressedExercises.includes(exerciseId)) {
+        console.log(`⚠️ Exercice ${exerciseId} n'est pas supprimé pour aujourd'hui`);
+        return {
+          success: true,
+          variation: existingVariation,
+          message: 'Exercice déjà présent'
+        };
+      }
+
+      // ✅ Retirer l'exercice de la liste des supprimés
+      const updatedSuppressedExercises = suppressedExercises.filter(id => id !== exerciseId);
+
+      // ✅ Mettre à jour la variation
+      const updatedVariation = {
+        ...existingVariation,
+        suppressedExercises: updatedSuppressedExercises,
+        lastModifiedAt: new Date(),
+        modificationCount: (existingVariation.modificationCount || 0) + 1
+      };
+
+      // ✅ Si plus aucune variation, supprimer l'entrée
+      const hasOtherVariations = updatedSuppressedExercises.length > 0 || 
+                                 (existingVariation.additionalExercises?.length || 0) > 0;
+
+      const updatedData = {
+        ...currentData,
+        dailyVariations: {
+          ...(currentData.dailyVariations || {}),
+          ...(hasOtherVariations ? { [dateStr]: updatedVariation } : {})
+        }
+      };
+
+      // ✅ Si pas d'autres variations, supprimer complètement l'entrée
+      if (!hasOtherVariations) {
+        delete updatedData.dailyVariations[dateStr];
+      }
+
+      // ✅ Sauvegarder immédiatement (action critique)
+      await updateData(updatedData);
+
+      console.log(`✅ Exercice ${exerciseId} restauré pour aujourd'hui`);
+      return {
+        success: true,
+        variation: hasOtherVariations ? updatedVariation : null,
+        message: 'Exercice restauré avec succès'
+      };
+    } catch (error) {
+      console.error('❌ Erreur lors de la restauration de l\'exercice:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Génère un ID unique pour un exercice exceptionnel
+   * @param {string} dateStr - Date au format YYYY-MM-DD
+   * @param {object} variation - Variation existante (optionnelle)
+   * @returns {string} ID unique au format exceptional_YYYY-MM-DD_NNNN
+   */
+  const generateExceptionalExerciseId = (dateStr, variation) => {
+    // ✅ Stratégie incrémentale : Compteur par date (plus simple, prévisible, garanti unique)
+    const currentCounter = variation?.lastExceptionalIdCounter || 0;
+    const newCounter = currentCounter + 1;
+
+    // ✅ Validation : Si compteur dépasse 9999, utiliser stratégie hybride
+    if (newCounter > 9999) {
+      console.warn('⚠️ Compteur dépasse 9999, passage en mode hybride');
+      const timestamp = Date.now().toString().slice(-6); // 6 derniers chiffres
+      return `exceptional_${dateStr}_${String(newCounter).padStart(4, '0')}_${timestamp}`;
+    }
+
+    return `exceptional_${dateStr}_${String(newCounter).padStart(4, '0')}`;
+  };
+
+  /**
+   * Ajoute un exercice exceptionnel pour aujourd'hui
+   * @param {object} exercise - Données de l'exercice exceptionnel
+   * @param {string} exercise.name - Nom de l'exercice (requis, 2-100 chars)
+   * @param {'reps'|'duration'} exercise.type - Type d'exercice (requis)
+   * @param {number} [exercise.series] - Nombre de séries (requis si type === 'reps', 1-50)
+   * @param {number[]} [exercise.repsPerSeries] - Reps par série (requis si type === 'reps')
+   * @param {number} [exercise.duration] - Durée en secondes (requis si type === 'duration', > 0)
+   * @param {string} [exercise.materiel] - Matériel utilisé
+   * @param {string} [exercise.notes] - Notes personnelles
+   * @param {string} [reason] - Raison de l'ajout
+   * @returns {Promise<{success: boolean, exerciseId: string, exercise: object}>}
+   */
+  const addExceptionalExercise = async (exercise, reason) => {
+    try {
+      // ✅ Validation stricte de l'entrée
+      if (!exercise || typeof exercise !== 'object') {
+        throw new Error('Données d\'exercice invalides');
+      }
+
+      // ✅ Validation nom (2-100 chars)
+      if (!exercise.name || typeof exercise.name !== 'string' || exercise.name.trim().length < 2) {
+        throw new Error('Le nom de l\'exercice doit contenir au moins 2 caractères');
+      }
+      if (exercise.name.trim().length > 100) {
+        throw new Error('Le nom de l\'exercice ne peut pas dépasser 100 caractères');
+      }
+
+      // ✅ Validation type (reps ou duration)
+      if (!exercise.type || !['reps', 'duration'].includes(exercise.type)) {
+        throw new Error('Le type d\'exercice doit être "reps" ou "duration"');
+      }
+
+      // ✅ Validation selon le type
+      if (exercise.type === 'reps') {
+        if (!exercise.series || typeof exercise.series !== 'number' || exercise.series < 1 || exercise.series > 50) {
+          throw new Error('Le nombre de séries doit être entre 1 et 50');
+        }
+        if (!exercise.repsPerSeries || !Array.isArray(exercise.repsPerSeries) || exercise.repsPerSeries.length === 0) {
+          throw new Error('Au moins une série doit avoir des répétitions');
+        }
+        if (exercise.repsPerSeries.length !== exercise.series) {
+          throw new Error(`Le nombre de séries (${exercise.series}) ne correspond pas au nombre de valeurs de répétitions (${exercise.repsPerSeries.length})`);
+        }
+        if (exercise.repsPerSeries.some(r => typeof r !== 'number' || r <= 0 || r > 1000)) {
+          throw new Error('Toutes les répétitions doivent être positives et inférieures à 1000');
+        }
+      } else if (exercise.type === 'duration') {
+        if (!exercise.duration || typeof exercise.duration !== 'number' || exercise.duration <= 0) {
+          throw new Error('La durée doit être positive');
+        }
+        if (exercise.duration > 7200) {
+          throw new Error('La durée ne peut pas dépasser 7200 secondes (2 heures)');
+        }
+      }
+
+      const dateStr = getDateStr(new Date());
+      const currentData = getCurrentData();
+      const existingVariation = currentData.dailyVariations?.[dateStr];
+
+      // ✅ Générer ID unique
+      const exerciseId = generateExceptionalExerciseId(dateStr, existingVariation);
+      const newCounter = (existingVariation?.lastExceptionalIdCounter || 0) + 1;
+
+      // ✅ Créer l'exercice exceptionnel
+      const newExercise = {
+        id: exerciseId,
+        name: exercise.name.trim(),
+        type: exercise.type,
+        series: exercise.type === 'reps' ? exercise.series : undefined,
+        repsPerSeries: exercise.type === 'reps' ? [...exercise.repsPerSeries] : undefined,
+        duration: exercise.type === 'duration' ? exercise.duration : undefined,
+        materiel: exercise.materiel?.trim() || undefined,
+        notes: exercise.notes?.trim() || undefined,
+        isExceptional: true,
+        completed: false,
+        addedAt: new Date(),
+        modificationCount: 0,
+        lastModifiedAt: new Date(),
+        version: '1.0',
+        schemaVersion: 1
+      };
+
+      // ✅ Créer ou mettre à jour la variation
+      const updatedVariation = {
+        date: dateStr,
+        suppressedExercises: existingVariation?.suppressedExercises || [],
+        additionalExercises: [...(existingVariation?.additionalExercises || []), newExercise],
+        reason: reason || existingVariation?.reason,
+        createdAt: existingVariation?.createdAt || new Date(),
+        lastModifiedAt: new Date(),
+        modificationCount: (existingVariation?.modificationCount || 0) + 1,
+        lastExceptionalIdCounter: newCounter,
+        version: '1.0',
+        schemaVersion: 1
+      };
+
+      // ✅ Sauvegarder immédiatement (action critique)
+      const updatedData = {
+        ...currentData,
+        dailyVariations: {
+          ...(currentData.dailyVariations || {}),
+          [dateStr]: updatedVariation
+        }
+      };
+
+      await updateData(updatedData);
+
+      console.log(`✅ Exercice exceptionnel "${exercise.name}" ajouté avec ID: ${exerciseId}`);
+      return {
+        success: true,
+        exerciseId: exerciseId,
+        exercise: newExercise,
+        message: 'Exercice exceptionnel ajouté avec succès'
+      };
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'ajout de l\'exercice exceptionnel:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Supprime un exercice exceptionnel pour aujourd'hui
+   * @param {string} exerciseId - ID de l'exercice exceptionnel à supprimer
+   * @returns {Promise<{success: boolean}>}
+   */
+  const removeExceptionalExercise = async (exerciseId) => {
+    try {
+      // ✅ Validation stricte de l'entrée
+      if (!exerciseId || typeof exerciseId !== 'string' || !exerciseId.startsWith('exceptional_')) {
+        throw new Error('ID d\'exercice exceptionnel invalide');
+      }
+
+      const dateStr = getDateStr(new Date());
+      const currentData = getCurrentData();
+      const existingVariation = currentData.dailyVariations?.[dateStr];
+
+      // ✅ Vérifier si variation existe
+      if (!existingVariation) {
+        throw new Error('Aucune variation trouvée pour aujourd\'hui');
+      }
+
+      const additionalExercises = existingVariation.additionalExercises || [];
+      const exerciseIndex = additionalExercises.findIndex(ex => ex.id === exerciseId);
+
+      // ✅ Vérifier si exercice existe
+      if (exerciseIndex === -1) {
+        throw new Error(`Exercice exceptionnel ${exerciseId} non trouvé`);
+      }
+
+      // ✅ Retirer l'exercice de la liste
+      const updatedAdditionalExercises = additionalExercises.filter(ex => ex.id !== exerciseId);
+
+      // ✅ Mettre à jour la variation
+      const updatedVariation = {
+        ...existingVariation,
+        additionalExercises: updatedAdditionalExercises,
+        lastModifiedAt: new Date(),
+        modificationCount: (existingVariation.modificationCount || 0) + 1
+      };
+
+      // ✅ Si plus aucune variation, supprimer l'entrée
+      const hasOtherVariations = (existingVariation.suppressedExercises?.length || 0) > 0 || 
+                                 updatedAdditionalExercises.length > 0;
+
+      const updatedData = {
+        ...currentData,
+        dailyVariations: {
+          ...(currentData.dailyVariations || {}),
+          ...(hasOtherVariations ? { [dateStr]: updatedVariation } : {})
+        }
+      };
+
+      // ✅ Si pas d'autres variations, supprimer complètement l'entrée
+      if (!hasOtherVariations) {
+        delete updatedData.dailyVariations[dateStr];
+      }
+
+      // ✅ Sauvegarder immédiatement (action critique)
+      await updateData(updatedData);
+
+      console.log(`✅ Exercice exceptionnel ${exerciseId} supprimé`);
+      return {
+        success: true,
+        message: 'Exercice exceptionnel supprimé avec succès'
+      };
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression de l\'exercice exceptionnel:', error);
+      throw error;
+    }
+  };
+
+  // ✅ Debounce pour modifications fréquentes (updateExceptionalExercise)
+  const updateExceptionalExerciseDebounceRef = useRef(null);
+  const pendingUpdateRef = useRef(null);
+
+  /**
+   * Met à jour un exercice exceptionnel (avec debounce pour modifications fréquentes)
+   * @param {string} exerciseId - ID de l'exercice exceptionnel
+   * @param {object} updates - Mises à jour à appliquer
+   * @returns {Promise<{success: boolean, exercise: object}>}
+   */
+  const updateExceptionalExercise = async (exerciseId, updates) => {
+    try {
+      // ✅ Validation stricte de l'entrée
+      if (!exerciseId || typeof exerciseId !== 'string' || !exerciseId.startsWith('exceptional_')) {
+        throw new Error('ID d\'exercice exceptionnel invalide');
+      }
+
+      if (!updates || typeof updates !== 'object') {
+        throw new Error('Mises à jour invalides');
+      }
+
+      const dateStr = getDateStr(new Date());
+      const currentData = getCurrentData();
+      const existingVariation = currentData.dailyVariations?.[dateStr];
+
+      // ✅ Vérifier si variation existe
+      if (!existingVariation) {
+        throw new Error('Aucune variation trouvée pour aujourd\'hui');
+      }
+
+      const additionalExercises = existingVariation.additionalExercises || [];
+      const exerciseIndex = additionalExercises.findIndex(ex => ex.id === exerciseId);
+
+      // ✅ Vérifier si exercice existe
+      if (exerciseIndex === -1) {
+        throw new Error(`Exercice exceptionnel ${exerciseId} non trouvé`);
+      }
+
+      const existingExercise = additionalExercises[exerciseIndex];
+
+      // ✅ Validation des mises à jour selon le type
+      if (updates.type && !['reps', 'duration'].includes(updates.type)) {
+        throw new Error('Le type doit être "reps" ou "duration"');
+      }
+
+      if (updates.name !== undefined) {
+        if (typeof updates.name !== 'string' || updates.name.trim().length < 2) {
+          throw new Error('Le nom doit contenir au moins 2 caractères');
+        }
+        if (updates.name.trim().length > 100) {
+          throw new Error('Le nom ne peut pas dépasser 100 caractères');
+        }
+      }
+
+      // ✅ Appliquer les mises à jour
+      const updatedExercise = {
+        ...existingExercise,
+        ...updates,
+        name: updates.name !== undefined ? updates.name.trim() : existingExercise.name,
+        notes: updates.notes !== undefined ? (updates.notes?.trim() || undefined) : existingExercise.notes,
+        materiel: updates.materiel !== undefined ? (updates.materiel?.trim() || undefined) : existingExercise.materiel,
+        lastModifiedAt: new Date(),
+        modificationCount: (existingExercise.modificationCount || 0) + 1
+      };
+
+      // ✅ Mettre à jour la liste des exercices
+      const updatedAdditionalExercises = [...additionalExercises];
+      updatedAdditionalExercises[exerciseIndex] = updatedExercise;
+
+      // ✅ Mettre à jour la variation
+      const updatedVariation = {
+        ...existingVariation,
+        additionalExercises: updatedAdditionalExercises,
+        lastModifiedAt: new Date(),
+        modificationCount: (existingVariation.modificationCount || 0) + 1
+      };
+
+      // ✅ Stocker la mise à jour en attente
+      pendingUpdateRef.current = {
+        dateStr,
+        variation: updatedVariation,
+        exercise: updatedExercise
+      };
+
+      // ✅ Debounce : Annuler le timer précédent
+      if (updateExceptionalExerciseDebounceRef.current) {
+        clearTimeout(updateExceptionalExerciseDebounceRef.current);
+      }
+
+      // ✅ Sauvegarder après 800ms de debounce
+      return new Promise((resolve, reject) => {
+        updateExceptionalExerciseDebounceRef.current = setTimeout(async () => {
+          try {
+            const pending = pendingUpdateRef.current;
+            if (!pending) {
+              resolve({ success: true, exercise: updatedExercise });
+              return;
+            }
+
+            const currentDataForSave = getCurrentData();
+            const updatedData = {
+              ...currentDataForSave,
+              dailyVariations: {
+                ...(currentDataForSave.dailyVariations || {}),
+                [pending.dateStr]: pending.variation
+              }
+            };
+
+            await updateData(updatedData);
+            pendingUpdateRef.current = null;
+
+            console.log(`✅ Exercice exceptionnel ${exerciseId} mis à jour`);
+            resolve({
+              success: true,
+              exercise: pending.exercise,
+              message: 'Exercice exceptionnel mis à jour avec succès'
+            });
+          } catch (error) {
+            console.error('❌ Erreur lors de la sauvegarde de la mise à jour:', error);
+            pendingUpdateRef.current = null;
+            reject(error);
+          }
+        }, 800); // 800ms debounce
+      });
+    } catch (error) {
+      console.error('❌ Erreur lors de la mise à jour de l\'exercice exceptionnel:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Marque un exercice exceptionnel comme complété
+   * @param {string} exerciseId - ID de l'exercice exceptionnel
+   * @param {number[]} [actualReps] - Reps réellement effectuées (si type === 'reps')
+   * @param {number} [actualDuration] - Durée réelle en secondes (si type === 'duration')
+   * @returns {Promise<{success: boolean, exercise: object}>}
+   */
+  const markExceptionalExerciseComplete = async (exerciseId, actualReps, actualDuration) => {
+    try {
+      // ✅ Validation stricte de l'entrée
+      if (!exerciseId || typeof exerciseId !== 'string' || !exerciseId.startsWith('exceptional_')) {
+        throw new Error('ID d\'exercice exceptionnel invalide');
+      }
+
+      const dateStr = getDateStr(new Date());
+      const currentData = getCurrentData();
+      const existingVariation = currentData.dailyVariations?.[dateStr];
+
+      // ✅ Vérifier si variation existe
+      if (!existingVariation) {
+        throw new Error('Aucune variation trouvée pour aujourd\'hui');
+      }
+
+      const additionalExercises = existingVariation.additionalExercises || [];
+      const exerciseIndex = additionalExercises.findIndex(ex => ex.id === exerciseId);
+
+      // ✅ Vérifier si exercice existe
+      if (exerciseIndex === -1) {
+        throw new Error(`Exercice exceptionnel ${exerciseId} non trouvé`);
+      }
+
+      const existingExercise = additionalExercises[exerciseIndex];
+
+      // ✅ Logique intelligente selon le type
+      const updatedExercise = {
+        ...existingExercise,
+        completed: true,
+        completedAt: new Date(),
+        lastModifiedAt: new Date(),
+        modificationCount: (existingExercise.modificationCount || 0) + 1
+      };
+
+      if (existingExercise.type === 'reps') {
+        // ✅ Si actualReps fourni, utiliser (priorité)
+        // Sinon, utiliser repsPerSeries planifiées
+        const repsToUse = actualReps || existingExercise.repsPerSeries || [];
+        
+        // ✅ Validation : s'assurer que toutes les valeurs sont valides
+        const validatedReps = repsToUse.filter(r => typeof r === 'number' && r > 0 && r < 10000);
+        
+        if (validatedReps.length === 0) {
+          console.warn('⚠️ Aucune rep valide fournie, utilisation reps planifiées');
+          updatedExercise.actualReps = existingExercise.repsPerSeries || [];
+        } else {
+          updatedExercise.actualReps = validatedReps;
+        }
+        
+        updatedExercise.totalReps = updatedExercise.actualReps.reduce((sum, r) => sum + r, 0);
+        
+        // ✅ Validation : si actualReps différentes de planifiées, logger pour analytics
+        if (actualReps && existingExercise.repsPerSeries && 
+            actualReps.length === existingExercise.repsPerSeries.length) {
+          const plannedTotal = existingExercise.repsPerSeries.reduce((sum, r) => sum + r, 0);
+          const actualTotal = updatedExercise.totalReps;
+          const diff = actualTotal - plannedTotal;
+          const diffPercent = plannedTotal > 0 ? (diff / plannedTotal * 100) : 0;
+          
+          if (Math.abs(diff) > 5 || Math.abs(diffPercent) > 20) {
+            console.log(`📊 Exercice "${existingExercise.name}" : ${actualTotal} reps effectuées vs ${plannedTotal} planifiées (diff: ${diff > 0 ? '+' : ''}${diff}, ${diffPercent > 0 ? '+' : ''}${diffPercent.toFixed(1)}%)`);
+            
+            // ✅ Enregistrer dans métadonnées pour analytics
+            updatedExercise.performance = {
+              ...existingExercise.performance,
+              deviationFromPlanned: diff,
+              deviationPercent: diffPercent
+            };
+          }
+        }
+      } else if (existingExercise.type === 'duration') {
+        // ✅ Si actualDuration fourni, utiliser (priorité)
+        // Sinon, utiliser duration planifiée
+        const durationToUse = actualDuration || existingExercise.duration;
+        
+        if (!durationToUse || durationToUse <= 0) {
+          console.warn('⚠️ Durée invalide, utilisation durée planifiée');
+          updatedExercise.actualDuration = existingExercise.duration || 0;
+        } else {
+          updatedExercise.actualDuration = durationToUse;
+        }
+        
+        // ✅ Validation : si actualDuration très différente de planifiée, logger
+        if (actualDuration && existingExercise.duration) {
+          const diff = Math.abs(actualDuration - existingExercise.duration);
+          const diffPercent = (diff / existingExercise.duration) * 100;
+          
+          if (diffPercent > 20) {
+            const minutes = Math.floor(actualDuration / 60);
+            const seconds = actualDuration % 60;
+            const plannedMinutes = Math.floor(existingExercise.duration / 60);
+            const plannedSeconds = existingExercise.duration % 60;
+            
+            console.log(`⏱️ Exercice "${existingExercise.name}" : ${minutes}min ${seconds}s effectuées vs ${plannedMinutes}min ${plannedSeconds}s planifiées (${diffPercent.toFixed(0)}% différence)`);
+            
+            // ✅ Enregistrer dans métadonnées pour analytics
+            updatedExercise.performance = {
+              ...existingExercise.performance,
+              deviationFromPlanned: diff,
+              deviationPercent: diffPercent
+            };
+          }
+        }
+      }
+
+      // ✅ Mettre à jour la liste des exercices
+      const updatedAdditionalExercises = [...additionalExercises];
+      updatedAdditionalExercises[exerciseIndex] = updatedExercise;
+
+      // ✅ Mettre à jour la variation
+      const updatedVariation = {
+        ...existingVariation,
+        additionalExercises: updatedAdditionalExercises,
+        lastModifiedAt: new Date(),
+        modificationCount: (existingVariation.modificationCount || 0) + 1
+      };
+
+      // ✅ Sauvegarder immédiatement (action critique)
+      const updatedData = {
+        ...currentData,
+        dailyVariations: {
+          ...(currentData.dailyVariations || {}),
+          [dateStr]: updatedVariation
+        }
+      };
+
+      await updateData(updatedData);
+
+      console.log(`✅ Exercice exceptionnel "${existingExercise.name}" marqué comme complété`);
+      return {
+        success: true,
+        exercise: updatedExercise,
+        message: 'Exercice exceptionnel marqué comme complété'
+      };
+    } catch (error) {
+      console.error('❌ Erreur lors de la complétion de l\'exercice exceptionnel:', error);
+      throw error;
+    }
+  };
+
+  // ✅ ============================================
+  // FIN PHASE 1.2 : ACTIONS CONTEXT - DAILY VARIATIONS
+  // ============================================
+
   const contextValue = {
     // États principaux
     currentDate,
@@ -1062,6 +2020,9 @@ const WorkoutProvider = ({ children }) => {
     
     // Fonctions de photos de progression
     addProgressEntry,
+    updateProgressEntry,
+    deleteProgressEntry,
+    deleteProgressEntryField,
     addProgressPhoto,
     deleteProgressPhoto,
     

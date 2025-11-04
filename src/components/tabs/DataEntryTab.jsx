@@ -8,6 +8,7 @@ import { Badge } from '../ui/Badge';
 import { Calendar, Save, RotateCcw, TrendingUp, Clock, Target, ChevronDown, ChevronRight, Zap } from 'lucide-react';
 import { typography } from '../../styles/typography';
 import WorkoutHistorySection from '../WorkoutHistorySection';
+import { calculateAutoReps } from '../../utils/exerciseCalculations';
 
 const DataEntryTab = () => {
   const { data, updateReps, toggleCheck, getDateStr, getDayName, getCurrentData } = useWorkout();
@@ -59,27 +60,7 @@ const DataEntryTab = () => {
     return allExercises;
   };
 
-  // Fonction pour calculer automatiquement les répétitions basées sur les séries
-  const calculateAutoReps = (seriesText) => {
-    if (!seriesText || !seriesText.includes('×')) {
-      return null;
-    }
-    
-    const match = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
-    if (match) {
-      const sets = parseInt(match[1]);
-      const minReps = parseInt(match[2]);
-      const maxReps = match[3] ? parseInt(match[3]) : minReps;
-      
-      // Calculer le juste milieu des répétitions
-      const avgReps = (minReps + maxReps) / 2;
-      
-      // Retourner le total exact (sets × moyenne)
-      return sets * avgReps;
-    }
-    
-    return null;
-  };
+  // Note: calculateAutoReps est maintenant importé depuis utils/exerciseCalculations
 
   // Gestionnaire pour l'auto-remplissage au focus
   const handleInputFocus = (exerciseId, exercise) => {

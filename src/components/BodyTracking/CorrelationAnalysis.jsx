@@ -35,7 +35,8 @@ import {
 import {
   analyzeVolumeWeightCorrelation,
   analyzeVolumeMuscleCorrelation,
-  identifyOptimalFrequency
+  identifyOptimalFrequency,
+  calculateWeeklyVolume
 } from './utils/historyIntegration';
 import {
   analyzeEnduranceWeightCorrelation,
@@ -161,28 +162,119 @@ const CorrelationAnalysis = () => {
       { key1: 'waist', label1: 'Tour de taille', key2: 'hips', label2: 'Tour de hanches', type1: 'metrics', type2: 'metrics' },
       { key1: 'arms', label1: 'Tour de bras', key2: 'thighs', label2: 'Tour de cuisse', type1: 'metrics', type2: 'metrics' },
       
-      // Impédancemétrie (type 'impedance')
-      { key1: 'bodyFatPercentage', label1: 'Pourcentage de graisse', key2: 'visceralFat', label2: 'Graisse viscérale', type1: 'impedance', type2: 'impedance' },
-      { key1: 'skeletalMuscle', label1: 'Masse musculaire', key2: 'basalMetabolism', label2: 'Métabolisme de base', type1: 'impedance', type2: 'impedance' },
-      { key1: 'bodyWater', label1: 'Eau corporelle', key2: 'skeletalMuscle', label2: 'Masse musculaire', type1: 'impedance', type2: 'impedance' },
+      // Impédancemétrie (type 'impedance') - ✅ CORRIGÉ : Utilisation des noms de champs corrects
+      { key1: 'bodyFatPercentage', label1: 'Pourcentage de graisse', key2: 'visceralFatIndex', label2: 'Indice de graisse viscérale', type1: 'impedance', type2: 'impedance' },
+      { key1: 'muscleMass', label1: 'Masse musculaire', key2: 'basalMetabolism', label2: 'Métabolisme de base', type1: 'impedance', type2: 'impedance' },
+      { key1: 'bodyWater', label1: 'Eau corporelle', key2: 'muscleMass', label2: 'Masse musculaire', type1: 'impedance', type2: 'impedance' },
       { key1: 'bodyFatPercentage', label1: 'Pourcentage de graisse', key2: 'bodyFatMass', label2: 'Masse graisseuse', type1: 'impedance', type2: 'impedance' },
       { key1: 'metabolicAge', label1: 'Âge métabolique', key2: 'bodyFatPercentage', label2: 'Pourcentage de graisse', type1: 'impedance', type2: 'impedance' },
       
-      // Cross-type (metrics + impedance)
+      // Cross-type (metrics + impedance) - ✅ CORRIGÉ : Utilisation des noms de champs corrects
       { key1: 'weight', label1: 'Poids', key2: 'bodyFatPercentage', label2: 'Pourcentage de graisse', type1: 'metrics', type2: 'impedance' },
-      { key1: 'weight', label1: 'Poids', key2: 'skeletalMuscle', label2: 'Masse musculaire', type1: 'metrics', type2: 'impedance' },
-      { key1: 'waist', label1: 'Tour de taille', key2: 'visceralFat', label2: 'Graisse viscérale', type1: 'metrics', type2: 'impedance' },
+      { key1: 'weight', label1: 'Poids', key2: 'muscleMass', label2: 'Masse musculaire', type1: 'metrics', type2: 'impedance' },
+      { key1: 'waist', label1: 'Tour de taille', key2: 'visceralFatIndex', label2: 'Indice de graisse viscérale', type1: 'metrics', type2: 'impedance' },
+      
+      // ✅ INTÉGRATION VOLUME D'ENTRAÎNEMENT (History Tab) - Corrélations volume vs changements corporels
+      { key1: 'workoutVolume', label1: 'Volume d\'entraînement', key2: 'weight', label2: 'Poids', type1: 'computed', type2: 'metrics', requiresHistory: true },
+      { key1: 'workoutVolume', label1: 'Volume d\'entraînement', key2: 'muscleMass', label2: 'Masse musculaire', type1: 'computed', type2: 'impedance', requiresHistory: true },
+      { key1: 'workoutVolume', label1: 'Volume d\'entraînement', key2: 'bodyFatPercentage', label2: 'Pourcentage de graisse', type1: 'computed', type2: 'impedance', requiresHistory: true },
     ];
 
-    // Extraire les séries de données pour chaque métrique
-    const extractMetricSeries = (metricKey, entryType) => {
+    /**
+     * Extrait une série de données pour une métrique donnée avec gestion des fallbacks
+     * Gère la compatibilité avec les anciens formats (skeletalMuscle → muscleMass, visceralFat → visceralFatIndex)
+     * ✅ ÉTENDU : Supporte aussi le type 'computed' pour métriques calculées (ex: volume d'entraînement)
+     * @param {string} metricKey - Clé de la métrique (ex: 'muscleMass', 'workoutVolume')
+     * @param {string} entryType - Type d'entrée ('metrics', 'impedance', ou 'computed')
+     * @param {Object} pair - Paire de métriques (pour accéder à requiresHistory si nécessaire)
+     * @returns {Array<{date: Date, value: number}>} Série de données avec dates
+     */
+    const extractMetricSeries = (metricKey, entryType, pair = null) => {
+      // ✅ GÉRER TYPE 'computed' (métriques calculées depuis autres sources)
+      if (entryType === 'computed') {
+        if (metricKey === 'workoutVolume' && pair?.requiresHistory) {
+          // ✅ CALCULER VOLUME D'ENTRAÎNEMENT DEPUIS WORKOUT HISTORY
+          const workoutHistory = getWorkoutHistory ? getWorkoutHistory() : [];
+          if (!workoutHistory || workoutHistory.length === 0) {
+            return []; // Pas de données d'entraînement
+          }
+          
+          // Calculer volume hebdomadaire pour la période
+          const weeklyVolume = calculateWeeklyVolume(workoutHistory, cutoffDate, endDate);
+          
+          if (!weeklyVolume || !weeklyVolume.weeks || weeklyVolume.weeks.length === 0) {
+            return [];
+          }
+          
+          // ✅ CRÉER SÉRIE DEPUIS WEEKLY VOLUME
+          // Chaque semaine donne un point de données (volume total de la semaine)
+          return weeklyVolume.weeks
+            .map(week => ({
+              date: new Date(week.startDate), // Utiliser début de semaine comme date
+              value: week.totalReps || 0 // Volume total (répétitions) de la semaine
+            }))
+            .filter(point => point.value > 0) // Filtrer semaines sans entraînement
+            .sort((a, b) => a.date.getTime() - b.date.getTime()); // ✅ TRIER PAR DATE CROISSANTE
+        }
+        
+        // Autres types computed non implémentés pour l'instant
+        return [];
+      }
+      // ✅ DÉFINIR LES FALLBACKS DE MANIÈRE CENTRALISÉE
+      // Mapping nouveau format → ancien format pour compatibilité
+      const fallbackMap = {
+        'muscleMass': 'skeletalMuscle',      // Nouveau format → ancien format
+        'visceralFatIndex': 'visceralFat',    // Nouveau format → ancien format
+      };
+      
+      const fallbackKey = fallbackMap[metricKey];
+      
       const entries = relevantEntries
-        .filter(entry => entry.type === entryType && entry[metricKey] != null && !isNaN(entry[metricKey]))
-        .map(entry => ({
-          date: entry.date ? new Date(entry.date) : (entry.timestamp ? new Date(entry.timestamp) : new Date()),
-          value: parseFloat(entry[metricKey])
-        }))
-        .filter(entry => isFinite(entry.value));
+        .filter(entry => {
+          // Vérifier le type d'abord (optimisation performance)
+          if (entry.type !== entryType) return false;
+          
+          // ✅ GESTION INTELLIGENTE DES FALLBACKS
+          let value = entry[metricKey];
+          
+          // Si valeur principale absente, essayer fallback
+          if (value == null && fallbackKey && entry[fallbackKey] != null) {
+            value = entry[fallbackKey];
+          }
+          
+          // Validation stricte : valeur numérique, finie, et positive (pour la plupart des métriques)
+          return value != null && 
+                 !isNaN(value) && 
+                 isFinite(value) &&
+                 (metricKey === 'bodyFatPercentage' || metricKey === 'bodyWater' || metricKey === 'proteinPercentage' 
+                  ? value >= 0 && value <= 100  // Pourcentages : 0-100
+                  : value > 0);  // Autres métriques doivent être > 0
+        })
+        .map(entry => {
+          // ✅ UTILISER LA VALEUR AVEC FALLBACK APPLIQUÉ
+          let value = entry[metricKey];
+          
+          if (value == null && fallbackKey && entry[fallbackKey] != null) {
+            value = entry[fallbackKey];
+          }
+          
+          // Normaliser la date
+          const entryDate = entry.date 
+            ? new Date(entry.date) 
+            : (entry.timestamp ? new Date(entry.timestamp) : new Date());
+          
+          return {
+            date: entryDate,
+            value: parseFloat(value)
+          };
+        })
+        .filter(entry => {
+          // ✅ VALIDATION FINALE STRICTE
+          return isFinite(entry.value) && 
+                 entry.value > 0 && 
+                 !isNaN(entry.date.getTime());
+        })
+        .sort((a, b) => a.date.getTime() - b.date.getTime()); // ✅ TRIER PAR DATE CROISSANTE
 
       return entries;
     };
@@ -346,16 +438,49 @@ const CorrelationAnalysis = () => {
       log.error('Erreur lors du calcul des corrélations volume d\'entraînement', error);
     }
     
-    // 🔄 NOUVEAU: Ajouter corrélations avec calories endurance (EnduranceTab)
+    // ✅ INTÉGRATION ENDURANCE : Corrélations avec calories endurance (EnduranceTab)
+    // ✅ DÉDUPLICATION : Exclure les dates déjà trackées par Garmin pour éviter double comptage
     try {
       const enduranceData = data?.enduranceData || {};
       
-      if (enduranceData.sessions && Object.keys(enduranceData.sessions).some(type => 
-        Array.isArray(enduranceData.sessions[type]) && enduranceData.sessions[type].length > 0
+      // ✅ CRÉER SET DES DATES DÉJÀ TRACKÉES PAR GARMIN
+      const garminActivityDates = new Set();
+      if (garminData?.activities) {
+        Object.values(garminData.activities).flat().forEach(activity => {
+          const activityDate = activity.startTime 
+            ? new Date(activity.startTime).toISOString().split('T')[0]
+            : (activity.date ? new Date(activity.date).toISOString().split('T')[0] : null);
+          if (activityDate) {
+            garminActivityDates.add(activityDate);
+          }
+        });
+      }
+      
+      // ✅ FILTRER ENDURANCE DATA : Exclure dates déjà dans Garmin
+      const filteredEnduranceData = {
+        ...enduranceData,
+        sessions: Object.entries(enduranceData.sessions || {}).reduce((acc, [type, sessions]) => {
+          if (!Array.isArray(sessions)) {
+            acc[type] = sessions;
+            return acc;
+          }
+          
+          // Filtrer sessions pour exclure dates déjà trackées par Garmin
+          acc[type] = sessions.filter(session => {
+            if (!session.date) return false;
+            const sessionDate = new Date(session.date).toISOString().split('T')[0];
+            return !garminActivityDates.has(sessionDate); // ✅ DÉDUPLICATION
+          });
+          return acc;
+        }, {})
+      };
+      
+      if (filteredEnduranceData.sessions && Object.keys(filteredEnduranceData.sessions).some(type => 
+        Array.isArray(filteredEnduranceData.sessions[type]) && filteredEnduranceData.sessions[type].length > 0
       )) {
-        // Corrélation Calories Endurance vs Poids
+        // ✅ CORRÉLATION CALORIES ENDURANCE VS POIDS (avec données filtrées)
         const enduranceWeightCorrelation = analyzeEnduranceWeightCorrelation(
-          enduranceData,
+          filteredEnduranceData, // ✅ Utiliser données filtrées (sans doublons Garmin)
           relevantEntries,
           cutoffDate,
           new Date(),
@@ -480,7 +605,7 @@ const CorrelationAnalysis = () => {
       ...filteredCorrelations.map(item => [
         item.variable1,
         item.variable2,
-        item.correlation.toFixed(3),
+        item.correlation != null && !isNaN(item.correlation) ? item.correlation.toFixed(3) : 'N/A',
         getCorrelationStrength(item.correlation),
         item.significance,
         item.dataPoints
@@ -596,7 +721,9 @@ const CorrelationAnalysis = () => {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-400 mb-1">
-                {(filteredCorrelations.reduce((sum, c) => sum + Math.abs(c.correlation), 0) / filteredCorrelations.length).toFixed(2)}
+                {filteredCorrelations.length > 0 
+                  ? (filteredCorrelations.reduce((sum, c) => sum + Math.abs(c.correlation || 0), 0) / filteredCorrelations.length).toFixed(2)
+                  : '0.00'}
               </div>
               <div className="text-sm text-slate-400">Corrélation moyenne</div>
             </div>
@@ -627,7 +754,7 @@ const CorrelationAnalysis = () => {
                       </span>
                     )}
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCorrelationBg(correlation.correlation)} ${getCorrelationColor(correlation.correlation)}`}>
-                      r = {correlation.correlation.toFixed(3)}
+                      r = {correlation.correlation != null && !isNaN(correlation.correlation) ? correlation.correlation.toFixed(3) : 'N/A'}
                     </span>
                     {getTrendIcon(correlation.trend)}
                   </div>

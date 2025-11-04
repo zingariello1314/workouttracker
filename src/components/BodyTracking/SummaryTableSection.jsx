@@ -7,7 +7,12 @@ import {
   AlertTriangle,
   Filter,
   ArrowUpDown,
-  Info
+  Info,
+  Edit,
+  Trash2,
+  Save,
+  X,
+  Eye
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -28,9 +33,14 @@ import logger from '../../utils/logger';
 const log = logger.component('SummaryTableSection');
 
 const SummaryTableSection = () => {
-  const { data } = useWorkout();
+  const { data, updateProgressEntry, deleteProgressEntry, deleteProgressEntryField } = useWorkout();
   const [sortBy, setSortBy] = useState('name');
   const [filterBy, setFilterBy] = useState('all');
+  const [editMode, setEditMode] = useState(false);
+  const [editedEntries, setEditedEntries] = useState({});
+  const [entriesToDelete, setEntriesToDelete] = useState(new Set());
+  const [fieldsToDelete, setFieldsToDelete] = useState(new Set());
+  const [isSaving, setIsSaving] = useState(false);
 
   // 🔍 Calculer les dates de référence pour variations 7j et 30j
   const calculateReferenceDates = () => {
@@ -207,20 +217,45 @@ const SummaryTableSection = () => {
     
     if (latestImpedanceEntry) {
       const impedanceMetrics = [
-        { key: 'bodyFatPercentage', name: 'Masse graisseuse', unit: '%', isGoodDown: true },
-        { key: 'bodyWater', name: 'Eau du corps', unit: '%', isGoodDown: false },
+        { key: 'weight', name: 'Poids', unit: 'kg', isGoodDown: true },
+        { key: 'bmi', name: 'IMC', unit: '', isGoodDown: false },
+        { key: 'bodyFatPercentage', name: 'Taux de graisse corporel', unit: '%', isGoodDown: true },
         { key: 'muscleMass', name: 'Masse musculaire', unit: 'kg', isGoodDown: false },
-        { key: 'visceralFat', name: 'Graisse viscérale', unit: '', isGoodDown: true },
+        { key: 'bodyFatMass', name: 'Graisses corporelles', unit: 'kg', isGoodDown: true },
+        { key: 'bodyFatIndex', name: 'Indice de masse grasse', unit: '/8', isGoodDown: true },
+        { key: 'obesityLevel', name: 'Niveau d\'obésité', unit: '/5', isGoodDown: true },
+        { key: 'visceralFatIndex', name: 'Indice de graisse viscérale', unit: '/20', isGoodDown: true },
+        { key: 'fatFreeWeight', name: 'Poids sans graisse', unit: 'kg', isGoodDown: false },
+        { key: 'bodyWater', name: 'Eau du corps', unit: '%', isGoodDown: false },
+        { key: 'boneMass', name: 'Masse osseuse', unit: 'kg', isGoodDown: false },
+        { key: 'proteinPercentage', name: 'Taux de protéines', unit: '%', isGoodDown: false },
+        { key: 'basalMetabolism', name: 'Taux métabolique basal', unit: 'kcal', isGoodDown: false },
         { key: 'metabolicAge', name: 'Âge métabolique', unit: 'ans', isGoodDown: true },
-        { key: 'skeletalMuscle', name: 'Muscle squelettique', unit: 'kg', isGoodDown: false },
-        { key: 'boneMass', name: 'Masse osseuse', unit: 'kg', isGoodDown: false }
+        // Compatibilité avec ancien format (uniquement si nouveau format n'existe pas)
+        { key: 'visceralFat', name: 'Graisse viscérale', unit: '', isGoodDown: true, onlyIfMissing: 'visceralFatIndex' },
+        { key: 'skeletalMuscle', name: 'Muscle squelettique', unit: 'kg', isGoodDown: false, onlyIfMissing: 'muscleMass' }
       ];
 
       impedanceMetrics.forEach(metric => {
+        // Vérifier compatibilité : si onlyIfMissing est défini, ne pas afficher si le champ préféré existe
+        if (metric.onlyIfMissing && latestImpedanceEntry[metric.onlyIfMissing] != null) {
+          return; // Skip ce champ car le nouveau format existe
+        }
+        
         if (latestImpedanceEntry[metric.key] != null && !isNaN(latestImpedanceEntry[metric.key])) {
           const currentValue = latestImpedanceEntry[metric.key];
-          const sevenDaysValue = sevenDaysAgoImpedanceEntry?.[metric.key];
-          const thirtyDaysValue = thirtyDaysAgoImpedanceEntry?.[metric.key];
+          // Gérer compatibilité pour calcul des variations (utiliser ancien nom si nouveau n'existe pas)
+          const getValueForComparison = (entry, key) => {
+            if (!entry) return null;
+            // Si le champ principal existe, l'utiliser
+            if (entry[key] != null) return entry[key];
+            // Sinon, chercher le champ de compatibilité
+            if (key === 'visceralFatIndex' && entry.visceralFat != null) return entry.visceralFat;
+            if (key === 'muscleMass' && entry.skeletalMuscle != null) return entry.skeletalMuscle;
+            return null;
+          };
+          const sevenDaysValue = getValueForComparison(sevenDaysAgoImpedanceEntry, metric.key);
+          const thirtyDaysValue = getValueForComparison(thirtyDaysAgoImpedanceEntry, metric.key);
           
           const weekChange = sevenDaysValue != null && !isNaN(sevenDaysValue) ? currentValue - sevenDaysValue : 0;
           const monthChange = thirtyDaysValue != null && !isNaN(thirtyDaysValue) ? currentValue - thirtyDaysValue : 0;
@@ -234,6 +269,10 @@ const SummaryTableSection = () => {
             ? formatWeight(currentValue)
             : metric.unit === 'ans'
             ? formatValue(currentValue, 'age')
+            : metric.unit === 'kcal'
+            ? `${currentValue} kcal`
+            : metric.unit === '/8' || metric.unit === '/5' || metric.unit === '/20'
+            ? `${currentValue}${metric.unit}`
             : `${currentValue}${metric.unit ? ` ${metric.unit}` : ''}`;
           
           bodyData.push({
@@ -362,22 +401,255 @@ const SummaryTableSection = () => {
     return `Depuis 30 jours : ${parts.join('. ')}.`;
   }, [bodyData]);
 
+  // 📝 Préparer les entrées pour l'édition (toutes les sessions)
+  const allEntriesForEdit = useMemo(() => {
+    if (!data?.progressEntries || data.progressEntries.length === 0) {
+      return [];
+    }
+
+    return [...data.progressEntries].sort((a, b) => {
+      const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
+      const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
+      return dateB - dateA; // Plus récent en premier
+    });
+  }, [data?.progressEntries]);
+
+  // Gérer les modifications des champs
+  const handleFieldChange = (entryId, fieldName, value) => {
+    setEditedEntries(prev => {
+      const entryKey = `${entryId}_${fieldName}`;
+      const newEdited = { ...prev };
+      if (value === '' || value === null) {
+        delete newEdited[entryKey];
+      } else {
+        newEdited[entryKey] = { entryId, fieldName, value };
+      }
+      return newEdited;
+    });
+  };
+
+  // Gérer la suppression d'une session
+  const handleDeleteSession = (entryId) => {
+    setEntriesToDelete(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
+
+  // Gérer la suppression d'un champ spécifique
+  const handleDeleteField = (entryId, fieldName) => {
+    const fieldKey = `${entryId}_${fieldName}`;
+    setFieldsToDelete(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fieldKey)) {
+        newSet.delete(fieldKey);
+      } else {
+        newSet.add(fieldKey);
+      }
+      return newSet;
+    });
+  };
+
+  // Sauvegarder toutes les modifications
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      // Supprimer les sessions entières
+      for (const entryId of entriesToDelete) {
+        await deleteProgressEntry(entryId);
+      }
+
+      // Supprimer les champs spécifiques
+      for (const fieldKey of fieldsToDelete) {
+        const [entryId, fieldName] = fieldKey.split('_');
+        await deleteProgressEntryField(entryId, fieldName);
+      }
+
+      // Mettre à jour les entrées modifiées
+      const updatesByEntry = {};
+      Object.values(editedEntries).forEach(({ entryId, fieldName, value }) => {
+        if (!updatesByEntry[entryId]) {
+          updatesByEntry[entryId] = {};
+        }
+        // Gérer les types selon le champ
+        if (fieldName === 'date') {
+          // La date est gérée séparément par updateProgressEntry
+          updatesByEntry[entryId][fieldName] = value;
+        } else if (fieldName === 'bodyType' || fieldName === 'notes') {
+          // bodyType et notes sont des strings, pas des nombres
+          updatesByEntry[entryId][fieldName] = value === '' ? null : value;
+        } else if (value === '' || value === null) {
+          updatesByEntry[entryId][fieldName] = null;
+        } else {
+          // Essayer de parser en nombre pour les champs numériques
+          const numValue = parseFloat(value);
+          updatesByEntry[entryId][fieldName] = !isNaN(numValue) && isFinite(numValue) ? numValue : value;
+        }
+      });
+
+      for (const [entryId, updates] of Object.entries(updatesByEntry)) {
+        await updateProgressEntry(entryId, updates);
+      }
+
+      // Réinitialiser les états
+      setEditedEntries({});
+      setEntriesToDelete(new Set());
+      setFieldsToDelete(new Set());
+      setEditMode(false);
+
+      log.info('Modifications enregistrées avec succès');
+    } catch (error) {
+      log.error('Erreur lors de la sauvegarde des modifications', error);
+      alert('Erreur lors de la sauvegarde des modifications. Veuillez réessayer.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Annuler les modifications
+  const handleCancelEdit = () => {
+    setEditedEntries({});
+    setEntriesToDelete(new Set());
+    setFieldsToDelete(new Set());
+    setEditMode(false);
+  };
+
+  // Obtenir la valeur d'un champ (éditée ou originale)
+  const getFieldValue = (entry, fieldName) => {
+    const entryKey = `${entry.id}_${fieldName}`;
+    if (editedEntries[entryKey]) {
+      return editedEntries[entryKey].value;
+    }
+    if (fieldName === 'date') {
+      return entry.date ? new Date(entry.date).toISOString().split('T')[0] : '';
+    }
+    const value = entry[fieldName];
+    if (value == null || value === '') {
+      return '';
+    }
+    // Pour les valeurs numériques, retourner le nombre (sera converti en string par React)
+    return typeof value === 'number' ? value : value;
+  };
+
+  // Vérifier si une entrée est marquée pour suppression
+  const isEntryMarkedForDeletion = (entryId) => {
+    return entriesToDelete.has(entryId);
+  };
+
+  // Vérifier si un champ est marqué pour suppression
+  const isFieldMarkedForDeletion = (entryId, fieldName) => {
+    return fieldsToDelete.has(`${entryId}_${fieldName}`);
+  };
+
+  // Définir les champs éditables selon le type d'entrée
+  const getEditableFields = (entry) => {
+    if (entry.type === 'metrics') {
+      return [
+        { key: 'weight', label: 'Poids (kg)', type: 'number', step: '0.1' },
+        { key: 'height', label: 'Taille (cm)', type: 'number', step: '0.1' },
+        { key: 'waist', label: 'Tour de taille (cm)', type: 'number', step: '0.1' },
+        { key: 'chest', label: 'Tour de poitrine (cm)', type: 'number', step: '0.1' },
+        { key: 'arms', label: 'Tour de bras (cm)', type: 'number', step: '0.1' },
+        { key: 'thighs', label: 'Tour de cuisses (cm)', type: 'number', step: '0.1' },
+        { key: 'neck', label: 'Tour de cou (cm)', type: 'number', step: '0.1' },
+        { key: 'hips', label: 'Tour de hanches (cm)', type: 'number', step: '0.1' }
+      ];
+    } else if (entry.type === 'impedance') {
+      return [
+        { key: 'weight', label: 'Poids (kg)', type: 'number', step: '0.1' },
+        { key: 'bmi', label: 'IMC', type: 'number', step: '0.1' },
+        { key: 'bodyFatPercentage', label: 'Taux de graisse corporel (%)', type: 'number', step: '0.1' },
+        { key: 'muscleMass', label: 'Masse musculaire (kg)', type: 'number', step: '0.1' },
+        { key: 'bodyFatMass', label: 'Graisses corporelles (kg)', type: 'number', step: '0.1' },
+        { key: 'bodyFatIndex', label: 'Indice de masse grasse (/8)', type: 'number', step: '0.1', max: 8 },
+        { key: 'obesityLevel', label: 'Niveau d\'obésité (/5)', type: 'number', step: '0.1', max: 5 },
+        { key: 'visceralFatIndex', label: 'Indice de graisse viscérale (/20)', type: 'number', step: '0.1', max: 20 },
+        { key: 'fatFreeWeight', label: 'Poids sans graisse (kg)', type: 'number', step: '0.1' },
+        { key: 'bodyWater', label: 'Eau du corps (%)', type: 'number', step: '0.1' },
+        { key: 'boneMass', label: 'Masse osseuse (kg)', type: 'number', step: '0.1' },
+        { key: 'proteinPercentage', label: 'Taux de protéines (%)', type: 'number', step: '0.1' },
+        { key: 'basalMetabolism', label: 'Taux métabolique basal (kcal)', type: 'number', step: '1' },
+        { key: 'metabolicAge', label: 'Âge métabolique (ans)', type: 'number', step: '1' },
+        // Compatibilité avec ancien format
+        { key: 'visceralFat', label: 'Graisse viscérale', type: 'number', step: '0.1' },
+        { key: 'skeletalMuscle', label: 'Muscle squelettique (kg)', type: 'number', step: '0.1' }
+      ];
+    }
+    return [];
+  };
+
+  // Obtenir les options pour le type de corps
+  const getBodyTypeOptions = () => [
+    { value: 'mince', label: 'Mince' },
+    { value: 'fin_mince', label: 'Fin mince' },
+    { value: 'standard', label: 'Standard' },
+    { value: 'obese', label: 'Obèse' },
+    { value: 'surpoids', label: 'Surpoids' },
+    { value: 'athletique', label: 'Athlétique' },
+    { value: 'surpoids_cache', label: 'Surpoids caché' }
+  ];
+
+  const hasChanges = editedEntries && Object.keys(editedEntries).length > 0 || 
+                     entriesToDelete && entriesToDelete.size > 0 ||
+                     fieldsToDelete && fieldsToDelete.size > 0;
+
   return (
     <div className="space-y-6">
-      {/* Résumé automatique */}
-      <Card className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/30">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-blue-500/20 rounded-lg">
-              <Info className="w-6 h-6 text-blue-400" />
-            </div>
+      {/* Bouton pour basculer entre vue normale et édition */}
+      <Card className="bg-slate-800/50 border-slate-700/50">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-white mb-2">Résumé de progression (30 jours)</h3>
-              <p className="text-blue-100">{summaryText}</p>
+              <h3 className="font-semibold text-white mb-1">
+                {editMode ? 'Mode Édition' : 'Vue Récapitulatif'}
+              </h3>
+              <p className="text-sm text-slate-400">
+                {editMode 
+                  ? 'Modifiez vos sessions d\'enregistrement. N\'oubliez pas de sauvegarder vos modifications.'
+                  : 'Vue d\'ensemble de vos métriques corporelles'}
+              </p>
             </div>
+            <Button
+              onClick={() => setEditMode(!editMode)}
+              className={`flex items-center gap-2 ${editMode ? 'bg-slate-600 hover:bg-slate-700' : 'bg-orange-600 hover:bg-orange-700'}`}
+            >
+              {editMode ? (
+                <>
+                  <Eye className="w-4 h-4" />
+                  Vue normale
+                </>
+              ) : (
+                <>
+                  <Edit className="w-4 h-4" />
+                  Modifier les saisies
+                </>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
+
+      {!editMode ? (
+        <>
+          {/* Résumé automatique */}
+          <Card className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/30">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-blue-500/20 rounded-lg">
+                  <Info className="w-6 h-6 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white mb-2">Résumé de progression (30 jours)</h3>
+                  <p className="text-blue-100">{summaryText}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Contrôles de tri et filtrage */}
       <Card className="bg-slate-800/50 border-slate-700/50">
@@ -567,25 +839,246 @@ const SummaryTableSection = () => {
         </CardContent>
       </Card>
 
-      {/* Indicateurs de fraîcheur - Afficher seulement si données obsolètes */}
-      {sortedData.some(item => {
-        const daysAgo = getDaysAgo(item.date);
-        return daysAgo > 7;
-      }) && (
-        <Card className="bg-yellow-600/10 border-yellow-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-yellow-400" />
-              <div>
-                <h4 className="font-semibold text-yellow-200">Données à actualiser</h4>
-                <p className="text-sm text-yellow-300">
-                  Certaines métriques n'ont pas été mises à jour récemment. 
-                  Pensez à effectuer de nouvelles mesures pour maintenir un suivi précis.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Indicateurs de fraîcheur - Afficher seulement si données obsolètes */}
+          {sortedData.some(item => {
+            const daysAgo = getDaysAgo(item.date);
+            return daysAgo > 7;
+          }) && (
+            <Card className="bg-yellow-600/10 border-yellow-500/30">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                  <div>
+                    <h4 className="font-semibold text-yellow-200">Données à actualiser</h4>
+                    <p className="text-sm text-yellow-300">
+                      Certaines métriques n'ont pas été mises à jour récemment. 
+                      Pensez à effectuer de nouvelles mesures pour maintenir un suivi précis.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Vue d'édition */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Edit className="w-5 h-5 text-orange-400" />
+                Édition des sessions d'enregistrement
+                <span className="text-sm font-normal text-slate-400">
+                  ({allEntriesForEdit.length} session{allEntriesForEdit.length > 1 ? 's' : ''})
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {allEntriesForEdit.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-slate-400">
+                    <Info className="w-16 h-16 mx-auto mb-4 text-slate-500" />
+                    <h4 className="text-xl font-semibold mb-2 text-white">Aucune session disponible</h4>
+                    <p className="text-slate-400">Commencez par saisir vos premières métriques corporelles.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {allEntriesForEdit.map((entry) => {
+                    const entryDate = entry.date ? new Date(entry.date) : (entry.timestamp ? new Date(entry.timestamp) : new Date());
+                    const dateStr = formatDate(entryDate);
+                    const isMarkedForDeletion = isEntryMarkedForDeletion(entry.id);
+                    const editableFields = getEditableFields(entry);
+
+                    return (
+                      <Card 
+                        key={entry.id} 
+                        className={isMarkedForDeletion ? 'bg-red-900/20 border-red-500/50' : 'bg-slate-800/50 border-slate-700/50'}
+                      >
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="text-lg">
+                                {entry.type === 'metrics' ? '📏 Métriques corporelles' : '⚡ Impédancemétrie'}
+                              </CardTitle>
+                              <p className="text-sm text-slate-400 mt-1">
+                                <Calendar className="w-4 h-4 inline mr-1" />
+                                {dateStr}
+                              </p>
+                            </div>
+                            <Button
+                              onClick={() => handleDeleteSession(entry.id)}
+                              className={`flex items-center gap-2 ${
+                                isMarkedForDeletion 
+                                  ? 'bg-green-600 hover:bg-green-700' 
+                                  : 'bg-red-600 hover:bg-red-700'
+                              }`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              {isMarkedForDeletion ? 'Annuler suppression' : 'Supprimer session'}
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {isMarkedForDeletion ? (
+                            <div className="py-4 text-center text-red-400">
+                              <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+                              <p className="font-semibold">Cette session sera supprimée lors de la sauvegarde</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {/* Édition de la date */}
+                              <div className="p-3 rounded-lg border bg-slate-700/50 border-slate-600">
+                                <label className="text-sm font-medium text-slate-300 mb-2 block">
+                                  Date de la session
+                                </label>
+                                <input
+                                  type="date"
+                                  value={getFieldValue(entry, 'date')}
+                                  onChange={(e) => handleFieldChange(entry.id, 'date', e.target.value)}
+                                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                />
+                              </div>
+                              {/* Champs éditables */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {editableFields.map((field) => {
+                                const fieldValue = getFieldValue(entry, field.key);
+                                const isFieldDeleted = isFieldMarkedForDeletion(entry.id, field.key);
+                                const hasValue = entry[field.key] != null && entry[field.key] !== '';
+
+                                return (
+                                  <div 
+                                    key={field.key}
+                                    className={`p-3 rounded-lg border ${
+                                      isFieldDeleted 
+                                        ? 'bg-red-900/20 border-red-500/50' 
+                                        : 'bg-slate-700/50 border-slate-600'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <label className="text-sm font-medium text-slate-300">
+                                        {field.label}
+                                      </label>
+                                      {hasValue && (
+                                        <Button
+                                          onClick={() => handleDeleteField(entry.id, field.key)}
+                                          className={`p-1 h-6 w-6 ${
+                                            isFieldDeleted 
+                                              ? 'bg-green-600 hover:bg-green-700' 
+                                              : 'bg-red-600 hover:bg-red-700'
+                                          }`}
+                                          title={isFieldDeleted ? 'Annuler suppression' : 'Supprimer cette donnée'}
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                    {isFieldDeleted ? (
+                                      <div className="text-red-400 text-sm py-2">
+                                        Cette donnée sera supprimée
+                                      </div>
+                                    ) : (
+                                      <input
+                                        type={field.type}
+                                        step={field.step}
+                                        max={field.max}
+                                        min={field.min || 0}
+                                        value={fieldValue}
+                                        onChange={(e) => handleFieldChange(entry.id, field.key, e.target.value)}
+                                        className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                        placeholder="—"
+                                      />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                              </div>
+                              {/* Type de corps et Notes (pour impédance) */}
+                              {entry.type === 'impedance' && (
+                                <>
+                                  <div className="p-3 rounded-lg border bg-slate-700/50 border-slate-600">
+                                    <label className="text-sm font-medium text-slate-300 mb-2 block">
+                                      Type de corps
+                                    </label>
+                                    <select
+                                      value={getFieldValue(entry, 'bodyType')}
+                                      onChange={(e) => handleFieldChange(entry.id, 'bodyType', e.target.value)}
+                                      className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    >
+                                      <option value="">Sélectionner...</option>
+                                      {getBodyTypeOptions().map(option => (
+                                        <option key={option.value} value={option.value}>
+                                          {option.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="p-3 rounded-lg border bg-slate-700/50 border-slate-600">
+                                    <label className="text-sm font-medium text-slate-300 mb-2 block">
+                                      Notes (optionnel)
+                                    </label>
+                                    <textarea
+                                      value={getFieldValue(entry, 'notes')}
+                                      onChange={(e) => handleFieldChange(entry.id, 'notes', e.target.value)}
+                                      className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                      rows="3"
+                                      placeholder="Conditions de mesure, observations..."
+                                    />
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Bouton d'enregistrement en bas */}
+          {hasChanges && (
+            <Card className="bg-gradient-to-r from-orange-600/20 to-orange-700/20 border-orange-500/50 sticky bottom-0 z-10">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-orange-400" />
+                    <div>
+                      <h4 className="font-semibold text-orange-200">Modifications non sauvegardées</h4>
+                      <p className="text-sm text-orange-300">
+                        {entriesToDelete.size > 0 && `${entriesToDelete.size} session${entriesToDelete.size > 1 ? 's' : ''} à supprimer`}
+                        {entriesToDelete.size > 0 && fieldsToDelete.size > 0 && ', '}
+                        {fieldsToDelete.size > 0 && `${fieldsToDelete.size} donnée${fieldsToDelete.size > 1 ? 's' : ''} à supprimer`}
+                        {Object.keys(editedEntries).length > 0 && (entriesToDelete.size > 0 || fieldsToDelete.size > 0) && ', '}
+                        {Object.keys(editedEntries).length > 0 && `${Object.keys(editedEntries).length} modification${Object.keys(editedEntries).length > 1 ? 's' : ''} en attente`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={handleCancelEdit}
+                      className="bg-slate-600 hover:bg-slate-700 flex items-center gap-2"
+                      disabled={isSaving}
+                    >
+                      <X className="w-4 h-4" />
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={handleSaveChanges}
+                      className="bg-orange-600 hover:bg-orange-700 flex items-center gap-2"
+                      disabled={isSaving}
+                    >
+                      <Save className="w-4 h-4" />
+                      {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );

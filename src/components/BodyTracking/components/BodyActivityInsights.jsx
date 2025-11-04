@@ -84,10 +84,19 @@ const BodyActivityInsights = () => {
       return;
     }
     
-    // Vérifier si on a des données de poids avant d'appeler l'analyse
-    const hasWeightData = data?.progressEntries?.some(entry => 
-      entry.type === 'metrics' && entry.weight != null && !isNaN(entry.weight)
-    );
+    // ✅ CORRIGÉ : Vérifier poids dans les deux types (metrics + impedance)
+    // Le poids peut être présent dans type 'metrics' ou type 'impedance'
+    const hasWeightData = data?.progressEntries?.some(entry => {
+      // Vérifier dans metrics
+      if (entry.type === 'metrics' && entry.weight != null && !isNaN(entry.weight) && entry.weight > 0) {
+        return true;
+      }
+      // Vérifier dans impedance aussi (l'impédancemètre mesure aussi le poids)
+      if (entry.type === 'impedance' && entry.weight != null && !isNaN(entry.weight) && entry.weight > 0) {
+        return true;
+      }
+      return false;
+    });
     
     if (!hasWeightData) {
       setWeightAnalysis(null);
@@ -270,7 +279,9 @@ const BodyActivityInsights = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-slate-700/30 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-white mb-1">
-                    {currentAnalysis.weightChange.change > 0 ? '-' : '+'}{Math.abs(currentAnalysis.weightChange.change).toFixed(1)} kg
+                    {currentAnalysis.weightChange?.change != null && !isNaN(currentAnalysis.weightChange.change)
+                      ? `${currentAnalysis.weightChange.change > 0 ? '-' : '+'}${Math.abs(currentAnalysis.weightChange.change).toFixed(1)} kg`
+                      : 'N/A'}
                   </div>
                   <div className="text-sm text-slate-400">Changement réel</div>
                 </div>
@@ -301,7 +312,9 @@ const BodyActivityInsights = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-slate-700/30 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-blue-400 mb-1">
-                    +{currentAnalysis.muscleChange.change.toFixed(1)} kg
+                    {currentAnalysis.muscleChange?.change != null && !isNaN(currentAnalysis.muscleChange.change)
+                      ? `+${currentAnalysis.muscleChange.change.toFixed(1)} kg`
+                      : 'N/A'}
                   </div>
                   <div className="text-sm text-slate-400">Gain musculaire</div>
                 </div>
@@ -313,7 +326,9 @@ const BodyActivityInsights = () => {
                 </div>
                 <div className="bg-slate-700/30 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-green-400 mb-1">
-                    {currentAnalysis.training.weeklyVolume.sessions.toFixed(1)}
+                    {currentAnalysis.training?.weeklyVolume?.sessions != null && !isNaN(currentAnalysis.training.weeklyVolume.sessions)
+                      ? currentAnalysis.training.weeklyVolume.sessions.toFixed(1)
+                      : '0.0'}
                   </div>
                   <div className="text-sm text-slate-400">Séances/semaine</div>
                 </div>

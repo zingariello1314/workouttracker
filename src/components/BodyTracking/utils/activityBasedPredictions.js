@@ -82,7 +82,8 @@ const calculateActivityImpact = (
       if (metricType === 'weight' && entry.type === 'metrics') {
         value = entry.weight;
       } else if (metricType === 'muscle' && entry.type === 'impedance') {
-        value = entry.skeletalMuscle;
+        // ✅ CORRIGÉ : Gestion des fallbacks pour compatibilité (muscleMass → skeletalMuscle)
+        value = entry.muscleMass || entry.skeletalMuscle;
       } else if (metricType === 'bodyFat' && entry.type === 'impedance') {
         value = entry.bodyFatPercentage;
       }

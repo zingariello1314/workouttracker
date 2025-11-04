@@ -59,7 +59,7 @@ const Modal = ({
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between p-6 border-b border-slate-700/50 bg-slate-800/60 backdrop-blur-sm">
             {title && (
-              <h2 className={`${typography.presets.heading.h2} text-white flex items-center gap-2`}>
+              <h2 className={`${typography.presets.h2} flex items-center gap-2`}>
                 {title}
               </h2>
             )}

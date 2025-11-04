@@ -33,6 +33,13 @@ import {
   generateActivityBasedScenarios,
   adjustPredictionWithActivity
 } from './utils/activityBasedPredictions';
+import {
+  calculateWeeklyVolume
+} from './utils/historyIntegration';
+import {
+  combineDailyCalories,
+  calculateEnduranceCaloriesForPeriod
+} from './utils/enduranceIntegration';
 import { useGarminData } from '../../hooks/useGarminData';
 import logger from '../../utils/logger';
 
@@ -63,13 +70,14 @@ const PredictionsModule = () => {
   }, [dbReady, showActivityScenarios, loadAllData]);
 
   // Métriques disponibles pour les prévisions (avec mapping vers les clés dans progressEntries)
+  // ✅ CORRIGÉ : Utilisation des noms de champs corrects avec fallbacks pour compatibilité
   const availableMetrics = [
     { value: 'weight', label: 'Poids', unit: 'kg', icon: '⚖️', key: 'weight', type: 'metrics' },
     { value: 'bodyFat', label: 'Pourcentage de graisse', unit: '%', icon: '🔥', key: 'bodyFatPercentage', type: 'impedance' },
-    { value: 'muscleMass', label: 'Masse musculaire', unit: 'kg', icon: '💪', key: 'skeletalMuscle', type: 'impedance' },
+    { value: 'muscleMass', label: 'Masse musculaire', unit: 'kg', icon: '💪', key: 'muscleMass', type: 'impedance', fallbackKey: 'skeletalMuscle' },
     { value: 'waist', label: 'Tour de taille', unit: 'cm', icon: '📏', key: 'waist', type: 'metrics' },
     { value: 'bmi', label: 'IMC', unit: '', icon: '📊', key: 'bmi', type: 'metrics' },
-    { value: 'visceralFat', label: 'Graisse viscérale', unit: '', icon: '🫀', key: 'visceralFat', type: 'impedance' },
+    { value: 'visceralFat', label: 'Graisse viscérale', unit: '', icon: '🫀', key: 'visceralFatIndex', type: 'impedance', fallbackKey: 'visceralFat' },
     { value: 'metabolicAge', label: 'Âge métabolique', unit: 'ans', icon: '⏰', key: 'metabolicAge', type: 'impedance' }
   ];
 
@@ -113,21 +121,40 @@ const PredictionsModule = () => {
 
     const relevantEntries = data.progressEntries
       .filter(entry => {
-        // Filtrer par type et vérifier que la métrique existe
+        // Filtrer par type d'abord (optimisation performance)
         if (entry.type !== entryType) return false;
+        
+        // ✅ GESTION DES FALLBACKS : Vérifier champ principal ou fallback
+        let value = entry[metricKey];
+        if (value == null && currentMetric.fallbackKey && entry[currentMetric.fallbackKey] != null) {
+          value = entry[currentMetric.fallbackKey];
+        }
         
         // Pour BMI, calculer depuis weight et height si nécessaire
         if (metricKey === 'bmi' && entryType === 'metrics') {
-          return entry.weight != null && entry.height != null && !isNaN(entry.weight) && !isNaN(entry.height);
+          return entry.weight != null && entry.height != null && 
+                 !isNaN(entry.weight) && !isNaN(entry.height) &&
+                 entry.weight > 0 && entry.height > 0; // ✅ Validation stricte
         }
         
-        return entry[metricKey] != null && !isNaN(entry[metricKey]);
+        // Validation stricte : valeur numérique, finie, et positive
+        return value != null && 
+               !isNaN(value) && 
+               isFinite(value) &&
+               (metricKey === 'bodyFatPercentage' || metricKey === 'bodyWater' || metricKey === 'proteinPercentage' 
+                ? value >= 0 && value <= 100  // Pourcentages : 0-100
+                : value > 0);  // Autres métriques doivent être > 0
       })
       .map(entry => {
         const entryDate = entry.date ? new Date(entry.date) : (entry.timestamp ? new Date(entry.timestamp) : new Date());
         
-        // Calculer BMI si nécessaire
+        // ✅ UTILISER LA VALEUR AVEC FALLBACK APPLIQUÉ
         let value = entry[metricKey];
+        if (value == null && currentMetric.fallbackKey && entry[currentMetric.fallbackKey] != null) {
+          value = entry[currentMetric.fallbackKey];
+        }
+        
+        // Calculer BMI si nécessaire
         if (metricKey === 'bmi' && entry.weight && entry.height) {
           const heightInM = entry.height / 100;
           value = entry.weight / (heightInM * heightInM);
@@ -139,7 +166,12 @@ const PredictionsModule = () => {
           timestamp: entryDate.getTime()
         };
       })
-      .filter(entry => isFinite(entry.value) && entry.value > 0)
+      .filter(entry => {
+        // ✅ VALIDATION FINALE STRICTE
+        return isFinite(entry.value) && 
+               entry.value > 0 && 
+               !isNaN(entry.date.getTime());
+      })
       .sort((a, b) => a.date - b.date); // Plus ancien en premier
 
     if (relevantEntries.length < 3) {
@@ -219,7 +251,7 @@ const PredictionsModule = () => {
     // Évaluer la qualité des données
     const dataQuality = evaluateDataQuality(relevantEntries, 3);
 
-    // Générer les facteurs pris en compte
+    // ✅ GÉNÉRER LES FACTEURS PRIS EN COMPTE (base + enrichissements)
     const factors = [
       `Tendance historique sur ${relevantEntries.length} mesures`,
       `Régularité: ${dataQuality.factors.find(f => f.includes('régul')) || 'à améliorer'}`,
@@ -234,22 +266,136 @@ const PredictionsModule = () => {
       factors.push('Tendance peu marquée - prudence recommandée');
     }
 
+    // ✅ AJUSTEMENTS BASÉS SUR VOLUME D'ENTRAÎNEMENT ET CALORIES COMBINÉES
+    let adjustedPredicted = prediction.predicted;
+    const adjustmentFactors = [];
+
+    // ✅ 1. AJUSTEMENT VOLUME D'ENTRAÎNEMENT (si métrique liée à muscle/poids)
+    if (currentMetric.key === 'muscleMass' || currentMetric.key === 'weight') {
+      try {
+        const workoutHistory = getWorkoutHistory ? getWorkoutHistory() : [];
+        if (workoutHistory && workoutHistory.length > 0) {
+          // Calculer volume hebdomadaire moyen pour la période
+          const startDate = relevantEntries[0].date;
+          const endDate = relevantEntries[relevantEntries.length - 1].date;
+          const weeklyVolume = calculateWeeklyVolume(workoutHistory, startDate, endDate);
+          
+          if (weeklyVolume && weeklyVolume.averageWeeklyVolume > 0) {
+            const avgWeeklyVolume = weeklyVolume.averageWeeklyVolume;
+            
+            // ✅ AJUSTEMENT MUSCLE : Volume élevé → Ajustement positif
+            if (currentMetric.key === 'muscleMass' && avgWeeklyVolume > 500) {
+              const adjustmentPercent = Math.min(0.05, (avgWeeklyVolume - 500) / 10000); // Max +5%
+              adjustedPredicted = adjustedPredicted * (1 + adjustmentPercent);
+              adjustmentFactors.push(
+                `Volume d'entraînement élevé (${Math.round(avgWeeklyVolume)} reps/semaine) favorise le gain musculaire (+${(adjustmentPercent * 100).toFixed(1)}%)`
+              );
+            }
+            
+            // ✅ AJUSTEMENT POIDS : Volume élevé + métrique muscle disponible → Ajustement pondéré
+            if (currentMetric.key === 'weight' && avgWeeklyVolume > 500) {
+              // Si on a aussi des données de muscle, ajuster selon recomposition
+              const latestImpedance = relevantEntries.find(e => 
+                e.type === 'impedance' && (e.muscleMass || e.skeletalMuscle)
+              );
+              if (latestImpedance) {
+                // Volume élevé peut maintenir/masquer perte de poids si gain muscle
+                // Pas d'ajustement automatique, mais ajouter facteur informatif
+                adjustmentFactors.push(
+                  `Volume d'entraînement élevé (${Math.round(avgWeeklyVolume)} reps/semaine) - possible recomposition corporelle (perte graisse + gain muscle)`
+                );
+              }
+            }
+          }
+        }
+      } catch (error) {
+        log.warn('Erreur calcul volume d\'entraînement pour ajustement prévision', error);
+      }
+    }
+
+    // ✅ 2. AJUSTEMENT CALORIES COMBINÉES (Garmin + Endurance) pour poids
+    if (currentMetric.key === 'weight' && garminData && data?.enduranceData) {
+      try {
+        // Calculer calories combinées pour la période récente (dernières 2 semaines)
+        const recentStartDate = new Date();
+        recentStartDate.setDate(recentStartDate.getDate() - 14);
+        const recentEndDate = new Date();
+        
+        // Calculer calories endurance pour période récente
+        const enduranceCalories = calculateEnduranceCaloriesForPeriod(
+          data.enduranceData,
+          recentStartDate,
+          recentEndDate,
+          currentValue // Utiliser poids actuel pour calcul précis
+        );
+        
+        // Calculer calories Garmin pour période récente
+        let garminCaloriesTotal = 0;
+        if (garminData.dailyMetrics) {
+          Object.entries(garminData.dailyMetrics).forEach(([dateStr, metrics]) => {
+            const date = new Date(dateStr);
+            if (date >= recentStartDate && date <= recentEndDate) {
+              garminCaloriesTotal += metrics.calories?.total || metrics.calories || 0;
+            }
+          });
+        }
+        
+        const totalCalories = garminCaloriesTotal + enduranceCalories.total;
+        const avgDailyCalories = totalCalories / 14; // 14 jours
+        
+        // ✅ AJUSTEMENT BASÉ SUR DÉFICIT CALORIQUE
+        // Si déficit significatif (> 500 kcal/jour) → Ajuster prévision perte de poids
+        const estimatedBMR = currentValue * 24 * 1.2; // Estimation BMR basique (TDEE)
+        const avgDailyDeficit = estimatedBMR - avgDailyCalories;
+        
+        if (avgDailyDeficit > 500 && totalChange < 0) { // Perte de poids prévue
+          // Déficit de 500 kcal/jour ≈ 0.5 kg/semaine ≈ 2 kg/mois
+          const weeklyDeficit = avgDailyDeficit * 7;
+          const estimatedWeightLoss = weeklyDeficit / 7700; // 7700 kcal = 1 kg
+          const monthlyEstimatedLoss = estimatedWeightLoss * 4.33; // Semaines par mois
+          
+          // Ajuster prévision si déficit suggère perte plus rapide
+          if (monthlyEstimatedLoss > Math.abs(totalChange)) {
+            adjustedPredicted = currentValue - monthlyEstimatedLoss;
+            adjustmentFactors.push(
+              `Déficit calorique moyen de ${Math.round(avgDailyDeficit)} kcal/jour favorise la perte de poids (${monthlyEstimatedLoss.toFixed(1)} kg/mois estimé)`
+            );
+          } else {
+            adjustmentFactors.push(
+              `Déficit calorique de ${Math.round(avgDailyDeficit)} kcal/jour confirme la tendance de perte de poids`
+            );
+          }
+        } else if (avgDailyDeficit < -300 && totalChange > 0) { // Gain de poids prévu
+          adjustmentFactors.push(
+            `Excédent calorique de ${Math.round(-avgDailyDeficit)} kcal/jour peut expliquer la prise de poids`
+          );
+        }
+      } catch (error) {
+        log.warn('Erreur calcul calories combinées pour ajustement prévision', error);
+      }
+    }
+
+    // ✅ COMBINER FACTEURS DE BASE ET AJUSTEMENTS
+    const allFactors = [...factors, ...adjustmentFactors];
+
     return {
       metric: currentMetric,
       current: currentValue,
-      predicted: prediction.predicted,
-      change: totalChange,
-      changePercentage,
+      predicted: adjustedPredicted, // ✅ Utiliser prédiction ajustée
+      change: adjustedPredicted - currentValue, // ✅ Changement recalculé
+      changePercentage: currentValue > 0 ? (((adjustedPredicted - currentValue) / currentValue) * 100) : 0,
       monthlyTrend,
       confidenceInterval: prediction.confidenceInterval,
       accuracy: prediction.accuracy,
       dataQuality: dataQuality.quality,
       lastUpdate: new Date(),
-      factors,
+      factors: allFactors, // ✅ Facteurs enrichis
       hasData: true,
-      regression // Exposer pour les détails
+      regression, // Exposer pour les détails
+      basePrediction: prediction.predicted, // ✅ Conserver prédiction de base pour comparaison
+      adjustments: adjustmentFactors.length > 0 ? adjustmentFactors : null // ✅ Exposer ajustements
     };
-  }, [data?.progressEntries, selectedMetric, predictionPeriod, confidenceLevel]);
+  }, [data?.progressEntries, data?.enduranceData, selectedMetric, predictionPeriod, confidenceLevel, getWorkoutHistory, garminData]);
 
   // Scénarios de prévision basés sur les vraies données
   const scenarios = useMemo(() => {
@@ -545,7 +691,9 @@ const PredictionsModule = () => {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-slate-300">Intervalle de confiance ({predictionsData.accuracy}%)</span>
                 <span className="text-sm text-purple-400">
-                  {predictionsData.confidenceInterval.lower.toFixed(1)} - {predictionsData.confidenceInterval.upper.toFixed(1)} {predictionsData.metric?.unit || ''}
+                  {predictionsData.confidenceInterval?.lower != null && predictionsData.confidenceInterval?.upper != null
+                    ? `${predictionsData.confidenceInterval.lower.toFixed(1)} - ${predictionsData.confidenceInterval.upper.toFixed(1)} ${predictionsData.metric?.unit || ''}`
+                    : 'N/A'}
                 </span>
               </div>
               <div className="w-full bg-slate-600 rounded-full h-2">
@@ -597,7 +745,7 @@ const PredictionsModule = () => {
                       }`}>
                         {scenario.name}
                       </h4>
-                      {scenario.probability != null && (
+                      {scenario.probability != null && !isNaN(scenario.probability) && (
                         <span className="text-xs text-slate-400 ml-auto">
                           {(scenario.probability * 100).toFixed(0)}%
                         </span>

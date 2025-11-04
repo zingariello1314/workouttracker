@@ -1,6 +1,7 @@
-import React from 'react';
-import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useToast } from '../../components/ui/Toast';
 import { workoutProgram } from '../../data/workoutProgram';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
@@ -8,6 +9,9 @@ import { Input, Checkbox } from '../ui/Input';
 import ChallengeCard from '../ui/ChallengeCard';
 import { typography } from '../../styles/typography';
 import { getAutoWeekVariant } from '../../utils/dateUtils';
+import { calculateAutoReps } from '../../utils/exerciseCalculations';
+import { useTodayExercises } from '../../hooks/useTodayExercises';
+import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
 
 const TodayTab = () => {
   const {
@@ -33,8 +37,16 @@ const TodayTab = () => {
     updateTempStretchData,
     getCurrentData,
     updateReps,
-    toggleCheck
+    toggleCheck,
+    // ✅ NOUVEAU : Fonctions de variations journalières
+    suppressExerciseForToday,
+    restoreExerciseForToday,
+    addExceptionalExercise,
+    removeExceptionalExercise,
+    markExceptionalExerciseComplete
   } = useWorkout();
+  
+  const { showSuccess, showError } = useToast();
 
   // Récupérer les défis actifs
   const getActiveChallenges = () => {
@@ -115,9 +127,17 @@ const TodayTab = () => {
         }
       });
 
-      console.log('🎉 Défi validé avec succès !');
+      showSuccess('Défi validé avec succès ! 🎉');
     } catch (error) {
       console.error('❌ Erreur lors de la validation du défi:', error);
+      showError('Erreur lors de la validation du défi', {
+        title: 'Échec de la validation',
+        message: 'Une erreur est survenue lors de la validation du défi.',
+        suggestions: [
+          'Vérifiez que tous les champs sont remplis',
+          'Réessayez dans quelques instants'
+        ]
+      });
       throw error;
     }
   };
@@ -158,27 +178,7 @@ const TodayTab = () => {
   //   inspectIndexedDB();
   // }, []);
 
-  // Fonction pour calculer automatiquement les répétitions basées sur les séries
-  const calculateAutoReps = (seriesText) => {
-    if (!seriesText || !seriesText.includes('×')) {
-      return null;
-    }
-    
-    const match = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
-    if (match) {
-      const sets = parseInt(match[1]);
-      const minReps = parseInt(match[2]);
-      const maxReps = match[3] ? parseInt(match[3]) : minReps;
-      
-      // Calculer le juste milieu des répétitions
-      const avgReps = (minReps + maxReps) / 2;
-      
-      // Retourner le total exact (sets × moyenne)
-      return sets * avgReps;
-    }
-    
-    return null;
-  };
+  // Note: calculateAutoReps est maintenant importé depuis utils/exerciseCalculations
 
   // Gestionnaire pour l'auto-remplissage au focus/clic
   const handleInputFocus = (exerciseId, exercise) => {
@@ -309,8 +309,18 @@ const TodayTab = () => {
     try {
       // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
       await saveExerciseChanges();
+      showSuccess('Exercices enregistrés avec succès');
     } catch (error) {
-      alert('Erreur critique lors de la sauvegarde des exercices. Veuillez réessayer.');
+      console.error('Erreur lors de la sauvegarde des exercices:', error);
+      showError('Erreur lors de la sauvegarde des exercices', {
+        title: 'Échec de la sauvegarde',
+        message: 'Une erreur est survenue lors de l\'enregistrement. Veuillez réessayer.',
+        suggestions: [
+          'Vérifiez votre connexion internet',
+          'Rafraîchissez la page et réessayez',
+          'Contactez le support si le problème persiste'
+        ]
+      });
     }
   };
 
@@ -319,8 +329,18 @@ const TodayTab = () => {
     try {
       // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
       await saveStretchChanges();
+      showSuccess('Étirements enregistrés avec succès');
     } catch (error) {
-      alert('Erreur critique lors de la sauvegarde des étirements. Veuillez réessayer.');
+      console.error('Erreur lors de la sauvegarde des étirements:', error);
+      showError('Erreur lors de la sauvegarde des étirements', {
+        title: 'Échec de la sauvegarde',
+        message: 'Une erreur est survenue lors de l\'enregistrement. Veuillez réessayer.',
+        suggestions: [
+          'Vérifiez votre connexion internet',
+          'Rafraîchissez la page et réessayez',
+          'Contactez le support si le problème persiste'
+        ]
+      });
     }
   };
 
@@ -330,6 +350,95 @@ const TodayTab = () => {
 
   const handleDiscardStretches = () => {
     discardStretchChanges();
+  };
+
+  // ✅ NOUVEAU : Handler pour supprimer un exercice pour aujourd'hui
+  const handleSuppressExercise = async (exerciseId) => {
+    try {
+      // Confirmation avant suppression
+      const confirmed = window.confirm(
+        'Êtes-vous sûr de vouloir supprimer cet exercice pour aujourd\'hui ?\n\nCette action peut être annulée en restaurant l\'exercice.'
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+
+      await suppressExerciseForToday(exerciseId);
+      showSuccess('Exercice supprimé pour aujourd\'hui');
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression de l\'exercice:', error);
+      showError('Erreur lors de la suppression', {
+        title: 'Échec de la suppression',
+        message: error.message || 'Une erreur est survenue lors de la suppression de l\'exercice.',
+        suggestions: [
+          'Vérifiez que l\'exercice existe dans le programme',
+          'Réessayez dans quelques instants'
+        ]
+      });
+    }
+  };
+
+  // ✅ NOUVEAU : Handler pour restaurer un exercice supprimé
+  const handleRestoreExercise = async (exerciseId) => {
+    try {
+      await restoreExerciseForToday(exerciseId);
+      showSuccess('Exercice restauré pour aujourd\'hui');
+    } catch (error) {
+      console.error('❌ Erreur lors de la restauration de l\'exercice:', error);
+      showError('Erreur lors de la restauration', {
+        title: 'Échec de la restauration',
+        message: error.message || 'Une erreur est survenue lors de la restauration de l\'exercice.',
+        suggestions: [
+          'Vérifiez que l\'exercice était bien supprimé',
+          'Réessayez dans quelques instants'
+        ]
+      });
+    }
+  };
+
+  // ✅ NOUVEAU : Handler pour compléter un exercice exceptionnel
+  const handleExceptionalExerciseComplete = async (exerciseId, actualReps, actualDuration) => {
+    try {
+      await markExceptionalExerciseComplete(exerciseId, actualReps, actualDuration);
+      showSuccess('Exercice exceptionnel marqué comme complété');
+    } catch (error) {
+      console.error('❌ Erreur lors de la complétion de l\'exercice exceptionnel:', error);
+      showError('Erreur lors de la complétion', {
+        title: 'Échec de la complétion',
+        message: error.message || 'Une erreur est survenue lors de la complétion de l\'exercice.',
+        suggestions: [
+          'Vérifiez que l\'exercice existe',
+          'Réessayez dans quelques instants'
+        ]
+      });
+    }
+  };
+
+  // ✅ NOUVEAU : Handler pour supprimer un exercice exceptionnel
+  const handleRemoveExceptionalExercise = async (exerciseId) => {
+    try {
+      const confirmed = window.confirm(
+        'Êtes-vous sûr de vouloir supprimer cet exercice exceptionnel ?'
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+
+      await removeExceptionalExercise(exerciseId);
+      showSuccess('Exercice exceptionnel supprimé');
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression de l\'exercice exceptionnel:', error);
+      showError('Erreur lors de la suppression', {
+        title: 'Échec de la suppression',
+        message: error.message || 'Une erreur est survenue lors de la suppression de l\'exercice.',
+        suggestions: [
+          'Vérifiez que l\'exercice existe',
+          'Réessayez dans quelques instants'
+        ]
+      });
+    }
   };
 
   const workout = getTodayWorkout(currentDate, isGymMode);
@@ -343,6 +452,17 @@ const TodayTab = () => {
   const hasGymVariants = (dayName === 'samedi' || dayName === 'dimanche') && 
                         workoutProgram[dayName] && 
                         workoutProgram[dayName].salleVariants;
+
+  // ✅ NOUVEAU : Utiliser le hook useTodayExercises pour obtenir exercices avec variations
+  const {
+    programExercises,
+    additionalExercises,
+    suppressedExerciseIds,
+    metadata: exercisesMetadata
+  } = useTodayExercises({ date: currentDate, isGymMode });
+
+  // ✅ État pour modal d'ajout d'exercice exceptionnel
+  const [showAddExceptionalModal, setShowAddExceptionalModal] = useState(false);
 
   const handleSessionFeedback = () => {
     // Calculer la durée réelle basée sur les exercices accomplis
@@ -556,8 +676,8 @@ const TodayTab = () => {
           Exercices
         </h3>
         <div className="space-y-3">
-          {/* Exercices classiques */}
-          {workout.exercices.map((exercise) => {
+          {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
+          {programExercises.map((exercise) => {
             // Générer la clé appropriée selon le type d'exercice
             let exerciseKey = `${dateStr}_${exercise.id}`;
             
@@ -612,10 +732,128 @@ const TodayTab = () => {
                     icon={Zap}
                     className="bg-blue-600 hover:bg-blue-700"
                   />
+                  {/* ✅ NOUVEAU : Bouton pour supprimer l'exercice pour aujourd'hui */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSuppressExercise(exercise.id)}
+                    icon={Trash2}
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    title="Supprimer pour aujourd'hui"
+                  />
                 </div>
               </div>
             );
           })}
+
+          {/* ✅ NOUVEAU : Section Exercices Exceptionnels */}
+          {additionalExercises.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-slate-600/50">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold text-white flex items-center gap-2">
+                  <span className="text-yellow-400">⭐</span>
+                  Exercices Exceptionnels
+                  {exercisesMetadata.additionalCount > 0 && (
+                    <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full">
+                      {exercisesMetadata.additionalCount}
+                    </span>
+                  )}
+                </h4>
+              </div>
+              <div className="space-y-3">
+                {additionalExercises.map((exercise) => {
+                  const isCompleted = exercise.completed || false;
+                  
+                  return (
+                    <div 
+                      key={exercise.id} 
+                      className="flex items-center space-x-3 p-4 bg-gradient-to-r from-yellow-700/20 to-orange-700/20 rounded-lg border border-yellow-500/30 hover:from-yellow-700/30 hover:to-orange-700/30 transition-all duration-200"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-white flex items-center gap-2">
+                          {exercise.name}
+                          <span className="text-xs bg-yellow-500/30 text-yellow-200 px-2 py-0.5 rounded-full">
+                            Exceptionnel
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-300 mt-1">
+                          {exercise.type === 'reps' ? (
+                            <>
+                              {exercise.series} séries
+                              {exercise.repsPerSeries && exercise.repsPerSeries.length > 0 && (
+                                <span className="ml-2">
+                                  ({exercise.repsPerSeries.join(' + ')} reps)
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {exercise.duration ? `${Math.floor(exercise.duration / 60)}min ${exercise.duration % 60}s` : 'Durée'}
+                            </>
+                          )}
+                          {exercise.materiel && ` • ${exercise.materiel}`}
+                          {exercise.notes && ` • ${exercise.notes}`}
+                        </div>
+                        {exercise.completed && (
+                          <div className="text-xs text-green-300 mt-1">
+                            {exercise.type === 'reps' && exercise.totalReps ? (
+                              `✓ Complété : ${exercise.totalReps} reps`
+                            ) : exercise.type === 'duration' && exercise.actualDuration ? (
+                              `✓ Complété : ${Math.floor(exercise.actualDuration / 60)}min ${exercise.actualDuration % 60}s`
+                            ) : (
+                              '✓ Complété'
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={isCompleted}
+                          onChange={() => {
+                            if (!isCompleted) {
+                              // Compléter l'exercice
+                              if (exercise.type === 'reps') {
+                                handleExceptionalExerciseComplete(exercise.id, exercise.repsPerSeries);
+                              } else {
+                                handleExceptionalExerciseComplete(exercise.id, null, exercise.duration);
+                              }
+                            } else {
+                              // Décocher (non implémenté pour l'instant, mais prévu)
+                              console.log('Décocher exercice exceptionnel non encore implémenté');
+                            }
+                          }}
+                          className="text-yellow-400"
+                          name={`exceptional_${exercise.id}`}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveExceptionalExercise(exercise.id)}
+                          icon={X}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          title="Supprimer cet exercice exceptionnel"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ✅ NOUVEAU : Bouton pour ajouter un exercice exceptionnel */}
+          <div className="mt-4 pt-4 border-t border-slate-600/50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddExceptionalModal(true)}
+              icon={Plus}
+              className="w-full border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+            >
+              Ajouter un exercice exceptionnel
+            </Button>
+          </div>
           
           {/* Activités complémentaires */}
           {workout.complementaryActivity && (
@@ -893,6 +1131,12 @@ const TodayTab = () => {
           Feedback de session
         </Button>
       </div>
+
+      {/* ✅ NOUVEAU : Modal d'ajout d'exercice exceptionnel */}
+      <AddExceptionalExerciseModal
+        isOpen={showAddExceptionalModal}
+        onClose={() => setShowAddExceptionalModal(false)}
+      />
     </div>
   );
 };

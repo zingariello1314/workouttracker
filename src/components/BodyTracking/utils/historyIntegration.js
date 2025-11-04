@@ -380,11 +380,18 @@ export const analyzeVolumeMuscleCorrelation = (workoutHistory = [], progressEntr
   }
   
   // Filtrer entrées d'impédance avec masse musculaire
+  // ✅ CORRIGÉ : Gestion des fallbacks pour compatibilité (muscleMass → skeletalMuscle)
   const muscleEntries = progressEntries
-    .filter(entry => entry.type === 'impedance' && entry.skeletalMuscle != null)
+    .filter(entry => {
+      if (entry.type !== 'impedance') return false;
+      // ✅ GESTION INTELLIGENTE DES FALLBACKS : muscleMass (nouveau) ou skeletalMuscle (ancien)
+      const muscle = entry.muscleMass || entry.skeletalMuscle;
+      return muscle != null && !isNaN(muscle);
+    })
     .map(entry => ({
       date: normalizeDate(entry.date || entry.timestamp),
-      muscleMass: entry.skeletalMuscle
+      // ✅ UTILISER muscleMass en priorité, fallback sur skeletalMuscle
+      muscleMass: entry.muscleMass || entry.skeletalMuscle
     }))
     .filter(entry => entry.date)
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -520,8 +527,11 @@ export const identifyOptimalFrequency = (workoutHistory = [], progressEntries = 
         );
         const first = sorted[0];
         const last = sorted[sorted.length - 1];
-        if (first.skeletalMuscle && last.skeletalMuscle) {
-          muscleChange = last.skeletalMuscle - first.skeletalMuscle; // Positif = gain
+        // ✅ CORRIGÉ : Gestion des fallbacks pour compatibilité (muscleMass → skeletalMuscle)
+        const firstMuscle = first.muscleMass || first.skeletalMuscle;
+        const lastMuscle = last.muscleMass || last.skeletalMuscle;
+        if (firstMuscle != null && lastMuscle != null) {
+          muscleChange = lastMuscle - firstMuscle; // Positif = gain
         }
       }
       

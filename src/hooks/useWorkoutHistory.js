@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { workoutProgram } from '../data/workoutProgram';
+import { calculateAutoReps } from '../utils/exerciseCalculations';
 
 /**
  * Hook personnalisé pour gérer l'historique des séances d'entraînement
@@ -63,23 +64,7 @@ export const useWorkoutHistory = () => {
     return allExercises;
   }, []);
 
-  // Fonction pour calculer les répétitions automatiques
-  const calculateAutoReps = useCallback((seriesText) => {
-    if (!seriesText || !seriesText.includes('×')) {
-      return null;
-    }
-    
-    const match = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
-    if (match) {
-      const sets = parseInt(match[1]);
-      const minReps = parseInt(match[2]);
-      const maxReps = match[3] ? parseInt(match[3]) : minReps;
-      const avgReps = (minReps + maxReps) / 2;
-      return sets * avgReps;
-    }
-    
-    return null;
-  }, []);
+  // Note: calculateAutoReps est maintenant importé depuis utils/exerciseCalculations
 
   // Fonction pour créer un nouveau tableau d'historique
   const createWorkoutTable = useCallback((program, triggerType = 'program_change') => {

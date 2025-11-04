@@ -23,7 +23,9 @@ import {
 import {
   calculateWeeklyVolume,
   calculateMonthlyVolume,
-  identifyOptimalFrequency
+  identifyOptimalFrequency,
+  analyzeVolumeMuscleCorrelation,
+  analyzeVolumeWeightCorrelation
 } from './historyIntegration';
 import {
   calculateEnduranceCaloriesForPeriod,
@@ -165,11 +167,18 @@ const getMuscleMassAtDate = (progressEntries = [], targetDate) => {
   }
   
   // Filtrer entrées d'impédance avec masse musculaire avant ou à la date cible
+  // ✅ CORRIGÉ : Gestion des fallbacks pour compatibilité (muscleMass → skeletalMuscle)
   const muscleEntries = progressEntries
-    .filter(entry => entry.type === 'impedance' && entry.skeletalMuscle != null && !isNaN(entry.skeletalMuscle))
+    .filter(entry => {
+      if (entry.type !== 'impedance') return false;
+      // ✅ GESTION INTELLIGENTE DES FALLBACKS : muscleMass (nouveau) ou skeletalMuscle (ancien)
+      const muscle = entry.muscleMass || entry.skeletalMuscle;
+      return muscle != null && !isNaN(muscle);
+    })
     .map(entry => ({
       date: normalizeDate(entry.date || entry.timestamp),
-      muscleMass: parseFloat(entry.skeletalMuscle)
+      // ✅ UTILISER muscleMass en priorité, fallback sur skeletalMuscle
+      muscleMass: parseFloat(entry.muscleMass || entry.skeletalMuscle)
     }))
     .filter(entry => entry.date && entry.date <= normalizedTarget)
     .sort((a, b) => b.date.localeCompare(a.date)); // Plus récent en premier
@@ -282,18 +291,36 @@ export const explainWeightChange = async (
     totalCaloriesConsumed = garminCalories.total; // Si métabolisme basal disponible
   }
   
-  // Calories exercices de force (HistoryTab)
-  const workoutCalories = estimateWorkoutCalories(workoutHistory, startDate, endDate, endWeight);
-  totalCaloriesBurned += workoutCalories;
+  // ✅ DÉDUPLICATION : Utiliser combineDailyCalories pour éviter double comptage
+  // combineDailyCalories gère déjà la priorité Garmin > Endurance
+  // Mais pour les calories exercices force, on doit les ajouter séparément car pas dans combineDailyCalories
   
-  // Calories endurance (EnduranceTab)
+  // Calories exercices de force (HistoryTab) - À ajouter séparément car pas dans Garmin/Endurance
+  const workoutCalories = estimateWorkoutCalories(workoutHistory, startDate, endDate, endWeight);
+  
+  // ✅ Calories combinées Garmin + Endurance (avec déduplication automatique)
+  // Utiliser combineDailyCalories pour chaque jour de la période
+  let combinedCaloriesTotal = 0;
+  const startDateObj = new Date(startDate);
+  const endDateObj = new Date(endDate);
+  const currentDate = new Date(startDateObj);
+  
+  while (currentDate <= endDateObj) {
+    const dailyCombined = combineDailyCalories(garminData, enduranceData, currentDate, endWeight);
+    combinedCaloriesTotal += dailyCombined.total;
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  // ✅ UTILISER CALORIES COMBINÉES (Garmin + Endurance déjà dédupliquées) + Calories exercices force
+  totalCaloriesBurned = combinedCaloriesTotal + workoutCalories;
+  
+  // ✅ CONSERVER enduranceCalories pour référence (calcul séparé pour affichage)
   const enduranceCalories = calculateEnduranceCaloriesForPeriod(
     enduranceData,
     startDate,
     endDate,
     endWeight
   );
-  totalCaloriesBurned += enduranceCalories.total;
   
   // 3. Calculer déficit/surplus calorique
   const avgDailyCaloriesBurned = totalCaloriesBurned / days;
@@ -334,7 +361,7 @@ export const explainWeightChange = async (
     const normalizedEnd = normalizeDate(endDate);
     return sessionDate && sessionDate >= normalizedStart && sessionDate <= normalizedEnd;
   }).length;
-  
+
   if (sessionsCount > 0) {
     factors.push({
       type: 'workout_sessions',
@@ -342,6 +369,46 @@ export const explainWeightChange = async (
       impact: weightChange > 0 ? 'positive' : 'neutral',
       contribution: sessionsCount > days * 0.5 ? 'high' : 'medium'
     });
+  }
+
+  // ✅ ENRICHISSEMENT : Analyser corrélation volume d'entraînement vs changement de poids
+  if (workoutHistory && workoutHistory.length > 0 && progressEntries.length >= 4) {
+    try {
+      const volumeWeightCorrelation = analyzeVolumeWeightCorrelation(
+        workoutHistory,
+        progressEntries,
+        startDate,
+        endDate
+      );
+      
+      if (volumeWeightCorrelation && volumeWeightCorrelation.correlation != null) {
+        const correlation = volumeWeightCorrelation.correlation;
+        const absCorrelation = Math.abs(correlation);
+        
+        if (absCorrelation > 0.3) {
+          // Corrélation significative détectée
+          if (correlation < -0.3 && weightChange > 0) {
+            // Corrélation négative forte : plus de volume = plus de perte de poids
+            factors.push({
+              type: 'volume_correlation',
+              description: `Corrélation forte (r=${correlation.toFixed(2)}) entre volume d'entraînement et perte de poids. Vos meilleures périodes correspondent à ${Math.round(volumeWeightCorrelation.optimalWeeklyVolume || 0)} reps/semaine en moyenne.`,
+              impact: 'positive',
+              contribution: absCorrelation > 0.6 ? 'high' : 'medium'
+            });
+          } else if (correlation > 0.3 && weightChange < 0) {
+            // Corrélation positive : volume élevé peut masquer perte si gain muscle simultané
+            factors.push({
+              type: 'volume_correlation',
+              description: `Corrélation (r=${correlation.toFixed(2)}) suggère que votre volume d'entraînement élevé peut expliquer la prise de poids (possible gain musculaire).`,
+              impact: 'neutral',
+              contribution: 'medium'
+            });
+          }
+        }
+      }
+    } catch (error) {
+      log.warn('Erreur analyse corrélation volume vs poids', error);
+    }
   }
   
   // Facteur: Endurance
@@ -635,6 +702,37 @@ export const explainMuscleDevelopment = (
       impact: 'positive',
       contribution: 'high'
     });
+  }
+
+  // ✅ ENRICHISSEMENT : Analyser corrélation volume d'entraînement vs gain musculaire
+  if (workoutHistory && workoutHistory.length > 0 && progressEntries.length >= 4) {
+    try {
+      const volumeMuscleCorrelation = analyzeVolumeMuscleCorrelation(
+        workoutHistory,
+        progressEntries,
+        startDate,
+        endDate
+      );
+      
+      if (volumeMuscleCorrelation && volumeMuscleCorrelation.correlation != null) {
+        const correlation = volumeMuscleCorrelation.correlation;
+        const absCorrelation = Math.abs(correlation);
+        
+        if (absCorrelation > 0.3 && muscleChange > 0) {
+          // Corrélation significative : volume élevé = gain musculaire
+          if (correlation > 0.4) {
+            factors.push({
+              type: 'volume_muscle_correlation',
+              description: `Corrélation positive forte (r=${correlation.toFixed(2)}) entre volume d'entraînement et gain musculaire. Vos meilleures périodes correspondent à ${Math.round(volumeMuscleCorrelation.optimalWeeklyVolume || 0)} reps/semaine en moyenne.`,
+              impact: 'positive',
+              contribution: absCorrelation > 0.6 ? 'high' : 'medium'
+            });
+          }
+        }
+      }
+    } catch (error) {
+      log.warn('Erreur analyse corrélation volume vs muscle', error);
+    }
   }
   
   // Facteur: Régularité
