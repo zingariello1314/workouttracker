@@ -7,6 +7,7 @@ import { History, ChevronDown, ChevronUp, Calendar, Save, Check, ChevronRight, S
 import { workoutProgram } from '../data/workoutProgram';
 import { useWorkout } from '../context/WorkoutContext';
 import { typography } from '../styles/typography';
+import { calculateAutoReps } from '../utils/exerciseCalculations';
 import './WorkoutHistorySection.css';
 
 /**
@@ -148,6 +149,47 @@ const WorkoutHistorySection = () => {
       }
     };
   }, []);
+
+  // ✅ Gestionnaire pour l'auto-remplissage au focus/clic
+  const handleInputFocus = (exerciseId, dateStr, exercise) => {
+    try {
+      // Validation de base
+      if (!exerciseId || !dateStr) {
+        console.warn('Paramètres invalides pour handleInputFocus');
+        return;
+      }
+
+      const currentData = getCurrentData();
+      if (!currentData) {
+        console.error('Données actuelles non disponibles');
+        return;
+      }
+
+      const key = `${dateStr}_${exerciseId}`;
+      const currentValue = currentData.reps[key] || '';
+      
+      // ✅ Si le champ est vide, calculer et remplir automatiquement
+      if (!currentValue && exercise && exercise.series) {
+        const autoReps = calculateAutoReps(exercise.series);
+        if (autoReps) {
+          // Mettre à jour les données avec le calcul automatique
+          const newData = {
+            ...currentData,
+            reps: {
+              ...currentData.reps,
+              [key]: autoReps.toString()
+            }
+          };
+          
+          updateTempExerciseData(newData);
+          // Utiliser le système de debounce unifié
+          debouncedSave();
+        }
+      }
+    } catch (error) {
+      console.error('Erreur dans handleInputFocus:', error);
+    }
+  };
 
   // Gérer la saisie des répétitions
   const handleRepsChange = (exerciseId, dateStr, value) => {
@@ -534,11 +576,12 @@ const WorkoutHistorySection = () => {
                                   return (
                                     <td key={`${item.id}_${dateInfo.isoDateStr}`} className="p-3">
                                       <div className="flex flex-col items-center gap-2">
-                                        {/* Champ de saisie */}
+                                        {/* ✅ Champ de saisie avec auto-remplissage au focus */}
                                         <Input
                                           type="number"
                                           value={repsValue}
                                           onChange={(e) => handleRepsChange(item.id, dateInfo.isoDateStr, e.target.value)}
+                                          onFocus={() => handleInputFocus(item.id, dateInfo.isoDateStr, item)}
                                           placeholder="0"
                                           className="w-16 h-10 text-center text-sm bg-slate-700 border-slate-600 text-white font-medium focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                                           min="0"
