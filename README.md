@@ -3296,26 +3296,15 @@ Ce projet est sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus
 
 ## 👨‍💻 Auteur & Contact
 
-**Développé avec ❤️ par [Votre Nom]**
+**Développé avec ❤️ par zingariello1314**
 
 ### 📧 Contact
 
-- **Email** : [VOTRE_EMAIL@example.com](mailto:VOTRE_EMAIL@example.com)
 - **GitHub** : [@zingariello1314](https://github.com/zingariello1314)
-- **Website** : [VOTRE_SITE.com](https://VOTRE_SITE.com)
 
 ### 🌐 Réseaux Sociaux
 
-- **Twitter/X** : [@VOTRE_TWITTER](#) *(lien à fournir)*
-- **LinkedIn** : [Votre Profil](#) *(lien à fournir)*
-- **Instagram** : [@VOTRE_INSTAGRAM](#) *(lien à fournir)*
-- **Discord** : [Serveur Discord](#) *(lien à fournir)*
-- **YouTube** : [Votre Chaîne](#) *(lien à fournir)*
-
-### 📰 Newsletter
-
-Abonnez-vous à la newsletter pour recevoir les dernières mises à jour :
-[📧 S'abonner](#) *(lien à fournir)*
+- **Instagram** : [@zingariello1314](https://instagram.com/zingariello1314)
 
 ---
 
@@ -3327,17 +3316,17 @@ Abonnez-vous à la newsletter pour recevoir les dernières mises à jour :
 
 <div align="center">
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/VOTRE_USERNAME)
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/VOTRE_USERNAME)
-[![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/VOTRE_USERNAME)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/zingariello1314)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/zingariello1314)
+[![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/wearehere343)
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub_Sponsors-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white)](https://github.com/sponsors/zingariello1314)
 
 </div>
 
 **Méthodes de soutien** :
-- ☕ **Buy Me a Coffee** : [buymeacoffee.com/VOTRE_USERNAME](https://buymeacoffee.com/VOTRE_USERNAME) *(lien à fournir)*
-- 🎁 **Ko-fi** : [ko-fi.com/VOTRE_USERNAME](https://ko-fi.com/VOTRE_USERNAME) *(lien à fournir)*
-- 💳 **PayPal** : [paypal.me/VOTRE_USERNAME](https://paypal.me/VOTRE_USERNAME) *(lien à fournir)*
+- ☕ **Buy Me a Coffee** : [buymeacoffee.com/zingariello1314](https://buymeacoffee.com/zingariello1314)
+- 🎁 **Ko-fi** : [ko-fi.com/zingariello1314](https://ko-fi.com/zingariello1314)
+- 💳 **PayPal** : [paypal.me/wearehere343](https://paypal.me/wearehere343)
 - 💜 **GitHub Sponsors** : [github.com/sponsors/zingariello1314](https://github.com/sponsors/zingariello1314)
 
 ### 🎁 Autres Façons de Soutenir
