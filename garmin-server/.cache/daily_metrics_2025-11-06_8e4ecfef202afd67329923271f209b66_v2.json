@@ -1,0 +1,1455 @@
+{
+  "steps": 279,
+  "distance": 0.253,
+  "floors": 0,
+  "calories": {
+    "total": 1039,
+    "active": 12,
+    "resting": 1027
+  },
+  "heartRate": {
+    "resting": 56,
+    "max": 87,
+    "avg": 65,
+    "timeSeries": [
+      {
+        "timestamp": "2025-11-05T23:00:00Z",
+        "bpm": 74
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 8
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -16
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -12
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -9
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -8
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -13
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 8
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -12
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 3480000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -11
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -11
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 16
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 11
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -12
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -9
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 9
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      }
+    ]
+  },
+  "respiration": {
+    "awake": {
+      "min": 11,
+      "max": 21,
+      "avg": 13.0
+    },
+    "sleep": {
+      "min": 11,
+      "max": 21,
+      "avg": 17.0
+    },
+    "timeSeries": [
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 12.0
+      },
+      {
+        "timestamp": null,
+        "value": 12.0
+      },
+      {
+        "timestamp": null,
+        "value": 13.0
+      },
+      {
+        "timestamp": null,
+        "value": 13.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 16.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 20.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 19.0
+      },
+      {
+        "timestamp": null,
+        "value": 19.0
+      },
+      {
+        "timestamp": null,
+        "value": 19.0
+      },
+      {
+        "timestamp": null,
+        "value": 20.0
+      },
+      {
+        "timestamp": null,
+        "value": 20.0
+      },
+      {
+        "timestamp": null,
+        "value": 20.0
+      },
+      {
+        "timestamp": null,
+        "value": 20.0
+      },
+      {
+        "timestamp": null,
+        "value": 20.0
+      },
+      {
+        "timestamp": null,
+        "value": 20.0
+      },
+      {
+        "timestamp": null,
+        "value": 19.0
+      },
+      {
+        "timestamp": null,
+        "value": 19.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      }
+    ]
+  },
+  "intensityMinutes": null,
+  "bodyBattery": {
+    "current": 99,
+    "timeSeries": [
+      {
+        "timestamp": null,
+        "value": 31
+      },
+      {
+        "timestamp": null,
+        "value": 31
+      },
+      {
+        "timestamp": null,
+        "value": 32
+      },
+      {
+        "timestamp": null,
+        "value": 32
+      },
+      {
+        "timestamp": null,
+        "value": 32
+      },
+      {
+        "timestamp": null,
+        "value": 32
+      },
+      {
+        "timestamp": null,
+        "value": 32
+      },
+      {
+        "timestamp": null,
+        "value": 32
+      },
+      {
+        "timestamp": null,
+        "value": 32
+      },
+      {
+        "timestamp": null,
+        "value": 32
+      },
+      {
+        "timestamp": null,
+        "value": 33
+      },
+      {
+        "timestamp": null,
+        "value": 33
+      },
+      {
+        "timestamp": null,
+        "value": 34
+      },
+      {
+        "timestamp": null,
+        "value": 34
+      },
+      {
+        "timestamp": null,
+        "value": 35
+      },
+      {
+        "timestamp": null,
+        "value": 35
+      },
+      {
+        "timestamp": null,
+        "value": 35
+      },
+      {
+        "timestamp": null,
+        "value": 35
+      },
+      {
+        "timestamp": null,
+        "value": 36
+      },
+      {
+        "timestamp": null,
+        "value": 36
+      },
+      {
+        "timestamp": null,
+        "value": 37
+      },
+      {
+        "timestamp": null,
+        "value": 37
+      },
+      {
+        "timestamp": null,
+        "value": 38
+      },
+      {
+        "timestamp": null,
+        "value": 38
+      }
+    ]
+  },
+  "stress": {
+    "average": 21,
+    "max": 82,
+    "timeSeries": []
+  },
+  "spo2": null,
+  "heartRateZones": {
+    "zone1": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone2": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone3": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone4": {
+      "time": 1,
+      "percentage": 100.0
+    },
+    "zone5": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "total": 1,
+    "zonesDefinition": {
+      "zone1": {
+        "min": 0,
+        "max": 52,
+        "name": "Zone 1 - \u00c9chauffement"
+      },
+      "zone2": {
+        "min": 52,
+        "max": 60,
+        "name": "Zone 2 - Br\u00fblage graisses"
+      },
+      "zone3": {
+        "min": 60,
+        "max": 69,
+        "name": "Zone 3 - A\u00e9robie"
+      },
+      "zone4": {
+        "min": 69,
+        "max": 78,
+        "name": "Zone 4 - Seuil"
+      },
+      "zone5": {
+        "min": 78,
+        "max": 87,
+        "name": "Zone 5 - Maximale"
+      }
+    },
+    "calculatedFromTimeSeries": true
+  },
+  "sleep": {
+    "duration": 8.45,
+    "quality": 0,
+    "deepSleep": 1.48,
+    "lightSleep": 6.87,
+    "remSleep": 0.1,
+    "bedTime": "03:50",
+    "wakeTime": "12:27",
+    "awakenings": null,
+    "movements": null,
+    "phasesDetails": null
+  },
+  "date": "2025-11-06",
+  "_phase3_merge_needed": true,
+  "_cached_at": 1762462384.3083136,
+  "_cache_version": 2,
+  "_raw_data_hash": "8e4ecfef202afd67329923271f209b66"
+}
