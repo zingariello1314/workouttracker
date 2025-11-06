@@ -1639,6 +1639,1483 @@ flowchart LR
 
 ---
 
-**✅ CHAPITRE 3 - PARTIE 1 TERMINÉE (Onglets 1-5)**
+---
 
-*Validez cette partie avant de continuer avec les onglets 6-14*
+### 6. 🗓️ Onglet "Calendar" (Calendrier)
+
+**Fichier** : `src/components/tabs/CalendarTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Heatmap calendrier annuel** : Visualisation activité sur 365 jours
+- **Statistiques globales** : Total séances, exercices, moyenne
+- **Graphique activité 7 jours** : Barres verticales avec gradients
+- **Intégration Garmin** : Données Garmin affichées dans le calendrier
+- **Nettoyage automatique** : Suppression sessions mock au chargement
+
+#### Architecture & Flux de Données
+
+```mermaid
+flowchart TB
+    A[🗓️ CalendarTab Chargé] --> B[Chargement Données<br/>getWorkoutHistory]
+    A --> C[Chargement Garmin<br/>loadAllData]
+    
+    B --> D[Filtrage Sessions<br/>Par Date]
+    C --> E[Fusion Données<br/>Garmin + Workout]
+    
+    D --> F[Calcul Statistiques<br/>Globales]
+    E --> F
+    
+    F --> G[Total Séances<br/>Total Exercices]
+    F --> H[Moyenne Exercices<br/>Par Séance]
+    F --> I[Sessions Semaine<br/>7 Derniers Jours]
+    
+    G --> J[📊 Heatmap Annuel<br/>CalendarHeatmap]
+    H --> J
+    I --> K[📈 Graphique Barres<br/>7 Jours]
+    
+    J --> L[Affichage Calendrier<br/>Couleurs Intensité]
+    K --> M[Affichage Barres<br/>Gradients Purple]
+    
+    N[🧹 Nettoyage Mock] -->|Une fois| B
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style J fill:#ec4899,stroke:#fff,color:#fff
+    style K fill:#3b82f6,stroke:#fff,color:#fff
+    style N fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **CalendarTab** : Composant principal avec gestion d'état
+- **CalendarHeatmap** : Composant Canvas pour heatmap annuel
+- **useWorkoutStats** : Hook pour calculs statistiques
+- **useGarminData** : Hook pour données Garmin
+- **getWorkoutHistory** : Récupération historique complet
+
+**Fonctionnalités techniques** :
+1. **Heatmap calendrier** :
+   - Canvas API pour rendu performant
+   - 365 carrés (un par jour)
+   - Couleurs selon intensité activité (0-4+ séances)
+   - Tooltip au survol avec détails
+
+2. **Statistiques calculées** :
+   - **Total séances** : Toutes séances confondues
+   - **Total exercices** : Somme exercices toutes séances
+   - **Moyenne exercices/séance** : Total exercices / Total séances
+   - **Sessions cette semaine** : Nombre jours avec activité (7 derniers)
+
+3. **Graphique 7 jours** :
+   - Barres verticales avec gradients purple
+   - Hauteur proportionnelle au nombre séances
+   - Labels jours de la semaine
+   - Animation au chargement
+
+4. **Intégration Garmin** :
+   - Fusion données Garmin avec données workout
+   - Affichage activités Garmin dans heatmap
+   - Synchronisation automatique
+
+5. **Nettoyage mock** :
+   - Suppression sessions mock au chargement (une fois)
+   - Utilise `useRef` pour éviter boucles infinies
+   - Fonction `deleteMockEnduranceSessions()`
+
+**Optimisations** :
+- 📊 **useMemo** : Calculs statistiques mémorisés
+- 🎨 **Canvas optimisé** : Rendu heatmap performant
+- 🔄 **Fusion intelligente** : Données Garmin + Workout sans duplication
+- ⚡ **Nettoyage unique** : Une seule exécution au montage
+
+**Interconnexions** :
+- → **Stats** : Données utilisées pour statistiques globales
+- → **Charts** : Heatmap peut être exporté
+- → **History** : Clic sur jour ouvre historique détaillé
+- ← **Garmin** : Import données activités
+- ← **Endurance** : Sessions endurance affichées
+
+---
+
+### 7. 🎯 Onglet "Program" (Programme)
+
+**Fichier** : `src/components/tabs/ProgramTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Gestion programmes** : Création, édition, suppression
+- **Activation programme** : Programme actif appliqué à "Today"
+- **Vue détaillée** : Affichage exercices par jour
+- **Export/Import** : Sauvegarde programmes en JSON
+- **Durée calculée** : Affichage durée programme (jours/semaines/mois)
+
+#### Architecture & Flux de Données
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 Utilisateur
+    participant PT as 🎯 ProgramTab
+    participant WC as 🔄 WorkoutContext
+    participant PDV as 📋 ProgramDetailView
+    participant IDB as 🗄️ IndexedDB
+
+    U->>PT: Ouverture onglet
+    PT->>WC: Charger programmes
+    WC->>IDB: Récupérer programmes
+    IDB-->>WC: Liste programmes
+    WC-->>PT: Affichage programmes
+    
+    alt Création Programme
+        U->>PT: Clic "Créer Programme"
+        PT->>PT: Afficher formulaire
+        U->>PT: Saisie nom/description/exercices
+        PT->>WC: addProgram(programData)
+        WC->>IDB: Sauvegarder programme
+        IDB-->>WC: ✅ Programme créé
+        WC-->>PT: Mise à jour liste
+    end
+    
+    alt Activation Programme
+        U->>PT: Clic "Activer"
+        PT->>WC: activateProgram(programId)
+        WC->>WC: Mettre à jour activeProgram
+        WC->>IDB: Sauvegarder état
+        WC-->>PT: ✅ Programme activé
+        PT-->>U: Programme appliqué à "Today"
+    end
+    
+    alt Vue Détaillée
+        U->>PT: Clic "Voir Détails"
+        PT->>PDV: Ouvrir vue détaillée
+        PDV->>WC: Charger exercices programme
+        WC-->>PDV: Exercices par jour
+        PDV-->>U: Affichage détaillé
+    end
+    
+    alt Export
+        U->>PT: Clic "Exporter"
+        PT->>WC: getProgram(programId)
+        WC-->>PT: Données programme
+        PT->>PT: Générer JSON
+        PT-->>U: Téléchargement fichier
+    end
+    
+    Note over U,IDB: Programmes persistés<br/>dans IndexedDB
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **ProgramTab** : Interface principale gestion programmes
+- **ProgramDetailView** : Vue détaillée exercices par jour
+- **WorkoutContext** : Gestion état programmes (CRUD)
+- **workoutProgram** : Programme par défaut (data/workoutProgram.js)
+
+**Fonctionnalités techniques** :
+1. **Gestion programmes** :
+   - **Création** : Formulaire nom, description, durée, exercices
+   - **Édition** : Modification programme existant
+   - **Suppression** : Suppression avec confirmation
+   - **Archivage** : Désactivation sans suppression
+
+2. **Activation programme** :
+   - Un seul programme actif à la fois
+   - Programme actif appliqué automatiquement à "Today"
+   - Exercices du jour selon programme
+   - Mise à jour automatique si programme change
+
+3. **Structure programme** :
+   ```javascript
+   {
+     id: "unique-id",
+     name: "Nom Programme",
+     description: "Description",
+     duration: 4, // semaines
+     startDate: "2025-01-01",
+     exercises: [
+       {
+         day: "lundi",
+         exercises: [...],
+         salleVariants: {...}
+       }
+     ]
+   }
+   ```
+
+4. **Calcul durée** :
+   - Format intelligent : jours < 7 → "X jours"
+   - Semaines < 4 → "X semaines"
+   - Mois → "X mois"
+   - Calcul depuis startDate jusqu'à aujourd'hui ou endDate
+
+5. **Export/Import** :
+   - Export JSON avec structure complète
+   - Import validation structure
+   - Sauvegarde dans IndexedDB
+
+**Optimisations** :
+- 💾 **Persistance IndexedDB** : Programmes sauvegardés
+- 🔄 **Synchronisation Today** : Mise à jour automatique
+- ⚡ **Vue détaillée lazy** : Chargement à la demande
+- 🎯 **Un seul actif** : Gestion état simplifiée
+
+**Interconnexions** :
+- → **Today** : Programme actif appliqué automatiquement
+- → **Exercises** : Liste exercices depuis programmes
+- → **Charts** : Statistiques par programme
+- ← **Settings** : Configuration programmes par défaut
+
+---
+
+### 8. 📊 Onglet "Charts" (Graphiques)
+
+**Fichier** : `src/components/tabs/ChartsTab.jsx`
+
+#### Fonctionnalités Principales
+
+L'onglet Charts est le plus riche visuellement avec **20+ graphiques interactifs** :
+
+**Graphiques Garmin** (9 graphiques) :
+- Fréquence Cardiaque (FC moyenne)
+- FC 24h (Time Series)
+- Body Battery
+- Stress
+- Sommeil
+- Respiration
+- Heatmap Activités
+- Corrélations
+- Activité Quotidienne
+
+**Graphiques Workout** (11+ graphiques) :
+- Volume & Répétitions
+- Activité & Régularité
+- Objectifs & Performance
+- Évolution Volume
+- Répartition Musculaire
+- Top Exercices
+- Calendrier Activité
+- Distribution Temporelle
+- Progression Individuelle
+- Boxe Activité
+- Natation Performance
+- Natation Évolution Distance
+- Natation Temps/Allure
+- Natation Volume/Régularité
+- Étirements Zone
+
+#### Architecture & Organisation
+
+```mermaid
+flowchart TB
+    A[📊 ChartsTab] --> B[Filtre Période<br/>7j/30j/90j/1an]
+    
+    B --> C[Chargement Données<br/>getWorkoutHistory]
+    B --> D[Chargement Garmin<br/>loadAllData]
+    
+    C --> E[Filtrage Par Période<br/>useMemo]
+    D --> F[Filtrage Garmin<br/>Par Période]
+    
+    E --> G[📈 Graphiques Workout<br/>11+ Composants]
+    F --> H[⌚ Graphiques Garmin<br/>9 Composants]
+    
+    G --> I[Layout Responsive<br/>Grid 1-3 Colonnes]
+    H --> I
+    
+    I --> J[Ligne 1: FC 24h<br/>Pleine Largeur]
+    I --> K[Ligne 2: 3 Graphiques<br/>FC, Body Battery, Stress]
+    I --> L[Lignes Suivantes<br/>Grid Dynamique]
+    
+    style A fill:#3b82f6,stroke:#fff,color:#fff
+    style G fill:#8b5cf6,stroke:#fff,color:#fff
+    style H fill:#10b981,stroke:#fff,color:#fff
+    style I fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée - Organisation des Graphiques**
+
+**Structure layout** :
+1. **Ligne 1** : FC 24h (Time Series) - Pleine largeur, hauteur 550px
+2. **Ligne 2** : 3 graphiques côte à côte
+   - Fréquence Cardiaque
+   - Body Battery
+   - Stress
+3. **Lignes suivantes** : Grid responsive (1-3 colonnes selon écran)
+
+**Composants graphiques** :
+- **Recharts** : Bibliothèque principale (AreaChart, LineChart, BarChart)
+- **ResponsiveContainer** : Adaptation automatique taille
+- **Custom Tooltips** : Tooltips personnalisés avec données détaillées
+- **Gradients** : Définitions SVG pour couleurs dégradées
+
+**Fonctionnalités techniques** :
+1. **Filtrage période** :
+   - 4 périodes : 7 jours, 30 jours, 90 jours, 1 an
+   - Filtrage côté client avec `useMemo`
+   - Recalcul automatique si période change
+
+2. **Wrappers Garmin** :
+   - `createGarminChartWrapper` : Adaptation interface commune
+   - `createGarminTimeSeriesChartWrapper` : Spécialisé time series
+   - `createGarminCorrelationChartsWrapper` : Graphiques corrélations
+   - Conversion `selectedPeriod` → `periodFilter`
+
+3. **Performance** :
+   - **Lazy loading** : Composants chargés à la demande
+   - **Memoization** : `useMemo` pour données filtrées
+   - **Conditional rendering** : Affichage seulement si données disponibles
+
+4. **Graphiques spéciaux** :
+   - **Heatmap** : Canvas API pour performance
+   - **Time Series** : Compression données (1000 points → 200)
+   - **Corrélations** : Calculs statistiques complexes
+
+**Optimisations** :
+- 📊 **useMemo** : Données filtrées mémorisées
+- 🎨 **Responsive** : Grid adaptatif selon écran
+- ⚡ **Lazy loading** : Composants chargés à la demande
+- 🔄 **Wrappers** : Interface unifiée pour tous graphiques
+
+**Interconnexions** :
+- → **Garmin** : Données Garmin affichées
+- → **Stats** : Données utilisées pour calculs
+- → **History** : Clic sur point ouvre détail
+- ← **Settings** : Configuration couleurs/thèmes
+
+---
+
+### 9. 📈 Onglet "Stats" (Statistiques)
+
+**Fichier** : `src/components/tabs/StatsTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Statistiques globales** : Total séances, répétitions, jours actifs
+- **Statistiques endurance** : Sessions, répétitions, distance, durée
+- **Série actuelle** : Calcul streak jours consécutifs
+- **Statistiques complémentaires** : Boxe, natation
+- **Modal Statistiques Avancées** : 12 métriques détaillées (voir Flux 5)
+
+#### Architecture & Calculs
+
+```mermaid
+flowchart TD
+    A[📈 StatsTab] --> B[Filtre Période<br/>Semaine/Mois/Année]
+    
+    B --> C[getWorkoutHistory<br/>Historique Complet]
+    B --> D[loadAllData<br/>Données Garmin]
+    
+    C --> E[Filtrage Par Période<br/>Date Range]
+    
+    E --> F[Calcul Statistiques<br/>Workout]
+    E --> G[Calcul Statistiques<br/>Endurance]
+    E --> H[Calcul Statistiques<br/>Complémentaires]
+    
+    F --> I[Total Séances<br/>Total Répétitions]
+    F --> J[Jours Actifs<br/>Moyenne Par Jour]
+    
+    G --> K[Sessions Endurance<br/>Répétitions Endurance]
+    G --> L[Distance Totale<br/>Durée Totale]
+    
+    H --> M[Boxe Sessions<br/>Natation Sessions]
+    
+    I --> N[Affichage Cartes<br/>Statistiques]
+    J --> N
+    K --> N
+    L --> N
+    M --> N
+    
+    N --> O[📊 Modal Avancées<br/>12 Métriques]
+    
+    D --> P[Calories Garmin<br/>Priorité]
+    P --> O
+    
+    style A fill:#3b82f6,stroke:#fff,color:#fff
+    style F fill:#8b5cf6,stroke:#fff,color:#fff
+    style G fill:#ec4899,stroke:#fff,color:#fff
+    style O fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **StatsTab** : Interface principale
+- **AdvancedStats** : Modal 12 métriques (composant séparé)
+- **useWorkoutStats** : Hook calculs statistiques
+- **useGarminData** : Hook données Garmin
+- **calculateEnduranceStats** : Fonction calcul endurance
+
+**Fonctionnalités techniques** :
+1. **Calcul statistiques workout** :
+   ```javascript
+   {
+     totalWorkouts: nombre séances,
+     totalReps: somme répétitions (exclut jumprope),
+     totalStretches: total étirements,
+     activeDays: nombre jours avec activité
+   }
+   ```
+
+2. **Calcul statistiques endurance** :
+   - **5 types activités** : Natation, Cardio, Course, Vélo, Autre
+   - **Filtrage mock** : Exclusion sessions mock automatique
+   - **Agrégation** :
+     - Total sessions par type
+     - Total répétitions (longueurs, tours, etc.)
+     - Distance totale (natation, course, vélo)
+     - Durée totale
+     - Sauts (jumprope)
+
+3. **Calcul série actuelle** :
+   - Algorithme optimisé avec `Set` O(1)
+   - Itération depuis aujourd'hui vers le passé
+   - Compte jours consécutifs avec activité
+   - Maximum 365 jours vérifiés
+
+4. **Statistiques complémentaires** :
+   - **Boxe** : Sessions, durée totale
+   - **Natation** : Sessions, durée totale
+   - Détection via `isComplementary` flag
+
+5. **Modal Statistiques Avancées** :
+   - 12 métriques détaillées (voir [Flux 5](#-flux-5--calcul-statistiques-avancées))
+   - Calculs optimisés avec `useMemo`
+   - Intégration Garmin pour calories
+
+**Optimisations** :
+- ⚡ **Set O(1)** : Lookup O(1) pour calcul streak
+- 📊 **useMemo** : Calculs mémorisés
+- 🔄 **Filtrage mock** : Exclusion automatique sessions mock
+- 💾 **Priorité Garmin** : Calories Garmin prioritaires
+
+**Points techniques** :
+- **Exclusion jumprope** : Les sauts ne comptent pas comme répétitions
+- **Normalisation** : Conversion string → number automatique
+- **Périodes** : Semaine (7j), Mois (30j), Année (365j)
+- **Filtrage date** : `sessionDate >= startDate && sessionDate <= now`
+
+**Interconnexions** :
+- → **AdvancedStats** : Modal 12 métriques détaillées
+- → **Charts** : Données utilisées pour graphiques
+- → **History** : Détails séances depuis statistiques
+- ← **Garmin** : Calories Garmin intégrées
+- ← **Tous onglets** : Agrégation données tous onglets
+
+---
+
+---
+
+### 10. 💪 Onglet "Exercises" (Exercices)
+
+**Fichier** : `src/components/tabs/ExercisesTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Synchronisation automatique** : Exercices depuis programmes (actif/tous/défaut)
+- **Catégorisation automatique** : Métadonnées enrichies (catégorie, groupe musculaire, difficulté)
+- **Filtrage avancé** : Par catégorie, groupe musculaire, équipement, difficulté
+- **Deux modes d'affichage** : Exercices ou Programmes
+- **Statistiques détaillées** : Répartition par catégorie, muscle, difficulté
+- **Détection changements** : Alerte si programme modifié
+
+#### Architecture & Synchronisation
+
+```mermaid
+flowchart TB
+    A[💪 ExercisesTab] --> B{Mode Affichage?}
+    
+    B -->|exercises| C[📋 Liste Exercices]
+    B -->|programs| D[📚 Liste Programmes]
+    
+    C --> E{Synchronisation<br/>Auto?}
+    E -->|Oui| F[detectProgramChanges<br/>Détection Modifs]
+    E -->|Non| G[Extraction Manuelle<br/>workoutProgram]
+    
+    F --> H[Source Données?]
+    H -->|active| I[Programme Actif<br/>Seulement]
+    H -->|all| J[Tous Programmes<br/>Fusion]
+    H -->|default| K[Programme Défaut<br/>workoutProgram]
+    
+    I --> L[syncExercisesFromPrograms<br/>WithCategorization]
+    J --> L
+    K --> L
+    
+    L --> M[Enrichissement<br/>Métadonnées]
+    M --> N[Catégorie<br/>Groupe Musculaire<br/>Difficulté]
+    
+    N --> O[Filtrage<br/>filterExercises]
+    O --> P[Affichage<br/>ExerciseCard]
+    
+    G --> O
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style L fill:#10b981,stroke:#fff,color:#fff
+    style M fill:#3b82f6,stroke:#fff,color:#fff
+    style P fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **ExercisesTab** : Interface principale
+- **ExerciseCard** : Carte d'affichage exercice
+- **ExerciseFilter** : Composant filtrage
+- **ProgramCard** : Carte programme (mode programmes)
+- **programSync** : Utilitaires synchronisation
+- **workoutProgramEnhanced** : Données enrichies
+
+**Fonctionnalités techniques** :
+1. **Synchronisation automatique** :
+   - **Déclenchement** : `useEffect` surveille `programs`, `activeProgram`, `dataSource`
+   - **Détection changements** : `detectProgramChanges()` compare état précédent
+   - **Synchronisation** : `syncExercisesFromProgramsWithCategorization()`
+   - **Enrichissement** : Ajout métadonnées (catégorie, muscle, difficulté)
+
+2. **Sources de données** :
+   - **default** : Programme par défaut (`workoutProgram`)
+   - **active_program** : Seulement programme actif
+   - **all_programs** : Tous programmes fusionnés
+
+3. **Catégorisation automatique** :
+   - **Catégories** : Force, Cardio, Flexibilité, Équilibre, etc.
+   - **Groupes musculaires** : Pectoraux, Dos, Jambes, etc.
+   - **Difficulté** : Débutant, Intermédiaire, Avancé
+   - **Équipement** : Aucun, Haltères, Barre, Machine, etc.
+
+4. **Filtrage** :
+   - **Multi-critères** : Catégorie + Groupe + Équipement + Difficulté
+   - **Recherche texte** : Nom exercice
+   - **Memoization** : `useMemo` pour performance
+
+5. **Statistiques** :
+   - Total exercices
+   - Répartition par catégorie
+   - Répartition par groupe musculaire
+   - Répartition par difficulté
+
+**Optimisations** :
+- 🔄 **Synchronisation incrémentale** : Seulement si changements détectés
+- 📊 **Memoization** : `useMemo` pour exercices, filtres, stats
+- ⚡ **Enrichissement intelligent** : Métadonnées ajoutées automatiquement
+- 🎯 **Détection changements** : Évite synchronisations inutiles
+
+**Points techniques** :
+- **Normalisation exercices** : Structure unifiée (id, name, metadata)
+- **Suppression doublons** : Basé sur ID unique
+- **Source tracking** : Chaque exercice connaît sa source (jour, programme)
+- **Fallback gracieux** : Si sync échoue, extraction manuelle
+
+**Interconnexions** :
+- → **Program** : Synchronisation depuis programmes
+- → **Today** : Exercices utilisés dans "Aujourd'hui"
+- → **Data Entry** : Liste exercices disponibles
+- ← **Settings** : Configuration synchronisation
+
+---
+
+### 11. 📜 Onglet "History" (Historique)
+
+**Fichier** : `src/components/tabs/HistoryTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Historique complet** : Toutes séances d'entraînement
+- **Filtrage exercices** : Tous / Programme / Exceptionnels / Supprimés
+- **Affichage détaillé** : Date, exercices, répétitions, étirements
+- **Statistiques par filtre** : Compteurs dynamiques
+- **Tri chronologique** : Plus récent en premier
+
+#### Architecture & Filtrage
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 Utilisateur
+    participant HT as 📜 HistoryTab
+    participant GH as 📜 getWorkoutHistory
+    participant F as 🔍 Filtre
+    participant S as 📊 Statistiques
+
+    U->>HT: Ouverture onglet
+    HT->>GH: Récupérer historique
+    GH-->>HT: Toutes séances
+    
+    HT->>HT: Calcul statistiques<br/>Par type exercice
+    HT-->>U: Affichage historique<br/>+ Stats
+    
+    U->>F: Sélection filtre
+    F->>HT: exerciseFilter<br/>(all/program/exceptional/suppressed)
+    
+    HT->>HT: Filtrer séances<br/>Par type exercice
+    HT->>S: Recalculer stats<br/>Filtrées
+    S-->>HT: Nouveaux compteurs
+    HT-->>U: Affichage filtré<br/>+ Stats mises à jour
+    
+    Note over U,S: Filtrage en temps réel<br/>useMemo optimisé
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **HistoryTab** : Interface principale
+- **getWorkoutHistory** : Fonction récupération historique
+- **Badge** : Composant affichage badges
+- **Card** : Conteneur séance
+
+**Fonctionnalités techniques** :
+1. **Récupération historique** :
+   - Appel `getWorkoutHistory()` depuis `WorkoutContext`
+   - Historique complet toutes séances
+   - Tri chronologique (plus récent en premier)
+
+2. **Filtrage exercices** :
+   - **Tous** : Aucun filtre, toutes séances
+   - **Programme** : `!isExceptional && !isSuppressed`
+   - **Exceptionnels** : `isExceptional === true`
+   - **Supprimés** : `isSuppressed === true`
+
+3. **Statistiques par filtre** :
+   ```javascript
+   {
+     totalProgram: nombre exercices programme,
+     totalExceptional: nombre exercices exceptionnels,
+     totalSuppressed: nombre exercices supprimés,
+     totalAll: total tous exercices
+   }
+   ```
+
+4. **Affichage séance** :
+   - Date formatée
+   - Liste exercices avec répétitions
+   - Étirements complétés
+   - Badges selon type (programme/exceptionnel/supprimé)
+
+5. **Calcul répétitions** :
+   - Utilise `calculateTotalRepsExcludingJumps()`
+   - Exclusion automatique jumprope
+   - Normalisation valeurs
+
+**Optimisations** :
+- 📊 **useMemo** : Filtrage et stats mémorisés
+- ⚡ **Filtrage temps réel** : Pas de délai, instantané
+- 🔄 **Recalcul optimisé** : Seulement si filtre change
+
+**Points techniques** :
+- **Structure séance** :
+  ```javascript
+  {
+    date: "2025-01-15",
+    exercises: [
+      {
+        name: "Pompes",
+        reps: 30,
+        isExceptional: false,
+        isSuppressed: false
+      }
+    ],
+    stretches: [...]
+  }
+  ```
+- **Filtrage conditionnel** : Filtre appliqué seulement si sélectionné
+- **Préservation structure** : Filtrage ne modifie pas données originales
+
+**Interconnexions** :
+- → **Stats** : Données utilisées pour statistiques
+- → **Charts** : Données utilisées pour graphiques
+- → **Today** : Historique référence pour "Aujourd'hui"
+- ← **Tous onglets** : Agrégation toutes séances
+
+---
+
+### 12. 🔮 Onglet "Predictions" (Prédictions)
+
+**Fichier** : `src/components/PredictionsTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Régression linéaire** : Calcul tendance avec R² (coefficient détermination)
+- **Moyenne mobile exponentielle (EMA)** : Lissage données
+- **Détection cycles** : Analyse périodicité
+- **Prédictions multi-périodes** : 7 jours, 14 jours, 30 jours
+- **Prédictions par exercice** : Analyse individuelle
+- **Recommandations IA** : Suggestions basées sur tendances
+- **Analyse volatilité** : Détection irrégularités
+
+#### Architecture & Algorithmes ML
+
+```mermaid
+flowchart TD
+    A[🔮 PredictionsTab] --> B{Données<br/>Suffisantes?}
+    
+    B -->|"< 7 séances"| C[Message<br/>Données Insuffisantes]
+    B -->|"≥ 7 séances"| D[Préparation Données<br/>Filtrage Période]
+    
+    D --> E[Calcul Répétitions<br/>Par Séance]
+    E --> F[Exclusion Jumprope<br/>calculateValidReps]
+    
+    F --> G[Régression Linéaire<br/>calculateLinearRegression]
+    F --> H[Moyenne Mobile<br/>calculateEMA]
+    F --> I[Détection Cycles<br/>detectCycles]
+    F --> J[Calcul Volatilité<br/>Écart-type]
+    
+    G --> K[Slope + Intercept<br/>+ R²]
+    H --> L[EMA Values<br/>Lissage]
+    I --> M[Période Cycle<br/>+ Force]
+    J --> N[Volatilité<br/>Score]
+    
+    K --> O[Prédictions<br/>7j/14j/30j]
+    L --> O
+    M --> O
+    N --> P[Recommandations<br/>IA]
+    
+    O --> Q[Prédictions<br/>Par Exercice]
+    P --> R[Affichage<br/>Dashboard]
+    Q --> R
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style G fill:#3b82f6,stroke:#fff,color:#fff
+    style H fill:#10b981,stroke:#fff,color:#fff
+    style O fill:#f59e0b,stroke:#fff,color:#fff
+    style P fill:#ec4899,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **PredictionsTab** : Interface principale
+- **Algorithms ML** : Régression, EMA, cycles
+- **getWorkoutHistory** : Source données
+
+**Fonctionnalités techniques** :
+1. **Régression linéaire** :
+   ```javascript
+   // Formule : y = slope * x + intercept
+   slope = (n * Σxy - Σx * Σy) / (n * Σx² - (Σx)²)
+   intercept = (Σy - slope * Σx) / n
+   R² = 1 - (SSres / SStot) // Coefficient détermination
+   ```
+   - **Slope** : Tendance (positif = hausse, négatif = baisse)
+   - **Intercept** : Valeur de base
+   - **R²** : Qualité prédiction (0-1, 1 = parfait)
+
+2. **Moyenne mobile exponentielle (EMA)** :
+   ```javascript
+   EMA(t) = α * valeur(t) + (1 - α) * EMA(t-1)
+   α = 2 / (période + 1) // Facteur de lissage
+   ```
+   - **Lissage** : Réduction bruit données
+   - **Réactivité** : Plus récent = plus de poids
+   - **Période** : 7 jours par défaut
+
+3. **Détection cycles** :
+   - **Autocorrélation** : Comparaison données avec décalages
+   - **Période optimale** : Période avec corrélation maximale
+   - **Force cycle** : Intensité corrélation (0-1)
+
+4. **Prédictions multi-périodes** :
+   ```javascript
+   nextWeek = EMA + slope * 7
+   next2Weeks = EMA + slope * 14
+   nextMonth = EMA + slope * 30
+   confidence = R² * 100 (ajusté selon période)
+   ```
+   - **Confiance décroissante** : Plus loin = moins fiable
+   - **Limites** : Min 20%, Max 95%
+
+5. **Prédictions par exercice** :
+   - Analyse individuelle chaque exercice
+   - Minimum 3 occurrences pour prédiction
+   - Tendance spécifique par exercice
+
+6. **Recommandations IA** :
+   - **Tendance baisse** : Suggestion récupération
+   - **Volatilité élevée** : Suggestion régularité
+   - **Fréquence faible** : Suggestion augmentation séances
+
+**Optimisations** :
+- 🧮 **Calculs optimisés** : `useMemo` pour tous calculs
+- 📊 **Filtrage période** : Seulement données nécessaires
+- ⚡ **Exclusion jumprope** : Calculs précis répétitions
+
+**Points techniques** :
+- **Seuil minimum** : 7 séances pour prédictions fiables
+- **Normalisation** : Exclusion jumprope des calculs
+- **Intervalles confiance** : Ajustés selon période (7j > 14j > 30j)
+- **Tendances** : 'hausse', 'baisse', 'stable' selon slope
+
+**Interconnexions** :
+- → **Stats** : Données utilisées pour prédictions
+- → **Charts** : Visualisation tendances
+- → **Smart Balancing** : Prédictions utilisées pour équilibrage
+- ← **History** : Source données historiques
+
+---
+
+---
+
+### 13. ⌚ Onglet "Garmin" (Synchronisation Garmin Connect)
+
+**Fichier** : `src/components/tabs/GarminTab.jsx`
+
+#### Fonctionnalités Principales
+
+L'onglet Garmin est l'un des plus complexes avec **synchronisation externe** :
+
+- **Synchronisation manuelle** : Plage de dates personnalisable
+- **Synchronisation automatique** : Configurable (quotidienne/hebdomadaire)
+- **4 sous-onglets** : Dashboard, Activités, Métriques, Graphiques
+- **7 types de données** : Activités, Métriques quotidiennes, FC, Sommeil, Stress, Body Battery, Respiration
+- **Compression time series** : Réduction ~80% pour FC 24h
+- **Import Endurance** : Option import automatique vers onglet Endurance
+- **Export PDF** : Rapports personnalisables
+- **Panneau debug** : Diagnostic avancé
+
+#### Architecture & Synchronisation Complète
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 Utilisateur
+    participant GT as ⌚ GarminTab
+    participant SC as 🔄 SyncControls
+    participant GS as 🐍 useGarminSync
+    participant API as 🐍 Serveur Python
+    participant GC as 🏃 Garmin Connect
+    participant GDB as 🗄️ GarminDataDB
+    participant ET as 🏃 EnduranceTab
+
+    U->>GT: Ouverture onglet
+    GT->>GDB: Charger données<br/>loadDataForTab
+    GDB-->>GT: Données IndexedDB
+    
+    alt Synchronisation Manuelle
+        U->>SC: Clic "Synchroniser"
+        SC->>GS: syncNow(startDate, endDate)
+        GS->>API: POST /sync<br/>{ dates, credentials }
+        API->>GC: Authentification<br/>OAuth2
+        GC-->>API: Token d'accès
+        API->>GC: GET /activities<br/>GET /dailyMetrics
+        GC-->>API: Données brutes JSON
+        
+        API->>API: Parsing + Normalisation
+        API->>API: Compression FC 24h<br/>(1000 → 200 points)
+        API-->>GS: Données formatées
+        
+        GS->>GDB: Transaction multi-stores
+        GDB-->>GS: ✅ Activités sauvegardées
+        GDB-->>GS: ✅ Métriques quotidiennes
+        GDB-->>GS: ✅ FC time series (compressée)
+        GDB-->>GS: ✅ Sommeil, Stress, etc.
+        
+        GS->>ET: Import automatique?<br/>importToEndurance()
+        ET->>ET: Mapping natation/cardio
+        ET-->>GS: ✅ Import terminé
+        
+        GS-->>GT: ✅ Synchronisation complète
+        GT-->>U: 🎉 Toast succès
+    end
+    
+    alt Synchronisation Automatique
+        GT->>GT: Vérifier dernière sync
+        GT->>GS: Auto-sync si nécessaire
+        GS->>API: Sync automatique
+        API-->>GS: Données mises à jour
+        GS->>GDB: Sauvegarde automatique
+    end
+    
+    Note over U,ET: Retry automatique<br/>Backoff exponentiel
+```
+
+**📖 Explication Détaillée - Processus de Synchronisation**
+
+**Composants impliqués** :
+- **GarminTab** : Composant principal avec 4 sous-onglets
+- **SyncControls** : Contrôles synchronisation (manuel/auto)
+- **useGarminSync** : Hook personnalisé orchestration sync
+- **useGarminData** : Hook gestion IndexedDB Garmin
+- **useGarminImport** : Hook import vers Endurance
+- **Serveur Python** : Backend communication Garmin Connect (API non officielle)
+
+**Fonctionnalités techniques** :
+1. **Synchronisation manuelle** :
+   - **Sélection dates** : Plage personnalisable (début/fin)
+   - **Appel API** : POST vers serveur Python avec credentials
+   - **Authentification** : OAuth2 avec Garmin Connect
+   - **Récupération données** : 7 types de données en parallèle
+   - **Traitement serveur** : Parsing, normalisation, compression
+   - **Sauvegarde** : Transaction atomique multi-stores
+
+2. **Types de données synchronisées** :
+   - **Activities** : Natation, cardio, course, vélo (4 types)
+   - **DailyMetrics** : Métriques quotidiennes agrégées
+   - **HeartRate** : FC time series 24h (compressée ~80%)
+   - **Sleep** : Données sommeil (durée, phases, qualité)
+   - **Stress** : Niveaux stress (0-100)
+   - **BodyBattery** : Énergie disponible (0-100)
+   - **Respiration** : Fréquence respiratoire
+
+3. **Compression time series** :
+   - **Algorithme** : Réduction points (Douglas-Peucker simplifié)
+   - **Réduction** : 1000 points → 200 points (~80%)
+   - **Précision** : Conservation tendances principales
+   - **Stockage** : Base64 compressé dans IndexedDB
+
+4. **Synchronisation automatique** :
+   - **Configuration** : Quotidienne/hebdomadaire
+   - **Déclenchement** : Vérification dernière sync
+   - **Plage** : Dernières 7 jours par défaut
+   - **Silencieuse** : Pas de notification si succès
+
+5. **Import Endurance** :
+   - **Mapping** : Natation → Endurance natation
+   - **Mapping** : Cardio → Endurance cardio
+   - **Option** : Import manuel ou automatique
+   - **Fusion** : Évite doublons avec sessions existantes
+
+6. **Gestion erreurs** :
+   - **Retry automatique** : 3 tentatives avec backoff exponentiel
+   - **Backoff** : 1s, 2s, 4s entre tentatives
+   - **Fallback** : Affichage données IndexedDB si sync échoue
+   - **Logging** : Erreurs loggées pour debugging
+
+**Structure IndexedDB GarminDataDB** :
+```javascript
+{
+  activities: {
+    swimming: [...],
+    jumpRope: [...],
+    cardio: [...],
+    running: [...]
+  },
+  dailyMetrics: {
+    "2025-01-15": {
+      heartRate: { avg: 65, max: 120, min: 55 },
+      steps: 8500,
+      calories: 2200,
+      distance: 6.2,
+      // ...
+    }
+  },
+  heartRate: {
+    "2025-01-15": {
+      compressed: "base64...", // Time series compressée
+      points: 200
+    }
+  },
+  sleep: { ... },
+  stress: { ... },
+  bodyBattery: { ... },
+  respiration: { ... }
+}
+```
+
+**Optimisations** :
+- 📦 **Compression** : Réduction 80% pour time series
+- 🔄 **Retry intelligent** : Backoff exponentiel
+- ⚡ **Chargement optimisé** : `loadDataForTab()` charge seulement données nécessaires
+- 💾 **Transactions atomiques** : Toutes données ou rien
+- 🎯 **Import incrémental** : Seulement nouvelles données
+
+**Points techniques** :
+- **API non officielle** : Utilise reverse engineering Garmin Connect
+- **Credentials** : Stockés côté serveur Python (pas dans frontend)
+- **Compression** : Algorithme propriétaire pour time series
+- **Validation** : Données validées avant sauvegarde
+
+**Interconnexions** :
+- → **Endurance** : Import activités natation/cardio
+- → **Charts** : Données affichées dans graphiques Garmin
+- → **Stats** : Calories Garmin prioritaires
+- → **Calendar** : Activités Garmin dans heatmap
+- ← **Settings** : Configuration synchronisation
+
+---
+
+### 14. 🧠 Onglet "Smart Balancing" (Équilibrage IA)
+
+**Fichier** : `src/components/SmartBalancingTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Analyse programme** : Comparaison prévu vs réalisé
+- **Score de consistance** : Calcul multi-critères (fréquence, variété, intensité)
+- **Détection déséquilibres** : Muscles sous/sur-sollicités
+- **Recommandations IA** : Suggestions personnalisées
+- **Programme optimisé** : Génération suggestions amélioration
+- **Analyse patterns** : Jours/heures optimaux
+- **Analyse complémentaire** : Boxe, natation, autres activités
+
+#### Architecture & Analyse IA
+
+```mermaid
+flowchart TB
+    A[🧠 SmartBalancingTab] --> B{Données<br/>Suffisantes?}
+    
+    B -->|"< 7 séances"| C[Message<br/>Données Insuffisantes]
+    B -->|"≥ 7 séances"| D[Chargement Données<br/>getWorkoutHistory]
+    
+    D --> E[Analyse Programme<br/>programComparisonAnalysis]
+    D --> F[Analyse Performance<br/>programAnalysis]
+    
+    E --> G[Prévu vs Réalisé<br/>Comparaison]
+    G --> H[Sessions Planifiées<br/>vs Réelles]
+    G --> I[Exercices Planifiés<br/>vs Réels]
+    
+    F --> J[Analyse Fréquence<br/>Sessions/Semaine]
+    F --> K[Analyse Intensité<br/>Répétitions/Séance]
+    F --> L[Analyse Variété<br/>Exercices Uniques]
+    F --> M[Analyse Patterns<br/>Jours/Heures]
+    
+    J --> N[Score Consistance<br/>Calcul Multi-Critères]
+    K --> N
+    L --> N
+    M --> N
+    
+    N --> O[Détection<br/>Déséquilibres]
+    O --> P[Muscles<br/>Sous-Sollicités]
+    O --> Q[Muscles<br/>Sur-Sollicités]
+    
+    P --> R[Recommandations<br/>IA]
+    Q --> R
+    H --> R
+    I --> R
+    
+    R --> S[Programme Optimisé<br/>Suggestions]
+    S --> T[Affichage<br/>Dashboard]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style E fill:#3b82f6,stroke:#fff,color:#fff
+    style F fill:#10b981,stroke:#fff,color:#fff
+    style N fill:#f59e0b,stroke:#fff,color:#fff
+    style R fill:#ec4899,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **SmartBalancingTab** : Interface principale
+- **Algorithms IA** : Analyse fréquence, intensité, variété
+- **exerciseDatabase** : Base données exercices pour catégorisation
+- **getWorkoutHistory** : Source données historiques
+
+**Fonctionnalités techniques** :
+1. **Analyse programme (prévu vs réalisé)** :
+   ```javascript
+   {
+     scheduled: {
+       sessionsPerWeek: nombre sessions planifiées,
+       exercisesPerSession: nombre exercices planifiés,
+       totalExercises: total exercices programme
+     },
+     actual: {
+       sessionsPerWeek: nombre sessions réelles,
+       exercisesPerSession: nombre exercices réels,
+       totalExercises: total exercices réalisés
+     },
+     compliance: {
+       sessions: pourcentage conformité sessions,
+       exercises: pourcentage conformité exercices
+     }
+   }
+   ```
+
+2. **Analyse performance (30 derniers jours)** :
+   - **Fréquence** :
+     - Sessions/semaine (actuel vs moyenne vs optimal)
+     - Tendance (hausse/baisse)
+     - Optimal selon programme ou recommandation
+   
+   - **Intensité** :
+     - Répétitions/séance (actuel vs moyenne vs optimal)
+     - Tendance pourcentage
+     - Exclusion jumprope des calculs
+   
+   - **Variété** :
+     - Nombre exercices uniques
+     - Exercices les plus fréquents
+     - Exercices les moins fréquents
+     - Range optimal : 8-12 exercices différents
+
+3. **Analyse patterns** :
+   - **Hebdomadaire** : Distribution par jour semaine
+   - **Horaire** : Distribution par heure journée
+   - **Jours optimaux** : Jours avec meilleures performances
+   - **Heures optimales** : Heures avec meilleures performances
+
+4. **Score de consistance** :
+   ```javascript
+   frequencyScore = min(100, (recentSessionsPerWeek / optimalFrequency) * 100)
+   varietyScore = min(100, (allExercises.size / 10) * 100)
+   intensityScore = max(0, min(100, 100 - abs(intensityTrend - 10)))
+   consistencyScore = (frequencyScore * 0.4 + varietyScore * 0.3 + intensityScore * 0.3)
+   ```
+   - **Pondération** : Fréquence 40%, Variété 30%, Intensité 30%
+   - **Niveaux** : Excellent (≥80), Bon (≥60), Moyen (≥40), À améliorer (<40)
+
+5. **Détection déséquilibres** :
+   - **Analyse musculaire** : Utilise `exerciseDatabase` pour catégoriser
+   - **Sous-sollicités** : Muscles < 5% répartition
+   - **Sur-sollicités** : Muscles > 30% répartition
+   - **Recommandations** : Exercices pour équilibrer
+
+6. **Recommandations IA** :
+   - **Priorité haute** : Déséquilibres critiques, tendance baisse
+   - **Priorité moyenne** : Variété insuffisante, fréquence faible
+   - **Priorité basse** : Optimisations mineures
+   - **Suggestions** : Exercices spécifiques, ajustements programme
+
+7. **Programme optimisé** :
+   - **Analyse par jour** : Volume, nombre exercices, équilibre
+   - **Suggestions** : Augmenter/réduire volume, ajouter exercices
+   - **Équilibrage** : Répartition musculaire optimale
+
+**Optimisations** :
+- 🧮 **Calculs optimisés** : `useMemo` pour toutes analyses
+- 📊 **Analyse incrémentale** : Seulement 30 derniers jours
+- ⚡ **Exclusion jumprope** : Calculs précis répétitions
+- 🎯 **Catégorisation automatique** : Base données exercices
+
+**Points techniques** :
+- **Seuil minimum** : 7 séances pour analyse fiable
+- **Période analyse** : 30 derniers jours (ajustable)
+- **Normalisation** : Exclusion jumprope, normalisation répétitions
+- **Pondération** : Scores ajustés selon importance
+
+**Interconnexions** :
+- → **Program** : Comparaison avec programme actif
+- → **Stats** : Données utilisées pour analyse
+- → **Predictions** : Prédictions utilisées pour recommandations
+- → **Exercises** : Base données pour catégorisation
+- ← **Settings** : Configuration seuils analyse
+
+---
+
+### 15. ⚙️ Onglet "Settings" (Paramètres)
+
+**Fichier** : `src/components/tabs/SettingsTab.jsx`
+
+#### Fonctionnalités Principales
+
+L'onglet Settings est le **centre de contrôle** de l'application :
+
+- **Export/Import données** : JSON complet avec validation
+- **Export/Import Garmin** : Données Garmin séparées
+- **Gestion images HomePage** : Upload, suppression, rotation
+- **Nettoyage données** : Suppression sessions mock, cache
+- **Validation données** : Vérification intégrité
+- **Statistiques données** : Compteurs détaillés
+- **Réinitialisation** : Reset complet avec confirmation
+
+#### Architecture & Gestion Données
+
+```mermaid
+flowchart TB
+    A[⚙️ SettingsTab] --> B{Section?}
+    
+    B -->|Export/Import| C[📥 Export/Import<br/>Données]
+    B -->|Garmin| D[⌚ Export/Import<br/>Garmin]
+    B -->|Images| E[🖼️ Gestion Images<br/>HomePage]
+    B -->|Nettoyage| F[🧹 Nettoyage<br/>Données]
+    B -->|Validation| G[✅ Validation<br/>Intégrité]
+    
+    C --> H[prepareExportData<br/>Préparation JSON]
+    H --> I[downloadExportFile<br/>Téléchargement]
+    
+    C --> J[processImportData<br/>Traitement Import]
+    J --> K[validateBodyTrackingData<br/>Validation]
+    K --> L[Fusion Données<br/>Sans Doublons]
+    L --> M[Sauvegarde<br/>IndexedDB]
+    
+    D --> N[exportGarminData<br/>Export Garmin]
+    D --> O[importGarminData<br/>Import Garmin]
+    
+    E --> P[HomePageImageSettings<br/>Upload/Delete]
+    P --> Q[HomepageImagesDB<br/>Sauvegarde]
+    
+    F --> R[deleteMockEnduranceSessions<br/>Suppression Mock]
+    F --> S[clearCache<br/>Vidage Cache]
+    
+    G --> T[Validation Structure<br/>Champs Requis]
+    T --> U[Statistiques<br/>Compteurs]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style C fill:#3b82f6,stroke:#fff,color:#fff
+    style D fill:#10b981,stroke:#fff,color:#fff
+    style G fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **SettingsTab** : Interface principale
+- **HomePageImageSettings** : Gestion images homepage
+- **exportImport utils** : Utilitaires export/import
+- **useGarminData** : Export/import Garmin
+- **useWorkout** : Gestion données workout
+
+**Fonctionnalités techniques** :
+1. **Export données** :
+   - **Préparation** : `prepareExportData()` structure JSON complète
+   - **Contenu** :
+     - Exercices, répétitions, étirements
+     - Photos progression (multi-résolution)
+     - Métriques corporelles
+     - Données endurance (5 activités)
+     - Programmes, historique
+     - Feedbacks session
+   - **Téléchargement** : `downloadExportFile()` génère fichier JSON
+   - **Format** : JSON avec métadonnées (version, date export)
+
+2. **Import données** :
+   - **Validation** : `validateBodyTrackingData()` vérifie structure
+   - **Traitement** : `processImportData()` normalise données
+   - **Fusion intelligente** :
+     - **Sessions endurance** : Fusion sans doublons (par ID + date)
+     - **Défis** : Fusion sans doublons (par ID + nom+type+date)
+     - **Photos** : Fusion avec préservation multi-résolution
+     - **Historique** : Préservation données existantes
+   - **Sauvegarde** : Transaction atomique IndexedDB
+   - **Backup** : Sauvegarde automatique avant import
+
+3. **Export/Import Garmin** :
+   - **Export** : `exportGarminData()` exporte toutes données Garmin
+   - **Import** : `importGarminData()` importe données Garmin
+   - **Séparation** : Données Garmin séparées de données workout
+   - **Validation** : Vérification structure Garmin
+
+4. **Gestion images HomePage** :
+   - **Upload** : Images Base64 validées
+   - **Suppression** : Suppression depuis IndexedDB
+   - **Rotation** : Configuration rotation automatique
+   - **Validation** : Vérification format, taille, Base64
+
+5. **Nettoyage données** :
+   - **Sessions mock** : `deleteMockEnduranceSessions()` suppression
+   - **Cache** : `clearCache()` vidage cache frontend
+   - **Activités mock Garmin** : `deleteMockActivities()` suppression
+   - **Confirmation** : Double confirmation avant suppression
+
+6. **Validation intégrité** :
+   - **Structure** : Vérification champs requis
+   - **Types** : Validation types données
+   - **Cohérence** : Vérification cohérence interne
+   - **Statistiques** : Compteurs détaillés par type
+
+7. **Statistiques données** :
+   ```javascript
+   {
+     exercises: nombre exercices,
+     reps: nombre répétitions,
+     stretches: nombre étirements,
+     photos: nombre photos,
+     progressEntries: nombre entrées progression,
+     reminders: nombre rappels,
+     enduranceSessions: nombre sessions endurance,
+     dailyVariations: nombre variations journalières,
+     sessionFeedbacks: nombre feedbacks
+   }
+   ```
+
+8. **Réinitialisation** :
+   - **Confirmation** : Triple confirmation (sécurité)
+   - **Suppression** : Toutes données IndexedDB
+   - **Réinitialisation** : État application à zéro
+   - **Irréversible** : Action définitive
+
+**Optimisations** :
+- 🔄 **Fusion intelligente** : Évite doublons automatiquement
+- 💾 **Backup automatique** : Sauvegarde avant import
+- ✅ **Validation stricte** : Vérification complète avant import
+- 📊 **Statistiques détaillées** : Compteurs précis
+
+**Points techniques** :
+- **Format export** : JSON avec versioning
+- **Fusion doublons** : Détection par ID + métadonnées
+- **Validation Base64** : Vérification stricte images
+- **Transactions** : Atomiques pour cohérence
+
+**Interconnexions** :
+- → **Tous onglets** : Configuration globale
+- → **HomePage** : Gestion images
+- → **Garmin** : Export/import Garmin
+- → **Progress** : Export/import photos
+- ← **Tous onglets** : Données exportées
+
+---
+
+---
+
+## 🔗 Interconnexion des Onglets
+
+Cette section illustre comment les onglets communiquent entre eux et partagent des données.
+
+### 📊 Diagramme Global d'Interconnexion
+
+```mermaid
+graph TB
+    subgraph "🎯 Point d'Entrée"
+        HOME[🏠 Home]
+    end
+    
+    subgraph "📝 Saisie & Suivi"
+        TODAY[📅 Today]
+        DATA[✏️ Data Entry]
+        PROGRESS[📸 Progress<br/>10 Sections]
+    end
+    
+    subgraph "📊 Analyse & Visualisation"
+        CHARTS[📊 Charts<br/>20+ Graphiques]
+        STATS[📈 Stats<br/>12 Métriques]
+        CALENDAR[🗓️ Calendar<br/>Heatmap]
+    end
+    
+    subgraph "🏃 Activités"
+        ENDURANCE[🏃 Endurance<br/>5 Types]
+        GARMIN[⌚ Garmin<br/>Sync Externe]
+    end
+    
+    subgraph "🎯 Organisation"
+        PROGRAM[🎯 Program]
+        EXERCISES[💪 Exercises]
+        HISTORY[📜 History]
+    end
+    
+    subgraph "🤖 Intelligence"
+        PREDICTIONS[🔮 Predictions<br/>ML]
+        BALANCING[🧠 Smart Balancing<br/>IA]
+    end
+    
+    subgraph "⚙️ Configuration"
+        SETTINGS[⚙️ Settings<br/>Export/Import]
+    end
+    
+    HOME --> TODAY
+    HOME --> DATA
+    HOME --> PROGRESS
+    HOME --> CHARTS
+    
+    TODAY --> STATS
+    DATA --> TODAY
+    DATA --> STATS
+    PROGRESS --> STATS
+    PROGRESS --> CHARTS
+    
+    ENDURANCE --> CHARTS
+    ENDURANCE --> STATS
+    GARMIN --> ENDURANCE
+    GARMIN --> CHARTS
+    GARMIN --> STATS
+    GARMIN --> CALENDAR
+    
+    PROGRAM --> TODAY
+    PROGRAM --> EXERCISES
+    EXERCISES --> TODAY
+    EXERCISES --> DATA
+    
+    HISTORY --> STATS
+    HISTORY --> CHARTS
+    HISTORY --> PREDICTIONS
+    
+    STATS --> PREDICTIONS
+    STATS --> BALANCING
+    PREDICTIONS --> BALANCING
+    
+    CALENDAR --> STATS
+    CALENDAR --> HISTORY
+    
+    SETTINGS --> HOME
+    SETTINGS --> GARMIN
+    SETTINGS --> PROGRESS
+    
+    style HOME fill:#8b5cf6,stroke:#fff,color:#fff
+    style STATS fill:#3b82f6,stroke:#fff,color:#fff
+    style GARMIN fill:#10b981,stroke:#fff,color:#fff
+    style PROGRESS fill:#ec4899,stroke:#fff,color:#fff
+    style SETTINGS fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+### 🔄 Flux de Données Principal
+
+```mermaid
+flowchart LR
+    A[👤 Utilisateur] --> B{Action}
+    
+    B -->|Saisie| C[📅 Today / ✏️ Data Entry]
+    B -->|Upload Photo| D[📸 Progress]
+    B -->|Activité| E[🏃 Endurance]
+    B -->|Sync| F[⌚ Garmin]
+    
+    C --> G[💾 IndexedDB<br/>WorkoutTrackerDB]
+    D --> G
+    E --> G
+    F --> H[💾 IndexedDB<br/>GarminDataDB]
+    
+    G --> I[📊 Agrégation<br/>getWorkoutHistory]
+    H --> I
+    
+    I --> J[📈 Stats]
+    I --> K[📊 Charts]
+    I --> L[🗓️ Calendar]
+    I --> M[📜 History]
+    
+    J --> N[🔮 Predictions]
+    J --> O[🧠 Smart Balancing]
+    
+    N --> P[Recommandations<br/>IA]
+    O --> P
+    
+    P --> Q[👤 Utilisateur<br/>Feedback]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style I fill:#3b82f6,stroke:#fff,color:#fff
+    style J fill:#10b981,stroke:#fff,color:#fff
+    style P fill:#ec4899,stroke:#fff,color:#fff
+```
+
+### 📋 Tableau d'Interconnexions Détaillé
+
+| Onglet Source | Onglet Destination | Type de Données | Fréquence |
+|---------------|-------------------|-----------------|-----------|
+| **Today** | Stats | Répétitions, séances | Temps réel |
+| **Today** | Charts | Données séances | Temps réel |
+| **Today** | History | Historique complet | Temps réel |
+| **Data Entry** | Today | Nouvelle séance | Après sauvegarde |
+| **Data Entry** | Stats | Données séance | Après sauvegarde |
+| **Progress** | Stats | Métriques corporelles | Temps réel |
+| **Progress** | Charts | Graphiques évolution | Temps réel |
+| **Endurance** | Stats | Sessions, répétitions | Temps réel |
+| **Endurance** | Charts | Graphiques endurance | Temps réel |
+| **Garmin** | Endurance | Import natation/cardio | Optionnel |
+| **Garmin** | Charts | Graphiques Garmin | Temps réel |
+| **Garmin** | Stats | Calories (priorité) | Temps réel |
+| **Garmin** | Calendar | Activités heatmap | Temps réel |
+| **Program** | Today | Exercices du jour | Automatique |
+| **Program** | Exercises | Liste exercices | Synchronisation |
+| **Stats** | Predictions | Données agrégées | Calcul |
+| **Stats** | Smart Balancing | Métriques performance | Calcul |
+| **History** | Stats | Données historiques | Calcul |
+| **History** | Charts | Données graphiques | Calcul |
+| **Predictions** | Smart Balancing | Prédictions futures | Calcul |
+| **Settings** | Tous | Configuration globale | Modification |
+
+### 🎯 Points d'Intégration Clés
+
+1. **getWorkoutHistory()** : Fonction centrale qui agrège toutes les données
+   - Utilisée par : Stats, Charts, Calendar, History, Predictions, Smart Balancing
+   - Source : WorkoutTrackerDB + EnduranceData
+
+2. **WorkoutContext** : État global partagé
+   - Gère : Navigation, données, programmes actifs
+   - Utilisé par : Tous les onglets
+
+3. **GarminDataDB** : Base dédiée données Garmin
+   - Utilisée par : Charts, Stats, Calendar, Endurance
+   - Synchronisation : Via serveur Python
+
+4. **exerciseDatabase** : Base données exercices
+   - Utilisée par : Stats, Smart Balancing, Exercises
+   - Catégorisation : Automatique muscles/catégories
+
+---
+
+**✅ CHAPITRE 3 TERMINÉ - Documentation Complète des 14 Onglets**
+
+*Tous les onglets ont été documentés avec diagrammes Mermaid interactifs et explications détaillées. La section Interconnexion montre comment les données circulent entre les onglets.*
