@@ -462,136 +462,310 @@ worker.onmessage = (event) => {
 - 🚀 Compression 5MB image : 2-3s (vs 5-8s synchrone)
 - 💪 Support images jusqu'à 20MB
 
-### 📊 Flux de Données Détaillé
+### 📊 Flux de Données Détaillé - Diagrammes Interactifs
 
+#### 🔄 Flux 1 : Saisie d'Exercice (Onglet "Aujourd'hui")
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 Utilisateur
+    participant T as 📅 TodayTab
+    participant WC as 🔄 WorkoutContext
+    participant WD as 💾 useWorkoutData
+    participant IDB as 🗄️ IndexedDB
+    participant LS as 💿 localStorage
+
+    U->>T: Coche exercice + Saisie répétitions
+    T->>WC: updateReps(exerciseId, reps, date)
+    WC->>WD: updateData(newData)
+    WD->>WD: Validation + Normalisation
+    WD->>IDB: Transaction 'readwrite'
+    IDB-->>WD: ✅ Confirmation sauvegarde
+    WD->>LS: Backup automatique
+    LS-->>WD: ✅ Backup sauvegardé
+    WD-->>WC: ✅ Données mises à jour
+    WC-->>T: Re-render optimisé (useMemo)
+    T-->>U: ✅ Feedback visuel (badge, toast)
+    
+    Note over U,LS: Debounce 1s pour éviter<br/>sauvegardes multiples
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│              FLUX DE DONNÉES COMPLET                            │
-└─────────────────────────────────────────────────────────────────┘
 
-┌─────────────┐
-│  Utilisateur│
-│  (Action)   │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────────────────┐
-│              COMPOSANT (ex: TodayTab)                       │
-│  • Écoute événements utilisateur                            │
-│  • Appelle fonctions WorkoutContext                        │
-└──────┬──────────────────────────────────────────────────────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────────────────┐
-│              WorkoutContext                                  │
-│  • Gère état global                                         │
-│  • Appelle useWorkoutData                                   │
-└──────┬──────────────────────────────────────────────────────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────────────────┐
-│              useWorkoutData                                  │
-│  • Logique métier                                           │
-│  • Validation données                                       │
-│  • Appelle IndexedDB                                        │
-└──────┬──────────────────────────────────────────────────────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────────────────┐
-│              IndexedDB                                       │
-│  • Sauvegarde persistante                                   │
-│  • Transactions atomiques                                   │
-│  • Indexation pour requêtes rapides                         │
-└──────┬──────────────────────────────────────────────────────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────────────────┐
-│              localStorage (Backup)                          │
-│  • Sauvegarde automatique backup                           │
-│  • Récupération en cas d'erreur IndexedDB                  │
-└─────────────────────────────────────────────────────────────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Mise à Jour UI                                  │
-│  • React re-render optimisé                                 │
-│  • Feedback utilisateur                                     │
-└─────────────────────────────────────────────────────────────┘
+#### 🔄 Flux 2 : Synchronisation Garmin Connect
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 Utilisateur
+    participant GT as ⌚ GarminTab
+    participant GS as 🔄 useGarminSync
+    participant API as 🐍 Serveur Python
+    participant GC as 🏃 Garmin Connect
+    participant GDB as 🗄️ GarminDataDB
+    participant ET as 🏃 EnduranceTab
+
+    U->>GT: Clic "Synchroniser"
+    GT->>GS: syncNow(startDate, endDate)
+    GS->>API: POST /sync { dates }
+    API->>GC: Authentification + Récupération
+    GC-->>API: Données brutes (JSON)
+    API->>API: Parsing + Normalisation
+    API->>API: Compression time series
+    API-->>GS: Données formatées
+    GS->>GDB: Transaction multi-stores
+    GDB-->>GS: ✅ Activités sauvegardées
+    GDB-->>GS: ✅ Métriques quotidiennes
+    GDB-->>GS: ✅ FC time series (compressée)
+    GS->>ET: Import automatique (optionnel)
+    ET->>ET: Mapping natation/cardio
+    GS-->>GT: ✅ Synchronisation complète
+    GT-->>U: 🎉 Toast succès + Stats mises à jour
+    
+    Note over U,ET: Retry automatique avec<br/>backoff exponentiel (3 tentatives)
+```
+
+#### 🔄 Flux 3 : Upload & Analyse Photo IA
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 Utilisateur
+    participant PG as 📸 PhotoGallerySection
+    participant WW as ⚙️ Web Worker
+    participant VQ as ✅ Validation Qualité
+    participant IDB as 🗄️ IndexedDB
+    participant MP as 🤖 MediaPipe
+    participant BP as 🎯 BodyPix
+    participant AO as 🧠 Orchestrateur IA
+
+    U->>PG: Upload photo (5MB)
+    PG->>WW: compressImageMultiResolution(file)
+    WW->>WW: Détection format (JPEG/PNG/WebP)
+    WW->>WW: Compression 3 résolutions
+    WW-->>PG: Progress (0-100%) + Messages
+    WW-->>PG: { thumbnail, preview, full }
+    PG->>VQ: validatePhotoQuality(file)
+    VQ-->>PG: { score, warnings, errors }
+    alt Qualité insuffisante
+        PG-->>U: ⚠️ Warning (non-bloquant)
+    end
+    PG->>IDB: addProgressPhoto(photoData)
+    IDB-->>PG: ✅ Photo sauvegardée
+    PG->>AO: analyzePhoto(photoUrl, options)
+    AO->>MP: Détection pose (33 landmarks)
+    MP-->>AO: Landmarks + Angles
+    AO->>BP: Segmentation corporelle
+    BP-->>AO: Masque binaire
+    AO->>AO: Extraction métriques
+    AO-->>PG: { metrics, poseDetection, segmentation }
+    PG->>IDB: updateProgressPhoto(id, { analysis })
+    IDB-->>PG: ✅ Analyse persistée
+    PG-->>U: 🎉 Photo analysée + Navigation dashboard
+    
+    Note over U,AO: Analyse automatique après upload<br/>ou manuelle depuis galerie
+```
+
+#### 🔄 Flux 4 : Compression Multi-Résolution (Web Worker)
+
+```mermaid
+sequenceDiagram
+    participant PG as 📸 PhotoGallerySection
+    participant WW as ⚙️ Web Worker
+    participant OC as 🖼️ OffscreenCanvas
+    participant IMG as 🖼️ ImageBitmap
+    participant IDB as 🗄️ IndexedDB
+
+    PG->>WW: postMessage({ file, options })
+    WW->>WW: FileReader.readAsDataURL()
+    WW->>OC: createImageBitmap(file)
+    OC-->>WW: ImageBitmap (optimisé)
+    
+    par Compression Thumbnail
+        WW->>OC: drawImage(scale 150px)
+        OC-->>WW: Canvas thumbnail
+        WW->>WW: toBlob(quality: 0.7)
+        WW-->>PG: Progress: "Thumbnail compressé"
+    and Compression Preview
+        WW->>OC: drawImage(scale 800px)
+        OC-->>WW: Canvas preview
+        WW->>WW: toBlob(quality: 0.8)
+        WW-->>PG: Progress: "Preview compressé"
+    and Compression Full
+        WW->>OC: drawImage(scale 2000px)
+        OC-->>WW: Canvas full
+        WW->>WW: toBlob(quality: 0.9)
+        WW-->>PG: Progress: "Full compressé"
+    end
+    
+    WW->>WW: blobToBase64() (chunks)
+    WW-->>PG: { thumbnail, preview, full }
+    PG->>IDB: Sauvegarde multi-résolution
+    IDB-->>PG: ✅ Photo optimisée sauvegardée
+    
+    Note over PG,IDB: UI reste responsive<br/>pendant compression (2-3s)
+```
+
+#### 🔄 Flux 5 : Calcul Statistiques Avancées
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 Utilisateur
+    participant ST as 📈 StatsTab
+    participant AS as 📊 AdvancedStats (Modal)
+    participant WH as 📜 getWorkoutHistory
+    participant GD as ⌚ GarminData
+    participant ED as 🏃 EnduranceData
+    participant DB as 💾 exerciseDatabase
+
+    U->>ST: Clic "Statistiques Avancées"
+    ST->>AS: Ouvrir modal
+    AS->>WH: getWorkoutHistory()
+    WH->>WH: Fusion données (exercices + endurance)
+    WH->>WH: Normalisation répétitions
+    WH-->>AS: Historique normalisé
+    AS->>AS: Calcul totalReps (normalisé)
+    AS->>AS: Calcul avgIntensity (feedbacks)
+    AS->>AS: Calcul avgDuration (estimé)
+    AS->>AS: calculateStreak() (Set O(1))
+    AS->>DB: findExerciseInDatabase()
+    DB-->>AS: Catégorisation muscles
+    AS->>AS: getMuscleDistribution()
+    AS->>AS: getProgressTrend() (régression)
+    AS->>GD: getGarminCaloriesForDate()
+    GD-->>AS: Calories Garmin (priorité)
+    alt Pas de Garmin
+        AS->>AS: estimateCalories() (MET)
+    end
+    AS->>ED: Statistiques endurance
+    ED-->>AS: Sessions + Répétitions
+    AS->>AS: Calcul 12 métriques
+    AS-->>ST: Affichage modal avec stats
+    ST-->>U: 📊 Dashboard complet
+    
+    Note over U,DB: Calculs optimisés avec<br/>useMemo + useCallback
 ```
 
 ### 🔧 Optimisations Techniques Avancées
 
 #### Compression Multi-Résolution (Photos)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│         COMPRESSION MULTI-RÉSOLUTION                        │
-└─────────────────────────────────────────────────────────────┘
+<details>
+<summary>📊 Diagramme de Flux Détaillé - Cliquez pour développer</summary>
 
-Image Originale (5MB, 4000x3000)
-        │
-        ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Web Worker (Non-bloquant)                                  │
-│  • Détection format (JPEG/PNG/WebP)                        │
-│  • Conversion WebP si supporté                             │
-│  • Compression 3 résolutions                            │
-└──────┬──────────────────────────────────────────────────────┘
-       │
-       ├─→ Thumbnail (150x150, ~15KB)   [Galerie]
-       ├─→ Preview (800x800, ~120KB)    [Vue détaillée]
-       └─→ Full (2000x2000, ~500KB)    [Analyse IA]
-       
-Réduction totale : ~70-80% (5MB → ~635KB)
+```mermaid
+flowchart TD
+    A[📸 Image Originale<br/>5MB, 4000x3000] --> B{Format Détecté?}
+    B -->|JPEG| C[🔄 Conversion WebP]
+    B -->|PNG| C
+    B -->|WebP| D[✅ Format OK]
+    C --> D
+    
+    D --> E[⚙️ Web Worker<br/>Non-bloquant]
+    
+    E --> F1[📦 Thumbnail<br/>150x150, quality: 0.7]
+    E --> F2[📦 Preview<br/>800x800, quality: 0.8]
+    E --> F3[📦 Full<br/>2000x2000, quality: 0.9]
+    
+    F1 --> G1[Base64 Thumbnail<br/>~15KB]
+    F2 --> G2[Base64 Preview<br/>~120KB]
+    F3 --> G3[Base64 Full<br/>~500KB]
+    
+    G1 --> H[💾 IndexedDB<br/>Structure multi-résolution]
+    G2 --> H
+    G3 --> H
+    
+    H --> I[✅ Photo Optimisée<br/>5MB → ~635KB<br/>Réduction: 70-80%]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style E fill:#3b82f6,stroke:#fff,color:#fff
+    style H fill:#10b981,stroke:#fff,color:#fff
+    style I fill:#f59e0b,stroke:#fff,color:#fff
 ```
+
+</details>
+
+**Résultat** :
+- 📉 **Réduction taille** : 5MB → ~635KB (70-80%)
+- ⚡ **Temps compression** : 2-3s (non-bloquant)
+- 💾 **Stockage optimisé** : 3 résolutions selon usage
 
 #### Pagination Intelligente (Photos)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│         SYSTÈME PAGINATION INTELLIGENTE                     │
-└─────────────────────────────────────────────────────────────┘
+<details>
+<summary>📊 Diagramme de Décision - Cliquez pour développer</summary>
 
-Nombre Photos < 50
-        │
-        ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Pagination Mémoire Classique                               │
-│  • Toutes photos en mémoire                                 │
-│  • Navigation instantanée                                    │
-│  • Pas de cache nécessaire                                  │
-└─────────────────────────────────────────────────────────────┘
-
-Nombre Photos ≥ 50
-        │
-        ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Cache LRU Persistant (IndexedDB)                           │
-│  • Cache 100 pages max                                      │
-│  • Éviction LRU automatique                                │
-│  • Persistance survit rechargement                          │
-│  • Access time tracking                                     │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A[📸 Photos Chargées] --> B{Nombre Photos?}
+    
+    B -->|"< 50"| C[💾 Pagination Mémoire<br/>Classique]
+    B -->|"≥ 50"| D[🗄️ Cache LRU Persistant<br/>IndexedDB]
+    
+    C --> C1[✅ Toutes photos en mémoire]
+    C --> C2[✅ Navigation instantanée]
+    C --> C3[✅ Pas de cache nécessaire]
+    
+    D --> D1[📦 Cache 100 pages max]
+    D --> D2[🔄 Éviction LRU auto]
+    D --> D3[💾 Persistance IndexedDB]
+    D --> D4[⏱️ Access time tracking]
+    
+    D1 --> E{Page en Cache?}
+    E -->|Oui| F[⚡ Chargement Instantané<br/>IndexedDB]
+    E -->|Non| G[📥 Chargement depuis<br/>WorkoutTrackerDB]
+    
+    F --> H[✅ Affichage Page]
+    G --> I[💾 Mise à jour Cache]
+    I --> H
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style C fill:#10b981,stroke:#fff,color:#fff
+    style D fill:#3b82f6,stroke:#fff,color:#fff
+    style H fill:#f59e0b,stroke:#fff,color:#fff
 ```
+
+</details>
+
+**Avantages** :
+- ⚡ **Navigation instantanée** : Pages visitées en cache
+- 💾 **Persistance** : Cache survit au rechargement
+- 🔄 **Éviction intelligente** : LRU automatique
+- 📊 **Tracking** : Access time pour optimisation
 
 #### Virtualisation (Grandes Listes)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│         VIRTUALISATION REACT-WINDOW                          │
-└─────────────────────────────────────────────────────────────┘
+<details>
+<summary>📊 Architecture Virtualisation - Cliquez pour développer</summary>
 
-1000 Photos
-        │
-        ▼
-┌─────────────────────────────────────────────────────────────┐
-│  FixedSizeGrid (react-window)                               │
-│  • Rendu seulement photos visibles                          │
-│  • Support 1000+ photos sans lag                            │
-│  • Scroll fluide                                            │
-│  • Mémoire constante (~50 photos max)                       │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    A[📸 1000 Photos<br/>en IndexedDB] --> B[FixedSizeGrid<br/>react-window]
+    
+    B --> C{Viewport Visible?}
+    
+    C -->|Visible| D[✅ Rendu Photo]
+    C -->|Hors Vue| E[⏸️ Pas de Rendu]
+    
+    D --> F[🖼️ Affichage<br/>Thumbnail 150px]
+    E --> G[💾 Mémoire Libérée]
+    
+    F --> H[👆 Scroll Utilisateur]
+    H --> I[🔄 Recalcul Visible]
+    I --> C
+    
+    J[📊 Mémoire Constante<br/>~50 photos max] -.-> B
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style B fill:#3b82f6,stroke:#fff,color:#fff
+    style D fill:#10b981,stroke:#fff,color:#fff
+    style E fill:#64748b,stroke:#fff,color:#fff
+    style J fill:#f59e0b,stroke:#fff,color:#fff
 ```
+
+</details>
+
+**Performance** :
+- 🚀 **Support 1000+ photos** : Sans lag
+- 💾 **Mémoire constante** : ~50 photos max en mémoire
+- ⚡ **Scroll fluide** : 60 FPS garanti
+- 📉 **Rendu optimisé** : Seulement photos visibles
 
 ### 📈 Métriques de Performance Détaillées
 
@@ -683,6 +857,26 @@ Gradients
 | **Modal** | Simple, confirm, form | Superpositions |
 | **Toast** | Success, error, warning, info | Notifications |
 | **Badge** | Status, count, label | Indicateurs |
+
+### 🎬 Diagrammes de Séquence Interactifs
+
+Les diagrammes ci-dessus utilisent **Mermaid**, un langage de diagrammes open-source supporté nativement par GitHub. Ils sont interactifs et peuvent être zoomés/navigués.
+
+**Technologies utilisées** :
+- **Mermaid.js** : Diagrammes de séquence, flowcharts, architecture
+- **Rendu natif GitHub** : Support automatique dans README
+- **Interactivité** : Zoom, navigation, export SVG/PNG
+
+**Types de diagrammes inclus** :
+- 📊 **Sequence Diagrams** : Flux d'interactions entre composants (5 diagrammes)
+- 🔄 **Flowcharts** : Décisions et processus (3 diagrammes)
+- 🏗️ **Architecture Diagrams** : Structure système
+
+**Fonctionnalités** :
+- ✅ **Zoom interactif** : Cliquez pour agrandir
+- ✅ **Navigation fluide** : Scroll horizontal/vertical
+- ✅ **Export** : SVG/PNG pour documentation
+- ✅ **Responsive** : S'adapte à tous les écrans
 
 ---
 
