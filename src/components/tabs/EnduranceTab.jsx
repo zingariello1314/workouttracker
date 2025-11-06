@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import StarRating from '../ui/StarRating';
@@ -87,30 +87,193 @@ const EnduranceTab = () => {
     console.log('💬 Feedbacks de session:', Object.keys(data?.sessionFeedbacks || {}).length);
   }, [data]);
 
+  // ✅ FIX DOUBLONS : Flag pour éviter nettoyage multiple
+  const hasCleanedDuplicatesRef = useRef(false);
+
   // Charger les données d'endurance depuis les données principales
   useEffect(() => {
     loadEnduranceData();
   }, [data]);
 
+  // ✅ FIX DOUBLONS : Fonction pour nettoyer les IDs dupliqués dans les sessions
+  const cleanDuplicateIds = useCallback((sessions, onCleanup) => {
+    const cleaned = {};
+    let hasChanges = false;
+    
+    Object.entries(sessions).forEach(([activityType, activitySessions]) => {
+      if (!Array.isArray(activitySessions)) {
+        cleaned[activityType] = activitySessions;
+        return;
+      }
+      
+      // ✅ FIX DOUBLONS : Détecter les IDs dupliqués (plus robuste avec Map)
+      const idMap = new Map(); // Map pour tracker les occurrences [id] => [indices]
+      const duplicateIds = new Set();
+      
+      activitySessions.forEach((session, idx) => {
+        const id = String(session.id);
+        if (idMap.has(id)) {
+          duplicateIds.add(id);
+          idMap.get(id).push(idx);
+        } else {
+          idMap.set(id, [idx]);
+        }
+      });
+      
+      if (duplicateIds.size > 0) {
+        console.log(`⚠️ [EnduranceTab] ${duplicateIds.size} ID(s) dupliqué(s) détecté(s) pour ${activityType}:`, Array.from(duplicateIds));
+        
+        // Générer de nouveaux IDs uniques pour TOUS les doublons (garder seulement le premier de chaque groupe)
+        cleaned[activityType] = activitySessions.map((session, idx) => {
+          const id = String(session.id);
+          if (duplicateIds.has(id)) {
+            const occurrences = idMap.get(id);
+            const isFirst = occurrences[0] === idx;
+            if (!isFirst) {
+              hasChanges = true;
+              const newId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${idx}-${activityType}`;
+              console.log(`  🔄 [EnduranceTab] Régénération ID pour ${activityType}[${idx}]: ${id} → ${newId}`);
+              return {
+                ...session,
+                id: newId // ✅ FIX : Nouvel ID unique
+              };
+            }
+          }
+          return session;
+        });
+      } else {
+        cleaned[activityType] = activitySessions;
+      }
+    });
+    
+    if (hasChanges && onCleanup) {
+      console.log('✅ [EnduranceTab] Changements détectés, callback de nettoyage appelé');
+      onCleanup(cleaned);
+    }
+    
+    return cleaned;
+  }, []);
+
   const loadEnduranceData = useCallback(() => {
     try {
     const enduranceData = data.enduranceData || {};
     
+    const rawSessions = {
+      boxing: enduranceData.sessions?.boxing || enduranceData.boxingSessions || [],
+      pushups: enduranceData.sessions?.pushups || enduranceData.pushupSessions || [],
+      swimming: enduranceData.sessions?.swimming || enduranceData.swimmingSessions || [],
+      jumprope: enduranceData.sessions?.jumprope || enduranceData.jumpropeSessions || [],
+      running: enduranceData.sessions?.running || enduranceData.runningSessions || []
+    };
+    
+    // ✅ FIX DOUBLONS : Nettoyer les IDs dupliqués AVANT de charger (forcé, toujours vérifier)
+    // Vérifier s'il y a vraiment des doublons avant de nettoyer
+    const hasDuplicates = Object.values(rawSessions).some(sessions => {
+      if (Array.isArray(sessions)) {
+        const ids = sessions.map(s => String(s.id));
+        return ids.length !== new Set(ids).size;
+      }
+      return false;
+    });
+    
+    let cleanedSessions = rawSessions;
+    if (hasDuplicates) {
+      console.log('⚠️ [EnduranceTab] Doublons détectés, nettoyage en cours...');
+      console.log('🔍 [EnduranceTab] Sessions avant nettoyage:', JSON.stringify(rawSessions, null, 2));
+      cleanedSessions = cleanDuplicateIds(rawSessions, (cleaned) => {
+        // Sauvegarder automatiquement après nettoyage
+        console.log('✅ [EnduranceTab] Nettoyage terminé, sauvegarde en cours...');
+        console.log('🔍 [EnduranceTab] Sessions après nettoyage:', JSON.stringify(cleaned, null, 2));
+        setTimeout(() => {
+          updateData({
+            ...data,
+            enduranceData: {
+              ...enduranceData,
+              sessions: cleaned
+            }
+          }).then(() => {
+            console.log('✅ [EnduranceTab] Sauvegarde terminée après nettoyage');
+            hasCleanedDuplicatesRef.current = true;
+            // ✅ FIX : Ne pas recharger ici pour éviter la boucle infinie
+            // Les données seront rechargées automatiquement via le useEffect qui écoute data
+          }).catch(err => {
+            console.error('❌ Erreur lors de la sauvegarde après nettoyage:', err);
+            hasCleanedDuplicatesRef.current = false; // Réessayer au prochain chargement
+          });
+        }, 100);
+      });
+    } else {
+      if (!hasCleanedDuplicatesRef.current) {
+        console.log('✅ [EnduranceTab] Aucun doublon détecté, données propres');
+      }
+      hasCleanedDuplicatesRef.current = true; // Pas de doublons, pas besoin de revérifier
+    }
+    
+      // ✅ FIX DOUBLONS : Nettoyer aussi les défis dupliqués
+      const rawChallenges = enduranceData.challenges || [];
+      let cleanedChallenges = rawChallenges;
+      
+      // Détecter les IDs dupliqués dans les défis
+      const challengeIdMap = new Map();
+      const duplicateChallengeIds = new Set();
+      
+      rawChallenges.forEach((challenge, idx) => {
+        const id = String(challenge.id);
+        if (challengeIdMap.has(id)) {
+          duplicateChallengeIds.add(id);
+          challengeIdMap.get(id).push(idx);
+        } else {
+          challengeIdMap.set(id, [idx]);
+        }
+      });
+      
+      if (duplicateChallengeIds.size > 0) {
+        console.log(`⚠️ [EnduranceTab] ${duplicateChallengeIds.size} ID(s) dupliqué(s) détecté(s) pour les défis:`, Array.from(duplicateChallengeIds));
+        
+        cleanedChallenges = rawChallenges.map((challenge, idx) => {
+          const id = String(challenge.id);
+          if (duplicateChallengeIds.has(id)) {
+            const occurrences = challengeIdMap.get(id);
+            const isFirst = occurrences[0] === idx;
+            if (!isFirst) {
+              const newId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${idx}-challenge`;
+              console.log(`  🔄 [EnduranceTab] Régénération ID pour challenge[${idx}]: ${id} → ${newId}`);
+              return {
+                ...challenge,
+                id: newId
+              };
+            }
+          }
+          return challenge;
+        });
+        
+        // Sauvegarder automatiquement après nettoyage des défis
+        if (cleanedChallenges.length !== rawChallenges.length || duplicateChallengeIds.size > 0) {
+          setTimeout(() => {
+            updateData({
+              ...data,
+              enduranceData: {
+                ...enduranceData,
+                challenges: cleanedChallenges
+              }
+            }).then(() => {
+              console.log('✅ [EnduranceTab] Sauvegarde terminée après nettoyage des défis');
+            }).catch(err => {
+              console.error('❌ Erreur lors de la sauvegarde après nettoyage des défis:', err);
+            });
+          }, 100);
+        }
+      }
+      
       setEnduranceState(prev => ({
         ...prev,
-        sessions: {
-          boxing: enduranceData.sessions?.boxing || enduranceData.boxingSessions || [],
-          pushups: enduranceData.sessions?.pushups || enduranceData.pushupSessions || [],
-          swimming: enduranceData.sessions?.swimming || enduranceData.swimmingSessions || [],
-          jumprope: enduranceData.sessions?.jumprope || enduranceData.jumpropeSessions || [],
-          running: enduranceData.sessions?.running || enduranceData.runningSessions || []
-        },
-        challenges: enduranceData.challenges || []
+        sessions: cleanedSessions,
+        challenges: cleanedChallenges
       }));
     } catch (error) {
       console.error('Erreur lors du chargement des données d\'endurance:', error);
     }
-  }, [data.enduranceData]);
+  }, [data, cleanDuplicateIds, updateData]);
 
   const saveEnduranceData = useCallback(async (newData) => {
     try {
@@ -299,9 +462,9 @@ const EnduranceTab = () => {
           )}
           
           <div className="flex flex-wrap gap-2">
-            {activeChallenges.slice(0, 3).map(challenge => (
+            {activeChallenges.slice(0, 3).map((challenge, idx) => (
               <button
-                key={challenge.id}
+                key={`urgent-challenge-${challenge.id}-${idx}`}
                 onClick={() => setActiveTab(challenge.activityType)}
                 className="px-3 py-1 bg-orange-500/30 hover:bg-orange-500/50 text-orange-200 rounded-lg text-sm transition-colors"
               >
@@ -535,11 +698,16 @@ const EnduranceTab = () => {
     return validatePonctuelChallenge(challenge, sessionData);
   }, [validatePonctuelChallenge]);
 
+  // ✅ FIX DOUBLONS : Générer un ID unique (timestamp + random pour éviter collisions)
+  const generateUniqueId = useCallback(() => {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }, []);
+
   // Fonctions d'ajout de sessions (refactorisées)
   const addSession = useCallback(async (activityType, sessionData) => {
     try {
     const newSession = {
-      id: Date.now(),
+      id: generateUniqueId(), // ✅ FIX : ID unique au lieu de Date.now()
         ...sessionData,
       validatedChallenges: []
     };
@@ -858,7 +1026,7 @@ const EnduranceTab = () => {
       }
 
     const newChallenge = {
-      id: Date.now(),
+      id: generateUniqueId(), // ✅ FIX : ID unique au lieu de Date.now()
       ...challengeForm,
       status: 'active',
       createdAt: new Date().toISOString(),
@@ -884,12 +1052,32 @@ const EnduranceTab = () => {
   }, [challengeForm, challenges, setChallenges, saveEnduranceData]);
 
 
-  // Fonctions de suppression (refactorisées)
-  const deleteSession = useCallback(async (activityType, id) => {
+  // ✅ FIX DOUBLONS : Fonction de suppression améliorée (utilise index si ID dupliqué)
+  const deleteSession = useCallback(async (activityType, id, index = null) => {
     try {
       const currentSessions = enduranceState?.sessions || {};
       const activitySessions = currentSessions[activityType] || [];
-      const updatedSessions = activitySessions.filter(s => s.id !== id);
+      
+      // ✅ FIX : Si index fourni, supprimer par index (évite problèmes avec IDs dupliqués)
+      // Sinon, supprimer par ID (comportement normal)
+      let updatedSessions;
+      if (index !== null && index >= 0 && index < activitySessions.length) {
+        // Vérifier que l'ID correspond aussi (double sécurité)
+        if (activitySessions[index].id === id) {
+          updatedSessions = activitySessions.filter((_, idx) => idx !== index);
+        } else {
+          // Si l'ID ne correspond pas, utiliser la méthode normale
+          updatedSessions = activitySessions.filter(s => s.id !== id);
+        }
+      } else {
+        // ✅ FIX : Si plusieurs sessions avec le même ID, supprimer seulement la première
+        const firstIndex = activitySessions.findIndex(s => s.id === id);
+        if (firstIndex !== -1) {
+          updatedSessions = activitySessions.filter((_, idx) => idx !== firstIndex);
+        } else {
+          updatedSessions = activitySessions.filter(s => s.id !== id);
+        }
+      }
       
       setSessions(activityType, updatedSessions);
       
@@ -908,9 +1096,38 @@ const EnduranceTab = () => {
     }
   }, [enduranceState?.sessions, setSessions, saveEnduranceData]);
 
-  const deleteChallenge = useCallback(async (id) => {
+  // ✅ FIX DOUBLONS : Supprimer défi par ID ou par index (comme pour les sessions)
+  const deleteChallenge = useCallback(async (id, index = null) => {
     try {
-      const updatedChallenges = challenges.filter(c => c.id !== id);
+      let updatedChallenges;
+      
+      if (index !== null && index >= 0 && index < challenges.length) {
+        // ✅ FIX : Supprimer par index si fourni (évite problèmes avec IDs dupliqués)
+        const filteredChallenges = challenges.filter(c => c.activityType === challenges[index].activityType);
+        const activityChallenges = challenges.filter((_, idx) => idx === index);
+        if (activityChallenges.length > 0) {
+          // Trouver l'index réel dans le tableau filtré
+          const realIndex = filteredChallenges.findIndex(c => c.id === id);
+          if (realIndex !== -1) {
+            updatedChallenges = challenges.filter((_, idx) => idx !== index);
+          } else {
+            // Fallback : supprimer par index fourni
+            updatedChallenges = challenges.filter((_, idx) => idx !== index);
+          }
+        } else {
+          updatedChallenges = challenges.filter((_, idx) => idx !== index);
+        }
+      } else {
+        // ✅ FIX : Si index non fourni, supprimer seulement la première occurrence avec cet ID
+        const firstIndex = challenges.findIndex(c => String(c.id) === String(id));
+        if (firstIndex !== -1) {
+          updatedChallenges = challenges.filter((_, idx) => idx !== firstIndex);
+        } else {
+          // Fallback : supprimer tous (ancien comportement)
+          updatedChallenges = challenges.filter(c => String(c.id) !== String(id));
+        }
+      }
+      
       setChallenges(updatedChallenges);
       
       await saveEnduranceData({
@@ -925,12 +1142,12 @@ const EnduranceTab = () => {
     }
   }, [challenges, setChallenges, saveEnduranceData]);
 
-  // Fonctions spécifiques pour chaque activité
-  const deletePushupSession = useCallback((id) => deleteSession('pushups', id), [deleteSession]);
-  const deleteBoxingSession = useCallback((id) => deleteSession('boxing', id), [deleteSession]);
-  const deleteSwimmingSession = useCallback((id) => deleteSession('swimming', id), [deleteSession]);
-  const deleteJumpropeSession = useCallback((id) => deleteSession('jumprope', id), [deleteSession]);
-  const deleteRunningSession = useCallback((id) => deleteSession('running', id), [deleteSession]);
+  // ✅ FIX DOUBLONS : Fonctions de suppression avec index pour éviter problèmes d'IDs dupliqués
+  const deletePushupSession = useCallback((id, index) => deleteSession('pushups', id, index), [deleteSession]);
+  const deleteBoxingSession = useCallback((id, index) => deleteSession('boxing', id, index), [deleteSession]);
+  const deleteSwimmingSession = useCallback((id, index) => deleteSession('swimming', id, index), [deleteSession]);
+  const deleteJumpropeSession = useCallback((id, index) => deleteSession('jumprope', id, index), [deleteSession]);
+  const deleteRunningSession = useCallback((id, index) => deleteSession('running', id, index), [deleteSession]);
 
   // Fonctions de modification des sessions
   const editSession = useCallback((activityType, sessionId) => {
@@ -1532,7 +1749,7 @@ const EnduranceTab = () => {
                         <tbody>
                           {sessions.boxing.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
                             <tr 
-                              key={session.id} 
+                              key={`boxing-${session.id}-${idx}`} 
                               className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors"
                             >
                               <td className="px-6 py-4 text-slate-300">{session.date}</td>
@@ -1551,7 +1768,7 @@ const EnduranceTab = () => {
                                     <Edit className="w-4 h-4" />
                                   </button>
                                 <button
-                                  onClick={() => deleteBoxingSession(session.id)}
+                                  onClick={() => deleteBoxingSession(session.id, idx)}
                                   className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                                     title="Supprimer la session"
                                 >
@@ -1616,8 +1833,8 @@ const EnduranceTab = () => {
                         {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} en cours
                       </h3>
                       <div className="space-y-2">
-                        {activeChallenges.map(c => (
-                          <div key={c.id} className="text-amber-200 text-sm flex items-center gap-2">
+                        {activeChallenges.map((c, idx) => (
+                          <div key={`active-challenge-${c.id}-${idx}`} className="text-amber-200 text-sm flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
                             {c.name}
                           </div>
@@ -1744,8 +1961,8 @@ const EnduranceTab = () => {
                 <div className="mb-8">
                   <h3 className="text-2xl font-bold text-white mb-6">Défis</h3>
                   <div className="grid gap-4">
-                    {challenges.filter(c => c.activityType === 'pushups').map(challenge => (
-                      <div key={challenge.id} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
+                    {challenges.filter(c => c.activityType === 'pushups').map((challenge, idx) => (
+                      <div key={`pushups-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
@@ -1781,7 +1998,11 @@ const EnduranceTab = () => {
                               <Edit className="w-5 h-5" />
                             </button>
                             <button
-                              onClick={() => deleteChallenge(challenge.id)}
+                              onClick={() => {
+                                // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
+                                const realIndex = challenges.findIndex(c => c === challenge);
+                                deleteChallenge(challenge.id, realIndex);
+                              }}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                               title="Supprimer le défi"
                             >
@@ -1819,9 +2040,12 @@ const EnduranceTab = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {sessions.pushups.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
+                          {sessions.pushups.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => {
+                            // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau non-trié pour la suppression
+                            const originalIndex = sessions.pushups.findIndex(s => s === session);
+                            return (
                             <tr 
-                              key={session.id} 
+                              key={`pushups-${session.id}-${idx}`} 
                               className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors"
                             >
                               <td className="px-6 py-4 text-slate-300">{session.date}</td>
@@ -1846,7 +2070,7 @@ const EnduranceTab = () => {
                                     <Edit className="w-4 h-4" />
                                   </button>
                                   <button
-                                    onClick={() => deletePushupSession(session.id)}
+                                    onClick={() => deletePushupSession(session.id, originalIndex)}
                                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                                     title="Supprimer la session"
                                   >
@@ -1855,7 +2079,8 @@ const EnduranceTab = () => {
                                 </div>
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -1902,8 +2127,8 @@ const EnduranceTab = () => {
                         {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} en cours
                       </h3>
                       <div className="space-y-2">
-                        {activeChallenges.map(c => (
-                          <div key={c.id} className="text-amber-200 text-sm flex items-center gap-2">
+                        {activeChallenges.map((c, idx) => (
+                          <div key={`active-challenge-${c.id}-${idx}`} className="text-amber-200 text-sm flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
                             {c.name}
                           </div>
@@ -2115,8 +2340,8 @@ const EnduranceTab = () => {
                 <div className="mb-8">
                   <h3 className="text-2xl font-bold text-white mb-6">Défis</h3>
                   <div className="grid gap-4">
-                    {challenges.filter(c => c.activityType === 'swimming').map(challenge => (
-                      <div key={challenge.id} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
+                    {challenges.filter(c => c.activityType === 'swimming').map((challenge, idx) => (
+                      <div key={`swimming-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
@@ -2152,7 +2377,11 @@ const EnduranceTab = () => {
                               <Edit className="w-5 h-5" />
                             </button>
                             <button
-                              onClick={() => deleteChallenge(challenge.id)}
+                              onClick={() => {
+                                // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
+                                const realIndex = challenges.findIndex(c => c === challenge);
+                                deleteChallenge(challenge.id, realIndex);
+                              }}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                               title="Supprimer le défi"
                             >
@@ -2177,8 +2406,10 @@ const EnduranceTab = () => {
                     </div>
                   ) : (
                     <div className="space-y-4 p-6">
-                      {sessions.swimming.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session) => (
-                        <div key={session.id} className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-purple-500/30 transition-all">
+                      {sessions.swimming.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => {
+                        const originalIndex = sessions.swimming.findIndex(s => s === session);
+                        return (
+                        <div key={`swimming-${session.id}-${idx}`} className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-purple-500/30 transition-all">
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
@@ -2248,7 +2479,7 @@ const EnduranceTab = () => {
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => deleteSwimmingSession(session.id)}
+                                onClick={() => deleteSwimmingSession(session.id, originalIndex)}
                                 className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                                 title="Supprimer la session"
                               >
@@ -2276,7 +2507,8 @@ const EnduranceTab = () => {
                             </div>
                           )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -2322,8 +2554,8 @@ const EnduranceTab = () => {
                         ⚠️ Vous avez {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} à accomplir
                       </h3>
                       <div className="space-y-2">
-                        {activeChallenges.map(c => (
-                          <div key={c.id} className="text-amber-200 text-sm flex items-center gap-2">
+                        {activeChallenges.map((c, idx) => (
+                          <div key={`active-challenge-${c.id}-${idx}`} className="text-amber-200 text-sm flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
                             {c.name}
                           </div>
@@ -2543,8 +2775,8 @@ const EnduranceTab = () => {
                 <div className="mb-8">
                   <h3 className="text-2xl font-bold text-white mb-6">Défis</h3>
                   <div className="grid gap-4">
-                    {challenges.filter(c => c.activityType === 'jumprope').map(challenge => (
-                      <div key={challenge.id} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
+                    {challenges.filter(c => c.activityType === 'jumprope').map((challenge, idx) => (
+                      <div key={`jumprope-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
@@ -2580,7 +2812,11 @@ const EnduranceTab = () => {
                               <Edit className="w-5 h-5" />
                             </button>
                             <button
-                              onClick={() => deleteChallenge(challenge.id)}
+                              onClick={() => {
+                                // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
+                                const realIndex = challenges.findIndex(c => c === challenge);
+                                deleteChallenge(challenge.id, realIndex);
+                              }}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                               title="Supprimer le défi"
                             >
@@ -2620,9 +2856,11 @@ const EnduranceTab = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {sessions.jumprope.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
+                          {sessions.jumprope.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => {
+                            const originalIndex = sessions.jumprope.findIndex(s => s === session);
+                            return (
                             <tr 
-                              key={session.id} 
+                              key={`jumprope-${session.id}-${idx}`} 
                               className={`border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors ${idx % 2 === 0 ? 'bg-slate-800/20' : 'bg-slate-800/10'}`}
                             >
                               <td className="px-6 py-4 text-slate-300">{session.date}</td>
@@ -2653,7 +2891,7 @@ const EnduranceTab = () => {
                                     <Edit className="w-4 h-4" />
                                   </button>
                                   <button
-                                    onClick={() => deleteJumpropeSession(session.id)}
+                                    onClick={() => deleteJumpropeSession(session.id, originalIndex)}
                                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                                     title="Supprimer la session"
                                   >
@@ -2662,7 +2900,8 @@ const EnduranceTab = () => {
                                 </div>
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -2710,8 +2949,8 @@ const EnduranceTab = () => {
                         ⚠️ Vous avez {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} à accomplir
                       </h3>
                       <div className="space-y-2">
-                        {activeChallenges.map(c => (
-                          <div key={c.id} className="text-amber-200 text-sm flex items-center gap-2">
+                        {activeChallenges.map((c, idx) => (
+                          <div key={`active-challenge-${c.id}-${idx}`} className="text-amber-200 text-sm flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
                             {c.name}
                           </div>
@@ -2900,8 +3139,8 @@ const EnduranceTab = () => {
                 <div className="mb-8">
                   <h3 className="text-2xl font-bold text-white mb-6">Défis</h3>
                   <div className="grid gap-4">
-                    {challenges.filter(c => c.activityType === 'running').map(challenge => (
-                      <div key={challenge.id} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
+                    {challenges.filter(c => c.activityType === 'running').map((challenge, idx) => (
+                      <div key={`running-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
@@ -2937,7 +3176,11 @@ const EnduranceTab = () => {
                               <Edit className="w-5 h-5" />
                             </button>
                             <button
-                              onClick={() => deleteChallenge(challenge.id)}
+                              onClick={() => {
+                                // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
+                                const realIndex = challenges.findIndex(c => c === challenge);
+                                deleteChallenge(challenge.id, realIndex);
+                              }}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                               title="Supprimer le défi"
                             >
@@ -2963,8 +3206,10 @@ const EnduranceTab = () => {
                     </div>
                   ) : (
                     <div className="space-y-4 p-6">
-                      {sessions.running.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session) => (
-                        <div key={session.id} className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-purple-500/30 transition-all">
+                      {sessions.running.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => {
+                        const originalIndex = sessions.running.findIndex(s => s === session);
+                        return (
+                        <div key={`running-${session.id}-${idx}`} className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-purple-500/30 transition-all">
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
@@ -3013,7 +3258,7 @@ const EnduranceTab = () => {
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => deleteRunningSession(session.id)}
+                                onClick={() => deleteRunningSession(session.id, originalIndex)}
                                 className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                                 title="Supprimer la session"
                               >
@@ -3027,7 +3272,8 @@ const EnduranceTab = () => {
                             </div>
                           )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

@@ -642,35 +642,110 @@ const SettingsTab = () => {
           ...(importedData.checkedStretches || {})
         },
         
-        // Données d'endurance : Fusionner les sessions par type
-        enduranceData: {
-          sessions: {
-            boxing: [
-              ...(backupData.enduranceData?.sessions?.boxing || []),
-              ...(importedData.enduranceData?.sessions?.boxing || [])
-            ],
-            pushups: [
-              ...(backupData.enduranceData?.sessions?.pushups || []),
-              ...(importedData.enduranceData?.sessions?.pushups || [])
-            ],
-            swimming: [
-              ...(backupData.enduranceData?.sessions?.swimming || []),
-              ...(importedData.enduranceData?.sessions?.swimming || [])
-            ],
-            jumprope: [
-              ...(backupData.enduranceData?.sessions?.jumprope || []),
-              ...(importedData.enduranceData?.sessions?.jumprope || [])
-            ],
-            running: [
-              ...(backupData.enduranceData?.sessions?.running || []),
-              ...(importedData.enduranceData?.sessions?.running || [])
-            ]
-          },
-          challenges: [
-            ...(backupData.enduranceData?.challenges || []),
-            ...(importedData.enduranceData?.challenges || [])
-          ]
-        },
+        // Données d'endurance : Fusionner les sessions par type EN ÉVITANT LES DOUBLONS
+        enduranceData: (() => {
+          // ✅ FIX DOUBLONS : Fonction helper pour fusionner sessions sans doublons
+          const mergeSessionsWithoutDuplicates = (existingSessions, importedSessions) => {
+            if (!Array.isArray(existingSessions)) existingSessions = [];
+            if (!Array.isArray(importedSessions)) importedSessions = [];
+            
+            // Créer un Set des IDs existants pour détection rapide
+            const existingIds = new Set(existingSessions.map(s => String(s.id)));
+            // Créer un Map pour détecter les doublons par date+heure (si pas d'ID)
+            const existingDateTimes = new Map();
+            existingSessions.forEach(s => {
+              const key = `${s.date || ''}_${s.time || ''}`;
+              if (key && key !== '_') {
+                existingDateTimes.set(key, true);
+              }
+            });
+            
+            // Filtrer les sessions importées : exclure celles avec ID ou date+heure déjà existants
+            const newSessions = importedSessions.filter(imported => {
+              const importedId = String(imported.id);
+              const importedDateTime = `${imported.date || ''}_${imported.time || ''}`;
+              
+              // Si l'ID existe déjà, c'est un doublon
+              if (importedId && existingIds.has(importedId)) {
+                console.log(`⚠️ [Settings] Session avec ID dupliqué ignorée: ${importedId} (${imported.date} ${imported.time})`);
+                return false;
+              }
+              
+              // Si date+heure identiques, c'est probablement un doublon
+              if (importedDateTime && importedDateTime !== '_' && existingDateTimes.has(importedDateTime)) {
+                console.log(`⚠️ [Settings] Session avec date/heure dupliquée ignorée: ${importedDateTime}`);
+                return false;
+              }
+              
+              return true;
+            });
+            
+            // Fusionner : existantes + nouvelles (sans doublons)
+            return [...existingSessions, ...newSessions];
+          };
+          
+          return {
+            sessions: {
+              boxing: mergeSessionsWithoutDuplicates(
+                backupData.enduranceData?.sessions?.boxing || backupData.enduranceData?.boxingSessions || [],
+                importedData.enduranceData?.sessions?.boxing || importedData.enduranceData?.boxingSessions || []
+              ),
+              pushups: mergeSessionsWithoutDuplicates(
+                backupData.enduranceData?.sessions?.pushups || backupData.enduranceData?.pushupSessions || [],
+                importedData.enduranceData?.sessions?.pushups || importedData.enduranceData?.pushupSessions || []
+              ),
+              swimming: mergeSessionsWithoutDuplicates(
+                backupData.enduranceData?.sessions?.swimming || backupData.enduranceData?.swimmingSessions || [],
+                importedData.enduranceData?.sessions?.swimming || importedData.enduranceData?.swimmingSessions || []
+              ),
+              jumprope: mergeSessionsWithoutDuplicates(
+                backupData.enduranceData?.sessions?.jumprope || backupData.enduranceData?.jumpropeSessions || [],
+                importedData.enduranceData?.sessions?.jumprope || importedData.enduranceData?.jumpropeSessions || []
+              ),
+              running: mergeSessionsWithoutDuplicates(
+                backupData.enduranceData?.sessions?.running || backupData.enduranceData?.runningSessions || [],
+                importedData.enduranceData?.sessions?.running || importedData.enduranceData?.runningSessions || []
+              )
+            },
+            challenges: (() => {
+              // ✅ FIX DOUBLONS : Fusionner défis sans doublons (par ID + nom+type+date pour robustesse)
+              const existingChallenges = backupData.enduranceData?.challenges || [];
+              const importedChallenges = importedData.enduranceData?.challenges || [];
+              
+              // Créer un Set des IDs existants
+              const existingChallengeIds = new Set(existingChallenges.map(c => String(c.id)));
+              // Créer un Map pour détecter les doublons par nom+type+date (fallback si pas d'ID)
+              const existingChallengeKeys = new Map();
+              existingChallenges.forEach(c => {
+                const key = `${c.name || ''}_${c.activityType || ''}_${c.startDate || c.targetDate || ''}`;
+                if (key && key !== '__') {
+                  existingChallengeKeys.set(key, true);
+                }
+              });
+              
+              const newChallenges = importedChallenges.filter(c => {
+                const id = String(c.id);
+                const key = `${c.name || ''}_${c.activityType || ''}_${c.startDate || c.targetDate || ''}`;
+                
+                // Si l'ID existe déjà, c'est un doublon
+                if (id && id !== 'undefined' && existingChallengeIds.has(id)) {
+                  console.log(`⚠️ [Settings] Défi avec ID dupliqué ignoré: ${id} (${c.name})`);
+                  return false;
+                }
+                
+                // Si nom+type+date identiques, c'est probablement un doublon
+                if (key && key !== '__' && existingChallengeKeys.has(key)) {
+                  console.log(`⚠️ [Settings] Défi avec nom/type/date dupliqués ignoré: ${key}`);
+                  return false;
+                }
+                
+                return true;
+              });
+              
+              return [...existingChallenges, ...newChallenges];
+            })()
+          };
+        })(),
         
         // Photos de progression : Fusionner en évitant doublons par date
         progressPhotos: [
@@ -734,7 +809,110 @@ const SettingsTab = () => {
         bodyTrackingLastUpdated: new Date().toISOString()
       };
       
-      // ✅ Sauvegarder les données fusionnées
+      // ✅ FIX DOUBLONS : Nettoyer les IDs dupliqués dans les sessions après fusion
+      // (au cas où des doublons auraient quand même passé les filtres)
+      const cleanDuplicateSessionIds = (sessions) => {
+        const cleaned = {};
+        let hasChanges = false;
+        
+        Object.entries(sessions).forEach(([activityType, activitySessions]) => {
+          if (!Array.isArray(activitySessions)) {
+            cleaned[activityType] = activitySessions;
+            return;
+          }
+          
+          // Détecter les IDs dupliqués
+          const idMap = new Map();
+          const duplicateIds = new Set();
+          
+          activitySessions.forEach((session, idx) => {
+            const id = String(session.id);
+            if (idMap.has(id)) {
+              duplicateIds.add(id);
+              idMap.get(id).push(idx);
+            } else {
+              idMap.set(id, [idx]);
+            }
+          });
+          
+          if (duplicateIds.size > 0) {
+            console.log(`⚠️ [Settings] ${duplicateIds.size} ID(s) dupliqué(s) détecté(s) après fusion pour ${activityType}:`, Array.from(duplicateIds));
+            
+            // Générer de nouveaux IDs uniques pour les doublons (garder le premier)
+            cleaned[activityType] = activitySessions.map((session, idx) => {
+              const id = String(session.id);
+              if (duplicateIds.has(id)) {
+                const occurrences = idMap.get(id);
+                const isFirst = occurrences[0] === idx;
+                if (!isFirst) {
+                  hasChanges = true;
+                  const newId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${idx}-${activityType}-import`;
+                  console.log(`  🔄 [Settings] Régénération ID pour ${activityType}[${idx}]: ${id} → ${newId}`);
+                  return {
+                    ...session,
+                    id: newId
+                  };
+                }
+              }
+              return session;
+            });
+          } else {
+            cleaned[activityType] = activitySessions;
+          }
+        });
+        
+        return { cleaned, hasChanges };
+      };
+      
+      // Nettoyer les sessions d'endurance après fusion
+      if (mergedData.enduranceData?.sessions) {
+        const { cleaned, hasChanges } = cleanDuplicateSessionIds(mergedData.enduranceData.sessions);
+        if (hasChanges) {
+          console.log('✅ [Settings] Nettoyage des IDs dupliqués effectué après fusion (sessions)');
+          mergedData.enduranceData.sessions = cleaned;
+        }
+      }
+      
+      // ✅ FIX DOUBLONS : Nettoyer aussi les défis dupliqués après fusion
+      if (mergedData.enduranceData?.challenges) {
+        const challengeIdMap = new Map();
+        const duplicateChallengeIds = new Set();
+        
+        mergedData.enduranceData.challenges.forEach((challenge, idx) => {
+          const id = String(challenge.id);
+          if (challengeIdMap.has(id)) {
+            duplicateChallengeIds.add(id);
+            challengeIdMap.get(id).push(idx);
+          } else {
+            challengeIdMap.set(id, [idx]);
+          }
+        });
+        
+        if (duplicateChallengeIds.size > 0) {
+          console.log(`⚠️ [Settings] ${duplicateChallengeIds.size} ID(s) dupliqué(s) détecté(s) après fusion pour les défis:`, Array.from(duplicateChallengeIds));
+          
+          mergedData.enduranceData.challenges = mergedData.enduranceData.challenges.map((challenge, idx) => {
+            const id = String(challenge.id);
+            if (duplicateChallengeIds.has(id)) {
+              const occurrences = challengeIdMap.get(id);
+              const isFirst = occurrences[0] === idx;
+              if (!isFirst) {
+                const newId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${idx}-challenge-import`;
+                console.log(`  🔄 [Settings] Régénération ID pour challenge[${idx}]: ${id} → ${newId}`);
+                return {
+                  ...challenge,
+                  id: newId
+                };
+              }
+            }
+            return challenge;
+          });
+          
+          console.log('✅ [Settings] Nettoyage des IDs dupliqués effectué après fusion (défis)');
+        }
+      }
+      
+      // ✅ Sauvegarder les données fusionnées et nettoyées
       await updateData(mergedData);
       
       // ✅ Forcer rechargement depuis IndexedDB pour mettre à jour le state
