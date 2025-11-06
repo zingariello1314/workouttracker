@@ -1202,4 +1202,443 @@ Les diagrammes ci-dessus utilisent **Mermaid**, un langage de diagrammes open-so
 
 **✅ CHAPITRE 2 TERMINÉ - Architecture & Stack Technologique**
 
-*Validez ce chapitre avant de continuer avec la Documentation Complète des 14 Onglets*
+---
+
+## 📱 Documentation Complète - Les 14 Onglets
+
+Cette section détaille chaque onglet de Momentum avec ses fonctionnalités, techniques utilisées, et interconnexions.
+
+### 🗺️ Vue d'Ensemble des Onglets
+
+```mermaid
+flowchart TB
+    A[🏠 Home] --> B[📅 Today]
+    A --> C[✏️ Data Entry]
+    A --> D[📸 Progress]
+    A --> E[🏃 Endurance]
+    A --> F[🗓️ Calendar]
+    A --> G[🎯 Program]
+    A --> H[📊 Charts]
+    A --> I[📈 Stats]
+    A --> J[💪 Exercises]
+    A --> K[📜 History]
+    A --> L[🔮 Predictions]
+    A --> M[⌚ Garmin]
+    A --> N[🧠 Smart Balancing]
+    A --> O[⚙️ Settings]
+    
+    B --> I
+    C --> B
+    D --> I
+    E --> H
+    F --> I
+    G --> B
+    H --> I
+    M --> E
+    M --> H
+    I --> L
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style D fill:#ec4899,stroke:#fff,color:#fff
+    style I fill:#3b82f6,stroke:#fff,color:#fff
+    style M fill:#10b981,stroke:#fff,color:#fff
+```
+
+**Légende** :
+- 🟣 **Home** : Point d'entrée principal
+- 🔴 **Progress** : Suivi corporel avancé (10 sous-sections)
+- 🔵 **Stats** : Centralise les données de tous les onglets
+- 🟢 **Garmin** : Source de données externes
+
+---
+
+### 1. 🏠 Onglet "Home" (Accueil)
+
+**Fichier** : `src/components/HomePage.jsx`
+
+#### Fonctionnalités Principales
+
+- **Page d'accueil immersive** avec images de fond personnalisables
+- **Géolocalisation** (après interaction utilisateur, conformité navigateur)
+- **Rotation automatique** des images toutes les 2 minutes
+- **Navigation rapide** vers les autres onglets
+- **Design responsive** avec transitions fluides
+
+#### Architecture & Flux de Données
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 Utilisateur
+    participant HP as 🏠 HomePage
+    participant HIDB as 🗄️ HomepageImagesDB
+    participant GL as 📍 Geolocation API
+    participant WC as 🔄 WorkoutContext
+
+    U->>HP: Chargement page
+    HP->>HIDB: Charger images de fond
+    HIDB-->>HP: Images Base64
+    HP->>HP: Rotation automatique (2 min)
+    HP-->>U: Affichage image actuelle
+    
+    U->>HP: Clic "Autoriser géolocalisation"
+    HP->>GL: requestGeolocation()
+    GL-->>HP: { lat, lng, city }
+    HP->>HP: Affichage météo locale
+    
+    U->>HP: Clic onglet navigation
+    HP->>WC: setActiveTab(tabId)
+    WC-->>HP: Navigation vers onglet
+    
+    Note over HP,HIDB: Images validées Base64<br/>Rotation avec setInterval
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **HomePage** : Composant principal avec gestion d'état local
+- **HomepageImagesDB** : IndexedDB dédiée aux images (v2)
+- **Geolocation API** : API navigateur pour localisation
+- **WorkoutContext** : Gestion navigation entre onglets
+
+**Fonctionnalités techniques** :
+1. **Gestion images** :
+   - Chargement depuis IndexedDB (object store `images`)
+   - Validation Base64 stricte avant affichage
+   - Rotation automatique avec `setInterval` (120 secondes)
+   - Fallback gracieux si aucune image
+
+2. **Géolocalisation** :
+   - Déclenchée uniquement après interaction utilisateur (conformité RGPD)
+   - Récupération ville via API reverse geocoding
+   - Affichage météo locale (optionnel)
+
+3. **Navigation** :
+   - Boutons rapides vers onglets principaux
+   - Transitions fluides avec Tailwind CSS
+   - État actif géré par `WorkoutContext`
+
+**Optimisations** :
+- ⚡ **Lazy loading images** : Chargement à la demande
+- 💾 **Cache IndexedDB** : Images persistantes entre sessions
+- 🎨 **Transitions CSS** : Animations fluides 60 FPS
+
+**Interconnexions** :
+- → **Tous les onglets** : Point d'entrée principal
+- ← **Settings** : Configuration images de fond
+
+---
+
+### 2. 📅 Onglet "Today" (Aujourd'hui)
+
+**Fichier** : `src/components/tabs/TodayTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Liste des exercices du jour** avec cases à cocher
+- **Saisie répétitions** en temps réel
+- **Feedback visuel** (badges, toasts)
+- **Synchronisation automatique** avec IndexedDB
+- **Affichage historique** de la journée
+
+#### Architecture & Flux de Données
+
+```mermaid
+flowchart TD
+    A[📅 TodayTab Chargé] --> B[Chargement Exercices<br/>getWorkoutHistory]
+    B --> C{Exercices<br/>Aujourd'hui?}
+    C -->|Oui| D[Affichage Liste<br/>avec Cases]
+    C -->|Non| E[Message<br/>Aucun exercice]
+    
+    D --> F[👤 Utilisateur<br/>Coche Exercice]
+    F --> G[Saisie Répétitions]
+    G --> H[updateReps<br/>WorkoutContext]
+    H --> I[Validation +<br/>Normalisation]
+    I --> J[Transaction<br/>IndexedDB]
+    J --> K[Backup<br/>localStorage]
+    K --> L[Re-render<br/>Optimisé]
+    L --> M[✅ Feedback<br/>Badge + Toast]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style F fill:#ec4899,stroke:#fff,color:#fff
+    style J fill:#10b981,stroke:#fff,color:#fff
+    style M fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **TodayTab** : Interface utilisateur principale
+- **WorkoutContext** : État global et fonctions de mise à jour
+- **useWorkoutData** : Logique de persistance IndexedDB
+- **getWorkoutHistory** : Récupération données filtrées par date
+
+**Fonctionnalités techniques** :
+1. **Chargement exercices** :
+   - Filtrage par date (aujourd'hui)
+   - Affichage liste avec cases à cocher
+   - État cochée/décochée persistant
+
+2. **Saisie répétitions** :
+   - Input numérique avec validation
+   - Normalisation automatique (string → number)
+   - Gestion formats spéciaux ("10:30" → 10)
+
+3. **Sauvegarde** :
+   - Debounce 1 seconde (évite sauvegardes multiples)
+   - Transaction atomique IndexedDB
+   - Backup localStorage automatique
+
+**Optimisations** :
+- ⏱️ **Debounce** : Réduction écritures IndexedDB
+- 🔄 **Memoization** : `useMemo` pour liste exercices
+- ⚡ **Re-render optimisé** : Seulement composants modifiés
+
+**Interconnexions** :
+- → **Stats** : Données utilisées pour statistiques
+- → **Charts** : Données affichées dans graphiques
+- → **History** : Historique complet des séances
+- ← **Program** : Exercices peuvent venir d'un programme
+
+---
+
+### 3. ✏️ Onglet "Data Entry" (Saisie)
+
+**Fichier** : `src/components/tabs/DataEntryTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Saisie manuelle complète** d'une séance d'entraînement
+- **Ajout exercices** dynamique
+- **Gestion séries/répétitions/poids**
+- **Sauvegarde session** avec feedback utilisateur
+- **Validation données** avant sauvegarde
+
+#### Architecture & Flux de Données
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 Utilisateur
+    participant DE as ✏️ DataEntryTab
+    participant F as 📝 Formulaire
+    participant V as ✅ Validation
+    participant WC as 🔄 WorkoutContext
+    participant IDB as 🗄️ IndexedDB
+
+    U->>DE: Ouverture onglet
+    DE->>F: Initialisation formulaire vide
+    F-->>U: Formulaire prêt
+    
+    U->>F: Ajout exercice
+    F->>F: Création ligne exercice
+    U->>F: Saisie séries/répétitions/poids
+    F->>V: Validation champs
+    V-->>F: ✅ Validation OK
+    
+    U->>F: Clic "Sauvegarder"
+    F->>V: Validation complète
+    V-->>F: { isValid, errors }
+    
+    alt Validation OK
+        F->>WC: saveWorkoutSession(data)
+        WC->>IDB: Transaction 'readwrite'
+        IDB-->>WC: ✅ Sauvegarde réussie
+        WC->>WC: Mise à jour état global
+        WC-->>DE: ✅ Confirmation
+        DE-->>U: 🎉 Toast succès
+    else Validation échouée
+        F-->>U: ⚠️ Affichage erreurs
+    end
+    
+    Note over U,IDB: Validation stricte<br/>avant sauvegarde
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **DataEntryTab** : Interface principale
+- **Formulaire dynamique** : Ajout/suppression exercices
+- **Validation service** : Vérification données avant sauvegarde
+- **WorkoutContext** : Fonction `saveWorkoutSession()`
+
+**Fonctionnalités techniques** :
+1. **Formulaire dynamique** :
+   - Ajout exercices à la volée
+   - Suppression exercices
+   - Gestion état local avec `useState`
+
+2. **Validation** :
+   - Vérification champs obligatoires
+   - Validation formats (nombres, dates)
+   - Messages d'erreur contextuels
+
+3. **Sauvegarde** :
+   - Création structure données normalisée
+   - Transaction IndexedDB atomique
+   - Feedback utilisateur (toast)
+
+**Optimisations** :
+- 🎯 **Validation côté client** : Évite appels inutiles
+- 💾 **Sauvegarde optimisée** : Une seule transaction
+- 🔄 **État local** : Pas de re-render global pendant saisie
+
+**Interconnexions** :
+- → **Today** : Séances sauvegardées apparaissent dans "Aujourd'hui"
+- → **History** : Ajout à l'historique complet
+- → **Stats** : Données utilisées pour statistiques
+- ← **Exercises** : Liste exercices disponibles
+
+---
+
+### 4. 📸 Onglet "Progress" (Suivi Corporel)
+
+**Fichier** : `src/components/tabs/ProgressTab.jsx`
+
+#### Fonctionnalités Principales
+
+L'onglet "Progress" est le plus complexe avec **10 sous-sections** :
+
+| Section | Description | Complexité |
+|---------|-------------|------------|
+| **Métriques** | Poids, taille, mensurations | ⭐⭐ |
+| **Photos** | Galerie avec analyse IA | ⭐⭐⭐⭐⭐ |
+| **Impédancemètre** | Données détaillées | ⭐⭐⭐ |
+| **Récapitulatif** | Tableau de bord global | ⭐⭐⭐ |
+| **Rappels** | Notifications automatiques | ⭐⭐ |
+| **Corrélations** | Analyse des relations | ⭐⭐⭐⭐ |
+| **Prévisions** | Projections futures | ⭐⭐⭐⭐ |
+| **Stabilité** | Détection stagnations | ⭐⭐⭐ |
+| **Analyses Intelligentes** | IA explicative | ⭐⭐⭐⭐ |
+| **Commentaires** | Analyse automatique | ⭐⭐⭐ |
+
+#### Architecture & Navigation
+
+```mermaid
+flowchart TB
+    A[📸 ProgressTab] --> B{Section Active?}
+    
+    B -->|metrics| C[📊 Métriques<br/>Poids, Taille]
+    B -->|photos| D[📷 Photos<br/>Galerie + IA]
+    B -->|impedance| E[⚡ Impédancemètre<br/>Données détaillées]
+    B -->|summary| F[📈 Récapitulatif<br/>Dashboard]
+    B -->|reminders| G[🔔 Rappels<br/>Notifications]
+    B -->|correlations| H[📊 Corrélations<br/>Relations]
+    B -->|predictions| I[🔮 Prévisions<br/>Projections]
+    B -->|stability| J[⚖️ Stabilité<br/>Stagnations]
+    B -->|insights| K[🧠 Analyses IA<br/>Explications]
+    B -->|comments| L[💬 Commentaires<br/>Auto-analyse]
+    
+    C --> M[💾 IndexedDB<br/>WorkoutTrackerDB]
+    D --> M
+    E --> M
+    F --> M
+    G --> M
+    H --> M
+    I --> M
+    J --> M
+    K --> M
+    L --> M
+    
+    style A fill:#ec4899,stroke:#fff,color:#fff
+    style D fill:#8b5cf6,stroke:#fff,color:#fff
+    style M fill:#10b981,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée - Section Photos (La Plus Complexe)**
+
+La section **Photos** est la plus avancée techniquement. Voir le [Flux 3 : Upload & Analyse Photo IA](#-flux-3--upload--analyse-photo-ia) pour les détails complets.
+
+**Fonctionnalités clés** :
+- **Upload photos** avec compression multi-résolution
+- **Analyse IA** : MediaPipe (pose) + BodyPix (segmentation)
+- **Galerie virtualisée** : Support 1000+ photos
+- **Pagination intelligente** : Cache LRU persistant
+- **Dashboard d'analyse** : Métriques, corrélations, évolution
+
+**Interconnexions** :
+- → **Stats** : Métriques corporelles utilisées
+- → **Charts** : Graphiques évolution corporelle
+- → **Predictions** : Projections basées sur photos
+- ← **Settings** : Configuration qualité photos
+
+---
+
+### 5. 🏃 Onglet "Endurance"
+
+**Fichier** : `src/components/tabs/EnduranceTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **5 types d'activités** : Natation, Cardio, Course, Vélo, Autre
+- **Saisie sessions** avec durée, distance, intensité
+- **Import Garmin** : Synchronisation automatique
+- **Statistiques** : Total sessions, répétitions, évolution
+- **Graphiques** : Visualisation progression
+
+#### Architecture & Flux de Données
+
+```mermaid
+flowchart LR
+    A[🏃 EnduranceTab] --> B{Type Activité?}
+    
+    B -->|Natation| C[🏊 Natation<br/>Longueurs, Temps]
+    B -->|Cardio| D[❤️ Cardio<br/>Durée, FC]
+    B -->|Course| E[👟 Course<br/>Distance, Temps]
+    B -->|Vélo| F[🚴 Vélo<br/>Distance, Vitesse]
+    B -->|Autre| G[⚡ Autre<br/>Personnalisé]
+    
+    C --> H[💾 Sauvegarde<br/>IndexedDB]
+    D --> H
+    E --> H
+    F --> H
+    G --> H
+    
+    I[⌚ Garmin Sync] -->|Import Auto| H
+    H --> J[📊 Statistiques<br/>Agrégation]
+    J --> K[📈 Graphiques<br/>Visualisation]
+    
+    style A fill:#3b82f6,stroke:#fff,color:#fff
+    style I fill:#10b981,stroke:#fff,color:#fff
+    style J fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **EnduranceTab** : Interface principale
+- **5 formulaires spécialisés** : Un par type d'activité
+- **Garmin import** : Synchronisation automatique depuis GarminTab
+- **Statistiques module** : Agrégation et calculs
+
+**Fonctionnalités techniques** :
+1. **Saisie activités** :
+   - Formulaire adapté par type
+   - Validation spécifique (distance, durée, etc.)
+   - Sauvegarde structure normalisée
+
+2. **Import Garmin** :
+   - Mapping natation/cardio depuis GarminDataDB
+   - Conversion format Garmin → format Momentum
+   - Option import manuel ou automatique
+
+3. **Statistiques** :
+   - Total sessions par type
+   - Total répétitions (longueurs, tours, etc.)
+   - Évolution temporelle
+   - Graphiques Recharts
+
+**Optimisations** :
+- 📊 **Agrégation optimisée** : Calculs avec `useMemo`
+- 🔄 **Import incrémental** : Seulement nouvelles données
+- ⚡ **Rendu conditionnel** : Affichage selon type sélectionné
+
+**Interconnexions** :
+- → **Garmin** : Import données activités
+- → **Stats** : Données utilisées pour statistiques globales
+- → **Charts** : Graphiques spécifiques endurance
+- → **History** : Historique complet activités
+
+---
+
+**✅ CHAPITRE 3 - PARTIE 1 TERMINÉE (Onglets 1-5)**
+
+*Validez cette partie avant de continuer avec les onglets 6-14*
