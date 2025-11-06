@@ -17,6 +17,7 @@ import AdvancedStatistics from './GarminTab/components/AdvancedStatistics';
 import AutoSyncSettings from './GarminTab/components/AutoSyncSettings';
 import PDFExport from './GarminTab/components/PDFExport';
 import GarminErrorBoundary from './GarminTab/components/ErrorBoundary';
+import DebugPanel from './GarminTab/components/DebugPanel';
 import { useGarminSync } from './GarminTab/hooks/useGarminSync';
 import { useGarminImport } from './GarminTab/hooks/useGarminImport';
 import { useToast } from './GarminTab/components/Toast';
@@ -36,13 +37,16 @@ const GarminTab = () => {
   const [periodFilter, setPeriodFilter] = React.useState('all');
   const [customStartDate, setCustomStartDate] = React.useState('');
   const [customEndDate, setCustomEndDate] = React.useState('');
+  const [showDebugPanel, setShowDebugPanel] = React.useState(false); // ✅ PHASE 1 : Panneau de diagnostic
   
   // 🟡 FIX #33: Suivre l'état précédent du loading pour détecter la fin de sync
   const prevLoadingRef = React.useRef(false);
   const prevGarminDataRef = React.useRef(null);
   const autoSyncExecutedRef = React.useRef(false); // 🟢 NOUVEAU : Éviter auto-sync multiple
 
-  // Tous les hooks personnalisés dans un ordre constant
+  // ✅ FIX : Tous les hooks personnalisés dans un ordre constant (RÈGLE REACT)
+  // Les hooks doivent TOUJOURS être appelés dans le même ordre à chaque rendu
+  // et au niveau supérieur du composant (pas dans des conditions, useEffect, etc.)
   const { loadAllData, loadDataForTab, dbReady, getLastSyncDate, deleteMockActivities } = useGarminData();
   const { importToEndurance } = useGarminImport();
   const { syncNow, backfill, fetchStatus, loading, baseUrl, clearCache } = useGarminSync(
@@ -50,6 +54,8 @@ const GarminTab = () => {
     setStatus,
     importToEndurance
   );
+  // ✅ FIX : useToast() déplacé AVANT tous les useEffect pour respecter les règles de React
+  const { showToast, ToastContainer } = useToast();
   
   // 🔴 FIX : Exposer clearCache globalement pour permettre vidage depuis SyncControls
   React.useEffect(() => {
@@ -62,9 +68,6 @@ const GarminTab = () => {
       }
     };
   }, [clearCache]);
-  
-  // 🟡 FIX #33: Toast pour feedback visuel - appelé après tous les autres hooks personnalisés
-  const { showToast, ToastContainer } = useToast();
 
   // 🔴 FIX #2: Charger les données depuis IndexedDB au montage avec cleanup
   React.useEffect(() => {
@@ -534,7 +537,8 @@ const GarminTab = () => {
             {activeTab === 'charts' && (
               <div role="tabpanel" id="garmin-charts-panel" aria-labelledby="charts-tab" className="space-y-6">
                 {/* 🔴 FIX #8: Heart Rate Time Series Chart avec toutes les props */}
-                {selectedDate && garminData.dailyMetrics[selectedDate]?.heartRate?.timeSeries?.length > 0 && (
+                {/* 🔴 NOUVEAU : Afficher même si pas de timeSeries (courbe enrichie sera créée avec métriques agrégées) */}
+                {selectedDate && garminData.dailyMetrics && garminData.dailyMetrics[selectedDate] && (
                   <GarminHeartRateTimeSeriesChart
                     dailyMetrics={garminData.dailyMetrics}
                     selectedDate={selectedDate}
@@ -542,6 +546,7 @@ const GarminTab = () => {
                     customStartDate={customStartDate}
                     customEndDate={customEndDate}
                     colors={colors}
+                    activities={garminData.activities}
                   />
                 )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -641,6 +646,7 @@ const GarminTab = () => {
             fetchStatus={fetchStatus}
             deleteMockActivities={deleteMockActivities}
             clearCache={clearCache}
+            onOpenDebug={() => setShowDebugPanel(true)} // ✅ PHASE 1 : Ouvrir le panneau de diagnostic
           />
 
           {/* 🔴 FIX #81-87: Synchronisation automatique */}
@@ -657,6 +663,11 @@ const GarminTab = () => {
         </div>
         </div>
         </div>
+
+        {/* ✅ PHASE 1 : Panneau de diagnostic */}
+        {showDebugPanel && (
+          <DebugPanel onClose={() => setShowDebugPanel(false)} />
+        )}
       </GarminProvider>
     </GarminErrorBoundary>
   );

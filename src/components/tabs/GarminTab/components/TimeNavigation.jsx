@@ -95,9 +95,9 @@ export default function TimeNavigation({
     
     // 🔴 FIX : Toujours sélectionner aujourd'hui, même s'il n'est pas dans les dates disponibles
     // Cela permettra de voir qu'il n'y a pas de données et de déclencher une sync si nécessaire
-    startTransition(() => {
+      startTransition(() => {
       setSelectedDate(todayLocal);
-    });
+      });
     
     // Afficher un message si la date n'est pas disponible
     if (dateKeys.length > 0 && !dateKeys.includes(todayLocal)) {

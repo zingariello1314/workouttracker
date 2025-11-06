@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Calendar, 
   ChevronLeft, 
@@ -16,6 +16,16 @@ import { useWorkout } from '../context/WorkoutContext';
 import { getDateStr } from '../utils/dateUtils';
 import { workoutProgram } from '../data/workoutProgram';
 import { calculateDayIntensityWithGarmin, getGarminActivityIcons } from '../utils/garminCalendarUtils';
+import { 
+  isMockEnduranceSession, 
+  parseDurationToMinutes, 
+  normalizeDateString,
+  calculateIntensityLevel,
+  calculateTimeIntensityLevel,
+  validateDuration,
+  validateDate,
+  validateNumericValue
+} from '../utils/calendarUtils';
 
 const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -28,14 +38,24 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées)
   const allData = getCurrentData();
 
+  // ✅ PHASE 2.3 : Cache pour les intensités calculées (useRef pour persister entre renders)
+  const intensityCache = useRef({});
+  
+  // ✅ PHASE 2.3 : Invalider le cache lorsque les données sources changent
+  useEffect(() => {
+    // Vider le cache lorsque allData change (les données sources ont changé)
+    intensityCache.current = {};
+  }, [allData, garminData]);
+
   // Fonction pour obtenir le nom du jour
   const getDayName = (date) => {
     const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
     return days[date.getDay()];
   };
 
-  // Calculer les seuils dynamiques basés sur toutes les données existantes
-  const calculateDynamicThresholds = () => {
+  // ✅ PHASE 2.1 : Mémoriser les seuils dynamiques basés sur toutes les données existantes
+  // Recalcul uniquement si allData.reps change (évite les recalculs inutiles)
+  const dynamicThresholds = useMemo(() => {
     if (!allData?.reps) return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100] };
     
     // Récupérer toutes les répétitions par jour
@@ -71,19 +91,14 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     ];
     
     return { min, max, thresholds, dailyReps };
-  };
+  }, [allData?.reps]);
 
-  // Calculer le niveau d'intensité basé sur les seuils dynamiques
-  const calculateDynamicIntensityLevel = (totalReps, thresholds) => {
-    if (totalReps === 0) return 0;
-    if (totalReps <= thresholds[1]) return 1; // Léger (vert)
-    if (totalReps <= thresholds[2]) return 2; // Modéré (jaune)
-    if (totalReps <= thresholds[3]) return 3; // Intense (orange)
-    return 4; // Extrême (rouge)
-  };
+  // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
+  // calculateDynamicIntensityLevel remplacé par calculateIntensityLevel (importée)
 
-  // Calculer les seuils dynamiques pour la durée (temps)
-  const calculateDynamicTimeThresholds = () => {
+  // ✅ PHASE 2.2 : Mémoriser les seuils dynamiques pour la durée (temps)
+  // Recalcul uniquement si allData.checkedExercises, allData.enduranceData.sessions, ou allData.reps change
+  const dynamicTimeThresholds = useMemo(() => {
     if (!allData) return { min: 0, max: 0, thresholds: [0, 30, 60, 90] };
     
     const durations = [];
@@ -110,27 +125,22 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       }
     });
     
-    // ✅ Ajouter les durées d'endurance (parser selon format)
+    // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
+    // isMockSessionForThresholds remplacé par isMockEnduranceSession (importée)
+    
     const enduranceData = allData?.enduranceData || {};
     const enduranceSessions = enduranceData.sessions || {};
     Object.entries(enduranceSessions).forEach(([activityType, sessions]) => {
       if (Array.isArray(sessions)) {
         sessions.forEach(session => {
+          // ✅ PHASE 1 : Exclure les sessions mock du calcul des seuils (fonction centralisée)
+          if (isMockEnduranceSession(session)) {
+            return; // Ignorer cette session mock
+          }
+          
           if (session.duration) {
-            let durationMinutes = 0;
-            
-            // Parser selon le format (même logique que dans getEnduranceDataForDate)
-            if (typeof session.duration === 'string' && session.duration.includes(':')) {
-              const parts = session.duration.split(':').map(Number);
-              if (parts.length === 3) {
-                durationMinutes = parts[0] * 60 + parts[1] + parts[2] / 60;
-              } else if (parts.length === 2) {
-                durationMinutes = parts[0] + parts[1] / 60;
-              }
-            } else {
-              const numValue = typeof session.duration === 'number' ? session.duration : parseInt(session.duration) || 0;
-              durationMinutes = numValue > 1000 ? Math.round(numValue / 60) : numValue;
-            }
+            // ✅ PHASE 1 : Utiliser parseDurationToMinutes pour cohérence
+            const durationMinutes = parseDurationToMinutes(session.duration, 'calculateDynamicTimeThresholds');
             
             if (durationMinutes > 0) {
               durations.push(Math.round(durationMinutes));
@@ -156,32 +166,37 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     ];
     
     return { min, max, thresholds };
-  };
+  }, [allData?.checkedExercises, allData?.enduranceData?.sessions, allData?.reps]);
 
-  // Calculer le niveau d'intensité basé sur les seuils dynamiques de temps
-  const calculateDynamicTimeIntensityLevel = (duration, thresholds) => {
-    if (duration === 0) return 0;
-    if (duration <= thresholds[1]) return 1; // Léger (vert)
-    if (duration <= thresholds[2]) return 2; // Modéré (jaune)
-    if (duration <= thresholds[3]) return 3; // Intense (orange)
-    return 4; // Extrême (rouge)
-  };
+  // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
+  // calculateDynamicTimeIntensityLevel remplacé par calculateTimeIntensityLevel (importée)
   const getIntensityForDate = (date) => {
     const dateStr = getDateStr(date);
+    
+    // ✅ PHASE 2.3 : Vérifier le cache avant de calculer
+    const cacheKey = dateStr;
+    if (intensityCache.current[cacheKey]) {
+      return intensityCache.current[cacheKey];
+    }
+    
     const dayName = getDayName(date);
     const workout = workoutProgram[dayName];
     
-    // Debug pour le 28 octobre 2025
-    if (dateStr === '2025-10-28') {
-      console.log('🔍 DEBUG CalendarHeatmap - 28 octobre 2025:');
-      console.log('Date string:', dateStr);
-      console.log('Day name:', dayName);
-      console.log('Workout found:', workout?.name);
-      console.log('All data:', allData);
-      console.log('Checked exercises:', allData?.checkedExercises);
-      console.log('Reps data:', allData?.reps);
-    }
+    // ✅ LOGS DE DEBUG DÉSACTIVÉS pour réduire le bruit (33k messages)
+    // Debug pour le 28 octobre 2025 (réactiver uniquement si nécessaire)
+    // if (dateStr === '2025-10-28') {
+    //   console.log('🔍 DEBUG CalendarHeatmap - 28 octobre 2025:');
+    //   console.log('Date string:', dateStr);
+    //   console.log('Day name:', dayName);
+    //   console.log('Workout found:', workout?.name);
+    //   console.log('All data:', allData);
+    //   console.log('Checked exercises:', allData?.checkedExercises);
+    //   console.log('Reps data:', allData?.reps);
+    // }
     
+    // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
+    // isMockSession remplacé par isMockEnduranceSession (importée)
+
     // Calculer les données d'endurance pour cette date
     // NOTE: Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
     // Elles servent uniquement à fournir des détails sur ce qui s'est passé
@@ -196,76 +211,83 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       let enduranceSessions = 0;
       
       // Parcourir toutes les activités d'endurance (pour les détails uniquement)
-      Object.values(sessions).forEach(activitySessions => {
+      // ✅ FIX : Filtrer les sessions mock
+      Object.entries(sessions).forEach(([activityType, activitySessions]) => {
         if (Array.isArray(activitySessions)) {
           activitySessions.forEach(session => {
-            // Normaliser la date de la session pour la comparaison
-            let sessionDateStr = session.date;
-            if (sessionDateStr) {
-              // Si la date contient 'T', prendre seulement la partie date
-              if (sessionDateStr.includes('T')) {
-                sessionDateStr = sessionDateStr.split('T')[0];
-              }
-              // Si c'est un format autre, essayer de parser
-              if (sessionDateStr.length > 10) {
-                try {
-                  sessionDateStr = new Date(sessionDateStr).toISOString().split('T')[0];
-                } catch (e) {
-                  // Ignorer si le parsing échoue
+            // ✅ PHASE 1 : Exclure les sessions mock (fonction centralisée)
+            if (isMockEnduranceSession(session)) {
+              return; // Ignorer cette session mock
+            }
+            // ✅ PHASE 4 : Valider la date (vérifier si future et normaliser)
+            const dateValidation = validateDate(session.date, `getEnduranceDataForDate.${activityType}.${session.id || 'unknown'}`);
+            const sessionDateStr = dateValidation.normalizedDate;
+            
+            // Ignorer les sessions avec dates futures (sauf si on veut les inclure pour le futur)
+            if (dateValidation.isFuture) {
+              return; // Ignorer cette session (date future)
+            }
+              
+            // Comparer les dates normalisées
+            if (sessionDateStr && sessionDateStr === dateStr) {
+              enduranceSessions++;
+              
+              // ✅ CORRECTION : Ajouter les répétitions (pompes, boxe) - EXCLURE jumprope
+              // Les sauts (jumprope) ne sont PAS des répétitions d'exercices, ils sont comptés séparément dans enduranceJumps
+              // Seulement les activités avec count (pushups, boxing) ou reps (boxing) sont des répétitions
+              // ✅ Les sessions créées depuis les défis (TodayTab) ont maintenant count ET reps (normalisé)
+              // ✅ Les sessions créées depuis EnduranceTab ont count
+              // ✅ Cette logique gère les deux cas : count (prioritaire) ou reps (fallback)
+              if (activityType !== 'jumprope') {
+                // Priorité : count > reps (pour éviter d'ajouter les deux si les deux existent)
+                // Si count existe, l'utiliser (priorité pour cohérence avec EnduranceTab)
+                // Sinon, utiliser reps (fallback pour compatibilité avec anciennes sessions ou défis)
+                const rawReps = session.count !== undefined && session.count !== null
+                  ? session.count
+                  : (session.reps !== undefined && session.reps !== null ? session.reps : 0);
+                // ✅ PHASE 4 : Valider la valeur numérique (rejette négatif, NaN)
+                const repsValidation = validateNumericValue(rawReps, `getEnduranceDataForDate.${dateStr}.${activityType}.reps`, false);
+                if (repsValidation.normalizedValue > 0) {
+                  enduranceReps += repsValidation.normalizedValue;
                 }
+              }
+              // ✅ PHASE 4 : Utiliser parseDurationToMinutes + validation centralisée
+              if (session.duration) {
+                const durationMinutes = parseDurationToMinutes(session.duration, `getEnduranceDataForDate.${dateStr}`);
+                const durationValidation = validateDuration(durationMinutes, `getEnduranceDataForDate.${dateStr}.${activityType}.${session.id || 'unknown'}`);
+                enduranceDuration += Math.round(durationValidation.clampedValue);
               }
               
-              // Comparer les dates normalisées
-              if (sessionDateStr === dateStr) {
-                enduranceSessions++;
-                
-                // Ajouter les répétitions (pompes, boxe)
-                if (session.count || session.reps) enduranceReps += parseInt(session.count || session.reps) || 0;
-                // ✅ CORRECTION PB 2: Parser la durée selon son format
-                if (session.duration) {
-                  let durationMinutes = 0;
-                  
-                  // Vérifier le type de la durée
-                  if (typeof session.duration === 'string') {
-                    // Format string: peut être "HH:MM:SS", "MM:SS", ou un nombre
-                    if (session.duration.includes(':')) {
-                      // Format temps (HH:MM:SS ou MM:SS)
-                      const parts = session.duration.split(':').map(Number);
-                      if (parts.length === 3) {
-                        // HH:MM:SS
-                        durationMinutes = parts[0] * 60 + parts[1] + parts[2] / 60;
-                      } else if (parts.length === 2) {
-                        // MM:SS
-                        durationMinutes = parts[0] + parts[1] / 60;
-                      }
-                    } else {
-                      // Nombre: vérifier si c'est en secondes (grand) ou minutes (petit)
-                      const numValue = parseInt(session.duration) || 0;
-                      // Si > 1000, probablement en secondes, sinon en minutes
-                      durationMinutes = numValue > 1000 ? Math.round(numValue / 60) : numValue;
-                    }
-                  } else if (typeof session.duration === 'number') {
-                    // Nombre: vérifier si c'est en secondes (grand) ou minutes (petit)
-                    durationMinutes = session.duration > 1000 ? Math.round(session.duration / 60) : session.duration;
+              // ✅ PHASE 4 : Ajouter la distance avec validation
+              if (session.distance) {
+                const distValidation = validateNumericValue(session.distance, `getEnduranceDataForDate.${dateStr}.${activityType}.distance`, false);
+                if (distValidation.normalizedValue > 0) {
+                  enduranceDistance += distValidation.normalizedValue;
+                }
+              }
+              if (session.laps && Array.isArray(session.laps)) {
+                session.laps.forEach((lap, lapIdx) => {
+                  const lapDistValidation = validateNumericValue(lap.distance, `getEnduranceDataForDate.${dateStr}.${activityType}.lap[${lapIdx}].distance`, false);
+                  if (lapDistValidation.normalizedValue > 0) {
+                    enduranceDistance += lapDistValidation.normalizedValue;
                   }
-                  
-                  enduranceDuration += Math.round(durationMinutes);
+                });
+              }
+              
+              // ✅ PHASE 4 : Ajouter les sauts avec validation
+              // ✅ CORRECTION : Pour jumprope, les sauts peuvent être dans jumps OU reps
+              if (activityType === 'jumprope') {
+                const rawJumps = session.jumps || session.reps || 0;
+                const jumpsValidation = validateNumericValue(rawJumps, `getEnduranceDataForDate.${dateStr}.jumprope.jumps`, false);
+                if (jumpsValidation.normalizedValue > 0) {
+                  enduranceJumps += jumpsValidation.normalizedValue;
                 }
-                
-                // Ajouter la distance (natation, course)
-                if (session.distance) {
-                  const dist = parseFloat(session.distance) || 0;
-                  enduranceDistance += dist;
+              } else if (session.jumps) {
+                // Pour les autres activités, utiliser jumps si présent
+                const jumpsValidation = validateNumericValue(session.jumps, `getEnduranceDataForDate.${dateStr}.${activityType}.jumps`, false);
+                if (jumpsValidation.normalizedValue > 0) {
+                  enduranceJumps += jumpsValidation.normalizedValue;
                 }
-                if (session.laps && Array.isArray(session.laps)) {
-                  session.laps.forEach(lap => {
-                    const lapDist = parseFloat(lap.distance) || 0;
-                    enduranceDistance += lapDist;
-                  });
-                }
-                
-                // Ajouter les sauts (corde à sauter)
-                if (session.jumps) enduranceJumps += parseInt(session.jumps) || 0;
               }
             }
           });
@@ -300,7 +322,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     }
 
     // Obtenir la liste des exercices - CORRECTION: inclure TOUTES les variantes
+    // ✅ CORRECTION : Utiliser un Set pour éviter les doublons si un exercice existe dans plusieurs variantes
     let exercisesList = [];
+    const exercisesIdsSeen = new Set(); // Pour éviter de compter le même exercice plusieurs fois
     
     if (workout?.salleVariants) {
       // Pour les jours avec variantes de salle, inclure TOUS les exercices possibles
@@ -309,17 +333,29 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       const streetExercices = workout.exercices || [];
       
       // Combiner tous les exercices possibles (salle A, salle B, street)
-      exercisesList = [...semaineA, ...semaineB, ...streetExercices];
+      // ✅ CORRECTION : Filtrer les doublons par ID d'exercice
+      const allExercises = [...semaineA, ...semaineB, ...streetExercices];
+      exercisesList = allExercises.filter(exercise => {
+        if (exercisesIdsSeen.has(exercise.id)) {
+          return false; // Déjà vu, ignorer
+        }
+        exercisesIdsSeen.add(exercise.id);
+        return true;
+      });
     } else if (workout?.exercices) {
       // Pour les jours sans variantes, utiliser les exercices de base
       exercisesList = workout.exercices || [];
     }
     
-    let totalReps = enduranceData.reps; // Commencer avec les reps d'endurance
+    // ✅ CORRECTION : Calculer les répétitions totales de manière séquentielle et claire
+    // Le total doit être : exercices classiques COCHÉS + reps d'endurance (pompes, boxe, défis complétés)
+    let totalReps = 0; // ✅ CORRECTION : Commencer à 0 au lieu de enduranceData.reps
     let completedExercises = 0;
     let totalPlannedExercises = exercisesList.length;
+    let exercisesReps = 0; // Pour debug : somme des reps des exercices classiques
     
-    // Calculer les répétitions réelles et exercices accomplis (exercices classiques)
+    // ✅ ÉTAPE 1 : Calculer les répétitions des exercices classiques COCHÉS
+    // Seulement les exercices avec checkedExercises = true ET reps > 0
     exercisesList.forEach(exercise => {
       const baseKey = `${dateStr}_${exercise.id}`;
       
@@ -346,14 +382,158 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
         }
       }
       
-      reps = parseInt(allData?.reps?.[actualKey] || 0);
+      const rawReps = allData?.reps?.[actualKey] || 0;
       isCompleted = allData?.checkedExercises?.[actualKey] || false;
       
-      if (isCompleted) {
+      // ✅ PHASE 4 : Valider la valeur numérique (rejette négatif, NaN)
+      const repsValidation = validateNumericValue(rawReps, `getIntensityForDate.${dateStr}.${exercise.id}.reps`, false);
+      reps = repsValidation.normalizedValue;
+      
+      // ✅ CORRECTION : Seulement si complété ET avec des reps > 0
+      if (isCompleted && reps > 0) {
         completedExercises++;
-        totalReps += reps; // Ajouter aux reps d'endurance
+        exercisesReps += reps;
+        totalReps += reps;
       }
     });
+    
+    // ✅ ÉTAPE 2 : Ajouter les reps d'endurance (pompes, boxe, défis complétés)
+    // Les défis complétés sont déjà inclus dans enduranceData.reps via les sessions d'endurance
+    // (voir getEnduranceDataForDate qui parcourt enduranceData.sessions)
+    const enduranceRepsValue = enduranceData.reps || 0;
+    
+    // 🔍 DEBUG : Vérifier si enduranceRepsValue est suspect et tracer les sessions problématiques
+    if (enduranceRepsValue > 1000) {
+      console.warn(`⚠️ [getIntensityForDate] ${dateStr} - enduranceRepsValue suspect: ${enduranceRepsValue}`);
+      // Tracer chaque session d'endurance pour cette date pour identifier la source
+      const enduranceDataRawDebug = allData?.enduranceData || {};
+      const sessionsDebug = enduranceDataRawDebug.sessions || {};
+      const problematicSessions = [];
+      Object.entries(sessionsDebug).forEach(([activityType, activitySessions]) => {
+        if (Array.isArray(activitySessions)) {
+          activitySessions.forEach(session => {
+            if (isMockEnduranceSession(session)) return;
+            const sessionDateStr = normalizeDateString(session.date);
+            if (sessionDateStr && sessionDateStr === dateStr) {
+              // ✅ CORRECTION : Exclure jumprope du calcul des reps (comme dans getEnduranceDataForDate)
+              if (activityType !== 'jumprope') {
+                const sessionReps = session.count !== undefined && session.count !== null
+                  ? parseInt(session.count) || 0
+                  : (session.reps !== undefined && session.reps !== null ? parseInt(session.reps) || 0 : 0);
+                if (sessionReps > 0) {
+                  problematicSessions.push({
+                    activityType,
+                    count: session.count,
+                    reps: session.reps,
+                    sessionReps,
+                    session: session // Session complète pour inspection
+                  });
+                }
+              }
+            }
+          });
+        }
+      });
+      console.warn(`   Sessions d'endurance trouvées pour ${dateStr}:`, problematicSessions);
+      console.warn(`   enduranceData calculé (getEnduranceDataForDate):`, enduranceData);
+      console.warn(`   enduranceDataRaw (allData.enduranceData):`, enduranceDataRawDebug);
+      
+      // 🔍 LOG DÉTAILLÉ : Afficher chaque session avec tous ses champs pour identifier la source
+      console.warn(`   🔍 ANALYSE DÉTAILLÉE DES ${problematicSessions.length} SESSION(S) PROBLÉMATIQUE(S):`);
+      problematicSessions.forEach((sessionInfo, index) => {
+        const totalRepsFromThisSession = sessionInfo.sessionReps || 0;
+        console.warn(`   📊 Session ${index + 1}/${problematicSessions.length} (${sessionInfo.activityType}):`);
+        console.warn(`      - count: ${sessionInfo.count}`);
+        console.warn(`      - reps: ${sessionInfo.reps}`);
+        console.warn(`      - sessionReps calculé: ${totalRepsFromThisSession} (utilisé dans le total)`);
+        console.warn(`      - date: ${sessionInfo.session?.date}`);
+        console.warn(`      - duration: ${sessionInfo.session?.duration}`);
+        console.warn(`      - validatedChallenges:`, sessionInfo.session?.validatedChallenges);
+        console.warn(`      - Session complète:`, sessionInfo.session);
+      });
+      
+      // Calculer la somme des reps des sessions pour vérifier
+      const totalRepsFromSessions = problematicSessions.reduce((sum, s) => sum + (s.sessionReps || 0), 0);
+      console.warn(`   ✅ VÉRIFICATION: Somme des reps des ${problematicSessions.length} session(s) = ${totalRepsFromSessions} (doit correspondre à enduranceRepsValue = ${enduranceRepsValue})`);
+    }
+    
+    totalReps += enduranceRepsValue;
+    
+    // 🔍 DEBUG : Logger les détails du calcul pour diagnostiquer les problèmes
+    // ✅ CORRECTION : Définir enduranceDataRaw avant le bloc if pour éviter les erreurs de scope
+    const enduranceDataRaw = allData?.enduranceData || {}; // ✅ CORRECTION : Renommer pour éviter conflit avec enduranceData du getEnduranceDataForDate
+    
+    if (dateStr === '2025-11-03' || dateStr === '2025-11-04' || totalReps > 1000 || enduranceRepsValue > 1000) { // Log pour les dates problématiques ou valeurs suspectes
+      // 🔍 DEBUG DÉTAILLÉ : Tracer chaque exercice compté
+      const exercisesDetails = [];
+      exercisesList.forEach(exercise => {
+        const baseKey = `${dateStr}_${exercise.id}`;
+        let actualKey = baseKey;
+        if (allData?.reps?.[baseKey] !== undefined || allData?.checkedExercises?.[baseKey] !== undefined) {
+          actualKey = baseKey;
+        } else {
+          const possibleKeys = [`${baseKey}_semaineA`, `${baseKey}_semaineB`];
+          for (const possibleKey of possibleKeys) {
+            if (allData?.reps?.[possibleKey] !== undefined || allData?.checkedExercises?.[possibleKey] !== undefined) {
+              actualKey = possibleKey;
+              break;
+            }
+          }
+        }
+        const reps = parseInt(allData?.reps?.[actualKey] || 0);
+        const isCompleted = allData?.checkedExercises?.[actualKey] || false;
+        if (isCompleted && reps > 0) {
+          exercisesDetails.push({ exerciseId: exercise.id, name: exercise.name, key: actualKey, reps, isCompleted });
+        }
+      });
+      
+      // 🔍 DEBUG DÉTAILLÉ : Tracer chaque session d'endurance
+      const enduranceSessionsDetails = [];
+      const sessions = enduranceDataRaw.sessions || {};
+      Object.entries(sessions).forEach(([activityType, activitySessions]) => {
+        if (Array.isArray(activitySessions)) {
+          activitySessions.forEach(session => {
+            if (isMockEnduranceSession(session)) return;
+            const sessionDateStr = normalizeDateString(session.date);
+            if (sessionDateStr && sessionDateStr === dateStr) {
+              // ✅ CORRECTION : Exclure jumprope du calcul des reps (comme dans getEnduranceDataForDate)
+              if (activityType !== 'jumprope') {
+                const sessionReps = session.count !== undefined && session.count !== null
+                  ? parseInt(session.count) || 0
+                  : (session.reps !== undefined && session.reps !== null ? parseInt(session.reps) || 0 : 0);
+                if (sessionReps > 0) {
+                  enduranceSessionsDetails.push({
+                    activityType: activityType || session.activityType || 'unknown',
+                    count: session.count,
+                    reps: session.reps,
+                    sessionReps,
+                    duration: session.duration,
+                    validatedChallenges: session.validatedChallenges
+                  });
+                }
+              }
+            }
+          });
+        }
+      });
+      
+      console.log(`🔍 [getIntensityForDate] ${dateStr} - CALCUL DÉTAILLÉ DES RÉPÉTITIONS:`, {
+        exercisesReps,
+        exercisesDetails,
+        enduranceReps: enduranceRepsValue,
+        enduranceSessionsDetails,
+        totalReps,
+        completedExercises,
+        totalPlannedExercises,
+        exercisesListLength: exercisesList.length,
+        enduranceDataDetails: {
+          sessions: enduranceDataRaw.sessions,
+          reps: enduranceDataRaw.reps,
+          sessionsCount: Object.values(enduranceDataRaw.sessions || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0),
+          enduranceDataCalculated: enduranceData // Valeur retournée par getEnduranceDataForDate
+        }
+      });
+    }
 
     // ✅ CORRECTION PB 2: Calculer la durée réelle avec PRIORITÉ Garmin > Programme
     // Principe: Si Garmin a une durée pour cette date, utiliser Garmin (plus précis), sinon utiliser la durée prévue du programme
@@ -368,28 +548,42 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
           
           // Vérifier activeTime (durée d'activité active en minutes)
           if (dailyMetric.activeTime !== undefined && dailyMetric.activeTime !== null) {
-            metricsDurationMinutes = typeof dailyMetric.activeTime === 'number' 
+            const rawActiveTime = typeof dailyMetric.activeTime === 'number' 
               ? dailyMetric.activeTime 
               : parseInt(dailyMetric.activeTime) || 0;
+            // ✅ PHASE 4 : Valider la durée (vérifier > 24h)
+            const activeTimeValidation = validateDuration(rawActiveTime, `calculateRealDuration.GarminDailyMetrics.${dateStr}.activeTime`);
+            metricsDurationMinutes = activeTimeValidation.clampedValue;
           }
           // Sinon vérifier activeDurationMinutes
           else if (dailyMetric.activeDurationMinutes !== undefined && dailyMetric.activeDurationMinutes !== null) {
-            metricsDurationMinutes = typeof dailyMetric.activeDurationMinutes === 'number'
+            const rawActiveDurationMinutes = typeof dailyMetric.activeDurationMinutes === 'number'
               ? dailyMetric.activeDurationMinutes
               : parseInt(dailyMetric.activeDurationMinutes) || 0;
+            // ✅ PHASE 4 : Valider la durée (vérifier > 24h)
+            const activeDurationValidation = validateDuration(rawActiveDurationMinutes, `calculateRealDuration.GarminDailyMetrics.${dateStr}.activeDurationMinutes`);
+            metricsDurationMinutes = activeDurationValidation.clampedValue;
           }
           // Sinon vérifier totalActivityDuration (en secondes généralement)
           else if (dailyMetric.totalActivityDuration !== undefined && dailyMetric.totalActivityDuration !== null) {
             const totalActivityDuration = typeof dailyMetric.totalActivityDuration === 'number'
               ? dailyMetric.totalActivityDuration
               : parseInt(dailyMetric.totalActivityDuration) || 0;
-            // Si > 1000, probablement en secondes, sinon en minutes
-            metricsDurationMinutes = totalActivityDuration > 1000 ? Math.round(totalActivityDuration / 60) : totalActivityDuration;
+            // ✅ PHASE 3 : Utiliser parseDurationToMinutes pour cohérence absolue
+            const parsedDuration = parseDurationToMinutes(totalActivityDuration, `calculateRealDuration.GarminDailyMetrics.${dateStr}`);
+            // ✅ PHASE 4 : Valider la durée (vérifier > 24h)
+            const durationValidation = validateDuration(parsedDuration, `calculateRealDuration.GarminDailyMetrics.${dateStr}.totalActivityDuration`);
+            metricsDurationMinutes = durationValidation.clampedValue;
           }
           
           // Si durée trouvée dans dailyMetrics, l'utiliser (plus précise)
           if (metricsDurationMinutes > 0) {
+            // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+            // console.log(`✅ [calculateRealDuration] Retour depuis dailyMetrics: ${metricsDurationMinutes} min`);
             return Math.round(metricsDurationMinutes);
+          } else {
+            // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+            // console.log(`🔍 [calculateRealDuration] dailyMetrics trouvé pour ${dateStr} mais aucune durée valide`);
           }
         }
       }
@@ -401,86 +595,169 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
         
         // Cardio
         const activitésCardio = (garminData.activities.cardio || []).filter(act => {
-          const actDate = new Date(act.date || act.startTime || act.start);
-          return actDate.toISOString().split('T')[0] === dateStr;
+          // ✅ PHASE 4 : Valider la date de l'activité (exclure dates futures)
+          const actDateInput = act.date || act.startTime || act.start;
+          const dateValidation = validateDate(actDateInput, `calculateRealDuration.Cardio.filter`);
+          if (!dateValidation.isValid || dateValidation.isFuture) {
+            return false; // Ignorer les activités avec dates invalides ou futures
+          }
+          return dateValidation.normalizedDate === dateStr;
         });
-        activitésCardio.forEach(act => {
-          // ✅ Parser la durée Garmin selon le format (peut être "HH:MM:SS", secondes, ou minutes)
+        // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+        // console.log(`🔍 [calculateRealDuration] Trouvé ${activitésCardio.length} activité(s) cardio pour ${dateStr}`);
+        activitésCardio.forEach((act, idx) => {
+          // ✅ PHASE 1 : Utiliser parseDurationToMinutes pour cohérence absolue
+          const actId = act.id || act.activityId || `cardio-${idx}`;
+          const actDate = act.date || act.startTime || act.start || 'unknown';
+          
           let actDurationMinutes = 0;
           
+          // Priorité : duration > totalTime > elapsedTime
           if (act.duration) {
-            if (typeof act.duration === 'string' && act.duration.includes(':')) {
-              // Format "HH:MM:SS" ou "MM:SS" (ex: "01:41:19" = 1h41m19s = 101.32 minutes)
-              const parts = act.duration.split(':').map(Number);
-              if (parts.length === 3) {
-                // HH:MM:SS
-                actDurationMinutes = parts[0] * 60 + parts[1] + parts[2] / 60;
-              } else if (parts.length === 2) {
-                // MM:SS
-                actDurationMinutes = parts[0] + parts[1] / 60;
-              }
-            } else {
-              const numValue = typeof act.duration === 'number' ? act.duration : parseInt(act.duration) || 0;
-              // Si > 1000, probablement en secondes, sinon en minutes
-              actDurationMinutes = numValue > 1000 ? Math.round(numValue / 60) : numValue;
-            }
+            actDurationMinutes = parseDurationToMinutes(act.duration, `calculateRealDuration.Cardio[${idx}].${actId}`);
           } else if (act.totalTime) {
             // totalTime généralement en secondes (convertir en minutes)
-            actDurationMinutes = Math.round((act.totalTime / 60) || 0);
+            actDurationMinutes = parseDurationToMinutes(act.totalTime, `calculateRealDuration.Cardio[${idx}].${actId}.totalTime`);
           } else if (act.elapsedTime) {
             // elapsedTime généralement en secondes (convertir en minutes)
-            actDurationMinutes = Math.round((act.elapsedTime / 60) || 0);
+            actDurationMinutes = parseDurationToMinutes(act.elapsedTime, `calculateRealDuration.Cardio[${idx}].${actId}.elapsedTime`);
+          } else {
+            // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages) - Garder uniquement les warnings critiques
+            // console.log(`⚠️ [calculateRealDuration] Cardio[${idx}] (${actId}) - Aucune durée trouvée`);
+          }
+          
+          // ✅ PHASE 4 : Utiliser la fonction centralisée de validation
+          const durationValidation = validateDuration(actDurationMinutes, `calculateRealDuration.Cardio[${idx}].${actId}`);
+          if (!durationValidation.isValid && durationValidation.warnings.length > 0) {
+            // Ajouter les détails de l'activité aux warnings
+            console.warn(`⚠️ [calculateRealDuration] Cardio[${idx}] (${actId}) - Données brutes:`, {
+              duration: act.duration,
+              totalTime: act.totalTime,
+              elapsedTime: act.elapsedTime,
+              date: actDate,
+              name: act.name || act.activityName || 'unknown'
+            });
+          }
+          actDurationMinutes = durationValidation.clampedValue;
+          
+          garminDurationMinutes += actDurationMinutes;
+        });
+        // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+        // console.log(`🔍 [calculateRealDuration] Durée totale cardio (après ${activitésCardio.length} activité(s)): ${garminDurationMinutes} min`);
+        
+        // Natation
+        const activitésNatation = (garminData.activities.swimming || []).filter(act => {
+          // ✅ PHASE 4 : Valider la date de l'activité (exclure dates futures)
+          const actDateInput = act.date || act.startTime || act.start;
+          const dateValidation = validateDate(actDateInput, `calculateRealDuration.Swimming.filter`);
+          if (!dateValidation.isValid || dateValidation.isFuture) {
+            return false; // Ignorer les activités avec dates invalides ou futures
+          }
+          return dateValidation.normalizedDate === dateStr;
+        });
+        activitésNatation.forEach((act, idx) => {
+          // ✅ PHASE 1 : Utiliser parseDurationToMinutes pour cohérence absolue
+          const actId = act.id || act.activityId || `swimming-${idx}`;
+          
+          let actDurationMinutes = 0;
+          
+          // Priorité : duration > totalTime > elapsedTime
+          if (act.duration) {
+            actDurationMinutes = parseDurationToMinutes(act.duration, `calculateRealDuration.Swimming[${idx}].${actId}`);
+          } else if (act.totalTime) {
+            actDurationMinutes = parseDurationToMinutes(act.totalTime, `calculateRealDuration.Swimming[${idx}].${actId}.totalTime`);
+          } else if (act.elapsedTime) {
+            actDurationMinutes = parseDurationToMinutes(act.elapsedTime, `calculateRealDuration.Swimming[${idx}].${actId}.elapsedTime`);
+          }
+          
+          // ✅ PHASE 4 : Utiliser la fonction centralisée de validation
+          const durationValidation = validateDuration(actDurationMinutes, `calculateRealDuration.Swimming[${idx}].${actId}`);
+          actDurationMinutes = durationValidation.clampedValue;
+          if (!durationValidation.isValid && durationValidation.warnings.length > 0) {
+            console.warn(`⚠️ [calculateRealDuration] Swimming[${idx}] (${actId}) - Données brutes:`, {
+              duration: act.duration,
+              totalTime: act.totalTime,
+              elapsedTime: act.elapsedTime,
+              date: actDate,
+              name: act.name || act.activityName || 'unknown'
+            });
           }
           
           garminDurationMinutes += actDurationMinutes;
         });
         
-        // Natation
-        const activitésNatation = (garminData.activities.swimming || []).filter(act => {
-          const actDate = new Date(act.date || act.startTime || act.start);
-          return actDate.toISOString().split('T')[0] === dateStr;
-        });
-        activitésNatation.forEach(act => {
-          if (act.duration) {
-            const numValue = typeof act.duration === 'number' ? act.duration : parseInt(act.duration) || 0;
-            garminDurationMinutes += numValue > 1000 ? Math.round(numValue / 60) : numValue;
-          } else if (act.totalTime) {
-            garminDurationMinutes += Math.round((act.totalTime / 60) || 0);
-          }
-        });
-        
         // Corde à sauter
         const activitésCorde = (garminData.activities.jumpRope || []).filter(act => {
-          const actDate = new Date(act.date || act.startTime || act.start);
-          return actDate.toISOString().split('T')[0] === dateStr;
-        });
-        activitésCorde.forEach(act => {
-          if (act.duration || act.durationSec) {
-            const dur = act.durationSec || act.duration;
-            const numValue = typeof dur === 'number' ? dur : parseInt(dur) || 0;
-            garminDurationMinutes += numValue > 1000 ? Math.round(numValue / 60) : numValue;
+          // ✅ PHASE 4 : Valider la date de l'activité (exclure dates futures)
+          const actDateInput = act.date || act.startTime || act.start;
+          const dateValidation = validateDate(actDateInput, `calculateRealDuration.JumpRope.filter`);
+          if (!dateValidation.isValid || dateValidation.isFuture) {
+            return false; // Ignorer les activités avec dates invalides ou futures
           }
+          return dateValidation.normalizedDate === dateStr;
+        });
+        activitésCorde.forEach((act, idx) => {
+          // ✅ PHASE 1 : Utiliser parseDurationToMinutes pour cohérence absolue
+          const actId = act.id || act.activityId || `jumpRope-${idx}`;
+          
+          let actDurationMinutes = 0;
+          
+          // Priorité : durationSec > duration > totalTime > elapsedTime
+          const dur = act.durationSec || act.duration;
+          if (dur) {
+            actDurationMinutes = parseDurationToMinutes(dur, `calculateRealDuration.JumpRope[${idx}].${actId}`);
+          } else if (act.totalTime) {
+            actDurationMinutes = parseDurationToMinutes(act.totalTime, `calculateRealDuration.JumpRope[${idx}].${actId}.totalTime`);
+          } else if (act.elapsedTime) {
+            actDurationMinutes = parseDurationToMinutes(act.elapsedTime, `calculateRealDuration.JumpRope[${idx}].${actId}.elapsedTime`);
+          }
+          
+          // ✅ PHASE 4 : Utiliser la fonction centralisée de validation
+          const durationValidation = validateDuration(actDurationMinutes, `calculateRealDuration.JumpRope[${idx}].${actId}`);
+          actDurationMinutes = durationValidation.clampedValue;
+          if (!durationValidation.isValid && durationValidation.warnings.length > 0) {
+            console.warn(`⚠️ [calculateRealDuration] JumpRope[${idx}] (${actId}) - Données brutes:`, {
+              duration: act.duration,
+              durationSec: act.durationSec,
+              totalTime: act.totalTime,
+              elapsedTime: act.elapsedTime,
+              date: actDate,
+              name: act.name || act.activityName || 'unknown'
+            });
+          }
+          
+          garminDurationMinutes += actDurationMinutes;
         });
         
-        // ✅ Si durée Garmin trouvée, l'utiliser (plus précise que la calculée)
+        // ✅ Si durée Garmin trouvée, l'utiliser ET RETOURNER DIRECTEMENT (sans rien ajouter)
+        // Les données Garmin sont la source de vérité absolue pour la durée d'entraînement
         if (garminDurationMinutes > 0) {
+          // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+          // console.log(`✅ [calculateRealDuration] Retour depuis activités Garmin: ${garminDurationMinutes} min`);
           return Math.round(garminDurationMinutes);
+        } else {
+          // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+          // console.log(`🔍 [calculateRealDuration] Pas d'activités Garmin trouvées pour ${dateStr}`);
         }
       }
       
-            // ✅ PRIORITÉ 2: Utiliser la durée prévue du programme (pas calculée de tous les exercices)
-      // Commencer avec la durée prévue du programme d'entraînement pour ce jour
-      let totalDurationMinutes = 0;
-      
-      // Parser la durée prévue du programme (workout.duration ou workout.duree)
+      // ✅ PRIORITÉ 2: Si PAS de données Garmin, utiliser la durée prévue du programme
+      // Ne PAS ajouter enduranceData.duration car cela peut inclure des valeurs mock
+      // Le programme est la source de vérité quand Garmin n'est pas disponible
       if (workout) {
+        let programDurationMinutes = 0;
+        
         // Priorité 1: workout.duration (nombre en minutes)
         if (workout.duration && typeof workout.duration === 'number') {
-          totalDurationMinutes = workout.duration;
+          programDurationMinutes = workout.duration;
+          // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+          // console.log(`🔍 [calculateRealDuration] workout.duration trouvé: ${programDurationMinutes} min`);
         }
         // Priorité 2: workout.estimatedDuration (nombre en minutes)
         else if (workout.estimatedDuration && typeof workout.estimatedDuration === 'number') {
-          totalDurationMinutes = workout.estimatedDuration;
+          programDurationMinutes = workout.estimatedDuration;
+          // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+          // console.log(`🔍 [calculateRealDuration] workout.estimatedDuration trouvé: ${programDurationMinutes} min`);
         }
         // Priorité 3: parser workout.duree (format texte comme "1h", "45-55 min", etc.)
         else if (workout.duree && typeof workout.duree === 'string') {
@@ -490,7 +767,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
           // Format "1h" ou "~1 h"
           const hourMatch = dureeStr.match(/(\d+)\s*h/);
           if (hourMatch) {
-            totalDurationMinutes = parseInt(hourMatch[1]) * 60;
+            programDurationMinutes = parseInt(hourMatch[1]) * 60;
+            // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+            // console.log(`🔍 [calculateRealDuration] workout.duree (heures) parsé: ${hourMatch[1]}h → ${programDurationMinutes} min`);
           }
           // Format "45-55 min" ou "45 min"
           else {
@@ -498,49 +777,37 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             if (minMatch) {
               const minMin = parseInt(minMatch[1]);
               const minMax = minMatch[2] ? parseInt(minMatch[2]) : minMin;
-              totalDurationMinutes = Math.round((minMin + minMax) / 2); // Moyenne si plage
+              programDurationMinutes = Math.round((minMin + minMax) / 2); // Moyenne si plage
+              // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+              // console.log(`🔍 [calculateRealDuration] workout.duree (minutes) parsé: ${minMin}-${minMax} min → ${programDurationMinutes} min`);
             }
             // Sinon essayer de parser un nombre simple
             else {
               const simpleNum = parseInt(dureeStr);
               if (!isNaN(simpleNum) && simpleNum > 0 && simpleNum < 300) {
-                totalDurationMinutes = simpleNum; // Assumons que c'est en minutes si raisonnable
+                programDurationMinutes = simpleNum; // Assumons que c'est en minutes si raisonnable
+                // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+                // console.log(`🔍 [calculateRealDuration] workout.duree (nombre simple) parsé: ${simpleNum} min`);
               }
             }
           }
         }
-      }
-      
-      // Ajouter la durée totale des sessions d'endurance pour cette date
-      totalDurationMinutes += enduranceData.duration;
-
-      // Ajouter la durée des activités complémentaires cochées dans l'onglet Aujourd'hui
-      if (workout?.complementaryActivity) {
-        const complementaryKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`;
-        const isComplementaryChecked = allData?.checkedExercises?.[complementaryKey] || false;
         
-        if (isComplementaryChecked) {
-          // Vérifier s'il y a des minutes saisies manuellement
-          const minutesKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`;
-          const manualMinutes = parseInt(allData?.reps?.[minutesKey] || 0);
-          
-          if (manualMinutes > 0) {
-            // Utiliser les minutes saisies manuellement
-            totalDurationMinutes += manualMinutes;
-          } else {
-            // Utiliser la durée prévue par défaut
-            totalDurationMinutes += workout.complementaryActivity.duration || 90;
-          }
+        // ✅ Si durée du programme trouvée, la retourner directement
+        if (programDurationMinutes > 0) {
+          // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+          // console.log(`✅ [calculateRealDuration] Retour depuis programme: ${programDurationMinutes} min`);
+          return Math.round(programDurationMinutes);
+        } else {
+          // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
+          // console.log(`🔍 [calculateRealDuration] Aucune durée trouvée dans workout pour ${dateStr}`);
         }
       }
 
-      // Si aucune durée n'a été trouvée, retourner 0
-      if (totalDurationMinutes === 0 && completedExercises === 0 && enduranceData.sessions === 0) {
-        return 0;
-      }
-      
-            // ✅ RETOURNER la durée totale (prévue du programme + endurance + complémentaire)
-      return Math.round(totalDurationMinutes);
+      // ✅ Si aucune durée n'a été trouvée (ni Garmin, ni programme), retourner 0
+      // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages) - Garder uniquement les warnings critiques
+      // console.log(`⚠️ [calculateRealDuration] Aucune durée trouvée (ni Garmin, ni programme) pour ${dateStr}, retour 0`);
+      return 0;
     };
 
     const realDuration = calculateRealDuration();
@@ -556,13 +823,14 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
         
         // Debug pour le 28 octobre 2025
         if (dateStr === '2025-10-28') {
-          console.log('🔍 DEBUG Calcul intensité:');
-          console.log('Completed exercises:', completedExercises);
-          console.log('Endurance sessions:', enduranceData.sessions);
-          console.log('Is complementary checked:', isComplementaryChecked);
-          console.log('Total activities:', totalActivities);
-          console.log('Real duration:', realDuration);
-          console.log('Total reps:', totalReps);
+          // ✅ LOGS DE DEBUG DÉSACTIVÉS pour réduire le bruit (33k messages)
+          // console.log('🔍 DEBUG Calcul intensité:');
+          // console.log('Completed exercises:', completedExercises);
+          // console.log('Endurance sessions:', enduranceData.sessions);
+          // console.log('Is complementary checked:', isComplementaryChecked);
+          // console.log('Total activities:', totalActivities);
+          // console.log('Real duration:', realDuration);
+          // console.log('Total reps:', totalReps);
         }
         
         // Calculer le niveau d'intensité avec logique hiérarchique et seuils dynamiques
@@ -575,29 +843,35 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
           
           if (totalReps > 0) {
             // PRIORITÉ AUX REPS : Utiliser les seuils dynamiques basés sur les données réelles
-            const { thresholds } = calculateDynamicThresholds();
-            intensityLevel = calculateDynamicIntensityLevel(totalReps, thresholds);
+            // ✅ PHASE 2.1 : Utiliser les seuils mémorisés (évite les recalculs inutiles)
+            const { thresholds } = dynamicThresholds;
+            // ✅ PHASE 1 : Utiliser la fonction centralisée
+            intensityLevel = calculateIntensityLevel(totalReps, thresholds);
             
-            // Debug pour le 28 octobre 2025
-            if (dateStr === '2025-10-28') {
-              console.log('🔍 DEBUG Logique REPS DYNAMIQUE:');
-              console.log('Total reps:', totalReps);
-              console.log('Thresholds:', thresholds);
-              console.log('Final intensity level:', intensityLevel);
-            }
+            // ✅ LOGS DE DEBUG DÉSACTIVÉS pour réduire le bruit (33k messages)
+            // Debug pour le 28 octobre 2025 (réactiver uniquement si nécessaire)
+            // if (dateStr === '2025-10-28') {
+            //   console.log('🔍 DEBUG Logique REPS DYNAMIQUE:');
+            //   console.log('Total reps:', totalReps);
+            //   console.log('Thresholds:', thresholds);
+            //   console.log('Final intensity level:', intensityLevel);
+            // }
           } else {
             // BASÉ SUR LE TEMPS : Utiliser des seuils dynamiques pour la durée
             // Seulement les activités complémentaires de l'onglet Aujourd'hui
-            const { thresholds: timeThresholds } = calculateDynamicTimeThresholds();
-            intensityLevel = calculateDynamicTimeIntensityLevel(realDuration, timeThresholds);
+            // ✅ PHASE 2.2 : Utiliser les seuils mémorisés (évite les recalculs inutiles)
+            const { thresholds: timeThresholds } = dynamicTimeThresholds;
+            // ✅ PHASE 1 : Utiliser la fonction centralisée
+            intensityLevel = calculateTimeIntensityLevel(realDuration, timeThresholds);
             
-            // Debug pour le 28 octobre 2025
-            if (dateStr === '2025-10-28') {
-              console.log('🔍 DEBUG Logique TEMPS DYNAMIQUE:');
-              console.log('Real duration:', realDuration);
-              console.log('Time thresholds:', timeThresholds);
-              console.log('Final intensity level:', intensityLevel);
-            }
+            // ✅ LOGS DE DEBUG DÉSACTIVÉS pour réduire le bruit (33k messages)
+            // Debug pour le 28 octobre 2025 (réactiver uniquement si nécessaire)
+            // if (dateStr === '2025-10-28') {
+            //   console.log('🔍 DEBUG Logique TEMPS DYNAMIQUE:');
+            //   console.log('Real duration:', realDuration);
+            //   console.log('Time thresholds:', timeThresholds);
+            //   console.log('Final intensity level:', intensityLevel);
+            // }
           }
         }
         
@@ -613,14 +887,15 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
           const garminAdjusted = calculateDayIntensityWithGarmin(dateStr, workoutIntensity, garminData);
           adjustedIntensity = garminAdjusted.level;
           
-          // Debug pour le 28 octobre 2025
-          if (dateStr === '2025-10-28' && garminAdjusted.multiplier !== 1.0) {
-            console.log('🔍 DEBUG Ajustements Garmin:');
-            console.log('Niveau original:', intensityLevel);
-            console.log('Niveau ajusté:', adjustedIntensity);
-            console.log('Multiplicateur:', garminAdjusted.multiplier);
-            console.log('Ajustements:', garminAdjusted.adjustments);
-          }
+          // ✅ LOGS DE DEBUG DÉSACTIVÉS pour réduire le bruit (33k messages)
+          // Debug pour le 28 octobre 2025 (réactiver uniquement si nécessaire)
+          // if (dateStr === '2025-10-28' && garminAdjusted.multiplier !== 1.0) {
+          //   console.log('🔍 DEBUG Ajustements Garmin:');
+          //   console.log('Niveau original:', intensityLevel);
+          //   console.log('Niveau ajusté:', adjustedIntensity);
+          //   console.log('Multiplicateur:', garminAdjusted.multiplier);
+          //   console.log('Ajustements:', garminAdjusted.adjustments);
+          // }
         }
     
     // L'intensité ne dépend que des activités complémentaires de l'onglet Aujourd'hui
@@ -629,7 +904,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     // PHASE 5.3 : Récupérer les icônes Garmin pour cette date
     const garminIcons = garminData ? getGarminActivityIcons(garminData, dateStr) : [];
     
-    return {
+    const result = {
       level: adjustedIntensity, // Utiliser le niveau ajusté par Garmin
       reps: totalReps,
       duration: realDuration,
@@ -642,13 +917,68 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       garminIcons: garminIcons,
       // Garder la compatibilité avec l'ancien format
       exercises: completedExercises,
+      // ✅ CORRECTION : Utiliser la même logique que pour le calcul du total
+      // (chercher les variantes _semaineA, _semaineB, et vérifier reps > 0)
       session: completedExercises > 0 ? { 
-        exercises: exercisesList.filter(ex => allData.checkedExercises[`${dateStr}_${ex.id}`]).map(ex => ({
-          name: ex.name,
-          reps: parseInt(allData.reps[`${dateStr}_${ex.id}`]) || 0
-        }))
+        exercises: exercisesList
+          .filter(ex => {
+            // Chercher la clé avec les variantes (même logique que pour le calcul)
+            const baseKey = `${dateStr}_${ex.id}`;
+            let actualKey = baseKey;
+            
+            if (allData?.reps?.[baseKey] !== undefined || allData?.checkedExercises?.[baseKey] !== undefined) {
+              actualKey = baseKey;
+            } else {
+              const possibleKeys = [`${baseKey}_semaineA`, `${baseKey}_semaineB`];
+              for (const possibleKey of possibleKeys) {
+                if (allData?.reps?.[possibleKey] !== undefined || allData?.checkedExercises?.[possibleKey] !== undefined) {
+                  actualKey = possibleKey;
+                  break;
+                }
+              }
+            }
+            
+            const reps = parseInt(allData?.reps?.[actualKey] || 0);
+            const isCompleted = allData?.checkedExercises?.[actualKey] || false;
+            // ✅ CORRECTION : Seulement si complété ET avec des reps > 0 (même logique que le calcul)
+            return isCompleted && reps > 0;
+          })
+          .map(ex => {
+            // Chercher la clé avec les variantes (même logique que pour le calcul)
+            const baseKey = `${dateStr}_${ex.id}`;
+            let actualKey = baseKey;
+            
+            if (allData?.reps?.[baseKey] !== undefined || allData?.checkedExercises?.[baseKey] !== undefined) {
+              actualKey = baseKey;
+            } else {
+              const possibleKeys = [`${baseKey}_semaineA`, `${baseKey}_semaineB`];
+              for (const possibleKey of possibleKeys) {
+                if (allData?.reps?.[possibleKey] !== undefined || allData?.checkedExercises?.[possibleKey] !== undefined) {
+                  actualKey = possibleKey;
+                  break;
+                }
+              }
+            }
+            
+            return {
+              name: ex.name,
+              reps: parseInt(allData?.reps?.[actualKey] || 0)
+            };
+          })
       } : null
     };
+    
+    // ✅ PHASE 2.3 : Mettre en cache le résultat avant de le retourner
+    intensityCache.current[cacheKey] = result;
+    
+    // Limiter la taille du cache (garder seulement les 90 derniers jours)
+    const cacheKeys = Object.keys(intensityCache.current);
+    if (cacheKeys.length > 90) {
+      const oldestKeys = cacheKeys.sort().slice(0, cacheKeys.length - 90);
+      oldestKeys.forEach(key => delete intensityCache.current[key]);
+    }
+    
+    return result;
   };
 
   // Calcul des streaks
@@ -727,7 +1057,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     
     const days = [];
     const currentDay = new Date(startDate);
-    const { thresholds } = calculateDynamicThresholds();
+    // ✅ PHASE 2.1 : Utiliser les seuils mémorisés (évite les recalculs inutiles)
+    const { thresholds } = dynamicThresholds;
     
     // Générer 6 semaines (42 jours) pour couvrir tout le mois
     for (let i = 0; i < 42; i++) {
@@ -1270,7 +1601,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                             </div>
                             <div>
                               <span className="text-slate-400">Durée:</span>
-                              <span className="text-white ml-2">{act.duration || Math.round((act.totalTime || 0) / 60)}min</span>
+                              <span className="text-white ml-2">
+                                {parseDurationToMinutes(act.duration || act.totalTime || 0, `GarminActivities.Swimming[${idx}]`)}min
+                              </span>
                             </div>
                             {act.avgHR && (
                               <div>
@@ -1303,7 +1636,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                             </div>
                             <div>
                               <span className="text-slate-400">Durée:</span>
-                              <span className="text-white ml-2">{act.duration || Math.round((act.totalTime || 0) / 60)}min</span>
+                              <span className="text-white ml-2">
+                                {parseDurationToMinutes(act.duration || act.totalTime || 0, `GarminActivities.JumpRope[${idx}]`)}min
+                              </span>
                             </div>
                             {act.speed && (
                               <div>
@@ -1332,7 +1667,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                           <div className="grid grid-cols-2 gap-2">
                             <div>
                               <span className="text-slate-400">Durée:</span>
-                              <span className="text-white ml-2">{act.duration || Math.round((act.totalTime || 0) / 60)}min</span>
+                              <span className="text-white ml-2">
+                                {parseDurationToMinutes(act.duration || act.totalTime || 0, `GarminActivities.Cardio[${idx}]`)}min
+                              </span>
                             </div>
                             {act.calories?.active && (
                               <div>
@@ -1389,11 +1726,17 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                   <Activity className="mr-2" size={16} />
                   Activités d'endurance
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className={`grid gap-4 ${selectedDate.intensity.enduranceData.reps > 0 ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-4'}`}>
                   <div className="bg-orange-700/30 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-orange-200">{selectedDate.intensity.enduranceData.sessions}</div>
                     <div className="text-orange-300 text-sm">Sessions</div>
                   </div>
+                  {selectedDate.intensity.enduranceData.reps > 0 && (
+                    <div className="bg-red-700/30 rounded-lg p-3 text-center">
+                      <div className="text-lg font-bold text-red-200">{selectedDate.intensity.enduranceData.reps}</div>
+                      <div className="text-red-300 text-sm">Pompes</div>
+                    </div>
+                  )}
                   <div className="bg-blue-700/30 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-blue-200">
                       {selectedDate.intensity.enduranceData.distance % 1 === 0 

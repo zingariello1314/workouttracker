@@ -41,12 +41,14 @@ class ServerCache {
   constructor(ttlMinutes = 5) {
     this.cache = new Map();
     this.ttlMs = ttlMinutes * 60 * 1000;
+    this.defaultTtlMs = ttlMinutes * 60 * 1000; // TTL par défaut (5 min)
+    this.todayTtlMs = 1 * 60 * 1000; // ✅ PHASE 2.2 : TTL réduit pour aujourd'hui (1 min)
   }
 
-  // Générer une clé de cache basée sur les paramètres de la requête
+  // ✅ PHASE 2.4 : Générer une clé de cache incluant lastSyncTimestamp
   generateKey(params) {
-    const { start, end } = params || {};
-    return `sync_${start || 'default'}_${end || 'default'}`;
+    const { start, end, lastSyncTimestamp } = params || {};
+    return `sync_${start || 'default'}_${end || 'default'}_${lastSyncTimestamp || 'none'}`;
   }
 
   // Vérifier si une entrée existe et n'est pas expirée
@@ -54,15 +56,23 @@ class ServerCache {
     const entry = this.cache.get(key);
     if (!entry) return null;
     
+    // ✅ PHASE 2.2 : TTL adaptatif selon si c'est aujourd'hui ou une date passée
     const now = Date.now();
-    if (now - entry.timestamp > this.ttlMs) {
+    const cacheAge = now - entry.timestamp;
+    
+    // Déterminer si c'est pour aujourd'hui (clé contient la date d'aujourd'hui)
+    const today = new Date().toISOString().split('T')[0];
+    const isTodayCache = key.includes(today);
+    const effectiveTtl = isTodayCache ? this.todayTtlMs : this.defaultTtlMs;
+    
+    if (cacheAge > effectiveTtl) {
       // Cache expiré
       this.cache.delete(key);
-      console.log(`[CACHE] Entry expired: ${key}`);
+      console.log(`[CACHE] Entry expired: ${key} (age: ${Math.round(cacheAge / 1000)}s, TTL: ${Math.round(effectiveTtl / 1000)}s)`);
       return null;
     }
     
-    console.log(`[CACHE] Hit for key: ${key} (age: ${Math.round((now - entry.timestamp) / 1000)}s)`);
+    console.log(`[CACHE] Hit for key: ${key} (age: ${Math.round(cacheAge / 1000)}s, TTL: ${Math.round(effectiveTtl / 1000)}s, ${isTodayCache ? 'aujourd\'hui' : 'passé'})`);
     return entry.data;
   }
 
@@ -246,46 +256,100 @@ app.get('/api/garmin/status', statusLimiter, (req, res) => {
 
 // Sync endpoint avec rate limiting, cache et retry
 app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
+  const requestStartTime = Date.now();
+  const requestTimestamp = new Date().toISOString();
+  console.log(`[🔍 DIAGNOSTIC SERVEUR] ${requestTimestamp} - POST /api/garmin/sync`);
   console.log('[SERVER] POST /api/garmin/sync');
   console.log('[SERVER] USE_PYTHON env var:', process.env.USE_PYTHON);
   
   try {
-    const { start, end } = req.query || {};
-    console.log('[SERVER] Query params - start:', start, 'end:', end);
+    const { start, end, lastSyncTimestamp, forceRefresh } = req.query || {};
+    console.log('[SERVER] Query params - start:', start, 'end:', end, 'lastSyncTimestamp:', lastSyncTimestamp, 'forceRefresh:', forceRefresh);
+    console.log(`[🔍 DIAGNOSTIC SERVEUR] Paramètres reçus - start: ${start}, end: ${end}, lastSyncTimestamp: ${lastSyncTimestamp || 'none'}, forceRefresh: ${forceRefresh || false}`);
     
-    // PHASE 4.3 : Vérifier le cache d'abord
-    const cacheKey = serverCache.generateKey({ start, end });
-    const cachedResult = serverCache.get(cacheKey);
+    // ✅ PHASE 2.4 : Inclure lastSyncTimestamp dans la clé de cache
+    const cacheKey = serverCache.generateKey({ start, end, lastSyncTimestamp: lastSyncTimestamp || 'none' });
+    const cachedResult = forceRefresh === 'true' ? null : serverCache.get(cacheKey);
     
     if (cachedResult) {
+      const cacheAge = Date.now() - (serverCache.cache.get(cacheKey)?.timestamp || 0);
+      const cacheAgeSeconds = Math.round(cacheAge / 1000);
+      // ✅ PHASE 2.2 : Calculer TTL effectif selon si c'est aujourd'hui
+      const today = new Date().toISOString().split('T')[0];
+      const isTodayCache = cacheKey.includes(today);
+      const effectiveTtl = isTodayCache ? serverCache.todayTtlMs : serverCache.defaultTtlMs;
+      const ttlRemaining = Math.round((effectiveTtl - cacheAge) / 1000);
+      console.log(`[🔍 DIAGNOSTIC SERVEUR] ⚠️ CACHE SERVEUR UTILISÉ - Clé: ${cacheKey}, Âge: ${cacheAgeSeconds}s, TTL restant: ${ttlRemaining}s (${isTodayCache ? 'aujourd\'hui' : 'passé'})`);
       console.log('[SERVER] Returning cached result');
       lastStatus = { lastSync: cachedResult.lastSync, ok: true, message: 'Synchronisation terminée (cache)' };
       return res.json({
         ...cachedResult,
-        cached: true
+        cached: true,
+        diagnostic: {
+          cacheUsed: true,
+          cacheKey,
+          cacheAgeSeconds,
+          ttlRemainingSeconds: ttlRemaining
+        }
       });
+    } else if (forceRefresh === 'true') {
+      console.log(`[🔍 DIAGNOSTIC SERVEUR] ForceRefresh activé - bypass du cache serveur`);
+    } else {
+      console.log(`[🔍 DIAGNOSTIC SERVEUR] Cache serveur - Pas de cache valide pour la clé: ${cacheKey}`);
     }
 
     if (process.env.USE_PYTHON === '1') {
       console.log('[SERVER] Using Python script...');
+      const pythonStartTime = Date.now();
       const args = ['fetch_garmin_data.py'];
       if (start && end) {
         args.push('--start', String(start), '--end', String(end));
       }
+      // ✅ PHASE 2.4 : Passer lastSyncTimestamp au script Python
+      if (lastSyncTimestamp) {
+        args.push('--lastSyncTimestamp', String(lastSyncTimestamp));
+        console.log(`[🔍 DIAGNOSTIC SERVEUR] Envoi lastSyncTimestamp à Python: ${lastSyncTimestamp}`);
+        console.log('[SERVER] Passing lastSyncTimestamp to Python:', lastSyncTimestamp);
+      }
       console.log('[SERVER] Calling Python script with args:', args);
+      console.log(`[🔍 DIAGNOSTIC SERVEUR] Appel script Python avec args: ${args.join(' ')}`);
       
       // PHASE 4.2 : Utiliser retry avec backoff exponentiel
       const result = await runPythonScriptWithRetry(args, 3);
+      const pythonDuration = Date.now() - pythonStartTime;
       
       console.log('[SERVER] Python script result:', result?.ok ? 'OK' : 'FAILED');
+      console.log(`[🔍 DIAGNOSTIC SERVEUR] Script Python terminé - Durée: ${pythonDuration}ms, OK: ${result?.ok || false}`);
       
       if (result && result.ok) {
+        // ✅ PHASE 1 : Logging détaillé des données Python
+        if (result.data) {
+          const activitiesCount = Object.values(result.data.activities || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+          const dailyMetricsCount = Object.keys(result.data.dailyMetrics || {}).length;
+          console.log(`[🔍 DIAGNOSTIC SERVEUR] Données Python - Activités: ${activitiesCount}, Métriques: ${dailyMetricsCount}, LastSync: ${result.lastSync}`);
+        }
+        
         // PHASE 4.3 : Mettre en cache uniquement les résultats OK
-        serverCache.set(cacheKey, result);
+        if (forceRefresh !== 'true') {
+          serverCache.set(cacheKey, result);
+          console.log(`[🔍 DIAGNOSTIC SERVEUR] Résultat mis en cache avec la clé: ${cacheKey}`);
+        } else {
+          console.log(`[🔍 DIAGNOSTIC SERVEUR] ForceRefresh activé - résultat non mis en cache`);
+        }
         lastStatus = { lastSync: result.lastSync, ok: true, message: 'Synchronisation terminée (Python)' };
-        return res.json(result);
+        const totalDuration = Date.now() - requestStartTime;
+        return res.json({
+          ...result,
+          diagnostic: {
+            cacheUsed: false,
+            pythonDuration,
+            totalDuration,
+            requestTimestamp
+          }
+        });
       } else {
         console.error('[SERVER] Python run failed:', result);
+        console.error(`[🔍 DIAGNOSTIC SERVEUR] ❌ Échec script Python - Erreur: ${result?.error || 'Unknown error'}`);
         lastStatus = { lastSync: lastStatus.lastSync, ok: false, message: 'Python error' };
         return res.json({ ok: false, error: result.error || 'python failed', lastSync: new Date().toISOString() });
       }
@@ -340,6 +404,49 @@ app.get('/api/garmin/cache/stats', (req, res) => {
       expiresInSeconds: Math.round((serverCache.ttlMs - (Date.now() - entry.timestamp)) / 1000)
     }))
   });
+});
+
+// ✅ PHASE 1 : Endpoint de diagnostic complet
+app.get('/api/garmin/debug', (req, res) => {
+  console.log('[SERVER] GET /api/garmin/debug');
+  try {
+    const cacheEntries = Array.from(serverCache.cache.entries()).map(([key, entry]) => ({
+      key,
+      timestamp: new Date(entry.timestamp).toISOString(),
+      ageSeconds: Math.round((Date.now() - entry.timestamp) / 1000),
+      expiresInSeconds: Math.round((serverCache.ttlMs - (Date.now() - entry.timestamp)) / 1000),
+      dataSummary: {
+        ok: entry.data?.ok,
+        lastSync: entry.data?.lastSync,
+        hasActivities: !!entry.data?.data?.activities,
+        hasDailyMetrics: !!entry.data?.data?.dailyMetrics,
+        activitiesCount: entry.data?.data?.activities ? 
+          Object.values(entry.data.data.activities).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0) : 0,
+        dailyMetricsCount: entry.data?.data?.dailyMetrics ? Object.keys(entry.data.data.dailyMetrics).length : 0
+      }
+    }));
+
+    res.json({
+      ok: true,
+      timestamp: new Date().toISOString(),
+      server: {
+        cache: {
+          size: serverCache.cache.size,
+          ttlMinutes: serverCache.ttlMs / 60000,
+          entries: cacheEntries
+        },
+        lastStatus: lastStatus,
+        usePython: process.env.USE_PYTHON === '1'
+      },
+      diagnostic: {
+        message: 'Endpoint de diagnostic - Utilisez ces informations pour comprendre le comportement du cache et de la synchronisation',
+        cacheExplanation: 'Le cache serveur a un TTL de 5 minutes. Si une sync est faite dans les 5 minutes, les données en cache sont retournées.',
+        frontendCacheExplanation: 'Le cache frontend a un TTL de 60 secondes. Il est utilisé avant même de faire une requête au serveur.'
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // ==========================================

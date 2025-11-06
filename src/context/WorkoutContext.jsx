@@ -4,6 +4,7 @@ import { useWorkoutLogic } from '../hooks/useWorkoutLogic';
 import { workoutProgram } from '../data/workoutProgram';
 import { findExerciseInDatabase } from '../data/exerciseDatabase';
 import { getDateStr, getDayName } from '../utils/dateUtils';
+import { isMockEnduranceSession } from '../utils/calendarUtils';
 
 const WorkoutContext = createContext();
 
@@ -1952,6 +1953,73 @@ const WorkoutProvider = ({ children }) => {
   // FIN PHASE 1.2 : ACTIONS CONTEXT - DAILY VARIATIONS
   // ============================================
 
+  /**
+   * ✅ NOUVEAU : Supprime toutes les sessions mock d'endurance de workoutData
+   * Identifie et supprime les sessions avec des valeurs suspectes ou impossibles
+   * @returns {Promise<{deleted: number, details: object}>} Nombre de sessions supprimées
+   */
+  const deleteMockEnduranceSessions = useCallback(async () => {
+    try {
+      const currentData = getCurrentData();
+      const enduranceData = currentData?.enduranceData || {};
+      const sessions = enduranceData.sessions || {};
+      
+      let totalDeleted = 0;
+      const details = {
+        boxing: 0,
+        pushups: 0,
+        swimming: 0,
+        jumprope: 0,
+        running: 0
+      };
+      
+      // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
+      // isMockSession remplacé par isMockEnduranceSession (importée)
+      
+      // Filtrer les sessions mock pour chaque type d'activité
+      const cleanedSessions = {};
+      
+      Object.entries(sessions).forEach(([activityType, activitySessions]) => {
+        if (Array.isArray(activitySessions)) {
+          const validSessions = activitySessions.filter(session => {
+            // ✅ PHASE 1 : Utiliser la fonction centralisée
+            const isMock = isMockEnduranceSession(session);
+            if (isMock) {
+              details[activityType] = (details[activityType] || 0) + 1;
+              totalDeleted++;
+            }
+            return !isMock;
+          });
+          cleanedSessions[activityType] = validSessions;
+        } else {
+          cleanedSessions[activityType] = activitySessions;
+        }
+      });
+      
+      // Sauvegarder les sessions nettoyées
+      const updatedData = {
+        ...currentData,
+        enduranceData: {
+          ...enduranceData,
+          sessions: cleanedSessions,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+      
+      await updateData(updatedData);
+      
+      console.log(`[WorkoutContext] ✅ Supprimé ${totalDeleted} sessions mock d'endurance:`, details);
+      
+      return {
+        deleted: totalDeleted,
+        details
+      };
+    } catch (error) {
+      console.error('[WorkoutContext] ❌ Erreur lors de la suppression des sessions mock:', error);
+      throw error;
+    }
+  }, [getCurrentData, updateData]);
+
   const contextValue = {
     // États principaux
     currentDate,
@@ -2050,7 +2118,10 @@ const WorkoutProvider = ({ children }) => {
     ...(workoutLogic || {}),
     
     // Fonctions de statistiques
-    getWorkoutHistory
+    getWorkoutHistory,
+    
+    // ✅ NOUVEAU : Fonction pour supprimer les sessions mock d'endurance
+    deleteMockEnduranceSessions
   };
 
   // Sauvegarde automatique du contexte

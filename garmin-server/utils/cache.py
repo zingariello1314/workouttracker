@@ -242,7 +242,7 @@ def get_cache_size() -> int:
 
 # 🟢 NOUVEAU : Cache pour métriques quotidiennes parsées
 # Durée de vie différente selon si c'est aujourd'hui ou une date passée
-DAILY_METRICS_CACHE_TTL_TODAY = 3600  # 1 heure pour aujourd'hui (données dynamiques)
+DAILY_METRICS_CACHE_TTL_TODAY = 300  # ✅ FIX A.3 : 5 minutes au lieu de 1h pour données dynamiques (évite cache obsolète)
 DAILY_METRICS_CACHE_TTL_PAST = 7 * 24 * 60 * 60  # 7 jours pour dates passées (données statiques)
 
 def get_daily_metrics_cache_key(date_str: str, raw_data_hash: str) -> str:
@@ -315,6 +315,24 @@ def get_raw_data_hash(stats: Any, steps_data: Any, hr_day: Any, sleep: Any,
         if isinstance(spo2_data, dict):
             essential_data['spo2'] = spo2_data.get('spo2ValuesArray', [])[:5]
         
+        # ✅ FIX C.1 : Pour aujourd'hui, inclure une granularité de 5 minutes dans le hash
+        # Cela évite les collisions de cache quand les données sont identiques mais à des moments différents
+        if date_str:
+            from datetime import datetime
+            try:
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+                today = datetime.now().date()
+                if date_obj == today:
+                    # Pour aujourd'hui, inclure un bucket de 5 minutes dans le hash
+                    now = datetime.now()
+                    time_bucket = (now.hour * 60 + now.minute) // 5  # Bucket de 5 minutes (0-287 par jour)
+                    essential_data['_time_bucket'] = time_bucket
+                    # Log uniquement si nécessaire (éviter trop de logs)
+                    # print_debug(f"🕐 Hash incluant time bucket {time_bucket} pour {date_str}")
+            except Exception:
+                # En cas d'erreur de parsing date, continuer sans time bucket
+                pass
+        
         # Hash des données essentielles
         data_str = json.dumps(essential_data, sort_keys=True, default=str)
         return hashlib.md5(data_str.encode()).hexdigest()
@@ -377,6 +395,24 @@ def get_cached_daily_metrics(date_str: str, raw_data_hash: str) -> Optional[Dict
             # Vérifier la version du cache
             if cached.get('_cache_version') != CACHE_VERSION:
                 return None
+            
+            # ✅ FIX C.2 : Validation du cache avant utilisation pour aujourd'hui
+            if is_today:
+                has_data = (
+                    cached.get('steps', 0) > 0 or
+                    cached.get('calories', {}).get('total', 0) > 0 or
+                    len(cached.get('heartRate', {}).get('timeSeries', [])) > 0
+                )
+                if not has_data:
+                    # Vérifier l'heure de création du cache
+                    cache_age_minutes = file_age / 60
+                    if cache_age_minutes > 15:  # Si cache créé il y a plus de 15 minutes et vide, invalider
+                        print_debug(f"⚠️ Cache invalidé: données vides pour {date_str} créé il y a {cache_age_minutes:.1f} minutes")
+                        try:
+                            cache_file.unlink()
+                        except Exception:
+                            pass
+                        return None
             
             return cached
     except Exception:

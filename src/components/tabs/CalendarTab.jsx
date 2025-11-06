@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Calendar, Activity, Target, Flame, Zap, Clock, Dumbbell } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useWorkoutStats } from '../../hooks/useWorkoutStats';
@@ -6,10 +6,11 @@ import { useGarminData } from '../../hooks/useGarminData';
 import CalendarHeatmap from '../CalendarHeatmap';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { getDateStr } from '../../utils/dateUtils';
+import { isMockEnduranceSession } from '../../utils/calendarUtils';
 
 const CalendarTab = () => {
   // Récupérer les données directement du contexte pour la réactivité
-  const { data, getCurrentData } = useWorkout();
+  const { data, getCurrentData, deleteMockEnduranceSessions } = useWorkout();
   
   // Utiliser getCurrentData() pour inclure les données temporaires non sauvegardées
   const currentData = getCurrentData();
@@ -38,7 +39,10 @@ const CalendarTab = () => {
     return history;
   }, [currentData.reps, currentData.checkedExercises, getWorkoutHistory]);
 
-  // 🏃 Calculer les statistiques d'endurance
+  // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
+  // Plus besoin de useCallback car la fonction est stable (importée)
+
+  // 🏃 Calculer les statistiques d'endurance (FILTRER LES MOCK)
   const enduranceStats = useMemo(() => {
     const enduranceData = currentData?.enduranceData || {};
     const sessions = enduranceData.sessions || {};
@@ -58,17 +62,29 @@ const CalendarTab = () => {
       }
     };
 
-    // Calculer les statistiques pour chaque activité
+    // Calculer les statistiques pour chaque activité (EXCLURE LES MOCK)
     Object.entries(sessions).forEach(([activityType, activitySessions]) => {
       if (Array.isArray(activitySessions)) {
-        stats.byActivity[activityType].sessions = activitySessions.length;
-        stats.totalSessions += activitySessions.length;
+        // Filtrer les sessions mock (utilise la fonction centralisée)
+        const validSessions = activitySessions.filter(session => !isMockEnduranceSession(session));
+        
+        stats.byActivity[activityType].sessions = validSessions.length;
+        stats.totalSessions += validSessions.length;
 
-        activitySessions.forEach(session => {
-          if (session.reps && !isNaN(session.reps)) {
-            stats.byActivity[activityType].reps += parseInt(session.reps);
-            stats.totalReps += parseInt(session.reps);
+        validSessions.forEach(session => {
+          // ✅ CORRECTION : Pour pushups/boxing, utiliser count (priorité) ou reps (fallback)
+          // Exclure jumprope du calcul des reps (les sauts sont comptés séparément)
+          if (activityType !== 'jumprope') {
+            // Priorité : count > reps (cohérence avec CalendarHeatmap et EnduranceTab)
+            const sessionReps = session.count !== undefined && session.count !== null
+              ? parseInt(session.count) || 0
+              : (session.reps !== undefined && session.reps !== null ? parseInt(session.reps) || 0 : 0);
+            if (sessionReps > 0) {
+              stats.byActivity[activityType].reps += sessionReps;
+              stats.totalReps += sessionReps;
+            }
           }
+          
           if (session.distance && !isNaN(session.distance)) {
             stats.byActivity[activityType].distance += parseInt(session.distance);
             stats.totalDistance += parseInt(session.distance);
@@ -77,7 +93,18 @@ const CalendarTab = () => {
             stats.byActivity[activityType].duration += parseInt(session.duration);
             stats.totalDuration += parseInt(session.duration);
           }
-          if (session.jumps && !isNaN(session.jumps)) {
+          
+          // ✅ CORRECTION : Pour jumprope, utiliser jumps OU reps (qui représente les sauts)
+          if (activityType === 'jumprope') {
+            const sessionJumps = session.jumps !== undefined && session.jumps !== null
+              ? parseInt(session.jumps) || 0
+              : (session.reps !== undefined && session.reps !== null ? parseInt(session.reps) || 0 : 0);
+            if (sessionJumps > 0) {
+              stats.byActivity[activityType].jumps += sessionJumps;
+              stats.totalJumps += sessionJumps;
+            }
+          } else if (session.jumps && !isNaN(session.jumps)) {
+            // Pour les autres activités, utiliser jumps si présent
             stats.byActivity[activityType].jumps += parseInt(session.jumps);
             stats.totalJumps += parseInt(session.jumps);
           }
@@ -134,6 +161,38 @@ const CalendarTab = () => {
       last7Days
     };
   }, [getSessionsCount]);
+
+  // ✅ FIX : Ref pour éviter le nettoyage multiple (boucle infinie)
+  const hasCleanedMockSessionsRef = useRef(false);
+
+  // ✅ NOUVEAU : Supprimer les sessions mock UNE SEULE FOIS au chargement
+  useEffect(() => {
+    // Ne nettoyer qu'une seule fois au montage du composant
+    if (hasCleanedMockSessionsRef.current) {
+      return;
+    }
+    
+    const cleanupMockSessions = async () => {
+      try {
+        // Marquer comme nettoyé avant l'appel pour éviter les appels multiples
+        hasCleanedMockSessionsRef.current = true;
+        
+        const result = await deleteMockEnduranceSessions();
+        if (result.deleted > 0) {
+          console.log(`[CalendarTab] ✅ ${result.deleted} sessions mock supprimées:`, result.details);
+        }
+      } catch (error) {
+        console.error('[CalendarTab] ❌ Erreur lors du nettoyage des sessions mock:', error);
+        // Réinitialiser le flag en cas d'erreur pour permettre un nouvel essai
+        hasCleanedMockSessionsRef.current = false;
+      }
+    };
+    
+    // Nettoyer les sessions mock au chargement (une seule fois)
+    if (currentData?.enduranceData?.sessions) {
+      cleanupMockSessions();
+    }
+  }, [deleteMockEnduranceSessions]); // ✅ FIX : Supprimer currentData?.enduranceData?.sessions des dépendances
 
   return (
     <div className="p-6 space-y-6">

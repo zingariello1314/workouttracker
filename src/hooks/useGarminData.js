@@ -373,6 +373,18 @@ export const useGarminData = () => {
           // 🔴 FIX #12: Dédupliquer timeSeries AVANT fusion
           const deduplicateTimeSeries = (series) => {
             if (!Array.isArray(series) || series.length === 0) return [];
+            
+            // 🔴 FIX : Si la time series est compressée (delta encoding), ne pas la dédupliquer
+            // Les deltas n'ont pas de timestamp, donc ils seraient filtrés
+            const isCompressed = series.length > 1 && series[1] && 
+                                (series[1].d_ts !== undefined || series[1].d_val !== undefined);
+            
+            if (isCompressed) {
+              // Garder la time series compressée telle quelle
+              return series;
+            }
+            
+            // Sinon, dédupliquer normalement
             const seen = new Map();
             return series
               .filter(ts => {
@@ -418,10 +430,28 @@ export const useGarminData = () => {
                 heartRate: { 
                   ...existing.heartRate, 
                   ...(metrics.heartRate || {}),
-                  timeSeries: deduplicateTimeSeries([
-                    ...(existing.heartRate?.timeSeries || []),
-                    ...(metrics.heartRate?.timeSeries || [])
-                  ]),
+                  // 🔴 FIX : Si les nouvelles métriques ont une timeSeries compressée, la prioriser
+                  // Cela évite d'écraser les données compressées avec les anciennes corrompues
+                  timeSeries: (() => {
+                    const newTimeSeries = metrics.heartRate?.timeSeries || [];
+                    const existingTimeSeries = existing.heartRate?.timeSeries || [];
+                    
+                    // Vérifier si les nouvelles données sont compressées
+                    const newIsCompressed = newTimeSeries.length > 1 && newTimeSeries[1] && 
+                                           (newTimeSeries[1].d_ts !== undefined || newTimeSeries[1].d_val !== undefined);
+                    
+                    // Si les nouvelles données sont compressées, les utiliser directement
+                    if (newIsCompressed && newTimeSeries.length > 1) {
+                      console.log(`[GarminData] Prioriser timeSeries compressée pour ${date} (localStorage): ${newTimeSeries.length} points`);
+                      return newTimeSeries;
+                    }
+                    
+                    // Sinon, fusionner normalement (dédupliquer)
+                    return deduplicateTimeSeries([
+                      ...existingTimeSeries,
+                      ...newTimeSeries
+                    ]);
+                  })(),
                 },
                 // 🟢 PRIORITÉ 2 : Fusionner bodyBattery avec time series
                 bodyBattery: metrics.bodyBattery ? {
@@ -490,6 +520,18 @@ export const useGarminData = () => {
       // 🔴 FIX #12: Fonction de déduplication pour timeSeries
       const deduplicateTimeSeries = (series) => {
         if (!Array.isArray(series) || series.length === 0) return [];
+        
+        // 🔴 FIX : Si la time series est compressée (delta encoding), ne pas la dédupliquer
+        // Les deltas n'ont pas de timestamp, donc ils seraient filtrés
+        const isCompressed = series.length > 1 && series[1] && 
+                            (series[1].d_ts !== undefined || series[1].d_val !== undefined);
+        
+        if (isCompressed) {
+          // Garder la time series compressée telle quelle
+          return series;
+        }
+        
+        // Sinon, dédupliquer normalement
         const seen = new Map();
         return series
           .filter(ts => {
@@ -546,11 +588,28 @@ export const useGarminData = () => {
                 heartRate: { 
                   ...existing.heartRate, 
                   ...(metrics.heartRate || {}),
-                  // 🔴 FIX #12: Dédupliquer AVANT de fusionner timeSeries
-                  timeSeries: deduplicateTimeSeries([
-                    ...(existing.heartRate?.timeSeries || []),
-                    ...(metrics.heartRate?.timeSeries || [])
-                  ]),
+                  // 🔴 FIX : Si les nouvelles métriques ont une timeSeries compressée, la prioriser
+                  // Cela évite d'écraser les données compressées avec les anciennes corrompues
+                  timeSeries: (() => {
+                    const newTimeSeries = metrics.heartRate?.timeSeries || [];
+                    const existingTimeSeries = existing.heartRate?.timeSeries || [];
+                    
+                    // Vérifier si les nouvelles données sont compressées
+                    const newIsCompressed = newTimeSeries.length > 1 && newTimeSeries[1] && 
+                                           (newTimeSeries[1].d_ts !== undefined || newTimeSeries[1].d_val !== undefined);
+                    
+                    // Si les nouvelles données sont compressées, les utiliser directement
+                    if (newIsCompressed && newTimeSeries.length > 1) {
+                      console.log(`[GarminData] Prioriser timeSeries compressée pour ${date}: ${newTimeSeries.length} points`);
+                      return newTimeSeries;
+                    }
+                    
+                    // Sinon, fusionner normalement (dédupliquer)
+                    return deduplicateTimeSeries([
+                      ...existingTimeSeries,
+                      ...newTimeSeries
+                    ]);
+                  })(),
                 },
                 // 🟢 PRIORITÉ 3 : Fusionner zones de FC quotidiennes (garder la plus récente)
                 heartRateZones: metrics.heartRateZones || existing.heartRateZones,
@@ -1562,6 +1621,64 @@ export const useGarminData = () => {
     return calculatedStartStr;
   }, [getLastSyncDate]);
 
+  /**
+   * ✅ PHASE 2.2 : Récupère le timestamp exact de dernière sync pour une date spécifique
+   * 
+   * Utilisé pour la récupération incrémentale minute par minute.
+   * Pour le jour en cours, on récupère le `lastSynced` de la métrique du jour
+   * pour ne récupérer que les nouvelles données depuis la dernière sync.
+   * 
+   * @param {string} date - Date au format YYYY-MM-DD
+   * @returns {Promise<string|null>} Timestamp ISO de dernière sync (ex: "2025-11-04T14:30:00Z") ou null si pas de sync
+   */
+  const getLastSyncTimestampForDate = useCallback(async (date) => {
+    if (!dbReady || !date) return null;
+    
+    try {
+      const db = await openDB();
+      if (!db || useFallback) {
+        // Fallback localStorage
+        const key = getStorageKey(STORE_DAILY_METRICS, date);
+        const itemStr = localStorage.getItem(key);
+        if (itemStr) {
+          try {
+            const item = JSON.parse(itemStr);
+            return item.lastSynced || null;
+          } catch (e) {
+            console.warn('[GarminData] Error parsing metric from localStorage:', key, e);
+            return null;
+          }
+        }
+        return null;
+      }
+      
+      const tx = db.transaction([STORE_DAILY_METRICS], 'readonly');
+      const store = tx.objectStore(STORE_DAILY_METRICS);
+      
+      const metric = await new Promise((resolve, reject) => {
+        const req = store.get(date);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      
+      return metric?.lastSynced || null;
+    } catch (err) {
+      console.error('[GarminData] Error getting last sync timestamp for date:', date, err);
+      // Fallback localStorage
+      try {
+        const key = getStorageKey(STORE_DAILY_METRICS, date);
+        const itemStr = localStorage.getItem(key);
+        if (itemStr) {
+          const item = JSON.parse(itemStr);
+          return item.lastSynced || null;
+        }
+      } catch (e) {
+        // Ignorer erreur fallback
+      }
+      return null;
+    }
+  }, [dbReady]);
+
   return {
     dbReady,
     saveActivities,
@@ -1577,6 +1694,7 @@ export const useGarminData = () => {
     getLastSyncDate,  // 🟢 NOUVEAU : Récupère la dernière date de sync
     setLastSyncDate,  // 🟢 NOUVEAU : Stocke la dernière date de sync
     getSyncStartDate,  // 🟢 NOUVEAU : Calcule la date de début pour sync incrémentale
+    getLastSyncTimestampForDate,  // ✅ PHASE 2.2 : Récupère le timestamp exact de dernière sync pour une date
     deleteMockActivities,  // 🔴 NOUVEAU : Supprime toutes les activités mock de test
   };
 };

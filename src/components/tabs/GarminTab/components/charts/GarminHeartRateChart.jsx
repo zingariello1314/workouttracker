@@ -56,6 +56,50 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
     return data;
   }, [dailyMetrics, filteredDates, effectiveSelectedDate]);
 
+  // ✅ FIX : Calculer le domaine Y avec marge pour éviter que les valeurs ne touchent le bord
+  const yAxisDomain = React.useMemo(() => {
+    if (!chartData || chartData.length === 0) return [0, 180];
+    
+    // Trouver les valeurs min et max parmi toutes les valeurs FC (resting, max, avg)
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    
+    chartData.forEach(d => {
+      if (d.resting !== null && d.resting !== undefined) {
+        minValue = Math.min(minValue, d.resting);
+        maxValue = Math.max(maxValue, d.resting);
+      }
+      if (d.max !== null && d.max !== undefined) {
+        minValue = Math.min(minValue, d.max);
+        maxValue = Math.max(maxValue, d.max);
+      }
+      if (d.avg !== null && d.avg !== undefined) {
+        minValue = Math.min(minValue, d.avg);
+        maxValue = Math.max(maxValue, d.avg);
+      }
+    });
+    
+    // Si aucune valeur trouvée, utiliser des valeurs par défaut
+    if (minValue === Infinity || maxValue === -Infinity) {
+      return [0, 180];
+    }
+    
+    // Calculer la marge : 10% de la plage ou minimum 10 bpm
+    const range = maxValue - minValue;
+    const margin = Math.max(range * 0.1, 10); // 10% ou minimum 10 bpm
+    
+    // Calculer le domaine avec marge
+    const domainMin = Math.max(0, Math.floor(minValue - margin));
+    const domainMax = Math.ceil(maxValue + margin);
+    
+    // S'assurer que le domaine ne dépasse pas les limites physiologiques raisonnables
+    // (0-220 bpm pour un adulte)
+    const finalMin = Math.max(0, domainMin);
+    const finalMax = Math.min(220, domainMax);
+    
+    return [finalMin, finalMax];
+  }, [chartData]);
+
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
@@ -145,6 +189,8 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
             <YAxis
               stroke="#9CA3AF"
               label={{ value: 'bpm', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF' } }}
+              domain={yAxisDomain}
+              allowDataOverflow={false}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />

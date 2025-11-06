@@ -349,11 +349,11 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
               const lightSleep = extractNumericForDisplay(d.sleep.lightSleep);
               const remSleep = extractNumericForDisplay(d.sleep.remSleep);
               return (deepSleep > 0 || lightSleep > 0 || remSleep > 0) && (
-                <div className="text-slate-400 text-xs mt-1">
+              <div className="text-slate-400 text-xs mt-1">
                   {deepSleep > 0 && <span>Profond: {Math.floor(deepSleep)}h{Math.round((deepSleep % 1) * 60)}m</span>}
                   {lightSleep > 0 && <span className="ml-2">Léger: {Math.floor(lightSleep)}h{Math.round((lightSleep % 1) * 60)}m</span>}
                   {remSleep > 0 && <span className="ml-2">REM: {Math.floor(remSleep)}h{Math.round((remSleep % 1) * 60)}m</span>}
-                </div>
+              </div>
               );
             })()}
             {(d.sleep.bedTime || d.sleep.wakeTime) && (
@@ -373,29 +373,29 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
                 const awakeMax = extractNumericForDisplay(d.respiration.awake.max);
                 const awakeAvg = extractNumericForDisplay(d.respiration.awake.avg);
                 return (awakeMin > 0 || awakeMax > 0 || awakeAvg > 0) && (
-                  <div>
-                    <div className="text-slate-300 text-xs mb-2 font-medium">Éveillé</div>
-                    <div className="flex gap-3 flex-wrap">
+                <div>
+                  <div className="text-slate-300 text-xs mb-2 font-medium">Éveillé</div>
+                  <div className="flex gap-3 flex-wrap">
                       {awakeMin > 0 && (
-                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                          <span className="text-slate-400 text-xs">Min</span>
+                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                        <span className="text-slate-400 text-xs">Min</span>
                           <div className="text-white text-sm font-semibold">{awakeMin}</div>
-                        </div>
-                      )}
+                      </div>
+                    )}
                       {awakeAvg > 0 && (
-                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                          <span className="text-slate-400 text-xs">Moy</span>
+                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                        <span className="text-slate-400 text-xs">Moy</span>
                           <div className="text-white text-sm font-semibold">{awakeAvg}</div>
-                        </div>
-                      )}
+                      </div>
+                    )}
                       {awakeMax > 0 && (
-                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                          <span className="text-slate-400 text-xs">Max</span>
+                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                        <span className="text-slate-400 text-xs">Max</span>
                           <div className="text-white text-sm font-semibold">{awakeMax}</div>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
+                </div>
                 );
               })()}
               {d.respiration.sleep && (() => {
@@ -403,29 +403,29 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
                 const sleepMax = extractNumericForDisplay(d.respiration.sleep.max);
                 const sleepAvg = extractNumericForDisplay(d.respiration.sleep.avg);
                 return (sleepMin > 0 || sleepMax > 0 || sleepAvg > 0) && (
-                  <div>
-                    <div className="text-slate-300 text-xs mb-2 font-medium">Sommeil</div>
-                    <div className="flex gap-3 flex-wrap">
+                <div>
+                  <div className="text-slate-300 text-xs mb-2 font-medium">Sommeil</div>
+                  <div className="flex gap-3 flex-wrap">
                       {sleepMin > 0 && (
-                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                          <span className="text-slate-400 text-xs">Min</span>
+                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                        <span className="text-slate-400 text-xs">Min</span>
                           <div className="text-white text-sm font-semibold">{sleepMin}</div>
-                        </div>
-                      )}
+                      </div>
+                    )}
                       {sleepAvg > 0 && (
-                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                          <span className="text-slate-400 text-xs">Moy</span>
+                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                        <span className="text-slate-400 text-xs">Moy</span>
                           <div className="text-white text-sm font-semibold">{sleepAvg}</div>
-                        </div>
-                      )}
+                      </div>
+                    )}
                       {sleepMax > 0 && (
-                        <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                          <span className="text-slate-400 text-xs">Max</span>
+                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
+                        <span className="text-slate-400 text-xs">Max</span>
                           <div className="text-white text-sm font-semibold">{sleepMax}</div>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
+                </div>
                 );
               })()}
             </div>
@@ -436,10 +436,10 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
           const moderate = extractNumericForDisplay(d.intensityMinutes.moderate);
           const vigorous = extractNumericForDisplay(d.intensityMinutes.vigorous);
           return (total > 0 || moderate > 0 || vigorous > 0) ? (
-            <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-              <div className="text-slate-400 text-xs">Minutes intensives</div>
+          <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+            <div className="text-slate-400 text-xs">Minutes intensives</div>
               <div className="text-white text-lg">{total} min</div>
-              <div className="text-slate-400 text-xs mt-1">
+            <div className="text-slate-400 text-xs mt-1">
                 Modérée: {moderate} • Soutenue: {vigorous} (x2)
               </div>
             </div>

@@ -404,13 +404,13 @@ export default function GarminDashboard({
         {d.spo2 !== undefined && d.spo2 !== null && (() => {
           const spo2Value = extractNumeric(d.spo2);
           return spo2Value > 0 && (
-            <div className="bg-gradient-to-br from-cyan-800/60 to-cyan-900/60 border border-cyan-700 rounded-lg p-4">
-              <div className="text-cyan-300 text-xs mb-1">SpO2</div>
+          <div className="bg-gradient-to-br from-cyan-800/60 to-cyan-900/60 border border-cyan-700 rounded-lg p-4">
+            <div className="text-cyan-300 text-xs mb-1">SpO2</div>
               <div className="text-white text-2xl font-bold">{spo2Value}%</div>
-              <div className={`text-xs mt-2 ${
+            <div className={`text-xs mt-2 ${
                 spo2Value >= 95 ? 'text-green-400' :
                 spo2Value >= 90 ? 'text-yellow-400' : 'text-red-400'
-              }`}>
+            }`}>
                 {spo2Value >= 95 ? 'Normal' : spo2Value >= 90 ? 'Acceptable' : 'Faible'}
               </div>
             </div>
@@ -423,10 +423,10 @@ export default function GarminDashboard({
           const moderate = extractNumeric(d.intensityMinutes.moderate);
           const vigorous = extractNumeric(d.intensityMinutes.vigorous);
           return total > 0 || moderate > 0 || vigorous > 0 ? (
-            <div className="bg-gradient-to-br from-yellow-800/60 to-yellow-900/60 border border-yellow-700 rounded-lg p-4">
-              <div className="text-yellow-300 text-xs mb-1">Intensité</div>
+          <div className="bg-gradient-to-br from-yellow-800/60 to-yellow-900/60 border border-yellow-700 rounded-lg p-4">
+            <div className="text-yellow-300 text-xs mb-1">Intensité</div>
               <div className="text-white text-2xl font-bold">{total} min</div>
-              <div className="text-yellow-400 text-xs mt-2">
+            <div className="text-yellow-400 text-xs mt-2">
                 Modérée: {moderate} • Soutenue: {vigorous} (x2)
               </div>
             </div>

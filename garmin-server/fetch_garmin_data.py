@@ -33,18 +33,19 @@ from parsers.daily_metrics_parser import (
 )
 from parsers.sleep_parser import (
     parse_sleep_data,
-    extract_respiration_from_sleep
+    extract_respiration_from_sleep,
+    extract_heart_rate_from_sleep  # 🟢 PHASE 4 : Extraction FC depuis sommeil
 )
 from parsers.respiration_parser import (
     parse_respiration_data,
     merge_respiration_sources
 )
 from parsers.wellness_parser import (
-    fetch_body_battery,
+    fetch_body_battery as fetch_body_battery_api,  # ✅ FIX : Renommer pour éviter shadowing
     parse_body_battery,
-    fetch_stress,
+    fetch_stress as fetch_stress_api,  # ✅ FIX : Renommer pour éviter shadowing
     parse_stress,
-    fetch_spo2,
+    fetch_spo2 as fetch_spo2_api,  # ✅ FIX : Renommer pour éviter shadowing
     parse_spo2
 )
 from parsers.heart_rate_zones_parser import (
@@ -182,23 +183,26 @@ def fetch_today_metrics_parallel(client, date_str):
             print_debug(f"⚠️ Failed to get_heart_rates({date_str}) after retries: {e}")
             return ("hr_day", None)
     
-    def fetch_body_battery():
+    def _fetch_body_battery():
         try:
-            return ("body_battery_data", fetch_body_battery(client, date_str))
+            # ✅ FIX : Utiliser les fonctions importées (renommées) pour éviter shadowing
+            return ("body_battery_data", fetch_body_battery_api(client, date_str))
         except Exception as e:
             print_debug(f"⚠️ Failed to fetch_body_battery({date_str}): {e}")
             return ("body_battery_data", None)
     
-    def fetch_stress():
+    def _fetch_stress():
         try:
-            return ("stress_data", fetch_stress(client, date_str))
+            # ✅ FIX : Utiliser les fonctions importées (renommées) pour éviter shadowing
+            return ("stress_data", fetch_stress_api(client, date_str))
         except Exception as e:
             print_debug(f"⚠️ Failed to fetch_stress({date_str}): {e}")
             return ("stress_data", None)
     
-    def fetch_spo2():
+    def _fetch_spo2():
         try:
-            return ("spo2_data", fetch_spo2(client, date_str))
+            # ✅ FIX : Utiliser les fonctions importées (renommées) pour éviter shadowing
+            return ("spo2_data", fetch_spo2_api(client, date_str))
         except Exception as e:
             print_debug(f"⚠️ Failed to fetch_spo2({date_str}): {e}")
             return ("spo2_data", None)
@@ -231,9 +235,9 @@ def fetch_today_metrics_parallel(client, date_str):
             executor.submit(fetch_steps): "steps_data",
             executor.submit(fetch_stats): "stats",
             executor.submit(fetch_hr): "hr_day",
-            executor.submit(fetch_body_battery): "body_battery_data",
-            executor.submit(fetch_stress): "stress_data",
-            executor.submit(fetch_spo2): "spo2_data",
+            executor.submit(_fetch_body_battery): "body_battery_data",  # ✅ FIX : Utiliser fonction renommée
+            executor.submit(_fetch_stress): "stress_data",  # ✅ FIX : Utiliser fonction renommée
+            executor.submit(_fetch_spo2): "spo2_data",  # ✅ FIX : Utiliser fonction renommée
             executor.submit(fetch_sleep): "sleep",
             executor.submit(fetch_respiration): "respiration_data",
             executor.submit(fetch_intensity): "intensity_data"
@@ -297,6 +301,116 @@ def _get_steps_data_with_retry(client, date_str):
 def _get_heart_rates_with_retry(client, date_str):
     """Helper avec retry pour get_heart_rates"""
     return client.get_heart_rates(date_str)
+
+
+# ✅ PHASE 2.3 : Fonction pour récupération incrémentale minute par minute
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def fetch_heart_rate_incremental(client, date_str, start_timestamp=None):
+    """
+    ✅ PHASE 2.3 : Récupère les données FC minute par minute depuis start_timestamp.
+    
+    Cette fonction récupère toutes les données du jour via get_heart_rates(),
+    puis filtre uniquement les points depuis start_timestamp pour optimiser
+    la récupération incrémentale (évite de récupérer des données déjà stockées).
+    
+    Args:
+        client: Client Garmin Connect
+        date_str: Date au format YYYY-MM-DD
+        start_timestamp: Timestamp ISO de début (ex: "2025-11-04T14:30:00Z") ou None
+        
+    Returns:
+        dict: Données hr_day avec heartRateValues filtrées depuis start_timestamp,
+              ou None si erreur, ou toutes les données si start_timestamp est None
+    """
+    try:
+        # Récupérer toutes les données du jour (obligatoire : l'API ne permet pas de filtrer par timestamp)
+        hr_day = _get_heart_rates_with_retry(client, date_str)
+        
+        if not hr_day or not isinstance(hr_day, dict):
+            return None
+        
+        # Si start_timestamp non fourni, retourner toutes les données
+        if not start_timestamp:
+            return hr_day
+        
+        # Convertir start_timestamp en timestamp Unix pour comparaison
+        from datetime import datetime, timezone
+        try:
+            if isinstance(start_timestamp, str):
+                # Parser ISO string
+                if start_timestamp.endswith('Z'):
+                    start_timestamp_normalized = start_timestamp.replace('Z', '+00:00')
+                else:
+                    start_timestamp_normalized = start_timestamp
+                start_dt = datetime.fromisoformat(start_timestamp_normalized)
+                if start_dt.tzinfo is None:
+                    start_dt = start_dt.replace(tzinfo=timezone.utc)
+                start_ts = start_dt.timestamp()
+            else:
+                # Si c'est déjà un timestamp (nombre)
+                start_ts = float(start_timestamp) / 1000 if start_timestamp > 1e10 else float(start_timestamp)
+        except Exception as e:
+            print_debug(f"⚠️ Error parsing start_timestamp {start_timestamp}: {e}")
+            return hr_day  # Retourner toutes les données en cas d'erreur
+        
+        # Extraire les points FC depuis hr_day
+        hr_values = (
+            hr_day.get('heartRateValues') or
+            hr_day.get('values') or
+            hr_day.get('data') or
+            hr_day.get('timeSeries') or
+            []
+        )
+        
+        if not isinstance(hr_values, list):
+            hr_values = []
+        
+        # Filtrer uniquement les points depuis start_timestamp
+        filtered_values = []
+        for point in hr_values:
+            try:
+                # Extraire le timestamp du point
+                if isinstance(point, list) and len(point) >= 2:
+                    point_timestamp_raw = point[0]
+                elif isinstance(point, dict):
+                    point_timestamp_raw = point.get('timestamp') or point.get('time')
+                else:
+                    continue
+                
+                # Normaliser le timestamp du point en UTC ISO
+                point_timestamp = normalize_datetime_to_utc(point_timestamp_raw)
+                if not point_timestamp:
+                    continue
+                
+                # Convertir en timestamp Unix pour comparaison
+                point_dt = datetime.fromisoformat(point_timestamp.replace('Z', '+00:00'))
+                point_ts = point_dt.timestamp()
+                
+                # Filtrer : garder uniquement les points >= start_timestamp
+                if point_ts >= start_ts:
+                    filtered_values.append(point)
+                    
+            except Exception as e:
+                print_debug(f"⚠️ Error filtering HR point: {e}, point: {point}")
+                continue
+        
+        print_debug(f"✅ Filtered {len(filtered_values)} HR points since {start_timestamp} (from {len(hr_values)} total for {date_str})")
+        
+        # Retourner hr_day avec les valeurs filtrées (copie pour ne pas modifier l'original)
+        filtered_hr_day = hr_day.copy()
+        filtered_hr_day['heartRateValues'] = filtered_values
+        
+        return filtered_hr_day
+        
+    except Exception as e:
+        print_debug(f"⚠️ Error in fetch_heart_rate_incremental for {date_str}: {e}")
+        # En cas d'erreur, retourner toutes les données (fallback sécurisé)
+        try:
+            return _get_heart_rates_with_retry(client, date_str)
+        except Exception as e2:
+            print_debug(f"⚠️ Fallback also failed: {e2}")
+            return None
 
 
 @retry_with_backoff(max_retries=3, base_delay=1.0)
@@ -424,14 +538,20 @@ def print_json_err(message):
 args = sys.argv[1:]
 arg_start = None
 arg_end = None
+arg_last_sync_timestamp = None  # ✅ PHASE 2.4 : Timestamp de dernière sync pour récupération incrémentale
 try:
     if '--start' in args:
         arg_start = args[args.index('--start') + 1]
     if '--end' in args:
         arg_end = args[args.index('--end') + 1]
+    # ✅ PHASE 2.4 : Récupérer le timestamp de dernière sync si fourni
+    if '--lastSyncTimestamp' in args:
+        arg_last_sync_timestamp = args[args.index('--lastSyncTimestamp') + 1]
+        print_debug(f"✅ Received lastSyncTimestamp: {arg_last_sync_timestamp}")
 except Exception:
     arg_start = None
     arg_end = None
+    arg_last_sync_timestamp = None
 
 if EMAIL and PASSWORD:
     try:
@@ -466,7 +586,7 @@ if EMAIL and PASSWORD:
         parsing_errors = []
         parsing_errors_lock = threading.Lock()
         
-        def process_day(d_str: str) -> Dict:
+        def process_day(d_str: str, last_sync_timestamp_for_date: str = None) -> Dict:
             """Processe les données pour un jour donné"""
             day_swim = []
             day_jump = []
@@ -749,18 +869,55 @@ if EMAIL and PASSWORD:
             
             # Métriques quotidiennes
             # 🟢 OPTIMISATION : Utiliser récupération parallèle pour aujourd'hui (gain de temps ~90%)
+            # ✅ PHASE 2.5 : Utiliser récupération incrémentale pour FC si lastSyncTimestamp fourni
             if d_str == current_date:
                 print_debug(f"🚀 Using parallel fetch for today ({d_str})...")
+                
+                # Récupérer toutes les métriques en parallèle (steps, stats, body battery, etc.)
                 parallel_results = fetch_today_metrics_parallel(client, d_str)
                 steps_data = parallel_results["steps_data"]
                 stats = parallel_results["stats"]
-                hr_day = parallel_results["hr_day"]
                 body_battery_data = parallel_results["body_battery_data"]
                 stress_data = parallel_results["stress_data"]
                 spo2_data = parallel_results["spo2_data"]
                 sleep = parallel_results["sleep"]
                 respiration_data = parallel_results["respiration_data"]
                 intensity_data = parallel_results["intensity_data"]
+                
+                # ✅ PHASE 2.5 : Si lastSyncTimestamp fourni, utiliser récupération incrémentale pour FC
+                if last_sync_timestamp_for_date:
+                    print_debug(f"✅ Using incremental HR fetch for {d_str} since {last_sync_timestamp_for_date}")
+                    hr_day_incremental = fetch_heart_rate_incremental(client, d_str, last_sync_timestamp_for_date)
+                    if hr_day_incremental:
+                        hr_points_count = len(hr_day_incremental.get('heartRateValues', []))
+                        print_debug(f"✅ Incremental HR fetch returned {hr_points_count} points")
+                        
+                        # ✅ FIX B.1 : Si récupération incrémentale retourne 0 points et qu'on est après 00:15, essayer récupération complète
+                        if hr_points_count == 0:
+                            from datetime import datetime, time
+                            now = datetime.now()
+                            midnight = datetime.combine(now.date(), time.min)
+                            minutes_since_midnight = (now - midnight).total_seconds() / 60
+                            
+                            if minutes_since_midnight > 15:
+                                print_debug(f"⚠️ Récupération incrémentale vide après 00:15 (minutes: {minutes_since_midnight:.1f}), tentative récupération complète...")
+                                hr_day_complete = _get_heart_rates_with_retry(client, d_str)
+                                if hr_day_complete and len(hr_day_complete.get('heartRateValues', [])) > 0:
+                                    hr_day = hr_day_complete
+                                    print_debug(f"✅ Récupération complète réussie: {len(hr_day.get('heartRateValues', []))} points")
+                                else:
+                                    hr_day = hr_day_incremental  # Utiliser quand même l'incrémentale (même si vide)
+                            else:
+                                hr_day = hr_day_incremental  # Trop tôt dans la journée, normal qu'il n'y ait pas de données
+                        else:
+                            hr_day = hr_day_incremental
+                    else:
+                        # Fallback : utiliser hr_day de parallel_results
+                        hr_day = parallel_results["hr_day"]
+                        print_debug(f"⚠️ Incremental HR fetch returned None, using parallel fetch result")
+                else:
+                    # Pas de lastSyncTimestamp : utiliser récupération normale
+                    hr_day = parallel_results["hr_day"]
             else:
                 # Pour les dates passées, utiliser récupération séquentielle (moins critique)
                 try:
@@ -789,9 +946,9 @@ if EMAIL and PASSWORD:
                         print_debug(f"⚠️ Failed to get_heart_rates({d_str}) after retries: {e}")
                         hr_day = None
                     
-                    body_battery_data = fetch_body_battery(client, d_str)
-                    stress_data = fetch_stress(client, d_str)
-                    spo2_data = fetch_spo2(client, d_str)
+                    body_battery_data = fetch_body_battery_api(client, d_str)  # ✅ FIX : Utiliser fonction renommée
+                    stress_data = fetch_stress_api(client, d_str)  # ✅ FIX : Utiliser fonction renommée
+                    spo2_data = fetch_spo2_api(client, d_str)  # ✅ FIX : Utiliser fonction renommée
                     
                     try:
                         sleep = _get_sleep_data_with_retry(client, d_str)
@@ -824,22 +981,82 @@ if EMAIL and PASSWORD:
                 respiration_data, intensity_data, d_str
             )
             
-            # Essayer de récupérer depuis le cache
-            cached_daily = get_cached_daily_metrics(d_str, raw_data_hash)
+            # ✅ FIX A.2 : Ne pas utiliser le cache si récupération incrémentale (données peuvent avoir changé)
+            if last_sync_timestamp_for_date and d_str == current_date:
+                print_debug(f"🔄 Récupération incrémentale active, bypass du cache pour {d_str}")
+                cached_daily = None
+            else:
+                # Essayer de récupérer depuis le cache
+                cached_daily = get_cached_daily_metrics(d_str, raw_data_hash)
             
             if cached_daily:
-                print_debug(f"✅ Using cached daily metrics for {d_str}")
-                # Retirer les métadonnées de cache avant de l'utiliser
-                day_daily = {k: v for k, v in cached_daily.items() 
-                           if not k.startswith('_')}
-                # S'assurer que toutes les clés de base sont présentes (même si vides)
-                if 'calories' not in day_daily:
-                    day_daily['calories'] = {"total": 0, "active": 0, "resting": 0}
-                if 'heartRate' not in day_daily:
-                    day_daily['heartRate'] = {"resting": 0, "max": 0, "avg": 0, "timeSeries": []}
+                # ✅ FIX A.1 : Ne pas utiliser le cache si données vides et après 00:15
+                from datetime import datetime, time
+                now = datetime.now()
+                midnight = datetime.combine(now.date(), time.min)
+                minutes_since_midnight = (now - midnight).total_seconds() / 60
+                
+                # Retirer les métadonnées de cache avant de vérifier
+                day_daily_temp = {k: v for k, v in cached_daily.items() 
+                               if not k.startswith('_')}
+                
+                # Vérifier si données sont vides
+                is_empty = (
+                    day_daily_temp.get('steps', 0) == 0 and
+                    day_daily_temp.get('calories', {}).get('total', 0) == 0 and
+                    len(day_daily_temp.get('heartRate', {}).get('timeSeries', [])) == 0
+                )
+                
+                # Si données vides et après 00:15, invalider le cache
+                if is_empty and minutes_since_midnight > 15 and d_str == current_date:
+                    print_debug(f"⚠️ Cache invalidé: données vides pour {d_str} après 00:15 (minutes depuis minuit: {minutes_since_midnight:.1f})")
+                    cached_daily = None  # Forcer re-parsing
+                else:
+                    print_debug(f"✅ Using cached daily metrics for {d_str}")
+                    # Retirer les métadonnées de cache avant de l'utiliser
+                    day_daily = day_daily_temp
+                    # S'assurer que toutes les clés de base sont présentes (même si vides)
+                    if 'calories' not in day_daily:
+                        day_daily['calories'] = {"total": 0, "active": 0, "resting": 0}
+                    if 'heartRate' not in day_daily:
+                        day_daily['heartRate'] = {"resting": 0, "max": 0, "avg": 0, "timeSeries": []}
             else:
                 # Pas de cache valide, parser les métriques
                 print_debug(f"🔄 Parsing daily metrics for {d_str} (cache miss or expired)")
+                
+                # ✅ FIX B.3 : Logs détaillés pour diagnostic
+                print_debug(f"📊 Stats récupérés: {bool(stats)}, clés: {list(stats.keys())[:10] if stats and isinstance(stats, dict) else 'None'}")
+                print_debug(f"👣 Steps récupérés: {bool(steps_data)}, clés: {list(steps_data.keys())[:10] if steps_data and isinstance(steps_data, dict) else 'None'}")
+                hr_values_count = len(hr_day.get('heartRateValues', [])) if hr_day and isinstance(hr_day, dict) else 0
+                print_debug(f"❤️ HR récupérés: {bool(hr_day)}, points: {hr_values_count}")
+                print_debug(f"💤 Sleep récupéré: {bool(sleep)}, type: {type(sleep)}")
+                print_debug(f"🔋 Body Battery récupéré: {bool(body_battery_data)}, type: {type(body_battery_data)}")
+                print_debug(f"😰 Stress récupéré: {bool(stress_data)}, type: {type(stress_data)}")
+                print_debug(f"🫁 SpO2 récupéré: {bool(spo2_data)}, type: {type(spo2_data)}")
+                
+                # ✅ FIX B.2 : Validation des données brutes avant parsing
+                # Vérifier que les données ne sont pas toutes vides/None (structure valide mais données absentes)
+                has_any_raw_data = (
+                    (stats and isinstance(stats, dict) and len(stats) > 0) or
+                    (steps_data and isinstance(steps_data, dict) and len(steps_data) > 0) or
+                    (hr_day and isinstance(hr_day, dict) and len(hr_day.get('heartRateValues', [])) > 0) or
+                    (sleep and isinstance(sleep, dict) and len(sleep) > 0) or
+                    (body_battery_data is not None) or
+                    (stress_data is not None) or
+                    (spo2_data is not None)
+                )
+                
+                if not has_any_raw_data and d_str == current_date:
+                    from datetime import datetime, time
+                    now = datetime.now()
+                    midnight = datetime.combine(now.date(), time.min)
+                    minutes_since_midnight = (now - midnight).total_seconds() / 60
+                    
+                    if minutes_since_midnight > 15:
+                        print_debug(f"⚠️⚠️ Aucune donnée brute récupérée pour {d_str} après 00:15 (minutes: {minutes_since_midnight:.1f})")
+                        print_debug(f"⚠️ Cela peut indiquer un problème de récupération depuis l'API Garmin")
+                    else:
+                        print_debug(f"ℹ️ Aucune donnée brute encore disponible pour {d_str} (trop tôt dans la journée: {minutes_since_midnight:.1f} min)")
                 
                 # Utiliser parsers modulaires (pour aujourd'hui ET dates passées)
                 try:
@@ -916,14 +1133,26 @@ if EMAIL and PASSWORD:
                     # 🟡 FIX : Heart rate depuis stats et hr_day, mais aussi essayer steps_data pour aujourd'hui
                     # 🟢 NOUVEAU : Passer les time series des activités pour fusion (déjà extraites lors du parsing)
                     # 🟢 NOUVEAU : Passer aussi les activités pour interpolation intelligente
+                    # 🟢 PHASE 4 : Extraire les FC du sommeil et les fusionner
                     all_activities = day_swim + day_jump + day_cardio
+                    sleep_hr_time_series = None
+                    if sleep and isinstance(sleep, dict):
+                        try:
+                            sleep_hr_time_series = extract_heart_rate_from_sleep(sleep, d_str)
+                            if sleep_hr_time_series and len(sleep_hr_time_series) > 0:
+                                print_debug(f"✅ Extracted {len(sleep_hr_time_series)} HR points from sleep data for {d_str}")
+                        except Exception as e:
+                            print_debug(f"⚠️ Error extracting HR from sleep for {d_str}: {e}")
+                            sleep_hr_time_series = None
+                    
                     heart_rate = parse_daily_heart_rate(
                         stats, 
                         hr_day, 
                         d_str, 
                         steps_data if d_str == current_date else None,
                         all_activities_hr_time_series if all_activities_hr_time_series else None,
-                        all_activities if all_activities else None
+                        all_activities if all_activities else None,
+                        sleep_hr_time_series  # 🟢 PHASE 4 : FC du sommeil
                     )
                     day_daily["heartRate"].update(heart_rate)
                     
@@ -1075,10 +1304,24 @@ if EMAIL and PASSWORD:
         dates_to_process = [d.strftime('%Y-%m-%d') for d in daterange(start_dt, end_dt)]
         max_workers = min(5, len(dates_to_process))  # Limiter à 5 workers pour éviter rate limit
         
+        # ✅ PHASE 2.5 : Déterminer le lastSyncTimestamp pour le jour en cours
+        last_sync_timestamp_for_today = None
+        if arg_last_sync_timestamp and current_date in dates_to_process:
+            last_sync_timestamp_for_today = arg_last_sync_timestamp
+            print_debug(f"✅ Using incremental sync for today ({current_date}) with lastSyncTimestamp: {last_sync_timestamp_for_today}")
+        
         if len(dates_to_process) > 1 and max_workers > 1:
             print_debug(f"Parallélisation activée : {len(dates_to_process)} jours avec {max_workers} workers")
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                future_to_date = {executor.submit(process_day, d_str): d_str for d_str in dates_to_process}
+                # ✅ PHASE 2.5 : Passer lastSyncTimestamp uniquement pour le jour en cours
+                future_to_date = {
+                    executor.submit(
+                        process_day, 
+                        d_str, 
+                        last_sync_timestamp_for_today if d_str == current_date else None
+                    ): d_str 
+                    for d_str in dates_to_process
+                }
                 
                 for future in as_completed(future_to_date):
                     d_str = future_to_date[future]
@@ -1095,7 +1338,11 @@ if EMAIL and PASSWORD:
         else:
             # Pas de parallélisation si 1 seul jour ou workers insuffisants
             for d_str in dates_to_process:
-                result = process_day(d_str)
+                # ✅ PHASE 2.5 : Passer lastSyncTimestamp uniquement pour le jour en cours
+                result = process_day(
+                    d_str, 
+                    last_sync_timestamp_for_today if d_str == current_date else None
+                )
                 swim_list.extend(result["swim"])
                 jump_list.extend(result["jump"])
                 cardio_list.extend(result["cardio"])
@@ -1130,6 +1377,13 @@ if EMAIL and PASSWORD:
             # Inclure les 10 dernières erreurs pour debugging
             payload["recent_errors"] = error_stats["recent_errors"][:10]
             print_debug(f"📊 Error tracking: {error_stats['total']} total errors ({error_stats['recoverable']} recoverable, {error_stats['unrecoverable']} unrecoverable)")
+        
+        # ✅ PHASE 1 : Logging détaillé avant envoi JSON
+        activities_count = sum(len(arr) for arr in payload.get("activities", {}).values() if isinstance(arr, list))
+        daily_metrics_count = len(payload.get("dailyMetrics", {}))
+        print_debug(f"[🔍 DIAGNOSTIC PYTHON] Données finales - Activités: {activities_count}, Métriques: {daily_metrics_count}, LastSync: {now_iso}")
+        if arg_last_sync_timestamp:
+            print_debug(f"[🔍 DIAGNOSTIC PYTHON] Récupération incrémentale depuis: {arg_last_sync_timestamp}")
         
         print_json_ok(payload)
         raise SystemExit(0)

@@ -301,7 +301,7 @@ def parse_daily_calories(stats: Dict, date_str: str = "", steps_data: Any = None
     return result
 
 
-def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: Any = None, activity_hr_time_series: Optional[List[Dict[str, Any]]] = None, activities: Optional[List[Dict[str, Any]]] = None) -> Dict:
+def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: Any = None, activity_hr_time_series: Optional[List[Dict[str, Any]]] = None, activities: Optional[List[Dict[str, Any]]] = None, sleep_hr_time_series: Optional[List[Dict[str, Any]]] = None) -> Dict:
     """
     Parse la fréquence cardiaque quotidienne depuis stats et time series.
     
@@ -309,6 +309,10 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
         stats: Stats quotidiennes depuis client.get_stats()
         hr_day: Données HR time series depuis client.get_heart_rates()
         date_str: Date pour les logs
+        steps_data: Données de pas (optionnel, pour aujourd'hui)
+        activity_hr_time_series: Time series FC depuis activités (optionnel)
+        activities: Liste des activités (optionnel, pour interpolation)
+        sleep_hr_time_series: Time series FC depuis sommeil (optionnel, 🟢 PHASE 4)
         
     Returns:
         dict: FC avec resting, max, avg, timeSeries
@@ -417,22 +421,69 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
     count_hr = 0
     
     if isinstance(hr_day, dict):
-        hr_vals = hr_day.get('heartRateValues', []) or hr_day.get('values', []) or []
+        # 🔴 FIX : Chercher time series dans TOUS les champs possibles de l'API Garmin
+        # L'API peut retourner les données dans différents formats selon le contexte
+        hr_vals = (
+            hr_day.get('heartRateValues') or
+            hr_day.get('values') or
+            hr_day.get('data') or
+            hr_day.get('timeSeries') or
+            hr_day.get('heartRateTimeSeries') or
+            hr_day.get('hrValues') or
+            []
+        )
+        
+        # 🔴 FIX : Si hr_vals est un dict, essayer d'extraire les valeurs
+        if isinstance(hr_vals, dict):
+            hr_vals = (
+                hr_vals.get('heartRateValues') or
+                hr_vals.get('values') or
+                hr_vals.get('data') or
+                hr_vals.get('timeSeries') or
+                []
+            )
+        
+        # Si c'est toujours pas une liste, essayer de convertir
+        if not isinstance(hr_vals, list):
+            hr_vals = []
+        
+        print_debug(f"🔍 Extracting HR time series from hr_day for {date_str}: found {len(hr_vals)} raw points")
+        
         for p in hr_vals:
-            if isinstance(p, list) and len(p) >= 2 and p[1] is not None:
-                try:
-                    bpm_val = safe_int(p[1])
-                    if bpm_val > 0:
-                        max_hr_from_series = max(max_hr_from_series, bpm_val)
-                        sum_hr += bpm_val
-                        count_hr += 1
-                        ts.append({
-                            # 🔴 FIX #11: Normaliser timestamp en UTC
-                            "timestamp": normalize_datetime_to_utc(safe_int(p[0])),
-                            "bpm": bpm_val
-                        })
-                except Exception:
-                    continue
+            try:
+                # Format 1: [timestamp, bpm] (liste)
+                if isinstance(p, list) and len(p) >= 2:
+                    timestamp_raw = p[0]
+                    bpm_raw = p[1]
+                    if bpm_raw is not None:
+                        bpm_val = safe_int(bpm_raw, 0)
+                        if bpm_val > 0:
+                            max_hr_from_series = max(max_hr_from_series, bpm_val)
+                            sum_hr += bpm_val
+                            count_hr += 1
+                            ts.append({
+                                "timestamp": normalize_datetime_to_utc(timestamp_raw),
+                                "bpm": bpm_val
+                            })
+                # Format 2: {"timestamp": ..., "bpm": ...} (dict)
+                elif isinstance(p, dict):
+                    bpm_raw = p.get('bpm') or p.get('value') or p.get('heartRate') or p.get('hr')
+                    timestamp_raw = p.get('timestamp') or p.get('time') or p.get('startTimeGMT') or p.get('startTimeLocal')
+                    if bpm_raw is not None and timestamp_raw is not None:
+                        bpm_val = safe_int(bpm_raw, 0)
+                        if bpm_val > 0:
+                            max_hr_from_series = max(max_hr_from_series, bpm_val)
+                            sum_hr += bpm_val
+                            count_hr += 1
+                            ts.append({
+                                "timestamp": normalize_datetime_to_utc(timestamp_raw),
+                                "bpm": bpm_val
+                            })
+            except Exception as e:
+                print_debug(f"⚠️ Error parsing HR time series point: {e}, point: {p}")
+                continue
+        
+        print_debug(f"✅ Extracted {len(ts)} HR time series points from hr_day for {date_str}")
     
     # Si FC max non dans stats mais dans time series
     if heart_rate["max"] == 0 and max_hr_from_series > 0:
@@ -443,11 +494,12 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
         heart_rate["avg"] = round(sum_hr / count_hr)
     
     # 🟢 NOUVEAU : Fusionner time series depuis activités si disponible
+    # Créer ts_dict pour déduplication (sera réutilisé pour sommeil si nécessaire)
+    ts_dict = {}
     if activity_hr_time_series and isinstance(activity_hr_time_series, list) and len(activity_hr_time_series) > 0:
         print_debug(f"🔄 Merging {len(activity_hr_time_series)} HR time series points from activities for {date_str}")
         
         # Créer un dict pour déduplication par timestamp
-        ts_dict = {}
         for point in ts:
             timestamp = point.get('timestamp')
             if timestamp:
@@ -484,6 +536,50 @@ def parse_daily_heart_rate(stats: Dict, hr_day: Any, date_str: str, steps_data: 
         ts.sort(key=lambda x: x.get('timestamp', ''))
         
         print_debug(f"✅ Merged HR time series: {len(ts)} total points (from daily: {len(ts) - len(activity_hr_time_series)}, from activities: {len(activity_hr_time_series)})")
+    
+    # 🟢 PHASE 4 : Fusionner time series depuis sommeil si disponible
+    if sleep_hr_time_series and isinstance(sleep_hr_time_series, list) and len(sleep_hr_time_series) > 0:
+        print_debug(f"🔄 Merging {len(sleep_hr_time_series)} HR time series points from sleep for {date_str}")
+        
+        # Réutiliser ts_dict si déjà créé pour activités, sinon le créer depuis ts
+        if not ts_dict:
+            for point in ts:
+                timestamp = point.get('timestamp')
+                if timestamp:
+                    ts_dict[timestamp] = point
+        
+        # Fusionner les points du sommeil (garder le plus récent en cas de doublon)
+        for sleep_point in sleep_hr_time_series:
+            if isinstance(sleep_point, dict):
+                timestamp = sleep_point.get('timestamp')
+                bpm = sleep_point.get('bpm')
+                
+                if timestamp and bpm and safe_int(bpm, 0) > 0:
+                    timestamp_normalized = normalize_datetime_to_utc(timestamp)
+                    if timestamp_normalized:
+                        existing = ts_dict.get(timestamp_normalized)
+                        if existing:
+                            # En cas de doublon, garder la valeur la plus élevée (plus précise pour FC)
+                            existing_bpm = safe_int(existing.get('bpm'), 0)
+                            new_bpm = safe_int(bpm, 0)
+                            if new_bpm > existing_bpm:
+                                ts_dict[timestamp_normalized] = {"timestamp": timestamp_normalized, "bpm": new_bpm, "source": "sleep"}
+                                # Mettre à jour les stats si nécessaire
+                                if new_bpm > max_hr_from_series:
+                                    max_hr_from_series = new_bpm
+                                sum_hr = sum_hr - existing_bpm + new_bpm
+                        else:
+                            # Nouveau point, l'ajouter
+                            ts_dict[timestamp_normalized] = {"timestamp": timestamp_normalized, "bpm": safe_int(bpm, 0), "source": "sleep"}
+                            count_hr += 1
+                            new_bpm = safe_int(bpm, 0)
+                            sum_hr += new_bpm
+                            if new_bpm > max_hr_from_series:
+                                max_hr_from_series = new_bpm
+        
+        ts = list(ts_dict.values())
+        ts.sort(key=lambda x: x.get('timestamp', ''))
+        print_debug(f"✅ Merged HR time series with sleep: {len(ts)} total points (from sleep: {len(sleep_hr_time_series)})")
     
     # 🔴 FIX #24: Downsampling optimal avec compression intelligente
     if len(ts) > 0:

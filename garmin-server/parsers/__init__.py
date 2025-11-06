@@ -21,6 +21,7 @@ from .sleep_parser import (
     parse_sleep_phases,
     parse_sleep_times,
     extract_respiration_from_sleep,
+    extract_heart_rate_from_sleep,  # 🟢 PHASE 4 : Extraction FC depuis sommeil
     parse_sleep_awakenings,
     parse_sleep_movements,
     parse_sleep_phases_detailed

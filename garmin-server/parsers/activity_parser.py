@@ -1707,7 +1707,7 @@ def parse_jump_rope_metrics(entry_base: Dict[str, Any], summary_dto: Dict[str, A
         print_debug(f"✅ Final jump rope activity {act_id} - jumps: {final_jumps}, connectIQ keys: {list(connect_iq.keys())}")
     else:
         print_debug(f"❌ Final jump rope activity {act_id} - NO JUMPS FOUND after all searches")
-
+    
 
 def extract_activity_heart_rate_time_series(act_details: Optional[Dict[str, Any]], act_summary: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     """

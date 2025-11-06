@@ -12,6 +12,7 @@ import { getAutoWeekVariant } from '../../utils/dateUtils';
 import { calculateAutoReps, detectExerciseUnit } from '../../utils/exerciseCalculations';
 import { useTodayExercises } from '../../hooks/useTodayExercises';
 import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
+import { isMockEnduranceSession } from '../../utils/calendarUtils';
 
 const TodayTab = () => {
   const {
@@ -77,19 +78,32 @@ const TodayTab = () => {
   // Fonction pour valider un défi
   const handleChallengeComplete = async (challengeId, completionData) => {
     try {
+      // Déterminer le type d'activité du défi
+      const activityType = getActiveChallenges().find(c => c.id === challengeId)?.activityType || 'pushups';
+      
+      // ✅ CORRECTION : Normaliser les données pour les pushups/boxing
+      // Pour pushups : s'assurer que count existe (utilisé par défaut dans CalendarHeatmap)
+      // Si reps existe mais pas count, copier reps dans count pour cohérence
+      const normalizedData = { ...completionData };
+      if (activityType === 'pushups' || activityType === 'boxing') {
+        if (normalizedData.reps && !normalizedData.count) {
+          normalizedData.count = normalizedData.reps;
+        }
+      }
+      
       // Créer une session d'endurance pour valider le défi
       const sessionData = {
         id: Date.now(),
         date: getDateStr(currentDate),
         time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        ...completionData,
+        ...normalizedData,
         validatedChallenges: [challengeId]
       };
 
       // Mettre à jour les données d'endurance
       const enduranceData = data?.enduranceData || {};
       const currentSessions = enduranceData.sessions || {};
-      const activityType = getActiveChallenges().find(c => c.id === challengeId)?.activityType || 'pushups';
+      // Note: activityType est déjà défini plus haut (ligne 82)
       
       const updatedSessions = {
         ...currentSessions,
@@ -1032,60 +1046,16 @@ const TodayTab = () => {
         const sessions = enduranceData.sessions || {};
         const todayEnduranceSessions = [];
         
-        // 🔴 FIX : Fonction pour détecter les sessions mock
-        const isMockSession = (session) => {
-          const durationMinutes = session.duration || 0;
-          const distance = session.distance || 0;
-          const jumps = session.jumps || 0;
-          
-          // Pattern 1 : Durée excessive (> 24h, 3600 min = 60h, ou 1200 min = 20h)
-          if (durationMinutes >= 1440 || durationMinutes === 3600 || durationMinutes === 1200) {
-            return true;
-          }
-          
-          // Pattern 2 : Distance très faible (1.5m) avec durée élevée (Natation mock)
-          if (distance === 1.5 && durationMinutes > 60) {
-            return true;
-          }
-          
-          // Pattern 3 : Corde à sauter mock (exactement 1200 jumps ET 1200 min)
-          if (jumps === 1200 && durationMinutes === 1200) {
-            return true;
-          }
-          
-          // Pattern 4 : Date future
-          if (session.date) {
-            const sessionDate = new Date(session.date + 'T00:00:00');
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (sessionDate > today) {
-              return true;
-            }
-          }
-          
-          // Pattern 5 : Pas de garminId ET source = 'garmin' avec valeurs suspectes
-          if (session.source === 'garmin' && !session.garminId) {
-            if (durationMinutes >= 1440 || durationMinutes === 3600 || durationMinutes === 1200) {
-              return true;
-            }
-            if (distance === 1.5 && durationMinutes > 60) {
-              return true;
-            }
-            if (jumps === 1200 && durationMinutes === 1200) {
-              return true;
-            }
-          }
-          
-          return false;
-        };
+        // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
+        // isMockSession remplacé par isMockEnduranceSession (importée)
         
         // Collecter toutes les sessions d'endurance du jour (FILTRER LES MOCK)
         Object.entries(sessions).forEach(([activityType, activitySessions]) => {
           if (Array.isArray(activitySessions)) {
             activitySessions.forEach(session => {
               if (session.date === dateStr) {
-                // 🔴 FIX : Filtrer les sessions mock
-                if (!isMockSession(session)) {
+                // ✅ PHASE 1 : Filtrer les sessions mock (fonction centralisée)
+                if (!isMockEnduranceSession(session)) {
                   todayEnduranceSessions.push({
                     ...session,
                     activityType,

@@ -569,3 +569,4 @@ Vérifier que tous les hooks ont accès aux dépendances nécessaires :
 **Statut :** Planification complète, prêt pour exécution
 
 
+

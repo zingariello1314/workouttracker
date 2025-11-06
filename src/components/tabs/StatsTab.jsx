@@ -4,6 +4,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useGarminData } from '../../hooks/useGarminData';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import { isMockEnduranceSession } from '../../utils/calendarUtils';
 
 const StatsTab = () => {
   const {
@@ -32,7 +33,10 @@ const StatsTab = () => {
   // Utiliser les vraies données de l'historique des entraînements
   const workoutHistory = getWorkoutHistory();
   
-  // Fonction pour calculer les statistiques d'endurance
+  // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
+  // isMockSession remplacé par isMockEnduranceSession (importée)
+
+  // Fonction pour calculer les statistiques d'endurance (FILTRER LES MOCK)
   const calculateEnduranceStats = (filteredHistory, period) => {
     // Récupérer les données d'endurance depuis le contexte
     const enduranceData = data?.enduranceData || {};
@@ -44,10 +48,15 @@ const StatsTab = () => {
     let totalEnduranceDistance = 0;
     let totalEnduranceJumps = 0;
     
-    // Parcourir toutes les activités d'endurance
-    Object.values(sessions).forEach(activitySessions => {
+    // Parcourir toutes les activités d'endurance (EXCLURE LES MOCK)
+    Object.entries(sessions).forEach(([activityType, activitySessions]) => {
       if (Array.isArray(activitySessions)) {
         activitySessions.forEach(session => {
+          // ✅ PHASE 1 : Exclure les sessions mock (fonction centralisée)
+          if (isMockEnduranceSession(session)) {
+            return; // Ignorer cette session
+          }
+          
           const sessionDate = new Date(session.date);
           const startDate = new Date();
           
@@ -70,8 +79,19 @@ const StatsTab = () => {
           if (sessionDate >= startDate && sessionDate <= new Date()) {
             totalEnduranceSessions++;
             
-            // Ajouter les répétitions (pompes, boxe)
-            if (session.count) totalEnduranceReps += parseInt(session.count) || 0;
+            // ✅ CORRECTION : Ajouter les répétitions (pompes, boxe) - EXCLURE jumprope
+            // Pour pushups/boxing, utiliser count (priorité) ou reps (fallback)
+            // Exclure jumprope du calcul des reps (les sauts sont comptés séparément)
+            if (activityType !== 'jumprope') {
+              // Priorité : count > reps (cohérence avec CalendarHeatmap, CalendarTab, EnduranceTab)
+              const sessionReps = session.count !== undefined && session.count !== null
+                ? parseInt(session.count) || 0
+                : (session.reps !== undefined && session.reps !== null ? parseInt(session.reps) || 0 : 0);
+              if (sessionReps > 0) {
+                totalEnduranceReps += sessionReps;
+              }
+            }
+            
             if (session.duration) totalEnduranceDuration += parseInt(session.duration) || 0;
             
             // Ajouter la distance (natation, course)
@@ -82,8 +102,18 @@ const StatsTab = () => {
               });
             }
             
-            // Ajouter les sauts (corde à sauter)
-            if (session.jumps) totalEnduranceJumps += parseInt(session.jumps) || 0;
+            // ✅ CORRECTION : Pour jumprope, utiliser jumps OU reps (qui représente les sauts)
+            if (activityType === 'jumprope') {
+              const sessionJumps = session.jumps !== undefined && session.jumps !== null
+                ? parseInt(session.jumps) || 0
+                : (session.reps !== undefined && session.reps !== null ? parseInt(session.reps) || 0 : 0);
+              if (sessionJumps > 0) {
+                totalEnduranceJumps += sessionJumps;
+              }
+            } else if (session.jumps) {
+              // Pour les autres activités, utiliser jumps si présent
+              totalEnduranceJumps += parseInt(session.jumps) || 0;
+            }
           }
         });
       }

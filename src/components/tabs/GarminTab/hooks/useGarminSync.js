@@ -39,6 +39,7 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
     getLastSyncDate,
     setLastSyncDate,
     getSyncStartDate,
+    getLastSyncTimestampForDate,  // ✅ PHASE 2.2 : Pour récupération incrémentale minute par minute
     loadDataForTab
   } = useGarminData();
 
@@ -97,33 +98,54 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
   }, []);
 
   const processSyncResponse = useCallback(async (json, syncDateRange = null) => {
+    // ✅ PHASE 1 : Logging détaillé du traitement de la réponse
+    const processStartTime = Date.now();
+    log.info(`[🔍 DIAGNOSTIC] Début traitement réponse - OK: ${json.ok}, Data présent: ${!!json.data}`);
+    
     if (json.data && json.ok) {
       // Sauvegarder dans IndexedDB AVANT de mettre à jour l'état
       if (dbReady) {
+        const saveStartTime = Date.now();
+        const activitiesBeforeSave = Object.values(json.data.activities || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+        const dailyMetricsBeforeSave = Object.keys(json.data.dailyMetrics || {}).length;
+        log.info(`[🔍 DIAGNOSTIC] Sauvegarde IndexedDB - Activités: ${activitiesBeforeSave}, Métriques: ${dailyMetricsBeforeSave}`);
+        
         await saveActivities(json.data.activities || {});
         await saveDailyMetrics(json.data.dailyMetrics || {});
+        const saveDuration = Date.now() - saveStartTime;
+        log.info(`[🔍 DIAGNOSTIC] Sauvegarde IndexedDB terminée - Durée: ${saveDuration}ms`);
         
         // 🟢 NOUVEAU : Mettre à jour la date de dernière sync
+        const syncTimestamp = new Date().toISOString();
         if (syncDateRange && syncDateRange.endDate) {
           await setLastSyncDate(syncDateRange.endDate);
+          log.info(`[🔍 DIAGNOSTIC] Timestamp de dernière sync mis à jour: ${syncDateRange.endDate} (timestamp: ${syncTimestamp})`);
         } else {
           // Par défaut, utiliser aujourd'hui
           const today = new Date().toISOString().split('T')[0];
           await setLastSyncDate(today);
+          log.info(`[🔍 DIAGNOSTIC] Timestamp de dernière sync mis à jour: ${today} (timestamp: ${syncTimestamp})`);
         }
         
         // 🟢 NOUVEAU : Recharger les données depuis IndexedDB pour avoir les données complètes (fusionnées)
         // Cela garantit qu'on affiche toutes les données, pas seulement celles de la sync actuelle
+        const loadStartTime = Date.now();
         const allData = await loadAllData();
+        const loadDuration = Date.now() - loadStartTime;
+        const activitiesAfterLoad = Object.values(allData.activities || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+        const dailyMetricsAfterLoad = Object.keys(allData.dailyMetrics || {}).length;
+        log.info(`[🔍 DIAGNOSTIC] Données rechargées depuis IndexedDB - Durée: ${loadDuration}ms, Activités: ${activitiesAfterLoad}, Métriques: ${dailyMetricsAfterLoad}`);
         setGarminData(allData);
       } else {
         setGarminData(json.data);
         // Sauvegarder aussi la date de sync en fallback
         if (syncDateRange && syncDateRange.endDate) {
           await setLastSyncDate(syncDateRange.endDate);
+          log.info(`[🔍 DIAGNOSTIC] Timestamp de dernière sync (fallback): ${syncDateRange.endDate}`);
         } else {
           const today = new Date().toISOString().split('T')[0];
           await setLastSyncDate(today);
+          log.info(`[🔍 DIAGNOSTIC] Timestamp de dernière sync (fallback): ${today}`);
         }
       }
       // Import automatique vers Endurance
@@ -182,13 +204,63 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
       return;
     }
 
+    // ✅ PHASE 1 : Logging détaillé pour diagnostic
+    const syncStartTime = new Date().toISOString();
+    const syncStartTimestamp = Date.now();
+    log.info(`[🔍 DIAGNOSTIC] Début synchronisation - Timestamp: ${syncStartTime}, ForceRefresh: ${forceRefresh}`);
+    log.info(`[🔍 DIAGNOSTIC] Plage de dates: ${startDate} → ${endDate}`);
+    
     log.debug(`Synchronisation incrémentale depuis ${startDate} jusqu'à ${endDate}`);
 
+    // ✅ PHASE 2.4 : Récupérer le timestamp de dernière sync pour le jour en cours
+    // Pour permettre la récupération incrémentale minute par minute
+    let lastSyncTimestamp = null;
+    if (endDate === startDate || endDate >= startDate) {
+      // Si on synchronise aujourd'hui (endDate = aujourd'hui), récupérer le timestamp exact
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      if (endDate === todayStr) {
+        try {
+          lastSyncTimestamp = await getLastSyncTimestampForDate(todayStr);
+          if (lastSyncTimestamp) {
+            log.info(`[🔍 DIAGNOSTIC] Last sync timestamp for today: ${lastSyncTimestamp}`);
+            log.debug(`[useGarminSync] Last sync timestamp for today: ${lastSyncTimestamp}`);
+          } else {
+            log.info(`[🔍 DIAGNOSTIC] Aucun timestamp de dernière sync trouvé pour aujourd'hui (première sync du jour)`);
+          }
+        } catch (e) {
+          log.warn('[useGarminSync] Error getting last sync timestamp:', e);
+          log.warn(`[🔍 DIAGNOSTIC] Erreur lors de la récupération du timestamp: ${e.message}`);
+          // Continuer sans timestamp (fallback sur récupération complète)
+        }
+      }
+    }
+
     // 🟡 FIX #26: Vérifier cache frontend avant sync (mais seulement si la plage correspond)
+    // ✅ PHASE 2.4 : Inclure lastSyncTimestamp dans la clé de cache pour éviter cache incorrect
+    // ✅ PHASE 2.1 : Bypass du cache frontend si forceRefresh est activé
+    // ✅ PHASE 2.2 : TTL adaptatif - réduction pour aujourd'hui
     const now = Date.now();
-    const cacheKey = `sync_${startDate}_${endDate}`;
-    if (frontendCache.data && frontendCache.cacheKey === cacheKey && (now - frontendCache.timestamp) < frontendCache.ttl) {
-      log.debug(`Using cached data (cache valid for ${Math.round((frontendCache.ttl - (now - frontendCache.timestamp)) / 1000)} more seconds)`);
+    const cacheKey = `sync_${startDate}_${endDate}_${lastSyncTimestamp || 'none'}`;
+    
+    // Calculer TTL adaptatif selon si c'est aujourd'hui ou une date passée
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isToday = endDate === todayStr;
+    // TTL réduit pour aujourd'hui (30 secondes) vs dates passées (60 secondes)
+    const adaptiveTtl = isToday ? 30000 : CACHE_TTL_MS; // 30s pour aujourd'hui, 60s pour passé
+    const effectiveTtl = forceRefresh ? 0 : adaptiveTtl; // TTL 0 si forceRefresh
+    
+    const cacheAge = frontendCache.data ? (now - frontendCache.timestamp) : null;
+    const cacheValid = !forceRefresh && frontendCache.data && frontendCache.cacheKey === cacheKey && cacheAge < effectiveTtl;
+    
+    // ✅ PHASE 1 : Logging détaillé du cache frontend
+    log.info(`[🔍 DIAGNOSTIC] Cache frontend - Clé: ${cacheKey}, Présent: ${!!frontendCache.data}, Clé correspond: ${frontendCache.cacheKey === cacheKey}, Âge: ${cacheAge ? Math.round(cacheAge / 1000) + 's' : 'N/A'}, TTL effectif: ${effectiveTtl / 1000}s (${isToday ? 'aujourd\'hui' : 'passé'}), ForceRefresh: ${forceRefresh}, Valide: ${cacheValid}`);
+    
+    if (cacheValid) {
+      const remainingSeconds = Math.round((effectiveTtl - cacheAge) / 1000);
+      log.info(`[🔍 DIAGNOSTIC] ⚠️ UTILISATION DU CACHE FRONTEND - Reste ${remainingSeconds}s avant expiration`);
+      log.debug(`Using cached data (cache valid for ${remainingSeconds} more seconds)`);
       setStatus({
         lastSync: frontendCache.data.lastSync,
         ok: true,
@@ -196,18 +268,44 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
       });
       await processSyncResponse(frontendCache.data, { startDate, endDate });
       return;
+    } else if (frontendCache.data) {
+      log.info(`[🔍 DIAGNOSTIC] Cache frontend présent mais invalide (clé différente ou expiré)`);
     }
 
     try {
       setLoading(true);
-      // 🟢 NOUVEAU : Passer les dates pour synchronisation incrémentale
-      const query = `?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`;
+      // ✅ PHASE 2.4 : Passer les dates ET le timestamp de dernière sync pour récupération incrémentale
+      let query = `?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`;
+      if (lastSyncTimestamp) {
+        query += `&lastSyncTimestamp=${encodeURIComponent(lastSyncTimestamp)}`;
+        log.info(`[🔍 DIAGNOSTIC] Envoi lastSyncTimestamp au serveur: ${lastSyncTimestamp}`);
+        log.debug(`[useGarminSync] Passing lastSyncTimestamp: ${lastSyncTimestamp}`);
+      }
+      if (forceRefresh) {
+        query += `&forceRefresh=true`;
+        log.info(`[🔍 DIAGNOSTIC] ForceRefresh activé - bypass du cache`);
+      }
+      
+      const requestStartTime = Date.now();
+      log.info(`[🔍 DIAGNOSTIC] Envoi requête au serveur: POST /api/garmin/sync${query}`);
       const json = await tryFetch(`/api/garmin/sync${query}`, { method: 'POST' });
+      const requestDuration = Date.now() - requestStartTime;
+      
+      // ✅ PHASE 1 : Logging détaillé de la réponse serveur
+      log.info(`[🔍 DIAGNOSTIC] Réponse serveur reçue - Durée: ${requestDuration}ms, OK: ${json.ok}, Cached: ${json.cached || false}, LastSync: ${json.lastSync}`);
+      if (json.data) {
+        const activitiesCount = Object.values(json.data.activities || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+        const dailyMetricsCount = Object.keys(json.data.dailyMetrics || {}).length;
+        log.info(`[🔍 DIAGNOSTIC] Données reçues - Activités: ${activitiesCount}, Métriques quotidiennes: ${dailyMetricsCount}`);
+      }
       
       // 🟡 FIX #26: Mettre à jour le cache avec la clé de plage
+      // ✅ PHASE 2.2 : Utiliser TTL adaptatif pour le cache
       frontendCache.data = json;
       frontendCache.timestamp = Date.now();
       frontendCache.cacheKey = cacheKey;
+      frontendCache.ttl = adaptiveTtl; // Mettre à jour le TTL selon la date
+      log.info(`[🔍 DIAGNOSTIC] Cache frontend mis à jour avec nouvelles données (TTL: ${adaptiveTtl / 1000}s pour ${isToday ? 'aujourd\'hui' : 'date passée'})`);
       
       setStatus({
         lastSync: json.lastSync,
@@ -215,7 +313,12 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
         message: json.ok ? `Sync OK (${startDate} → ${endDate})` : 'Erreur sync',
         error: json.error
       });
+      
+      const processStartTime = Date.now();
       await processSyncResponse(json, { startDate, endDate });
+      const processDuration = Date.now() - processStartTime;
+      const totalDuration = Date.now() - syncStartTimestamp;
+      log.info(`[🔍 DIAGNOSTIC] Synchronisation terminée - Durée traitement: ${processDuration}ms, Durée totale: ${totalDuration}ms`);
     } catch (e) {
       try {
         // Fallback GET avec dates
