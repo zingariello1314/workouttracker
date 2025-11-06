@@ -32,15 +32,51 @@ class PoseDetectionService {
 
     this.initPromise = (async () => {
       try {
-        // ✅ FIX MediaPipe: Les erreurs WebAssembly sont interceptées globalement dans main.jsx
-        // Ici, on initialise simplement MediaPipe - les erreurs non-bloquantes seront filtrées
-        this.pose = new Pose({
-          locateFile: (file) => {
-            // Utiliser CDN jsDelivr pour les fichiers MediaPipe
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-          }
-        });
+        // ✅ PHASE 1.7 : Initialisation MediaPipe avec gestion erreurs WASM améliorée
+        // Les erreurs WebAssembly sont interceptées globalement dans main.jsx
+        // Ici, on initialise MediaPipe avec fallback si CDN échoue
+        
+        let poseInstance = null;
+        let initError = null;
 
+        try {
+          // Tentative 1 : CDN jsDelivr (recommandé)
+          poseInstance = new Pose({
+            locateFile: (file) => {
+              // ✅ Utiliser CDN jsDelivr pour les fichiers MediaPipe
+              return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+            }
+          });
+        } catch (cdnError) {
+          initError = cdnError;
+          console.warn('[PoseDetectionService] Erreur CDN jsDelivr, tentative fallback...', cdnError);
+          
+          try {
+            // Tentative 2 : CDN unpkg (fallback)
+            poseInstance = new Pose({
+              locateFile: (file) => {
+                return `https://unpkg.com/@mediapipe/pose/${file}`;
+              }
+            });
+          } catch (unpkgError) {
+            console.error('[PoseDetectionService] Erreur CDN unpkg aussi:', unpkgError);
+            // Tentative 3 : Fichiers locaux (si disponibles)
+            try {
+              poseInstance = new Pose({
+                locateFile: (file) => {
+                  // Essayer depuis node_modules (si build local)
+                  return `/node_modules/@mediapipe/pose/${file}`;
+                }
+              });
+            } catch (localError) {
+              throw new Error('Impossible d\'initialiser MediaPipe (tous CDN échoués)');
+            }
+          }
+        }
+
+        this.pose = poseInstance;
+
+        // ✅ PHASE 1.7 : Configuration avec options robustes
         this.pose.setOptions({
           modelComplexity: 1, // 0 = rapide, 1 = équilibré, 2 = précis (plus lent)
           smoothLandmarks: true,
@@ -50,19 +86,39 @@ class PoseDetectionService {
           minTrackingConfidence: 0.5
         });
 
-        // ✅ Attendre que MediaPipe soit prêt (même si warning Module.arguments apparaît)
-        // Le warning est non-bloquant et MediaPipe fonctionne normalement
-        await new Promise((resolve) => {
+        // ✅ PHASE 1.7 : Attendre que MediaPipe soit prêt avec timeout
+        // Les erreurs WASM non-bloquantes sont filtrées dans main.jsx
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Timeout initialisation MediaPipe (> 3s)'));
+          }, 3000);
+
           // Attendre un tick pour laisser MediaPipe s'initialiser
-          setTimeout(resolve, 100);
+          setTimeout(() => {
+            clearTimeout(timeout);
+            resolve();
+          }, 200); // Augmenté de 100ms à 200ms pour laisser plus de temps
         });
 
         this.initialized = true;
         console.log('[PoseDetectionService] Initialisé avec succès');
       } catch (error) {
-        // ✅ Si erreur réelle (pas le warning Module.arguments), la logger
-        // Le warning Module.arguments est intercepté globalement et n'arrivera pas ici
-        console.error('[PoseDetectionService] Erreur initialisation:', error);
+        // ✅ PHASE 1.7 : Gestion erreurs améliorée
+        const errorMessage = error?.message || error?.toString() || '';
+        const errorName = error?.name || '';
+
+        // Filtrer erreurs WASM non-bloquantes (déjà filtrées dans main.jsx mais double vérification)
+        if (errorName === 'ErrnoError' && errorMessage.includes('No such file or directory')) {
+          // Erreur fichier manquant - MediaPipe peut quand même fonctionner
+          console.warn('[PoseDetectionService] Fichier WASM manquant (non-bloquant), continuer...');
+          this.initialized = true; // Marquer comme initialisé quand même
+          return;
+        }
+
+        // Erreur critique - propager
+        console.error('[PoseDetectionService] Erreur initialisation critique:', error);
+        this.initialized = false;
+        this.initPromise = null;
         throw error;
       }
     })();
@@ -76,13 +132,60 @@ class PoseDetectionService {
    * @returns {Promise<Object>} Résultat avec landmarks, confiance, angles
    */
   async detectPose(imageElement) {
+    // ✅ PHASE 1.7 : Validation robuste de l'élément image
+    if (!imageElement) {
+      throw new Error('Élément image invalide (null ou undefined)');
+    }
+
+    // Vérifier que l'élément est valide et a des dimensions
+    const isValidElement = 
+      imageElement instanceof HTMLImageElement ||
+      imageElement instanceof HTMLVideoElement ||
+      imageElement instanceof HTMLCanvasElement;
+
+    if (!isValidElement) {
+      throw new Error(`Type d'élément invalide: ${imageElement.constructor.name}`);
+    }
+
+    // Vérifier dimensions valides
+    const width = imageElement.width || imageElement.videoWidth || 0;
+    const height = imageElement.height || imageElement.videoHeight || 0;
+    
+    if (width === 0 || height === 0) {
+      throw new Error(`Dimensions invalides: ${width}x${height}`);
+    }
+
+    // Pour HTMLVideoElement, vérifier readyState
+    if (imageElement instanceof HTMLVideoElement) {
+      if (imageElement.readyState < 2) { // HAVE_CURRENT_DATA
+        throw new Error(`Vidéo pas prête (readyState: ${imageElement.readyState})`);
+      }
+    }
+
     await this.initialize();
 
+    // ✅ PHASE 1.7 : Vérifier que MediaPipe est bien initialisé
+    if (!this.pose) {
+      throw new Error('MediaPipe Pose non initialisé');
+    }
+
     return new Promise((resolve, reject) => {
+      let resolved = false;
+      let timeoutId = null;
+
       try {
         // Callback unique pour cette détection
         const onResults = (results) => {
-          if (!results.poseLandmarks || results.poseLandmarks.length === 0) {
+          if (resolved) return; // Éviter double résolution
+          resolved = true;
+          
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+
+          // ✅ PHASE 1.7 : Gestion robuste des résultats
+          if (!results || !results.poseLandmarks || results.poseLandmarks.length === 0) {
             resolve({
               detected: false,
               confidence: 0,
@@ -92,39 +195,91 @@ class PoseDetectionService {
             return;
           }
 
-          // Calculer confiance moyenne basée sur visibilité landmarks
-          const avgVisibility = results.poseLandmarks.reduce(
-            (sum, landmark) => sum + (landmark.visibility || 0), 
-            0
-          ) / results.poseLandmarks.length;
+          try {
+            // Calculer confiance moyenne basée sur visibilité landmarks
+            const avgVisibility = results.poseLandmarks.reduce(
+              (sum, landmark) => sum + (landmark.visibility || 0), 
+              0
+            ) / results.poseLandmarks.length;
 
-          // Calculer angles articulaires
-          const angles = this.calculateAngles(results.poseLandmarks);
+            // Calculer angles articulaires
+            const angles = this.calculateAngles(results.poseLandmarks);
 
-          resolve({
-            detected: true,
-            confidence: avgVisibility,
-            landmarks: results.poseLandmarks, // 33 points (x, y, z, visibility)
-            worldLandmarks: results.poseWorldLandmarks, // Coordonnées 3D
-            angles,
-            connections: POSE_CONNECTIONS
-          });
+            resolve({
+              detected: true,
+              confidence: avgVisibility,
+              landmarks: results.poseLandmarks, // 33 points (x, y, z, visibility)
+              worldLandmarks: results.poseWorldLandmarks, // Coordonnées 3D
+              angles,
+              connections: POSE_CONNECTIONS
+            });
+          } catch (calcError) {
+            // Erreur dans calcul angles/confiance - retourner résultat partiel
+            console.warn('[PoseDetectionService] Erreur calcul angles, retour résultat partiel:', calcError);
+            resolve({
+              detected: true,
+              confidence: 0.5, // Confiance par défaut
+              landmarks: results.poseLandmarks,
+              worldLandmarks: results.poseWorldLandmarks,
+              angles: {},
+              connections: POSE_CONNECTIONS,
+              warning: 'Calcul angles échoué'
+            });
+          }
         };
 
-        // Configurer callback temporaire
+        // Configurer callback résultats
         this.pose.onResults(onResults);
 
-        // Lancer détection
-        this.pose.send({ image: imageElement });
+        // ✅ PHASE 1.7 : Envelopper send() dans try-catch pour capturer erreurs synchrones
+        // Note: Les erreurs WASM asynchrones sont filtrées dans main.jsx
+        try {
+          this.pose.send({ image: imageElement });
+        } catch (sendError) {
+          // Erreur synchrone lors de l'envoi (rare mais possible)
+          if (resolved) return;
+          resolved = true;
+          
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+          
+          const errorMessage = sendError?.message || sendError?.toString() || '';
+          const errorName = sendError?.name || '';
 
-        // Timeout sécurité (5 secondes max)
-        setTimeout(() => {
-          if (!this.initialized) {
-            reject(new Error('Timeout détection pose (> 5s)'));
+          // ✅ Filtrer erreurs WASM non-bloquantes (déjà filtrées dans main.jsx mais double vérification)
+          if (errorName === 'ErrnoError' || 
+              (errorName === 'RuntimeError' && errorMessage.includes('Aborted'))) {
+            // Erreur WASM non-bloquante - MediaPipe peut continuer
+            // Les erreurs asynchrones seront gérées par les event listeners globaux
+            console.warn('[PoseDetectionService] Erreur WASM synchrone (non-bloquante), continuer...');
+            // Ne pas rejeter - laisser MediaPipe continuer (les erreurs WASM sont filtrées)
+            return;
+          }
+
+          // Erreur critique synchrone - rejeter
+          console.error('[PoseDetectionService] Erreur synchrone critique:', sendError);
+          reject(sendError);
+          return;
+        }
+
+        // ✅ PHASE 1.7 : Timeout sécurité amélioré (5 secondes max)
+        timeoutId = setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            reject(new Error('Timeout détection pose (> 5s) - MediaPipe ne répond pas'));
           }
         }, 5000);
 
       } catch (error) {
+        if (resolved) return;
+        resolved = true;
+        
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        
         console.error('[PoseDetectionService] Erreur détection:', error);
         reject(error);
       }

@@ -107,12 +107,13 @@ export function createGarminChartWrapper(GarminChartComponent, needsActivities =
 
     // 🟡 FIX #20 : Conteneur avec dimensions absolues garanties pour éviter warnings Recharts
     // Dimensions fixes en px pour garantir que le conteneur est toujours mesurable
+    // 🔴 FIX : Hauteur augmentée à 500px pour accommoder graphiques et statistiques en bas
     return (
       <div 
         style={{ 
           width: '100%', 
-          height: '400px', 
-          minHeight: '400px', 
+          height: '500px', 
+          minHeight: '500px', 
           minWidth: '400px',
           position: 'relative',
           display: 'block',
@@ -312,12 +313,14 @@ export function createGarminTimeSeriesChartWrapper(GarminChartComponent) {
     }
 
     // 🟡 FIX #20 : Conteneur avec dimensions absolues garanties
+    // 🔴 FIX : Hauteur augmentée pour FC 24h en pleine largeur (éviter coupure verticale)
+    // 🔴 FIX : Hauteur augmentée à 800px pour accommoder header, zones FC, graphique et statistiques complètes
     return (
       <div 
         style={{ 
           width: '100%', 
-          height: '400px', 
-          minHeight: '400px', 
+          height: '800px', 
+          minHeight: '800px', 
           minWidth: '400px',
           position: 'relative',
           display: 'block',

@@ -508,9 +508,26 @@ const WorkoutProvider = ({ children }) => {
     // ============================================
     try {
       if (currentData.reps) {
+        // ✅ CORRECTION CRITIQUE : Fonction de normalisation pour éviter les chaînes concaténées
+        const normalizeRepsValue = (value) => {
+          if (value == null) return 0;
+          if (typeof value === 'number') {
+            return isNaN(value) || !isFinite(value) ? 0 : Math.max(0, Math.floor(value));
+          }
+          if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (trimmed === '') return 0;
+            // ✅ Utiliser parseFloat pour gérer les décimales, puis Math.floor pour entier
+            const parsed = parseFloat(trimmed);
+            return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, Math.floor(parsed));
+          }
+          return 0;
+        };
+        
         Object.keys(currentData.reps).forEach(key => {
-          const reps = parseInt(currentData.reps[key]) || 0;
-          console.log(`DEBUG: Processing key: ${key} reps: ${reps}`);
+          // ✅ CORRECTION : Utiliser normalizeRepsValue au lieu de parseInt simple
+          const reps = normalizeRepsValue(currentData.reps[key]);
+          console.log(`DEBUG: Processing key: ${key} reps: ${reps} (original: ${currentData.reps[key]}, type: ${typeof currentData.reps[key]})`);
           
           if (reps > 0) {
             // Extraire la date de la clé (format: YYYY-MM-DD_exerciseId_variant)
@@ -531,7 +548,7 @@ const WorkoutProvider = ({ children }) => {
               
               dataByDate[dateStr].exercises[key] = {
                 exerciseId: exerciseId,
-                reps: reps,
+                reps: reps, // ✅ CORRECTION : Déjà normalisé
                 completed: currentData.checkedExercises?.[key] || false,
                 variant: variant
               };
@@ -729,26 +746,57 @@ const WorkoutProvider = ({ children }) => {
           
           // ✅ Si exercice exceptionnel, utiliser les données complètes
           if (exerciseData.isExceptional) {
+            // ✅ CORRECTION : Normaliser reps et totalReps pour éviter les chaînes
+            const normalizeRepsValue = (value) => {
+              if (value == null) return 0;
+              if (typeof value === 'number') {
+                return isNaN(value) || !isFinite(value) ? 0 : Math.max(0, Math.floor(value));
+              }
+              if (typeof value === 'string') {
+                const trimmed = value.trim();
+                if (trimmed === '') return 0;
+                const parsed = parseFloat(trimmed);
+                return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, Math.floor(parsed));
+              }
+              return 0;
+            };
+            
             exercises.push({
               id: exerciseData.exerciseId,
               name: exerciseData.name || 'Exercice exceptionnel',
-              reps: exerciseData.reps || 0,
+              reps: normalizeRepsValue(exerciseData.reps), // ✅ CORRECTION : Normaliser
               duration: exerciseData.duration || null,
               completed: true,
               isExceptional: true, // ✅ Flag pour distinction
               type: exerciseData.type,
               actualReps: exerciseData.actualReps, // Détails par série si disponible
-              totalReps: exerciseData.totalReps, // Total calculé
+              totalReps: normalizeRepsValue(exerciseData.totalReps), // ✅ CORRECTION : Normaliser
               materiel: exerciseData.materiel,
               notes: exerciseData.notes
             });
           } else {
             // ✅ Exercice normal (programme ou endurance)
             const exerciseName = getExerciseNameById(exerciseData.exerciseId);
+            
+            // ✅ CORRECTION : Normaliser reps pour éviter les chaînes
+            const normalizeRepsValue = (value) => {
+              if (value == null) return 0;
+              if (typeof value === 'number') {
+                return isNaN(value) || !isFinite(value) ? 0 : Math.max(0, Math.floor(value));
+              }
+              if (typeof value === 'string') {
+                const trimmed = value.trim();
+                if (trimmed === '') return 0;
+                const parsed = parseFloat(trimmed);
+                return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, Math.floor(parsed));
+              }
+              return 0;
+            };
+            
             exercises.push({
               id: exerciseData.exerciseId,
               name: exerciseName,
-              reps: exerciseData.reps || 0,
+              reps: normalizeRepsValue(exerciseData.reps), // ✅ CORRECTION : Normaliser
               completed: exerciseData.completed || false,
               variant: exerciseData.variant || '',
               // ✅ Données spécifiques endurance si présentes
@@ -794,13 +842,64 @@ const WorkoutProvider = ({ children }) => {
           });
         }
 
-        // ✅ Calculer totalReps (EXCLURE les supprimés et non-complétés)
+        // ✅ CORRECTION CRITIQUE : Calculer totalReps avec normalisation des types
+        // Le problème : ex.reps peut être une chaîne, causant une concaténation au lieu d'une addition
+        // Solution : Normaliser chaque valeur en nombre avant l'addition
+        const normalizeRepsValue = (value) => {
+          if (value == null) return 0;
+          if (typeof value === 'number') {
+            return isNaN(value) || !isFinite(value) ? 0 : Math.max(0, Math.floor(value));
+          }
+          if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (trimmed === '') return 0;
+            const parsed = parseFloat(trimmed);
+            return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, Math.floor(parsed));
+          }
+          return 0;
+        };
+        
         const totalReps = exercises
           .filter(ex => !ex.isSuppressed && ex.completed) // ✅ Exclure supprimés et non-complétés
-          .reduce((sum, ex) => sum + (ex.reps || 0), 0);
+          .reduce((sum, ex) => {
+            // ✅ CORRECTION : Normaliser ex.reps avant l'addition pour éviter concaténation
+            const normalizedReps = normalizeRepsValue(ex.reps);
+            return sum + normalizedReps;
+          }, 0);
         
         const completedExercises = exercises.filter(ex => ex.completed).length;
         const completedStretches = stretches.filter(stretch => stretch.completed).length;
+
+        // ✅ PHASE 1.1 : Récupérer intensity depuis sessionFeedbacks
+        // Le feedback est stocké dans currentData.sessionFeedbacks[dateStr] avec difficulte (1-10)
+        const sessionFeedback = currentData.sessionFeedbacks?.[dateStr];
+        const intensity = sessionFeedback?.difficulte || null; // null si pas de feedback, sera géré par AdvancedStats avec valeur par défaut 5
+
+        // ✅ PHASE 1.1 : Calculer duration (en minutes)
+        // Priorité 1 : Somme des durées des exercices (si disponibles)
+        // Priorité 2 : Estimation basée sur le nombre d'exercices (5 min par exercice)
+        // Priorité 3 : Durée par défaut de 30 minutes
+        let duration = null;
+        
+        // Essayer de calculer depuis les durées des exercices
+        const totalDurationFromExercises = exercises
+          .filter(ex => ex.completed && ex.duration != null)
+          .reduce((sum, ex) => {
+            // Normaliser la durée (peut être en secondes ou minutes)
+            const exDuration = normalizeRepsValue(ex.duration);
+            // Si la durée est < 60, considérer que c'est en minutes, sinon convertir secondes → minutes
+            return sum + (exDuration < 60 ? exDuration : Math.round(exDuration / 60));
+          }, 0);
+        
+        if (totalDurationFromExercises > 0) {
+          duration = totalDurationFromExercises;
+        } else if (completedExercises > 0) {
+          // Estimation : 5 minutes par exercice complété
+          duration = completedExercises * 5;
+        } else {
+          // Valeur par défaut si aucune activité
+          duration = null; // Sera géré par AdvancedStats avec valeur par défaut 30
+        }
 
         // ✅ Inclure dans l'historique si au moins une activité
         if (totalReps > 0 || completedExercises > 0 || completedStretches > 0 || exercises.length > 0) {
@@ -814,6 +913,9 @@ const WorkoutProvider = ({ children }) => {
             completedStretches: completedStretches,
             totalExercises: exercises.length,
             totalStretches: stretches.length,
+            // ✅ PHASE 1.1 : Ajouter intensity et duration pour AdvancedStats
+            intensity: intensity, // null si pas de feedback, AdvancedStats utilisera 5 par défaut
+            duration: duration, // null si pas calculable, AdvancedStats utilisera 30 par défaut
             // ✅ Métadonnées enrichies pour analytics
             hasVariations: !!variation,
             suppressedCount: variation && Array.isArray(variation.suppressedExercises) 
@@ -822,7 +924,9 @@ const WorkoutProvider = ({ children }) => {
             exceptionalCount: variation && Array.isArray(variation.additionalExercises)
               ? variation.additionalExercises.filter(ex => ex && ex.completed === true).length
               : 0,
-            variationReason: variation?.reason || null
+            variationReason: variation?.reason || null,
+            // ✅ PHASE 1.1 : Ajouter référence au feedback complet si disponible
+            feedback: sessionFeedback || null
           };
           
           console.log(`DEBUG: Adding session data for ${dateStr}:`, sessionData);
@@ -1107,20 +1211,27 @@ const WorkoutProvider = ({ children }) => {
       const normalizedPhotoData = validateAndNormalizePhotoData(photoData);
 
       // 🔧 Validation renforcée des données photo (structure normalisée)
+      // ✅ PHASE 1.5 : Préserver structure multi-résolution si présente
       const validatedPhoto = {
         id: normalizedPhotoData.id || `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         date: normalizedPhotoData.date || new Date().toISOString(),
         weight: normalizedPhotoData.weight ? parseFloat(normalizedPhotoData.weight) : null,
         notes: normalizedPhotoData.notes || '',
-        url: normalizedPhotoData.url, // ✅ UNIQUEMENT `url` (plus de `photo`)
+        url: normalizedPhotoData.url, // ✅ Fallback si resolutions n'existe pas
         measurements: normalizedPhotoData.measurements || {},
         angle: normalizedPhotoData.angle || 'front',
         tags: normalizedPhotoData.tags || ['progress'],
+        // ✅ PHASE 1.5 : Préserver structure multi-résolution (thumbnail/preview/full)
+        ...(normalizedPhotoData.resolutions && typeof normalizedPhotoData.resolutions === 'object'
+          ? { resolutions: normalizedPhotoData.resolutions }
+          : {}),
         // Métadonnées de sauvegarde
         savedAt: Date.now(),
         version: '2.0', // Version incrémentée pour marquer normalisation
         filename: normalizedPhotoData.filename || 'progress_photo.jpg',
-        type: normalizedPhotoData.type || 'photo'
+        type: normalizedPhotoData.type || 'photo',
+        // ✅ PHASE 1.5 : Préserver métadonnées compression si présentes
+        ...(normalizedPhotoData.compression ? { compression: normalizedPhotoData.compression } : {})
       };
 
       const currentData = getCurrentData();
@@ -1140,27 +1251,137 @@ const WorkoutProvider = ({ children }) => {
     }
   };
 
-  // Fonction pour supprimer une photo de progression
-  const deleteProgressPhoto = async (photoIndex) => {
+  // ✅ PHASE 1.3 : Fonction pour mettre à jour une photo de progression
+  /**
+   * Met à jour une photo de progression existante par son ID
+   * 
+   * @param {string} photoId - ID unique de la photo à mettre à jour
+   * @param {Object} updates - Objet contenant les champs à mettre à jour
+   * @param {Object} updates.analysis - Résultats d'analyse IA (optionnel)
+   * @param {string} updates.notes - Notes de la photo (optionnel)
+   * @param {number} updates.weight - Poids (optionnel)
+   * @param {string} updates.angle - Angle de la photo (optionnel)
+   * @param {Array} updates.tags - Tags de la photo (optionnel)
+   * @param {Object} updates.measurements - Mensurations (optionnel)
+   * @param {Object} updates.resolutions - Structure multi-résolution (optionnel, préservée si non fournie)
+   * 
+   * @returns {Promise<Object>} Photo mise à jour
+   * 
+   * **Important** :
+   * - Préserve la structure multi-résolution existante si non fournie dans updates
+   * - Fusionne intelligemment les updates (deep merge pour objets imbriqués)
+   * - Sauvegarde automatiquement dans IndexedDB
+   * - Compatible avec export JSON (structure analysis incluse)
+   */
+  const updateProgressPhoto = async (photoId, updates) => {
     try {
-      if (typeof photoIndex !== 'number' || photoIndex < 0) {
-        throw new Error('Index de photo invalide');
+      if (!photoId || typeof photoId !== 'string') {
+        throw new Error('ID de photo invalide');
+      }
+
+      if (!updates || typeof updates !== 'object') {
+        throw new Error('Updates invalides');
       }
 
       const currentData = getCurrentData();
       const progressPhotos = currentData.progressPhotos || [];
       
-      if (photoIndex >= progressPhotos.length) {
-        throw new Error('Photo non trouvée');
+      // ✅ Trouver photo par ID (pas index)
+      const photoIndex = progressPhotos.findIndex(photo => photo.id === photoId);
+      
+      if (photoIndex === -1) {
+        throw new Error(`Photo avec ID "${photoId}" non trouvée`);
       }
 
-      const updatedPhotos = progressPhotos.filter((_, index) => index !== photoIndex);
+      const existingPhoto = progressPhotos[photoIndex];
+
+      // ✅ Fusion intelligente : préserver structure multi-résolution et autres métadonnées
+      const updatedPhoto = {
+        ...existingPhoto,
+        ...updates,
+        // ✅ Préserver structure multi-résolution si non fournie dans updates
+        resolutions: updates.resolutions !== undefined 
+          ? updates.resolutions 
+          : existingPhoto.resolutions,
+        // ✅ Fusion profonde pour analysis (préserver métadonnées existantes)
+        analysis: updates.analysis 
+          ? {
+              ...existingPhoto.analysis,
+              ...updates.analysis,
+              // Préserver analyzedAt si déjà présent, sinon utiliser maintenant
+              analyzedAt: updates.analysis.analyzedAt || existingPhoto.analysis?.analyzedAt || new Date().toISOString()
+            }
+          : existingPhoto.analysis,
+        // ✅ Préserver url si resolutions existe (fallback)
+        url: updates.url !== undefined 
+          ? updates.url 
+          : (existingPhoto.url || (existingPhoto.resolutions?.preview?.data || existingPhoto.resolutions?.full?.data)),
+        // ✅ Métadonnées de mise à jour
+        updatedAt: Date.now(),
+        version: existingPhoto.version || '2.0'
+      };
+
+      // ✅ Remplacer photo dans le tableau
+      const updatedPhotos = [...progressPhotos];
+      updatedPhotos[photoIndex] = updatedPhoto;
+
       const updatedData = {
         ...currentData,
-        progressPhotos: updatedPhotos
+        progressPhotos: updatedPhotos,
+        // Marquer la dernière mise à jour du suivi corporel
+        bodyTrackingLastUpdated: new Date().toISOString()
       };
 
       await updateData(updatedData);
+      
+      return { success: true, photo: updatedPhoto };
+    } catch (error) {
+      console.error('❌ Erreur lors de la mise à jour de la photo de progression:', error);
+      throw error;
+    }
+  };
+
+  // ✅ PHASE 1.4 : Fonction pour supprimer une photo de progression par ID
+  /**
+   * Supprime une photo de progression par son ID unique
+   * 
+   * @param {string} photoId - ID unique de la photo à supprimer
+   * @returns {Promise<Object>} { success: boolean }
+   * 
+   * **Important** :
+   * - Utilise ID (pas index) pour cohérence avec reste du système
+   * - Compatible avec pagination/virtualisation (ID stable)
+   * - Supprime de IndexedDB via updateData
+   */
+  const deleteProgressPhoto = async (photoId) => {
+    try {
+      if (!photoId || typeof photoId !== 'string') {
+        throw new Error('ID de photo invalide');
+      }
+
+      const currentData = getCurrentData();
+      const progressPhotos = currentData.progressPhotos || [];
+      
+      // ✅ Recherche par ID (pas index)
+      const photoIndex = progressPhotos.findIndex(photo => photo.id === photoId);
+      
+      if (photoIndex === -1) {
+        throw new Error(`Photo avec ID "${photoId}" non trouvée`);
+      }
+
+      // ✅ Supprimer photo du tableau
+      const updatedPhotos = progressPhotos.filter(photo => photo.id !== photoId);
+      
+      const updatedData = {
+        ...currentData,
+        progressPhotos: updatedPhotos,
+        // Marquer la dernière mise à jour du suivi corporel
+        bodyTrackingLastUpdated: new Date().toISOString()
+      };
+
+      await updateData(updatedData);
+      
+      return { success: true };
     } catch (error) {
       console.error('❌ Erreur lors de la suppression de la photo de progression:', error);
       throw error;
@@ -2092,6 +2313,7 @@ const WorkoutProvider = ({ children }) => {
     deleteProgressEntry,
     deleteProgressEntryField,
     addProgressPhoto,
+    updateProgressPhoto, // ✅ PHASE 1.3 : Mise à jour photo par ID
     deleteProgressPhoto,
     
     // Fonctions homepageImages supprimées - maintenant gérées par useHomepageImages indépendant

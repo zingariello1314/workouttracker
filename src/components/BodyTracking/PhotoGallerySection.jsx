@@ -1,5 +1,4 @@
 import React, { useState, useRef, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
-import { useDeepCompareMemo } from 'use-deep-compare';
 import { 
   Camera, 
   Upload, 
@@ -30,14 +29,16 @@ import { useWorkout } from '../../context/WorkoutContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { formatDate } from '../../utils/dateUtils';
-import { validatePhoto } from './utils/validation';
+import { validatePhoto, validateMultiResolutionStructure, validatePhotoQuality } from './utils/validation';
 import { useToast } from './hooks/useToast';
 import { compressImage, compressImageMultiResolution } from './utils/imageCompression'; // ✅ OPTIMISATION: Compression multi-résolution
-import { usePagination } from './hooks/usePagination';
-import usePhotosPaginated from './hooks/usePhotosPaginated'; // ✅ OPTIMISATION: Pagination avec cache LRU
+import usePhotoPagination from './hooks/usePhotoPagination'; // ✅ PHASE 2.4 : Hook pagination unifié
 import { getPhotoAnalysisOrchestrator } from './services/photoAnalysisOrchestrator';
 import { getModelPreloader } from './services/modelPreloader';
 import { getPhotoUrl } from './utils/photoNormalizer';
+import { getErrorFeedbackService, ERROR_TYPES } from './services/errorFeedbackService';
+import { getEnhancedErrorHandler, withRetry } from './services/enhancedErrorHandler';
+import { adaptiveSetTimeout } from './utils/adaptiveTimeouts';
 import logger from '../../utils/logger';
 
 // Lazy loading composants lourds
@@ -49,16 +50,19 @@ const PhotoCorrelationsDashboard = lazy(() => import('./PhotoCorrelationsDashboa
 
 // ✅ OPTIMISATION: Navigation Dashboard Améliorée
 import DashboardNavigation from './components/DashboardNavigation';
+// ✅ PHASE 1.6 : ErrorBoundary pour VirtualizedPhotoGrid
+import BodyTrackingErrorBoundary from './ErrorBoundary';
 
 const log = logger.component('PhotoGallerySection');
 
 const PhotoGallerySection = () => {
-  const { data, addProgressPhoto } = useWorkout();
+  const { data, addProgressPhoto, updateProgressPhoto, deleteProgressPhoto } = useWorkout(); // ✅ PHASE 1.3 : updateProgressPhoto, PHASE 2.3 : deleteProgressPhoto
   const { showSuccess, showError, showWarning, showInfo, ToastContainer } = useToast();
   
   // ✅ OPTIMISATION: Service feedback erreurs détaillé
-  const { getErrorFeedbackService, ERROR_TYPES } = require('./services/errorFeedbackService');
   const errorFeedbackService = React.useMemo(() => getErrorFeedbackService(), []);
+  // ✅ PHASE 4.3 : Service gestion erreurs enrichie
+  const enhancedErrorHandler = React.useMemo(() => getEnhancedErrorHandler(), []);
   const fileInputRef = useRef(null);
   
   const [viewMode, setViewMode] = useState('grid'); // 'grid' ou 'list'
@@ -67,7 +71,14 @@ const PhotoGallerySection = () => {
   const [showModal, setShowModal] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [compareMode, setCompareMode] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  // ✅ PHASE 4.2 : État enrichi pour feedback compression
+  const [uploadProgress, setUploadProgress] = useState({
+    progress: 0,
+    currentResolution: null,
+    message: '',
+    estimatedTime: null,
+    startTime: null
+  });
   
   // États analyse IA
   const [showCaptureSession, setShowCaptureSession] = useState(false);
@@ -78,66 +89,26 @@ const PhotoGallerySection = () => {
   const [viewType, setViewType] = useState('gallery'); // 'gallery' | 'dashboard' | 'muscle' | 'timeline' | 'correlations'
   const [justCaptured, setJustCaptured] = useState(false); // ✅ OPTIMISATION: Flag pour suggestions intelligentes
 
-  // ✅ OPTIMISATION: Activer pagination avec cache LRU si > 50 photos (réduction mémoire)
-  const USE_PAGINATED_LOADING = (data?.progressPhotos?.length || 0) > 50;
-  
-  // 📄 PAGINATION OPTIMISÉE - Utilisée seulement si pas de virtualisation
+  // ✅ PHASE 2.4 : Pagination unifiée (détecte automatiquement mode optimal)
   const itemsPerPage = viewMode === 'grid' ? 12 : 8; // Moins en mode liste (photos plus grandes)
-  const [currentPage, setCurrentPage] = useState(1);
   
-  // ✅ OPTIMISATION: Pagination avec cache LRU (si > 50 photos)
   const {
-    photos: paginatedPhotosData,
+    photos: progressPhotos,
     loading: paginationLoading,
     totalPages: paginatedTotalPages,
     totalPhotos: paginatedTotalPhotos,
-    invalidateCache: invalidatePaginationCache
-  } = usePhotosPaginated(
-    USE_PAGINATED_LOADING ? currentPage : 1,
-    itemsPerPage,
-    {
-      filterBy,
-      enableCache: true,
-      maxCacheSize: 10
-    }
-  );
-
-  // 🔍 Récupérer les vraies photos de progression (MEMOIZED avec Deep Compare)
-  // ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
-  // ✅ OPTIMISATION: Utiliser données paginées si activé, sinon calculer depuis mémoire
-  const progressPhotos = useDeepCompareMemo(() => {
-    // ✅ Si pagination activée, utiliser données paginées
-    if (USE_PAGINATED_LOADING) {
-      return paginatedPhotosData;
-    }
-    
-    // ✅ Sinon, comportement classique (mémoire)
-    if (!data?.progressPhotos || data.progressPhotos.length === 0) {
-      return [];
-    }
-    
-    return data.progressPhotos
-      .sort((a, b) => {
-        const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
-        const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
-        return dateB - dateA; // Plus récent en premier
-      })
-      .map(photo => ({
-        id: photo.id,
-        // ✅ OPTIMISATION: Préserver structure multi-résolution si présente
-        ...(photo.resolutions ? { resolutions: photo.resolutions } : {}),
-        url: getPhotoUrl(photo, 'preview'), // ✅ OPTIMISATION: Utiliser preview par défaut (bon équilibre)
-        date: photo.date ? new Date(photo.date) : (photo.timestamp ? new Date(photo.timestamp) : new Date()),
-        angle: photo.angle || 'front',
-        weight: photo.weight,
-        notes: photo.notes,
-        tags: photo.tags || ['progress'],
-        filename: photo.filename,
-        type: photo.type,
-        // Préserver métadonnées compression si présentes
-        ...(photo.compression ? { compression: photo.compression } : {})
-      }));
-  }, [USE_PAGINATED_LOADING, paginatedPhotosData, data?.progressPhotos]);
+    currentPage: finalCurrentPage,
+    paginationInfo,
+    goToNextPage,
+    goToPrevPage,
+    goToPage,
+    goToFirstPage,
+    goToLastPage,
+    resetPagination,
+    invalidateCache: invalidatePaginationCache,
+    useCachePagination: USE_PAGINATED_LOADING,
+    mode: paginationMode
+  } = usePhotoPagination(itemsPerPage, filterBy, viewMode);
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -158,8 +129,54 @@ const PhotoGallerySection = () => {
       }
       
       if (file.type.startsWith('image/')) {
-        // ✅ OPTIMISATION: COMPRESSION MULTI-RÉSOLUTION AVANT SAUVEGARDE
-        setUploadProgress(0);
+        // ✅ PHASE 4.4 : Validation qualité enrichie (non-bloquante)
+        validatePhotoQuality(file, {
+          minWidth: 200,
+          minHeight: 200,
+          maxWidth: 10000,
+          maxHeight: 10000,
+          minAspectRatio: 0.3,
+          maxAspectRatio: 3.0,
+          minSharpness: 100,
+          checkBlur: true
+        }).then(qualityResult => {
+          // Afficher warnings si qualité insuffisante (non-bloquant)
+          if (qualityResult.warnings && qualityResult.warnings.length > 0) {
+            const warningMessage = `⚠️ Qualité photo: ${qualityResult.warnings.join('; ')}`;
+            showWarning(warningMessage);
+            log.warn('Avertissements qualité photo', {
+              score: qualityResult.score,
+              metrics: qualityResult.metrics,
+              warnings: qualityResult.warnings
+            });
+          }
+          
+          // Afficher recommandations si disponibles
+          if (qualityResult.recommendations && qualityResult.recommendations.length > 0) {
+            log.info('Recommandations qualité photo', qualityResult.recommendations);
+          }
+          
+          // Bloquer seulement si erreurs critiques (résolution trop faible)
+          if (!qualityResult.isValid && qualityResult.errors && qualityResult.errors.length > 0) {
+            const errorMessage = `❌ Photo rejetée: ${qualityResult.errors.join('; ')}`;
+            showError(errorMessage);
+            // Note: Ne pas return ici car c'est dans un .then() - le traitement continue
+            // L'erreur sera gérée par le flux normal
+          }
+        }).catch(qualityError => {
+          log.warn('Erreur validation qualité (non-bloquant)', qualityError);
+          // Continuer même si validation qualité échoue
+        });
+        
+        // ✅ PHASE 4.2 : COMPRESSION MULTI-RÉSOLUTION AVEC FEEDBACK ENRICHI
+        const startTime = Date.now();
+        setUploadProgress({
+          progress: 0,
+          currentResolution: null,
+          message: 'Initialisation...',
+          estimatedTime: null,
+          startTime
+        });
         
         // Compresser l'image en multi-résolution (thumbnail/preview/full)
         compressImageMultiResolution(
@@ -173,11 +190,95 @@ const PhotoGallerySection = () => {
             ],
             progressive: true // JPEG progressif si fallback
           },
-          (progress) => {
-            setUploadProgress(progress);
+          (progress, message) => {
+            // ✅ PHASE 4.2 : Feedback enrichi avec résolution, message, temps estimé
+            const progressValue = typeof progress === 'number' ? progress : 0;
+            const elapsed = Date.now() - startTime;
+            
+            // Extraire résolution depuis message si présent
+            let currentResolution = null;
+            if (message) {
+              const resolutionMatch = message.match(/(thumbnail|preview|full)/i);
+              if (resolutionMatch) {
+                currentResolution = resolutionMatch[1].toLowerCase();
+              }
+            }
+            
+            // Calculer temps estimé (basé sur progression actuelle)
+            let estimatedTime = null;
+            if (progressValue > 10 && progressValue < 100) {
+              const estimatedTotal = (elapsed / progressValue) * 100;
+              estimatedTime = Math.max(0, Math.round((estimatedTotal - elapsed) / 1000)); // En secondes
+            }
+            
+            // Formater message utilisateur
+            let userMessage = message || 'Compression en cours...';
+            if (currentResolution) {
+              const resolutionLabels = {
+                thumbnail: 'Miniature',
+                preview: 'Aperçu',
+                full: 'Pleine résolution'
+              };
+              userMessage = `${resolutionLabels[currentResolution] || currentResolution}...`;
+            }
+            
+            setUploadProgress({
+              progress: progressValue,
+              currentResolution,
+              message: userMessage,
+              estimatedTime,
+              startTime
+            });
+            
+            if (process.env.NODE_ENV === 'development') {
+              log.debug(`Compression: ${userMessage} (${progressValue}%)`, {
+                currentResolution,
+                estimatedTime: estimatedTime ? `${estimatedTime}s` : 'calcul...',
+                elapsed: `${Math.round(elapsed / 1000)}s`
+              });
+            }
           }
         )
           .then((compressionResult) => {
+            // ✅ PHASE 2.5 : Validation structure multi-résolution
+            const validation = validateMultiResolutionStructure(compressionResult, {
+              strict: true,
+              requiredResolutions: ['thumbnail', 'preview', 'full']
+            });
+
+            if (!validation.isValid) {
+              // Erreurs critiques : arrêter le processus
+              const errorMessage = `Erreur de compression : ${validation.errors.join(', ')}`;
+              log.error('Validation structure multi-résolution échouée', {
+                errors: validation.errors,
+                warnings: validation.warnings,
+                compressionResult: {
+                  hasThumbnail: !!compressionResult.thumbnail,
+                  hasPreview: !!compressionResult.preview,
+                  hasFull: !!compressionResult.full
+                }
+              });
+              
+              const feedback = errorFeedbackService.analyzeError(
+                new Error(errorMessage),
+                ERROR_TYPES.UPLOAD,
+                'COMPRESSION_INCOMPLETE',
+                { fileName: file.name }
+              );
+              showError(feedback.title || 'Erreur de compression', feedback);
+              setUploadProgress({ progress: 0, currentResolution: null, message: '', estimatedTime: null, startTime: null });
+              return; // Arrêter le processus
+            }
+
+            // ✅ Afficher warnings si présents (non-bloquants)
+            if (validation.warnings.length > 0) {
+              log.warn('Avertissements validation multi-résolution', {
+                warnings: validation.warnings,
+                fileName: file.name
+              });
+              // Ne pas bloquer, juste logger
+            }
+
             // Afficher informations de compression
             const { originalSizeKB, totalSizeKB, reduction, format } = compressionResult;
             
@@ -187,8 +288,10 @@ const PhotoGallerySection = () => {
                 `Photo compressée (${format.toUpperCase()}): ${originalSizeKB.toFixed(1)}KB → ${totalSizeKB.toFixed(1)}KB (-${reduction}%)`
               );
             }
+
+            log.info(`Validation multi-résolution réussie: ${validation.validResolutions}/${validation.totalResolutions} résolutions valides`);
             
-            // ✅ OPTIMISATION: Créer l'entrée photo avec structure multi-résolution
+            // ✅ OPTIMISATION: Créer l'entrée photo avec structure multi-résolution validée
             const photoEntry = {
               id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               // Structure multi-résolution: { thumbnail, preview, full }
@@ -256,29 +359,48 @@ const PhotoGallerySection = () => {
               );
               
               if (result.success) {
-                // Enrichir photo avec résultats
+                // ✅ PHASE 1.3 : Enrichir photo avec résultats et sauvegarder
+                const analysisData = {
+                  analyzed: true,
+                  analyzedAt: new Date().toISOString(),
+                  metrics: result.metrics,
+                  poseDetection: result.poseDetection,
+                  segmentation: result.segmentation,
+                  preprocessing: result.preprocessing,
+                  summary: result.summary
+                };
+                
+                // ✅ Sauvegarder résultats analyse dans IndexedDB
+                try {
+                  await updateProgressPhoto(savedPhoto.id, { analysis: analysisData });
+                  log.info(`Analyse IA sauvegardée pour photo ${savedPhoto.id}`);
+                } catch (updateError) {
+                  log.error('Erreur sauvegarde analyse IA', updateError);
+                  // Continuer même si sauvegarde échoue (affichage toujours possible)
+                }
+                
                 const enrichedPhoto = {
                   ...savedPhoto,
-                  analysis: {
-                    analyzed: true,
-                    analyzedAt: new Date().toISOString(),
-                    metrics: result.metrics,
-                    poseDetection: result.poseDetection,
-                    segmentation: result.segmentation,
-                    preprocessing: result.preprocessing,
-                    summary: result.summary
-                  }
+                  analysis: analysisData
                 };
                 
                 showSuccess(`✅ Photo analysée avec succès ! ${result.summary?.musclesAnalyzed || 0} muscles analysés.`);
                 
-                // ✅ NAVIGATION: Rediriger vers Dashboard pour voir résultats
+                // ✅ PHASE 4.1 : NAVIGATION avec timeout adaptatif
                 setJustCaptured(true); // ✅ Activer flag pour suggestions intelligentes
-                setTimeout(() => {
+                
+                adaptiveSetTimeout(() => {
                   setViewType('dashboard');
-                  // Reset flag après 5s (temps pour voir la suggestion)
-                  setTimeout(() => setJustCaptured(false), 5000);
-                }, 1000);
+                  // ✅ PHASE 4.1 : Reset flag avec timeout adaptatif
+                  adaptiveSetTimeout(() => setJustCaptured(false), 'reset', {
+                    photosCount: progressPhotos.length,
+                    hasAnalysis: true
+                  });
+                }, 'navigation', {
+                  musclesAnalyzed: result.summary?.musclesAnalyzed || 0,
+                  photosCount: progressPhotos.length,
+                  complexAnalysis: result.summary?.musclesAnalyzed > 10
+                });
               } else {
                 const feedback = errorFeedbackService.analyzeError(
                 result.error || 'Analyse échouée',
@@ -290,122 +412,90 @@ const PhotoGallerySection = () => {
               }
             } catch (error) {
               log.error('Erreur analyse automatique upload', error);
-              const feedback = errorFeedbackService.analyzeError(
+              
+              // ✅ PHASE 4.3 : Utiliser gestionnaire enrichi
+              enhancedErrorHandler.handleError(
                 error,
                 ERROR_TYPES.ANALYSIS,
                 null,
-                { photoId: savedPhoto?.id }
-              );
-              showWarning(feedback.message, feedback);
+                { photoId: savedPhoto?.id },
+                // Retry function : réessayer l'analyse
+                async () => {
+                  const orchestrator = getPhotoAnalysisOrchestrator();
+                  const analysisSource = getPhotoUrl(savedPhoto, 'full') || getPhotoUrl(savedPhoto, 'preview') || getPhotoUrl(savedPhoto);
+                  return await orchestrator.analyzePhoto(
+                    analysisSource,
+                    { id: savedPhoto?.id, angle: savedPhoto?.angle || 'front' },
+                    { targetResolution: 512, segmentationResolution: 'medium' }
+                  );
+                }
+              ).then(result => {
+                const feedback = result.feedback;
+                if (result.success && result.recovered) {
+                  showInfo(feedback.title || 'Analyse récupérée', {
+                    ...feedback,
+                    message: feedback.message + ' (réessayé avec succès)'
+                  });
+                } else {
+                  showWarning(feedback.message, feedback);
+                }
+              });
             } finally {
               setAnalyzingPhoto(null);
               setAnalysisProgress({ progress: 0, message: '' });
             }
           })
-          .catch((error) => {
+          .catch(async (error) => {
             log.error('Erreur lors de la compression/sauvegarde de la photo', error);
-            setUploadProgress(0);
-            const feedback = errorFeedbackService.analyzeError(
+            setUploadProgress({ progress: 0, currentResolution: null, message: '', estimatedTime: null, startTime: null });
+            
+            // ✅ PHASE 4.3 : Utiliser gestionnaire enrichi avec retry pour erreurs récupérables
+            const result = await enhancedErrorHandler.handleError(
               error,
               ERROR_TYPES.SAVE,
               null,
-              { photoId: file.name }
+              { photoId: file.name, fileName: file.name }
             );
-            showError(feedback.title, feedback);
+            
+            const feedback = result.feedback;
+            if (result.success && result.recovered) {
+              showWarning(feedback.title || 'Erreur récupérée', {
+                ...feedback,
+                message: feedback.message + ' (récupération automatique)'
+              });
+            } else {
+              showError(feedback.title || 'Erreur lors de la sauvegarde', feedback);
+            }
           });
       }
     });
   };
 
-  // 🔍 Filtrer et trier photos (MEMOIZED)
-  // ✅ OPTIMISATION: Si pagination activée, photos déjà filtrées/triées par usePhotosPaginated
-  const filteredPhotos = useMemo(() => {
-    if (USE_PAGINATED_LOADING) {
-      return progressPhotos; // Déjà filtrées par usePhotosPaginated
-    }
-    return progressPhotos.filter(photo => {
-      if (filterBy === 'all') return true;
-      return photo.angle === filterBy;
-    });
-  }, [progressPhotos, filterBy, USE_PAGINATED_LOADING]);
+  // ✅ PHASE 2.4 : Photos déjà filtrées et triées par usePhotoPagination
+  // Plus besoin de logique conditionnelle - le hook unifié gère tout
+  const sortedPhotos = progressPhotos; // Déjà filtrées et triées par le hook
 
-  const sortedPhotos = useMemo(() => {
-    if (USE_PAGINATED_LOADING) {
-      return filteredPhotos; // Déjà triées par usePhotosPaginated
-    }
-    return [...filteredPhotos].sort((a, b) => {
-      const dateA = a.date instanceof Date ? a.date : new Date(a.date || 0);
-      const dateB = b.date instanceof Date ? b.date : new Date(b.date || 0);
-      return dateB - dateA; // Plus récent en premier
-    });
-  }, [filteredPhotos, USE_PAGINATED_LOADING]);
-
-  // ✅ OPTIMISATION: Virtualisation automatique si > 50 photos (seuil performance)
+  // ✅ PHASE 2.4 : Virtualisation automatique si > 50 photos (seuil performance)
   const shouldVirtualize = useMemo(() => {
     return sortedPhotos.length > 50; // Seuil: virtualisation si > 50 photos
   }, [sortedPhotos.length]);
 
-  // 📄 PAGINATION OPTIMISÉE - Utilisée seulement si pas de virtualisation et pagination non activée
-  const {
-    paginatedItems: paginatedPhotos,
-    currentPage: legacyCurrentPage,
-    totalPages: legacyTotalPages,
-    paginationInfo,
-    goToNextPage,
-    goToPrevPage,
-    goToPage,
-    goToFirstPage,
-    goToLastPage,
-    resetPagination
-  } = usePagination(
-    USE_PAGINATED_LOADING ? [] : sortedPhotos, // ✅ Ne pas paginer si déjà paginé
-    {
-      itemsPerPage,
-      initialPage: 1
-      // Note: Si pagination activée, usePagination reçoit tableau vide (pas utilisé)
-    }
-  );
-
-  // ✅ OPTIMISATION: Fonctions navigation pagination avec cache LRU
+  // ✅ PHASE 2.4 : Fonction navigation unifiée (plus besoin de logique conditionnelle)
   const handlePageChange = useCallback((newPage) => {
-    if (USE_PAGINATED_LOADING) {
-      setCurrentPage(newPage);
-      // ✅ Invalider cache si nécessaire (après ajout/suppression photo)
-      // invalidatePaginationCache(); // Décommenter si besoin
-    } else {
-      goToPage(newPage);
-    }
-  }, [USE_PAGINATED_LOADING, goToPage]);
+    goToPage(newPage);
+  }, [goToPage]);
 
   const goToNextPageOptimized = useCallback(() => {
-    if (USE_PAGINATED_LOADING) {
-      setCurrentPage(prev => Math.min(prev + 1, paginatedTotalPages));
-    } else {
-      goToNextPage();
-    }
-  }, [USE_PAGINATED_LOADING, paginatedTotalPages, goToNextPage]);
+    goToNextPage();
+  }, [goToNextPage]);
 
   const goToPrevPageOptimized = useCallback(() => {
-    if (USE_PAGINATED_LOADING) {
-      setCurrentPage(prev => Math.max(prev - 1, 1));
-    } else {
-      goToPrevPage();
-    }
-  }, [USE_PAGINATED_LOADING, goToPrevPage]);
+    goToPrevPage();
+  }, [goToPrevPage]);
 
-  // ✅ Calculer valeurs pagination finales (selon mode)
-  const finalCurrentPage = USE_PAGINATED_LOADING ? currentPage : legacyCurrentPage;
-  const finalTotalPages = USE_PAGINATED_LOADING ? paginatedTotalPages : legacyTotalPages;
-  const finalLoading = USE_PAGINATED_LOADING ? paginationLoading : false;
-
-  // Réinitialiser pagination quand le filtre change (seulement si pagination active)
-  useEffect(() => {
-    if (USE_PAGINATED_LOADING) {
-      setCurrentPage(1); // Reset à page 1 si filtre change
-    } else if (!shouldVirtualize) {
-      resetPagination();
-    }
-  }, [filterBy, resetPagination, shouldVirtualize, USE_PAGINATED_LOADING]);
+  // ✅ PHASE 2.4 : Valeurs pagination finales (déjà calculées par hook unifié)
+  const finalTotalPages = paginatedTotalPages;
+  const finalLoading = paginationLoading;
 
   const handlePhotoSelect = useCallback((photoId) => {
     setSelectedPhotos(prev => {
@@ -494,23 +584,31 @@ const PhotoGallerySection = () => {
       );
 
       if (result.success) {
-        // Enrichir photo avec métadonnées analyse
-        const enrichedPhoto = {
-          ...photo,
-          analysis: {
-            analyzed: true,
-            analyzedAt: new Date().toISOString(),
-            metrics: result.metrics,
-            poseDetection: result.poseDetection,
-            segmentation: result.segmentation,
-            preprocessing: result.preprocessing,
-            summary: result.summary
-          }
+        // ✅ PHASE 1.3 : Enrichir photo avec métadonnées analyse et sauvegarder
+        const analysisData = {
+          analyzed: true,
+          analyzedAt: new Date().toISOString(),
+          metrics: result.metrics,
+          poseDetection: result.poseDetection,
+          segmentation: result.segmentation,
+          preprocessing: result.preprocessing,
+          summary: result.summary
         };
 
-        // Mettre à jour photo dans données
-        // Note: Devrait utiliser updateProgressPhoto si disponible dans WorkoutContext
-        // Pour l'instant, on affiche juste les résultats
+        // ✅ Sauvegarder résultats analyse dans IndexedDB
+        try {
+          await updateProgressPhoto(photo.id, { analysis: analysisData });
+          log.info(`Analyse IA sauvegardée pour photo ${photo.id}`);
+        } catch (updateError) {
+          log.error('Erreur sauvegarde analyse IA', updateError);
+          // Continuer même si sauvegarde échoue (affichage toujours possible)
+        }
+
+        const enrichedPhoto = {
+          ...photo,
+          analysis: analysisData
+        };
+
         setAnalysisResults(enrichedPhoto);
         setShowAnalysisModal(true);
         
@@ -540,27 +638,244 @@ const PhotoGallerySection = () => {
   };
 
   /**
-   * Précharge modèles IA selon contexte
+   * ✅ PHASE 3.5 : Précharge adaptatif modèles IA selon contexte
    */
   useEffect(() => {
     const preloader = getModelPreloader();
     
-    // Précharger modèles selon vue active
-    if (viewType === 'gallery' && showCaptureSession) {
-      // Si onglet galerie et modal capture ouvert: précharger MediaPipe
-      preloader.preloadPoseModel().catch(err => 
-        log.warn('Erreur préchargement MediaPipe:', err)
-      );
-    } else if (viewType === 'dashboard' || viewType === 'muscle' || viewType === 'timeline') {
-      // Si dashboards d'analyse: précharger tous modèles en idle
-      preloader.preloadOnIdle('analysis', 1000);
-    }
+    // ✅ PHASE 3.5 : Utiliser nouvelle méthode adaptative
+    preloader.preloadForView(viewType, showCaptureSession);
   }, [viewType, showCaptureSession]);
 
   /**
    * Gère sauvegarde session depuis PhotoCaptureSession avec analyse automatique
    * ✅ NAVIGATION: Redirige automatiquement vers Dashboard après analyse
    */
+  // ✅ PHASE 2.2 : Fonction téléchargement photo optimale
+  /**
+   * Télécharge une photo avec la meilleure résolution disponible
+   * Gère les cas Base64, blob URLs, et structure multi-résolution
+   * 
+   * @param {Object} photo - Photo à télécharger
+   * @returns {Promise<void>}
+   */
+  const handleDownloadPhoto = useCallback(async (photo) => {
+    if (!photo) {
+      showError('Photo invalide');
+      return;
+    }
+
+    try {
+      // ✅ Obtenir meilleure résolution disponible (full > preview > thumbnail)
+      let photoUrl = getPhotoUrl(photo, 'full');
+      if (!photoUrl) {
+        photoUrl = getPhotoUrl(photo, 'preview');
+      }
+      if (!photoUrl) {
+        photoUrl = getPhotoUrl(photo, 'thumbnail');
+      }
+      if (!photoUrl) {
+        photoUrl = photo.url || photo.photo;
+      }
+
+      if (!photoUrl) {
+        showError('Aucune image disponible pour téléchargement');
+        return;
+      }
+
+      // ✅ Générer nom de fichier optimal
+      const photoDate = photo.date ? new Date(photo.date) : new Date();
+      const dateStr = photoDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      const angleStr = photo.angle || 'front';
+      const photoId = photo.id ? photo.id.split('_').pop() : Date.now().toString(36);
+      const extension = photo.filename?.split('.').pop() || 'jpg';
+      const filename = `progress_${dateStr}_${angleStr}_${photoId}.${extension}`;
+
+      // ✅ Gérer Base64 et blob URLs
+      let blob = null;
+      let objectUrl = null;
+
+      if (photoUrl.startsWith('data:image')) {
+        // Cas Base64 : convertir en blob
+        const response = await fetch(photoUrl);
+        blob = await response.blob();
+      } else if (photoUrl.startsWith('blob:')) {
+        // Cas blob URL : récupérer blob existant
+        const response = await fetch(photoUrl);
+        blob = await response.blob();
+      } else {
+        // Cas URL externe ou Base64 sans préfixe : essayer fetch
+        try {
+          const response = await fetch(photoUrl);
+          if (response.ok) {
+            blob = await response.blob();
+          } else {
+            // Fallback : créer blob depuis Base64 si c'est du Base64 sans préfixe
+            if (photoUrl.length > 100 && /^[A-Za-z0-9+/=]+$/.test(photoUrl)) {
+              // Probablement Base64 sans préfixe
+              const base64Data = `data:image/jpeg;base64,${photoUrl}`;
+              const response2 = await fetch(base64Data);
+              blob = await response2.blob();
+            } else {
+              throw new Error('Impossible de récupérer l\'image');
+            }
+          }
+        } catch (fetchError) {
+          log.warn('Erreur fetch image, tentative Base64 direct', fetchError);
+          // Dernier recours : essayer comme Base64
+          try {
+            const base64Data = photoUrl.includes(',') 
+              ? photoUrl 
+              : `data:image/jpeg;base64,${photoUrl}`;
+            const response2 = await fetch(base64Data);
+            blob = await response2.blob();
+          } catch (base64Error) {
+            throw new Error('Format d\'image non supporté pour téléchargement');
+          }
+        }
+      }
+
+      if (!blob) {
+        throw new Error('Impossible de créer le fichier à télécharger');
+      }
+
+      // ✅ Créer URL objet temporaire et déclencher téléchargement
+      objectUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      // Ajouter au DOM, cliquer, puis retirer
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // ✅ PHASE 4.1 : Nettoyer URL objet avec timeout adaptatif (basé sur taille fichier)
+      const cleanupDelay = photo?.resolutions?.full?.data 
+        ? Math.min(2000, Math.max(500, photo.resolutions.full.data.length / 10000)) // 500ms-2s selon taille
+        : 1000; // Défaut 1s
+      
+      setTimeout(() => {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+        }
+      }, cleanupDelay);
+
+      showSuccess(`Photo téléchargée : ${filename}`);
+      log.info(`Photo téléchargée: ${filename} (${(blob.size / 1024).toFixed(1)} KB)`);
+
+    } catch (error) {
+      log.error('Erreur téléchargement photo', error);
+      const feedback = errorFeedbackService.analyzeError(
+        error,
+        ERROR_TYPES.DOWNLOAD,
+        null,
+        { photoId: photo?.id }
+      );
+      showError(feedback.title || 'Erreur lors du téléchargement', feedback);
+    }
+  }, [showSuccess, showError, errorFeedbackService]);
+
+  // ✅ PHASE 2.3 : Fonction suppression photo optimale
+  /**
+   * Supprime une photo avec confirmation, gestion cache, et navigation intelligente
+   * 
+   * @param {Object} photo - Photo à supprimer
+   * @returns {Promise<void>}
+   */
+  const handleDeletePhoto = useCallback(async (photo) => {
+    if (!photo || !photo.id) {
+      showError('Photo invalide');
+      return;
+    }
+
+    // ✅ Confirmation utilisateur avec détails
+    const photoDate = photo.date ? new Date(photo.date).toLocaleDateString('fr-FR') : 'date inconnue';
+    const confirmMessage = `Êtes-vous sûr de vouloir supprimer cette photo du ${photoDate} ?\n\nCette action est irréversible.`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return; // Utilisateur a annulé
+    }
+
+    try {
+      // ✅ Supprimer via WorkoutContext (utilise ID, sauvegarde IndexedDB)
+      await deleteProgressPhoto(photo.id);
+      
+      // ✅ Invalider cache pagination si activé
+      if (USE_PAGINATED_LOADING) {
+        invalidatePaginationCache();
+        log.info('Cache pagination invalidé après suppression photo');
+      }
+
+      // ✅ Navigation intelligente après suppression
+      const currentPhoto = sortedPhotos[currentPhotoIndex];
+      const isDeletedPhotoCurrent = currentPhoto && currentPhoto.id === photo.id;
+      
+      if (isDeletedPhotoCurrent) {
+        // Si photo supprimée est celle affichée dans modal
+        const remainingPhotos = sortedPhotos.filter(p => p.id !== photo.id);
+        
+        if (remainingPhotos.length === 0) {
+          // Plus aucune photo : fermer modal
+          setShowModal(false);
+          showSuccess('Photo supprimée. Aucune autre photo disponible.');
+        } else {
+          // Naviguer vers photo suivante ou précédente
+          let newIndex = currentPhotoIndex;
+          
+          if (newIndex >= remainingPhotos.length) {
+            // Si index dépasse, aller à la dernière photo
+            newIndex = remainingPhotos.length - 1;
+          }
+          
+          setCurrentPhotoIndex(newIndex);
+          showSuccess('Photo supprimée');
+        }
+      } else {
+        // Photo supprimée n'était pas celle affichée
+        showSuccess('Photo supprimée');
+      }
+
+      // ✅ PHASE 2.4 : Ajuster pagination si nécessaire (si dernière photo de la page)
+      if (USE_PAGINATED_LOADING && finalCurrentPage > 1) {
+        const photosOnCurrentPage = sortedPhotos.length;
+        if (photosOnCurrentPage === 0) {
+          // Page vide : aller à page précédente
+          const newPage = Math.max(1, finalCurrentPage - 1);
+          goToPage(newPage);
+          log.info(`Page ${finalCurrentPage} vide après suppression, navigation vers page ${newPage}`);
+        }
+      }
+
+      log.info(`Photo supprimée: ${photo.id} (${photoDate})`);
+
+    } catch (error) {
+      log.error('Erreur suppression photo', error);
+      const feedback = errorFeedbackService.analyzeError(
+        error,
+        ERROR_TYPES.SAVE, // Utiliser SAVE car c'est une opération de sauvegarde (suppression)
+        null,
+        { photoId: photo.id }
+      );
+      showError(feedback.title || 'Erreur lors de la suppression', feedback);
+    }
+  }, [
+    showSuccess, 
+    showError, 
+    errorFeedbackService, 
+    deleteProgressPhoto,
+    invalidatePaginationCache,
+    USE_PAGINATED_LOADING,
+    sortedPhotos,
+    currentPhotoIndex,
+    setShowModal,
+    setCurrentPhotoIndex,
+    goToPage,
+    finalCurrentPage
+  ]);
+
   const handleSessionComplete = useCallback(async (photos) => {
     try {
       // Photos sont déjà sauvegardées et analysées par PhotoCaptureSession
@@ -631,14 +946,24 @@ const PhotoGallerySection = () => {
           `Redirection vers le Dashboard...`
         );
         
-        // ✅ NAVIGATION: Fermer modal et rediriger vers Dashboard après 1s
+        // ✅ PHASE 4.1 : NAVIGATION avec timeout adaptatif
         setShowCaptureSession(false);
         setJustCaptured(true); // ✅ Activer flag pour suggestions intelligentes
-        setTimeout(() => {
+        
+        // Calculer timeout adaptatif basé sur nombre de photos analysées
+        const analyzedCount = successCount;
+        adaptiveSetTimeout(() => {
           setViewType('dashboard');
-          // Reset flag après 5s
-          setTimeout(() => setJustCaptured(false), 5000);
-        }, 1000);
+          // ✅ PHASE 4.1 : Reset flag avec timeout adaptatif
+          adaptiveSetTimeout(() => setJustCaptured(false), 'reset', {
+            photosCount: progressPhotos.length,
+            hasAnalysis: analyzedCount > 0
+          });
+        }, 'navigation', {
+          musclesAnalyzed: analyzedCount * 5, // Estimation moyenne 5 muscles par photo
+          photosCount: progressPhotos.length,
+          complexAnalysis: analyzedCount > 1
+        });
         
       } else {
         // Toutes photos déjà analysées
@@ -646,14 +971,23 @@ const PhotoGallerySection = () => {
           `✅ ${photos.length} photo(s) analysée(s). Redirection vers le Dashboard...`
         );
         
-        // ✅ NAVIGATION: Fermer modal et rediriger vers Dashboard après 1s
+        // ✅ PHASE 4.1 : NAVIGATION avec timeout adaptatif
         setShowCaptureSession(false);
         setJustCaptured(true); // ✅ Activer flag pour suggestions intelligentes
-        setTimeout(() => {
+        
+        // Calculer timeout adaptatif (toutes photos déjà analysées = navigation plus rapide)
+        adaptiveSetTimeout(() => {
           setViewType('dashboard');
-          // Reset flag après 5s
-          setTimeout(() => setJustCaptured(false), 5000);
-        }, 1000);
+          // ✅ PHASE 4.1 : Reset flag avec timeout adaptatif
+          adaptiveSetTimeout(() => setJustCaptured(false), 'reset', {
+            photosCount: progressPhotos.length,
+            hasAnalysis: true // Toutes photos ont analyse
+          });
+        }, 'navigation', {
+          musclesAnalyzed: photos.length * 5, // Estimation moyenne
+          photosCount: progressPhotos.length,
+          complexAnalysis: false // Moins complexe car déjà analysées
+        });
       }
       
     } catch (error) {
@@ -832,27 +1166,53 @@ const PhotoGallerySection = () => {
             </Suspense>
           ) : (
             <>
-              {/* Barre de progression de compression */}
-              {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
+              {/* ✅ PHASE 4.2 : Barre de progression de compression enrichie */}
+              {uploadProgress.progress > 0 && uploadProgress.progress < 100 && (
+            <div className="mb-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-blue-400 animate-pulse" />
-                  <span className="text-sm text-slate-300">
-                    Compression en cours... {uploadProgress.toFixed(0)}%
-                  </span>
+                  <Upload className="w-5 h-5 text-blue-400 animate-pulse" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-slate-200">
+                      {uploadProgress.message || 'Compression en cours...'}
+                    </span>
+                    {uploadProgress.currentResolution && (
+                      <span className="text-xs text-slate-400 mt-0.5">
+                        Résolution: {uploadProgress.currentResolution}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <span className="text-xs text-slate-400">{uploadProgress.toFixed(0)}%</span>
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-semibold text-blue-400">
+                    {uploadProgress.progress.toFixed(0)}%
+                  </span>
+                  {uploadProgress.estimatedTime !== null && uploadProgress.estimatedTime > 0 && (
+                    <span className="text-xs text-slate-400 mt-0.5">
+                      ~{uploadProgress.estimatedTime}s restantes
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden mb-2">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
+                  className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress.progress}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Optimisation de la taille et de la qualité pour un stockage efficace
-              </p>
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>
+                  {uploadProgress.currentResolution === 'thumbnail' && 'Miniature (150x200)'}
+                  {uploadProgress.currentResolution === 'preview' && 'Aperçu (400x533)'}
+                  {uploadProgress.currentResolution === 'full' && 'Pleine résolution (1200x1600)'}
+                  {!uploadProgress.currentResolution && 'Optimisation de la taille et de la qualité...'}
+                </span>
+                {uploadProgress.startTime && (
+                  <span>
+                    {Math.round((Date.now() - uploadProgress.startTime) / 1000)}s écoulées
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
@@ -860,23 +1220,26 @@ const PhotoGallerySection = () => {
           {viewMode === 'grid' ? (
             shouldVirtualize ? (
               // ✅ MODE VIRTUALISÉ: Pour grandes collections (>50 photos)
-              <VirtualizedPhotoGrid
-                photos={sortedPhotos} // Utiliser toutes photos triées (virtualisation gère l'affichage)
-                columns={4} // Responsive: sera adapté automatiquement selon viewport
-                itemWidth={200}
-                itemHeight={266} // 3:4 aspect ratio
-                onPhotoSelect={handlePhotoSelect}
-                selectedPhotos={selectedPhotos}
-                getAngleIcon={getAngleIcon}
-                getAngleLabel={getAngleLabel}
-                openModal={openModal}
-                sortedPhotos={sortedPhotos}
-                containerHeight={600}
-              />
+              // ✅ PHASE 1.6 : ErrorBoundary pour fallback gracieux si react-window absent ou erreur
+              <BodyTrackingErrorBoundary>
+                <VirtualizedPhotoGrid
+                  photos={sortedPhotos} // Utiliser toutes photos triées (virtualisation gère l'affichage)
+                  columns={4} // Responsive: sera adapté automatiquement selon viewport
+                  itemWidth={200}
+                  itemHeight={266} // 3:4 aspect ratio
+                  onPhotoSelect={handlePhotoSelect}
+                  selectedPhotos={selectedPhotos}
+                  getAngleIcon={getAngleIcon}
+                  getAngleLabel={getAngleLabel}
+                  openModal={openModal}
+                  sortedPhotos={sortedPhotos}
+                  containerHeight={600}
+                />
+              </BodyTrackingErrorBoundary>
             ) : (
-              // MODE PAGINÉ: Pour petites collections (<50 photos) - garde compatibilité
+              // ✅ PHASE 2.4 : MODE PAGINÉ: Utilise sortedPhotos (déjà paginées par hook unifié)
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {paginatedPhotos.map((photo, index) => {
+                {sortedPhotos.map((photo, index) => {
                 // Index global pour la navigation dans le modal
                 const globalIndex = sortedPhotos.findIndex(p => p.id === photo.id);
                 return (
@@ -952,8 +1315,8 @@ const PhotoGallerySection = () => {
             )
           ) : (
             <div className="space-y-4">
-              {paginatedPhotos.map((photo, index) => {
-                // Index global pour la navigation dans le modal
+              {sortedPhotos.map((photo, index) => {
+                // ✅ PHASE 2.4 : Index global pour la navigation dans le modal
                 const globalIndex = sortedPhotos.findIndex(p => p.id === photo.id);
                 return (
                 <div
@@ -1292,11 +1655,22 @@ const PhotoGallerySection = () => {
                     )}
                     
                     <div className="flex gap-2">
-                      <Button size="sm" variant="ghost">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleDownloadPhoto(sortedPhotos[currentPhotoIndex])}
+                        title="Télécharger la photo originale"
+                      >
                         <Download className="w-4 h-4 mr-2" />
                         Télécharger
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-red-400 hover:text-red-300"
+                        onClick={() => handleDeletePhoto(sortedPhotos[currentPhotoIndex])}
+                        title="Supprimer cette photo (irréversible)"
+                      >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Supprimer
                       </Button>

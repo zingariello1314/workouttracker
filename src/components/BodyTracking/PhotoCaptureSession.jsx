@@ -39,6 +39,7 @@ import { useThrottledCallback } from './hooks/useThrottle';
 import { usePhotoAutoSave } from './hooks/usePhotoAutoSave';
 import { getPhotoUrl } from './utils/photoNormalizer';
 import { getWebcamPreprocessingService } from './services/webcamPreprocessingService'; // ✅ OPTIMISATION: Preprocessing adaptatif webcam
+import { getErrorFeedbackService, ERROR_TYPES } from './services/errorFeedbackService';
 import logger from '../../utils/logger';
 
 const log = logger.component('PhotoCaptureSession');
@@ -88,7 +89,7 @@ const PhotoCaptureSession = ({
   const { showSuccess, showError, showWarning, ToastContainer } = useToast();
   
   // ✅ OPTIMISATION: Service feedback erreurs détaillé
-  const { getErrorFeedbackService, ERROR_TYPES } = require('./services/errorFeedbackService');
+  // ✅ PHASE 1.2 : Correction require() → import
   const errorFeedbackService = useMemo(() => getErrorFeedbackService(), []);
   
   // ✅ OPTIMISATION: Hook centralisé pour sauvegarde photos (élimine duplication)

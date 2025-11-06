@@ -75,11 +75,19 @@ const PhotoCorrelationsDashboard = () => {
   const [correlationsData, setCorrelationsData] = useState(null);
   const [error, setError] = useState(null);
 
+  // ✅ PHASE 3.2 : Hash stable pour éviter recalculs inutiles
+  const photosHash = useMemo(() => {
+    if (!data?.progressPhotos || data.progressPhotos.length === 0) {
+      return '';
+    }
+    return `${data.progressPhotos.length}_${data.progressPhotos.map(p => p.id).join(',')}`;
+  }, [data?.progressPhotos]);
+
   /**
    * Extrait toutes les photos analysées
-   * ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+   * ✅ PHASE 3.2 : useMemo optimisé avec hash stable
    */
-  const analyzedPhotos = useDeepCompareMemo(() => {
+  const analyzedPhotos = useMemo(() => {
     if (!data?.progressPhotos || data.progressPhotos.length === 0) {
       return [];
     }
@@ -95,7 +103,7 @@ const PhotoCorrelationsDashboard = () => {
         summary: photo.analysis.summary
       }))
       .sort((a, b) => a.date - b.date);
-  }, [data?.progressPhotos]);
+  }, [photosHash]);
 
   /**
    * Calcule corrélations globales

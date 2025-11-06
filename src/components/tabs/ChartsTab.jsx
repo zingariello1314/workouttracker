@@ -32,6 +32,7 @@ import GarminSleepChart from './GarminTab/components/charts/GarminSleepChart';
 import GarminRespirationChart from './GarminTab/components/charts/GarminRespirationChart';
 import GarminActivityHeatmap from './GarminTab/components/charts/GarminActivityHeatmap';
 import GarminCorrelationCharts from './GarminTab/components/charts/GarminCorrelationCharts';
+import GarminDailyActivityChart from './GarminTab/components/charts/GarminDailyActivityChart';
 import { createGarminChartWrapper, createGarminTimeSeriesChartWrapper, createGarminCorrelationChartsWrapper } from './charts/GarminChartWrapper';
 
 const ChartsTab = () => {
@@ -133,6 +134,9 @@ const ChartsTab = () => {
   );
   const GarminCorrelationChartsWrapped = React.useMemo(() => 
     createGarminCorrelationChartsWrapper(GarminCorrelationCharts), []
+  );
+  const GarminDailyActivityChartWrapped = React.useMemo(() => 
+    createGarminChartWrapper(GarminDailyActivityChart), []
   );
 
   // Configuration des graphiques avec votre design exact
@@ -399,6 +403,36 @@ const ChartsTab = () => {
     });
   }, [chartData, themeColors, selectedPeriod, garminData]);
 
+  // Séparer les graphiques spéciaux (FC 24h en pleine largeur, puis ligne de 3)
+  const fc24hConfig = memoizedChartConfigs.find(c => c.id === 'garmin-heart-rate-timeseries');
+  const secondRowGarminConfigs = [
+    memoizedChartConfigs.find(c => c.id === 'garmin-heart-rate'),
+    memoizedChartConfigs.find(c => c.id === 'garmin-body-battery'),
+    {
+      id: 'garmin-daily-activity',
+      title: 'Activité Quotidienne',
+      icon: Activity,
+      color: 'blue',
+      bgColor: 'bg-blue-500/20',
+      textColor: 'text-blue-400',
+      component: GarminDailyActivityChartWrapped,
+      props: { garminData, selectedPeriod, colors: themeColors },
+      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+    }
+  ].filter(config => {
+    // Filtrer les configs null ET vérifier les conditions
+    if (!config) return false;
+    if (config.condition !== undefined && config.condition === false) return false;
+    return true;
+  });
+  
+  // Autres graphiques (exclure ceux déjà affichés)
+  const otherChartConfigs = memoizedChartConfigs.filter(c => 
+    c.id !== 'garmin-heart-rate-timeseries' && 
+    c.id !== 'garmin-heart-rate' && 
+    c.id !== 'garmin-body-battery'
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-6">
       {/* Header avec votre design exact */}
@@ -426,9 +460,54 @@ const ChartsTab = () => {
         </div>
       </div>
 
-      {/* Grille 3x3 - Tous les éléments avec votre design exact */}
+      {/* Ligne 1 : FC 24h en pleine largeur */}
+      {fc24hConfig && (() => {
+        const IconComponent = fc24hConfig.icon;
+        const ChartComponent = fc24hConfig.component;
+        return (
+          <div className="mb-20">
+            <div className={`bg-slate-900/40 backdrop-blur-sm rounded-2xl p-6 pb-12 border ${fc24hConfig.bgColor.replace('bg-', 'border-').replace('/20', '/20')} shadow-xl hover:shadow-${fc24hConfig.color}-500/20 transition-all duration-300 min-h-[1050px]`}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <IconComponent className={fc24hConfig.textColor} size={20} />
+                  {fc24hConfig.title}
+                </h2>
+              </div>
+              <ChartComponent {...fc24hConfig.props} />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Ligne 2 : 3 graphiques Garmin (Heart Rate, Body Battery, Daily Activity) */}
+      {secondRowGarminConfigs.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {secondRowGarminConfigs.map((config) => {
+            if (!config) return null;
+            const IconComponent = config.icon;
+            const ChartComponent = config.component;
+            
+            return (
+              <div 
+                key={config.id} 
+                className={`bg-slate-900/40 backdrop-blur-sm rounded-2xl p-6 pb-8 border ${config.bgColor.replace('bg-', 'border-').replace('/20', '/20')} shadow-xl hover:shadow-${config.color}-500/20 transition-all duration-300 min-h-[600px]`}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <IconComponent className={config.textColor} size={20} />
+                    {config.title}
+                  </h2>
+                </div>
+                <ChartComponent {...config.props} />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Grille 3x3 - Autres graphiques */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {memoizedChartConfigs.map((config) => {
+        {otherChartConfigs.map((config) => {
           const IconComponent = config.icon;
           const ChartComponent = config.component;
           

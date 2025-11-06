@@ -21,6 +21,7 @@ export const ERROR_TYPES = {
   ANALYSIS: 'analysis',
   UPLOAD: 'upload',
   SAVE: 'save',
+  DOWNLOAD: 'download', // ✅ PHASE 2.2 : Ajout type erreur téléchargement
   WEBCAM: 'webcam',
   POSE_DETECTION: 'pose_detection',
   SEGMENTATION: 'segmentation',
@@ -155,6 +156,18 @@ const ERROR_MESSAGES = {
         'Vérifiez votre connexion internet',
         'Réessayez dans quelques instants',
         'Vérifiez que le fichier n\'est pas corrompu'
+      ],
+      severity: 'error'
+    },
+    // ✅ PHASE 2.5 : Erreur compression incomplète
+    COMPRESSION_INCOMPLETE: {
+      title: 'Erreur de compression',
+      message: 'La compression de l\'image n\'a pas généré toutes les résolutions nécessaires.',
+      suggestions: [
+        'Réessayez avec une autre image',
+        'Vérifiez que l\'image n\'est pas corrompue',
+        'Réduisez la taille de l\'image si elle est très grande',
+        'Contactez le support si le problème persiste'
       ],
       severity: 'error'
     }
@@ -370,12 +383,29 @@ class ErrorFeedbackService {
       [ERROR_TYPES.UPLOAD]: {
         'size': 'FILE_TOO_LARGE',
         'format': 'INVALID_FORMAT',
-        'upload': 'UPLOAD_FAILED'
+        'upload': 'UPLOAD_FAILED',
+        'compression': 'COMPRESSION_INCOMPLETE',
+        'résolution': 'COMPRESSION_INCOMPLETE',
+        'resolution': 'COMPRESSION_INCOMPLETE',
+        'incomplète': 'COMPRESSION_INCOMPLETE',
+        'incomplete': 'COMPRESSION_INCOMPLETE'
       },
       [ERROR_TYPES.SAVE]: {
         'save': 'SAVE_FAILED',
         'indexeddb': 'INDEXEDDB_ERROR',
         'storage': 'INDEXEDDB_ERROR'
+      },
+      // ✅ PHASE 2.2 : Mapping erreurs téléchargement
+      [ERROR_TYPES.DOWNLOAD]: {
+        'aucune image': 'NO_IMAGE_AVAILABLE',
+        'non disponible': 'NO_IMAGE_AVAILABLE',
+        'récupérer': 'FETCH_FAILED',
+        'fetch': 'FETCH_FAILED',
+        'format': 'FORMAT_NOT_SUPPORTED',
+        'non supporté': 'FORMAT_NOT_SUPPORTED',
+        'créer': 'BLOB_CREATION_FAILED',
+        'blob': 'BLOB_CREATION_FAILED',
+        'fichier': 'BLOB_CREATION_FAILED'
       },
       [ERROR_TYPES.WEBCAM]: {
         'permission': 'PERMISSION_DENIED',

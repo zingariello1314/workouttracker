@@ -22,6 +22,7 @@ import ExerciseVariations from './components/ExerciseVariations/ExerciseVariatio
 import AdvancedStats from './components/AdvancedStats';
 import SessionFeedback from './components/SessionFeedback';
 import { useWorkout } from './context/WorkoutContext';
+import { useGarminData } from './hooks/useGarminData';
 
 const WorkoutTrackerApp = () => {
   return (
@@ -46,6 +47,21 @@ const WorkoutTrackerContent = () => {
     sessionData,
     getWorkoutHistory
   } = useWorkout();
+
+  // ✅ Charger les données Garmin pour les calories
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminData, setGarminData] = React.useState(null);
+  
+  React.useEffect(() => {
+    if (dbReady) {
+      loadAllData()
+        .then(setGarminData)
+        .catch(err => {
+          console.error('[App] Error loading Garmin data:', err);
+          setGarminData(null);
+        });
+    }
+  }, [dbReady, loadAllData]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -111,6 +127,7 @@ const WorkoutTrackerContent = () => {
         {showAdvancedStats && (
           <AdvancedStats
             workoutData={getWorkoutHistory()}
+            garminData={garminData}
             isOpen={showAdvancedStats}
             onClose={() => setShowAdvancedStats(false)}
           />

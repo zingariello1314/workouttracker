@@ -12,7 +12,7 @@
  * Référence: suiviphotoapprofondi.md - Section 7 (Vue Par Muscle)
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Activity,
   TrendingUp,
@@ -108,11 +108,19 @@ const PhotoMuscleAnalysis = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [photoIndex, setPhotoIndex] = useState(0); // Pour slider comparaison photos
 
+  // ✅ PHASE 3.2 : Hash stable pour éviter recalculs inutiles
+  const photosHash = useMemo(() => {
+    if (!data?.progressPhotos || data.progressPhotos.length === 0) {
+      return '';
+    }
+    return `${data.progressPhotos.length}_${data.progressPhotos.map(p => p.id).join(',')}`;
+  }, [data?.progressPhotos]);
+
   /**
    * Extrait toutes les photos analysées (pour corrélations)
-   * ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+   * ✅ PHASE 3.2 : useMemo optimisé avec hash stable
    */
-  const allAnalyzedPhotos = useDeepCompareMemo(() => {
+  const allAnalyzedPhotos = useMemo(() => {
     if (!data?.progressPhotos || data.progressPhotos.length === 0) {
       return [];
     }
@@ -128,13 +136,13 @@ const PhotoMuscleAnalysis = () => {
         summary: photo.analysis.summary
       }))
       .sort((a, b) => a.date - b.date);
-  }, [data?.progressPhotos]);
+  }, [photosHash]);
 
   /**
    * Extrait toutes les photos analysées pour le muscle sélectionné
-   * ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+   * ✅ PHASE 3.2 : useMemo optimisé avec hash stable
    */
-  const muscleData = useDeepCompareMemo(() => {
+  const muscleData = useMemo(() => {
     if (!data?.progressPhotos || data.progressPhotos.length === 0) {
       return [];
     }
@@ -153,13 +161,13 @@ const PhotoMuscleAnalysis = () => {
         poseDetection: photo.analysis.poseDetection
       }))
       .sort((a, b) => a.date - b.date); // Trier chronologiquement
-  }, [data?.progressPhotos, selectedMuscle]);
+  }, [photosHash, selectedMuscle]);
 
   /**
    * Calcule statistiques pour le muscle sélectionné
-   * ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+   * ✅ PHASE 3.2 : useMemo optimisé
    */
-  const muscleStats = useDeepCompareMemo(() => {
+  const muscleStats = useMemo(() => {
     if (muscleData.length === 0) {
       return {
         totalAnalyses: 0,
@@ -209,9 +217,9 @@ const PhotoMuscleAnalysis = () => {
 
   /**
    * Prépare données pour graphiques d'évolution
-   * ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+   * ✅ PHASE 3.2 : useMemo optimisé
    */
-  const evolutionData = useDeepCompareMemo(() => {
+  const evolutionData = useMemo(() => {
     return muscleData.map(photo => {
       const metrics = photo.metrics.metrics || {};
       return {

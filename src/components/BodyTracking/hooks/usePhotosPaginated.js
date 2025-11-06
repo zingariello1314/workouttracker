@@ -2,6 +2,14 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkout } from '../../../context/WorkoutContext';
 import { getPhotoUrl } from '../utils/photoNormalizer';
 import logger from '../../../utils/logger';
+import {
+  loadCacheFromDB,
+  savePageToCache,
+  updateAccessTime,
+  evictLRUFromDB,
+  cleanExpiredCache,
+  invalidateCache as invalidateDBCache
+} from '../services/photoPaginationCache';
 
 const log = logger.hook('usePhotosPaginated');
 
@@ -37,12 +45,45 @@ const usePhotosPaginated = (page = 1, itemsPerPage = 12, options = {}) => {
   const [error, setError] = useState(null);
   const [totalPhotos, setTotalPhotos] = useState(0);
   
-  // ✅ Cache LRU: Map avec accès ordre insertion
+  // ✅ PHASE 3.4 : Cache LRU mémoire + IndexedDB
   const pageCacheRef = useRef(new Map());
   const lastAccessRef = useRef(new Map()); // Pour vrai LRU (Least Recently Used)
+  const cacheLoadedRef = useRef(false); // Flag pour chargement initial cache IndexedDB
+  const saveDebounceTimerRef = useRef(null); // Debounce sauvegarde IndexedDB
   
-  // ✅ Fonction éviction LRU: supprimer page la moins récemment utilisée
-  const evictLRUPage = useCallback(() => {
+  // ✅ PHASE 3.4 : Charger cache depuis IndexedDB au démarrage
+  useEffect(() => {
+    if (!enableCache || cacheLoadedRef.current) return;
+
+    const loadCache = async () => {
+      try {
+        log.debug('Chargement cache IndexedDB...');
+        const dbCache = await loadCacheFromDB();
+        
+        // Fusionner cache IndexedDB dans cache mémoire
+        dbCache.forEach((value, key) => {
+          pageCacheRef.current.set(key, value);
+          lastAccessRef.current.set(key, value.accessTime || value.timestamp);
+        });
+
+        cacheLoadedRef.current = true;
+        log.debug(`✅ Cache IndexedDB chargé: ${dbCache.size} pages`);
+
+        // Nettoyer cache expiré en arrière-plan
+        cleanExpiredCache().catch(err => {
+          log.error('Erreur nettoyage cache expiré', err);
+        });
+      } catch (err) {
+        log.error('Erreur chargement cache IndexedDB', err);
+        cacheLoadedRef.current = true; // Marquer comme chargé même en cas d'erreur
+      }
+    };
+
+    loadCache();
+  }, [enableCache]);
+
+  // ✅ PHASE 3.4 : Fonction éviction LRU (mémoire + IndexedDB)
+  const evictLRUPage = useCallback(async () => {
     if (pageCacheRef.current.size < maxCacheSize) return;
     
     // Trouver page avec accès le plus ancien
@@ -57,13 +98,20 @@ const usePhotosPaginated = (page = 1, itemsPerPage = 12, options = {}) => {
       }
     }
     
-    // Évincer page la plus ancienne
+    // Évincer page la plus ancienne (mémoire)
     if (oldestPage !== null) {
-      log.debug(`Éviction LRU: page ${oldestPage} (accès: ${new Date(oldestAccessTime).toISOString()})`);
+      log.debug(`Éviction LRU mémoire: page ${oldestPage}`);
       pageCacheRef.current.delete(oldestPage);
       lastAccessRef.current.delete(oldestPage);
     }
-  }, [maxCacheSize]);
+
+    // Éviction LRU dans IndexedDB (en arrière-plan)
+    if (enableCache) {
+      evictLRUFromDB(maxCacheSize).catch(err => {
+        log.error('Erreur éviction LRU IndexedDB', err);
+      });
+    }
+  }, [maxCacheSize, enableCache]);
   
   // ✅ Charger page depuis cache ou calculer
   const loadPage = useCallback(async () => {
@@ -77,18 +125,32 @@ const usePhotosPaginated = (page = 1, itemsPerPage = 12, options = {}) => {
     try {
       setError(null);
       
-      // ✅ Vérifier cache d'abord
+      // ✅ PHASE 3.4 : Vérifier cache mémoire d'abord
       const cacheKey = `${page}_${filterBy}`;
       if (enableCache && pageCacheRef.current.has(cacheKey)) {
-        log.debug(`Cache hit: page ${page}, filter ${filterBy}`);
+        log.debug(`Cache hit mémoire: page ${page}, filter ${filterBy}`);
         const cachedData = pageCacheRef.current.get(cacheKey);
         setPhotos(cachedData.photos);
         setTotalPhotos(cachedData.totalPhotos);
         setLoading(false);
         
-        // ✅ Mettre à jour timestamp accès (LRU)
-        lastAccessRef.current.set(cacheKey, Date.now());
+        // ✅ Mettre à jour timestamp accès (LRU mémoire)
+        const now = Date.now();
+        lastAccessRef.current.set(cacheKey, now);
+        
+        // ✅ PHASE 3.4 : Mettre à jour accessTime dans IndexedDB (en arrière-plan)
+        if (cacheLoadedRef.current) {
+          updateAccessTime(cacheKey).catch(err => {
+            log.error('Erreur mise à jour accessTime IndexedDB', err);
+          });
+        }
         return;
+      }
+
+      // ✅ PHASE 3.4 : Si cache mémoire vide, vérifier IndexedDB (si chargé)
+      if (enableCache && cacheLoadedRef.current) {
+        // Le cache IndexedDB a déjà été chargé dans le cache mémoire au démarrage
+        // Si on arrive ici, la page n'est pas en cache
       }
       
       setLoading(true);
@@ -129,22 +191,44 @@ const usePhotosPaginated = (page = 1, itemsPerPage = 12, options = {}) => {
       // ✅ Extraire page demandée
       const pagePhotos = filteredPhotos.slice(startIndex, endIndex);
       
-      // ✅ Mettre en cache si activé
+      // ✅ PHASE 3.4 : Mettre en cache (mémoire + IndexedDB) si activé
       if (enableCache) {
         // Évincer si nécessaire
-        evictLRUPage();
+        await evictLRUPage();
         
-        // Ajouter au cache
+        // Ajouter au cache mémoire
+        const now = Date.now();
         const cacheData = {
           photos: pagePhotos,
           totalPhotos: total,
-          timestamp: Date.now()
+          timestamp: now,
+          accessTime: now
         };
         
         pageCacheRef.current.set(cacheKey, cacheData);
-        lastAccessRef.current.set(cacheKey, Date.now());
+        lastAccessRef.current.set(cacheKey, now);
         
         log.debug(`Cache miss → Cached: page ${page}, filter ${filterBy} (${pagePhotos.length} photos)`);
+
+        // ✅ PHASE 3.4 : Sauvegarder dans IndexedDB (debounced pour performance)
+        if (cacheLoadedRef.current) {
+          // Annuler sauvegarde précédente si en attente
+          if (saveDebounceTimerRef.current) {
+            clearTimeout(saveDebounceTimerRef.current);
+          }
+
+          // Debounce sauvegarde (évite trop de writes)
+          saveDebounceTimerRef.current = setTimeout(async () => {
+            try {
+              await savePageToCache(cacheKey, {
+                photos: pagePhotos,
+                totalPhotos: total
+              });
+            } catch (err) {
+              log.error('Erreur sauvegarde cache IndexedDB', err);
+            }
+          }, 300); // 300ms debounce
+        }
       }
       
       setPhotos(pagePhotos);
@@ -166,14 +250,24 @@ const usePhotosPaginated = (page = 1, itemsPerPage = 12, options = {}) => {
   // ✅ Calculer totalPages
   const totalPages = Math.ceil(totalPhotos / itemsPerPage);
   
-  // ✅ Fonction invalidation cache (utile après ajout/suppression photo)
-  const invalidateCache = useCallback(() => {
-    log.debug('Invalidation cache photos');
+  // ✅ PHASE 3.4 : Fonction invalidation cache (mémoire + IndexedDB)
+  const invalidateCache = useCallback(async () => {
+    log.debug('Invalidation cache photos (mémoire + IndexedDB)');
+    
+    // Invalider cache mémoire
     pageCacheRef.current.clear();
     lastAccessRef.current.clear();
+    
+    // Invalider cache IndexedDB (en arrière-plan)
+    if (enableCache) {
+      invalidateDBCache().catch(err => {
+        log.error('Erreur invalidation cache IndexedDB', err);
+      });
+    }
+    
     // Recharger page actuelle
     loadPage();
-  }, [loadPage]);
+  }, [loadPage, enableCache]);
   
   return {
     photos,

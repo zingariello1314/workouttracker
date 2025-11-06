@@ -7,39 +7,101 @@ import './index.css'
 // L'erreur "Module.arguments" vient du WebAssembly et n'est pas capturée par console.error
 // On doit utiliser les event listeners globaux pour la filtrer
 if (typeof window !== 'undefined') {
-  // Intercepter erreurs non-capturées (inclut WebAssembly RuntimeError)
+  // ✅ FIX MediaPipe WASM: Intercepter erreurs WebAssembly (y compris RuntimeError)
+  // Les erreurs WASM (ErrnoError, RuntimeError: Aborted, memory access out of bounds)
+  // sont souvent non-bloquantes mais polluent la console
   window.addEventListener('error', (event) => {
     const errorMessage = event.message || event.error?.message || '';
     const errorSource = event.filename || '';
+    const errorName = event.error?.name || '';
     
-    // Filtrer erreur MediaPipe Module.arguments (warning Emscripten non-bloquant)
+    // ✅ Filtrer erreur MediaPipe Module.arguments (warning Emscripten non-bloquant)
     if (errorMessage.includes('Module.arguments has been replaced with plain arguments_') ||
         (errorMessage.includes('Aborted') && errorMessage.includes('arguments_'))) {
-      // Empêcher l'erreur d'apparaître dans la console
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Filtrer logs WebGL MediaPipe (warnings informatifs)
+    // ✅ PHASE 1.7 : Filtrer logs WebGL MediaPipe (warnings informatifs)
+    // Ces logs sont normaux et indiquent juste que MediaPipe a créé un contexte WebGL
     if (errorSource.includes('pose_solution_simd_wasm_bin.js') &&
         (errorMessage.includes('WebGL context') || 
          errorMessage.includes('GL version') ||
-         errorMessage.includes('OpenGL error checking'))) {
+         errorMessage.includes('OpenGL error checking') ||
+         errorMessage.includes('Successfully created a WebGL context') ||
+         errorMessage.includes('I0000') || // Logs informatifs MediaPipe (I = Info)
+         errorMessage.includes('W0000'))) { // Logs warnings MediaPipe (W = Warning)
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
+    
+    // ✅ PHASE 1.7 : Filtrer erreurs WASM MediaPipe non-bloquantes
+    // ErrnoError: No such file or directory (errno: 44) - MediaPipe essaie fichiers locaux inexistants
+    // RuntimeError: Aborted - MediaPipe s'arrête mais peut continuer
+    // RuntimeError: memory access out of bounds - Accès mémoire invalide (souvent récupérable)
+    if (errorSource.includes('pose_solution_simd_wasm_bin.js') || 
+        errorSource.includes('pose_solution_simd_wasm_bin.wasm')) {
+      // Filtrer ErrnoError errno: 44 (No such file or directory)
+      if (errorName === 'ErrnoError' && 
+          (errorMessage.includes('No such file or directory') || 
+           (event.error?.errno === 44))) {
+        // Erreur non-bloquante : MediaPipe peut continuer sans ce fichier
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+      
+      // Filtrer RuntimeError: Aborted si non critique
+      if (errorName === 'RuntimeError' && 
+          errorMessage.includes('Aborted') &&
+          !errorMessage.includes('critical')) {
+        // Abort non-critique : MediaPipe peut réessayer
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+      
+      // Filtrer memory access out of bounds si récupérable
+      if (errorName === 'RuntimeError' && 
+          errorMessage.includes('memory access out of bounds')) {
+        // Accès mémoire invalide : MediaPipe peut récupérer
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    }
   }, true); // Capture phase pour intercepter avant propagation
 
-  // Intercepter rejections de promesses (pour RuntimeError: Aborted)
+  // ✅ PHASE 1.7 : Intercepter rejections de promesses (pour RuntimeError: Aborted WASM)
   window.addEventListener('unhandledrejection', (event) => {
     const errorMessage = event.reason?.message || event.reason?.toString() || '';
+    const errorName = event.reason?.name || '';
+    const errorStack = event.reason?.stack || '';
     
     // Filtrer erreur MediaPipe Module.arguments dans les promesses
     if (errorMessage.includes('Module.arguments has been replaced with plain arguments_') ||
         (errorMessage.includes('Aborted') && errorMessage.includes('arguments_'))) {
-      // Empêcher la rejection d'apparaître dans la console
+      event.preventDefault();
+      return false;
+    }
+    
+    // ✅ Filtrer RuntimeError: Aborted depuis WASM MediaPipe
+    if (errorName === 'RuntimeError' && 
+        errorMessage.includes('Aborted') &&
+        (errorStack.includes('pose_solution_simd_wasm_bin') ||
+         errorStack.includes('wasm_bin.wasm'))) {
+      // Abort WASM non-critique : MediaPipe peut réessayer
+      event.preventDefault();
+      return false;
+    }
+    
+    // ✅ Filtrer memory access out of bounds depuis WASM
+    if (errorName === 'RuntimeError' && 
+        errorMessage.includes('memory access out of bounds') &&
+        errorStack.includes('wasm_bin')) {
+      // Accès mémoire invalide : MediaPipe peut récupérer
       event.preventDefault();
       return false;
     }

@@ -437,3 +437,432 @@ export const validateImpedanceForm = (formData, existingEntries = [], options = 
   };
 };
 
+/**
+ * ✅ PHASE 2.5 : Valide la structure multi-résolution après compression
+ * 
+ * Vérifie que toutes les résolutions sont présentes et valides :
+ * - thumbnail, preview, full doivent exister
+ * - Chaque résolution doit avoir data (Base64 valide)
+ * - Dimensions valides (width > 0, height > 0)
+ * - Tailles valides (size > 0)
+ * 
+ * @param {Object} compressionResult - Résultat de compressImageMultiResolution
+ * @param {Object} options - Options de validation
+ * @param {boolean} options.strict - Mode strict (toutes résolutions requises) ou souple (au moins une)
+ * @param {Array<string>} options.requiredResolutions - Résolutions requises (défaut: ['thumbnail', 'preview', 'full'])
+ * @returns {Object} - { isValid: boolean, errors: Array<string>, warnings: Array<string> }
+ */
+export const validateMultiResolutionStructure = (compressionResult, options = {}) => {
+  const {
+    strict = true,
+    requiredResolutions = ['thumbnail', 'preview', 'full']
+  } = options;
+
+  const errors = [];
+  const warnings = [];
+
+  if (!compressionResult || typeof compressionResult !== 'object') {
+    return {
+      isValid: false,
+      errors: ['Résultat de compression invalide (objet attendu)'],
+      warnings: []
+    };
+  }
+
+  // ✅ Vérifier présence des résolutions requises
+  const missingResolutions = requiredResolutions.filter(
+    res => !compressionResult[res] || typeof compressionResult[res] !== 'object'
+  );
+
+  if (missingResolutions.length > 0) {
+    if (strict) {
+      errors.push(`Résolutions manquantes: ${missingResolutions.join(', ')}`);
+    } else {
+      warnings.push(`Résolutions manquantes (mode souple): ${missingResolutions.join(', ')}`);
+    }
+  }
+
+  // ✅ Valider chaque résolution présente
+  requiredResolutions.forEach(resName => {
+    const resolution = compressionResult[resName];
+    
+    if (!resolution) {
+      if (strict) {
+        errors.push(`Résolution "${resName}" manquante`);
+      }
+      return; // Passer à la suivante
+    }
+
+    // Vérifier structure de base
+    if (typeof resolution !== 'object') {
+      errors.push(`Résolution "${resName}" invalide (objet attendu)`);
+      return;
+    }
+
+    // ✅ Vérifier data (Base64 valide)
+    if (!resolution.data || typeof resolution.data !== 'string') {
+      errors.push(`Résolution "${resName}" : data manquant ou invalide`);
+    } else {
+      // Vérifier format Base64 (commence par data:image/...)
+      const base64Pattern = /^data:image\/(jpeg|jpg|png|webp);base64,/i;
+      if (!base64Pattern.test(resolution.data)) {
+        errors.push(`Résolution "${resName}" : format Base64 invalide (attendu: data:image/...;base64,...)`);
+      } else {
+        // Vérifier que le Base64 n'est pas vide après le préfixe
+        const base64Data = resolution.data.split(',')[1];
+        if (!base64Data || base64Data.length < 100) {
+          errors.push(`Résolution "${resName}" : données Base64 trop courtes ou vides`);
+        }
+      }
+    }
+
+    // ✅ Vérifier dimensions
+    if (resolution.width === undefined || resolution.width === null) {
+      errors.push(`Résolution "${resName}" : width manquant`);
+    } else if (typeof resolution.width !== 'number' || resolution.width <= 0 || !isFinite(resolution.width)) {
+      errors.push(`Résolution "${resName}" : width invalide (attendu: nombre > 0)`);
+    }
+
+    if (resolution.height === undefined || resolution.height === null) {
+      errors.push(`Résolution "${resName}" : height manquant`);
+    } else if (typeof resolution.height !== 'number' || resolution.height <= 0 || !isFinite(resolution.height)) {
+      errors.push(`Résolution "${resName}" : height invalide (attendu: nombre > 0)`);
+    }
+
+    // ✅ Vérifier taille (size)
+    if (resolution.size === undefined || resolution.size === null) {
+      warnings.push(`Résolution "${resName}" : size manquant (non bloquant)`);
+    } else if (typeof resolution.size !== 'number' || resolution.size <= 0 || !isFinite(resolution.size)) {
+      warnings.push(`Résolution "${resName}" : size invalide (non bloquant)`);
+    }
+
+    // ✅ Vérifier format (optionnel mais recommandé)
+    if (resolution.format && !['jpeg', 'jpg', 'webp', 'png'].includes(resolution.format.toLowerCase())) {
+      warnings.push(`Résolution "${resName}" : format inattendu "${resolution.format}" (non bloquant)`);
+    }
+
+    // ✅ Vérifier quality (optionnel mais recommandé)
+    if (resolution.quality !== undefined) {
+      if (typeof resolution.quality !== 'number' || resolution.quality < 0 || resolution.quality > 1) {
+        warnings.push(`Résolution "${resName}" : quality invalide (attendu: 0-1, non bloquant)`);
+      }
+    }
+  });
+
+  // ✅ Vérifier métadonnées globales (optionnel)
+  if (compressionResult.originalSize !== undefined) {
+    if (typeof compressionResult.originalSize !== 'number' || compressionResult.originalSize <= 0) {
+      warnings.push('originalSize invalide (non bloquant)');
+    }
+  }
+
+  if (compressionResult.totalSize !== undefined) {
+    if (typeof compressionResult.totalSize !== 'number' || compressionResult.totalSize <= 0) {
+      warnings.push('totalSize invalide (non bloquant)');
+    }
+  }
+
+  // ✅ En mode strict, au moins une résolution doit être valide
+  const validResolutions = requiredResolutions.filter(resName => {
+    const res = compressionResult[resName];
+    return res && 
+           res.data && 
+           typeof res.data === 'string' && 
+           /^data:image\/.+;base64,/.test(res.data) &&
+           res.width > 0 && 
+           res.height > 0;
+  });
+
+  if (strict && validResolutions.length === 0) {
+    errors.push('Aucune résolution valide trouvée');
+  } else if (!strict && validResolutions.length === 0) {
+    errors.push('Au moins une résolution valide est requise');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    validResolutions: validResolutions.length,
+    totalResolutions: requiredResolutions.length
+  };
+};
+
+/**
+ * ✅ PHASE 4.4 : Valide la qualité d'une photo de manière enrichie
+ * 
+ * Analyse :
+ * - Résolution minimale/maximale
+ * - Ratio d'aspect (portrait/paysage)
+ * - Détection de flou basique (variance Laplacienne)
+ * - Métriques de qualité
+ * 
+ * @param {File|string} input - Fichier photo ou Data URL Base64
+ * @param {Object} options - Options de validation
+ * @param {number} options.minWidth - Largeur minimale (défaut: 200)
+ * @param {number} options.minHeight - Hauteur minimale (défaut: 200)
+ * @param {number} options.maxWidth - Largeur maximale (défaut: 10000)
+ * @param {number} options.maxHeight - Hauteur maximale (défaut: 10000)
+ * @param {number} options.minAspectRatio - Ratio d'aspect minimal (défaut: 0.3)
+ * @param {number} options.maxAspectRatio - Ratio d'aspect maximal (défaut: 3.0)
+ * @param {number} options.minSharpness - Netteté minimale (variance Laplacienne, défaut: 100)
+ * @param {boolean} options.checkBlur - Activer détection flou (défaut: true)
+ * @returns {Promise<Object>} - { isValid: boolean, score: number, metrics: {...}, warnings: Array<string>, errors: Array<string> }
+ */
+export const validatePhotoQuality = async (input, options = {}) => {
+  const {
+    minWidth = 200,
+    minHeight = 200,
+    maxWidth = 10000,
+    maxHeight = 10000,
+    minAspectRatio = 0.3,
+    maxAspectRatio = 3.0,
+    minSharpness = 100,
+    checkBlur = true
+  } = options;
+
+  const errors = [];
+  const warnings = [];
+  let score = 100; // Score de qualité (0-100)
+  const metrics = {
+    width: 0,
+    height: 0,
+    aspectRatio: 0,
+    sharpness: 0,
+    fileSize: 0,
+    format: null
+  };
+
+  try {
+    // ✅ Étape 1: Charger l'image
+    let imageData;
+    let fileSize = 0;
+
+    if (input instanceof File) {
+      fileSize = input.size;
+      imageData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(input);
+      });
+    } else if (typeof input === 'string') {
+      imageData = input;
+      // Estimer taille depuis Base64
+      const base64Data = input.split(',')[1] || '';
+      fileSize = Math.ceil((base64Data.length * 3) / 4);
+    } else {
+      return {
+        isValid: false,
+        score: 0,
+        metrics,
+        errors: ['Format d\'entrée invalide (File ou Data URL attendu)'],
+        warnings: []
+      };
+    }
+
+    // Détecter format
+    if (imageData.startsWith('data:image/')) {
+      const formatMatch = imageData.match(/data:image\/(\w+);/);
+      metrics.format = formatMatch ? formatMatch[1].toLowerCase() : 'unknown';
+    } else {
+      metrics.format = 'unknown';
+    }
+
+    // ✅ Étape 2: Créer Image et obtenir dimensions
+    const img = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = imageData;
+    });
+
+    metrics.width = img.width;
+    metrics.height = img.height;
+    metrics.fileSize = fileSize;
+    metrics.aspectRatio = metrics.width / metrics.height;
+
+    // ✅ Étape 3: Validation résolution
+    if (metrics.width < minWidth) {
+      errors.push(`Résolution trop faible: largeur ${metrics.width}px (minimum: ${minWidth}px)`);
+      score -= 30;
+    }
+    if (metrics.height < minHeight) {
+      errors.push(`Résolution trop faible: hauteur ${metrics.height}px (minimum: ${minHeight}px)`);
+      score -= 30;
+    }
+    if (metrics.width > maxWidth) {
+      warnings.push(`Résolution très élevée: largeur ${metrics.width}px (recommandé: max ${maxWidth}px)`);
+      score -= 5;
+    }
+    if (metrics.height > maxHeight) {
+      warnings.push(`Résolution très élevée: hauteur ${metrics.height}px (recommandé: max ${maxHeight}px)`);
+      score -= 5;
+    }
+
+    // ✅ Étape 4: Validation ratio d'aspect
+    if (metrics.aspectRatio < minAspectRatio || metrics.aspectRatio > maxAspectRatio) {
+      warnings.push(`Ratio d'aspect inhabituel: ${metrics.aspectRatio.toFixed(2)} (recommandé: ${minAspectRatio}-${maxAspectRatio})`);
+      score -= 10;
+    }
+
+    // ✅ Étape 5: Détection flou/netteté (variance Laplacienne)
+    if (checkBlur && metrics.width >= 100 && metrics.height >= 100) {
+      try {
+        const sharpness = await calculateImageSharpness(img);
+        metrics.sharpness = sharpness;
+
+        if (sharpness < minSharpness) {
+          warnings.push(`Photo potentiellement floue (netteté: ${sharpness.toFixed(0)}, minimum: ${minSharpness})`);
+          score -= 20;
+        } else if (sharpness < minSharpness * 1.5) {
+          warnings.push(`Photo légèrement floue (netteté: ${sharpness.toFixed(0)})`);
+          score -= 10;
+        }
+      } catch (sharpnessError) {
+        log.warn('Impossible de calculer la netteté', sharpnessError);
+        // Ne pas bloquer si calcul échoue
+      }
+    }
+
+    // ✅ Étape 6: Validation taille fichier
+    const fileSizeMB = fileSize / (1024 * 1024);
+    if (fileSizeMB > 10) {
+      warnings.push(`Fichier volumineux: ${fileSizeMB.toFixed(2)}MB (sera compressé)`);
+      score -= 5;
+    } else if (fileSizeMB < 0.01) {
+      warnings.push(`Fichier très petit: ${fileSizeMB.toFixed(2)}MB (qualité peut être faible)`);
+      score -= 15;
+    }
+
+    // ✅ Étape 7: Calcul score final
+    score = Math.max(0, Math.min(100, score));
+
+    // ✅ Étape 8: Recommandations basées sur métriques
+    const recommendations = [];
+    
+    if (metrics.width < 400 || metrics.height < 400) {
+      recommendations.push('Résolution faible - utilisez une photo de meilleure qualité pour l\'analyse IA');
+    }
+    
+    if (metrics.sharpness > 0 && metrics.sharpness < minSharpness) {
+      recommendations.push('Photo floue - assurez-vous que la photo est nette et bien focalisée');
+    }
+    
+    if (metrics.aspectRatio < 0.5 || metrics.aspectRatio > 2.0) {
+      recommendations.push('Ratio d\'aspect inhabituel - utilisez une photo en portrait ou paysage standard');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      score: Math.round(score),
+      metrics,
+      errors,
+      warnings,
+      recommendations
+    };
+
+  } catch (error) {
+    log.error('Erreur validation qualité photo', error);
+    return {
+      isValid: false,
+      score: 0,
+      metrics,
+      errors: [`Erreur lors de la validation: ${error.message}`],
+      warnings: []
+    };
+  }
+};
+
+/**
+ * ✅ PHASE 4.4 : Calcule la netteté d'une image (variance Laplacienne)
+ * 
+ * Algorithme :
+ * 1. Convertir en niveaux de gris
+ * 2. Appliquer filtre Laplacien
+ * 3. Calculer variance (plus élevée = plus nette)
+ * 
+ * @param {HTMLImageElement} img - Image à analyser
+ * @returns {Promise<number>} - Score de netteté (0-1000+)
+ */
+const calculateImageSharpness = async (img) => {
+  return new Promise((resolve, reject) => {
+    try {
+      // ✅ Créer canvas pour analyse (taille réduite pour performance)
+      const maxAnalysisSize = 400; // Analyser sur 400px max pour performance
+      const scale = Math.min(maxAnalysisSize / img.width, maxAnalysisSize / img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.floor(img.width * scale);
+      canvas.height = Math.floor(img.height * scale);
+      
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) {
+        reject(new Error('Impossible de créer contexte canvas'));
+        return;
+      }
+
+      // Dessiner image redimensionnée
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // ✅ Obtenir données image (niveaux de gris)
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const width = canvas.width;
+      const height = canvas.height;
+
+      // ✅ Convertir en niveaux de gris et calculer variance Laplacienne
+      const grayscale = new Uint8Array(width * height);
+      
+      // Conversion RGB → Grayscale (formule standard)
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+        grayscale[i / 4] = gray;
+      }
+
+      // ✅ Appliquer filtre Laplacien (détection contours)
+      const laplacian = new Float32Array(width * height);
+      let sum = 0;
+      let sumSquared = 0;
+      let count = 0;
+
+      // Kernel Laplacien 3x3:
+      // [ 0 -1  0]
+      // [-1  4 -1]
+      // [ 0 -1  0]
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          const idx = y * width + x;
+          const center = grayscale[idx];
+          const top = grayscale[(y - 1) * width + x];
+          const bottom = grayscale[(y + 1) * width + x];
+          const left = grayscale[y * width + (x - 1)];
+          const right = grayscale[y * width + (x + 1)];
+
+          // Filtre Laplacien
+          const laplacianValue = Math.abs(4 * center - top - bottom - left - right);
+          laplacian[idx] = laplacianValue;
+          
+          sum += laplacianValue;
+          sumSquared += laplacianValue * laplacianValue;
+          count++;
+        }
+      }
+
+      // ✅ Calculer variance (mesure de netteté)
+      const mean = sum / count;
+      const variance = (sumSquared / count) - (mean * mean);
+      
+      // Normaliser et retourner score (0-1000+)
+      const sharpness = Math.max(0, variance);
+      
+      resolve(sharpness);
+
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+

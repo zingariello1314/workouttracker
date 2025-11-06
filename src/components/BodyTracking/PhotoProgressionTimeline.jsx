@@ -8,7 +8,6 @@
  */
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useDeepCompareMemo } from 'use-deep-compare';
 import {
   Calendar,
   Filter,
@@ -73,11 +72,19 @@ const PhotoProgressionTimeline = () => {
   const [playSpeed, setPlaySpeed] = useState(1); // 1x, 2x, 3x
   const timelineRef = useRef(null);
 
+  // ✅ PHASE 3.2 : Hash stable pour éviter recalculs inutiles
+  const photosHash = useMemo(() => {
+    if (!data?.progressPhotos || data.progressPhotos.length === 0) {
+      return '';
+    }
+    return `${data.progressPhotos.length}_${data.progressPhotos.map(p => p.id).join(',')}`;
+  }, [data?.progressPhotos]);
+
   /**
    * Extrait toutes les photos analysées avec métriques
-   * ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+   * ✅ PHASE 3.2 : useMemo optimisé avec hash stable
    */
-  const allAnalyzedPhotos = useDeepCompareMemo(() => {
+  const allAnalyzedPhotos = useMemo(() => {
     if (!data?.progressPhotos || data.progressPhotos.length === 0) {
       return [];
     }
@@ -95,7 +102,7 @@ const PhotoProgressionTimeline = () => {
         qualityScore: photo.capture?.qualityScore || photo.analysis?.preprocessing?.qualityScore || 0
       }))
       .sort((a, b) => a.date - b.date); // Trier chronologiquement
-  }, [data?.progressPhotos]);
+  }, [photosHash]);
 
   /**
    * Filtre photos selon période et qualité

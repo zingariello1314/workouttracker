@@ -16,7 +16,8 @@ import {
 function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors, activities }) {
   // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
   // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
-  const { containerRef, containerSize } = useChartContainerSize();
+  // 🔴 FIX : Hauteur minimale augmentée à 550px pour éviter coupure verticale
+  const { containerRef, containerSize } = useChartContainerSize(550, 400);
 
   // 🔴 NOUVEAU : Création d'une courbe continue comme Garmin Connect
   const enrichedData = React.useMemo(() => {
@@ -430,7 +431,7 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
   };
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
+    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 pb-12">
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-white font-semibold">❤️ Fréquence Cardiaque - 24h ({selectedDate})</h4>
         <div className="text-slate-400 text-xs flex items-center gap-3">
@@ -496,14 +497,14 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
           </div>
         </div>
       )}
-      <div ref={containerRef} className="h-80 min-h-[320px]">
+      <div ref={containerRef} className="h-[550px] min-h-[550px] px-2 pb-2">
         <ResponsiveContainer 
           width={Math.max(400, containerSize.width)} 
-          height={Math.max(320, containerSize.height)} 
-          minHeight={320} 
+          height={Math.max(550, containerSize.height)} 
+          minHeight={550} 
           minWidth={400}
         >
-          <AreaChart data={validTimeSeries} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <AreaChart data={validTimeSeries} margin={{ top: 10, right: 40, left: 60, bottom: 30 }}>
             <defs>
               <linearGradient id="colorBpm" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={colors?.red || '#EF4444'} stopOpacity={0.3}/>
@@ -587,7 +588,7 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
             <YAxis
               domain={[minBpm, maxBpm]}
               stroke="#9CA3AF"
-              label={{ value: 'bpm', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF' } }}
+              label={{ value: 'bpm', angle: -90, position: 'left', style: { fill: '#9CA3AF', textAnchor: 'middle' } }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />

@@ -8,7 +8,6 @@
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { useDeepCompareMemo } from 'use-deep-compare';
 import {
   BarChart3,
   TrendingUp,
@@ -67,11 +66,19 @@ const PhotoGlobalDashboard = () => {
   const dashboardService = getDashboardDataService();
   const [selectedPeriod, setSelectedPeriod] = useState('all');
 
+  // ✅ PHASE 3.2 : Hash stable pour éviter recalculs inutiles
+  const photosHash = useMemo(() => {
+    if (!data?.progressPhotos || data.progressPhotos.length === 0) {
+      return '';
+    }
+    return `${data.progressPhotos.length}_${data.progressPhotos.map(p => p.id).join(',')}`;
+  }, [data?.progressPhotos]);
+
   /**
    * Extrait toutes les photos analysées avec métriques
-   * ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+   * ✅ PHASE 3.2 : useMemo optimisé avec hash stable
    */
-  const analyzedPhotos = useDeepCompareMemo(() => {
+  const analyzedPhotos = useMemo(() => {
     if (!data?.progressPhotos || data.progressPhotos.length === 0) {
       return [];
     }
@@ -87,13 +94,13 @@ const PhotoGlobalDashboard = () => {
         angle: photo.angle || 'unknown'
       }))
       .sort((a, b) => a.date - b.date); // Trier chronologiquement
-  }, [data?.progressPhotos]);
+  }, [photosHash]);
 
   /**
    * Prépare données pour graphiques de progression globale
-   * ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+   * ✅ PHASE 3.2 : useMemo optimisé
    */
-  const progressionData = useDeepCompareMemo(() => {
+  const progressionData = useMemo(() => {
     if (analyzedPhotos.length === 0) return [];
 
     return analyzedPhotos.map(photo => ({
@@ -191,9 +198,9 @@ const PhotoGlobalDashboard = () => {
 
   /**
    * Prépare données pour graphique par muscle
-   * ✅ OPTIMISATION: Memoization Profonde - Re-render seulement si contenu change réellement
+   * ✅ PHASE 3.2 : useMemo optimisé
    */
-  const muscleProgressionData = useDeepCompareMemo(() => {
+  const muscleProgressionData = useMemo(() => {
     if (analyzedPhotos.length === 0) return {};
 
     // Agréger par muscle sur toutes les photos
