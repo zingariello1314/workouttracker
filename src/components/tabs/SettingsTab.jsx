@@ -12,9 +12,10 @@ import {
   processImportData,
   validateBodyTrackingData 
 } from '../BodyTracking/utils/exportImport';
+import { isMockEnduranceSession } from '../../utils/calendarUtils';
 
 const SettingsTab = () => {
-  const { data, updateData, loadFromDB } = useWorkout();
+  const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
   const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
   const [exportStatus, setExportStatus] = useState(null);
   const [importStatus, setImportStatus] = useState(null);
@@ -24,6 +25,10 @@ const SettingsTab = () => {
   const [showHomePageSettings, setShowHomePageSettings] = useState(false);
   const [garminExportStatus, setGarminExportStatus] = useState(null);
   const [garminImportStatus, setGarminImportStatus] = useState(null);
+  const [allDataImportStatus, setAllDataImportStatus] = useState(null);
+  const [showAllDataImportPreview, setShowAllDataImportPreview] = useState(false);
+  const [allDataPreviewData, setAllDataPreviewData] = useState(null);
+  const [cleanupStatus, setCleanupStatus] = useState(null);
   const fileInputRef = useRef(null);
 
   // Fonction pour exporter spécifiquement les données de suivi corporel (OPTIMISÉE)
@@ -163,6 +168,13 @@ const SettingsTab = () => {
       setGarminExportStatus('loading');
       const garminData = await exportGarminData();
       
+      // ✅ PHASE 3.1 : Calculer statistiques sur lastSynced pour métadonnées
+      const dailyMetricsDates = Object.keys(garminData.dailyMetrics || {});
+      const metricsWithLastSynced = dailyMetricsDates.filter(date => {
+        const metric = garminData.dailyMetrics[date];
+        return metric && metric.lastSynced;
+      }).length;
+
       const exportObject = {
         version: '1.0',
         exportDate: new Date().toISOString(),
@@ -176,10 +188,15 @@ const SettingsTab = () => {
           totalActivities: (garminData.activities?.swimming || []).length + 
                           (garminData.activities?.jumpRope || []).length + 
                           (garminData.activities?.cardio || []).length,
-          totalDailyMetrics: Object.keys(garminData.dailyMetrics || {}).length,
+          totalDailyMetrics: dailyMetricsDates.length,
+          // ✅ PHASE 3.1 : Statistiques sur lastSynced
+          metricsWithLastSynced: metricsWithLastSynced,
+          metricsWithLastSyncedPercentage: dailyMetricsDates.length > 0 
+            ? Math.round((metricsWithLastSynced / dailyMetricsDates.length) * 100) 
+            : 0,
           dateRange: {
-            earliest: Object.keys(garminData.dailyMetrics || {}).sort()[0] || null,
-            latest: Object.keys(garminData.dailyMetrics || {}).sort().reverse()[0] || null
+            earliest: dailyMetricsDates.sort()[0] || null,
+            latest: dailyMetricsDates.sort().reverse()[0] || null
           },
           activityDateRange: {
             earliest: [
@@ -192,6 +209,16 @@ const SettingsTab = () => {
               ...(garminData.activities?.jumpRope || []).map(a => a.date),
               ...(garminData.activities?.cardio || []).map(a => a.date)
             ].sort().reverse()[0] || null
+          },
+          // ✅ PHASE 3.1 : Documentation des champs inclus
+          fieldsIncluded: {
+            activities: ['id', 'date', 'type', 'name', 'duration', 'distance', 'calories', 'heartRate', 'lastSynced', 'source'],
+            dailyMetrics: ['date', 'steps', 'calories', 'distance', 'heartRate', 'sleep', 'bodyBattery', 'stress', 'spo2', 'respiration', 'intensityMinutes', 'floors', 'lastSynced', 'performance']
+          },
+          // ✅ PHASE 3.1 : Note sur lastSynced
+          notes: {
+            lastSynced: 'Champ lastSynced (ISO timestamp) inclus dans chaque métrique quotidienne pour optimisations Phase 3.1 (récupération incrémentale)',
+            compatibility: 'Export compatible avec import. Les timestamps lastSynced sont préservés lors de l\'import.'
           }
         }
       };
@@ -252,7 +279,103 @@ const SettingsTab = () => {
     }
   };
 
-  // Fonction pour valider les données importées
+  // ✅ FIX CALENDRIER : Fonction pour valider les données d'import COMPLET (toutes les données d'entraînement)
+  const validateAllWorkoutData = (data) => {
+    const errors = [];
+    const warnings = [];
+    
+    if (!data || typeof data !== 'object') {
+      errors.push('Format de données invalide');
+      return { isValid: false, errors, warnings, stats: null };
+    }
+    
+    // Support format export complet { data: {...}, metadata: {...} }
+    const workoutData = data.data || data;
+    
+    // Vérifier les champs obligatoires (mais permettre qu'ils soient vides pour compatibilité)
+    const requiredFields = ['checkedExercises', 'reps', 'checkedStretches'];
+    requiredFields.forEach(field => {
+      if (field in workoutData && typeof workoutData[field] !== 'object') {
+        errors.push(`${field} doit être un objet`);
+      }
+    });
+    
+    // Vérifier les types optionnels
+    if (workoutData.progressPhotos !== undefined && !Array.isArray(workoutData.progressPhotos)) {
+      errors.push('progressPhotos doit être un tableau');
+    }
+    
+    if (workoutData.progressEntries !== undefined && !Array.isArray(workoutData.progressEntries)) {
+      errors.push('progressEntries doit être un tableau');
+    }
+    
+    if (workoutData.bodyTrackingReminders !== undefined && !Array.isArray(workoutData.bodyTrackingReminders)) {
+      errors.push('bodyTrackingReminders doit être un tableau');
+    }
+    
+    if (workoutData.historyReps !== undefined && typeof workoutData.historyReps !== 'object') {
+      errors.push('historyReps doit être un objet');
+    }
+    
+    if (workoutData.programHistory !== undefined && !Array.isArray(workoutData.programHistory)) {
+      errors.push('programHistory doit être un tableau');
+    }
+    
+    if (workoutData.enduranceData !== undefined && typeof workoutData.enduranceData !== 'object') {
+      errors.push('enduranceData doit être un objet');
+    }
+    
+    if (workoutData.dailyVariations !== undefined && typeof workoutData.dailyVariations !== 'object') {
+      errors.push('dailyVariations doit être un objet');
+    }
+    
+    if (workoutData.sessionFeedbacks !== undefined && typeof workoutData.sessionFeedbacks !== 'object') {
+      errors.push('sessionFeedbacks doit être un objet');
+    }
+    
+    if (workoutData.weekVariant !== undefined && typeof workoutData.weekVariant !== 'string') {
+      errors.push('weekVariant doit être une chaîne de caractères');
+    }
+    
+    // Warnings pour données manquantes (pas bloquant)
+    if (!workoutData.checkedExercises || Object.keys(workoutData.checkedExercises || {}).length === 0) {
+      warnings.push('Aucun exercice trouvé dans les données');
+    }
+    
+    if (!workoutData.reps || Object.keys(workoutData.reps || {}).length === 0) {
+      warnings.push('Aucune répétition trouvée dans les données');
+    }
+    
+    if (!workoutData.enduranceData || !workoutData.enduranceData.sessions) {
+      warnings.push('Aucune donnée d\'endurance trouvée');
+    }
+    
+    const stats = {
+      exercises: Object.keys(workoutData.checkedExercises || {}).length,
+      reps: Object.keys(workoutData.reps || {}).length,
+      stretches: Object.keys(workoutData.checkedStretches || {}).length,
+      photos: (workoutData.progressPhotos || []).length,
+      progressEntries: (workoutData.progressEntries || []).length,
+      reminders: (workoutData.bodyTrackingReminders || []).length,
+      historyReps: Object.keys(workoutData.historyReps || {}).length,
+      programHistory: (workoutData.programHistory || []).length,
+      enduranceSessions: Object.values(workoutData.enduranceData?.sessions || {}).reduce(
+        (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0
+      ),
+      dailyVariations: Object.keys(workoutData.dailyVariations || {}).length,
+      sessionFeedbacks: Object.keys(workoutData.sessionFeedbacks || {}).length
+    };
+    
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      stats,
+      data: workoutData
+    };
+  };
+
+  // Fonction pour valider les données importées (Body Tracking uniquement - ancienne fonction)
   const validateImportData = (data) => {
     const errors = [];
     
@@ -441,7 +564,308 @@ const SettingsTab = () => {
     }
   };
 
-  // Fonction pour importer depuis un fichier
+  // ✅ FIX CALENDRIER : Fonction pour prévisualiser l'import COMPLET (toutes les données d'entraînement)
+  const previewImportAllData = () => {
+    try {
+      if (!importData.trim()) {
+        setAllDataImportStatus('error');
+        return;
+      }
+      
+      let parsedData;
+      try {
+        parsedData = JSON.parse(importData);
+      } catch (parseError) {
+        setAllDataImportStatus('error');
+        console.error('Erreur de parsing JSON:', parseError);
+        return;
+      }
+      
+      // Valider les données
+      const validation = validateAllWorkoutData(parsedData);
+      
+      if (!validation.isValid) {
+        setAllDataImportStatus('error');
+        console.error('Erreurs de validation:', validation.errors);
+        return;
+      }
+      
+      // Préparer les données de prévisualisation
+      setAllDataPreviewData({
+        data: validation.data,
+        stats: validation.stats,
+        warnings: validation.warnings,
+        errors: validation.errors,
+        isExportFormat: !!parsedData.data || !!parsedData.metadata
+      });
+      
+      setShowAllDataImportPreview(true);
+      setAllDataImportStatus('preview');
+      
+    } catch (error) {
+      console.error('Erreur lors de la prévisualisation complète:', error);
+      setAllDataImportStatus('error');
+    }
+  };
+
+  // ✅ FIX CALENDRIER : Fonction pour confirmer l'import COMPLET (toutes les données d'entraînement)
+  const confirmImportAllData = async () => {
+    try {
+      setAllDataImportStatus('loading');
+      
+      // Créer backup avant import
+      const currentData = await loadFromDB();
+      const backupData = currentData || data || {};
+      
+      localStorage.setItem('workoutData_preImport_backup', JSON.stringify({
+        data: backupData,
+        backupDate: new Date().toISOString()
+      }));
+      
+      // Utiliser les données de prévisualisation validées
+      const importedData = allDataPreviewData.data;
+      
+      // ✅ Fusion intelligente : Fusionner avec données existantes (stratégie merge conservatrice)
+      // Principe : Préserver les données existantes si les nouvelles sont vides, sinon utiliser les nouvelles
+      const mergedData = {
+        // Données de base : Fusionner intelligemment
+        checkedExercises: {
+          ...(backupData.checkedExercises || {}),
+          ...(importedData.checkedExercises || {})
+        },
+        reps: {
+          ...(backupData.reps || {}),
+          ...(importedData.reps || {})
+        },
+        checkedStretches: {
+          ...(backupData.checkedStretches || {}),
+          ...(importedData.checkedStretches || {})
+        },
+        
+        // Données d'endurance : Fusionner les sessions par type
+        enduranceData: {
+          sessions: {
+            boxing: [
+              ...(backupData.enduranceData?.sessions?.boxing || []),
+              ...(importedData.enduranceData?.sessions?.boxing || [])
+            ],
+            pushups: [
+              ...(backupData.enduranceData?.sessions?.pushups || []),
+              ...(importedData.enduranceData?.sessions?.pushups || [])
+            ],
+            swimming: [
+              ...(backupData.enduranceData?.sessions?.swimming || []),
+              ...(importedData.enduranceData?.sessions?.swimming || [])
+            ],
+            jumprope: [
+              ...(backupData.enduranceData?.sessions?.jumprope || []),
+              ...(importedData.enduranceData?.sessions?.jumprope || [])
+            ],
+            running: [
+              ...(backupData.enduranceData?.sessions?.running || []),
+              ...(importedData.enduranceData?.sessions?.running || [])
+            ]
+          },
+          challenges: [
+            ...(backupData.enduranceData?.challenges || []),
+            ...(importedData.enduranceData?.challenges || [])
+          ]
+        },
+        
+        // Photos de progression : Fusionner en évitant doublons par date
+        progressPhotos: [
+          ...(backupData.progressPhotos || []).filter(existingPhoto => {
+            const existingDate = existingPhoto.date || existingPhoto.timestamp;
+            return !(importedData.progressPhotos || []).some(importedPhoto => {
+              const importedDate = importedPhoto.date || importedPhoto.timestamp;
+              return existingDate === importedDate;
+            });
+          }),
+          ...(importedData.progressPhotos || [])
+        ],
+        
+        // Entrées de progression : Fusionner en évitant doublons par date + type
+        progressEntries: [
+          ...(backupData.progressEntries || []).filter(existingEntry => {
+            const existingKey = `${existingEntry.date || existingEntry.timestamp}_${existingEntry.type}`;
+            return !(importedData.progressEntries || []).some(importedEntry => {
+              const importedKey = `${importedEntry.date || importedEntry.timestamp}_${importedEntry.type}`;
+              return existingKey === importedKey;
+            });
+          }),
+          ...(importedData.progressEntries || [])
+        ],
+        
+        // Historique des répétitions : Fusionner
+        historyReps: {
+          ...(backupData.historyReps || {}),
+          ...(importedData.historyReps || {})
+        },
+        
+        // Variations journalières : Fusionner
+        dailyVariations: {
+          ...(backupData.dailyVariations || {}),
+          ...(importedData.dailyVariations || {})
+        },
+        
+        // Feedbacks de session : Fusionner
+        sessionFeedbacks: {
+          ...(backupData.sessionFeedbacks || {}),
+          ...(importedData.sessionFeedbacks || {})
+        },
+        
+        // Historique des programmes : Fusionner en évitant doublons
+        programHistory: [
+          ...(backupData.programHistory || []),
+          ...(importedData.programHistory || []).filter(imported => {
+            return !(backupData.programHistory || []).some(existing => 
+              existing.id === imported.id || 
+              (existing.startDate === imported.startDate && existing.endDate === imported.endDate)
+            );
+          })
+        ],
+        
+        // Configuration : Préférer les données importées si présentes
+        startDate: importedData.startDate || backupData.startDate || null,
+        weekVariant: importedData.weekVariant || backupData.weekVariant || 'A',
+        
+        // Rappels suivi corporel : Remplacer (configuration utilisateur)
+        bodyTrackingReminders: importedData.bodyTrackingReminders || backupData.bodyTrackingReminders || [],
+        bodyTrackingLastUpdated: new Date().toISOString()
+      };
+      
+      // ✅ Sauvegarder les données fusionnées
+      await updateData(mergedData);
+      
+      // ✅ Forcer rechargement depuis IndexedDB pour mettre à jour le state
+      const reloadedData = await loadFromDB();
+      if (reloadedData) {
+        // Les données sont maintenant dans IndexedDB et seront chargées automatiquement
+        console.log('[Settings] ✅ Import complet réussi, données rechargées depuis IndexedDB');
+      }
+      
+      setAllDataImportStatus('success');
+      setShowAllDataImportPreview(false);
+      setImportData('');
+      setAllDataPreviewData(null);
+      
+      setTimeout(() => {
+        setAllDataImportStatus(null);
+        // Suggérer de recharger la page pour voir les changements
+        if (window.confirm('Import réussi ! Souhaitez-vous recharger la page pour voir les changements ?')) {
+          window.location.reload();
+        }
+      }, 3000);
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'import complet:', error);
+      setAllDataImportStatus('error');
+      setTimeout(() => setAllDataImportStatus(null), 5000);
+    }
+  };
+
+  // ✅ FIX CALENDRIER : Fonction de debug pour identifier les sessions mockées
+  const debugMockSessions = () => {
+    try {
+      const enduranceData = data?.enduranceData || {};
+      const sessions = enduranceData.sessions || {};
+      const mockSessions = [];
+      const validSessions = [];
+      
+      Object.entries(sessions).forEach(([activityType, activitySessions]) => {
+        if (Array.isArray(activitySessions)) {
+          activitySessions.forEach(session => {
+            const isMock = isMockEnduranceSession(session);
+            const sessionInfo = {
+              activityType,
+              date: session.date,
+              duration: session.duration,
+              jumps: session.jumps || session.count || session.reps || 0,
+              distance: session.distance || 0,
+              isMock,
+              session: JSON.stringify(session, null, 2)
+            };
+            
+            if (isMock) {
+              mockSessions.push(sessionInfo);
+            } else {
+              validSessions.push(sessionInfo);
+            }
+          });
+        }
+      });
+      
+      console.log('🔍 DEBUG - Sessions mockées détectées:', mockSessions);
+      console.log('✅ DEBUG - Sessions valides:', validSessions);
+      
+      if (mockSessions.length > 0) {
+        alert(`🔍 Debug : ${mockSessions.length} session(s) mockée(s) détectée(s) et ${validSessions.length} valide(s).\n\nVoir la console pour les détails.`);
+      } else {
+        alert(`ℹ️ Debug : Aucune session mockée détectée par la fonction isMockEnduranceSession().\n\n${validSessions.length} session(s) valide(s) trouvée(s).\n\nVoir la console pour les détails.`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors du debug:', error);
+      alert(`❌ Erreur lors du debug : ${error.message}`);
+    }
+  };
+
+  // ✅ FIX CALENDRIER : Fonction pour supprimer toutes les données mockées d'endurance
+  const handleCleanupMockEndurance = async () => {
+    try {
+      if (!window.confirm(
+        '⚠️ Supprimer toutes les données mockées/fausses d\'endurance ?\n\n' +
+        'Cela supprimera :\n' +
+        '- Sessions avec durée suspecte (880 min, etc.)\n' +
+        '- Sessions avec sauts suspectes (13200, etc.)\n' +
+        '- Sessions natation avec distance suspecte (1.5m)\n' +
+        '- Toutes les autres données mockées détectées\n\n' +
+        'Cette action est irréversible. Une sauvegarde sera créée avant la suppression.'
+      )) {
+        return;
+      }
+
+      setCleanupStatus('loading');
+
+      // Créer backup avant nettoyage
+      const currentData = await loadFromDB();
+      const backupData = currentData || data || {};
+      localStorage.setItem('workoutData_preCleanup_backup', JSON.stringify({
+        data: backupData,
+        backupDate: new Date().toISOString()
+      }));
+
+      // Supprimer les sessions mockées
+      const result = await deleteMockEnduranceSessions();
+
+      if (result.deleted > 0) {
+        setCleanupStatus('success');
+        const detailsText = Object.entries(result.details)
+          .filter(([_, count]) => count > 0)
+          .map(([type, count]) => `${type}: ${count}`)
+          .join(', ');
+        
+        alert(`✅ ${result.deleted} session(s) mockée(s) supprimée(s) !\n\nDétails : ${detailsText}\n\nRechargez la page pour voir les changements.`);
+        
+        setTimeout(() => {
+          setCleanupStatus(null);
+          if (window.confirm('Souhaitez-vous recharger la page pour voir les changements ?')) {
+            window.location.reload();
+          }
+        }, 3000);
+      } else {
+        setCleanupStatus('none');
+        alert('ℹ️ Aucune session mockée trouvée. Vos données sont déjà propres.');
+        setTimeout(() => setCleanupStatus(null), 3000);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors du nettoyage des sessions mockées:', error);
+      setCleanupStatus('error');
+      alert(`❌ Erreur lors du nettoyage : ${error.message}`);
+      setTimeout(() => setCleanupStatus(null), 5000);
+    }
+  };
+
+  // Fonction pour importer depuis un fichier (détecte automatiquement le type)
   const handleFileImport = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -704,8 +1128,21 @@ const SettingsTab = () => {
                 icon={FileText}
                 variant="outline"
                 className="flex-1"
+                title="Prévisualiser l'import Body Tracking uniquement"
               >
-                Prévisualiser
+                Prévisualiser (Body Tracking)
+              </Button>
+              
+              {/* ✅ FIX CALENDRIER : Bouton pour prévisualiser l'import COMPLET */}
+              <Button
+                onClick={previewImportAllData}
+                disabled={!importData.trim() || allDataImportStatus === 'loading'}
+                icon={FileText}
+                variant="outline"
+                className="flex-1 bg-blue-600/20 border-blue-500/50 text-blue-300 hover:bg-blue-600/30"
+                title="Prévisualiser l'import COMPLET (toutes les données d'entraînement)"
+              >
+                {allDataImportStatus === 'loading' ? 'Prévisualisation...' : 'Prévisualiser (Complet)'}
               </Button>
               
               <Button
@@ -714,6 +1151,7 @@ const SettingsTab = () => {
                 icon={Upload}
                 variant="outline"
                 className="bg-purple-600/20 border-purple-500/50 text-purple-300 hover:bg-purple-600/30"
+                title="Importer uniquement les données Garmin"
               >
                 {garminImportStatus === 'loading' ? 'Import...' : 'Import Garmin'}
               </Button>
@@ -764,11 +1202,154 @@ const SettingsTab = () => {
                 Erreur lors de l'import Garmin. Vérifiez le format JSON.
               </div>
             )}
+
+            {/* ✅ FIX CALENDRIER : Statuts pour l'import complet */}
+            {allDataImportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Import complet réussi ! Toutes vos données ont été importées.
+              </div>
+            )}
+
+            {allDataImportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'import complet. Vérifiez le format JSON et réessayez.
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Modal de prévisualisation */}
+      {/* ✅ FIX CALENDRIER : Modal de prévisualisation pour l'import COMPLET */}
+      {showAllDataImportPreview && allDataPreviewData && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-lg border border-slate-700 max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">Prévisualisation de l'import complet</h3>
+                <Button
+                  onClick={() => {
+                    setShowAllDataImportPreview(false);
+                    setAllDataPreviewData(null);
+                  }}
+                  variant="outline"
+                  className="text-white border-slate-600 hover:bg-slate-700"
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Statistiques */}
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-3">Statistiques des données à importer</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-400">Exercices :</span>
+                      <span className="text-white ml-2 font-semibold">{allDataPreviewData.stats?.exercises || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Répétitions :</span>
+                      <span className="text-white ml-2 font-semibold">{allDataPreviewData.stats?.reps || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Étirements :</span>
+                      <span className="text-white ml-2 font-semibold">{allDataPreviewData.stats?.stretches || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Sessions endurance :</span>
+                      <span className="text-white ml-2 font-semibold">{allDataPreviewData.stats?.enduranceSessions || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Photos :</span>
+                      <span className="text-white ml-2 font-semibold">{allDataPreviewData.stats?.photos || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Entrées progression :</span>
+                      <span className="text-white ml-2 font-semibold">{allDataPreviewData.stats?.progressEntries || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Historique reps :</span>
+                      <span className="text-white ml-2 font-semibold">{allDataPreviewData.stats?.historyReps || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Variations journalières :</span>
+                      <span className="text-white ml-2 font-semibold">{allDataPreviewData.stats?.dailyVariations || 0}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Warnings */}
+                {allDataPreviewData.warnings && allDataPreviewData.warnings.length > 0 && (
+                  <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-4">
+                    <h4 className="text-yellow-300 font-medium mb-2 flex items-center">
+                      <AlertTriangle className="mr-2" size={16} />
+                      Avertissements
+                    </h4>
+                    <ul className="list-disc list-inside text-yellow-200 text-sm space-y-1">
+                      {allDataPreviewData.warnings.map((warning, index) => (
+                        <li key={index}>{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Erreurs */}
+                {allDataPreviewData.errors && allDataPreviewData.errors.length > 0 && (
+                  <div className="bg-red-900/20 border border-red-600/30 rounded-lg p-4">
+                    <h4 className="text-red-300 font-medium mb-2 flex items-center">
+                      <AlertTriangle className="mr-2" size={16} />
+                      Erreurs
+                    </h4>
+                    <ul className="list-disc list-inside text-red-200 text-sm space-y-1">
+                      {allDataPreviewData.errors.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Note importante */}
+                <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <AlertTriangle className="text-blue-400 mr-2 mt-0.5" size={16} />
+                    <div className="text-sm text-blue-200">
+                      <strong>Note importante :</strong> L'import va fusionner intelligemment les données avec vos données existantes. 
+                      Les données existantes seront préservées si les nouvelles données sont vides. 
+                      Une sauvegarde automatique sera créée avant l'import.
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      setShowAllDataImportPreview(false);
+                      setAllDataPreviewData(null);
+                    }}
+                    variant="outline"
+                    className="flex-1 border-slate-600 text-white hover:bg-slate-700"
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    onClick={confirmImportAllData}
+                    disabled={allDataImportStatus === 'loading'}
+                    icon={Save}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  >
+                    {allDataImportStatus === 'loading' ? 'Import en cours...' : 'Confirmer l\'import complet'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de prévisualisation (Body Tracking uniquement) */}
       {showImportPreview && previewData && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-lg border border-slate-700 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
@@ -863,6 +1444,106 @@ const SettingsTab = () => {
           </div>
         </div>
       )}
+
+      {/* ✅ FIX CALENDRIER : Section Nettoyage des données mockées */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <AlertTriangle className="mr-2" size={20} />
+            Nettoyage des données mockées
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-4">
+              <div className="flex items-start">
+                <AlertTriangle className="text-yellow-400 mr-2 mt-0.5" size={16} />
+                <div className="text-sm text-yellow-200">
+                  <strong>Attention :</strong> Cette fonction supprime toutes les données mockées/fausses d'endurance détectées automatiquement.
+                  <br />
+                  <br />
+                  <strong>Données supprimées :</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>Sessions avec durée suspecte (880 min, 1200 min, etc.)</li>
+                    <li>Sessions avec sauts suspectes (13200, 13000-13500, etc.)</li>
+                    <li>Sessions natation avec distance suspecte (1.5m avec durée élevée)</li>
+                    <li>Sessions avec dates futures</li>
+                    <li>Toutes autres données mockées détectées</li>
+                  </ul>
+                  <br />
+                  Une sauvegarde automatique sera créée avant la suppression.
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={debugMockSessions}
+                variant="outline"
+                icon={AlertTriangle}
+                className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                title="Debug : Identifier les sessions mockées dans la console"
+              >
+                Debug (Console)
+              </Button>
+              
+              <Button
+                onClick={handleCleanupMockEndurance}
+                disabled={cleanupStatus === 'loading'}
+                icon={AlertTriangle}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-800"
+                title="Supprimer toutes les données mockées d'endurance détectées"
+              >
+                {cleanupStatus === 'loading' ? 'Nettoyage...' : 'Supprimer mockées'}
+              </Button>
+            </div>
+
+            {cleanupStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Nettoyage réussi ! Les données mockées ont été supprimées.
+              </div>
+            )}
+
+            {cleanupStatus === 'none' && (
+              <div className="flex items-center text-blue-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Aucune donnée mockée trouvée. Vos données sont déjà propres.
+              </div>
+            )}
+
+            {cleanupStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors du nettoyage. Vérifiez la console pour plus de détails.
+              </div>
+            )}
+
+            {localStorage.getItem('workoutData_preCleanup_backup') && (
+              <Button
+                onClick={async () => {
+                  try {
+                    const backup = localStorage.getItem('workoutData_preCleanup_backup');
+                    if (backup) {
+                      const parsedBackup = JSON.parse(backup);
+                      await updateData(parsedBackup.data);
+                      alert('✅ Sauvegarde restaurée avec succès !');
+                      window.location.reload();
+                    }
+                  } catch (error) {
+                    alert(`❌ Erreur lors de la restauration : ${error.message}`);
+                  }
+                }}
+                icon={RotateCcw}
+                variant="outline"
+                className="w-full border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+              >
+                Restaurer la sauvegarde pré-nettoyage
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Section Informations */}
       <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">

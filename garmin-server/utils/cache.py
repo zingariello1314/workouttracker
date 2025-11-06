@@ -344,6 +344,83 @@ def get_raw_data_hash(stats: Any, steps_data: Any, hr_day: Any, sleep: Any,
         return hashlib.md5(str(time.time()).encode()).hexdigest()
 
 
+def get_latest_cached_daily_metrics(date_str: str) -> Optional[Dict]:
+    """
+    ✅ PHASE 3.1 : Récupère le cache parsé le plus récent pour une date donnée (indépendamment du hash).
+    Utilisé pour Phase 3.1 : éviter les appels API si sync récente.
+    
+    Args:
+        date_str: Date au format YYYY-MM-DD
+        
+    Returns:
+        dict: Métriques parsées en cache le plus récent, ou None si non trouvé/invalide
+    """
+    try:
+        from datetime import datetime, date
+        import time
+        import json
+        
+        # Chercher tous les fichiers de cache pour cette date
+        cache_pattern = f"daily_metrics_{date_str}_*_v{CACHE_VERSION}.json"
+        cache_files = list(CACHE_DIR.glob(cache_pattern))
+        
+        if not cache_files:
+            return None
+        
+        # Trouver le fichier le plus récent
+        latest_cache_file = max(cache_files, key=lambda f: f.stat().st_mtime)
+        
+        # Déterminer TTL selon si c'est aujourd'hui ou une date passée
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        today = date.today()
+        is_today = date_obj == today
+        
+        cache_ttl = DAILY_METRICS_CACHE_TTL_TODAY if is_today else DAILY_METRICS_CACHE_TTL_PAST
+        
+        # Vérifier l'âge du cache
+        file_age = time.time() - latest_cache_file.stat().st_mtime
+        if file_age > cache_ttl:
+            # Cache expiré
+            return None
+        
+        # Charger le cache
+        with open(latest_cache_file, 'r', encoding='utf-8') as f:
+            cached = json.load(f)
+            
+            # Vérifier que le cache est valide
+            if not isinstance(cached, dict) or 'date' not in cached:
+                return None
+            
+            # Vérifier que la date correspond
+            if cached.get('date') != date_str:
+                return None
+            
+            # Vérifier la version du cache
+            if cached.get('_cache_version') != CACHE_VERSION:
+                return None
+            
+            # ✅ PHASE 3.1 : Validation du cache avant utilisation pour aujourd'hui
+            if is_today:
+                has_data = (
+                    cached.get('steps', 0) > 0 or
+                    cached.get('calories', {}).get('total', 0) > 0 or
+                    len(cached.get('heartRate', {}).get('timeSeries', [])) > 0
+                )
+                if not has_data:
+                    # Vérifier l'heure de création du cache
+                    cache_age_minutes = file_age / 60
+                    if cache_age_minutes > 15:  # Si cache créé il y a plus de 15 minutes et vide, invalider
+                        print_debug(f"⚠️ Cache invalidé: données vides pour {date_str} créé il y a {cache_age_minutes:.1f} minutes")
+                        return None
+            
+            return cached
+    except Exception as e:
+        print_debug(f"⚠️ Error in get_latest_cached_daily_metrics({date_str}): {e}")
+        # En cas d'erreur, ignorer le cache
+        pass
+    return None
+
+
 def get_cached_daily_metrics(date_str: str, raw_data_hash: str) -> Optional[Dict]:
     """
     Récupère les métriques quotidiennes parsées depuis le cache.

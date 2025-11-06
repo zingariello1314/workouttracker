@@ -74,6 +74,7 @@ from utils.cache import (
     cache_parsed, 
     get_classification_hash,
     get_cached_daily_metrics,
+    get_latest_cached_daily_metrics,  # ✅ PHASE 3.1 : Fonction helper pour trouver cache le plus récent
     cache_daily_metrics,
     get_raw_data_hash
 )
@@ -870,19 +871,146 @@ if EMAIL and PASSWORD:
             # Métriques quotidiennes
             # 🟢 OPTIMISATION : Utiliser récupération parallèle pour aujourd'hui (gain de temps ~90%)
             # ✅ PHASE 2.5 : Utiliser récupération incrémentale pour FC si lastSyncTimestamp fourni
+            # ✅ PHASE 3.1 : Vérifier cache parsé avant appels API si lastSyncTimestamp récent
             if d_str == current_date:
-                print_debug(f"🚀 Using parallel fetch for today ({d_str})...")
+                # ✅ PHASE 3.1 : Si lastSyncTimestamp < 5 minutes, vérifier cache parsé AVANT les appels API
+                should_skip_api_calls = False
+                cached_daily_before_api = None
                 
-                # Récupérer toutes les métriques en parallèle (steps, stats, body battery, etc.)
-                parallel_results = fetch_today_metrics_parallel(client, d_str)
-                steps_data = parallel_results["steps_data"]
-                stats = parallel_results["stats"]
-                body_battery_data = parallel_results["body_battery_data"]
-                stress_data = parallel_results["stress_data"]
-                spo2_data = parallel_results["spo2_data"]
-                sleep = parallel_results["sleep"]
-                respiration_data = parallel_results["respiration_data"]
-                intensity_data = parallel_results["intensity_data"]
+                if last_sync_timestamp_for_date:
+                    try:
+                        from datetime import datetime, timezone
+                        last_sync_dt = datetime.fromisoformat(last_sync_timestamp_for_date.replace('Z', '+00:00'))
+                        if last_sync_dt.tzinfo is None:
+                            last_sync_dt = last_sync_dt.replace(tzinfo=timezone.utc)
+                        now_dt = datetime.now(timezone.utc)
+                        last_sync_age_minutes = (now_dt - last_sync_dt).total_seconds() / 60
+                        
+                        # Si sync il y a moins de 5 minutes, vérifier le cache parsé
+                        if last_sync_age_minutes < 5:
+                            print_debug(f"✅ PHASE 3.1 - Sync récente ({last_sync_age_minutes:.1f} min), vérification cache parsé avant appels API...")
+                            # ✅ PHASE 3.1 : Utiliser fonction helper pour trouver cache le plus récent (indépendamment du hash)
+                            cached_daily_before_api = get_latest_cached_daily_metrics(d_str)
+                            
+                            # Si cache disponible et valide (pas vide, pas de métadonnées de cache seulement)
+                            if cached_daily_before_api:
+                                # Vérifier que ce n'est pas juste des métadonnées
+                                cache_content = {k: v for k, v in cached_daily_before_api.items() if not k.startswith('_')}
+                                if cache_content and (cache_content.get('steps', 0) > 0 or cache_content.get('calories', {}).get('total', 0) > 0):
+                                    should_skip_api_calls = True
+                                    print_debug(f"✅ PHASE 3.1 - Cache parsé disponible, skip appels API pour steps/stats (économie de requêtes Garmin)")
+                                else:
+                                    print_debug(f"⚠️ PHASE 3.1 - Cache parsé vide ou invalide, récupération API nécessaire")
+                            else:
+                                print_debug(f"ℹ️ PHASE 3.1 - Pas de cache parsé disponible, récupération API nécessaire")
+                    except Exception as e:
+                        print_debug(f"⚠️ PHASE 3.1 - Erreur vérification cache: {e}, récupération API normale")
+                
+                if should_skip_api_calls and cached_daily_before_api:
+                    # ✅ PHASE 3.1 : Utiliser cache parsé, ne PAS faire les appels API pour steps/stats
+                    # Mais on récupère quand même body_battery, stress, spo2, sleep, respiration, intensity (peuvent avoir changé)
+                    print_debug(f"✅ PHASE 3.1 - Utilisation cache parsé, récupération sélective (body_battery, stress, etc.)")
+                    
+                    # Récupérer uniquement les métriques qui peuvent changer rapidement
+                    from concurrent.futures import ThreadPoolExecutor, as_completed
+                    parallel_results = {
+                        "steps_data": None,  # ✅ PHASE 3.1 : Skip API call
+                        "stats": None,  # ✅ PHASE 3.1 : Skip API call
+                        "hr_day": None,  # Sera géré par fetch_heart_rate_incremental
+                        "body_battery_data": None,
+                        "stress_data": None,
+                        "spo2_data": None,
+                        "sleep": None,
+                        "respiration_data": None,
+                        "intensity_data": None
+                    }
+                    
+                    # ✅ PHASE 3.1 : Récupérer uniquement les métriques qui peuvent changer rapidement
+                    # Fonctions helper pour éviter problèmes avec lambda dans executor
+                    def _fetch_body_battery_wrapper():
+                        try:
+                            return ("body_battery_data", fetch_body_battery_api(client, d_str))
+                        except Exception as e:
+                            print_debug(f"⚠️ Failed to fetch_body_battery({d_str}): {e}")
+                            return ("body_battery_data", None)
+                    
+                    def _fetch_stress_wrapper():
+                        try:
+                            return ("stress_data", fetch_stress_api(client, d_str))
+                        except Exception as e:
+                            print_debug(f"⚠️ Failed to fetch_stress({d_str}): {e}")
+                            return ("stress_data", None)
+                    
+                    def _fetch_spo2_wrapper():
+                        try:
+                            return ("spo2_data", fetch_spo2_api(client, d_str))
+                        except Exception as e:
+                            print_debug(f"⚠️ Failed to fetch_spo2({d_str}): {e}")
+                            return ("spo2_data", None)
+                    
+                    def _fetch_sleep_wrapper():
+                        try:
+                            return ("sleep", _get_sleep_data_with_retry(client, d_str))
+                        except Exception as e:
+                            print_debug(f"⚠️ Failed to get_sleep_data({d_str}): {e}")
+                            return ("sleep", None)
+                    
+                    def _fetch_respiration_wrapper():
+                        try:
+                            return ("respiration_data", _get_respiration_data_with_retry(client, d_str))
+                        except Exception as e:
+                            print_debug(f"⚠️ Failed to get_respiration_data({d_str}): {e}")
+                            return ("respiration_data", None)
+                    
+                    def _fetch_intensity_wrapper():
+                        try:
+                            return ("intensity_data", _get_intensity_minutes_with_retry(client, d_str))
+                        except Exception as e:
+                            print_debug(f"⚠️ Failed to get_intensity_minutes({d_str}): {e}")
+                            return ("intensity_data", None)
+                    
+                    with ThreadPoolExecutor(max_workers=6) as executor:
+                        futures = {
+                            executor.submit(_fetch_body_battery_wrapper): "body_battery_data",
+                            executor.submit(_fetch_stress_wrapper): "stress_data",
+                            executor.submit(_fetch_spo2_wrapper): "spo2_data",
+                            executor.submit(_fetch_sleep_wrapper): "sleep",
+                            executor.submit(_fetch_respiration_wrapper): "respiration_data",
+                            executor.submit(_fetch_intensity_wrapper): "intensity_data"
+                        }
+                        
+                        for future in as_completed(futures):
+                            try:
+                                key, value = future.result()
+                                parallel_results[key] = value
+                            except Exception as e:
+                                print_debug(f"⚠️ Error in selective fetch for {futures[future]}: {e}")
+                    
+                    steps_data = None  # ✅ PHASE 3.1 : Pas d'appel API
+                    stats = None  # ✅ PHASE 3.1 : Pas d'appel API
+                    body_battery_data = parallel_results["body_battery_data"]
+                    stress_data = parallel_results["stress_data"]
+                    spo2_data = parallel_results["spo2_data"]
+                    sleep = parallel_results["sleep"]
+                    respiration_data = parallel_results["respiration_data"]
+                    intensity_data = parallel_results["intensity_data"]
+                    
+                    # Utiliser le cache parsé pour steps/calories/distance
+                    print_debug(f"✅ PHASE 3.1 - Utilisation valeurs du cache parsé pour steps/calories/distance")
+                else:
+                    # Récupération normale (toutes les métriques en parallèle)
+                    print_debug(f"🚀 Using parallel fetch for today ({d_str})...")
+                    
+                    # Récupérer toutes les métriques en parallèle (steps, stats, body battery, etc.)
+                    parallel_results = fetch_today_metrics_parallel(client, d_str)
+                    steps_data = parallel_results["steps_data"]
+                    stats = parallel_results["stats"]
+                    body_battery_data = parallel_results["body_battery_data"]
+                    stress_data = parallel_results["stress_data"]
+                    spo2_data = parallel_results["spo2_data"]
+                    sleep = parallel_results["sleep"]
+                    respiration_data = parallel_results["respiration_data"]
+                    intensity_data = parallel_results["intensity_data"]
                 
                 # ✅ PHASE 2.5 : Si lastSyncTimestamp fourni, utiliser récupération incrémentale pour FC
                 if last_sync_timestamp_for_date:
@@ -981,8 +1109,19 @@ if EMAIL and PASSWORD:
                 respiration_data, intensity_data, d_str
             )
             
+            # ✅ PHASE 3.1 : Flag pour indiquer si on doit skip le parsing statique (steps/calories/distance)
+            should_skip_static_parsing = False
+            
+            # ✅ PHASE 3.1 : Si on a utilisé le cache parsé avant les appels API, l'utiliser maintenant
+            if should_skip_api_calls and cached_daily_before_api:
+                # ✅ PHASE 3.1 : Utiliser le cache parsé pour steps/calories/distance
+                print_debug(f"✅ PHASE 3.1 - Utilisation cache parsé pour steps/calories/distance (évite parsing depuis API)")
+                # Utiliser le cache parsé comme base
+                cached_daily = cached_daily_before_api
+                should_skip_static_parsing = True  # ✅ PHASE 3.1 : Skip parsing statique
+                # Note : Les métriques dynamiques (body_battery, stress, etc.) seront parsées depuis les données récupérées
             # ✅ FIX A.2 : Ne pas utiliser le cache si récupération incrémentale (données peuvent avoir changé)
-            if last_sync_timestamp_for_date and d_str == current_date:
+            elif last_sync_timestamp_for_date and d_str == current_date:
                 print_debug(f"🔄 Récupération incrémentale active, bypass du cache pour {d_str}")
                 cached_daily = None
             else:
@@ -991,86 +1130,124 @@ if EMAIL and PASSWORD:
             
             if cached_daily:
                 # ✅ FIX A.1 : Ne pas utiliser le cache si données vides et après 00:15
+                # ✅ PHASE 3.1 : Exception : si cache utilisé pour Phase 3.1, ne pas vérifier (déjà validé)
                 from datetime import datetime, time
-                now = datetime.now()
-                midnight = datetime.combine(now.date(), time.min)
-                minutes_since_midnight = (now - midnight).total_seconds() / 60
+                is_phase3_cache = should_skip_api_calls and cached_daily == cached_daily_before_api
                 
-                # Retirer les métadonnées de cache avant de vérifier
-                day_daily_temp = {k: v for k, v in cached_daily.items() 
-                               if not k.startswith('_')}
-                
-                # Vérifier si données sont vides
-                is_empty = (
-                    day_daily_temp.get('steps', 0) == 0 and
-                    day_daily_temp.get('calories', {}).get('total', 0) == 0 and
-                    len(day_daily_temp.get('heartRate', {}).get('timeSeries', [])) == 0
-                )
-                
-                # Si données vides et après 00:15, invalider le cache
-                if is_empty and minutes_since_midnight > 15 and d_str == current_date:
-                    print_debug(f"⚠️ Cache invalidé: données vides pour {d_str} après 00:15 (minutes depuis minuit: {minutes_since_midnight:.1f})")
-                    cached_daily = None  # Forcer re-parsing
+                if not is_phase3_cache:
+                    # Validation normale du cache (pas Phase 3.1)
+                    now = datetime.now()
+                    midnight = datetime.combine(now.date(), time.min)
+                    minutes_since_midnight = (now - midnight).total_seconds() / 60
+                    
+                    # Retirer les métadonnées de cache avant de vérifier
+                    day_daily_temp = {k: v for k, v in cached_daily.items() 
+                                   if not k.startswith('_')}
+                    
+                    # Vérifier si données sont vides
+                    is_empty = (
+                        day_daily_temp.get('steps', 0) == 0 and
+                        day_daily_temp.get('calories', {}).get('total', 0) == 0 and
+                        len(day_daily_temp.get('heartRate', {}).get('timeSeries', [])) == 0
+                    )
+                    
+                    # Si données vides et après 00:15, invalider le cache
+                    if is_empty and minutes_since_midnight > 15 and d_str == current_date:
+                        print_debug(f"⚠️ Cache invalidé: données vides pour {d_str} après 00:15 (minutes depuis minuit: {minutes_since_midnight:.1f})")
+                        cached_daily = None  # Forcer re-parsing
+                    else:
+                        print_debug(f"✅ Using cached daily metrics for {d_str}")
+                        # Retirer les métadonnées de cache avant de l'utiliser
+                        day_daily = day_daily_temp
+                        # S'assurer que toutes les clés de base sont présentes (même si vides)
+                        if 'calories' not in day_daily:
+                            day_daily['calories'] = {"total": 0, "active": 0, "resting": 0}
+                        if 'heartRate' not in day_daily:
+                            day_daily['heartRate'] = {"resting": 0, "max": 0, "avg": 0, "timeSeries": []}
                 else:
-                    print_debug(f"✅ Using cached daily metrics for {d_str}")
-                    # Retirer les métadonnées de cache avant de l'utiliser
-                    day_daily = day_daily_temp
+                    # ✅ PHASE 3.1 : Utiliser cache directement (déjà validé avant)
+                    print_debug(f"✅ PHASE 3.1 - Using validated cache for {d_str}")
+                    day_daily_temp = {k: v for k, v in cached_daily.items() if not k.startswith('_')}
+                    day_daily = day_daily_temp.copy()  # Copie pour éviter modifications
                     # S'assurer que toutes les clés de base sont présentes (même si vides)
                     if 'calories' not in day_daily:
                         day_daily['calories'] = {"total": 0, "active": 0, "resting": 0}
                     if 'heartRate' not in day_daily:
                         day_daily['heartRate'] = {"resting": 0, "max": 0, "avg": 0, "timeSeries": []}
-            else:
-                # Pas de cache valide, parser les métriques
-                print_debug(f"🔄 Parsing daily metrics for {d_str} (cache miss or expired)")
-                
-                # ✅ FIX B.3 : Logs détaillés pour diagnostic
-                print_debug(f"📊 Stats récupérés: {bool(stats)}, clés: {list(stats.keys())[:10] if stats and isinstance(stats, dict) else 'None'}")
-                print_debug(f"👣 Steps récupérés: {bool(steps_data)}, clés: {list(steps_data.keys())[:10] if steps_data and isinstance(steps_data, dict) else 'None'}")
-                hr_values_count = len(hr_day.get('heartRateValues', [])) if hr_day and isinstance(hr_day, dict) else 0
-                print_debug(f"❤️ HR récupérés: {bool(hr_day)}, points: {hr_values_count}")
-                print_debug(f"💤 Sleep récupéré: {bool(sleep)}, type: {type(sleep)}")
-                print_debug(f"🔋 Body Battery récupéré: {bool(body_battery_data)}, type: {type(body_battery_data)}")
-                print_debug(f"😰 Stress récupéré: {bool(stress_data)}, type: {type(stress_data)}")
-                print_debug(f"🫁 SpO2 récupéré: {bool(spo2_data)}, type: {type(spo2_data)}")
-                
-                # ✅ FIX B.2 : Validation des données brutes avant parsing
-                # Vérifier que les données ne sont pas toutes vides/None (structure valide mais données absentes)
-                has_any_raw_data = (
-                    (stats and isinstance(stats, dict) and len(stats) > 0) or
-                    (steps_data and isinstance(steps_data, dict) and len(steps_data) > 0) or
-                    (hr_day and isinstance(hr_day, dict) and len(hr_day.get('heartRateValues', [])) > 0) or
-                    (sleep and isinstance(sleep, dict) and len(sleep) > 0) or
-                    (body_battery_data is not None) or
-                    (stress_data is not None) or
-                    (spo2_data is not None)
-                )
-                
-                if not has_any_raw_data and d_str == current_date:
-                    from datetime import datetime, time
-                    now = datetime.now()
-                    midnight = datetime.combine(now.date(), time.min)
-                    minutes_since_midnight = (now - midnight).total_seconds() / 60
                     
-                    if minutes_since_midnight > 15:
-                        print_debug(f"⚠️⚠️ Aucune donnée brute récupérée pour {d_str} après 00:15 (minutes: {minutes_since_midnight:.1f})")
-                        print_debug(f"⚠️ Cela peut indiquer un problème de récupération depuis l'API Garmin")
-                    else:
-                        print_debug(f"ℹ️ Aucune donnée brute encore disponible pour {d_str} (trop tôt dans la journée: {minutes_since_midnight:.1f} min)")
+                    # ✅ PHASE 3.1 : Parser les métriques dynamiques (body_battery, stress, etc.) depuis les données récupérées
+                    # Ces métriques peuvent avoir changé rapidement, donc on les récupère toujours
+                    print_debug(f"✅ PHASE 3.1 - Parsing métriques dynamiques (body_battery, stress, etc.) depuis données récupérées...")
+                    # On marque un flag pour indiquer qu'on doit fusionner après le parsing normal
+                    day_daily['_phase3_merge_needed'] = True
+            
+            # ✅ PHASE 3.1 : Parser les métriques dynamiques même si cache Phase 3.1 utilisé
+            if not cached_daily or should_skip_static_parsing:
+                # Pas de cache valide, ou cache Phase 3.1 utilisé (on parse seulement les métriques dynamiques)
+                if should_skip_static_parsing:
+                    print_debug(f"✅ PHASE 3.1 - Parsing métriques dynamiques uniquement (steps/calories/distance depuis cache)")
+                else:
+                    print_debug(f"🔄 Parsing daily metrics for {d_str} (cache miss or expired)")
+                
+                # ✅ PHASE 3.1 : Parser steps/calories/distance seulement si pas de cache Phase 3.1
+                if not should_skip_static_parsing:
+                    # ✅ FIX B.3 : Logs détaillés pour diagnostic
+                    print_debug(f"📊 Stats récupérés: {bool(stats)}, clés: {list(stats.keys())[:10] if stats and isinstance(stats, dict) else 'None'}")
+                    print_debug(f"👣 Steps récupérés: {bool(steps_data)}, clés: {list(steps_data.keys())[:10] if steps_data and isinstance(steps_data, dict) else 'None'}")
+                    hr_values_count = len(hr_day.get('heartRateValues', [])) if hr_day and isinstance(hr_day, dict) else 0
+                    print_debug(f"❤️ HR récupérés: {bool(hr_day)}, points: {hr_values_count}")
+                    print_debug(f"💤 Sleep récupéré: {bool(sleep)}, type: {type(sleep)}")
+                    print_debug(f"🔋 Body Battery récupéré: {bool(body_battery_data)}, type: {type(body_battery_data)}")
+                    print_debug(f"😰 Stress récupéré: {bool(stress_data)}, type: {type(stress_data)}")
+                    print_debug(f"🫁 SpO2 récupéré: {bool(spo2_data)}, type: {type(spo2_data)}")
+                    
+                    # ✅ FIX B.2 : Validation des données brutes avant parsing
+                    # Vérifier que les données ne sont pas toutes vides/None (structure valide mais données absentes)
+                    has_any_raw_data = (
+                        (stats and isinstance(stats, dict) and len(stats) > 0) or
+                        (steps_data and isinstance(steps_data, dict) and len(steps_data) > 0) or
+                        (hr_day and isinstance(hr_day, dict) and len(hr_day.get('heartRateValues', [])) > 0) or
+                        (sleep and isinstance(sleep, dict) and len(sleep) > 0) or
+                        (body_battery_data is not None) or
+                        (stress_data is not None) or
+                        (spo2_data is not None)
+                    )
+                    
+                    if not has_any_raw_data and d_str == current_date:
+                        from datetime import datetime, time
+                        now = datetime.now()
+                        midnight = datetime.combine(now.date(), time.min)
+                        minutes_since_midnight = (now - midnight).total_seconds() / 60
+                        
+                        if minutes_since_midnight > 15:
+                            print_debug(f"⚠️⚠️ Aucune donnée brute récupérée pour {d_str} après 00:15 (minutes: {minutes_since_midnight:.1f})")
+                            print_debug(f"⚠️ Cela peut indiquer un problème de récupération depuis l'API Garmin")
+                        else:
+                            print_debug(f"ℹ️ Aucune donnée brute encore disponible pour {d_str} (trop tôt dans la journée: {minutes_since_midnight:.1f} min)")
                 
                 # Utiliser parsers modulaires (pour aujourd'hui ET dates passées)
                 try:
-                    day_daily["steps"] = parse_daily_steps(steps_data, d_str)
-                    day_daily["distance"] = parse_daily_distance(stats, steps_data, d_str, day_swim, day_jump, day_cardio)
-                    day_daily["floors"] = parse_daily_floors(stats)
-                    
-                    # 🟡 FIX : Essayer de parser calories depuis stats ET steps_data pour aujourd'hui
-                    calories = parse_daily_calories(stats, d_str, steps_data if d_str == current_date else None)
-                    day_daily["calories"].update(calories)
+                    # ✅ PHASE 3.1 : Parser steps/calories/distance seulement si pas de cache Phase 3.1
+                    if not should_skip_static_parsing:
+                        day_daily["steps"] = parse_daily_steps(steps_data, d_str)
+                        day_daily["distance"] = parse_daily_distance(stats, steps_data, d_str, day_swim, day_jump, day_cardio)
+                        day_daily["floors"] = parse_daily_floors(stats)
+                        
+                        # 🟡 FIX : Essayer de parser calories depuis stats ET steps_data pour aujourd'hui
+                        calories = parse_daily_calories(stats, d_str, steps_data if d_str == current_date else None)
+                        day_daily["calories"].update(calories)
+                    else:
+                        # ✅ PHASE 3.1 : Utiliser valeurs du cache pour steps/calories/distance
+                        print_debug(f"✅ PHASE 3.1 - Utilisation valeurs cache pour steps/calories/distance (skip parsing statique)")
+                        # Les valeurs sont déjà dans day_daily depuis le cache
                     
                     # 🔴 FIX CRITIQUE : Si toujours à 0 pour aujourd'hui, recherche récursive dans TOUTES les données
-                    if d_str == current_date and calories["total"] == 0 and calories["active"] == 0 and calories["resting"] == 0:
-                        print_debug(f"⚠️⚠️⚠️ Calories still 0 for today ({d_str}), performing DEEP SEARCH in all data structures...")
+                    # ✅ PHASE 3.1 : Skip cette vérification si on utilise le cache (calories déjà validées)
+                    if not should_skip_static_parsing and d_str == current_date:
+                        # Récupérer calories depuis day_daily (peut être depuis cache ou parsing)
+                        calories_check = day_daily.get("calories", {})
+                        if calories_check.get("total", 0) == 0 and calories_check.get("active", 0) == 0 and calories_check.get("resting", 0) == 0:
+                            print_debug(f"⚠️⚠️⚠️ Calories still 0 for today ({d_str}), performing DEEP SEARCH in all data structures...")
                         
                         # Dump complet de toutes les structures pour debug
                         print_debug(f"=== DEEP SEARCH: stats type={type(stats)}, keys={list(stats.keys())[:30] if isinstance(stats, dict) else 'N/A'}")

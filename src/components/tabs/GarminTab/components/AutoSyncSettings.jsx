@@ -72,7 +72,8 @@ export default function AutoSyncSettings({ syncFunction }) {
 
   return (
     <div 
-      className="bg-slate-800/60 border border-slate-700 rounded-lg p-4"
+      id="autosync-settings" // ✅ PHASE 5.3 : ID pour navigation depuis message informatif
+      className="bg-slate-800/60 border border-slate-700 rounded-lg p-4 transition-all duration-300"
       role="region"
       aria-label="Paramètres de synchronisation automatique"
     >
@@ -151,6 +152,33 @@ export default function AutoSyncSettings({ syncFunction }) {
               className="px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Heure de synchronisation"
             />
+          </div>
+
+          {/* ✅ PHASE 5.2 : Délai optionnel avant sync */}
+          <div>
+            <label 
+              htmlFor="sync-delay"
+              className="block text-slate-300 text-sm mb-2"
+            >
+              Délai avant synchronisation (minutes)
+            </label>
+            <input
+              id="sync-delay"
+              type="number"
+              min="0"
+              max="60"
+              step="1"
+              value={settings.delayBeforeSync || 0}
+              onChange={(e) => updateSettings({ delayBeforeSync: parseInt(e.target.value, 10) || 0 })}
+              disabled={!settings.enabled}
+              className="px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed w-full"
+              aria-label="Délai avant synchronisation en minutes"
+            />
+            <p className="text-slate-400 text-xs mt-1">
+              {settings.delayBeforeSync === 0 
+                ? 'Pas de délai - synchronisation immédiate' 
+                : `Attente de ${settings.delayBeforeSync} minute${settings.delayBeforeSync > 1 ? 's' : ''} avant la synchronisation (pour laisser Garmin traiter les données)`}
+            </p>
           </div>
         </div>
       )}

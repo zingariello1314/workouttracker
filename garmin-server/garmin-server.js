@@ -52,7 +52,8 @@ class ServerCache {
   }
 
   // Vérifier si une entrée existe et n'est pas expirée
-  get(key) {
+  // ✅ PHASE 3.1 : Amélioration avec lastSyncTimestamp pour décision intelligente
+  get(key, lastSyncTimestamp = null) {
     const entry = this.cache.get(key);
     if (!entry) return null;
     
@@ -65,7 +66,29 @@ class ServerCache {
     const isTodayCache = key.includes(today);
     const effectiveTtl = isTodayCache ? this.todayTtlMs : this.defaultTtlMs;
     
-    if (cacheAge > effectiveTtl) {
+    // ✅ PHASE 3.1 : Logique intelligente avec lastSyncTimestamp
+    // Si lastSyncTimestamp fourni ET date = aujourd'hui :
+    //   - Si cache existe ET (âge < TTL OU lastSyncTimestamp < 5 min) → utiliser cache
+    //   - Sinon → considérer expiré (mais ne pas supprimer si lastSyncTimestamp < 5 min)
+    let shouldUseCache = cacheAge <= effectiveTtl;
+    
+    if (lastSyncTimestamp && isTodayCache) {
+      try {
+        const lastSyncDate = new Date(lastSyncTimestamp);
+        const lastSyncAgeMinutes = (now - lastSyncDate.getTime()) / (1000 * 60);
+        
+        // Si sync il y a moins de 5 minutes, utiliser le cache même s'il est expiré
+        if (lastSyncAgeMinutes < 5) {
+          shouldUseCache = true;
+          console.log(`[CACHE] ✅ PHASE 3.1 - Cache utilisé malgré expiration (sync il y a ${Math.round(lastSyncAgeMinutes * 60)}s)`);
+        }
+      } catch (e) {
+        console.warn(`[CACHE] Error parsing lastSyncTimestamp: ${e.message}`);
+        // En cas d'erreur, utiliser la logique normale
+      }
+    }
+    
+    if (!shouldUseCache) {
       // Cache expiré
       this.cache.delete(key);
       console.log(`[CACHE] Entry expired: ${key} (age: ${Math.round(cacheAge / 1000)}s, TTL: ${Math.round(effectiveTtl / 1000)}s)`);
@@ -269,7 +292,8 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
     
     // ✅ PHASE 2.4 : Inclure lastSyncTimestamp dans la clé de cache
     const cacheKey = serverCache.generateKey({ start, end, lastSyncTimestamp: lastSyncTimestamp || 'none' });
-    const cachedResult = forceRefresh === 'true' ? null : serverCache.get(cacheKey);
+    // ✅ PHASE 3.1 : Passer lastSyncTimestamp à get() pour décision intelligente
+    const cachedResult = forceRefresh === 'true' ? null : serverCache.get(cacheKey, lastSyncTimestamp || null);
     
     if (cachedResult) {
       const cacheAge = Date.now() - (serverCache.cache.get(cacheKey)?.timestamp || 0);

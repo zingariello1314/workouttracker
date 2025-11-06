@@ -200,7 +200,8 @@ export function getAutoSyncSettings() {
   return {
     enabled: false,
     schedule: 'daily',
-    customTime: '08:00'
+    customTime: '08:00',
+    delayBeforeSync: 0  // ✅ PHASE 5.2 : Délai optionnel avant sync (en minutes, 0 = désactivé)
   };
 }
 

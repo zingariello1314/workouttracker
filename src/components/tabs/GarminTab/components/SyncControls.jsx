@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { ARIA_LABELS } from '../constants';
+import GarminInfoMessage from './GarminInfoMessage'; // ✅ PHASE 5.3 : Message informatif
 
 /**
  * Composant pour les contrôles de synchronisation Garmin
@@ -17,7 +18,9 @@ export default function SyncControls({
   fetchStatus,
   deleteMockActivities, // 🔴 NOUVEAU : Fonction pour supprimer les activités mock
   clearCache, // 🔴 NOUVEAU : Fonction pour vider le cache frontend
-  onOpenDebug // ✅ PHASE 1 : Fonction pour ouvrir le panneau de diagnostic
+  onOpenDebug, // ✅ PHASE 1 : Fonction pour ouvrir le panneau de diagnostic
+  garminData, // ✅ PHASE 5.3 : Données Garmin pour message informatif
+  onConfigureDelay // ✅ PHASE 5.3 : Fonction pour ouvrir paramètres de délai
 }) {
   const [deletingMocks, setDeletingMocks] = React.useState(false);
   
@@ -102,6 +105,14 @@ export default function SyncControls({
               </div>
             </div>
           )}
+          
+          {/* ✅ PHASE 5.3 : Message informatif pour délais Garmin */}
+          <GarminInfoMessage
+            status={status}
+            garminData={garminData}
+            onRetry={() => syncNow(false)}
+            onConfigureDelay={onConfigureDelay}
+          />
         </div>
       </div>
 

@@ -345,28 +345,58 @@ export function isMockEnduranceSession(session) {
   const reps = parseInt(session.reps || session.count) || 0;
 
   // Pattern 1 : Durée excessive (>= 1440 min = 24h, ou valeurs suspectes)
+  // ✅ AMÉLIORATION : Détecter aussi valeurs "trop rondes" suspectes (multiples de 20/50/100)
+  // et valeurs impossibles pour une session réelle
   if (durationMinutes >= 1440 || durationMinutes === 3600 || durationMinutes === 1200 || 
-      (durationMinutes >= 800 && durationMinutes <= 900)) { // Plage 880 min
+      (durationMinutes >= 800 && durationMinutes <= 900) || // Plage 880 min
+      (durationMinutes >= 200 && durationMinutes <= 300 && durationMinutes % 20 === 0)) { // Plage 200-300 min (ex: 220 min) - valeurs rondes suspectes
     return true;
+  }
+  
+  // ✅ AMÉLIORATION : Détecter durées "trop rondes" combinées avec sauts élevés
+  // (ex: 220 min = 3h40, valeur très suspecte si combinée avec 13200 sauts)
+  if (durationMinutes > 0 && (durationMinutes % 10 === 0 || durationMinutes % 20 === 0) && durationMinutes >= 100) {
+    // Si la durée est un multiple de 10/20 et >= 100 min, vérifier si combinée avec valeurs suspectes
+    if (jumps >= 10000 || jumps === 13200 || (jumps >= 13000 && jumps <= 13500)) {
+      return true; // Durée ronde + sauts suspects = très probablement mock
+    }
   }
 
   // Pattern 2 : Distance très faible (1.5m) avec durée élevée (Natation mock)
-  if (distance === 1.5 && durationMinutes > 60) {
+  // ✅ AMÉLIORATION : Détecter aussi distances très faibles (< 5m) avec durée > 30 min
+  if ((distance === 1.5 || (distance > 0 && distance < 5)) && durationMinutes > 30) {
     return true;
   }
 
   // Pattern 3 : Corde à sauter mock (valeurs suspectes)
-  if ((jumps === 1200 && durationMinutes === 1200) || 
-      jumps === 13200 || 
-      (jumps >= 13000 && jumps <= 13500)) { // Plage autour de 13200
+  // ✅ AMÉLIORATION : Détecter aussi valeurs très élevées de sauts (> 10000) avec durée suspecte
+  // ✅ FIX : Vérifier aussi dans count/reps si jumps n'est pas présent
+  const sessionJumps = jumps || parseInt(session.count) || parseInt(session.reps) || 0;
+  
+  if ((sessionJumps === 1200 && durationMinutes === 1200) || 
+      sessionJumps === 13200 || 
+      (sessionJumps >= 13000 && sessionJumps <= 13500) || // Plage autour de 13200
+      (sessionJumps > 10000 && durationMinutes < 120)) { // Plus de 10000 sauts en moins de 2h
     return true;
+  }
+  
+  // ✅ AMÉLIORATION : Détecter 13200 sauts même si durée normale (valeur très suspecte)
+  if (sessionJumps === 13200 || (sessionJumps >= 13200 && sessionJumps <= 13250)) {
+    return true; // 13200 sauts est toujours suspect, peu importe la durée
   }
 
   // Pattern 4 : Sessions avec des valeurs "trop rondes" suspectes
-  if (jumps > 0 && (jumps % 1000 === 0 || jumps % 100 === 0) && jumps > 1000) {
-    if (durationMinutes > 0 && (durationMinutes % 100 === 0 || durationMinutes % 1000 === 0)) {
+  // ✅ FIX : Utiliser sessionJumps au lieu de jumps
+  if (sessionJumps > 0 && (sessionJumps % 1000 === 0 || sessionJumps % 100 === 0) && sessionJumps > 1000) {
+    if (durationMinutes > 0 && (durationMinutes % 100 === 0 || durationMinutes % 1000 === 0 || durationMinutes % 20 === 0)) {
       return true; // Trop suspect si les deux sont des multiples ronds
     }
+  }
+  
+  // ✅ AMÉLIORATION : Détecter combinaisons suspectes de sauts élevés + durée ronde
+  // Exemple : 13200 sauts + 220 min = très suspect
+  if (sessionJumps >= 10000 && durationMinutes >= 200 && durationMinutes % 20 === 0) {
+    return true; // Sauts élevés + durée ronde = mock probable
   }
 
   // Pattern 5 : Date future
@@ -389,20 +419,38 @@ export function isMockEnduranceSession(session) {
   // Pattern 6 : Pas de garminId ET source = 'garmin' avec valeurs suspectes
   if (session.source === 'garmin' && !session.garminId) {
     if (durationMinutes >= 1440 || durationMinutes === 3600 || durationMinutes === 1200 || 
-        (durationMinutes >= 800 && durationMinutes <= 900)) {
+        (durationMinutes >= 800 && durationMinutes <= 900) ||
+        (durationMinutes >= 200 && durationMinutes <= 300 && durationMinutes % 20 === 0)) {
       return true;
     }
     if (distance === 1.5 && durationMinutes > 60) {
       return true;
     }
-    if (jumps === 1200 || jumps === 13200 || (jumps >= 13000 && jumps <= 13500)) {
+    if (sessionJumps === 1200 || sessionJumps === 13200 || (sessionJumps >= 13000 && sessionJumps <= 13500)) {
       return true;
     }
   }
 
   // Pattern 7 : Sessions avec des valeurs impossibles (durée > 24h, sauts > 10000/jour)
+  // ✅ FIX : Utiliser sessionJumps au lieu de jumps
   if (durationMinutes > 1440) return true;
-  if (jumps > 10000 && durationMinutes < 480) return true; // Plus de 10000 sauts en moins de 8h
+  if (sessionJumps > 10000 && durationMinutes < 480) return true; // Plus de 10000 sauts en moins de 8h
+
+  // ✅ AMÉLIORATION : Détecter sessions natation avec distance très faible (< 10m) et durée > 20 min
+  // (souvent des données mockées de test)
+  if (session.activityType === 'swimming' || session.type === 'swimming') {
+    if (distance > 0 && distance < 10 && durationMinutes > 20) {
+      return true;
+    }
+  }
+
+  // ✅ AMÉLIORATION : Détecter sessions avec valeurs "trop rondes" suspectes pour natation
+  // (ex: distance exactement 1.5m, 2m, 3m, etc. avec durée très élevée)
+  if (distance > 0 && distance < 10 && (distance === 1.5 || distance === 2 || distance === 3 || distance === 5)) {
+    if (durationMinutes > 60) {
+      return true;
+    }
+  }
 
   return false;
 }

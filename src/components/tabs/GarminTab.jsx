@@ -645,6 +645,19 @@ const GarminTab = () => {
             setEndDate={setEndDate}
             fetchStatus={fetchStatus}
             deleteMockActivities={deleteMockActivities}
+            garminData={garminData} // ✅ PHASE 5.3 : Données pour message informatif
+            onConfigureDelay={() => {
+              // ✅ PHASE 5.3 : Scroller vers AutoSyncSettings pour configurer le délai
+              const settingsElement = document.getElementById('autosync-settings');
+              if (settingsElement) {
+                settingsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Mettre en surbrillance brièvement
+                settingsElement.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
+                setTimeout(() => {
+                  settingsElement.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+                }, 2000);
+              }
+            }} // ✅ PHASE 5.3 : Fonction pour ouvrir paramètres de délai
             clearCache={clearCache}
             onOpenDebug={() => setShowDebugPanel(true)} // ✅ PHASE 1 : Ouvrir le panneau de diagnostic
           />
