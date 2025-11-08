@@ -25,7 +25,8 @@ import {
   setUseFallback,
   STORE_ACTIVITIES,
   STORE_DAILY_METRICS,
-  STORE_DEVICE_META
+  STORE_DEVICE_META,
+  readStorageBucket
 } from './garminDataUtils';
 
 import { DATE_RANGE } from '../components/tabs/GarminTab/constants';
@@ -167,30 +168,45 @@ export const calculateDateRange = (periodFilter, customStartDate, customEndDate)
  */
 const loadActivitiesFromLocalStorage = (startDate = null, endDate = null) => {
   const activities = { swimming: [], jumpRope: [], cardio: [] };
+  const processedIds = new Set();
+  
+  const isInRange = (date) => {
+    if (!startDate || !endDate || !date) return true;
+    return !(date < startDate || date > endDate);
+  };
+  
+  const pushActivity = (item) => {
+    if (!item || !item.type) return;
+    if (!isInRange(item.date)) return;
+    if (item.type === 'swimming') {
+      activities.swimming.push(item);
+    } else if (item.type === 'jumpRope') {
+      activities.jumpRope.push(item);
+    } else if (item.type === 'cardio') {
+      activities.cardio.push(item);
+    }
+  };
+  
+  try {
+    const bucket = readStorageBucket(STORE_ACTIVITIES);
+    Object.entries(bucket).forEach(([id, item]) => {
+      processedIds.add(id);
+      pushActivity(item);
+    });
+  } catch (bucketErr) {
+    log.warn('[loadActivitiesFromLocalStorage] Bucket read error:', bucketErr);
+  }
   
   try {
     const activityKeys = getAllStorageKeys(STORE_ACTIVITIES);
     for (const key of activityKeys) {
+      if (processedIds.has(key)) continue;
       try {
         const itemStr = localStorage.getItem(getStorageKey(STORE_ACTIVITIES, key));
         if (itemStr) {
           const item = JSON.parse(itemStr);
           
-          // Filtrer par plage de dates si spécifiée
-          if (startDate && endDate && item.date) {
-            if (item.date < startDate || item.date > endDate) {
-              continue;
-            }
-          }
-          
-          // Classer par type
-          if (item.type === 'swimming') {
-            activities.swimming.push(item);
-          } else if (item.type === 'jumpRope') {
-            activities.jumpRope.push(item);
-          } else if (item.type === 'cardio') {
-            activities.cardio.push(item);
-          }
+          pushActivity(item);
         }
       } catch (e) {
         log.warn('[loadActivitiesFromLocalStorage] Error loading activity from localStorage:', key, e);
@@ -212,25 +228,40 @@ const loadActivitiesFromLocalStorage = (startDate = null, endDate = null) => {
  */
 const loadDailyMetricsFromLocalStorage = (startDate = null, endDate = null) => {
   const dailyMetrics = {};
+  const processedDates = new Set();
+  const isInRange = (date) => {
+    if (!startDate || !endDate || !date) return true;
+    return !(date < startDate || date > endDate);
+  };
+  
+  try {
+    const bucket = readStorageBucket(STORE_DAILY_METRICS);
+    Object.entries(bucket).forEach(([date, metric]) => {
+      processedDates.add(date);
+      if (!isInRange(date)) return;
+      if (metric) {
+        dailyMetrics[date] = metric;
+      }
+    });
+  } catch (bucketErr) {
+    log.warn('[loadDailyMetricsFromLocalStorage] Bucket read error:', bucketErr);
+  }
   
   try {
     const metricsKeys = getAllStorageKeys(STORE_DAILY_METRICS);
     for (const key of metricsKeys) {
+      if (processedDates.has(key)) continue;
       try {
         const itemStr = localStorage.getItem(getStorageKey(STORE_DAILY_METRICS, key));
         if (itemStr) {
           const item = JSON.parse(itemStr);
           
-          // Filtrer par plage de dates si spécifiée
-          if (startDate && endDate && item.date) {
-            if (item.date < startDate || item.date > endDate) {
-              continue;
-            }
+          if (!isInRange(item.date)) {
+            continue;
           }
           
-          // Extraire date et métriques
           const { date, ...rest } = item;
-          if (date) {
+          if (date && !dailyMetrics[date]) {
             dailyMetrics[date] = rest;
           }
         }

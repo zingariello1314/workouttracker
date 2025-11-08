@@ -24,7 +24,9 @@ import {
   getUseFallback,
   setUseFallback,
   STORE_ACTIVITIES,
-  STORE_DAILY_METRICS
+  STORE_DAILY_METRICS,
+  readStorageBucket,
+  writeStorageBucket
 } from './garminDataUtils';
 
 import {
@@ -37,6 +39,16 @@ import { logIndexedDBError } from './garminErrorHandler';
 import logger from '../utils/logger';
 
 const log = logger.module('garminDataSave');
+
+const now = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+
+const logDuration = (label, start, extra = {}) => {
+  const duration = now() - start;
+  log.debug(
+    `[${label}] durée ${duration.toFixed(1)}ms`,
+    { duration, ...extra }
+  );
+};
 
 // ==================== HELPERS INDEXEDDB AVEC RETRY ====================
 
@@ -157,8 +169,22 @@ const mergeActivity = (existing, newItem, type) => {
  * @param {Object} activities - Activités par type
  * @returns {Promise<void>} Promise résolue quand sauvegarde terminée
  */
+const BATCH_SIZE_ACTIVITIES = 25;
+const BATCH_SIZE_DAILY_METRICS = 50;
+
+const chunkArray = (array, size) => {
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+};
+
 const saveActivitiesToLocalStorage = async (activities) => {
   try {
+    const bucket = readStorageBucket(STORE_ACTIVITIES);
+    const touchedIds = new Set(Object.keys(bucket));
+
     for (const type of ['swimming', 'jumpRope', 'cardio']) {
       const items = activities[type] || [];
       for (const item of items) {
@@ -166,10 +192,7 @@ const saveActivitiesToLocalStorage = async (activities) => {
           console.warn('[GarminDataSave] Activity missing id, skipping:', item);
           continue;
         }
-        
-        const key = getStorageKey(STORE_ACTIVITIES, item.id);
-        const existingStr = localStorage.getItem(key);
-        const existing = existingStr ? JSON.parse(existingStr) : null;
+        const existing = bucket[item.id] || null;
         
         // Fusionner avec existante ou créer nouvelle
         const merged = mergeActivity(existing, item, type);
@@ -180,10 +203,22 @@ const saveActivitiesToLocalStorage = async (activities) => {
           merged.source = item.source || 'garmin';
         }
         
-        localStorage.setItem(key, JSON.stringify(merged));
+        bucket[item.id] = merged;
+        touchedIds.add(item.id);
       }
     }
-    console.log('[GarminDataSave] Activities saved to localStorage');
+    
+    writeStorageBucket(STORE_ACTIVITIES, bucket);
+    
+    // Nettoyer anciennes entrées legacy pour éviter doublons
+    const legacyKeys = getAllStorageKeys(STORE_ACTIVITIES);
+    for (const key of legacyKeys) {
+      if (!touchedIds.has(key)) {
+        localStorage.removeItem(getStorageKey(STORE_ACTIVITIES, key));
+      }
+    }
+    
+    log.debug('[GarminDataSave] Activities saved to localStorage bucket', { count: touchedIds.size });
   } catch (err) {
     console.error('[GarminDataSave] Save activities to localStorage error:', err);
     throw err;
@@ -198,6 +233,10 @@ const saveActivitiesToLocalStorage = async (activities) => {
  */
 const saveActivitiesToIndexedDB = async (activities) => {
   try {
+    const start = now();
+    let savedCount = 0;
+    let errorCount = 0;
+
     const db = await openDB();
     if (!db) {
       // Si openDB retourne null, utiliser fallback
@@ -208,8 +247,7 @@ const saveActivitiesToIndexedDB = async (activities) => {
     const tx = db.transaction([STORE_ACTIVITIES], 'readwrite');
     const store = tx.objectStore(STORE_ACTIVITIES);
     
-    // Déduplication robuste par ID Garmin (activityId)
-    // L'ID Garmin est unique et persiste entre les sync
+    const activityEntries = [];
     for (const type of ['swimming', 'jumpRope', 'cardio']) {
       const items = activities[type] || [];
       for (const item of items) {
@@ -217,39 +255,40 @@ const saveActivitiesToIndexedDB = async (activities) => {
           console.warn('[GarminDataSave] Activity missing id, skipping:', item);
           continue;
         }
-        
+        activityEntries.push({ item, type });
+      }
+    }
+    
+    for (const batch of chunkArray(activityEntries, BATCH_SIZE_ACTIVITIES)) {
+      await Promise.all(batch.map(async ({ item, type }) => {
         try {
-          // ✅ PHASE 1.5 : Vérifier si l'activité existe déjà avec retry
           const existing = await getFromStoreWithRetry(store, item.id, {
             store: STORE_ACTIVITIES,
             activityId: item.id,
             type
           });
           
-          // Fusionner avec existante ou créer nouvelle
           const merged = mergeActivity(existing, item, type);
           
-          // ✅ PHASE 1.5 : Sauvegarder avec retry
           await putToStoreWithRetry(store, merged, {
             store: STORE_ACTIVITIES,
             activityId: item.id,
             type
           });
+          savedCount += 1;
         } catch (e) {
-          // Erreur après retry : log détaillé mais continuer pour autres activités
           logIndexedDBError(e, {
             store: STORE_ACTIVITIES,
             activityId: item.id,
             type,
-            operation: 'saveActivity'
+            operation: 'saveActivityBatch'
           }, 'warn');
-          log.warn(`[saveActivitiesToIndexedDB] Error saving activity ${item.id}, continuing with other activities`);
-          // Continuer même en cas d'erreur pour une activité spécifique
+          errorCount += 1;
         }
-      }
+      }));
     }
     
-    log.info('[saveActivitiesToIndexedDB] Activities saved successfully to IndexedDB');
+    logDuration('saveActivitiesToIndexedDB', start, { savedCount, errorCount });
   } catch (err) {
     // Erreur globale : log détaillé et fallback
     logIndexedDBError(err, {
@@ -314,22 +353,33 @@ export const saveActivities = async (activities, dbReady) => {
  */
 const saveDailyMetricsToLocalStorage = async (dailyMetrics) => {
   try {
+    const bucket = readStorageBucket(STORE_DAILY_METRICS);
+    const touchedDates = new Set(Object.keys(bucket));
+
     for (const [date, metrics] of Object.entries(dailyMetrics)) {
       if (!date || !metrics) {
         console.warn('[GarminDataSave] Invalid date or metrics, skipping:', date);
         continue;
       }
       
-      const key = getStorageKey(STORE_DAILY_METRICS, date);
-      const existingStr = localStorage.getItem(key);
-      const existing = existingStr ? JSON.parse(existingStr) : null;
+      const existing = bucket[date] || null;
       
       // Utiliser module de fusion pour fusionner intelligemment
       const merged = mergeDailyMetrics(metrics, existing, date);
-      
-      localStorage.setItem(key, JSON.stringify(merged));
+      bucket[date] = merged;
+      touchedDates.add(date);
     }
-    console.log('[GarminDataSave] Daily metrics saved to localStorage');
+    
+    writeStorageBucket(STORE_DAILY_METRICS, bucket);
+    
+    const legacyKeys = getAllStorageKeys(STORE_DAILY_METRICS);
+    for (const key of legacyKeys) {
+      if (!touchedDates.has(key)) {
+        localStorage.removeItem(getStorageKey(STORE_DAILY_METRICS, key));
+      }
+    }
+    
+    log.debug('[GarminDataSave] Daily metrics saved to localStorage bucket', { count: touchedDates.size });
   } catch (err) {
     console.error('[GarminDataSave] Save daily metrics to localStorage error:', err);
     throw err;
@@ -344,6 +394,10 @@ const saveDailyMetricsToLocalStorage = async (dailyMetrics) => {
  */
 const saveDailyMetricsToIndexedDB = async (dailyMetrics) => {
   try {
+    const start = now();
+    let savedCount = 0;
+    let errorCount = 0;
+
     const db = await openDB();
     if (!db) {
       setUseFallback(true);
@@ -353,40 +407,42 @@ const saveDailyMetricsToIndexedDB = async (dailyMetrics) => {
     const tx = db.transaction([STORE_DAILY_METRICS], 'readwrite');
     const store = tx.objectStore(STORE_DAILY_METRICS);
     
-    for (const [date, metrics] of Object.entries(dailyMetrics)) {
-      if (!date || !metrics) {
-        console.warn('[GarminDataSave] Invalid date or metrics, skipping:', date);
-        continue;
-      }
-      
-      try {
-        // ✅ PHASE 1.5 : Récupérer les métriques existantes avec retry
-        const existing = await getFromStoreWithRetry(store, date, {
-          store: STORE_DAILY_METRICS,
-          date
-        });
-        
-        // Utiliser module de fusion pour fusionner intelligemment
-        const merged = mergeDailyMetrics(metrics, existing, date);
-        
-        // ✅ PHASE 1.5 : Sauvegarder avec retry
-        await putToStoreWithRetry(store, merged, {
-          store: STORE_DAILY_METRICS,
-          date
-        });
-      } catch (e) {
-        // Erreur après retry : log détaillé mais continuer pour autres dates
-        logIndexedDBError(e, {
-          store: STORE_DAILY_METRICS,
-          date,
-          operation: 'saveDailyMetricsForDate'
-        }, 'warn');
-        log.warn(`[saveDailyMetricsToIndexedDB] Error saving daily metrics for ${date}, continuing with other dates`);
-        // Continuer même en cas d'erreur pour une date spécifique
-      }
+    const metricEntries = Object.entries(dailyMetrics)
+      .filter(([date, metrics]) => {
+        if (!date || !metrics) {
+          console.warn('[GarminDataSave] Invalid date or metrics, skipping:', date);
+          return false;
+        }
+        return true;
+      });
+    
+    for (const batch of chunkArray(metricEntries, BATCH_SIZE_DAILY_METRICS)) {
+      await Promise.all(batch.map(async ([date, metrics]) => {
+        try {
+          const existing = await getFromStoreWithRetry(store, date, {
+            store: STORE_DAILY_METRICS,
+            date
+          });
+          
+          const merged = mergeDailyMetrics(metrics, existing, date);
+          
+          await putToStoreWithRetry(store, merged, {
+            store: STORE_DAILY_METRICS,
+            date
+          });
+          savedCount += 1;
+        } catch (e) {
+          logIndexedDBError(e, {
+            store: STORE_DAILY_METRICS,
+            date,
+            operation: 'saveDailyMetricsBatch'
+          }, 'warn');
+          errorCount += 1;
+        }
+      }));
     }
     
-    log.info('[saveDailyMetricsToIndexedDB] Daily metrics saved successfully to IndexedDB');
+    logDuration('saveDailyMetricsToIndexedDB', start, { savedCount, errorCount });
   } catch (err) {
     // Erreur globale : log détaillé et fallback
     logIndexedDBError(err, {

@@ -2,6 +2,22 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import StarRating from '../ui/StarRating';
+import {
+  loadEnduranceData as loadEnduranceDataService,
+  persistEnduranceData,
+  ENDURANCE_SCHEMA_VERSION
+} from '../../services/endurance/enduranceDataService';
+import { evaluateChallenges } from '../../services/endurance/enduranceChallengesService';
+import {
+  createDefaultFormState,
+  createDefaultChallengeFormState
+} from '../../services/endurance/enduranceFormSchema';
+import EnduranceSessionForm from './EnduranceTab/components/EnduranceSessionForm.jsx';
+import SwimmingSessionExtras from './EnduranceTab/components/SwimmingSessionExtras.jsx';
+import RunningSessionExtras from './EnduranceTab/components/RunningSessionExtras.jsx';
+import { handleSubmitSession } from '../../services/endurance/enduranceSubmitUtils';
+import EnduranceChallengeReminder from './EnduranceTab/components/ui/EnduranceChallengeReminder.jsx';
+import EnduranceSectionHeader from './EnduranceTab/components/ui/EnduranceSectionHeader.jsx';
 
 const EnduranceTab = () => {
   const { data, updateData, getWorkoutHistory } = useWorkout();
@@ -55,20 +71,6 @@ const EnduranceTab = () => {
     setEnduranceState(prev => ({ ...prev, activeTab: tab }));
   }, []);
 
-  const setSessions = useCallback((activityType, newSessions) => {
-    setEnduranceState(prev => ({
-      ...prev,
-      sessions: {
-        ...prev.sessions,
-        [activityType]: newSessions
-      }
-    }));
-  }, []);
-
-  const setChallenges = useCallback((newChallenges) => {
-    setEnduranceState(prev => ({ ...prev, challenges: newChallenges }));
-  }, []);
-
   const setUI = useCallback((uiUpdates) => {
     setEnduranceState(prev => ({
       ...prev,
@@ -87,246 +89,133 @@ const EnduranceTab = () => {
     console.log('💬 Feedbacks de session:', Object.keys(data?.sessionFeedbacks || {}).length);
   }, [data]);
 
-  // ✅ FIX DOUBLONS : Flag pour éviter nettoyage multiple
-  const hasCleanedDuplicatesRef = useRef(false);
+  const enduranceLogger = useMemo(() => ({
+    debug: (...args) => console.debug('[EnduranceTab]', ...args),
+    info: (...args) => console.info('[EnduranceTab]', ...args),
+    warn: (...args) => console.warn('[EnduranceTab]', ...args),
+    error: (...args) => console.error('[EnduranceTab]', ...args)
+  }), []);
 
-  // Charger les données d'endurance depuis les données principales
-  useEffect(() => {
-    loadEnduranceData();
-  }, [data]);
+  const normalizationKeyRef = useRef(null);
 
-  // ✅ FIX DOUBLONS : Fonction pour nettoyer les IDs dupliqués dans les sessions
-  const cleanDuplicateIds = useCallback((sessions, onCleanup) => {
-    const cleaned = {};
-    let hasChanges = false;
-    
-    Object.entries(sessions).forEach(([activityType, activitySessions]) => {
-      if (!Array.isArray(activitySessions)) {
-        cleaned[activityType] = activitySessions;
-        return;
-      }
-      
-      // ✅ FIX DOUBLONS : Détecter les IDs dupliqués (plus robuste avec Map)
-      const idMap = new Map(); // Map pour tracker les occurrences [id] => [indices]
-      const duplicateIds = new Set();
-      
-      activitySessions.forEach((session, idx) => {
-        const id = String(session.id);
-        if (idMap.has(id)) {
-          duplicateIds.add(id);
-          idMap.get(id).push(idx);
-        } else {
-          idMap.set(id, [idx]);
-        }
-      });
-      
-      if (duplicateIds.size > 0) {
-        console.log(`⚠️ [EnduranceTab] ${duplicateIds.size} ID(s) dupliqué(s) détecté(s) pour ${activityType}:`, Array.from(duplicateIds));
-        
-        // Générer de nouveaux IDs uniques pour TOUS les doublons (garder seulement le premier de chaque groupe)
-        cleaned[activityType] = activitySessions.map((session, idx) => {
-          const id = String(session.id);
-          if (duplicateIds.has(id)) {
-            const occurrences = idMap.get(id);
-            const isFirst = occurrences[0] === idx;
-            if (!isFirst) {
-              hasChanges = true;
-              const newId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${idx}-${activityType}`;
-              console.log(`  🔄 [EnduranceTab] Régénération ID pour ${activityType}[${idx}]: ${id} → ${newId}`);
-              return {
-                ...session,
-                id: newId // ✅ FIX : Nouvel ID unique
-              };
-            }
-          }
-          return session;
-        });
-      } else {
-        cleaned[activityType] = activitySessions;
-      }
-    });
-    
-    if (hasChanges && onCleanup) {
-      console.log('✅ [EnduranceTab] Changements détectés, callback de nettoyage appelé');
-      onCleanup(cleaned);
-    }
-    
-    return cleaned;
-  }, []);
-
-  const loadEnduranceData = useCallback(() => {
+  const loadEnduranceState = useCallback(async () => {
     try {
-    const enduranceData = data.enduranceData || {};
-    
-    const rawSessions = {
-      boxing: enduranceData.sessions?.boxing || enduranceData.boxingSessions || [],
-      pushups: enduranceData.sessions?.pushups || enduranceData.pushupSessions || [],
-      swimming: enduranceData.sessions?.swimming || enduranceData.swimmingSessions || [],
-      jumprope: enduranceData.sessions?.jumprope || enduranceData.jumpropeSessions || [],
-      running: enduranceData.sessions?.running || enduranceData.runningSessions || []
-    };
-    
-    // ✅ FIX DOUBLONS : Nettoyer les IDs dupliqués AVANT de charger (forcé, toujours vérifier)
-    // Vérifier s'il y a vraiment des doublons avant de nettoyer
-    const hasDuplicates = Object.values(rawSessions).some(sessions => {
-      if (Array.isArray(sessions)) {
-        const ids = sessions.map(s => String(s.id));
-        return ids.length !== new Set(ids).size;
-      }
-      return false;
-    });
-    
-    let cleanedSessions = rawSessions;
-    if (hasDuplicates) {
-      console.log('⚠️ [EnduranceTab] Doublons détectés, nettoyage en cours...');
-      console.log('🔍 [EnduranceTab] Sessions avant nettoyage:', JSON.stringify(rawSessions, null, 2));
-      cleanedSessions = cleanDuplicateIds(rawSessions, (cleaned) => {
-        // Sauvegarder automatiquement après nettoyage
-        console.log('✅ [EnduranceTab] Nettoyage terminé, sauvegarde en cours...');
-        console.log('🔍 [EnduranceTab] Sessions après nettoyage:', JSON.stringify(cleaned, null, 2));
-        setTimeout(() => {
-          updateData({
-            ...data,
-            enduranceData: {
-              ...enduranceData,
-              sessions: cleaned
-            }
-          }).then(() => {
-            console.log('✅ [EnduranceTab] Sauvegarde terminée après nettoyage');
-            hasCleanedDuplicatesRef.current = true;
-            // ✅ FIX : Ne pas recharger ici pour éviter la boucle infinie
-            // Les données seront rechargées automatiquement via le useEffect qui écoute data
-          }).catch(err => {
-            console.error('❌ Erreur lors de la sauvegarde après nettoyage:', err);
-            hasCleanedDuplicatesRef.current = false; // Réessayer au prochain chargement
-          });
-        }, 100);
-      });
-    } else {
-      if (!hasCleanedDuplicatesRef.current) {
-        console.log('✅ [EnduranceTab] Aucun doublon détecté, données propres');
-      }
-      hasCleanedDuplicatesRef.current = true; // Pas de doublons, pas besoin de revérifier
-    }
-    
-      // ✅ FIX DOUBLONS : Nettoyer aussi les défis dupliqués
-      const rawChallenges = enduranceData.challenges || [];
-      let cleanedChallenges = rawChallenges;
-      
-      // Détecter les IDs dupliqués dans les défis
-      const challengeIdMap = new Map();
-      const duplicateChallengeIds = new Set();
-      
-      rawChallenges.forEach((challenge, idx) => {
-        const id = String(challenge.id);
-        if (challengeIdMap.has(id)) {
-          duplicateChallengeIds.add(id);
-          challengeIdMap.get(id).push(idx);
-        } else {
-          challengeIdMap.set(id, [idx]);
-        }
-      });
-      
-      if (duplicateChallengeIds.size > 0) {
-        console.log(`⚠️ [EnduranceTab] ${duplicateChallengeIds.size} ID(s) dupliqué(s) détecté(s) pour les défis:`, Array.from(duplicateChallengeIds));
-        
-        cleanedChallenges = rawChallenges.map((challenge, idx) => {
-          const id = String(challenge.id);
-          if (duplicateChallengeIds.has(id)) {
-            const occurrences = challengeIdMap.get(id);
-            const isFirst = occurrences[0] === idx;
-            if (!isFirst) {
-              const newId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${idx}-challenge`;
-              console.log(`  🔄 [EnduranceTab] Régénération ID pour challenge[${idx}]: ${id} → ${newId}`);
-              return {
-                ...challenge,
-                id: newId
-              };
-            }
-          }
-          return challenge;
-        });
-        
-        // Sauvegarder automatiquement après nettoyage des défis
-        if (cleanedChallenges.length !== rawChallenges.length || duplicateChallengeIds.size > 0) {
-          setTimeout(() => {
-            updateData({
-              ...data,
-              enduranceData: {
-                ...enduranceData,
-                challenges: cleanedChallenges
-              }
-            }).then(() => {
-              console.log('✅ [EnduranceTab] Sauvegarde terminée après nettoyage des défis');
-            }).catch(err => {
-              console.error('❌ Erreur lors de la sauvegarde après nettoyage des défis:', err);
-            });
-          }, 100);
-        }
-      }
-      
+      const rawEnduranceData = data?.enduranceData || {};
+      const {
+        sessions: normalizedSessions,
+        challenges: normalizedChallenges,
+        metadata
+      } = loadEnduranceDataService(rawEnduranceData, { logger: enduranceLogger });
+
       setEnduranceState(prev => ({
         ...prev,
-        sessions: cleanedSessions,
-        challenges: cleanedChallenges
+        sessions: normalizedSessions,
+        challenges: normalizedChallenges
       }));
+
+      const schemaNeedsUpdate = (rawEnduranceData.schemaVersion || ENDURANCE_SCHEMA_VERSION) !== ENDURANCE_SCHEMA_VERSION;
+      const hasLegacy = (metadata.legacyMigrated || 0) > 0;
+      const duplicatesResolved =
+        (metadata.duplicatesResolved?.sessions || 0) +
+        (metadata.duplicatesResolved?.challenges || 0);
+
+      const normalizationKey = [
+        rawEnduranceData.lastUpdated || 'no-updated',
+        rawEnduranceData.schemaVersion || 'legacy',
+        metadata.legacyMigrated || 0,
+        metadata.duplicatesResolved?.sessions || 0,
+        metadata.duplicatesResolved?.challenges || 0
+      ].join('|');
+
+      if (
+        (schemaNeedsUpdate || hasLegacy || duplicatesResolved > 0) &&
+        normalizationKeyRef.current !== normalizationKey
+      ) {
+        await persistEnduranceData({
+          currentData: data || {},
+          patch: {
+            sessions: normalizedSessions,
+            challenges: normalizedChallenges
+          },
+          updateData,
+          logger: enduranceLogger
+        });
+        normalizationKeyRef.current = normalizationKey;
+      } else {
+        normalizationKeyRef.current = normalizationKey;
+      }
     } catch (error) {
-      console.error('Erreur lors du chargement des données d\'endurance:', error);
+      console.error('❌ [EnduranceTab] Erreur lors du chargement des données (service):', error);
+      normalizationKeyRef.current = null;
     }
-  }, [data, cleanDuplicateIds, updateData]);
+  }, [data, enduranceLogger, updateData]);
+
+  useEffect(() => {
+    loadEnduranceState();
+  }, [loadEnduranceState]);
 
   const saveEnduranceData = useCallback(async (newData) => {
     try {
-      // Validation des données avant sauvegarde
       if (!newData || typeof newData !== 'object') {
         throw new Error('Données invalides pour la sauvegarde');
       }
 
-      // Validation des sessions
-      Object.entries(newData).forEach(([key, value]) => {
-        if (key.includes('Sessions') && !Array.isArray(value)) {
-          throw new Error(`Les sessions ${key} doivent être un tableau`);
-        }
-        if (key === 'challenges' && !Array.isArray(value)) {
-          throw new Error('Les défis doivent être un tableau');
-        }
-      });
-
-      // 🔧 FUSION INTELLIGENTE : Préserver les données existantes
-      const currentData = data || {};
-      const currentEnduranceData = currentData.enduranceData || {};
-      
-      const updatedData = {
-        ...currentData, // Préserver TOUTES les données existantes (JSON importé, etc.)
-        enduranceData: {
-          ...currentEnduranceData, // Préserver les données d'endurance existantes
-          ...newData, // Ajouter les nouvelles données d'endurance
-          lastUpdated: new Date().toISOString()
-        }
+      const mergedSessions = {
+        boxing: Array.isArray(enduranceState.sessions?.boxing) ? enduranceState.sessions.boxing : [],
+        pushups: Array.isArray(enduranceState.sessions?.pushups) ? enduranceState.sessions.pushups : [],
+        swimming: Array.isArray(enduranceState.sessions?.swimming) ? enduranceState.sessions.swimming : [],
+        jumprope: Array.isArray(enduranceState.sessions?.jumprope) ? enduranceState.sessions.jumprope : [],
+        running: Array.isArray(enduranceState.sessions?.running) ? enduranceState.sessions.running : []
       };
 
-      console.log('🔄 Sauvegarde des données d\'endurance:', newData);
-      await updateData(updatedData);
-      
-      // Forcer la mise à jour de l'état local après sauvegarde
+      if (newData.sessions && typeof newData.sessions === 'object') {
+        Object.entries(newData.sessions).forEach(([activityType, value]) => {
+          if (Array.isArray(value) && activityType in mergedSessions) {
+            mergedSessions[activityType] = value;
+          }
+        });
+      }
+
+      const mergedChallenges = Array.isArray(newData.challenges)
+        ? newData.challenges
+        : Array.isArray(enduranceState.challenges)
+          ? enduranceState.challenges
+          : [];
+
+      const normalized = loadEnduranceDataService(
+        {
+          sessions: mergedSessions,
+          challenges: mergedChallenges,
+          schemaVersion: ENDURANCE_SCHEMA_VERSION
+        },
+        { logger: enduranceLogger }
+      );
+
+      const result = await persistEnduranceData({
+        currentData: data || {},
+        patch: {
+          sessions: normalized.sessions,
+          challenges: normalized.challenges
+        },
+        updateData,
+        logger: enduranceLogger
+      });
+
+      const nextSessions = result?.enduranceData?.sessions || normalized.sessions;
+      const nextChallenges = result?.enduranceData?.challenges || normalized.challenges;
+
       setEnduranceState(prev => ({
         ...prev,
-        sessions: {
-          boxing: newData.sessions?.boxing || prev.sessions.boxing,
-          pushups: newData.sessions?.pushups || prev.sessions.pushups,
-          swimming: newData.sessions?.swimming || prev.sessions.swimming,
-          jumprope: newData.sessions?.jumprope || prev.sessions.jumprope,
-          running: newData.sessions?.running || prev.sessions.running
-        },
-        challenges: newData.challenges || prev.challenges
+        sessions: nextSessions,
+        challenges: nextChallenges
       }));
-      
-      console.log('✅ Données d\'endurance sauvegardées avec succès (fusion intelligente)');
+
+      return { success: true };
     } catch (error) {
-      console.error('❌ Erreur sauvegarde endurance:', error);
-      throw error; // Re-throw pour permettre la gestion d'erreur dans les composants appelants
+      console.error('❌ [EnduranceTab] Erreur sauvegarde endurance (service):', error);
+      throw error;
     }
-  }, [data, updateData]);
+  }, [data, enduranceLogger, enduranceState.challenges, enduranceState.sessions, updateData]);
 
   // Fonction pour identifier les exercices d'endurance (améliorée)
   const isEnduranceExercise = useCallback((exerciseName) => {
@@ -437,493 +326,133 @@ const EnduranceTab = () => {
   }, [getActiveChallenges]);
 
   // Composant de rappel des défis
-  const ChallengeReminder = useMemo(() => {
-    const activeChallenges = getActiveChallenges();
-    const urgentChallenges = getUrgentChallenges();
-    
-    if (activeChallenges.length === 0) return null;
-    
-    return (
-      <div className="bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 rounded-xl p-4 mb-6 backdrop-blur-sm">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-            <Award className="w-4 h-4 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-orange-200">
-            ⚠️ Vous avez {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} à accomplir
-          </h3>
-        </div>
-        
-        <div className="space-y-2">
-          {urgentChallenges.length > 0 && (
-            <div className="text-red-300 text-sm font-medium">
-              🚨 {urgentChallenges.length} défi{urgentChallenges.length > 1 ? 's' : ''} urgent{urgentChallenges.length > 1 ? 's' : ''} (échéance &lt; 24h)
-            </div>
-          )}
-          
-          <div className="flex flex-wrap gap-2">
-            {activeChallenges.slice(0, 3).map((challenge, idx) => (
-              <button
-                key={`urgent-challenge-${challenge.id}-${idx}`}
-                onClick={() => setActiveTab(challenge.activityType)}
-                className="px-3 py-1 bg-orange-500/30 hover:bg-orange-500/50 text-orange-200 rounded-lg text-sm transition-colors"
-              >
-                {challenge.name}
-              </button>
-            ))}
-            {activeChallenges.length > 3 && (
-              <span className="px-3 py-1 text-orange-300 text-sm">
-                +{activeChallenges.length - 3} autres...
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }, [getActiveChallenges, getUrgentChallenges, setActiveTab]);
 
   // Formulaires pour chaque type d'activité
-  const [sessionForm, setSessionForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
-    count: '',
-    duration: '',
-    notes: '',
-    // Évaluations par étoiles
-    congestion: 0,
-    motivation: 0,
-    sentimentAvant: 0,
-    sentimentApres: 0
-  });
+  const [sessionForm, setSessionForm] = useState(() => createDefaultFormState('pushups'));
+  const [boxingForm, setBoxingForm] = useState(() => createDefaultFormState('boxing'));
+  const [swimmingForm, setSwimmingForm] = useState(() => createDefaultFormState('swimming'));
+  const [jumpropeForm, setJumpropeForm] = useState(() => createDefaultFormState('jumprope'));
+  const [runningForm, setRunningForm] = useState(() => createDefaultFormState('running'));
 
-  const [boxingForm, setBoxingForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
-    duration: '',
-    notes: '',
-    // Évaluations par étoiles
-    congestion: 0,
-    motivation: 0,
-    sentimentAvant: 0,
-    sentimentApres: 0
-  });
+  const [challengeForm, setChallengeForm] = useState(() => createDefaultChallengeFormState('pushups'));
 
-  const [swimmingForm, setSwimmingForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
-    swimType: 'crawl',
-    laps: [{ distance: 25, time: '' }],
-    notes: '',
-    // Nouveaux champs pour la natation
-    heartRate: '', // Fréquence cardiaque moyenne (bpm)
-    calories: '', // Calories dépensées
-    pace100m: '', // Allure moyenne sur 100m (mm:ss)
-    // Évaluations par étoiles
-    congestion: 0,
-    motivation: 0,
-    sentimentAvant: 0,
-    sentimentApres: 0
-  });
-
-  const [jumpropeForm, setJumpropeForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
-    duration: '',
-    type: 'continue',
-    jumps: '',
-    sessionNumber: 1,
-    // Nouveaux champs métriques
-    hrMax: '', // BPM max
-    hrAvg: '', // BPM moyen
-    bestStreak: '', // meilleure série de sauts
-    jumpsPerMin: '', // moyenne sauts/min
-    calories: '', // calories brûlées
-    notes: '',
-    // Évaluations par étoiles
-    congestion: 0,
-    motivation: 0,
-    sentimentAvant: 0,
-    sentimentApres: 0,
-    // Nouveaux critères
-    fluidite: 0,
-    transpiration: 0
-  });
-
-  const [runningForm, setRunningForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().slice(0, 5),
-    distance: '',
-    duration: '',
-    type: 'endurance',
-    elevation: '',
-    notes: '',
-    // Évaluations par étoiles
-    congestion: 0,
-    motivation: 0,
-    sentimentAvant: 0,
-    sentimentApres: 0
-  });
-
-  const [challengeForm, setChallengeForm] = useState({
-    name: '',
-    type: 'ponctuel',
-    targetDate: '',
-    startDate: '',
-    endDate: '',
-    frequency: 'daily',
-    moment: 'matin',
-    goalCount: '',
-    goalDuration: '',
-    goalDistance: '',
-    activityType: 'pushups'
-  });
-
-  // Fonction de validation des défis (améliorée)
-  const validateChallenges = useCallback((sessionData, activityType) => {
-    const validatedChallengeIds = [];
-    const updatedChallenges = challenges.map(challenge => {
-      if (challenge.activityType !== activityType || challenge.status !== 'active') {
-        return challenge;
-      }
-
-      let isValid = false;
-      
-      switch (challenge.type) {
-        case 'ponctuel':
-          isValid = validatePonctuelChallenge(challenge, sessionData);
-          break;
-        case 'recurrent':
-          isValid = validateRecurrentChallenge(challenge, sessionData);
-          break;
-        case 'periode':
-          isValid = validatePeriodeChallenge(challenge, sessionData);
-          break;
-        default:
-          isValid = false;
-      }
-
-      if (isValid) {
-        validatedChallengeIds.push(challenge.id);
-        // Pour les défis récurrents, on ne les "termine" pas définitivement
-        if (challenge.type === 'recurrent') {
-          return {
-            ...challenge,
-            status: 'active',
-            lastCompletedDate: sessionData.date, // YYYY-MM-DD
-            completedSessionId: sessionData.id
-          };
-        }
-        // Ponctuels / période → marqués comme complétés
-        return { 
-          ...challenge, 
-          status: 'completed', 
-          completedAt: new Date().toISOString(),
-          completedSessionId: sessionData.id
-        };
-      }
-      
-      return challenge;
-    });
-
-    return { validatedChallengeIds, updatedChallenges };
-  }, [challenges]);
-
-  // Validation pour défis ponctuels
-  const validatePonctuelChallenge = useCallback((challenge, sessionData) => {
-    const sessionDate = new Date(sessionData.date);
-    const targetDate = new Date(challenge.targetDate);
-    
-    // Vérifier si la session est dans la période de validité (permet les dates antérieures)
-    // Pour les défis antérieurs, on vérifie que la session est antérieure ou égale à la date cible
-    if (sessionDate > targetDate) return false;
-    
-    // Vérifier les objectifs selon l'activité
-    switch (challenge.activityType) {
-      case 'pushups':
-        return (!challenge.goalCount || parseInt(sessionData.count) >= challenge.goalCount) &&
-               (!challenge.goalDuration || parseFloat(sessionData.duration) <= challenge.goalDuration);
-      case 'swimming':
-        // totalTime est en secondes, convertir en minutes pour la comparaison
-        const totalTimeMinutes = typeof sessionData.totalTime === 'number' ? 
-          sessionData.totalTime / 60 : parseFloat(sessionData.totalTime || 0) / 60;
-        return (!challenge.goalDistance || parseFloat(sessionData.totalDistance) >= challenge.goalDistance) &&
-               (!challenge.goalDuration || totalTimeMinutes <= challenge.goalDuration);
-      case 'running':
-        return (!challenge.goalDistance || parseFloat(sessionData.distance) >= challenge.goalDistance) &&
-               (!challenge.goalDuration || parseFloat(sessionData.duration) <= challenge.goalDuration);
-      case 'jumprope':
-        return (!challenge.goalDuration || parseFloat(sessionData.duration) >= challenge.goalDuration) &&
-               (!challenge.goalJumps || parseInt(sessionData.jumps) >= challenge.goalJumps);
-      default:
-        return false;
-    }
-  }, []);
-
-  // Validation pour défis récurrents
-  const validateRecurrentChallenge = useCallback((challenge, sessionData) => {
-    // Défis récurrents : vérifier la fréquence et les objectifs
-    const sessionDate = new Date(sessionData.date);
-    
-    // Vérifier si la session est dans la période de validité (permet les dates antérieures)
-    if (challenge.endDate && sessionDate > new Date(challenge.endDate)) return false;
-    if (challenge.startDate && sessionDate < new Date(challenge.startDate)) return false;
-    
-    // Vérifier la fréquence selon le type
-    switch (challenge.frequency) {
-      case 'daily':
-        // Vérifier si c'est le bon moment de la journée
-        if (challenge.timeOfDay && challenge.timeOfDay !== sessionData.timeOfDay) return false;
-        break;
-      case 'weekly':
-        // Vérifier si c'est le bon jour de la semaine
-        if (challenge.dayOfWeek && challenge.dayOfWeek !== sessionDate.getDay()) return false;
-        break;
-    }
-    
-    // Vérifier les objectifs
-    return validatePonctuelChallenge(challenge, sessionData);
-  }, [validatePonctuelChallenge]);
-
-  // Validation pour défis sur période
-  const validatePeriodeChallenge = useCallback((challenge, sessionData) => {
-    const sessionDate = new Date(sessionData.date);
-    const startDate = new Date(challenge.startDate);
-    const endDate = new Date(challenge.endDate);
-    
-    // Vérifier si la session est dans la période (permet les dates antérieures)
-    if (sessionDate < startDate || sessionDate > endDate) return false;
-    
-    // Pour les défis sur période, on accumule les sessions
-    // Cette fonction sera appelée pour chaque session et la progression sera calculée séparément
-    return validatePonctuelChallenge(challenge, sessionData);
-  }, [validatePonctuelChallenge]);
-
-  // ✅ FIX DOUBLONS : Générer un ID unique (timestamp + random pour éviter collisions)
-  const generateUniqueId = useCallback(() => {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  }, []);
-
-  // Fonctions d'ajout de sessions (refactorisées)
   const addSession = useCallback(async (activityType, sessionData) => {
     try {
-    const newSession = {
-      id: generateUniqueId(), // ✅ FIX : ID unique au lieu de Date.now()
+      const currentSessionsMap = enduranceState.sessions || {};
+      const activitySessions = Array.isArray(currentSessionsMap[activityType])
+        ? currentSessionsMap[activityType]
+        : [];
+
+      const evaluation = evaluateChallenges(challenges, sessionData, activityType, { logger: enduranceLogger });
+
+      const newSession = {
         ...sessionData,
-      validatedChallenges: []
-    };
-
-      // Validation des défis
-      const { validatedChallengeIds, updatedChallenges } = validateChallenges(sessionData, activityType);
-      newSession.validatedChallenges = validatedChallengeIds;
-
-      // Mise à jour des sessions
-      const currentSessions = sessions[activityType] || [];
-      const updatedSessions = [...currentSessions, newSession];
-      
-      setSessions(activityType, updatedSessions);
-      setChallenges(updatedChallenges);
-      
-      // Sauvegarde avec structure cohérente
-      const saveData = {
-        sessions: {
-          ...sessions,
-          [activityType]: updatedSessions
-        },
-        challenges: updatedChallenges
+        activityType,
+        validatedChallenges: evaluation.validatedIds
       };
-      
-      await saveEnduranceData(saveData);
 
-      // Notification de succès
-      if (validatedChallengeIds.length > 0) {
-        console.log(`🎉 ${validatedChallengeIds.length} défi(s) validé(s) !`);
+      const updatedSessionsMap = {
+        ...currentSessionsMap,
+        [activityType]: [...activitySessions, newSession]
+      };
+
+      await saveEnduranceData({
+        sessions: updatedSessionsMap,
+        challenges: evaluation.updatedChallenges
+      });
+
+      if (evaluation.validatedIds.length > 0) {
+        enduranceLogger.info?.(`[EnduranceTab] Défis validés pour ${activityType}:`, evaluation.validatedIds);
       }
 
-      return { success: true, validatedChallenges: validatedChallengeIds };
+      return { success: true, validatedChallengeIds: evaluation.validatedIds };
     } catch (error) {
-      console.error(`❌ Erreur lors de l'ajout de la session ${activityType}:`, error);
+      console.error(`❌ [EnduranceTab] Erreur lors de l'ajout de la session ${activityType}:`, error);
       return { success: false, error: error.message };
     }
-  }, [sessions, validateChallenges, setSessions, setChallenges, saveEnduranceData]);
+  }, [challenges, enduranceLogger, enduranceState.sessions, saveEnduranceData]);
 
-  // Fonction de modification des sessions
   const updateSession = useCallback(async (activityType, sessionId, updatedData) => {
     try {
-      const currentSessions = sessions[activityType] || [];
-      const updatedSessions = currentSessions.map(session => 
-        session.id === sessionId ? { ...session, ...updatedData } : session
+      const currentSessionsMap = enduranceState.sessions || {};
+      const activitySessions = Array.isArray(currentSessionsMap[activityType])
+        ? currentSessionsMap[activityType]
+        : [];
+
+      const updatedSessions = activitySessions.map(session =>
+        String(session.id) === String(sessionId)
+          ? { ...session, ...updatedData }
+          : session
       );
-      
-      setSessions(activityType, updatedSessions);
-      
-      // Sauvegarde
-      const saveData = {
-        sessions: {
-          ...sessions,
-          [activityType]: updatedSessions
-        }
+
+      const updatedSessionsMap = {
+        ...currentSessionsMap,
+        [activityType]: updatedSessions
       };
-      
-      await saveEnduranceData(saveData);
-      
-      // Fermer le mode édition
-      setUI({ 
-        editingSession: null, 
+
+      await saveEnduranceData({
+        sessions: updatedSessionsMap
+      });
+
+      setUI({
+        editingSession: null,
         showSessionForm: false,
         allowPastDates: false
       });
-      
+
       return { success: true };
     } catch (error) {
-      console.error('Erreur lors de la modification de la session:', error);
+      console.error('❌ [EnduranceTab] Erreur lors de la modification de la session:', error);
       return { success: false, error: error.message };
     }
-  }, [sessions, setSessions, setUI, saveEnduranceData]);
+  }, [enduranceState.sessions, saveEnduranceData, setUI]);
 
   // Fonctions de reset des formulaires
   const resetPushupForm = useCallback(() => {
-    setSessionForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      count: '',
-      duration: '',
-      notes: '',
-      // Évaluations par étoiles
-      congestion: 0,
-      motivation: 0,
-      sentimentAvant: 0,
-      sentimentApres: 0
-    });
+    setSessionForm(createDefaultFormState('pushups'));
   }, []);
 
   const resetBoxingForm = useCallback(() => {
-    setBoxingForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      duration: '',
-      notes: '',
-      // Évaluations par étoiles
-      congestion: 0,
-      motivation: 0,
-      sentimentAvant: 0,
-      sentimentApres: 0
-    });
+    setBoxingForm(createDefaultFormState('boxing'));
   }, []);
 
   const resetSwimmingForm = useCallback(() => {
-    setSwimmingForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      swimType: 'crawl',
-      laps: [{ distance: 25, time: '' }],
-      notes: '',
-      // Nouveaux champs pour la natation
-      heartRate: '',
-      calories: '',
-      pace100m: '',
-      // Évaluations par étoiles
-      congestion: 0,
-      motivation: 0,
-      sentimentAvant: 0,
-      sentimentApres: 0
-    });
+    setSwimmingForm(createDefaultFormState('swimming'));
   }, []);
 
   const resetJumpropeForm = useCallback(() => {
-    setJumpropeForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      duration: '',
-      type: 'continue',
-      jumps: '',
-      sessionNumber: 1,
-      hrMax: '',
-      hrAvg: '',
-      bestStreak: '',
-      jumpsPerMin: '',
-      calories: '',
-      notes: '',
-      // Évaluations par étoiles
-      congestion: 0,
-      motivation: 0,
-      sentimentAvant: 0,
-      sentimentApres: 0,
-      fluidite: 0,
-      transpiration: 0
-    });
+    setJumpropeForm(createDefaultFormState('jumprope'));
   }, []);
 
   const resetRunningForm = useCallback(() => {
-    setRunningForm({
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
-      distance: '',
-      duration: '',
-      type: 'endurance',
-      elevation: '',
-      notes: '',
-      // Évaluations par étoiles
-      congestion: 0,
-      motivation: 0,
-      sentimentAvant: 0,
-      sentimentApres: 0
-    });
+    setRunningForm(createDefaultFormState('running'));
   }, []);
 
-  const resetChallengeForm = useCallback(() => {
-    setChallengeForm({
-      name: '',
-      type: 'ponctuel',
-      targetDate: '',
-      startDate: '',
-      endDate: '',
-      frequency: 'daily',
-      moment: 'matin',
-      goalCount: '',
-      goalDuration: '',
-      goalDistance: '',
-      notes: ''
+  const resetChallengeForm = useCallback((activityType) => {
+    const nextActivity = activityType || challengeForm.activityType || 'pushups';
+    setChallengeForm(createDefaultChallengeFormState(nextActivity));
+  }, [challengeForm.activityType]);
+
+  const submitSession = useCallback(async (activityType, payload, resetFn) => {
+    return handleSubmitSession({
+      activityType,
+      payload,
+      resetFn,
+      ui,
+      addSession,
+      updateSession,
+      setUI
     });
-  }, []);
+  }, [addSession, setUI, ui, updateSession]);
 
   // Fonctions spécifiques pour chaque activité
   const addPushupSession = useCallback(async () => {
-    if (ui.editingSession) {
-      // Mode modification
-      const result = await updateSession(ui.editingSession.activityType, ui.editingSession.sessionId, sessionForm);
-      if (result.success) {
-        resetPushupForm();
-      }
-      return result;
-    } else {
-      // Mode création
-      const result = await addSession('pushups', sessionForm);
-      if (result.success) {
-        resetPushupForm();
-        setUI({ showSessionForm: false });
-      }
-      return result;
-    }
-  }, [addSession, updateSession, sessionForm, ui.editingSession, resetPushupForm, setUI]);
+    return submitSession('pushups', sessionForm, resetPushupForm);
+  }, [submitSession, sessionForm, resetPushupForm]);
 
   const addBoxingSession = useCallback(async () => {
-    if (ui.editingSession) {
-      // Mode modification
-      const result = await updateSession(ui.editingSession.activityType, ui.editingSession.sessionId, boxingForm);
-      if (result.success) {
-        resetBoxingForm();
-      }
-      return result;
-    } else {
-      // Mode création
-      const result = await addSession('boxing', boxingForm);
-      if (result.success) {
-        resetBoxingForm();
-        setUI({ showSessionForm: false });
-      }
-      return result;
-    }
-  }, [addSession, updateSession, boxingForm, ui.editingSession, resetBoxingForm, setUI]);
+    return submitSession('boxing', boxingForm, resetBoxingForm);
+  }, [submitSession, boxingForm, resetBoxingForm]);
 
   const addSwimmingSession = useCallback(async () => {
     const totalDistance = swimmingForm.laps.reduce((sum, lap) => sum + parseFloat(lap.distance || 0), 0);
@@ -954,13 +483,8 @@ const EnduranceTab = () => {
       calories: swimmingForm.calories ? parseInt(swimmingForm.calories) : null
     };
     
-    const result = await addSession('swimming', sessionData);
-    if (result.success) {
-      resetSwimmingForm();
-      setUI({ showSessionForm: false });
-    }
-    return result;
-  }, [addSession, swimmingForm]);
+    return submitSession('swimming', sessionData, resetSwimmingForm);
+  }, [resetSwimmingForm, submitSession, swimmingForm]);
 
   const addJumpropeSession = useCallback(async () => {
     // Calculs sécurisés
@@ -998,58 +522,46 @@ const EnduranceTab = () => {
       transpiration: jumpropeForm.transpiration || 0
     };
 
-    const result = await addSession('jumprope', sessionData);
-    if (result.success) {
-      resetJumpropeForm();
-      setUI({ showSessionForm: false });
-    }
-    return result;
-  }, [addSession, jumpropeForm]);
+    return submitSession('jumprope', sessionData, resetJumpropeForm);
+  }, [jumpropeForm, resetJumpropeForm, submitSession]);
 
   const addRunningSession = useCallback(async () => {
-    const result = await addSession('running', runningForm);
-    if (result.success) {
-    resetRunningForm();
-      setUI({ showSessionForm: false });
-    }
-    return result;
-  }, [addSession, runningForm]);
+    return submitSession('running', runningForm, resetRunningForm);
+  }, [runningForm, resetRunningForm, submitSession]);
 
 
 
   // Fonction d'ajout de défi (améliorée)
   const addChallenge = useCallback(async () => {
     try {
-      // Validation des données du défi
       if (!challengeForm.name || !challengeForm.activityType) {
         throw new Error('Nom et type d\'activité requis');
       }
 
-    const newChallenge = {
-      id: generateUniqueId(), // ✅ FIX : ID unique au lieu de Date.now()
-      ...challengeForm,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      progress: 0
-    };
+      const newChallenge = {
+        ...challengeForm,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        progress: 0
+      };
 
-    const updatedChallenges = [...challenges, newChallenge];
-    setChallenges(updatedChallenges);
-    
-    await saveEnduranceData({
-      challenges: updatedChallenges
-    });
+      const currentChallenges = Array.isArray(enduranceState.challenges) ? enduranceState.challenges : [];
+      const updatedChallenges = [...currentChallenges, newChallenge];
 
-    resetChallengeForm();
+      await saveEnduranceData({
+        challenges: updatedChallenges
+      });
+
+      resetChallengeForm(challengeForm.activityType);
       setUI({ showChallengeModal: false });
-      
-      console.log('✅ Défi créé avec succès');
+
+      enduranceLogger.info?.('[EnduranceTab] Défi créé avec succès');
       return { success: true };
     } catch (error) {
       console.error('❌ Erreur lors de la création du défi:', error);
       return { success: false, error: error.message };
     }
-  }, [challengeForm, challenges, setChallenges, saveEnduranceData]);
+  }, [challengeForm, enduranceLogger, enduranceState.challenges, resetChallengeForm, saveEnduranceData, setUI]);
 
 
   // ✅ FIX DOUBLONS : Fonction de suppression améliorée (utilise index si ID dupliqué)
@@ -1079,22 +591,22 @@ const EnduranceTab = () => {
         }
       }
       
-      setSessions(activityType, updatedSessions);
-      
+      const updatedSessionsMap = {
+        ...currentSessions,
+        [activityType]: updatedSessions
+      };
+
       await saveEnduranceData({
-        sessions: {
-          ...currentSessions,
-          [activityType]: updatedSessions
-        }
+        sessions: updatedSessionsMap
       });
       
-      console.log(`✅ Session ${activityType} supprimée avec succès`);
+      enduranceLogger.info?.(`[EnduranceTab] Session ${activityType} supprimée avec succès`);
       return { success: true };
     } catch (error) {
       console.error(`❌ Erreur lors de la suppression de la session ${activityType}:`, error);
       return { success: false, error: error.message };
     }
-  }, [enduranceState?.sessions, setSessions, saveEnduranceData]);
+  }, [enduranceLogger, enduranceState?.sessions, saveEnduranceData]);
 
   // ✅ FIX DOUBLONS : Supprimer défi par ID ou par index (comme pour les sessions)
   const deleteChallenge = useCallback(async (id, index = null) => {
@@ -1128,19 +640,17 @@ const EnduranceTab = () => {
         }
       }
       
-      setChallenges(updatedChallenges);
-      
       await saveEnduranceData({
         challenges: updatedChallenges
       });
       
-      console.log('✅ Défi supprimé avec succès');
+      enduranceLogger.info?.('[EnduranceTab] Défi supprimé avec succès');
       return { success: true };
     } catch (error) {
       console.error('❌ Erreur lors de la suppression du défi:', error);
       return { success: false, error: error.message };
     }
-  }, [challenges, setChallenges, saveEnduranceData]);
+  }, [challenges, enduranceLogger, saveEnduranceData]);
 
   // ✅ FIX DOUBLONS : Fonctions de suppression avec index pour éviter problèmes d'IDs dupliqués
   const deletePushupSession = useCallback((id, index) => deleteSession('pushups', id, index), [deleteSession]);
@@ -1247,8 +757,6 @@ const EnduranceTab = () => {
         challenge.id === challengeId ? { ...challenge, ...updatedData } : challenge
       );
       
-      setChallenges(updatedChallenges);
-      
       // Sauvegarde
       const saveData = {
         challenges: updatedChallenges
@@ -1267,7 +775,7 @@ const EnduranceTab = () => {
       console.error('Erreur lors de la modification du défi:', error);
       return { success: false, error: error.message };
     }
-  }, [challenges, setChallenges, setUI, saveEnduranceData]);
+  }, [challenges, saveEnduranceData, setUI]);
 
   // Fonctions pour le calendrier heatmap
   // Fonctions pour le calendrier heatmap (optimisées)
@@ -1489,6 +997,7 @@ const EnduranceTab = () => {
   }, []);
 
   const activeChallenges = useMemo(() => getActiveChallenges(), [getActiveChallenges]);
+  const urgentChallenges = useMemo(() => getUrgentChallenges(), [getUrgentChallenges]);
 
   const menuItems = [
     { id: 'boxing', label: 'Boxe', icon: Box },
@@ -1576,7 +1085,11 @@ const EnduranceTab = () => {
       <div className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto p-8">
           {/* Rappel des défis actifs */}
-          {ChallengeReminder}
+          <EnduranceChallengeReminder
+            activeChallenges={activeChallenges}
+            urgentChallenges={urgentChallenges}
+            onSelectActivity={setActiveTab}
+          />
           
           {/* Section exercices d'endurance depuis l'historique */}
           {EnduranceHistorySection}
@@ -1584,28 +1097,28 @@ const EnduranceTab = () => {
           {/* SECTION BOXE */}
           {activeTab === 'boxing' && (
             <>
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h2 className="text-4xl font-bold text-white mb-2">Boxe</h2>
-                  <p className="text-slate-400">Enregistrez vos sessions d'entraînement</p>
-                </div>
-                <div className="flex gap-3">
-                <button
-                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
-                >
-                  <Plus className="w-5 h-5" />
-                  Nouvelle session
-                </button>
-                  <button
-                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Calendar className="w-5 h-5" />
-                    Données antérieures
-                  </button>
-                </div>
-              </div>
+              <EnduranceSectionHeader
+                title="Boxe"
+                subtitle="Enregistrez vos sessions d'entraînement"
+                actions={[
+                  {
+                    key: 'new-boxing-session',
+                    label: 'Nouvelle session',
+                    icon: Plus,
+                    onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                  },
+                  {
+                    key: 'past-boxing-session',
+                    label: 'Données antérieures',
+                    icon: Calendar,
+                    onClick: () => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105'
+                  }
+                ]}
+              />
 
               {/* Formulaire de session boxe */}
               {ui.showSessionForm && (
@@ -1620,107 +1133,17 @@ const EnduranceTab = () => {
                       </span>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Date</label>
-                      <input
-                        type="date"
-                        value={boxingForm.date}
-                        onChange={(e) => setBoxingForm({...boxingForm, date: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Heure</label>
-                      <input
-                        type="time"
-                        value={boxingForm.time}
-                        onChange={(e) => setBoxingForm({...boxingForm, time: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Durée (minutes)</label>
-                      <input
-                        type="number"
-                        step="5"
-                        value={boxingForm.duration}
-                        onChange={(e) => setBoxingForm({...boxingForm, duration: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        placeholder="Ex: 60"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Notes</label>
-                      <textarea
-                        value={boxingForm.notes}
-                        onChange={(e) => setBoxingForm({...boxingForm, notes: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        rows="3"
-                        placeholder="Type d'entraînement, sparring, sac..."
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Évaluations par étoiles */}
-                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
-                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-yellow-400" />
-                      Évaluation de la session
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Congestion musculaire"
-                          rating={boxingForm.congestion}
-                          onRatingChange={(rating) => setBoxingForm({...boxingForm, congestion: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Motivation"
-                          rating={boxingForm.motivation}
-                          onRatingChange={(rating) => setBoxingForm({...boxingForm, motivation: rating})}
-                          size="md"
-                        />
-                      </div>
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Sentiment avant"
-                          rating={boxingForm.sentimentAvant}
-                          onRatingChange={(rating) => setBoxingForm({...boxingForm, sentimentAvant: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Sentiment après"
-                          rating={boxingForm.sentimentApres}
-                          onRatingChange={(rating) => setBoxingForm({...boxingForm, sentimentApres: rating})}
-                          size="md"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 flex justify-end gap-3">
-                    <button
-                      onClick={() => setUI({ showSessionForm: false })}
-                      className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      onClick={addBoxingSession}
-                      className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all flex items-center gap-2"
-                    >
-                      {ui.editingSession ? (
-                        <>
-                          <Save className="w-4 h-4" />
-                          Modifier
-                        </>
-                      ) : (
-                        'Enregistrer'
-                      )}
-                    </button>
-                  </div>
+                  <EnduranceSessionForm
+                    activityType="boxing"
+                    formState={boxingForm}
+                    setFormState={setBoxingForm}
+                    onSubmit={addBoxingSession}
+                    onCancel={() => setUI({ showSessionForm: false })}
+                    onUpdate={updateSession}
+                    onDelete={deleteBoxingSession}
+                    onEdit={editSession}
+                    onReset={resetBoxingForm}
+                  />
                 </div>
               )}
 
@@ -1790,36 +1213,36 @@ const EnduranceTab = () => {
           {/* SECTION POMPES */}
           {activeTab === 'pushups' && (
             <>
-              {/* Header */}
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h2 className="text-4xl font-bold text-white mb-2">Pompes</h2>
-                  <p className="text-slate-400">Gérez vos sessions et défis</p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Nouvelle session
-                  </button>
-                  <button
-                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Calendar className="w-5 h-5" />
-                    Données antérieures
-                  </button>
-                  <button
-                    onClick={() => setUI({ showChallengeModal: true })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Award className="w-5 h-5" />
-                    Créer un défi
-                  </button>
-                </div>
-              </div>
+              <EnduranceSectionHeader
+                title="Pompes"
+                subtitle="Gérez vos sessions et défis"
+                actions={[
+                  {
+                    key: 'new-pushup-session',
+                    label: 'Nouvelle session',
+                    icon: Plus,
+                    onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                  },
+                  {
+                    key: 'past-pushup-session',
+                    label: 'Données antérieures',
+                    icon: Calendar,
+                    onClick: () => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105'
+                  },
+                  {
+                    key: 'create-pushup-challenge',
+                    label: 'Créer un défi',
+                    icon: Award,
+                    onClick: () => setUI({ showChallengeModal: true }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105'
+                  }
+                ]}
+              />
 
               {/* Rappel défis actifs */}
               {activeChallenges.length > 0 && (
@@ -1849,110 +1272,17 @@ const EnduranceTab = () => {
               {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
                   <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session</h3>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Date</label>
-                      <input
-                        type="date"
-                        value={sessionForm.date}
-                        onChange={(e) => setSessionForm({...sessionForm, date: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Heure</label>
-                      <input
-                        type="time"
-                        value={sessionForm.time}
-                        onChange={(e) => setSessionForm({...sessionForm, time: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Nombre de pompes</label>
-                      <input
-                        type="number"
-                        value={sessionForm.count}
-                        onChange={(e) => setSessionForm({...sessionForm, count: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        placeholder="Ex: 50"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Durée (minutes)</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={sessionForm.duration}
-                        onChange={(e) => setSessionForm({...sessionForm, duration: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        placeholder="Ex: 5"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Notes</label>
-                      <textarea
-                        value={sessionForm.notes}
-                        onChange={(e) => setSessionForm({...sessionForm, notes: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        rows="3"
-                        placeholder="Commentaires optionnels..."
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Évaluations par étoiles */}
-                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
-                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-yellow-400" />
-                      Évaluation de la session
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Congestion musculaire"
-                          rating={sessionForm.congestion}
-                          onRatingChange={(rating) => setSessionForm({...sessionForm, congestion: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Motivation"
-                          rating={sessionForm.motivation}
-                          onRatingChange={(rating) => setSessionForm({...sessionForm, motivation: rating})}
-                          size="md"
-                        />
-                      </div>
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Sentiment avant"
-                          rating={sessionForm.sentimentAvant}
-                          onRatingChange={(rating) => setSessionForm({...sessionForm, sentimentAvant: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Sentiment après"
-                          rating={sessionForm.sentimentApres}
-                          onRatingChange={(rating) => setSessionForm({...sessionForm, sentimentApres: rating})}
-                          size="md"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 flex justify-end gap-3">
-                    <button
-                      onClick={() => setUI({ showSessionForm: false })}
-                      className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      onClick={addPushupSession}
-                      className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
-                    >
-                      Enregistrer
-                    </button>
-                  </div>
+                  <EnduranceSessionForm
+                    activityType="pushups"
+                    formState={sessionForm}
+                    setFormState={setSessionForm}
+                    onSubmit={addPushupSession}
+                    onCancel={() => setUI({ showSessionForm: false })}
+                    onUpdate={updateSession}
+                    onDelete={deletePushupSession}
+                    onEdit={editSession}
+                    onReset={resetPushupForm}
+                  />
                 </div>
               )}
 
@@ -2093,28 +1423,28 @@ const EnduranceTab = () => {
           {/* SECTION NATATION */}
           {activeTab === 'swimming' && (
             <>
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h2 className="text-4xl font-bold text-white mb-2">Natation</h2>
-                  <p className="text-slate-400">Suivez vos longueurs et performances</p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Nouvelle session
-                  </button>
-                  <button
-                    onClick={() => setUI({ showChallengeModal: true })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Award className="w-5 h-5" />
-                    Créer un défi
-                  </button>
-                </div>
-              </div>
+              <EnduranceSectionHeader
+                title="Natation"
+                subtitle="Suivez vos longueurs et performances"
+                actions={[
+                  {
+                    key: 'new-swimming-session',
+                    label: 'Nouvelle session',
+                    icon: Plus,
+                    onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                  },
+                  {
+                    key: 'create-swimming-challenge',
+                    label: 'Créer un défi',
+                    icon: Award,
+                    onClick: () => setUI({ showChallengeModal: true }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105'
+                  }
+                ]}
+              />
 
               {activeChallenges.length > 0 && (
                 <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 mb-8">
@@ -2142,186 +1472,31 @@ const EnduranceTab = () => {
               {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
                   <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session de natation</h3>
-                  <div className="grid grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Date</label>
-                      <input
-                        type="date"
-                        value={swimmingForm.date}
-                        onChange={(e) => setSwimmingForm({...swimmingForm, date: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Heure</label>
-                      <input
-                        type="time"
-                        value={swimmingForm.time}
-                        onChange={(e) => setSwimmingForm({...swimmingForm, time: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Type de nage</label>
-                      <select
-                        value={swimmingForm.swimType}
-                        onChange={(e) => setSwimmingForm({...swimmingForm, swimType: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      >
-                        <option value="crawl">Crawl</option>
-                        <option value="brasse">Brasse</option>
-                        <option value="dos">Dos</option>
-                        <option value="papillon">Papillon</option>
-                        <option value="mixte">Mixte</option>
-                      </select>
-                    </div>
-                  </div>
+                  <EnduranceSessionForm
+                    activityType="swimming"
+                    formState={swimmingForm}
+                    setFormState={setSwimmingForm}
+                  />
 
-                  <div className="mb-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-white font-semibold">Longueurs</h4>
-                      <button
-                        onClick={addLap}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Ajouter une longueur
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {swimmingForm.laps.map((lap, index) => (
-                        <div key={index} className="flex gap-3 items-center bg-slate-900/30 p-4 rounded-xl">
-                          <span className="text-slate-400 font-medium w-8">#{index + 1}</span>
-                          <div className="flex-1">
-                            <label className="block text-slate-400 text-xs mb-1">Distance (m)</label>
-                            <input
-                              type="number"
-                              value={lap.distance}
-                              onChange={(e) => updateLap(index, 'distance', e.target.value)}
-                              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <label className="block text-slate-400 text-xs mb-1">Temps (mm:ss)</label>
-                            <input
-                              type="text"
-                              value={lap.time}
-                              onChange={(e) => updateLap(index, 'time', e.target.value)}
-                              placeholder="1:30"
-                              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-                            />
-                          </div>
-                          {swimmingForm.laps.length > 1 && (
-                            <button
-                              onClick={() => removeLap(index)}
-                              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Nouveaux champs pour la natation */}
-                  <div className="mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                    <h4 className="text-blue-200 font-semibold mb-4 flex items-center gap-2">
-                      <Activity className="w-4 h-4" />
-                      Métriques avancées
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-slate-300 text-sm font-medium mb-2">Fréquence cardiaque moyenne</label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            value={swimmingForm.heartRate}
-                            onChange={(e) => setSwimmingForm({...swimmingForm, heartRate: e.target.value})}
-                            placeholder="150"
-                            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
-                          />
-                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm">bpm</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-slate-300 text-sm font-medium mb-2">Calories dépensées</label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            value={swimmingForm.calories}
-                            onChange={(e) => setSwimmingForm({...swimmingForm, calories: e.target.value})}
-                            placeholder="300"
-                            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
-                          />
-                          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm">kcal</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-slate-300 text-sm font-medium mb-2">Allure 100m</label>
-                        <input
-                          type="text"
-                          value={swimmingForm.pace100m}
-                          onChange={(e) => setSwimmingForm({...swimmingForm, pace100m: e.target.value})}
-                          placeholder="1:45"
-                          className="w-full px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Notes</label>
-                    <textarea
-                      value={swimmingForm.notes}
-                      onChange={(e) => setSwimmingForm({...swimmingForm, notes: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      rows="3"
-                      placeholder="Commentaires sur la séance..."
-                    />
-                  </div>
-
-                  {/* Évaluations par étoiles */}
-                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
-                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-yellow-400" />
-                      Évaluation de la session
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Congestion musculaire"
-                          rating={swimmingForm.congestion}
-                          onRatingChange={(rating) => setSwimmingForm({...swimmingForm, congestion: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Motivation"
-                          rating={swimmingForm.motivation}
-                          onRatingChange={(rating) => setSwimmingForm({...swimmingForm, motivation: rating})}
-                          size="md"
-                        />
-                      </div>
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Sentiment avant"
-                          rating={swimmingForm.sentimentAvant}
-                          onRatingChange={(rating) => setSwimmingForm({...swimmingForm, sentimentAvant: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Sentiment après"
-                          rating={swimmingForm.sentimentApres}
-                          onRatingChange={(rating) => setSwimmingForm({...swimmingForm, sentimentApres: rating})}
-                          size="md"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <SwimmingSessionExtras
+                    laps={swimmingForm.laps}
+                    onAddLap={addLap}
+                    onRemoveLap={removeLap}
+                    onUpdateLap={updateLap}
+                    heartRate={swimmingForm.heartRate}
+                    calories={swimmingForm.calories}
+                    pace100m={swimmingForm.pace100m}
+                    onChangeHeartRate={(value) => setSwimmingForm(prev => ({ ...prev, heartRate: value }))}
+                    onChangeCalories={(value) => setSwimmingForm(prev => ({ ...prev, calories: value }))}
+                    onChangePace100m={(value) => setSwimmingForm(prev => ({ ...prev, pace100m: value }))}
+                  />
 
                   <div className="mt-6 flex justify-end gap-3">
                     <button
-                      onClick={() => setUI({ showSessionForm: false })}
+                      onClick={() => {
+                        resetSwimmingForm();
+                        setUI({ showSessionForm: false });
+                      }}
                       className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
                     >
                       Annuler
@@ -2519,28 +1694,28 @@ const EnduranceTab = () => {
           {/* SECTION CORDE À SAUTER */}
           {activeTab === 'jumprope' && (
             <>
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h2 className="text-4xl font-bold text-white mb-2">Corde à Sauter</h2>
-                  <p className="text-slate-400">Suivez vos sessions et défis</p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Nouvelle session
-                  </button>
-                  <button
-                    onClick={() => setUI({ showChallengeModal: true })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Award className="w-5 h-5" />
-                    Créer un défi
-                  </button>
-                </div>
-              </div>
+              <EnduranceSectionHeader
+                title="Corde à Sauter"
+                subtitle="Suivez vos sessions et défis"
+                actions={[
+                  {
+                    key: 'new-jumprope-session',
+                    label: 'Nouvelle session',
+                    icon: Plus,
+                    onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                  },
+                  {
+                    key: 'create-jumprope-challenge',
+                    label: 'Créer un défi',
+                    icon: Award,
+                    onClick: () => setUI({ showChallengeModal: true }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105'
+                  }
+                ]}
+              />
 
               {/* Rappel défis actifs */}
               {activeChallenges.length > 0 && (
@@ -2566,184 +1741,15 @@ const EnduranceTab = () => {
                 </div>
               )}
 
-              {/* Formulaire de session */}
               {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
-                  <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session</h3>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Date</label>
-                      <input
-                        type="date"
-                        value={jumpropeForm.date}
-                        onChange={(e) => setJumpropeForm({...jumpropeForm, date: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Heure</label>
-                      <input
-                        type="time"
-                        value={jumpropeForm.time}
-                        onChange={(e) => setJumpropeForm({...jumpropeForm, time: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Durée (mm:ss)</label>
-                      <input
-                        type="text"
-                        value={jumpropeForm.duration}
-                        onChange={(e) => setJumpropeForm({...jumpropeForm, duration: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        placeholder="Ex: 5:30"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Type</label>
-                      <select
-                        value={jumpropeForm.type}
-                        onChange={(e) => setJumpropeForm({...jumpropeForm, type: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      >
-                        <option value="continue">Continue</option>
-                        <option value="fractionne">Fractionné</option>
-                        <option value="technique">Technique</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Nombre de sauts (optionnel)</label>
-                      <input
-                        type="number"
-                        value={jumpropeForm.jumps}
-                        onChange={(e) => setJumpropeForm({...jumpropeForm, jumps: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        placeholder="Ex: 500"
-                      />
-                    </div>
-                  <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">BPM max</label>
-                    <input
-                      type="number"
-                      value={jumpropeForm.hrMax}
-                      onChange={(e) => setJumpropeForm({...jumpropeForm, hrMax: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      placeholder="Ex: 185"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">BPM moyen</label>
-                    <input
-                      type="number"
-                      value={jumpropeForm.hrAvg}
-                      onChange={(e) => setJumpropeForm({...jumpropeForm, hrAvg: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      placeholder="Ex: 158"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Meilleure série (sauts)</label>
-                    <input
-                      type="number"
-                      value={jumpropeForm.bestStreak}
-                      onChange={(e) => setJumpropeForm({...jumpropeForm, bestStreak: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      placeholder="Ex: 220"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Sauts / minute (moy.)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={jumpropeForm.jumpsPerMin}
-                      onChange={(e) => setJumpropeForm({...jumpropeForm, jumpsPerMin: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      placeholder="Ex: 120"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Calories brûlées</label>
-                    <input
-                      type="number"
-                      value={jumpropeForm.calories}
-                      onChange={(e) => setJumpropeForm({...jumpropeForm, calories: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      placeholder="Ex: 180"
-                    />
-                  </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Session #</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={jumpropeForm.sessionNumber}
-                        onChange={(e) => setJumpropeForm({...jumpropeForm, sessionNumber: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Notes</label>
-                      <textarea
-                        value={jumpropeForm.notes}
-                        onChange={(e) => setJumpropeForm({...jumpropeForm, notes: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        rows="3"
-                        placeholder="Commentaires optionnels..."
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Évaluations par étoiles */}
-                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
-                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-yellow-400" />
-                      Évaluation de la session
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Congestion musculaire"
-                          rating={jumpropeForm.congestion}
-                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, congestion: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Motivation"
-                          rating={jumpropeForm.motivation}
-                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, motivation: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Fluidité"
-                          rating={jumpropeForm.fluidite}
-                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, fluidite: rating})}
-                          size="md"
-                        />
-                      </div>
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Sentiment avant"
-                          rating={jumpropeForm.sentimentAvant}
-                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, sentimentAvant: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Sentiment après"
-                          rating={jumpropeForm.sentimentApres}
-                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, sentimentApres: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Transpiration"
-                          rating={jumpropeForm.transpiration}
-                          onRatingChange={(rating) => setJumpropeForm({...jumpropeForm, transpiration: rating})}
-                          size="md"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
+                  <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session de corde à sauter</h3>
+                  <EnduranceSessionForm
+                    activityType="jumprope"
+                    formState={jumpropeForm}
+                    setFormState={setJumpropeForm}
+                  />
+
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       onClick={() => setUI({ showSessionForm: false })}
@@ -2760,7 +1766,7 @@ const EnduranceTab = () => {
                     <button
                       onClick={() => {
                         addJumpropeSession();
-                        setJumpropeForm({...jumpropeForm, sessionNumber: parseInt(jumpropeForm.sessionNumber) + 1});
+                        setJumpropeForm({ ...jumpropeForm, sessionNumber: parseInt(jumpropeForm.sessionNumber) + 1 });
                       }}
                       className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-green-500/50 transition-all"
                     >
@@ -2914,28 +1920,28 @@ const EnduranceTab = () => {
           {/* SECTION COURSE */}
           {activeTab === 'running' && (
             <>
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h2 className="text-4xl font-bold text-white mb-2">Course</h2>
-                  <p className="text-slate-400">Suivez vos performances et défis</p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setUI({ showSessionForm: !ui.showSessionForm })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Nouvelle session
-                  </button>
-                  <button
-                    onClick={() => setUI({ showChallengeModal: true })}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
-                  >
-                    <Award className="w-5 h-5" />
-                    Créer un défi
-                  </button>
-                </div>
-              </div>
+              <EnduranceSectionHeader
+                title="Course"
+                subtitle="Suivez vos performances et défis"
+                actions={[
+                  {
+                    key: 'new-running-session',
+                    label: 'Nouvelle session',
+                    icon: Plus,
+                    onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                  },
+                  {
+                    key: 'create-running-challenge',
+                    label: 'Créer un défi',
+                    icon: Award,
+                    onClick: () => setUI({ showChallengeModal: true }),
+                    className:
+                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105'
+                  }
+                ]}
+              />
 
               {/* Rappel défis actifs */}
               {activeChallenges.length > 0 && (
@@ -2965,157 +1971,19 @@ const EnduranceTab = () => {
               {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
                   <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session</h3>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Date</label>
-                      <input
-                        type="date"
-                        value={runningForm.date}
-                        onChange={(e) => setRunningForm({...runningForm, date: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Heure</label>
-                      <input
-                        type="time"
-                        value={runningForm.time}
-                        onChange={(e) => setRunningForm({...runningForm, time: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Distance (km)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={runningForm.distance}
-                        onChange={(e) => setRunningForm({...runningForm, distance: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        placeholder="Ex: 5.0"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Durée (hh:mm:ss)</label>
-                      <input
-                        type="text"
-                        value={runningForm.duration}
-                        onChange={(e) => setRunningForm({...runningForm, duration: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        placeholder="Ex: 0:25:30"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Type</label>
-                      <select
-                        value={runningForm.type}
-                        onChange={(e) => setRunningForm({...runningForm, type: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                      >
-                        <option value="endurance">Endurance</option>
-                        <option value="fractionne">Fractionné</option>
-                        <option value="recuperation">Récupération</option>
-                        <option value="tempo">Tempo</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Dénivelé (m) - Optionnel</label>
-                      <input
-                        type="number"
-                        value={runningForm.elevation}
-                        onChange={(e) => setRunningForm({...runningForm, elevation: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        placeholder="Ex: 150"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-slate-300 text-sm font-medium mb-2">Notes</label>
-                      <textarea
-                        value={runningForm.notes}
-                        onChange={(e) => setRunningForm({...runningForm, notes: e.target.value})}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                        rows="3"
-                        placeholder="Commentaires sur la course, conditions météo, sensations..."
-                      />
-                    </div>
-                  </div>
-                  
+                  <EnduranceSessionForm
+                    activityType="running"
+                    formState={runningForm}
+                    setFormState={setRunningForm}
+                  />
+
                   {/* Calculs automatiques */}
                   {runningForm.distance && runningForm.duration && (
-                    <div className="mt-6 p-4 bg-slate-900/30 border border-slate-600/50 rounded-xl">
-                      <h4 className="text-white font-semibold mb-3">Calculs automatiques</h4>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-slate-400">Allure:</span>
-                          <span className="text-white font-bold ml-2">
-                            {(() => {
-                              const distance = parseFloat(runningForm.distance);
-                              const [hours, minutes, seconds] = runningForm.duration.split(':').map(Number);
-                              const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-                              const pace = distance > 0 ? ((totalSeconds / 60) / distance).toFixed(2) : 0;
-                              return `${pace} min/km`;
-                            })()}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Vitesse:</span>
-                          <span className="text-white font-bold ml-2">
-                            {(() => {
-                              const distance = parseFloat(runningForm.distance);
-                              const [hours, minutes, seconds] = runningForm.duration.split(':').map(Number);
-                              const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-                              const speed = distance > 0 ? (distance / (totalSeconds / 3600)).toFixed(2) : 0;
-                              return `${speed} km/h`;
-                            })()}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Dénivelé:</span>
-                          <span className="text-white font-bold ml-2">
-                            {runningForm.elevation ? `${runningForm.elevation}m` : 'Non renseigné'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    <RunningSessionExtras
+                      distance={runningForm.distance}
+                      duration={runningForm.duration}
+                    />
                   )}
-
-                  {/* Évaluations par étoiles */}
-                  <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-600/30">
-                    <h4 className="text-slate-200 font-semibold mb-4 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-yellow-400" />
-                      Évaluation de la session
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Congestion musculaire"
-                          rating={runningForm.congestion}
-                          onRatingChange={(rating) => setRunningForm({...runningForm, congestion: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Motivation"
-                          rating={runningForm.motivation}
-                          onRatingChange={(rating) => setRunningForm({...runningForm, motivation: rating})}
-                          size="md"
-                        />
-                      </div>
-                      <div className="space-y-4">
-                        <StarRating
-                          label="Sentiment avant"
-                          rating={runningForm.sentimentAvant}
-                          onRatingChange={(rating) => setRunningForm({...runningForm, sentimentAvant: rating})}
-                          size="md"
-                        />
-                        <StarRating
-                          label="Sentiment après"
-                          rating={runningForm.sentimentApres}
-                          onRatingChange={(rating) => setRunningForm({...runningForm, sentimentApres: rating})}
-                          size="md"
-                        />
-                      </div>
-                    </div>
-                  </div>
 
                   <div className="mt-6 flex justify-end gap-3">
                     <button

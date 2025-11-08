@@ -112,3 +112,51 @@ export function areTimeNavigationPropsEqual(prevProps, nextProps) {
   );
 }
 
+/**
+ * Normalise une valeur d'activité (distance, durée, compte) en nombre ou null.
+ * Utilisé pour stabiliser les comparaisons des heatmaps/graphes d'activité.
+ */
+export function normalizeActivityValue(value) {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  if (typeof value === 'object') {
+    if (value.total !== undefined) return normalizeActivityValue(value.total);
+    if (value.value !== undefined) return normalizeActivityValue(value.value);
+    if (value.average !== undefined) return normalizeActivityValue(value.average);
+    if (value.avg !== undefined) return normalizeActivityValue(value.avg);
+    if (value.distance !== undefined) return normalizeActivityValue(value.distance);
+    if (value.duration !== undefined) return normalizeActivityValue(value.duration);
+    if (value.count !== undefined) return normalizeActivityValue(value.count);
+  }
+  return 0;
+}
+
+export function areActivitiesEqual(prevActivities = {}, nextActivities = {}) {
+  const categories = ['swimming', 'jumpRope', 'cardio'];
+  for (const category of categories) {
+    const prevList = prevActivities[category] || [];
+    const nextList = nextActivities[category] || [];
+    if (prevList === nextList) continue;
+    if (!Array.isArray(prevList) || !Array.isArray(nextList)) return false;
+    if (prevList.length !== nextList.length) return false;
+    for (let i = 0; i < prevList.length; i += 1) {
+      const prevItem = prevList[i];
+      const nextItem = nextList[i];
+      if (prevItem === nextItem) continue;
+      if (!prevItem || !nextItem) return false;
+      if (prevItem.id !== nextItem.id) return false;
+      if (prevItem.date !== nextItem.date) return false;
+      if (normalizeActivityValue(prevItem.distance) !== normalizeActivityValue(nextItem.distance)) return false;
+      if (normalizeActivityValue(prevItem.duration) !== normalizeActivityValue(nextItem.duration)) return false;
+      if (prevItem.type !== nextItem.type) return false;
+    }
+  }
+  return true;
+}
+

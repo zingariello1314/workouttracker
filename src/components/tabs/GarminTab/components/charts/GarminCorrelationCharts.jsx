@@ -19,23 +19,59 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
     7
   );
 
+  const extractNumeric = React.useCallback((value) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    if (typeof value === 'object') {
+      if (value.current !== undefined) return extractNumeric(value.current);
+      if (value.value !== undefined) return extractNumeric(value.value);
+      if (value.total !== undefined) return extractNumeric(value.total);
+      if (value.avg !== undefined) return extractNumeric(value.avg);
+      if (value.average !== undefined) return extractNumeric(value.average);
+      if (value.min !== undefined && value.max !== undefined) {
+        const min = extractNumeric(value.min);
+        const max = extractNumeric(value.max);
+        if (min !== null && max !== null) {
+          return (min + max) / 2;
+        }
+      }
+      if (Array.isArray(value)) {
+        const candidates = value
+          .map(extractNumeric)
+          .filter((num) => num !== null);
+        if (candidates.length > 0) {
+          const sum = candidates.reduce((acc, num) => acc + num, 0);
+          return sum / candidates.length;
+        }
+      }
+    }
+    return null;
+  }, []);
+
   // Préparer données pour corrélation sommeil/performance
   const sleepPerformanceData = React.useMemo(() => {
     if (!dailyMetrics || filteredDates.length === 0) return [];
     
     return filteredDates.map(date => {
       const dm = dailyMetrics[date] || {};
+      const sleep = dm.sleep || {};
       return {
         date,
-        sleepDuration: dm.sleep?.duration ? Math.round(dm.sleep.duration * 60) : null, // minutes
-        sleepQuality: dm.sleep?.quality || null,
-        steps: dm.steps || null,
-        intensityMinutes: dm.intensityMinutes?.total || null,
-        bodyBattery: dm.bodyBattery || null,
+        sleepDuration: sleep?.duration ? Math.round(sleep.duration * 60) : null, // minutes
+        sleepQuality: extractNumeric(sleep?.quality),
+        steps: extractNumeric(dm.steps),
+        intensityMinutes: extractNumeric(dm.intensityMinutes?.total ?? dm.intensityMinutes),
+        bodyBattery: extractNumeric(dm.bodyBattery),
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.sleepDuration !== null || d.steps !== null);
-  }, [dailyMetrics, filteredDates, effectiveSelectedDate]);
+  }, [dailyMetrics, extractNumeric, filteredDates, effectiveSelectedDate]);
 
   // Préparer données pour corrélation Body Battery/intensité
   const batteryIntensityData = React.useMemo(() => {
@@ -45,15 +81,15 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
       const dm = dailyMetrics[date] || {};
       return {
         date,
-        bodyBattery: dm.bodyBattery || null,
-        intensityTotal: dm.intensityMinutes?.total || null,
-        intensityModerate: dm.intensityMinutes?.moderate || null,
-        intensityVigorous: dm.intensityMinutes?.vigorous || null,
-        steps: dm.steps || null,
+        bodyBattery: extractNumeric(dm.bodyBattery),
+        intensityTotal: extractNumeric(dm.intensityMinutes?.total ?? dm.intensityMinutes),
+        intensityModerate: extractNumeric(dm.intensityMinutes?.moderate),
+        intensityVigorous: extractNumeric(dm.intensityMinutes?.vigorous),
+        steps: extractNumeric(dm.steps),
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.bodyBattery !== null && d.intensityTotal !== null);
-  }, [dailyMetrics, filteredDates, effectiveSelectedDate]);
+  }, [dailyMetrics, extractNumeric, filteredDates, effectiveSelectedDate]);
 
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (

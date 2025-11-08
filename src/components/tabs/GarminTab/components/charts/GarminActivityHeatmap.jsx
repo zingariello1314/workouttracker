@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFilteredDates } from '../../hooks/useFilteredDates';
-import { areChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areChartPropsEqual, areActivitiesEqual, normalizeActivityValue } from '../../../../../utils/chartComparison';
 
 /**
  * Graphique heatmap calendrier des activités Garmin
@@ -21,31 +21,39 @@ function GarminActivityHeatmap({ activities, dailyMetrics, selectedDate, periodF
   const activityData = React.useMemo(() => {
     const result = {};
 
-    // Compter activités par date (seulement pour les dates filtrées)
+    const incrementDay = (date, field) => {
+      if (!result[date]) {
+        result[date] = {
+          date,
+          total: 0,
+          swimming: 0,
+          jumpRope: 0,
+          cardio: 0,
+          distance: 0,
+          duration: 0
+        };
+      }
+      result[date].total += 1;
+      result[date][field] += 1;
+    };
+
+    const addMetrics = (date, act) => {
+      if (!result[date]) return;
+      result[date].distance += normalizeActivityValue(act.distance);
+      result[date].duration += normalizeActivityValue(act.duration);
+    };
+
     ['swimming', 'jumpRope', 'cardio'].forEach(type => {
-      const acts = activities[type] || [];
+      const acts = activities?.[type] || [];
       acts.forEach(act => {
         const date = act.date;
-        // Ne compter que si la date est dans filteredDates
-        if (filteredDates.includes(date)) {
-          if (!result[date]) {
-            result[date] = {
-              date,
-              total: 0,
-              swimming: 0,
-              jumpRope: 0,
-              cardio: 0,
-              distance: 0,
-              duration: 0
-            };
-          }
-          result[date].total += 1;
-          result[date][type === 'swimming' ? 'swimming' : type === 'jumpRope' ? 'jumpRope' : 'cardio'] += 1;
-          result[date].distance += act.distance || 0;
-          result[date].duration += act.duration || 0;
-        }
+        if (!date || !filteredDates.includes(date)) return;
+        const field = type === 'swimming' ? 'swimming' : type === 'jumpRope' ? 'jumpRope' : 'cardio';
+        incrementDay(date, field);
+        addMetrics(date, act);
       });
     });
+
     return result;
   }, [activities, filteredDates]);
 
@@ -159,7 +167,7 @@ function GarminActivityHeatmap({ activities, dailyMetrics, selectedDate, periodF
 
 export default React.memo(GarminActivityHeatmap, (prevProps, nextProps) => {
   return (
-    prevProps.activities === nextProps.activities &&
+    areActivitiesEqual(prevProps.activities, nextProps.activities) &&
     areChartPropsEqual(prevProps, nextProps)
   );
 });

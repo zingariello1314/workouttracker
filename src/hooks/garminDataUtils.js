@@ -193,6 +193,55 @@ export const getAllStorageKeys = (store) => {
   return keys;
 };
 
+/**
+ * Clé bucket pour stockage groupé localStorage
+ * @param {string} store
+ * @returns {string}
+ */
+const getStorageBucketKey = (store) => `garmin_${store}_bucket`;
+
+/**
+ * Lit le bucket localStorage (stockage groupé) pour un store donné
+ * @param {string} store
+ * @returns {Object} Objet clé/valeur ou {} si vide
+ */
+export const readStorageBucket = (store) => {
+  try {
+    const raw = localStorage.getItem(getStorageBucketKey(store));
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      return parsed;
+    }
+    return {};
+  } catch (err) {
+    log.warn('[garminDataUtils] readStorageBucket parse error:', { store, err });
+    return {};
+  }
+};
+
+/**
+ * Écrit le bucket localStorage pour un store donné
+ * @param {string} store
+ * @param {Object} data
+ */
+export const writeStorageBucket = (store, data) => {
+  try {
+    localStorage.setItem(getStorageBucketKey(store), JSON.stringify(data));
+  } catch (err) {
+    log.error('[garminDataUtils] writeStorageBucket error:', { store, err });
+    throw err;
+  }
+};
+
+/**
+ * Supprime le bucket localStorage pour un store donné
+ * @param {string} store
+ */
+export const deleteStorageBucket = (store) => {
+  localStorage.removeItem(getStorageBucketKey(store));
+};
+
 // ==================== OUVERTURE INDEXEDDB ====================
 
 /**

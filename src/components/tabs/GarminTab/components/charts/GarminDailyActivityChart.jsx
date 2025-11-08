@@ -4,6 +4,7 @@ import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { useChartContainerSize } from './useChartContainerSize';
 import { DATE_RANGE, ARIA_LABELS } from '../../constants';
 import logger from '../../../../../utils/logger';
+import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 import { Activity } from 'lucide-react';
 
 const log = logger.component('GarminDailyActivityChart');
@@ -43,14 +44,45 @@ function GarminDailyActivityChart({ dailyMetrics, selectedDate, periodFilter, cu
         }
       }
       
-      // Extraire distance (en mètres, convertir en km)
-      const distance = dm.distance ? (typeof dm.distance === 'number' ? dm.distance / 1000 : 0) : 0;
+      // Extraire distance : le backend fournit désormais la distance en kilomètres.
+      // Pour compatibilité ascendante, convertir depuis les mètres si nécessaire.
+      let distanceKm = 0;
+      const rawDistance = dm.distance;
+
+      const normalizeDistance = (value) => {
+        if (value === null || value === undefined) return 0;
+        if (typeof value === 'number') {
+          // Si la valeur est très grande (>= 100), considérer qu'elle est en mètres (données legacy) et convertir.
+          return value >= 100 ? value / 1000 : value;
+        }
+        if (typeof value === 'string') {
+          const parsed = parseFloat(value);
+          if (!Number.isNaN(parsed)) {
+            return parsed >= 100 ? parsed / 1000 : parsed;
+          }
+          return 0;
+        }
+        if (typeof value === 'object') {
+          const candidate =
+            value.value ??
+            value.total ??
+            value.avg ??
+            value.average ??
+            value.distance ??
+            value.km ??
+            null;
+          return normalizeDistance(candidate);
+        }
+        return 0;
+      };
+
+      distanceKm = normalizeDistance(rawDistance);
       
       return {
         date,
         steps,
         calories,
-        distance: parseFloat(distance.toFixed(2)),
+        distance: parseFloat(distanceKm.toFixed(2)),
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.steps > 0 || d.calories > 0 || d.distance > 0);
@@ -237,5 +269,5 @@ function GarminDailyActivityChart({ dailyMetrics, selectedDate, periodFilter, cu
   );
 }
 
-export default React.memo(GarminDailyActivityChart);
+export default React.memo(GarminDailyActivityChart, areChartPropsEqual);
 

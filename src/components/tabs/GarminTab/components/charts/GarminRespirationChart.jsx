@@ -25,24 +25,52 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
   // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
   const { containerRef, containerSize } = useChartContainerSize();
 
+  const normalizeRespValue = React.useCallback((value) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    if (typeof value === 'object') {
+      if (value.value !== undefined) return normalizeRespValue(value.value);
+      if (value.avg !== undefined) return normalizeRespValue(value.avg);
+      if (value.average !== undefined) return normalizeRespValue(value.average);
+      if (value.mean !== undefined) return normalizeRespValue(value.mean);
+      if (Array.isArray(value)) {
+        const samples = value
+          .map((sample) => normalizeRespValue(sample))
+          .filter((num) => num !== null);
+        if (samples.length === 0) return null;
+        const sum = samples.reduce((acc, num) => acc + num, 0);
+        return sum / samples.length;
+      }
+    }
+    return null;
+  }, []);
+
   const chartData = React.useMemo(() => {
     if (!dailyMetrics || filteredDates.length === 0) return [];
     
     return filteredDates.map(date => {
       const dm = dailyMetrics[date] || {};
       const resp = dm.respiration || {};
+      const awake = resp.awake || {};
+      const sleep = resp.sleep || {};
       return {
         date,
-        awakeMin: resp.awake?.min || null,
-        awakeAvg: resp.awake?.avg || null,
-        awakeMax: resp.awake?.max || null,
-        sleepMin: resp.sleep?.min || null,
-        sleepAvg: resp.sleep?.avg || null,
-        sleepMax: resp.sleep?.max || null,
+        awakeMin: normalizeRespValue(awake.min),
+        awakeAvg: normalizeRespValue(awake.avg ?? awake.average ?? awake.mean),
+        awakeMax: normalizeRespValue(awake.max),
+        sleepMin: normalizeRespValue(sleep.min),
+        sleepAvg: normalizeRespValue(sleep.avg ?? sleep.average ?? sleep.mean),
+        sleepMax: normalizeRespValue(sleep.max),
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.awakeAvg !== null || d.sleepAvg !== null);
-  }, [dailyMetrics, filteredDates, effectiveSelectedDate]);
+  }, [dailyMetrics, filteredDates, effectiveSelectedDate, normalizeRespValue]);
 
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (

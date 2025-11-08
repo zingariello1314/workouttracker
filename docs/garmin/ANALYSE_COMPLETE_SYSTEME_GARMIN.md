@@ -2026,6 +2026,207 @@ Séparer le fichier `useGarminData.js` (1905 lignes) en modules logiques pour am
 - Actions à suivre :
   - Relancer la synchronisation après correction pour s’assurer que les métriques (steps, calories, heart rate) sont correctement rapatriées.
   - Poursuivre la stabilisation du parser Python (gestion spécifique des pas/métriques manquantes) avant d’attaquer la batching IndexedDB (Phase 2.3).
+- Reprise plan (2025-11-08 03:10Z) :
+  - Orientation Phase 2.2 (Memoization Graphiques & Hooks) : finaliser l’enveloppe `React.memo` pour les composants restants (`GarminHydrationChart`, `GarminWeightChart`, `GarminTrainingLoadChart`) avec comparateurs dédiés basés sur `compareFilteredDailyMetrics`.
+  - Préparer la transition vers Phase 2.3 : inventorier chaque écriture IndexedDB (activités, daily metrics, device meta) pour identifier où introduire les batchs et la déduplication avant l’implémentation.
+  - Validation attendue : profilage React (mesure du temps de rendu avant/après), suivi mémoire via Performance Profiler, contrôle IndexedDB + export JSON pour confirmer l’absence de régressions.
+- Phase 2.2 — itération 1 (2025-11-08 03:25Z) :
+  - `GarminDailyActivityChart.jsx` importe désormais `areChartPropsEqual` (`chartComparison.js`) et est mémoïsé avec ce comparateur, évitant les re-renders lorsque seules d’autres séries changent.
+  - Normalisation distance : extraction robuste (nombre, string, objet) et conversion automatique des anciennes valeurs en mètres (>= 100) vers km ; prise en charge directe des nouvelles valeurs déjà en kilomètres.
+  - Validation : sélection date immuable après sync, ratio steps/distance cohérent (2849 pas → 2.14 km), export JSON identique (structure `dailyMetrics` conservée), aucun avertissement React DevTools.
+- Phase 2.2 — itération 2 (2025-11-08 03:40Z) :
+  - Audit des comparateurs existants (`areChartPropsEqual`, `shallowArrayEqual`, etc.) : confirmer leur compatibilité avec les jeux de props des graphiques restants (corrélations, respiration, activité quotidienne).
+  - Identification des composants déjà optimisés (`GarminCorrelationCharts`, `GarminRespirationChart`, `GarminActivityHeatmap`, `GarminBodyBatteryChart`, `GarminStressChart`, `GarminSleepChart`, `GarminHeartRateChart`, `GarminHeartRateTimeSeriesChart`) et des métriques couvertes (dailyMetrics, colors, props navigation).
+  - Plan de couverture : prochaine étape → inspection ciblée des composants dépendant d’objets enrichis (`GarminCorrelationCharts` + `GarminRespirationChart`) pour vérifier l’absence de nouvelles dépendances (ex. `intensityData`, `correlationStats`) dans leurs props ; ajouter un comparateur spécifique si nécessaire.
+- Phase 2.2 — itération 3 (2025-11-08 03:55Z) :
+  - `GarminCorrelationCharts.jsx` : ajout d’un helper `extractNumeric` (mémoïsé) pour assainir toutes les valeurs issues de `dailyMetrics` (nombres, chaînes, objets `{current, average, total, min/max}` ou tableaux).
+  - Les données consommées par Recharts (`sleepDuration`, `sleepQuality`, `bodyBattery`, `intensity*`, `steps`) sont désormais toujours numériques ou `null`, ce qui évite les re-renders déclenchés par des objets mutables et supprime les warnings potentiels.
+  - Validation : sync 2025‑11‑07 → graphiques corrélations stables (React DevTools), contrôle console (aucun warning Recharts), export JSON sans mutation additionnelle (les champs `dailyMetrics.*` restent identiques : seules les valeurs dérivées sont calculées localement).
+- Phase 2.2 — itération 4 (2025-11-08 04:05Z) :
+  - `GarminRespirationChart.jsx` : normalisation systématique des valeurs respiration via `normalizeRespValue` (support nombre, chaîne, objets `{avg|average|mean|min|max}`, tableaux).
+  - Les séries Recharts (`awakeMin/Avg/Max`, `sleepMin/Avg/Max`) sont stabilisées (valeur numérique ou `null`), empêchant les re-renders involontaires lorsque Garmin renvoie des objets enrichis.
+  - Validation : profilage rapide (sélection date). Aucune re-rendu parasite observé, absence de warnings console, export JSON inchangé (les objets `dailyMetrics.*.respiration` sont lus mais non mutés).
+- Phase 2.2 — itération 5 (2025-11-08 04:20Z) :
+  - `GarminActivityHeatmap.jsx` : consolidation du calcul hebdomadaire (distance/durée converties via `normalizeActivityValue`), plus aucune dépendance à des objets non normalisés.
+  - `chartComparison.js` : ajout de `normalizeActivityValue` + `areActivitiesEqual`, utilisés par le mémo du heatmap pour comparer finement les listes d’activités (id, date, distance, durée, type).
+  - Validation : parcours interactif (filtre période, survol heatmap) sans re-render superflu, console silencieuse, export JSON inchangé.
+  - État Phase 2.2 : toutes les vues graphiques critiques disposent désormais de comparateurs stables (memo complet). On peut enclencher la préparation Phase 2.3 (inventaire écritures IndexedDB).
+- Phase 2.3 — préparation (2025-11-08 04:30Z) :
+  - Objectif : cartographier exhaustivement toutes les écritures IndexedDB / localStorage (activités, daily metrics, device meta) pour identifier duplication, accès séquentiels et opportunités de batching.
+  - Méthode prévue :
+    1. Inspecter `garminDataSave.js` (fonctions `saveActivities`, `saveDailyMetrics`, helpers IndexedDB) et relever pour chaque store les points d’écriture (transactions, `put`, `enqueueSave`).
+    2. Analyser `garminDataLoad.js` et `garminDataUtils.js` pour comprendre l’ordre d’appel actuel, les files d’attente (`processSaveQueue`) et les logs associés (`logger.module(...)`).
+    3. Établir un tableau d’inventaire (date, module, fonction, type d’écriture, fréquence estimée, dépendances) directement dans ce document.
+    4. Vérifier la cohérence avec l’export JSON (module paramètres) afin d’anticiper les impacts côté export lors du batching.
+  - Validation attendue : pour chaque point d’écriture identifié, confirmer la logique de retry (mise en place Phase 1.5), le format des données stockées, et noter les métriques critiques (taille, débit). Servira de base à la conception des batchs (Phase 2.3.1).
+- Phase 2.3 — inventaire (2025-11-08 04:45Z) :
+  - Lecture `garminDataSave.js` :
+    - **Helpers IO** :
+      - `getFromStoreWithRetry(store, key)` : lecture `store.get` avec `retryWithBackoff` (max 2 tentatives, 50ms→500ms). Log `warn` pour erreurs autres que `NotFound`; retourne toujours `null` et ne stoppe pas le flux.
+      - `putToStoreWithRetry(store, data)` : écriture `store.put` (max 3 tentatives, 100ms→1000ms). Log `error` via `logIndexedDBError` en cas d’échec d’une tentative, rejette pour déclencher le retry. Contexte enrichi (`store`, `activityId` ou `date`).
+    - **Sauvegarde activités** :
+      - `saveActivitiesToLocalStorage` : boucle sur `swimming|jumpRope|cardio`; clés `garmin_activities::<id>` via `getStorageKey`; fusion `mergeActivity`; ajoute métadonnées `lastSynced`/`source`.
+      - `saveActivitiesToIndexedDB` :
+        - `openDB()` + fallback localStorage (déclenche `setUseFallback(true)`).
+        - Transaction `readwrite` sur `STORE_ACTIVITIES`; pour chaque activité → `getFromStoreWithRetry` puis `mergeActivity` → `putToStoreWithRetry`.
+        - En cas d’exception par activité, log `warn` et continue; en cas d’échec global (transaction/open), fallback localStorage et `throw` (gestion par `enqueueSave`).
+      - `saveActivities(activities, dbReady)` :
+        - refuse si `dbReady` faux.
+        - `enqueueSave` pour sérialiser les écritures; bascule automatiquement vers localStorage si `getUseFallback()` ou `indexedDB` indisponible.
+        - Aucune déduplication inter-date : chaque appel traite un paquet trié par type (à noter pour batching futur).
+    - **Sauvegarde daily metrics** :
+      - `saveDailyMetricsToLocalStorage` : même logique (clés `garmin_daily_metrics::<date>` + `mergeDailyMetrics`).
+      - `saveDailyMetricsToIndexedDB` :
+        - transaction `readwrite` sur `STORE_DAILY_METRICS`; pour chaque date -> `getFromStoreWithRetry` + `mergeDailyMetrics` + `putToStoreWithRetry`; logs `warn` sur erreur date, fallback global sinon.
+      - `saveDailyMetrics(dailyMetrics, dbReady)` :
+        - identique à `saveActivities` (queue + fallback).
+    - **Queue** : toutes les écritures passent par `enqueueSave()` / `processSaveQueue()` (géré côté `garminDataUtils`).
+  - Inventaire synthétique initial :
+
+    | Module / fonction | Store / fallback | Type d’écriture | Retry | Notes pour batching |
+    | --- | --- | --- | --- | --- |
+    | `saveActivitiesToIndexedDB` | `STORE_ACTIVITIES` | `store.put` par activité | Oui (3 tentatives) | boucle par type → candidat batching multi-put (transaction unique déjà utilisée) ; merge par activité |
+    | `saveActivitiesToLocalStorage` | localStorage | `setItem` par activité | Non | possible regroupement JSON unique par type |
+    | `saveActivities` | queue globale | dispatch localStorage/IndexedDB | N/A | Sérialise les paquets d’écriture ; à étudier si split par type/activité pour streaming |
+    | `saveDailyMetricsToIndexedDB` | `STORE_DAILY_METRICS` | `store.put` par date | Oui (3 tentatives) | boucle per-date ; batch possible (put groupé) |
+    | `saveDailyMetricsToLocalStorage` | localStorage | `setItem` par date | Non | peut être compressé en un dump journalier |
+    | `saveDailyMetrics` | queue globale | dispatch fallback | N/A | même logique que activités |
+
+  - Points d’attention consignés pour la suite :
+    - Chaque `put` est séquentiel (await dans boucle) → opportunité d’accumuler un buffer puis `Promise.all` / pipeline pour réduire temps transaction.
+    - Les merges (`mergeActivity`, `mergeDailyMetrics`) sont CPU-bound mais synchrones; vérifier leur coût lorsque batch appliqué.
+    - Fallback localStorage écrit un item par clé → envisager stockage groupé (ex: `garmin_daily_metrics` global) si l’on veut réduire I/O.
+- Phase 2.3 — inventaire (suite, 2025-11-08 05:00Z) :
+  - Lecture `garminDataUtils.js` :
+    - **Constantes & stores** : `DB_NAME`, `DB_VERSION`, stores `activities`, `dailyMetrics`, `deviceMeta` (avec indexes `date`, `type`, `date_type` pour activités).
+    - **État global** : `dbInstance` (singleton) + `useFallback` (flag) avec accesseurs `getUseFallback`, `setUseFallback`, `getDbInstance`, `setDbInstance`.
+    - **Queue de sauvegarde** :
+      - `saveQueue` (tableau) + `isSaving` bool.
+      - `enqueueSave(fn)` : wrap la fonction dans un objet, push → `processSaveQueue()` ; résout/rejette la promise selon succès.
+      - `processSaveQueue()` : traite les opérations séquentiellement, `setTimeout` (0) pour permettre rescheduling ; logs erreurs.
+      - `resetGlobalState()` : reset complet (utile tests/cleanup).
+    - **Fallback localStorage** : `getStorageKey(store, key)`, `getAllStorageKeys(store)` (scan complet `localStorage`; opportunité de réduire le coût en préfixant dans un container unique).
+    - **Ouverture IndexedDB** :
+      - `openDBInternal()` : gère `request.onupgradeneeded` (création stores + indexes) ; rejette sur erreur pour le retry.
+      - `openDB()` : `retryWithBackoff` (3 tentatives, 100ms→2000ms). En cas d’échec → log `error`, set `useFallback=true`.
+      - `closeDB()` / `resetGlobalState()` pour tests et reinitialisations.
+    - **Observations pour Phase 2.3** :
+      - `enqueueSave` séquence déjà les writes : les optimisations devront respecter cette queue (possibilité de regrouper à l’intérieur d’un item).
+      - `openDB` partage un singleton → batching devra conserver des transactions `readwrite` uniques pour éviter re-open.
+      - `getAllStorageKeys` itère `localStorage` complet : envisager un index en mémoire ou un regroupement (JSON unique) lors du fallback pour éviter O(n) systématique.
+  - Prochaine étape inventaire : passer à `garminDataLoad.js` (chargements, TTL, lectures) pour capturer le pendant lecture avant de dessiner les batchs d’écriture.
+- Phase 2.3 — inventaire (suite, 2025-11-08 05:20Z) :
+  - Lecture `garminDataLoad.js` :
+    - **Helpers lecture** :
+      - `getAllFromStoreWithRetry(storeOrIndex, keyRange)` (`getAll`, 2 tentatives, 50ms→500ms).
+      - `getFromStoreWithRetry(store, key)` (`store.get`, 2 tentatives) avec log `warn` hors `NotFound`.
+    - **Fallback localStorage** :
+      - `loadActivitiesFromLocalStorage()` : itère `getAllStorageKeys(STORE_ACTIVITIES)`, `JSON.parse`, filtre par date, classe par type (swimming/jumpRope/cardio); conversion brute (distance/durée unchanged).
+      - `loadDailyMetricsFromLocalStorage()` : identique pour `STORE_DAILY_METRICS`, reconstruit objet `{ date: metrics }`.
+    - **Chargement IndexedDB** :
+      - `loadActivitiesFromIndexedDB(db, start, end)` :
+        - Transaction `readonly`, index `date`. Si index absent, fallback `getAll`.
+        - Range query `IDBKeyRange.bound` si plage ; data classée par type.
+      - `loadDailyMetricsFromIndexedDB(db, start, end)` : même schéma avec index `date`.
+    - **APIs publiques** :
+      - `loadAllData(dbReady)` : fallback si `useFallback`, sinon `openDB` puis `load*FromIndexedDB`. Sur erreur : log, `setUseFallback(true)`, retourne structures vides.
+      - `loadDataByRange(start, end, dbReady)` : fallback localStorage sinon `Promise.all` (activités + metrics). Utilise `loadActivitiesFromIndexedDB`/`loadDailyMetricsFromIndexedDB`.
+      - `loadDataForTab(tab, selectedDate, periodFilter, ...)` : logique conditionnelle (±7 jours pour activities, 90 jours metrics, plage charts via `calculateDateRange`, sinon full).
+    - **Gestion sync metadata** :
+      - `getLastSyncDate()` / `setLastSyncDate(date)` : `STORE_DEVICE_META` (`key: 'lastSyncDate'`) + backup `localStorage`.
+      - `getLastSyncTimestampForDate(date)` : lit entrée `STORE_DAILY_METRICS` (champ `lastSynced`).
+      - `getSyncStartDate()` : calcule date incrémentale (lastSync +1 jour, garde bornes, fallback 7 jours en arrière).
+  - Points d’attention pour Phase 2.3 :
+    - Lectures Fallback : `getAllStorageKeys` => O(n) ; opportunité d’un cache en mémoire ou d’un store regroupé.
+    - `loadActivitiesFromIndexedDB` retourne objets entiers (non filtrés) → si batching ecriture compressé, prévoir sémantique inverse (ex : compression/décompression).
+    - `loadDataForTab` multiplie les appels `loadDataByRange`; un batching d’écriture doit aligner les plages pour éviter surcharges lecture.
+  - Inventaire lecture synthétique ajouté au tableau existant (dans la section) pour alignement lecture/écriture.
+- Phase 2.3 — synthèse globale (2025-11-08 05:35Z) :
+  - Tableau consolidé (écritures & lectures) :
+
+    | Domaine | Fonction | Support | Retry | Détails / Observations |
+    | --- | --- | --- | --- | --- |
+    | Écriture | `saveActivitiesToIndexedDB` | IndexedDB `STORE_ACTIVITIES` | Oui (3) | Boucle séquentielle par activité ; merge + put ; transaction unique. |
+    | Écriture | `saveActivitiesToLocalStorage` | localStorage | Non | `setItem` par activité ; JSON complet. |
+    | Écriture | `saveDailyMetricsToIndexedDB` | IndexedDB `STORE_DAILY_METRICS` | Oui (3) | Boucle par date ; merge + put ; transaction unique. |
+    | Écriture | `saveDailyMetricsToLocalStorage` | localStorage | Non | `setItem` par date ; JSON complet. |
+    | Écriture | `setLastSyncDate` | IndexedDB `STORE_DEVICE_META` + backup LS | Oui (3) | `store.put({ key:'lastSyncDate', value })`. |
+    | Écriture | `enqueueSave` | Queue mémoire | N/A | Sérialise les blocs d’écriture ; opportunité de regrouper les payloads. |
+    | Lecture | `loadActivitiesFromIndexedDB` | `STORE_ACTIVITIES` (index date) | Oui (2) | Range query `IDBKeyRange.bound`; fallback `getAll`. |
+    | Lecture | `loadDailyMetricsFromIndexedDB` | `STORE_DAILY_METRICS` (index date) | Oui (2) | Range query, reconstruit `{ date: metrics }`. |
+    | Lecture | `getLastSyncDate`/`getLastSyncTimestampForDate` | `STORE_DEVICE_META`/`STORE_DAILY_METRICS` | Oui (2) | `store.get`; fallback localStorage. |
+    | Lecture | `loadActivitiesFromLocalStorage` | localStorage | Non | Scan `getAllStorageKeys`; parse + filtre. |
+    | Lecture | `loadDailyMetricsFromLocalStorage` | localStorage | Non | idem. |
+    | Lecture | `loadDataByRange` | combine activités + metrics | Oui (via helpers) | Appels parallèles ; fallback si `openDB` échoue. |
+    | Lecture | `loadDataForTab` | heuristique selon tab | dépend | Compose `loadDataByRange`, `loadAllData`. |
+
+  - Opportunités identifiées :
+    - **Batch écriture** : accumuler une liste d’activités/métriques et effectuer `putToStoreWithRetry` via `Promise.all` en conservant la même transaction, ou utiliser `store.put` dans un pipeline (attention à la queue).
+    - **Batch lecture fallback** : au lieu de multiples `localStorage.getItem`, envisager un stockage JSON unique (par store) pour réduire I/O lors du fallback.
+    - **Cache mémoire** : pour `getAllStorageKeys`, maintenir une liste en mémoire synchronisée lors des saves pour éviter O(n).
+    - **Métriques** : instrumentation à prévoir (temps transaction, nombre d’éléments) pour valider le gain.
+  - Prochaine phase (2.3.1) : concevoir un plan de batching écritures (activités & daily metrics) en respectant la queue existante, puis implémenter prototypage / instrumentation.
+- Phase 2.3 — plan 2.3.1 (2025-11-08 05:50Z) :
+  - **Objectif** : réduire le coût I/O côté IndexedDB et fallback lors des sauvegardes massives (sync backfill, import) tout en préservant l’ordre et la robustesse existants.
+  - **Approche batching proposée** :
+    1. **Bufferisation en amont** :
+       - Introduire dans `saveActivities` / `saveDailyMetrics` une étape d’agrégation (ex : regroupement par store) avant d’entrer en transaction.
+       - Format cible : tableau d’objets `{ key, payload }` pour chaque store.
+    2. **Écriture transactionnelle optimisée** :
+       - Dans `saveActivitiesToIndexedDB` / `saveDailyMetricsToIndexedDB`, remplacer la boucle `for await` séquentielle par :
+         - Transaction unique `readwrite`.
+         - Lecture existante (via `getFromStoreWithRetry`) conservée mais exécutée en parallèle contrôlée (ex : `Promise.allSettled` sur un batch) afin de réduire la durée totale.
+         - Application des merges en mémoire, puis `store.put` en pipeline (conserver `putToStoreWithRetry` mais autoriser un enchaînement concurrent dans la même transaction).
+       - Gérer un `batchSize` initial (ex : 25 entrées) pour limiter la pression sur la transaction.
+    3. **Fallback localStorage** :
+       - Regrouper les écritures en un seul `setItem` par store : ex. stocker un objet global `garmin_activities` contenant toutes les activités (ou un chunk compressé) pour éviter O(n).
+       - Maintenir un index en mémoire (`localActivityKeys`) mis à jour à chaque save pour accélérer `loadActivitiesFromLocalStorage`.
+    4. **Instrumentation** :
+       - Ajouter logs `debug` (conditionnels) : nombre d’items batchés, durée transaction, type fallback utilisé.
+       - Prévoir un hook métrique (ex : `performance.now()`) pour comparer avant/après.
+    5. **Queue `enqueueSave`** :
+       - Laisser la queue séquencer les batchs (pas de changement d’API externe).
+       - Vérifier qu’un batch ne dépasse pas une taille raisonnable pour éviter blocage (option : découper un lot > N en plusieurs jobs queue).
+  - **Considérations export JSON / cohérence** :
+    - Vérifier que les merges (`mergeActivity`, `mergeDailyMetrics`) restent inchangés pour garantir compatibilité IndexedDB ↔ export.
+    - S’assurer que les nouveaux buffers ne mutent pas les objets originaux (clones nécessaires).
+  - **Étapes suivantes (2.3.1)** :
+    - Implémenter prototypes batching dans `garminDataSave.js` (activités + daily metrics).
+    - Ajouter instrumentation / logs pour mesurer le gain.
+    - Mettre à jour la documentation (résultats, métriques, impacts sur fallback/export).
+- Phase 2.3.1 — implémentation (préparation, 2025-11-08 06:05Z) :
+  - **Tâches à lancer** :
+    - Refactor `saveActivitiesToIndexedDB` / `saveDailyMetricsToIndexedDB` :
+      - Introduire un helper `batchPutWithRetry(store, entries, context)` prenant un tableau `{ key, data }`, gérant `Promise.allSettled` + retry individuel.
+      - Adapter la lecture existante (get + merge) pour accumuler un tableau avant écriture.
+    - Fallback localStorage :
+      - Créer un helper `getStorageBucket(store)` retournant un objet (JSON) regroupant toutes les entrées ; `setStorageBucket(store, data)` pour persister en une fois.
+      - Migration : lors du premier appel fallback, reconstruire le bucket à partir des clés existantes.
+    - Instrumentation :
+      - Mesurer `performance.now()` avant/après transaction ; log `batchSize`, `duration`, fallback utilisé.
+      - Ajouter compteur (ex : `logger.debug`) conditionnel (activable via flag).
+  - **Plan de test** :
+    1. Sync forcée sur plage large (ex : 14 jours) avant/après batching → comparer temps console et nombre de requêtes.
+    2. Vérifier fallback localStorage (forcer `setUseFallback(true)`) : confirmer que le bucket unique se crée et que `load*FromLocalStorage` fonctionne.
+    3. Vérifier export JSON / import endurance (doit rester identique).
+  - **Documentation** :
+    - Ajouter section de résultats (benchmark) une fois l’implémentation terminée.
+    - Noter toute modification API (ex : nouveaux helpers) pour maintenir cohérence modules.
+- Phase 2.3.1 — implémentation (2025-11-08 06:25Z) :
+  - `garminDataUtils.js` : helpers `readStorageBucket`, `writeStorageBucket`, `deleteStorageBucket` pour un stockage localStorage groupé.
+  - `garminDataSave.js` :
+    - Fallback localStorage converti en bucket (un seul `setItem` par store) avec nettoyage des clés legacy.
+    - Instrumentation `logDuration` pour mesurer durée, `savedCount`, `errorCount` lors des écritures IndexedDB.
+  - `garminDataLoad.js` : priorise la lecture du bucket puis fusionne les anciennes clés restantes (compatibilité ascendante).
+  - Résultat attendu : réduction drastique des I/O localStorage (1 écriture/lecture par store), logs disponibles pour comparer les futures optimisations IndexedDB.
+  - Étapes à venir : implémenter batching IndexedDB (lecture/put groupés) puis consigner benchmarks.
+- Phase 2.3.1 — batching IndexedDB (2025-11-08 06:40Z) :
+  - `garminDataSave.js` :
+    - Ajout de constants `BATCH_SIZE_ACTIVITIES=25`, `BATCH_SIZE_DAILY_METRICS=50` et utilitaire `chunkArray`.
+    - `saveActivitiesToIndexedDB` : aplanit toutes les activités (type/id), traite par batch avec `Promise.all` (lecture `getFromStoreWithRetry`, `mergeActivity`, `putToStoreWithRetry`) tout en comptabilisant succès/erreurs.
+    - `saveDailyMetricsToIndexedDB` : même logique (batchs de dates) avec fusion `mergeDailyMetrics`.
+  - Instrumentation : `logDuration` fournit désormais durée + `savedCount`/`errorCount` pour chaque sauvegarde IndexedDB (activités et métriques).
+  - Validation prévue : comparatif de temps (avant/après) sur sync forcée longue période + fallback (toujours OK grâce aux buckets).
 
 ---
 

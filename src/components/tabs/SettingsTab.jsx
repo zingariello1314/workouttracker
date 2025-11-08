@@ -13,6 +13,11 @@ import {
   validateBodyTrackingData 
 } from '../BodyTracking/utils/exportImport';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
+import {
+  createDefaultFormState,
+  createDefaultChallengeFormState
+} from '../../services/endurance/enduranceFormSchema';
+import { ENDURANCE_SCHEMA_VERSION } from '../../services/endurance/enduranceDataService';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
@@ -30,6 +35,62 @@ const SettingsTab = () => {
   const [allDataPreviewData, setAllDataPreviewData] = useState(null);
   const [cleanupStatus, setCleanupStatus] = useState(null);
   const fileInputRef = useRef(null);
+
+  const buildEnduranceExportStats = (enduranceData = {}) => {
+    const sessions = enduranceData.sessions || {};
+    const getList = (type) => (Array.isArray(sessions[type]) ? sessions[type] : []);
+
+    const perTypeCounts = {
+      boxing: getList('boxing').length,
+      pushups: getList('pushups').length,
+      swimming: getList('swimming').length,
+      jumprope: getList('jumprope').length,
+      running: getList('running').length
+    };
+
+    const totalSessions = Object.values(perTypeCounts).reduce((sum, count) => sum + count, 0);
+
+    const swimmingDetail = getList('swimming').reduce(
+      (acc, session) => {
+        if (Array.isArray(session?.laps) && session.laps.length > 0) acc.withLaps += 1;
+        if (session?.pace100m) acc.withPace100m += 1;
+        if (session?.heartRate !== undefined && session.heartRate !== null) acc.withHeartRate += 1;
+        if (session?.calories !== undefined && session.calories !== null) acc.withCalories += 1;
+        return acc;
+      },
+      { withLaps: 0, withPace100m: 0, withHeartRate: 0, withCalories: 0 }
+    );
+
+    const jumpropeDetail = getList('jumprope').reduce(
+      (acc, session) => {
+        if (session?.durationSec) acc.withDurationSec += 1;
+        if (session?.jumpsPerMin) acc.withJumpsPerMin += 1;
+        if (session?.hrMax || session?.hrAvg) acc.withHeartRate += 1;
+        return acc;
+      },
+      { withDurationSec: 0, withJumpsPerMin: 0, withHeartRate: 0 }
+    );
+
+    const challenges = Array.isArray(enduranceData.challenges) ? enduranceData.challenges : [];
+    const challengeStats = challenges.reduce(
+      (acc, challenge) => {
+        const status = challenge?.status || 'unknown';
+        acc.byStatus[status] = (acc.byStatus[status] || 0) + 1;
+        return acc;
+      },
+      { total: challenges.length, byStatus: {} }
+    );
+
+    return {
+      schemaVersion: enduranceData.schemaVersion || ENDURANCE_SCHEMA_VERSION,
+      lastUpdated: enduranceData.lastUpdated || null,
+      totalSessions,
+      perTypeCounts,
+      swimmingDetail,
+      jumpropeDetail,
+      challenges: challengeStats
+    };
+  };
 
   // Fonction pour exporter spécifiquement les données de suivi corporel (OPTIMISÉE)
   const exportBodyTrackingData = async () => {
@@ -120,13 +181,17 @@ const SettingsTab = () => {
           homepageLastUpdated: null, // Système indépendant
           
           // Données d'endurance
-          endurancePushupSessions: (dataToExport.enduranceData?.sessions?.pushups || dataToExport.enduranceData?.pushupSessions || []).length,
-          enduranceBoxingSessions: (dataToExport.enduranceData?.sessions?.boxing || dataToExport.enduranceData?.boxingSessions || []).length,
-          enduranceSwimmingSessions: (dataToExport.enduranceData?.sessions?.swimming || dataToExport.enduranceData?.swimmingSessions || []).length,
-          enduranceJumpropeSessions: (dataToExport.enduranceData?.sessions?.jumprope || dataToExport.enduranceData?.jumpropeSessions || []).length,
-          enduranceRunningSessions: (dataToExport.enduranceData?.sessions?.running || dataToExport.enduranceData?.runningSessions || []).length,
-          enduranceChallenges: (dataToExport.enduranceData?.challenges || []).length,
+          enduranceSummary: buildEnduranceExportStats(dataToExport.enduranceData || {}),
           enduranceLastUpdated: dataToExport.enduranceData?.lastUpdated || null,
+          enduranceSchemaVersion: dataToExport.enduranceData?.schemaVersion || ENDURANCE_SCHEMA_VERSION,
+          enduranceChallenges: (dataToExport.enduranceData?.challenges || []).length,
+          enduranceSessionsLegacyKeys: {
+            pushupSessions: Array.isArray(dataToExport.enduranceData?.pushupSessions) ? dataToExport.enduranceData.pushupSessions.length : 0,
+            boxingSessions: Array.isArray(dataToExport.enduranceData?.boxingSessions) ? dataToExport.enduranceData.boxingSessions.length : 0,
+            swimmingSessions: Array.isArray(dataToExport.enduranceData?.swimmingSessions) ? dataToExport.enduranceData.swimmingSessions.length : 0,
+            jumpropeSessions: Array.isArray(dataToExport.enduranceData?.jumpropeSessions) ? dataToExport.enduranceData.jumpropeSessions.length : 0,
+            runningSessions: Array.isArray(dataToExport.enduranceData?.runningSessions) ? dataToExport.enduranceData.runningSessions.length : 0
+          },
           
           // Configuration et historique
           startDate: dataToExport.startDate,
