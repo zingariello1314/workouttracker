@@ -56,3 +56,59 @@ export function areChartPropsEqual(prevProps, nextProps) {
   );
 }
 
+/**
+ * Compare deux tableaux de manière shallow (ordre strict)
+ */
+export function shallowArrayEqual(a = [], b = []) {
+  if (a === b) return true;
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * Comparateur pour les props de GarminDailyMetrics
+ */
+export function areDailyMetricsPropsEqual(prevProps, nextProps) {
+  const sameDateKeys =
+    prevProps.dateKeys === nextProps.dateKeys ||
+    shallowArrayEqual(prevProps.dateKeys, nextProps.dateKeys);
+
+  return (
+    prevProps.selectedDate === nextProps.selectedDate &&
+    prevProps.comparisonMode === nextProps.comparisonMode &&
+    prevProps.compareDate === nextProps.compareDate &&
+    prevProps.setSelectedDate === nextProps.setSelectedDate &&
+    sameDateKeys &&
+    compareFilteredDailyMetrics(prevProps.dailyMetrics, nextProps.dailyMetrics)
+  );
+}
+
+/**
+ * Comparateur pour les props de TimeNavigation
+ */
+export function areTimeNavigationPropsEqual(prevProps, nextProps) {
+  const sameDateKeys =
+    prevProps.dateKeys === nextProps.dateKeys ||
+    shallowArrayEqual(prevProps.dateKeys, nextProps.dateKeys);
+
+  return (
+    prevProps.selectedDate === nextProps.selectedDate &&
+    prevProps.comparisonMode === nextProps.comparisonMode &&
+    prevProps.compareDate === nextProps.compareDate &&
+    prevProps.periodFilter === nextProps.periodFilter &&
+    prevProps.customStartDate === nextProps.customStartDate &&
+    prevProps.customEndDate === nextProps.customEndDate &&
+    sameDateKeys &&
+    prevProps.setSelectedDate === nextProps.setSelectedDate &&
+    prevProps.setComparisonMode === nextProps.setComparisonMode &&
+    prevProps.setCompareDate === nextProps.setCompareDate &&
+    prevProps.setPeriodFilter === nextProps.setPeriodFilter &&
+    prevProps.setCustomStartDate === nextProps.setCustomStartDate &&
+    prevProps.setCustomEndDate === nextProps.setCustomEndDate
+  );
+}
+

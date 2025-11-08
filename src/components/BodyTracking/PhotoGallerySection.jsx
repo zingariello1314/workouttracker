@@ -288,7 +288,7 @@ const PhotoGallerySection = () => {
                 `Photo compressée (${format.toUpperCase()}): ${originalSizeKB.toFixed(1)}KB → ${totalSizeKB.toFixed(1)}KB (-${reduction}%)`
               );
             }
-
+            
             log.info(`Validation multi-résolution réussie: ${validation.validResolutions}/${validation.totalResolutions} résolutions valides`);
             
             // ✅ OPTIMISATION: Créer l'entrée photo avec structure multi-résolution validée
@@ -361,13 +361,13 @@ const PhotoGallerySection = () => {
               if (result.success) {
                 // ✅ PHASE 1.3 : Enrichir photo avec résultats et sauvegarder
                 const analysisData = {
-                  analyzed: true,
-                  analyzedAt: new Date().toISOString(),
-                  metrics: result.metrics,
-                  poseDetection: result.poseDetection,
-                  segmentation: result.segmentation,
-                  preprocessing: result.preprocessing,
-                  summary: result.summary
+                    analyzed: true,
+                    analyzedAt: new Date().toISOString(),
+                    metrics: result.metrics,
+                    poseDetection: result.poseDetection,
+                    segmentation: result.segmentation,
+                    preprocessing: result.preprocessing,
+                    summary: result.summary
                 };
                 
                 // ✅ Sauvegarder résultats analyse dans IndexedDB
@@ -437,7 +437,7 @@ const PhotoGallerySection = () => {
                     message: feedback.message + ' (réessayé avec succès)'
                   });
                 } else {
-                  showWarning(feedback.message, feedback);
+              showWarning(feedback.message, feedback);
                 }
               });
             } finally {
@@ -466,7 +466,7 @@ const PhotoGallerySection = () => {
             } else {
               showError(feedback.title || 'Erreur lors de la sauvegarde', feedback);
             }
-          });
+    });
       }
     });
   };
@@ -482,15 +482,15 @@ const PhotoGallerySection = () => {
 
   // ✅ PHASE 2.4 : Fonction navigation unifiée (plus besoin de logique conditionnelle)
   const handlePageChange = useCallback((newPage) => {
-    goToPage(newPage);
+      goToPage(newPage);
   }, [goToPage]);
 
   const goToNextPageOptimized = useCallback(() => {
-    goToNextPage();
+      goToNextPage();
   }, [goToNextPage]);
 
   const goToPrevPageOptimized = useCallback(() => {
-    goToPrevPage();
+      goToPrevPage();
   }, [goToPrevPage]);
 
   // ✅ PHASE 2.4 : Valeurs pagination finales (déjà calculées par hook unifié)
@@ -586,13 +586,13 @@ const PhotoGallerySection = () => {
       if (result.success) {
         // ✅ PHASE 1.3 : Enrichir photo avec métadonnées analyse et sauvegarder
         const analysisData = {
-          analyzed: true,
-          analyzedAt: new Date().toISOString(),
-          metrics: result.metrics,
-          poseDetection: result.poseDetection,
-          segmentation: result.segmentation,
-          preprocessing: result.preprocessing,
-          summary: result.summary
+            analyzed: true,
+            analyzedAt: new Date().toISOString(),
+            metrics: result.metrics,
+            poseDetection: result.poseDetection,
+            segmentation: result.segmentation,
+            preprocessing: result.preprocessing,
+            summary: result.summary
         };
 
         // ✅ Sauvegarder résultats analyse dans IndexedDB
@@ -1175,14 +1175,14 @@ const PhotoGallerySection = () => {
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-slate-200">
                       {uploadProgress.message || 'Compression en cours...'}
-                    </span>
+                  </span>
                     {uploadProgress.currentResolution && (
                       <span className="text-xs text-slate-400 mt-0.5">
                         Résolution: {uploadProgress.currentResolution}
                       </span>
                     )}
-                  </div>
                 </div>
+              </div>
                 <div className="flex flex-col items-end">
                   <span className="text-sm font-semibold text-blue-400">
                     {uploadProgress.progress.toFixed(0)}%
@@ -1222,19 +1222,19 @@ const PhotoGallerySection = () => {
               // ✅ MODE VIRTUALISÉ: Pour grandes collections (>50 photos)
               // ✅ PHASE 1.6 : ErrorBoundary pour fallback gracieux si react-window absent ou erreur
               <BodyTrackingErrorBoundary>
-                <VirtualizedPhotoGrid
-                  photos={sortedPhotos} // Utiliser toutes photos triées (virtualisation gère l'affichage)
-                  columns={4} // Responsive: sera adapté automatiquement selon viewport
-                  itemWidth={200}
-                  itemHeight={266} // 3:4 aspect ratio
-                  onPhotoSelect={handlePhotoSelect}
-                  selectedPhotos={selectedPhotos}
-                  getAngleIcon={getAngleIcon}
-                  getAngleLabel={getAngleLabel}
-                  openModal={openModal}
-                  sortedPhotos={sortedPhotos}
-                  containerHeight={600}
-                />
+              <VirtualizedPhotoGrid
+                photos={sortedPhotos} // Utiliser toutes photos triées (virtualisation gère l'affichage)
+                columns={4} // Responsive: sera adapté automatiquement selon viewport
+                itemWidth={200}
+                itemHeight={266} // 3:4 aspect ratio
+                onPhotoSelect={handlePhotoSelect}
+                selectedPhotos={selectedPhotos}
+                getAngleIcon={getAngleIcon}
+                getAngleLabel={getAngleLabel}
+                openModal={openModal}
+                sortedPhotos={sortedPhotos}
+                containerHeight={600}
+              />
               </BodyTrackingErrorBoundary>
             ) : (
               // ✅ PHASE 2.4 : MODE PAGINÉ: Utilise sortedPhotos (déjà paginées par hook unifié)

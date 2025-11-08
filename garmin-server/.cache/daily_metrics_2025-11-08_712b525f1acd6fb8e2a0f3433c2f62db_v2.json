@@ -1,0 +1,372 @@
+{
+  "steps": 446,
+  "distance": 0.369,
+  "floors": 0,
+  "calories": {
+    "total": 292,
+    "active": 129,
+    "resting": 163
+  },
+  "heartRate": {
+    "resting": 60,
+    "max": 121,
+    "avg": 96,
+    "timeSeries": [
+      {
+        "timestamp": "2025-11-07T23:00:00Z",
+        "bpm": 97
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 17
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -14
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 14
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -11
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -13
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 11
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -11
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 8
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      }
+    ]
+  },
+  "respiration": {
+    "awake": {
+      "min": 11,
+      "max": 15,
+      "avg": 13.0
+    },
+    "sleep": {
+      "min": 11,
+      "max": 15,
+      "avg": null
+    }
+  },
+  "intensityMinutes": null,
+  "bodyBattery": {
+    "current": 21,
+    "timeSeries": [
+      {
+        "timestamp": "2025-11-07T23:00:00Z",
+        "value": 31
+      },
+      {
+        "timestamp": "2025-11-07T23:24:00Z",
+        "value": 28
+      },
+      {
+        "timestamp": "2025-11-07T23:42:00Z",
+        "value": 28
+      },
+      {
+        "timestamp": "2025-11-08T00:15:00Z",
+        "value": 25
+      },
+      {
+        "timestamp": "2025-11-08T00:24:00Z",
+        "value": 25
+      },
+      {
+        "timestamp": "2025-11-08T00:57:00Z",
+        "value": 21
+      }
+    ]
+  },
+  "stress": {
+    "average": 76,
+    "max": 99,
+    "timeSeries": []
+  },
+  "spo2": null,
+  "heartRateZones": {
+    "zone1": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone2": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone3": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone4": {
+      "time": 1,
+      "percentage": 100.0
+    },
+    "zone5": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "total": 1,
+    "zonesDefinition": {
+      "zone1": {
+        "min": 0,
+        "max": 72,
+        "name": "Zone 1 - \u00c9chauffement"
+      },
+      "zone2": {
+        "min": 72,
+        "max": 84,
+        "name": "Zone 2 - Br\u00fblage graisses"
+      },
+      "zone3": {
+        "min": 84,
+        "max": 96,
+        "name": "Zone 3 - A\u00e9robie"
+      },
+      "zone4": {
+        "min": 96,
+        "max": 108,
+        "name": "Zone 4 - Seuil"
+      },
+      "zone5": {
+        "min": 108,
+        "max": 121,
+        "name": "Zone 5 - Maximale"
+      }
+    },
+    "calculatedFromTimeSeries": true
+  },
+  "sleep": {
+    "duration": 0,
+    "quality": 0,
+    "deepSleep": null,
+    "lightSleep": null,
+    "remSleep": null,
+    "bedTime": null,
+    "wakeTime": null,
+    "awakenings": null,
+    "movements": null,
+    "phasesDetails": null
+  },
+  "date": "2025-11-08",
+  "_cached_at": 1762566627.2843227,
+  "_cache_version": 2,
+  "_raw_data_hash": "712b525f1acd6fb8e2a0f3433c2f62db"
+}

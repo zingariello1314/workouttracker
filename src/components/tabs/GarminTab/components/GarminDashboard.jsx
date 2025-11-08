@@ -238,14 +238,6 @@ export default function GarminDashboard({
     const numericValue = extractNumeric(value);
     const numericCompareValue = compareValue !== null ? extractNumeric(compareValue) : null;
     
-    // 🔴 FIX : Pour les strings (comme formatDistance), ne pas utiliser extractNumeric
-    let displayValue;
-    if (typeof value === 'string') {
-      displayValue = value;
-    } else {
-      displayValue = numericValue;
-    }
-    
     const diff = numericCompareValue !== null 
       ? numericValue - numericCompareValue 
       : null;
@@ -283,7 +275,12 @@ export default function GarminDashboard({
             <h4 className="text-slate-300 font-medium mb-3 text-sm">{displayDate}</h4>
             <div className="grid grid-cols-2 gap-3">
               {renderMetricCard('Pas', extractNumeric(d.steps), 'blue', extractNumeric(compareData?.steps))}
-              {renderMetricCard('Distance', formatDistance(extractNumeric(d.distance)), 'blue', formatDistance(extractNumeric(compareData?.distance)))}
+              {renderMetricCard(
+                'Distance',
+                d.distance != null && d.distance !== undefined ? formatDistance(d.distance) : '—',
+                'blue',
+                compareData?.distance != null && compareData.distance !== undefined ? formatDistance(compareData.distance) : '—'
+              )}
               {renderMetricCard('Calories', extractNumeric(calories.total), 'orange', extractNumeric(compareCalories.total))}
               {renderMetricCard('FC Repos', extractNumeric(hr.resting), 'red', extractNumeric(compareHR.resting))}
             </div>
@@ -293,7 +290,11 @@ export default function GarminDashboard({
             <h4 className="text-slate-300 font-medium mb-3 text-sm">{compareDate}</h4>
             <div className="grid grid-cols-2 gap-3">
               {renderMetricCard('Pas', extractNumeric(compareData?.steps), 'blue')}
-              {renderMetricCard('Distance', formatDistance(extractNumeric(compareData?.distance)), 'blue')}
+              {renderMetricCard(
+                'Distance',
+                compareData?.distance != null && compareData.distance !== undefined ? formatDistance(compareData.distance) : '—',
+                'blue'
+              )}
               {renderMetricCard('Calories', extractNumeric(compareCalories.total), 'orange')}
               {renderMetricCard('FC Repos', extractNumeric(compareHR.resting), 'red')}
             </div>
@@ -308,7 +309,9 @@ export default function GarminDashboard({
         <div className="bg-gradient-to-br from-blue-800/60 to-blue-900/60 border border-blue-700 rounded-lg p-4">
           <div className="text-blue-300 text-xs mb-1">Pas</div>
           <div className="text-white text-2xl font-bold">{extractNumeric(d.steps)}</div>
-          <div className="text-blue-400 text-xs mt-2">Distance: {formatDistance(extractNumeric(d.distance))}</div>
+        <div className="text-blue-400 text-xs mt-2">
+          Distance: {d.distance != null && d.distance !== undefined ? formatDistance(d.distance) : '—'}
+        </div>
         </div>
 
         {/* Carte Calories */}

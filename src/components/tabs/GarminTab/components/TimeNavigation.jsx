@@ -1,6 +1,7 @@
 import React, { useRef, useCallback, useTransition } from 'react';
 import { useThrottle } from '../../../../hooks/useThrottle';
 import { DEBOUNCE_DELAY_MS, DATE_RANGE, ARIA_LABELS, KEYBOARD } from '../constants';
+import { areTimeNavigationPropsEqual } from '../../../../utils/chartComparison';
 
 /**
  * 🟡 FIX #17 : Composant de navigation temporelle avancée avec optimisations
@@ -9,7 +10,7 @@ import { DEBOUNCE_DELAY_MS, DATE_RANGE, ARIA_LABELS, KEYBOARD } from '../constan
  * - Debouncing pour sélecteur de date (300ms)
  * - Mémorisation des calculs de dates
  */
-export default function TimeNavigation({
+function TimeNavigation({
   selectedDate,
   setSelectedDate,
   dateKeys,
@@ -472,4 +473,6 @@ export default function TimeNavigation({
     </div>
   );
 }
+
+export default React.memo(TimeNavigation, areTimeNavigationPropsEqual);
 

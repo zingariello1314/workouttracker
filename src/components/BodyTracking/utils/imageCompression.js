@@ -375,11 +375,11 @@ export const compressImageMultiResolution = async (input, options = {}, onProgre
     try {
         // ✅ PHASE 4.2 : Étape 1: Détection support WebP (10% progression)
         if (onProgress) onProgress(10, 'Détection format optimal...');
+      
+      checkWebPSupport().then(supportsWebP => {
+        const format = supportsWebP ? 'webp' : 'jpeg';
+        log.debug(`Format détecté: ${format}`);
         
-        checkWebPSupport().then(supportsWebP => {
-          const format = supportsWebP ? 'webp' : 'jpeg';
-          log.debug(`Format détecté: ${format}`);
-          
           // ✅ PHASE 4.2 : Étape 2: Charger l'image (20% progression)
           const originalSize = input instanceof File ? input.size : getBase64Size(input);
           const originalSizeKB = bytesToKB(originalSize);

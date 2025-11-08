@@ -1,7 +1,10 @@
 /**
  * 🔴 FIX #24: Utilitaires pour décompresser les time series côté frontend
  * Gère la décompression delta encoding si nécessaire
+ * ✅ PHASE 1.4 : Optimisé avec cache LRU pour éviter décompressions redondantes
  */
+
+import { getDecompressed } from './garminTimeSeriesCache';
 
 /**
  * Décompresse une time series compressée avec delta encoding
@@ -108,13 +111,20 @@ export function decompressTimeSeriesDelta(compressed) {
 
 /**
  * Prépare une time series pour affichage (décompresse si nécessaire)
+ * 
+ * ✅ PHASE 1.4 : Utilise le cache pour éviter décompressions redondantes
+ * 
  * @param {Array} timeSeries - Time series (peut être compressée ou non)
+ * @param {Object} options - Options
+ * @param {boolean} options.useCache - Utiliser le cache (défaut: true)
  * @returns {Array} Time series prête pour affichage
  */
-export function prepareTimeSeriesForDisplay(timeSeries) {
+export function prepareTimeSeriesForDisplay(timeSeries, options = {}) {
   if (!timeSeries || !Array.isArray(timeSeries) || timeSeries.length === 0) {
     return [];
   }
+
+  const { useCache = true } = options;
 
   // Vérifier si compressée (si le 2e élément a d_ts et d_val)
   const isCompressed = timeSeries.length > 1 && 
@@ -122,7 +132,12 @@ export function prepareTimeSeriesForDisplay(timeSeries) {
                        (timeSeries[1].d_ts !== undefined || timeSeries[1].d_val !== undefined);
 
   if (isCompressed) {
-    return decompressTimeSeriesDelta(timeSeries);
+    // Utiliser le cache si activé
+    if (useCache) {
+      return getDecompressed(timeSeries, decompressTimeSeriesDelta);
+    } else {
+      return decompressTimeSeriesDelta(timeSeries);
+    }
   }
 
   return timeSeries;
@@ -197,10 +212,16 @@ export function enrichHeartRateTimeSeriesForVisualization(timeSeries, options = 
     { zone: 'zone5', min: 0.90, max: 1.0, name: 'Zone 5 - Maximale', color: '#DC2626' } // 90-100%
   ];
 
-  // 🔴 FIX : Décompresser d'abord si nécessaire (double vérification)
+  // ✅ PHASE 1.4 : Décompresser d'abord si nécessaire (utilise cache)
+  const { useCache = true } = options;
   let processedTimeSeries = timeSeries;
   if (timeSeries.length > 1 && timeSeries[1] && (timeSeries[1].d_ts !== undefined || timeSeries[1].d_val !== undefined)) {
-    processedTimeSeries = decompressTimeSeriesDelta(timeSeries);
+    // Utiliser le cache si activé
+    if (useCache) {
+      processedTimeSeries = getDecompressed(timeSeries, decompressTimeSeriesDelta);
+    } else {
+      processedTimeSeries = decompressTimeSeriesDelta(timeSeries);
+    }
   }
   
   // Trier et nettoyer les données

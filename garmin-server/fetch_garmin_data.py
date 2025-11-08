@@ -606,6 +606,9 @@ if EMAIL and PASSWORD:
                 "stress": None,
                 "spo2": None
             }
+            # Variables de contrôle initialisées par défaut pour éviter tout accès avant affectation
+            should_skip_api_calls = False
+            cached_daily_before_api = None
             
             try:
                 # 🔴 FIX #38: Activités - Récupérer liste de base avec retry automatique
@@ -874,8 +877,6 @@ if EMAIL and PASSWORD:
             # ✅ PHASE 3.1 : Vérifier cache parsé avant appels API si lastSyncTimestamp récent
             if d_str == current_date:
                 # ✅ PHASE 3.1 : Si lastSyncTimestamp < 5 minutes, vérifier cache parsé AVANT les appels API
-                should_skip_api_calls = False
-                cached_daily_before_api = None
                 
                 if last_sync_timestamp_for_date:
                     try:
@@ -1101,6 +1102,26 @@ if EMAIL and PASSWORD:
                     print_debug(f"❌ Error fetching metrics for {d_str}: {e}")
                     steps_data = stats = hr_day = sleep = None
                     body_battery_data = stress_data = spo2_data = respiration_data = intensity_data = None
+
+            # Normaliser les structures potentiellement None pour éviter les TypeError (len(None), attributs manquants, etc.)
+            if steps_data is None:
+                steps_data = {}
+            if stats is None:
+                stats = {}
+            if hr_day is None:
+                hr_day = {}
+            if sleep is None:
+                sleep = {}
+            if body_battery_data is None:
+                body_battery_data = {}
+            if stress_data is None:
+                stress_data = {}
+            if spo2_data is None:
+                spo2_data = {}
+            if respiration_data is None:
+                respiration_data = {}
+            if intensity_data is None:
+                intensity_data = {}
             
             # 🟢 OPTIMISATION : Vérifier le cache avant de parser les métriques quotidiennes
             raw_data_hash = get_raw_data_hash(
@@ -1512,18 +1533,23 @@ if EMAIL and PASSWORD:
                             daily_dict[result["date"]] = result["daily"]
                     except Exception as e:
                         print_debug(f"❌ ERROR processing day {d_str}: {e}")
+                        raise
         else:
             # Pas de parallélisation si 1 seul jour ou workers insuffisants
             for d_str in dates_to_process:
-                # ✅ PHASE 2.5 : Passer lastSyncTimestamp uniquement pour le jour en cours
-                result = process_day(
-                    d_str, 
-                    last_sync_timestamp_for_today if d_str == current_date else None
-                )
-                swim_list.extend(result["swim"])
-                jump_list.extend(result["jump"])
-                cardio_list.extend(result["cardio"])
-                daily_dict[result["date"]] = result["daily"]
+                try:
+                    # ✅ PHASE 2.5 : Passer lastSyncTimestamp uniquement pour le jour en cours
+                    result = process_day(
+                        d_str, 
+                        last_sync_timestamp_for_today if d_str == current_date else None
+                    )
+                    swim_list.extend(result["swim"])
+                    jump_list.extend(result["jump"])
+                    cardio_list.extend(result["cardio"])
+                    daily_dict[result["date"]] = result["daily"]
+                except Exception as e:
+                    print_debug(f"❌ ERROR processing day {d_str}: {e}")
+                    raise
         
         # Finaliser les données pour le JSON de sortie
         payload = {

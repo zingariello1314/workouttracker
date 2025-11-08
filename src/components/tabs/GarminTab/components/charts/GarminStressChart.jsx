@@ -68,39 +68,41 @@ function GarminStressChart({ dailyMetrics, selectedDate, periodFilter, customSta
     );
   }
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const value = payload[0].value;
-      let stressLevel = 'Faible';
-      let color = colors?.green || '#10B981';
-      if (value > 75) {
-        stressLevel = 'Très élevé';
-        color = colors?.red || '#EF4444';
-      } else if (value > 50) {
-        stressLevel = 'Élevé';
-        color = colors?.orange || '#F59E0B';
-      } else if (value > 25) {
-        stressLevel = 'Modéré';
-        color = colors?.yellow || '#FCD34D';
-      }
-      
-      return (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-semibold mb-2">{label}</p>
-          <p className="text-sm" style={{ color }}>
-            {`Stress: ${value}`}
-          </p>
-          <div className="mt-2 text-xs text-slate-400">
-            Niveau: {stressLevel}
-          </div>
-        </div>
-      );
+  const renderTooltip = React.useCallback(({ active, payload, label }) => {
+    if (!active || !payload || payload.length === 0) {
+      return null;
     }
-    return null;
-  };
+    const value = payload[0].value;
+    let stressLevel = 'Faible';
+    let color = colors?.green || '#10B981';
+    if (value > 75) {
+      stressLevel = 'Très élevé';
+      color = colors?.red || '#EF4444';
+    } else if (value > 50) {
+      stressLevel = 'Élevé';
+      color = colors?.orange || '#F59E0B';
+    } else if (value > 25) {
+      stressLevel = 'Modéré';
+      color = colors?.yellow || '#FCD34D';
+    }
+
+    return (
+      <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
+        <p className="text-white font-semibold mb-2">{label}</p>
+        <p className="text-sm" style={{ color }}>
+          {`Stress: ${value}`}
+        </p>
+        <div className="mt-2 text-xs text-slate-400">
+          Niveau: {stressLevel}
+        </div>
+      </div>
+    );
+  }, [colors]);
 
   // 🔴 FIX #39: ARIA labels pour accessibilité
-  const chartDescription = `Graphique montrant l'évolution du niveau de stress sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s). Valeur moyenne: ${Math.round(avgValue)}/100.`;
+  const chartDescription = React.useMemo(() => (
+    `Graphique montrant l'évolution du niveau de stress sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s). Valeur moyenne: ${Math.round(avgValue)}/100.`
+  ), [chartData.length, avgValue]);
   
   return (
     <div 
@@ -163,7 +165,7 @@ function GarminStressChart({ dailyMetrics, selectedDate, periodFilter, customSta
               domain={[0, 100]}
               label={{ value: 'Stress', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF' } }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={renderTooltip} />
             <Legend />
             {effectiveSelectedDate && chartData.some(d => d.date === effectiveSelectedDate) && (
               <ReferenceLine

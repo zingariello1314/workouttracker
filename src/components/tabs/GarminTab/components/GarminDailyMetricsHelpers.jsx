@@ -45,7 +45,11 @@ export function renderMetricsGrid(metrics) {
       </div>
       <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
         <div className="text-slate-400 text-xs">Distance</div>
-        <div className="text-white text-lg">{formatDistance(extractNumeric(metrics.distance))}</div>
+        <div className="text-white text-lg">
+          {metrics.distance != null && metrics.distance !== undefined
+            ? formatDistance(metrics.distance)
+            : '—'}
+        </div>
       </div>
       <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
         <div className="text-slate-400 text-xs">Calories totales</div>

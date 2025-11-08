@@ -28,14 +28,15 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
     
     const rawTimeSeries = dayMetrics?.heartRate?.timeSeries || [];
     
-    // 🔴 FIX : Décompresser la time series si elle est compressée (delta encoding)
-    const timeSeries = prepareTimeSeriesForDisplay(rawTimeSeries);
+    // ✅ PHASE 1.4 : Décompresser avec cache (évite décompressions redondantes)
+    // Note: prepareTimeSeriesForDisplay utilise maintenant le cache automatiquement
+    const timeSeries = prepareTimeSeriesForDisplay(rawTimeSeries, { useCache: true });
     
     // 🔴 DEBUG : Logger pour diagnostiquer la décompression et valider les données
     if (rawTimeSeries.length > 0) {
       const isCompressed = rawTimeSeries.length > 1 && rawTimeSeries[1] && (rawTimeSeries[1].d_ts !== undefined || rawTimeSeries[1].d_val !== undefined);
       if (isCompressed) {
-        console.log(`[GarminHeartRateTimeSeriesChart] ${selectedDate}: ${rawTimeSeries.length} points compressés → ${timeSeries.length} points décompressés`);
+        console.log(`[GarminHeartRateTimeSeriesChart] ${selectedDate}: ${rawTimeSeries.length} points compressés → ${timeSeries.length} points décompressés (cache activé)`);
         
         // 🔴 VALIDATION : Logger les premiers et derniers points pour comparaison avec Garmin Connect
         if (timeSeries.length > 0) {
@@ -374,61 +375,59 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
   }
 
   // 🟢 PRIORITÉ 3 - TÂCHE 2 : Tooltip enrichi avec zone FC et statistiques
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const dataPoint = payload[0];
-      const bpm = dataPoint?.value;
-      
-      // Déterminer la zone FC pour ce point
-      let zoneInfo = null;
-      if (bpm && enrichedData?.metadata?.zoneThresholds) {
-        const effectiveMaxHR = enrichedData.metadata.effectiveMaxHR;
-        const hrPercentage = bpm / effectiveMaxHR;
-        
-        for (const zone of enrichedData.metadata.zoneThresholds) {
-          const zoneMin = zone.minBpm / effectiveMaxHR;
-          const zoneMax = zone.maxBpm / effectiveMaxHR;
-          if (hrPercentage >= zoneMin && hrPercentage < zoneMax) {
-            zoneInfo = zone;
-            break;
-          }
-        }
-        // Zone 5 inclut 100%
-        if (!zoneInfo && hrPercentage >= 0.90) {
-          zoneInfo = enrichedData.metadata.zoneThresholds[4];
+  const renderTooltip = React.useCallback(({ active, payload, label }) => {
+    if (!active || !payload || payload.length === 0) {
+      return null;
+    }
+    const dataPoint = payload[0];
+    const bpm = dataPoint?.value;
+
+    let zoneInfo = null;
+    if (bpm && enrichedData?.metadata?.zoneThresholds) {
+      const effectiveMaxHR = enrichedData.metadata.effectiveMaxHR;
+      const hrPercentage = bpm / effectiveMaxHR;
+
+      for (const zone of enrichedData.metadata.zoneThresholds) {
+        const zoneMin = zone.minBpm / effectiveMaxHR;
+        const zoneMax = zone.maxBpm / effectiveMaxHR;
+        if (hrPercentage >= zoneMin && hrPercentage < zoneMax) {
+          zoneInfo = zone;
+          break;
         }
       }
-      
-      return (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg min-w-[200px]">
-          <p className="text-white font-semibold mb-2">{label}</p>
-          <div className="space-y-1">
-            <p className="text-sm font-medium" style={{ color: dataPoint?.color || '#EF4444' }}>
-              {`FC: ${bpm} bpm`}
-            </p>
-            {zoneInfo && (
-              <div className="pt-1 border-t border-slate-700">
-                <p className="text-xs text-slate-400">Zone FC</p>
-                <p className="text-sm font-medium" style={{ color: zoneInfo.color }}>
-                  {zoneInfo.name}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {zoneInfo.minBpm}-{zoneInfo.maxBpm} bpm
-                </p>
-              </div>
-            )}
-            {enrichedData?.stats && (
-              <div className="pt-1 border-t border-slate-700">
-                <p className="text-xs text-slate-400">Moyenne: {enrichedData.stats.avg} bpm</p>
-                <p className="text-xs text-slate-400">Points: {enrichedData.stats.totalPoints}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      );
+      if (!zoneInfo && hrPercentage >= 0.90) {
+        zoneInfo = enrichedData.metadata.zoneThresholds[4];
+      }
     }
-    return null;
-  };
+
+    return (
+      <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg min-w-[200px]">
+        <p className="text-white font-semibold mb-2">{label}</p>
+        <div className="space-y-1">
+          <p className="text-sm font-medium" style={{ color: dataPoint?.color || '#EF4444' }}>
+            {`FC: ${bpm} bpm`}
+          </p>
+          {zoneInfo && (
+            <div className="pt-1 border-t border-slate-700">
+              <p className="text-xs text-slate-400">Zone FC</p>
+              <p className="text-sm font-medium" style={{ color: zoneInfo.color }}>
+                {zoneInfo.name}
+              </p>
+              <p className="text-xs text-slate-500">
+                {zoneInfo.minBpm}-{zoneInfo.maxBpm} bpm
+              </p>
+            </div>
+          )}
+          {enrichedData?.stats && (
+            <div className="pt-1 border-t border-slate-700">
+              <p className="text-xs text-slate-400">Moyenne: {enrichedData.stats.avg} bpm</p>
+              <p className="text-xs text-slate-400">Points: {enrichedData.stats.totalPoints}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }, [enrichedData]);
 
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 pb-12">
@@ -547,33 +546,7 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
             })} */}
             {/* ✅ PHASE 2.1 : Zones sans données (gaps) - vert clair comme Garmin Connect */}
             {/* 🔴 FIX : Protection contre gapAreas undefined */}
-            {gapAreas && Array.isArray(gapAreas) && gapAreas.length > 0 && gapAreas.map((gap, idx) => {
-              // Utiliser x1 et x2 basés sur le time string pour compatibilité avec XAxis
-              // Recharts utilisera les valeurs de time pour positionner les ReferenceArea
-              return (
-                <ReferenceArea
-                  key={`gap-${idx}-${gap.type}`}
-                  x1={gap.x1}
-                  x2={gap.x2}
-                  y1={minBpm}
-                  y2={maxBpm}
-                  fill="url(#gapGradient)"
-                  stroke="#86EFAC"
-                  strokeWidth={1}
-                  strokeOpacity={0.4}
-                  strokeDasharray="4 4"
-                  ifOverflow="extendDomain"
-                  label={{
-                    value: "Pas de données",
-                    position: "inside",
-                    fill: "#86EFAC",
-                    fontSize: 10,
-                    fontWeight: 500,
-                    opacity: 0.7
-                  }}
-                />
-              );
-            })}
+            {/* Suppression des zones vertes en cas de gaps pour éviter la pollution visuelle */}
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
             <XAxis
               dataKey="time"
@@ -590,7 +563,7 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
               stroke="#9CA3AF"
               label={{ value: 'bpm', angle: -90, position: 'left', style: { fill: '#9CA3AF', textAnchor: 'middle' } }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={renderTooltip} />
             <Legend />
             <Area
               type={enrichedData?.hasEnoughDataForCurve ? "monotone" : "linear"}

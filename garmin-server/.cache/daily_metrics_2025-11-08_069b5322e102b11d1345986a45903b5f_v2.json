@@ -1,0 +1,560 @@
+{
+  "steps": 522,
+  "distance": 0.429,
+  "floors": 0,
+  "calories": {
+    "total": 432,
+    "active": 140,
+    "resting": 292
+  },
+  "heartRate": {
+    "resting": 60,
+    "max": 121,
+    "avg": 92,
+    "timeSeries": [
+      {
+        "timestamp": "2025-11-07T23:00:00Z",
+        "bpm": 97
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 17
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -14
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 14
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -11
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -13
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 11
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 10
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -11
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 8
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -6
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -9
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -5
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 8
+      }
+    ]
+  },
+  "respiration": {
+    "awake": {
+      "min": 11,
+      "max": 23,
+      "avg": 14.0
+    },
+    "sleep": {
+      "min": 11,
+      "max": 23,
+      "avg": null
+    }
+  },
+  "intensityMinutes": null,
+  "bodyBattery": {
+    "current": 15,
+    "timeSeries": [
+      {
+        "timestamp": "2025-11-07T23:00:00Z",
+        "value": 31
+      },
+      {
+        "timestamp": "2025-11-08T00:00:00Z",
+        "value": 26
+      },
+      {
+        "timestamp": "2025-11-08T00:12:00Z",
+        "value": 26
+      },
+      {
+        "timestamp": "2025-11-08T01:21:00Z",
+        "value": 19
+      },
+      {
+        "timestamp": "2025-11-08T01:24:00Z",
+        "value": 19
+      },
+      {
+        "timestamp": "2025-11-08T02:12:00Z",
+        "value": 15
+      }
+    ]
+  },
+  "stress": {
+    "average": 74,
+    "max": 99,
+    "timeSeries": []
+  },
+  "spo2": null,
+  "heartRateZones": {
+    "zone1": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone2": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone3": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone4": {
+      "time": 1,
+      "percentage": 100.0
+    },
+    "zone5": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "total": 1,
+    "zonesDefinition": {
+      "zone1": {
+        "min": 0,
+        "max": 72,
+        "name": "Zone 1 - \u00c9chauffement"
+      },
+      "zone2": {
+        "min": 72,
+        "max": 84,
+        "name": "Zone 2 - Br\u00fblage graisses"
+      },
+      "zone3": {
+        "min": 84,
+        "max": 96,
+        "name": "Zone 3 - A\u00e9robie"
+      },
+      "zone4": {
+        "min": 96,
+        "max": 108,
+        "name": "Zone 4 - Seuil"
+      },
+      "zone5": {
+        "min": 108,
+        "max": 121,
+        "name": "Zone 5 - Maximale"
+      }
+    },
+    "calculatedFromTimeSeries": true
+  },
+  "sleep": {
+    "duration": 0,
+    "quality": 0,
+    "deepSleep": null,
+    "lightSleep": null,
+    "remSleep": null,
+    "bedTime": null,
+    "wakeTime": null,
+    "awakenings": null,
+    "movements": null,
+    "phasesDetails": null
+  },
+  "date": "2025-11-08",
+  "_cached_at": 1762569947.4637368,
+  "_cache_version": 2,
+  "_raw_data_hash": "069b5322e102b11d1345986a45903b5f"
+}

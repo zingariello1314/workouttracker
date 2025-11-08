@@ -133,10 +133,10 @@ def validate_distance_steps_consistency(distance_km: Optional[float], steps: Opt
     expected_distance = steps * 0.75 / 1000  # km
     ratio = distance_km / expected_distance if expected_distance > 0 else 0
     
-    if ratio < 0.5 or ratio > 1.5:  # Tolérance de 50%
+    if ratio < 0.4 or ratio > 1.6:  # Tolérance resserrée (±60%)
         error_msg = f"Ratio distance/steps suspect: {distance_km:.2f} km pour {steps} pas (attendu ~{expected_distance:.2f} km)"
         print_debug(f"⚠️ {date_str}: {error_msg}")
-        # Ne pas bloquer pour activité non pédestre (natation, vélo, etc.)
+        return (False, error_msg)
     
     return (True, None)
 

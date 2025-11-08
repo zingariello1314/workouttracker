@@ -81,26 +81,28 @@ function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, cust
     );
   }
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const value = payload[0].value;
-      return (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-semibold mb-2">{label}</p>
-          <p className="text-sm" style={{ color: payload[0].color }}>
-            {`Body Battery: ${value}/100`}
-          </p>
-          <div className="mt-2 text-xs text-slate-400">
-            {value >= 70 ? 'Excellent' : value >= 50 ? 'Bon' : value >= 30 ? 'Moyen' : 'Faible'}
-          </div>
-        </div>
-      );
+  const renderTooltip = React.useCallback(({ active, payload, label }) => {
+    if (!active || !payload || payload.length === 0) {
+      return null;
     }
-    return null;
-  };
+    const value = payload[0].value;
+    return (
+      <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
+        <p className="text-white font-semibold mb-2">{label}</p>
+        <p className="text-sm" style={{ color: payload[0].color }}>
+          {`Body Battery: ${value}/100`}
+        </p>
+        <div className="mt-2 text-xs text-slate-400">
+          {value >= 70 ? 'Excellent' : value >= 50 ? 'Bon' : value >= 30 ? 'Moyen' : 'Faible'}
+        </div>
+      </div>
+    );
+  }, []);
 
   // 🔴 FIX #39: ARIA labels pour accessibilité
-  const chartDescription = `Graphique montrant l'évolution du niveau de batterie corporelle (Body Battery) sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s). Valeur moyenne: ${Math.round(avgValue)}/100.`;
+  const chartDescription = React.useMemo(() => {
+    return `Graphique montrant l'évolution du niveau de batterie corporelle (Body Battery) sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s). Valeur moyenne: ${Math.round(avgValue)}/100.`;
+  }, [chartData.length, avgValue]);
   
   return (
     <div 
@@ -158,7 +160,7 @@ function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, cust
               domain={[0, 100]}
               label={{ value: 'Body Battery', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF' } }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={renderTooltip} />
             <Legend />
             {effectiveSelectedDate && chartData.some(d => d.date === effectiveSelectedDate) && (
               <ReferenceLine

@@ -43,7 +43,7 @@ export default function SyncControls({
         alert(`✅ ${result.activities} activité(s) et ${result.metrics} métrique(s) mock supprimée(s) (${total} au total).\n\nSynchronisation en cours pour récupérer vos vraies données...`);
         // Forcer une sync sans cache
         if (syncNow) {
-          await syncNow(true); // forceRefresh = true
+          await syncNow({ forceRefresh: true, skipDelay: true }); // forceRefresh = true, pas de délai
         }
       } else {
         alert('ℹ️ Aucune donnée mock trouvée. Vos données sont déjà propres.');
@@ -110,7 +110,7 @@ export default function SyncControls({
           <GarminInfoMessage
             status={status}
             garminData={garminData}
-            onRetry={() => syncNow(false)}
+            onRetry={() => syncNow({ forceRefresh: false, skipDelay: true })}
             onConfigureDelay={onConfigureDelay}
           />
         </div>
@@ -121,7 +121,7 @@ export default function SyncControls({
         <h3 className="text-white font-semibold mb-3">Synchronisation</h3>
         <div className="flex gap-2">
           <button
-            onClick={() => syncNow(false)}
+            onClick={() => syncNow({ forceRefresh: false, skipDelay: true })}
             disabled={loading}
             aria-label={ARIA_LABELS.SYNC_BUTTON}
             aria-busy={loading}
@@ -136,7 +136,7 @@ export default function SyncControls({
           </button>
           {/* ✅ PHASE 2.1 : Bouton pour forcer la synchronisation (bypass cache) */}
           <button
-            onClick={() => syncNow(true)}
+            onClick={() => syncNow({ forceRefresh: true, skipDelay: true })}
             disabled={loading}
             aria-label="Forcer la synchronisation (bypass cache)"
             aria-busy={loading}

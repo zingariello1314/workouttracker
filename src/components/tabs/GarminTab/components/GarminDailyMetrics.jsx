@@ -2,11 +2,19 @@ import React from 'react';
 import { formatHeartRate, formatDistance, formatSleepDuration } from '../utils/garminFormatters';
 import { renderMetricsGrid } from './GarminDailyMetricsHelpers';
 import { MissingValue } from './MissingDataTooltip';
+import { areDailyMetricsPropsEqual } from '../../../../utils/chartComparison';
 
 /**
  * Composant pour afficher les métriques quotidiennes détaillées
  */
-export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSelectedDate, comparisonMode, compareDate }) {
+function GarminDailyMetrics({
+  dailyMetrics,
+  dateKeys: dateKeysProp,
+  selectedDate,
+  setSelectedDate,
+  comparisonMode,
+  compareDate
+}) {
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
@@ -16,7 +24,12 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
   }
 
   // 🟡 FIX #22: Memoization des clés de dates triées
-  const dateKeys = React.useMemo(() => Object.keys(dailyMetrics).sort(), [dailyMetrics]);
+  const dateKeys = React.useMemo(() => {
+    if (Array.isArray(dateKeysProp)) {
+      return dateKeysProp;
+    }
+    return Object.keys(dailyMetrics).sort();
+  }, [dateKeysProp, dailyMetrics]);
   
   // 🟡 FIX #22: Memoization de la date d'affichage
   // 🔴 FIX : Privilégier aujourd'hui si disponible, sinon la date la plus récente valide (pas future)
@@ -515,4 +528,6 @@ export default function GarminDailyMetrics({ dailyMetrics, selectedDate, setSele
     </div>
   );
 }
+
+export default React.memo(GarminDailyMetrics, areDailyMetricsPropsEqual);
 

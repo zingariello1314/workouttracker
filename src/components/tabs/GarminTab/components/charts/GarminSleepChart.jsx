@@ -66,36 +66,38 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
     );
   }
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-semibold mb-2">{label}</p>
-          {payload.map((entry, index) => {
-            const value = entry.value;
-            let displayValue = value;
-            let unit = '';
-            if (entry.dataKey === 'duration' || entry.dataKey === 'deepSleep' || entry.dataKey === 'lightSleep' || entry.dataKey === 'remSleep') {
-              const hours = Math.floor(value / 60);
-              const minutes = value % 60;
-              displayValue = `${hours}h${minutes}m`;
-            } else if (entry.dataKey === 'quality') {
-              unit = '/100';
-            }
-            return (
-              <p key={index} className="text-sm" style={{ color: entry.color }}>
-                {`${entry.name}: ${displayValue}${unit}`}
-              </p>
-            );
-          })}
-        </div>
-      );
+  const renderTooltip = React.useCallback(({ active, payload, label }) => {
+    if (!active || !payload || payload.length === 0) {
+      return null;
     }
-    return null;
-  };
+    return (
+      <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
+        <p className="text-white font-semibold mb-2">{label}</p>
+        {payload.map((entry, index) => {
+          const value = entry.value;
+          let displayValue = value;
+          let unit = '';
+          if (entry.dataKey === 'duration' || entry.dataKey === 'deepSleep' || entry.dataKey === 'lightSleep' || entry.dataKey === 'remSleep') {
+            const hours = Math.floor(value / 60);
+            const minutes = value % 60;
+            displayValue = `${hours}h${minutes}m`;
+          } else if (entry.dataKey === 'quality') {
+            unit = '/100';
+          }
+          return (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {`${entry.name}: ${displayValue}${unit}`}
+            </p>
+          );
+        })}
+      </div>
+    );
+  }, []);
 
   // 🔴 FIX #39: ARIA labels pour accessibilité
-  const chartDescription = `Graphique montrant l'évolution du sommeil (durée, phases profondes, légères, REM) sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s). Durée moyenne: ${Math.floor(avgDuration / 60)}h${Math.round(avgDuration % 60)}m.`;
+  const chartDescription = React.useMemo(() => (
+    `Graphique montrant l'évolution du sommeil (durée, phases profondes, légères, REM) sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s). Durée moyenne: ${Math.floor(avgDuration / 60)}h${Math.round(avgDuration % 60)}m.`
+  ), [chartData.length, avgDuration]);
   
   return (
     <div 
@@ -163,7 +165,7 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
               domain={[0, 100]}
               label={{ value: 'Qualité', angle: 90, position: 'insideRight', style: { fill: '#9CA3AF' } }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={renderTooltip} />
             <Legend />
             {effectiveSelectedDate && chartData.some(d => d.date === effectiveSelectedDate) && (
               <ReferenceLine

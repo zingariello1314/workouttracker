@@ -10,6 +10,9 @@ import time
 from typing import Any, Dict, Optional, Tuple
 from pathlib import Path
 
+from utils.validators import validate_distance_steps_consistency
+from utils.logger import print_debug
+
 # Répertoire de cache (dans le dossier garmin-server)
 CACHE_DIR = Path(__file__).parent.parent / '.cache'
 CACHE_DIR.mkdir(exist_ok=True)
@@ -490,6 +493,43 @@ def get_cached_daily_metrics(date_str: str, raw_data_hash: str) -> Optional[Dict
                         except Exception:
                             pass
                         return None
+
+            # ✅ Nouvelle validation : ratio distance/pas cohérent (même pour dates passées)
+            distance_cached = cached.get('distance')
+            steps_cached = cached.get('steps')
+            is_valid_ratio, ratio_error_msg = validate_distance_steps_consistency(distance_cached, steps_cached, date_str)
+            if not is_valid_ratio:
+                print_debug(f"⚠️ Cache invalidé: incohérence distance/steps pour {date_str} ({ratio_error_msg})")
+                try:
+                    cache_file.unlink()
+                except Exception:
+                    pass
+                return None
+
+            # 🔒 Contrôle strict additionnel pour éviter ratios aberrants conservés en cache
+            try:
+                distance_num = float(distance_cached) if distance_cached is not None else 0.0
+                steps_num = int(steps_cached) if steps_cached is not None else 0
+                if distance_num > 0 and steps_num > 0:
+                    expected_distance = steps_num * 0.75 / 1000.0
+                    if expected_distance > 0:
+                        ratio = distance_num / expected_distance
+                        if ratio > 1.6 or ratio < 0.4:
+                            print_debug(
+                                f"⚠️ Cache invalidé: ratio distance/steps {ratio:.2f} (distance={distance_num} km, steps={steps_num}) pour {date_str}"
+                            )
+                            try:
+                                cache_file.unlink()
+                            except Exception:
+                                pass
+                            return None
+            except Exception as ratio_exc:
+                print_debug(f"⚠️ Cache: échec validation ratio distance/steps pour {date_str}: {ratio_exc}")
+                try:
+                    cache_file.unlink()
+                except Exception:
+                    pass
+                return None
             
             return cached
     except Exception:

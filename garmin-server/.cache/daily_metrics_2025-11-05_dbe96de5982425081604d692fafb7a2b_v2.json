@@ -1,6 +1,6 @@
 {
   "steps": 2849,
-  "distance": 19.028,
+  "distance": 2.137,
   "floors": 0,
   "calories": {
     "total": 2304,
@@ -1282,102 +1282,30 @@
     "total": 81
   },
   "bodyBattery": {
-    "current": 100,
+    "current": 34,
     "timeSeries": [
       {
-        "timestamp": null,
+        "timestamp": "2025-11-05T00:48:00Z",
         "value": 34
       },
       {
-        "timestamp": null,
-        "value": 34
+        "timestamp": "2025-11-05T06:57:00Z",
+        "value": 87
       },
       {
-        "timestamp": null,
-        "value": 34
+        "timestamp": "2025-11-05T09:09:00Z",
+        "value": 100
       },
       {
-        "timestamp": null,
-        "value": 34
+        "timestamp": "2025-11-05T14:57:00Z",
+        "value": 78
       },
       {
-        "timestamp": null,
-        "value": 34
+        "timestamp": "2025-11-05T15:00:00Z",
+        "value": 78
       },
       {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
+        "timestamp": "2025-11-05T22:48:00Z",
         "value": 34
       }
     ]
@@ -1452,7 +1380,7 @@
     "phasesDetails": null
   },
   "date": "2025-11-05",
-  "_cached_at": 1762390211.188225,
+  "_cached_at": 1762570430.0086033,
   "_cache_version": 2,
   "_raw_data_hash": "dbe96de5982425081604d692fafb7a2b"
 }

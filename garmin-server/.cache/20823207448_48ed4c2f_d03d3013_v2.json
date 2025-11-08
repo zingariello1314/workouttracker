@@ -1,0 +1,44 @@
+{
+  "id": 20823207448,
+  "date": "2025-10-28 16:51:26",
+  "time": "",
+  "duration": 68,
+  "calories": {
+    "total": 8,
+    "resting": 1,
+    "active": 7
+  },
+  "avgHR": 106,
+  "maxHR": 122,
+  "minHR": null,
+  "sweatLoss": null,
+  "intensityMinutes": {
+    "moderate": null,
+    "vigorous": null,
+    "total": null
+  },
+  "startTimeLocal": "2025-10-28T17:51:26Z",
+  "startTimeGMT": "2025-10-28T16:51:26Z",
+  "location": null,
+  "elevation": null,
+  "deviceInfo": {
+    "deviceId": null,
+    "deviceTypePk": null,
+    "deviceVersionPk": null
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Nat. piscine",
+  "activityType": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "d03d3013",
+  "_cached_at": 1762473052.855063,
+  "_cache_version": 2
+}

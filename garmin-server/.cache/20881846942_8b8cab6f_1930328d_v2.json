@@ -1,0 +1,58 @@
+{
+  "id": 20881846942,
+  "date": "2025-11-03 16:46:56",
+  "time": "",
+  "duration": 3673,
+  "calories": {
+    "total": 405,
+    "resting": 72,
+    "active": 333
+  },
+  "avgHR": 119,
+  "maxHR": 151,
+  "minHR": null,
+  "sweatLoss": null,
+  "intensityMinutes": {
+    "moderate": 39,
+    "vigorous": 15,
+    "total": 54
+  },
+  "startTimeLocal": "2025-11-03T17:46:56Z",
+  "startTimeGMT": "2025-11-03T16:46:56Z",
+  "location": {
+    "start": {
+      "lat": 44.8287311475724,
+      "lng": -0.6639173068106174
+    },
+    "end": {
+      "lat": 44.828951843082905,
+      "lng": -0.6640846095979214
+    }
+  },
+  "elevation": {
+    "gain": null,
+    "loss": null,
+    "max": 40.77046203613281,
+    "min": 40.45944595336914
+  },
+  "deviceInfo": {
+    "deviceId": null,
+    "deviceTypePk": null,
+    "deviceVersionPk": null
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "M\u00e9rignac Cardio",
+  "activityType": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "1930328d",
+  "_cached_at": 1762473054.6150317,
+  "_cache_version": 2
+}

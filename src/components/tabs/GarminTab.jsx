@@ -1,28 +1,76 @@
 import React from 'react';
 import { useGarminData } from '../../hooks/useGarminData';
 import SyncControls from './GarminTab/components/SyncControls';
-import GarminDashboard from './GarminTab/components/GarminDashboard';
-import GarminActivities from './GarminTab/components/GarminActivities';
-import GarminDailyMetrics from './GarminTab/components/GarminDailyMetrics';
-import GarminHeartRateChart from './GarminTab/components/charts/GarminHeartRateChart';
-import GarminHeartRateTimeSeriesChart from './GarminTab/components/charts/GarminHeartRateTimeSeriesChart';
-import GarminBodyBatteryChart from './GarminTab/components/charts/GarminBodyBatteryChart';
-import GarminStressChart from './GarminTab/components/charts/GarminStressChart';
-import GarminSleepChart from './GarminTab/components/charts/GarminSleepChart';
-import GarminRespirationChart from './GarminTab/components/charts/GarminRespirationChart';
-import GarminActivityHeatmap from './GarminTab/components/charts/GarminActivityHeatmap';
-import GarminCorrelationCharts from './GarminTab/components/charts/GarminCorrelationCharts';
 import TimeNavigation from './GarminTab/components/TimeNavigation';
-import AdvancedStatistics from './GarminTab/components/AdvancedStatistics';
-import AutoSyncSettings from './GarminTab/components/AutoSyncSettings';
-import PDFExport from './GarminTab/components/PDFExport';
-import GarminErrorBoundary from './GarminTab/components/ErrorBoundary';
-import DebugPanel from './GarminTab/components/DebugPanel';
 import { useGarminSync } from './GarminTab/hooks/useGarminSync';
 import { useGarminImport } from './GarminTab/hooks/useGarminImport';
 import { useToast } from './GarminTab/components/Toast';
 import { GarminProvider } from './GarminTab/context/GarminContext';
+import GarminErrorBoundary from './GarminTab/components/ErrorBoundary';
 import { ARIA_LABELS } from './GarminTab/constants';
+
+const GarminDashboard = React.lazy(() => import('./GarminTab/components/GarminDashboard'));
+const GarminActivities = React.lazy(() => import('./GarminTab/components/GarminActivities'));
+const GarminDailyMetrics = React.lazy(() => import('./GarminTab/components/GarminDailyMetrics'));
+const GarminHeartRateChart = React.lazy(() => import('./GarminTab/components/charts/GarminHeartRateChart'));
+const GarminHeartRateTimeSeriesChart = React.lazy(() => import('./GarminTab/components/charts/GarminHeartRateTimeSeriesChart'));
+const GarminBodyBatteryChart = React.lazy(() => import('./GarminTab/components/charts/GarminBodyBatteryChart'));
+const GarminStressChart = React.lazy(() => import('./GarminTab/components/charts/GarminStressChart'));
+const GarminSleepChart = React.lazy(() => import('./GarminTab/components/charts/GarminSleepChart'));
+const GarminRespirationChart = React.lazy(() => import('./GarminTab/components/charts/GarminRespirationChart'));
+const GarminActivityHeatmap = React.lazy(() => import('./GarminTab/components/charts/GarminActivityHeatmap'));
+const GarminCorrelationCharts = React.lazy(() => import('./GarminTab/components/charts/GarminCorrelationCharts'));
+const AdvancedStatistics = React.lazy(() => import('./GarminTab/components/AdvancedStatistics'));
+const AutoSyncSettings = React.lazy(() => import('./GarminTab/components/AutoSyncSettings'));
+const PDFExport = React.lazy(() => import('./GarminTab/components/PDFExport'));
+const DebugPanel = React.lazy(() => import('./GarminTab/components/DebugPanel'));
+
+const SectionFallback = ({ label, minHeight = '240px' }) => (
+  <div
+    className="rounded-lg border border-slate-700 bg-slate-800/60 flex items-center justify-center text-slate-300 text-sm"
+    style={{ minHeight }}
+    role="status"
+    aria-live="polite"
+  >
+    <div className="flex items-center gap-3">
+      <span className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin"></span>
+      <span>Chargement {label}…</span>
+    </div>
+  </div>
+);
+
+const TAB_PREFETCHERS = {
+  dashboard: [() => import('./GarminTab/components/GarminDashboard')],
+  activities: [() => import('./GarminTab/components/GarminActivities')],
+  metrics: [
+    () => import('./GarminTab/components/AdvancedStatistics'),
+    () => import('./GarminTab/components/GarminDailyMetrics')
+  ],
+  charts: [
+    () => import('./GarminTab/components/charts/GarminHeartRateTimeSeriesChart'),
+    () => import('./GarminTab/components/charts/GarminHeartRateChart'),
+    () => import('./GarminTab/components/charts/GarminBodyBatteryChart'),
+    () => import('./GarminTab/components/charts/GarminStressChart'),
+    () => import('./GarminTab/components/charts/GarminSleepChart'),
+    () => import('./GarminTab/components/charts/GarminRespirationChart'),
+    () => import('./GarminTab/components/charts/GarminActivityHeatmap'),
+    () => import('./GarminTab/components/charts/GarminCorrelationCharts')
+  ]
+};
+
+const UTILITY_PREFETCHERS = [
+  () => import('./GarminTab/components/AutoSyncSettings'),
+  () => import('./GarminTab/components/PDFExport'),
+  () => import('./GarminTab/components/DebugPanel')
+];
+
+const EMPTY_ACTIVITIES = Object.freeze({
+  swimming: Object.freeze([]),
+  jumpRope: Object.freeze([]),
+  cardio: Object.freeze([])
+});
+
+const EMPTY_DAILY_METRICS = Object.freeze({});
 
 const GarminTab = () => {
   const [status, setStatus] = React.useState(null);
@@ -56,6 +104,7 @@ const GarminTab = () => {
   );
   // ✅ FIX : useToast() déplacé AVANT tous les useEffect pour respecter les règles de React
   const { showToast, ToastContainer } = useToast();
+  const prefetchedTabsRef = React.useRef(new Set());
   
   // 🔴 FIX : Exposer clearCache globalement pour permettre vidage depuis SyncControls
   React.useEffect(() => {
@@ -277,6 +326,47 @@ const GarminTab = () => {
     }
   }, [loading, garminData, status, showToast]);
 
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const prefetchTabModules = (tab) => {
+      if (prefetchedTabsRef.current.has(tab)) {
+        return;
+      }
+      const loaders = TAB_PREFETCHERS[tab];
+      if (!loaders) {
+        return;
+      }
+      prefetchedTabsRef.current.add(tab);
+      loaders.forEach((load) => {
+        load().catch(() => {
+          // Ignorer silencieusement les erreurs de prefetch
+        });
+      });
+    };
+
+    // Prefetch pour l'onglet actif (assure que le chunk est prêt après la première suspension)
+    prefetchTabModules(activeTab);
+
+    // Prefetch des utilitaires (AutoSync, PDF, Debug) en arrière-plan
+    UTILITY_PREFETCHERS.forEach((loader) => {
+      loader().catch(() => {});
+    });
+
+    const idleCallback = window.requestIdleCallback || ((cb) => window.setTimeout(cb, 500));
+    const cancelIdleCallback = window.cancelIdleCallback || window.clearTimeout;
+
+    const idleHandle = idleCallback(() => {
+      Object.keys(TAB_PREFETCHERS).forEach(prefetchTabModules);
+    }, { timeout: 1500 });
+
+    return () => {
+      cancelIdleCallback(idleHandle);
+    };
+  }, [activeTab]);
+
   const handleBackfill = React.useCallback(() => {
     // 🟡 FIX #28: Validation des entrées backfill
     if (!startDate || !endDate) {
@@ -311,7 +401,7 @@ const GarminTab = () => {
     backfill(startDate, endDate, setSelectedDate);
   }, [startDate, endDate, backfill, setSelectedDate]);
 
-  const colors = {
+  const colors = React.useMemo(() => ({
     primary: '#3B82F6',
     secondary: '#10B981',
     accent: '#F59E0B',
@@ -323,23 +413,53 @@ const GarminTab = () => {
     orange: '#F59E0B',
     cyan: '#06B6D4',
     blue: '#3B82F6'
-  };
+  }), []);
 
   // 🟢 FIX #32: Props communes pour Context API
+  const memoizedActivities = React.useMemo(
+    () => garminData?.activities || EMPTY_ACTIVITIES,
+    [garminData?.activities]
+  );
+
+  const memoizedDailyMetrics = React.useMemo(
+    () => garminData?.dailyMetrics || EMPTY_DAILY_METRICS,
+    [garminData?.dailyMetrics]
+  );
+
+  const memoizedDateKeys = React.useMemo(
+    () => Object.keys(memoizedDailyMetrics).sort((a, b) => a.localeCompare(b)),
+    [memoizedDailyMetrics]
+  );
+
+  // 🟢 NOUVEAU : s'assurer que la date sélectionnée pointe toujours vers une journée disponible
+  React.useEffect(() => {
+    if (!garminData?.dailyMetrics) {
+      return;
+    }
+    const dateKeys = Object.keys(garminData.dailyMetrics).sort();
+    if (dateKeys.length === 0) {
+      return;
+    }
+    const latestDate = dateKeys[dateKeys.length - 1];
+    if (!selectedDate || !garminData.dailyMetrics[selectedDate]) {
+      setSelectedDate(latestDate);
+    }
+  }, [garminData?.dailyMetrics, selectedDate, setSelectedDate]);
+
   const commonChartProps = React.useMemo(() => ({
-    dailyMetrics: garminData?.dailyMetrics || {},
+    dailyMetrics: memoizedDailyMetrics,
     selectedDate,
     periodFilter,
     customStartDate,
     customEndDate,
     colors
-  }), [garminData?.dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors]);
+  }), [memoizedDailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors]);
 
   return (
     <GarminErrorBoundary>
       <GarminProvider
-        dailyMetrics={garminData?.dailyMetrics || {}}
-        activities={garminData?.activities || { swimming: [], jumpRope: [], cardio: [] }}
+        dailyMetrics={memoizedDailyMetrics}
+        activities={memoizedActivities}
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
         periodFilter={periodFilter}
@@ -393,11 +513,11 @@ const GarminTab = () => {
         )}
 
         {/* Navigation temporelle avancée */}
-        {garminData && garminData.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0 && (
+        {garminData && garminData.dailyMetrics && memoizedDateKeys.length > 0 && (
           <TimeNavigation
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
-            dateKeys={Object.keys(garminData.dailyMetrics).sort()}
+            dateKeys={memoizedDateKeys}
             comparisonMode={comparisonMode}
             setComparisonMode={setComparisonMode}
             compareDate={compareDate}
@@ -490,124 +610,133 @@ const GarminTab = () => {
           <div className="mt-6">
             {activeTab === 'dashboard' && (
               <div role="tabpanel" id="garmin-dashboard-panel" aria-labelledby="dashboard-tab">
-                <GarminDashboard
-                  dailyMetrics={garminData.dailyMetrics}
-                  selectedDate={selectedDate}
-                  comparisonMode={comparisonMode}
-                  compareDate={compareDate}
-                  activities={garminData.activities}
-                  periodFilter={periodFilter}
-                  customStartDate={customStartDate}
-                  customEndDate={customEndDate}
-                />
+                <React.Suspense fallback={<SectionFallback label="du tableau de bord" minHeight="320px" />}>
+                  <GarminDashboard
+                    dailyMetrics={memoizedDailyMetrics}
+                    selectedDate={selectedDate}
+                    comparisonMode={comparisonMode}
+                    compareDate={compareDate}
+                    activities={memoizedActivities}
+                    periodFilter={periodFilter}
+                    customStartDate={customStartDate}
+                    customEndDate={customEndDate}
+                  />
+                </React.Suspense>
               </div>
             )}
 
             {activeTab === 'activities' && (
               <div role="tabpanel" id="garmin-activities-panel" aria-labelledby="activities-tab">
-                <GarminActivities
-                  activities={garminData.activities}
-                  selectedDate={selectedDate}
-                />
+                <React.Suspense fallback={<SectionFallback label="des activités" minHeight="280px" />}>
+                  <GarminActivities
+                    activities={memoizedActivities}
+                    selectedDate={selectedDate}
+                  />
+                </React.Suspense>
               </div>
             )}
 
             {activeTab === 'metrics' && (
               <div role="tabpanel" id="garmin-metrics-panel" aria-labelledby="metrics-tab">
-                {/* 🔴 FIX #71-80: Statistiques avancées */}
-                <AdvancedStatistics
-                  dailyMetrics={garminData.dailyMetrics}
-                  selectedDate={selectedDate}
-                  periodFilter={periodFilter}
-                  customStartDate={customStartDate}
-                  customEndDate={customEndDate}
-                />
-                <div className="mt-6">
-                  <GarminDailyMetrics
-                    dailyMetrics={garminData.dailyMetrics}
+                <React.Suspense fallback={<SectionFallback label="des métriques" minHeight="360px" />}>
+                  {/* 🔴 FIX #71-80: Statistiques avancées */}
+                  <AdvancedStatistics
+                    dailyMetrics={memoizedDailyMetrics}
                     selectedDate={selectedDate}
-                    setSelectedDate={setSelectedDate}
-                    comparisonMode={comparisonMode}
-                    compareDate={compareDate}
+                    periodFilter={periodFilter}
+                    customStartDate={customStartDate}
+                    customEndDate={customEndDate}
                   />
-                </div>
+                  <div className="mt-6">
+                    <GarminDailyMetrics
+                      dailyMetrics={memoizedDailyMetrics}
+                    dateKeys={memoizedDateKeys}
+                      selectedDate={selectedDate}
+                      setSelectedDate={setSelectedDate}
+                      comparisonMode={comparisonMode}
+                      compareDate={compareDate}
+                    />
+                  </div>
+                </React.Suspense>
               </div>
             )}
 
             {activeTab === 'charts' && (
               <div role="tabpanel" id="garmin-charts-panel" aria-labelledby="charts-tab" className="space-y-6">
-                {/* 🔴 FIX #8: Heart Rate Time Series Chart avec toutes les props */}
-                {/* 🔴 NOUVEAU : Afficher même si pas de timeSeries (courbe enrichie sera créée avec métriques agrégées) */}
-                {selectedDate && garminData.dailyMetrics && garminData.dailyMetrics[selectedDate] && (
-                  <GarminHeartRateTimeSeriesChart
-                    dailyMetrics={garminData.dailyMetrics}
+                <React.Suspense fallback={<SectionFallback label="des graphiques" minHeight="620px" />}>
+                  {/* 🔴 FIX #8: Heart Rate Time Series Chart avec toutes les props */}
+                  {/* 🔴 NOUVEAU : Afficher même si pas de timeSeries (courbe enrichie sera créée avec métriques agrégées) */}
+                  {selectedDate && memoizedDailyMetrics && memoizedDailyMetrics[selectedDate] && (
+                    <GarminHeartRateTimeSeriesChart
+                      dailyMetrics={memoizedDailyMetrics}
+                      selectedDate={selectedDate}
+                      periodFilter={periodFilter}
+                      customStartDate={customStartDate}
+                      customEndDate={customEndDate}
+                      colors={colors}
+                      activities={memoizedActivities}
+                    />
+                  )}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <GarminHeartRateChart
+                      dailyMetrics={memoizedDailyMetrics}
+                      selectedDate={selectedDate}
+                      periodFilter={periodFilter}
+                      customStartDate={customStartDate}
+                      customEndDate={customEndDate}
+                      colors={colors}
+                    />
+                    <GarminBodyBatteryChart
+                      dailyMetrics={garminData.dailyMetrics}
+                      selectedDate={selectedDate}
+                      periodFilter={periodFilter}
+                      customStartDate={customStartDate}
+                      customEndDate={customEndDate}
+                      colors={colors}
+                    />
+                    <GarminStressChart
+                      dailyMetrics={garminData.dailyMetrics}
+                      selectedDate={selectedDate}
+                      periodFilter={periodFilter}
+                      customStartDate={customStartDate}
+                      customEndDate={customEndDate}
+                      colors={colors}
+                    />
+                    <GarminSleepChart
+                      dailyMetrics={garminData.dailyMetrics}
+                      selectedDate={selectedDate}
+                      periodFilter={periodFilter}
+                      customStartDate={customStartDate}
+                      customEndDate={customEndDate}
+                      colors={colors}
+                    />
+                  </div>
+                  <GarminRespirationChart
+                    dailyMetrics={memoizedDailyMetrics}
                     selectedDate={selectedDate}
                     periodFilter={periodFilter}
                     customStartDate={customStartDate}
                     customEndDate={customEndDate}
                     colors={colors}
-                    activities={garminData.activities}
                   />
-                )}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <GarminHeartRateChart
-                    dailyMetrics={garminData.dailyMetrics}
+                  <GarminActivityHeatmap
+                    activities={memoizedActivities}
+                    dailyMetrics={memoizedDailyMetrics}
                     selectedDate={selectedDate}
                     periodFilter={periodFilter}
                     customStartDate={customStartDate}
                     customEndDate={customEndDate}
                     colors={colors}
                   />
-                  <GarminBodyBatteryChart
-                    dailyMetrics={garminData.dailyMetrics}
+                  <GarminCorrelationCharts
+                    dailyMetrics={memoizedDailyMetrics}
                     selectedDate={selectedDate}
                     periodFilter={periodFilter}
                     customStartDate={customStartDate}
                     customEndDate={customEndDate}
                     colors={colors}
                   />
-                  <GarminStressChart
-                    dailyMetrics={garminData.dailyMetrics}
-                    selectedDate={selectedDate}
-                    periodFilter={periodFilter}
-                    customStartDate={customStartDate}
-                    customEndDate={customEndDate}
-                    colors={colors}
-                  />
-                  <GarminSleepChart
-                    dailyMetrics={garminData.dailyMetrics}
-                    selectedDate={selectedDate}
-                    periodFilter={periodFilter}
-                    customStartDate={customStartDate}
-                    customEndDate={customEndDate}
-                    colors={colors}
-                  />
-                </div>
-                <GarminRespirationChart
-                  dailyMetrics={garminData.dailyMetrics}
-                  selectedDate={selectedDate}
-                  periodFilter={periodFilter}
-                  customStartDate={customStartDate}
-                  customEndDate={customEndDate}
-                  colors={colors}
-                />
-                <GarminActivityHeatmap
-                  activities={garminData.activities}
-                  dailyMetrics={garminData.dailyMetrics}
-                  selectedDate={selectedDate}
-                  periodFilter={periodFilter}
-                  customStartDate={customStartDate}
-                  customEndDate={customEndDate}
-                  colors={colors}
-                />
-                <GarminCorrelationCharts
-                  dailyMetrics={garminData.dailyMetrics}
-                  selectedDate={selectedDate}
-                  periodFilter={periodFilter}
-                  customStartDate={customStartDate}
-                  customEndDate={customEndDate}
-                  colors={colors}
-                />
+                </React.Suspense>
               </div>
             )}
 
@@ -663,23 +792,29 @@ const GarminTab = () => {
           />
 
           {/* 🔴 FIX #81-87: Synchronisation automatique */}
-          <AutoSyncSettings syncFunction={syncNow} />
+          <React.Suspense fallback={<SectionFallback label="des paramètres d'auto-sync" minHeight="160px" />}>
+            <AutoSyncSettings syncFunction={syncNow} />
+          </React.Suspense>
 
           {/* 🔴 FIX #81-87: Export PDF */}
-          <PDFExport
-            garminData={garminData}
-            selectedDate={selectedDate}
-            periodFilter={periodFilter}
-            customStartDate={customStartDate}
-            customEndDate={customEndDate}
-          />
+          <React.Suspense fallback={<SectionFallback label="de l'export PDF" minHeight="160px" />}>
+            <PDFExport
+              garminData={garminData}
+              selectedDate={selectedDate}
+              periodFilter={periodFilter}
+              customStartDate={customStartDate}
+              customEndDate={customEndDate}
+            />
+          </React.Suspense>
         </div>
         </div>
         </div>
 
         {/* ✅ PHASE 1 : Panneau de diagnostic */}
         {showDebugPanel && (
-          <DebugPanel onClose={() => setShowDebugPanel(false)} />
+          <React.Suspense fallback={<SectionFallback label="du panneau de diagnostic" minHeight="240px" />}>
+            <DebugPanel onClose={() => setShowDebugPanel(false)} />
+          </React.Suspense>
         )}
       </GarminProvider>
     </GarminErrorBoundary>

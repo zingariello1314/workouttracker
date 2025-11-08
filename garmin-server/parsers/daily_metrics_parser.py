@@ -171,12 +171,11 @@ def parse_daily_distance(stats: Dict, steps_data: Any, date_str: str, swim_list:
     is_valid, error_msg = validate_distance_steps_consistency(distance_km, steps, date_str)
     if not is_valid and error_msg:
         print_debug(f"⚠️ {date_str}: {error_msg}")
-        # Si ratio suspect, essayer de recalculer depuis steps
-        if steps > 0:
-            estimated_distance = steps * 0.75 / 1000  # 0.75m par pas moyen
-            if abs(distance_km - estimated_distance) > estimated_distance * 0.5:
-                print_debug(f"⚠️  Correcting distance for {date_str} from {distance_km} km to {estimated_distance} km (based on steps)")
-                distance_km = estimated_distance
+        # Si ratio suspect, recalcul depuis steps comme source principale
+        if steps and steps > 0:
+            estimated_distance = round((steps * 0.75) / 1000.0, 3)  # 0.75 m par pas moyen
+            print_debug(f"⚠️  Correcting distance for {date_str} from {distance_km} km to {estimated_distance} km (based on steps)")
+            distance_km = estimated_distance
         # Si distance > 100km sans steps, c'est suspect mais on garde la valeur (peut être vélo/natation longue distance)
         elif distance_km > 100:
             print_debug(f"⚠️ {date_str}: Distance très élevée ({distance_km}km) sans steps - possiblement vélo/natation longue distance")

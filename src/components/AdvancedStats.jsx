@@ -366,7 +366,7 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
     let streak = 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // ✅ CORRECTION : Parcourir les jours depuis aujourd'hui jusqu'à 365 jours en arrière
     // Même logique que calculateCurrentStreak() dans StatsTab.jsx
     for (let i = 0; i < 365; i++) {
@@ -734,7 +734,7 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
   // Calculs des statistiques avancées
   const stats = useMemo(() => {
     try {
-      if (!workoutData || workoutData.length === 0) return null;
+    if (!workoutData || workoutData.length === 0) return null;
 
       // ✅ PHASE 1.2 : Normaliser toutes les données en entrée pour éviter les problèmes de types
       // Cette normalisation garantit que tous les calculs suivants utilisent des nombres valides
@@ -821,7 +821,7 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
       duration: calculateChange(currentStats.avgDuration, previousStats.avgDuration)
     };
 
-      return { current: currentStats, previous: previousStats, changes };
+    return { current: currentStats, previous: previousStats, changes };
     } catch (error) {
       // ✅ CORRECTION : Capturer les erreurs pour éviter un crash silencieux
       console.error('[AdvancedStats] Error calculating stats:', error);
@@ -874,11 +874,11 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
     
     return (
       <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600 hover:bg-slate-700/70 transition-colors duration-200">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
             <Icon size={18} className={iconColorClass} />
-            <span className="text-slate-400 text-sm">{title}</span>
-          </div>
+          <span className="text-slate-400 text-sm">{title}</span>
+        </div>
           {change !== undefined && (
             <div className="group relative">
               {formatChange(change)}
@@ -896,13 +896,13 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
               )}
             </div>
           )}
-        </div>
-        <div className="text-2xl font-bold text-white">
-          {typeof value === 'number' ? value.toLocaleString('fr-FR') : value}
-          {unit && <span className="text-lg text-slate-400 ml-1">{unit}</span>}
-        </div>
       </div>
-    );
+      <div className="text-2xl font-bold text-white">
+          {typeof value === 'number' ? value.toLocaleString('fr-FR') : value}
+        {unit && <span className="text-lg text-slate-400 ml-1">{unit}</span>}
+      </div>
+    </div>
+  );
   });
   
   // ✅ OPTIMISATION : Donner un nom au composant pour le debugging React DevTools

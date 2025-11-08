@@ -1,11 +1,13 @@
 import React from 'react';
-import { formatDistance, formatDuration } from '../../utils/garminFormatters';
 import { useFilteredDates } from '../../hooks/useFilteredDates';
+import { areChartPropsEqual } from '../../../../../utils/chartComparison';
 
 /**
  * Graphique heatmap calendrier des activités Garmin
  */
-export default function GarminActivityHeatmap({ activities, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+const DAY_ORDER = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+function GarminActivityHeatmap({ activities, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   const { filteredDates, displayInfo } = useFilteredDates(
     dailyMetrics,
     selectedDate,
@@ -82,15 +84,13 @@ export default function GarminActivityHeatmap({ activities, dailyMetrics, select
       </div>
     );
   }
-  const dayOrder = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-
-  const getIntensityColor = (total) => {
+  const getIntensityColor = React.useCallback((total) => {
     if (total === 0) return 'bg-slate-800';
     if (total === 1) return 'bg-green-600';
     if (total === 2) return 'bg-yellow-500';
     if (total >= 3) return 'bg-red-500';
     return 'bg-slate-700';
-  };
+  }, []);
 
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6">
@@ -105,7 +105,7 @@ export default function GarminActivityHeatmap({ activities, dailyMetrics, select
           <thead>
             <tr>
               <th className="text-left text-slate-400 px-2 py-2"></th>
-              {dayOrder.map(day => (
+              {DAY_ORDER.map(day => (
                 <th key={day} className="text-center text-slate-400 px-1 py-2">{day}</th>
               ))}
             </tr>
@@ -116,7 +116,7 @@ export default function GarminActivityHeatmap({ activities, dailyMetrics, select
                 <td className="text-slate-400 px-2 py-1 text-right">
                   {new Date(week.week).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                 </td>
-                {dayOrder.map(day => {
+                {DAY_ORDER.map(day => {
                   const dayData = week.days[day];
                   const total = dayData?.total || 0;
                   return (
@@ -156,4 +156,11 @@ export default function GarminActivityHeatmap({ activities, dailyMetrics, select
     </div>
   );
 }
+
+export default React.memo(GarminActivityHeatmap, (prevProps, nextProps) => {
+  return (
+    prevProps.activities === nextProps.activities &&
+    areChartPropsEqual(prevProps, nextProps)
+  );
+});
 
