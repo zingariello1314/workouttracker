@@ -232,6 +232,8 @@ const SettingsTab = () => {
     try {
       setGarminExportStatus('loading');
       const garminData = await exportGarminData();
+      const forcedHistory = garminData.forcedRangesHistory || [];
+      const lastForcedEntry = forcedHistory[0] || null;
       
       // ✅ PHASE 3.1 : Calculer statistiques sur lastSynced pour métadonnées
       const dailyMetricsDates = Object.keys(garminData.dailyMetrics || {});
@@ -259,6 +261,14 @@ const SettingsTab = () => {
           metricsWithLastSyncedPercentage: dailyMetricsDates.length > 0 
             ? Math.round((metricsWithLastSynced / dailyMetricsDates.length) * 100) 
             : 0,
+          forcedSync: {
+            totalEntries: forcedHistory.length,
+            lastMode: lastForcedEntry?.mode || null,
+            lastTriggeredAt: lastForcedEntry?.triggeredAt || null,
+            lastRange: lastForcedEntry
+              ? { start: lastForcedEntry.start, end: lastForcedEntry.end, includeToday: !!lastForcedEntry.includeToday }
+              : null,
+          },
           dateRange: {
             earliest: dailyMetricsDates.sort()[0] || null,
             latest: dailyMetricsDates.sort().reverse()[0] || null

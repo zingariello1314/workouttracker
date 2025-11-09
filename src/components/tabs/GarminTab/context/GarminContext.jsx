@@ -28,7 +28,10 @@ export const useGarminContext = () => {
       setComparisonMode: () => {},
       compareDate: null,
       setCompareDate: () => {},
-      colors: {}
+      colors: {},
+      forcedRangesHistory: [],
+      addForcedRangeEntry: () => {},
+      clearForcedRangesHistory: () => {}
     };
   }
   return context;
@@ -50,7 +53,10 @@ export const GarminProvider = ({
   setComparisonMode = () => {},
   compareDate = null,
   setCompareDate = () => {},
-  colors = {}
+  colors = {},
+  forcedRangesHistory = [],
+  addForcedRangeEntry = () => {},
+  clearForcedRangesHistory = () => {}
 }) => {
   const value = React.useMemo(() => ({
     dailyMetrics,
@@ -67,7 +73,10 @@ export const GarminProvider = ({
     setComparisonMode,
     compareDate,
     setCompareDate,
-    colors
+    colors,
+    forcedRangesHistory,
+    addForcedRangeEntry,
+    clearForcedRangesHistory
   }), [
     dailyMetrics,
     activities,
@@ -83,7 +92,10 @@ export const GarminProvider = ({
     setComparisonMode,
     compareDate,
     setCompareDate,
-    colors
+    colors,
+    forcedRangesHistory,
+    addForcedRangeEntry,
+    clearForcedRangesHistory
   ]);
 
   return (

@@ -389,10 +389,7 @@ export const checkFrontendCache = (
  * - Met à jour le status
  * - Logging détaillé pour diagnostic
  * 
- * @param {string} startDate - Date de début (YYYY-MM-DD)
- * @param {string} endDate - Date de fin (YYYY-MM-DD)
- * @param {string|null} lastSyncTimestamp - Timestamp de dernière sync
- * @param {boolean} forceRefresh - Si true, inclure dans la query
+ * @param {Object} params - Paramètres de requête { startDate, endDate, lastSyncTimestamp, forceRefresh, requestBody }
  * @param {Function} tryFetch - Fonction pour effectuer la requête
  * @param {Object} frontendCache - Objet cache frontend (muté)
  * @param {string} todayStr - Date d'aujourd'hui (YYYY-MM-DD)
@@ -400,39 +397,59 @@ export const checkFrontendCache = (
  * @returns {Promise<Object>} Réponse JSON du serveur
  * 
  * @example
- * const json = await performSyncRequest(startDate, endDate, timestamp, false, tryFetch, frontendCache, todayStr, setStatus);
+ * const json = await performSyncRequest(
+ *   { startDate, endDate, lastSyncTimestamp, forceRefresh: false },
+ *   tryFetch,
+ *   frontendCache,
+ *   todayStr,
+ *   setStatus
+ * );
  */
 export const performSyncRequest = async (
-  startDate,
-  endDate,
-  lastSyncTimestamp,
-  forceRefresh,
+  params,
   tryFetch,
   frontendCache,
   todayStr,
   setStatus
 ) => {
-  // Construire la query
-  let query = `?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`;
+  const {
+    startDate = null,
+    endDate = null,
+    lastSyncTimestamp = null,
+    forceRefresh = false,
+    requestBody = null
+  } = params || {};
+
+  const queryParts = [];
+  if (startDate) {
+    queryParts.push(`start=${encodeURIComponent(startDate)}`);
+  }
+  if (endDate) {
+    queryParts.push(`end=${encodeURIComponent(endDate)}`);
+  }
   if (lastSyncTimestamp) {
-    query += `&lastSyncTimestamp=${encodeURIComponent(lastSyncTimestamp)}`;
-    log.info(`[🔍 DIAGNOSTIC] Envoi lastSyncTimestamp au serveur: ${lastSyncTimestamp}`);
-    log.debug(`[performSyncRequest] Passing lastSyncTimestamp: ${lastSyncTimestamp}`);
+    queryParts.push(`lastSyncTimestamp=${encodeURIComponent(lastSyncTimestamp)}`);
   }
   if (forceRefresh) {
-    query += `&forceRefresh=true`;
-    log.info(`[🔍 DIAGNOSTIC] ForceRefresh activé - bypass du cache`);
+    queryParts.push('forceRefresh=true');
   }
-  
+  const query = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+
+  const fetchOptions = requestBody
+    ? {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      }
+    : { method: 'POST' };
+
   const requestStartTime = Date.now();
   log.info(`[🔍 DIAGNOSTIC] Envoi requête au serveur: POST /api/garmin/sync${query}`);
-  
-  // Effectuer la requête
-  const json = await tryFetch(`/api/garmin/sync${query}`, { method: 'POST' });
-  
+
+  const json = await tryFetch(`/api/garmin/sync${query}`, fetchOptions);
+
   const requestDuration = Date.now() - requestStartTime;
-  
-  // Logging détaillé de la réponse serveur
+
   log.info(`[🔍 DIAGNOSTIC] Réponse serveur reçue - Durée: ${requestDuration}ms, OK: ${json.ok}, Cached: ${json.cached || false}, LastSync: ${json.lastSync}`);
   if (json.data) {
     const activitiesCount = Object.values(json.data.activities || {}).reduce(
@@ -442,27 +459,23 @@ export const performSyncRequest = async (
     const dailyMetricsCount = Object.keys(json.data.dailyMetrics || {}).length;
     log.info(`[🔍 DIAGNOSTIC] Données reçues - Activités: ${activitiesCount}, Métriques quotidiennes: ${dailyMetricsCount}`);
   }
-  
-  // Mettre à jour le cache avec la clé de plage et TTL adaptatif
+
   const isToday = endDate === todayStr;
-  const adaptiveTtl = isToday ? 30000 : CACHE_TTL_MS; // 30s pour aujourd'hui, 60s pour passé
-  const cacheKey = `sync_${startDate}_${endDate}_${lastSyncTimestamp || 'none'}`;
-  
+  const adaptiveTtl = isToday ? 30000 : CACHE_TTL_MS;
+  const cacheKey = `sync_${startDate || 'none'}_${endDate || 'none'}_${lastSyncTimestamp || 'none'}`;
+
   frontendCache.data = json;
   frontendCache.timestamp = Date.now();
   frontendCache.cacheKey = cacheKey;
   frontendCache.ttl = adaptiveTtl;
-  
-  log.info(`[🔍 DIAGNOSTIC] Cache frontend mis à jour avec nouvelles données (TTL: ${adaptiveTtl / 1000}s pour ${isToday ? 'aujourd\'hui' : 'date passée'})`);
-  
-  // Mettre à jour le status
+
   setStatus({
     lastSync: json.lastSync,
     ok: json.ok,
-    message: json.ok ? `Sync OK (${startDate} → ${endDate})` : 'Erreur sync',
+    message: json.ok ? `Sync OK (${startDate || 'auto'} → ${endDate || 'auto'})` : 'Erreur sync',
     error: json.error
   });
-  
+
   return json;
 };
 

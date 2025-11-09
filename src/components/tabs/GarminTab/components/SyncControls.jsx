@@ -2,6 +2,8 @@ import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { ARIA_LABELS } from '../constants';
 import GarminInfoMessage from './GarminInfoMessage'; // ✅ PHASE 5.3 : Message informatif
+import ForceSyncMenu from './sync/ForceSyncMenu';
+import { describeRange } from './sync/forceSyncUtils';
 
 /**
  * Composant pour les contrôles de synchronisation Garmin
@@ -20,9 +22,46 @@ export default function SyncControls({
   clearCache, // 🔴 NOUVEAU : Fonction pour vider le cache frontend
   onOpenDebug, // ✅ PHASE 1 : Fonction pour ouvrir le panneau de diagnostic
   garminData, // ✅ PHASE 5.3 : Données Garmin pour message informatif
-  onConfigureDelay // ✅ PHASE 5.3 : Fonction pour ouvrir paramètres de délai
+  onConfigureDelay, // ✅ PHASE 5.3 : Fonction pour ouvrir paramètres de délai
+  forcedRangesHistory = [],
+  onClearForcedHistory = null,
+  onRefreshForcedHistory = null
 }) {
   const [deletingMocks, setDeletingMocks] = React.useState(false);
+  const [showHistory, setShowHistory] = React.useState(false);
+
+  const lastForcedRange = forcedRangesHistory?.[0] || null;
+  const dateFormatter = React.useMemo(() => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }), []);
+  const dateTimeFormatter = React.useMemo(() => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }), []);
+
+  const lastRangeDescriptor = React.useMemo(() => {
+    if (!lastForcedRange) return null;
+    const range = { start: lastForcedRange.start, end: lastForcedRange.end };
+    return describeRange(range, lastForcedRange.includeToday);
+  }, [lastForcedRange]);
+
+  const formatRangeLabel = React.useCallback((entry) => {
+    if (!entry) return '—';
+    const descriptor = describeRange({ start: entry.start, end: entry.end }, entry.includeToday);
+    const startLabel = (() => {
+      try {
+        return dateFormatter.format(new Date(`${entry.start}T00:00:00`));
+      } catch {
+        return entry.start;
+      }
+    })();
+    const endLabel = (() => {
+      try {
+        return dateFormatter.format(new Date(`${entry.end}T00:00:00`));
+      } catch {
+        return entry.end;
+      }
+    })();
+    if (startLabel === endLabel) {
+      return `${startLabel} (${descriptor?.spanDays || 1} jour${(descriptor?.spanDays || 1) > 1 ? 's' : ''})`;
+    }
+    return `${startLabel} → ${endLabel} (${descriptor?.spanDays || '?'} jours)`;
+  }, [dateFormatter]);
   
   const handleDeleteMocks = async () => {
     if (!window.confirm('Supprimer toutes les données de test (mock) : activités ET métriques quotidiennes ? Cette action est irréversible.\n\nAprès suppression, une synchronisation sera effectuée pour récupérer vos vraies données.')) {
@@ -59,6 +98,15 @@ export default function SyncControls({
     }
   };
   
+  const formatTimestamp = React.useCallback((iso) => {
+    if (!iso) return '—';
+    try {
+      return dateTimeFormatter.format(new Date(iso));
+    } catch {
+      return iso;
+    }
+  }, [dateTimeFormatter]);
+
   return (
     <div className="mb-6 space-y-4">
       {/* Statut */}
@@ -134,28 +182,117 @@ export default function SyncControls({
           >
             {loading ? 'Synchronisation...' : 'Synchroniser'}
           </button>
-          {/* ✅ PHASE 2.1 : Bouton pour forcer la synchronisation (bypass cache) */}
-          <button
-            onClick={() => syncNow({ forceRefresh: true, skipDelay: true })}
-            disabled={loading}
-            aria-label="Forcer la synchronisation (bypass cache)"
-            aria-busy={loading}
-            aria-disabled={loading}
-            className={`px-4 py-2 rounded-md text-white font-medium text-sm ${
-              loading
-                ? 'bg-slate-600 cursor-not-allowed'
-                : 'bg-orange-600 hover:bg-orange-700'
-            }`}
-            title="Forcer la synchronisation en bypassant tous les caches (serveur et frontend)"
-          >
-            {loading ? 'Forçage...' : 'Forcer'}
-          </button>
+          <ForceSyncMenu
+            loading={loading}
+            onSync={(request) => syncNow(request)}
+            lastForcedRange={lastForcedRange}
+          />
         </div>
         <p className="text-slate-400 text-xs mt-2">
           <span className="text-blue-400">Synchroniser</span> : Utilise le cache si disponible (plus rapide).
           <br />
           <span className="text-orange-400">Forcer</span> : Bypass tous les caches pour récupérer les données les plus récentes.
         </p>
+      </div>
+
+      {/* Historique des forçages */}
+      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-white font-semibold">Historique des forçages</h3>
+          <div className="flex items-center gap-2 text-xs">
+            {onRefreshForcedHistory && (
+              <button
+                type="button"
+                onClick={onRefreshForcedHistory}
+                disabled={loading}
+                className={`px-3 py-1 rounded ${
+                  loading
+                    ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                    : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                }`}
+              >
+                Rafraîchir
+              </button>
+            )}
+            {onClearForcedHistory && forcedRangesHistory.length > 0 && (
+              <button
+                type="button"
+                onClick={onClearForcedHistory}
+                disabled={loading}
+                className={`px-3 py-1 rounded ${
+                  loading
+                    ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                    : 'bg-red-700 hover:bg-red-600 text-white'
+                }`}
+              >
+                Vider
+              </button>
+            )}
+          </div>
+        </div>
+
+        {forcedRangesHistory.length === 0 ? (
+          <p className="text-sm text-slate-400">
+            Aucun forçage enregistré pour le moment. Utilise le menu « Forcer » pour recalculer une plage de dates.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="text-sm text-slate-200 space-y-1">
+              <div>
+                <span className="text-slate-400">Dernier forçage&nbsp;:</span>{' '}
+                <span className="font-medium">{formatTimestamp(lastForcedRange.triggeredAt)}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="uppercase tracking-wide text-orange-300 bg-orange-900/40 border border-orange-700/40 px-2 py-0.5 rounded">
+                  {lastForcedRange.mode || 'personnalisé'}
+                </span>
+                <span className="text-slate-300">{formatRangeLabel(lastForcedRange)}</span>
+                {lastRangeDescriptor?.spanDays && (
+                  <span className="text-slate-500">
+                    {lastRangeDescriptor.spanDays} jour{lastRangeDescriptor.spanDays > 1 ? 's' : ''}
+                  </span>
+                )}
+                {lastForcedRange.cachePurge?.removedFiles > 0 && (
+                  <span className="text-orange-400">
+                    Cache serveur purgé ({lastForcedRange.cachePurge.removedFiles})
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowHistory((prev) => !prev)}
+              className="text-xs text-slate-300 underline underline-offset-4"
+            >
+              {showHistory ? 'Masquer' : 'Afficher'} les {Math.min(5, forcedRangesHistory.length)} dernières entrées
+            </button>
+
+            {showHistory && (
+              <ul className="mt-2 divide-y divide-slate-800 text-xs text-slate-300">
+                {forcedRangesHistory.slice(0, 5).map((entry) => {
+                  const key = entry.id || `${entry.triggeredAt}-${entry.mode || 'custom'}-${entry.start}`;
+                  return (
+                    <li key={key} className="py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-3">
+                      <span className="font-medium text-slate-100">{formatTimestamp(entry.triggeredAt)}</span>
+                      <span className="text-slate-400">
+                        {entry.mode || 'personnalisé'} • {formatRangeLabel(entry)}
+                      </span>
+                      <span className="text-slate-500">
+                        {entry.activitiesCount || 0} activité{(entry.activitiesCount || 0) > 1 ? 's' : ''} • {entry.metricsCount || 0} jour{(entry.metricsCount || 0) > 1 ? 's' : ''}
+                      </span>
+                    </li>
+                  );
+                })}
+                {forcedRangesHistory.length > 5 && (
+                  <li className="py-2 text-slate-500 italic">
+                    … {forcedRangesHistory.length - 5} entrée{forcedRangesHistory.length - 5 > 1 ? 's' : ''} supplémentaire{forcedRangesHistory.length - 5 > 1 ? 's' : ''}
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Backfill */}

@@ -60,7 +60,8 @@ from utils.helpers import (
     safe_int,
     safe_float,
     daterange,
-    print_debug
+    print_debug,
+    normalize_datetime_to_utc
 )
 from utils.error_tracker import (
     get_error_tracker,
@@ -141,28 +142,104 @@ def fetch_today_metrics_parallel(client, date_str):
             print_debug(f"⚠️ Failed to get_steps_data({date_str}) after retries: {e}")
             return ("steps_data", None)
     
+    def _normalize_summary(summary):
+        """Garmin peut renvoyer un tableau ou un dict, normaliser en dict."""
+        if isinstance(summary, list):
+            return summary[0] if summary else None
+        return summary
+
+    def _has_meaningful_stats(data):
+        """Vérifie si les stats contiennent au moins une valeur exploitable."""
+        if not isinstance(data, dict) or not data:
+            return False
+        numeric_fields = [
+            'totalSteps',
+            'totalKilocalories',
+            'activeKilocalories',
+            'bmrKilocalories',
+            'totalDistanceMeters',
+            'wellnessDistanceMeters',
+            'distance',
+            'distanceInMeters',
+            'distanceInKm',
+            'moderateIntensityMinutes',
+            'vigorousIntensityMinutes'
+        ]
+        for field in numeric_fields:
+            value = data.get(field)
+            if value is None:
+                continue
+            try:
+                # Certains champs peuvent être des booléens ou des strings
+                numeric = float(value)
+            except (TypeError, ValueError):
+                continue
+            # On considère qu'une valeur > 0 indique des données utiles
+            if numeric > 0:
+                return True
+        return False
+
     def fetch_stats():
         try:
             stats = _get_stats_with_retry(client, date_str)
+            stats = _normalize_summary(stats)
+            stats_source = "get_stats"
+
+            if stats and isinstance(stats, dict):
+                empty_stats = not _has_meaningful_stats(stats)
+            else:
+                empty_stats = True
+
             if not stats or (isinstance(stats, dict) and len(stats) == 0):
                 # Essayer get_daily_summary en fallback
                 try:
                     daily_summary = _get_daily_summary_with_retry(client, date_str)
+                    daily_summary = _normalize_summary(daily_summary)
                     if daily_summary:
                         print_debug(f"✅ get_daily_summary({date_str}) returned data (fallback)")
-                        return ("stats", daily_summary)
+                        stats = daily_summary
+                        stats_source = "get_daily_summary"
+                        empty_stats = not _has_meaningful_stats(stats)
+                        if not empty_stats:
+                            return ("stats", stats)
                 except Exception as e2:
                     print_debug(f"get_daily_summary({date_str}) also failed: {e2}")
                     # Essayer get_wellness_summary en dernier recours
                     try:
                         wellness_summary = _get_wellness_summary_with_retry(client, date_str)
+                        wellness_summary = _normalize_summary(wellness_summary)
                         if wellness_summary:
                             print_debug(f"✅ get_wellness_summary({date_str}) returned data (fallback)")
-                            return ("stats", wellness_summary)
+                            stats = wellness_summary
+                            stats_source = "get_wellness_summary"
+                            empty_stats = not _has_meaningful_stats(stats)
+                            if not empty_stats:
+                                return ("stats", stats)
                     except Exception as e3:
                         print_debug(f"get_wellness_summary({date_str}) also failed: {e3}")
             elif stats:
                 print_debug(f"✅ get_stats({date_str}) returned data: keys={list(stats.keys())[:5] if isinstance(stats, dict) else 'N/A'}")
+                if empty_stats:
+                    print_debug(f"⚠️ get_stats({date_str}) returned structure sans valeurs exploitables, tentative fallback...")
+                    try:
+                        daily_summary = _get_daily_summary_with_retry(client, date_str)
+                        daily_summary = _normalize_summary(daily_summary)
+                        if daily_summary and _has_meaningful_stats(daily_summary):
+                            print_debug(f"✅ get_daily_summary({date_str}) provided meaningful data (fallback après structure vide)")
+                            return ("stats", daily_summary)
+                    except Exception as e2:
+                        print_debug(f"get_daily_summary({date_str}) fallback also failed after empty get_stats: {e2}")
+                    try:
+                        wellness_summary = _get_wellness_summary_with_retry(client, date_str)
+                        wellness_summary = _normalize_summary(wellness_summary)
+                        if wellness_summary and _has_meaningful_stats(wellness_summary):
+                            print_debug(f"✅ get_wellness_summary({date_str}) provided meaningful data (fallback après structure vide)")
+                            return ("stats", wellness_summary)
+                    except Exception as e3:
+                        print_debug(f"get_wellness_summary({date_str}) fallback also failed after empty get_stats: {e3}")
+                    # Si aucun fallback n'a donné de valeurs, on log l'état vide
+                    print_debug(f"⚠️ Aucune donnée calorique/steps exploitable obtenue pour {date_str} (source: {stats_source})")
+                    return ("stats", stats or {})
             return ("stats", stats)
         except Exception as e:
             print_debug(f"Failed to get_stats({date_str}): {e}")
@@ -170,7 +247,8 @@ def fetch_today_metrics_parallel(client, date_str):
             try:
                 print_debug(f"⚠️ Trying get_daily_summary({date_str}) as fallback...")
                 daily_summary = _get_daily_summary_with_retry(client, date_str)
-                if daily_summary:
+                daily_summary = _normalize_summary(daily_summary)
+                if daily_summary and _has_meaningful_stats(daily_summary):
                     print_debug(f"✅ get_daily_summary({date_str}) succeeded as fallback")
                     return ("stats", daily_summary)
             except Exception as e2:
@@ -279,15 +357,33 @@ def _get_stats_with_retry(client, date_str):
 @retry_with_backoff(max_retries=3, base_delay=1.0)
 @retry_on_rate_limit(max_retries=5, base_delay=5.0)
 def _get_daily_summary_with_retry(client, date_str):
-    """Helper avec retry pour get_daily_summary"""
-    return client.get_daily_summary(date_str)
+    """Helper avec retry pour get_daily_summary (si disponible)."""
+    getter = getattr(client, "get_daily_summary", None)
+    if not callable(getter):
+        print_debug("ℹ️ Garmin client ne fournit pas get_daily_summary(), fallback indisponible.")
+        return None
+    try:
+        return getter(date_str)
+    except AttributeError as exc:
+        # Certains SDK lèvent AttributeError même si la méthode existe partiellement
+        print_debug(f"⚠️ get_daily_summary indisponible pour {date_str}: {exc}")
+        return None
+
 
 
 @retry_with_backoff(max_retries=3, base_delay=1.0)
 @retry_on_rate_limit(max_retries=5, base_delay=5.0)
 def _get_wellness_summary_with_retry(client, date_str):
-    """Helper avec retry pour get_wellness_summary"""
-    return client.get_wellness_summary(date_str)
+    """Helper avec retry pour get_wellness_summary (si disponible)."""
+    getter = getattr(client, "get_wellness_summary", None)
+    if not callable(getter):
+        print_debug("ℹ️ Garmin client ne fournit pas get_wellness_summary(), fallback indisponible.")
+        return None
+    try:
+        return getter(date_str)
+    except AttributeError as exc:
+        print_debug(f"⚠️ get_wellness_summary indisponible pour {date_str}: {exc}")
+        return None
 
 
 @retry_with_backoff(max_retries=3, base_delay=1.0)
@@ -1031,9 +1127,10 @@ if EMAIL and PASSWORD:
                             if minutes_since_midnight > 15:
                                 print_debug(f"⚠️ Récupération incrémentale vide après 00:15 (minutes: {minutes_since_midnight:.1f}), tentative récupération complète...")
                                 hr_day_complete = _get_heart_rates_with_retry(client, d_str)
-                                if hr_day_complete and len(hr_day_complete.get('heartRateValues', [])) > 0:
+                                hr_values_complete = hr_day_complete.get('heartRateValues') if hr_day_complete else []
+                                if hr_values_complete:
                                     hr_day = hr_day_complete
-                                    print_debug(f"✅ Récupération complète réussie: {len(hr_day.get('heartRateValues', []))} points")
+                                    print_debug(f"✅ Récupération complète réussie: {len(hr_values_complete)} points")
                                 else:
                                     hr_day = hr_day_incremental  # Utiliser quand même l'incrémentale (même si vide)
                             else:
@@ -1215,7 +1312,8 @@ if EMAIL and PASSWORD:
                     # ✅ FIX B.3 : Logs détaillés pour diagnostic
                     print_debug(f"📊 Stats récupérés: {bool(stats)}, clés: {list(stats.keys())[:10] if stats and isinstance(stats, dict) else 'None'}")
                     print_debug(f"👣 Steps récupérés: {bool(steps_data)}, clés: {list(steps_data.keys())[:10] if steps_data and isinstance(steps_data, dict) else 'None'}")
-                    hr_values_count = len(hr_day.get('heartRateValues', [])) if hr_day and isinstance(hr_day, dict) else 0
+                    hr_values_raw = hr_day.get('heartRateValues') if hr_day and isinstance(hr_day, dict) else []
+                    hr_values_count = len(hr_values_raw or [])
                     print_debug(f"❤️ HR récupérés: {bool(hr_day)}, points: {hr_values_count}")
                     print_debug(f"💤 Sleep récupéré: {bool(sleep)}, type: {type(sleep)}")
                     print_debug(f"🔋 Body Battery récupéré: {bool(body_battery_data)}, type: {type(body_battery_data)}")
@@ -1227,7 +1325,7 @@ if EMAIL and PASSWORD:
                     has_any_raw_data = (
                         (stats and isinstance(stats, dict) and len(stats) > 0) or
                         (steps_data and isinstance(steps_data, dict) and len(steps_data) > 0) or
-                        (hr_day and isinstance(hr_day, dict) and len(hr_day.get('heartRateValues', [])) > 0) or
+                        (hr_day and isinstance(hr_day, dict) and len((hr_day.get('heartRateValues') or [])) > 0) or
                         (sleep and isinstance(sleep, dict) and len(sleep) > 0) or
                         (body_battery_data is not None) or
                         (stress_data is not None) or

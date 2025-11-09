@@ -72,6 +72,8 @@ const EMPTY_ACTIVITIES = Object.freeze({
 
 const EMPTY_DAILY_METRICS = Object.freeze({});
 
+const FORCED_HISTORY_DISPLAY_LIMIT = 200;
+
 const GarminTab = () => {
   const [status, setStatus] = React.useState(null);
   const [garminData, setGarminData] = React.useState(null);
@@ -82,6 +84,7 @@ const GarminTab = () => {
   const [activeTab, setActiveTab] = React.useState('dashboard'); // dashboard, activities, metrics, charts
   const [comparisonMode, setComparisonMode] = React.useState(false);
   const [compareDate, setCompareDate] = React.useState(null);
+  const [forcedRangesHistory, setForcedRangesHistory] = React.useState([]);
   const [periodFilter, setPeriodFilter] = React.useState('all');
   const [customStartDate, setCustomStartDate] = React.useState('');
   const [customEndDate, setCustomEndDate] = React.useState('');
@@ -95,12 +98,54 @@ const GarminTab = () => {
   // ✅ FIX : Tous les hooks personnalisés dans un ordre constant (RÈGLE REACT)
   // Les hooks doivent TOUJOURS être appelés dans le même ordre à chaque rendu
   // et au niveau supérieur du composant (pas dans des conditions, useEffect, etc.)
-  const { loadAllData, loadDataForTab, dbReady, getLastSyncDate, deleteMockActivities } = useGarminData();
+  const { loadAllData, loadDataForTab, dbReady, getLastSyncDate, deleteMockActivities, loadForcedRangesHistory, clearForcedRangesHistory } = useGarminData();
   const { importToEndurance } = useGarminImport();
+
+  const handleForcedRangeRecorded = React.useCallback((entry) => {
+    if (!entry) return;
+    setForcedRangesHistory((prev) => {
+      const existsIndex = prev.findIndex((item) => {
+        if (item.id && entry.id) {
+          return item.id === entry.id;
+        }
+        return (
+          item.triggeredAt === entry.triggeredAt &&
+          item.mode === entry.mode &&
+          item.start === entry.start &&
+          item.end === entry.end
+        );
+      });
+      const filtered = existsIndex >= 0 ? prev.filter((_, idx) => idx !== existsIndex) : prev;
+      return [entry, ...filtered].slice(0, FORCED_HISTORY_DISPLAY_LIMIT);
+    });
+  }, []);
+
+  const refreshForcedRangesHistory = React.useCallback(async () => {
+    if (!dbReady) return;
+    try {
+      const history = await loadForcedRangesHistory(FORCED_HISTORY_DISPLAY_LIMIT);
+      setForcedRangesHistory(history);
+    } catch (err) {
+      console.warn('[GarminTab] Erreur lors du chargement de l\'historique des forçages', err);
+    }
+  }, [dbReady, loadForcedRangesHistory]);
+
+  const handleClearForcedHistory = React.useCallback(async () => {
+    try {
+      await clearForcedRangesHistory();
+      setForcedRangesHistory([]);
+    } catch (err) {
+      console.error('[GarminTab] Erreur lors de la suppression de l\'historique des forçages', err);
+    }
+  }, [clearForcedRangesHistory]);
+
   const { syncNow, backfill, fetchStatus, loading, baseUrl, clearCache } = useGarminSync(
     setGarminData,
     setStatus,
-    importToEndurance
+    importToEndurance,
+    {
+      onForcedRangeRecorded: handleForcedRangeRecorded
+    }
   );
   // ✅ FIX : useToast() déplacé AVANT tous les useEffect pour respecter les règles de React
   const { showToast, ToastContainer } = useToast();
@@ -455,6 +500,24 @@ const GarminTab = () => {
     colors
   }), [memoizedDailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors]);
 
+  React.useEffect(() => {
+    if (!dbReady) return;
+    let cancelled = false;
+    loadForcedRangesHistory(FORCED_HISTORY_DISPLAY_LIMIT)
+      .then((history) => {
+        if (!cancelled && Array.isArray(history)) {
+          setForcedRangesHistory(history);
+        }
+      })
+      .catch((err) => {
+        console.warn('[GarminTab] Impossible de charger l\'historique des forçages', err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dbReady, loadForcedRangesHistory]);
+
   return (
     <GarminErrorBoundary>
       <GarminProvider
@@ -473,6 +536,9 @@ const GarminTab = () => {
         compareDate={compareDate}
         setCompareDate={setCompareDate}
         colors={colors}
+        forcedRangesHistory={forcedRangesHistory}
+        addForcedRangeEntry={handleForcedRangeRecorded}
+        clearForcedRangesHistory={handleClearForcedHistory}
       >
         <div className="max-w-7xl mx-auto p-4">
         {/* 🟡 FIX #33: Container pour les toasts */}
@@ -789,6 +855,9 @@ const GarminTab = () => {
             }} // ✅ PHASE 5.3 : Fonction pour ouvrir paramètres de délai
             clearCache={clearCache}
             onOpenDebug={() => setShowDebugPanel(true)} // ✅ PHASE 1 : Ouvrir le panneau de diagnostic
+            forcedRangesHistory={forcedRangesHistory}
+            onClearForcedHistory={handleClearForcedHistory}
+            onRefreshForcedHistory={refreshForcedRangesHistory}
           />
 
           {/* 🔴 FIX #81-87: Synchronisation automatique */}

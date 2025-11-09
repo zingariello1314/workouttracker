@@ -6,6 +6,8 @@ const express = require('express');
 const cors = require('cors');
 const { spawn } = require('child_process');
 const rateLimit = require('express-rate-limit');
+const fs = require('fs');
+const path = require('path');
 
 // ==========================================
 // PHASE 4.1 : RATE LIMITING
@@ -136,6 +138,204 @@ const serverCache = new ServerCache(5); // TTL de 5 minutes
 setInterval(() => {
   serverCache.cleanup();
 }, 10 * 60 * 1000);
+
+// ==========================================
+// OUTILS DATE & PLAGE (FORCE SYNC)
+// ==========================================
+
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const CACHE_DIR = path.join(__dirname, '.cache');
+
+function formatDateStr(date) {
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    return date.toISOString().split('T')[0];
+  }
+  return null;
+}
+
+function isValidDateStr(str) {
+  if (!str || typeof str !== 'string' || !DATE_REGEX.test(str)) return false;
+  const [y, m, d] = str.split('-').map(Number);
+  const test = new Date(y, m - 1, d);
+  return (
+    test.getFullYear() === y &&
+    test.getMonth() === m - 1 &&
+    test.getDate() === d
+  );
+}
+
+function shiftDateStr(str, deltaDays) {
+  if (!isValidDateStr(str)) return null;
+  const [y, m, d] = str.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + deltaDays);
+  return formatDateStr(date);
+}
+
+function enumerateDates(start, end) {
+  if (!isValidDateStr(start) || !isValidDateStr(end)) return [];
+  const dates = [];
+  let cursor = start;
+  while (cursor && cursor <= end) {
+    dates.push(cursor);
+    cursor = shiftDateStr(cursor, 1);
+  }
+  return dates;
+}
+
+function purgeCacheForRange(start, end) {
+  if (!start || !end || !isValidDateStr(start) || !isValidDateStr(end)) {
+    return { removedFiles: 0, dates: [] };
+  }
+  if (!fs.existsSync(CACHE_DIR)) {
+    return { removedFiles: 0, dates: [] };
+  }
+  const dates = enumerateDates(start, end);
+  let removed = 0;
+  for (const dateStr of dates) {
+    const prefix = `daily_metrics_${dateStr}_`;
+    try {
+      const files = fs.readdirSync(CACHE_DIR).filter((name) => name.startsWith(prefix));
+      for (const file of files) {
+        fs.unlinkSync(path.join(CACHE_DIR, file));
+        removed++;
+      }
+    } catch (e) {
+      console.warn(`[CACHE PURGE] Erreur lors de la suppression pour ${dateStr}: ${e.message}`);
+    }
+  }
+  if (removed > 0) {
+    console.log(`[CACHE PURGE] Supprimé ${removed} fichier(s) de cache pour ${start} → ${end}`);
+  }
+  return { removedFiles: removed, dates };
+}
+
+function resolveForceRange(payload = {}) {
+  const now = new Date();
+  const todayStr = formatDateStr(now);
+  const baseForce = payload.forceRefresh === true || payload.forceRefresh === 'true';
+  const includeToday = payload.includeToday === true || payload.includeToday === 'true';
+
+  const rangeFromPayload =
+    (payload.range && typeof payload.range === 'object' && payload.range.start && payload.range.end)
+      ? payload.range
+      : null;
+
+  const explicitStart = payload.start || payload.rangeStart || (rangeFromPayload && rangeFromPayload.start);
+  const explicitEnd = payload.end || payload.rangeEnd || (rangeFromPayload && rangeFromPayload.end);
+
+  const mode = payload.mode || payload.forceMode || null;
+
+  const summary = {
+    mode,
+    includeToday,
+    triggeredAt: new Date().toISOString()
+  };
+
+  const result = {
+    start: null,
+    end: null,
+    forceRefresh: baseForce,
+    mode,
+    includeToday,
+    summary
+  };
+
+  const ensureValidRange = (start, end, options = {}) => {
+    if (!isValidDateStr(start) || !isValidDateStr(end)) return null;
+    if (start > end) return null;
+    return { start, end };
+  };
+
+  if (!mode && explicitStart && explicitEnd) {
+    const valid = ensureValidRange(explicitStart, explicitEnd);
+    if (valid) {
+      result.start = valid.start;
+      result.end = valid.end;
+      summary.start = valid.start;
+      summary.end = valid.end;
+    }
+    return result;
+  }
+
+  switch (mode) {
+    case 'today': {
+      result.forceRefresh = true;
+      result.start = todayStr;
+      result.end = todayStr;
+      break;
+    }
+    case 'yesterday': {
+      result.forceRefresh = true;
+      const yesterday = shiftDateStr(todayStr, -1);
+      result.start = yesterday;
+      result.end = yesterday;
+      break;
+    }
+    case 'range': {
+      const startValue = explicitStart || todayStr;
+      let endValue = explicitEnd || startValue;
+      if (includeToday) {
+        endValue = todayStr;
+      }
+      const valid = ensureValidRange(startValue, endValue);
+      if (valid) {
+        result.forceRefresh = true;
+        result.start = valid.start;
+        result.end = valid.end;
+      }
+      break;
+    }
+    case 'auto': {
+      const lastSyncDate = payload.lastSyncDate && isValidDateStr(payload.lastSyncDate)
+        ? payload.lastSyncDate
+        : null;
+      const thresholdHours = payload.autoThresholdHours ? Number(payload.autoThresholdHours) : null;
+      const nowMs = now.getTime();
+      let shouldTrigger = true;
+      if (thresholdHours && payload.lastSyncTimestamp) {
+        const lastSyncTs = Date.parse(payload.lastSyncTimestamp);
+        if (!Number.isNaN(lastSyncTs)) {
+          const diffHours = (nowMs - lastSyncTs) / (1000 * 60 * 60);
+          shouldTrigger = diffHours >= thresholdHours;
+        }
+      }
+      if (shouldTrigger && lastSyncDate && lastSyncDate < todayStr) {
+        result.forceRefresh = true;
+        result.start = shiftDateStr(lastSyncDate, 1) || todayStr;
+        result.end = todayStr;
+      } else {
+        result.forceRefresh = result.forceRefresh || false;
+        result.start = todayStr;
+        result.end = todayStr;
+      }
+      break;
+    }
+    default: {
+      if (explicitStart && explicitEnd) {
+        const valid = ensureValidRange(explicitStart, explicitEnd);
+        if (valid) {
+          result.start = valid.start;
+          result.end = valid.end;
+        }
+      } else {
+        result.start = explicitStart || null;
+        result.end = explicitEnd || null;
+      }
+      break;
+    }
+  }
+
+  if (!result.start || !result.end) {
+    summary.start = result.start || explicitStart || null;
+    summary.end = result.end || explicitEnd || null;
+  } else {
+    summary.start = result.start;
+    summary.end = result.end;
+  }
+
+  return result;
+}
 
 // ==========================================
 // PHASE 4.2 : RETRY AVEC BACKOFF EXPONENTIEL
@@ -286,9 +486,19 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
   console.log('[SERVER] USE_PYTHON env var:', process.env.USE_PYTHON);
   
   try {
-    const { start, end, lastSyncTimestamp, forceRefresh } = req.query || {};
-    console.log('[SERVER] Query params - start:', start, 'end:', end, 'lastSyncTimestamp:', lastSyncTimestamp, 'forceRefresh:', forceRefresh);
-    console.log(`[🔍 DIAGNOSTIC SERVEUR] Paramètres reçus - start: ${start}, end: ${end}, lastSyncTimestamp: ${lastSyncTimestamp || 'none'}, forceRefresh: ${forceRefresh || false}`);
+    const payload = {
+      ...(req.query || {}),
+      ...(req.body && typeof req.body === 'object' ? req.body : {})
+    };
+    const resolution = resolveForceRange(payload);
+    const start = resolution.start || payload.start || null;
+    const end = resolution.end || payload.end || null;
+    const lastSyncTimestamp = payload.lastSyncTimestamp || null;
+    const forceRefresh = resolution.forceRefresh ? 'true' : (payload.forceRefresh === 'true' ? 'true' : 'false');
+
+    console.log('[SERVER] Payload reçu:', payload);
+    console.log('[SERVER] Plage normalisée - start:', start, 'end:', end, 'mode:', resolution.mode || 'default');
+    console.log(`[🔍 DIAGNOSTIC SERVEUR] Paramètres reçus - start: ${start}, end: ${end}, lastSyncTimestamp: ${lastSyncTimestamp || 'none'}, forceRefresh: ${forceRefresh}`);
     
     // ✅ PHASE 2.4 : Inclure lastSyncTimestamp dans la clé de cache
     const cacheKey = serverCache.generateKey({ start, end, lastSyncTimestamp: lastSyncTimestamp || 'none' });
@@ -322,6 +532,11 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
       console.log(`[🔍 DIAGNOSTIC SERVEUR] Cache serveur - Pas de cache valide pour la clé: ${cacheKey}`);
     }
 
+    let cachePurgeInfo = null;
+    if (forceRefresh === 'true' && start && end) {
+      cachePurgeInfo = purgeCacheForRange(start, end);
+    }
+
     if (process.env.USE_PYTHON === '1') {
       console.log('[SERVER] Using Python script...');
       const pythonStartTime = Date.now();
@@ -352,7 +567,18 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
           const dailyMetricsCount = Object.keys(result.data.dailyMetrics || {}).length;
           console.log(`[🔍 DIAGNOSTIC SERVEUR] Données Python - Activités: ${activitiesCount}, Métriques: ${dailyMetricsCount}, LastSync: ${result.lastSync}`);
         }
-        
+
+        const forcedRange = resolution.mode
+          ? {
+              mode: resolution.mode,
+              start: resolution.start || start || null,
+              end: resolution.end || end || null,
+              includeToday: resolution.includeToday || false,
+              triggeredAt: resolution.summary?.triggeredAt || new Date().toISOString(),
+              cachePurge: cachePurgeInfo
+            }
+          : null;
+
         // PHASE 4.3 : Mettre en cache uniquement les résultats OK
         if (forceRefresh !== 'true') {
           serverCache.set(cacheKey, result);
@@ -364,11 +590,18 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
         const totalDuration = Date.now() - requestStartTime;
         return res.json({
           ...result,
+          forcedRange,
           diagnostic: {
             cacheUsed: false,
             pythonDuration,
             totalDuration,
-            requestTimestamp
+            requestTimestamp,
+            resolve: {
+              mode: resolution.mode || null,
+              forceRefresh: forceRefresh === 'true',
+              includeToday: resolution.includeToday || false,
+              cachePurge: cachePurgeInfo
+            }
           }
         });
       } else {

@@ -29,6 +29,13 @@ import {
   getLastSyncTimestampForDate
 } from './garminDataLoad';
 import { autoPurge, purgeOldTimeSeries, deleteMockActivities } from './garminDataPurge';
+import {
+  saveForcedRangeEntry,
+  loadForcedRangesHistory,
+  clearForcedRangesHistory,
+  importForcedRangesHistory,
+  FORCED_HISTORY_LIMIT
+} from './garminForcedHistory';
 
 /**
  * Hook principal pour la gestion des données Garmin dans IndexedDB
@@ -151,6 +158,20 @@ export const useGarminData = () => {
     return await loadDataForTab(tab, selectedDate, periodFilter, customStartDate, customEndDate, dbReady);
   }, [dbReady]);
   
+  const loadForcedRangesHistoryWrapper = useCallback(async (limit = FORCED_HISTORY_LIMIT) => {
+    return await loadForcedRangesHistory(limit);
+  }, []);
+
+  const saveForcedRangeEntryWrapper = useCallback(async (entry) => {
+    if (!dbReady) return null;
+    return await saveForcedRangeEntry(entry);
+  }, [dbReady]);
+
+  const clearForcedRangesHistoryWrapper = useCallback(async () => {
+    if (!dbReady) return;
+    await clearForcedRangesHistory();
+  }, [dbReady]);
+  
   /**
    * Calcule la plage de dates selon le periodFilter
    * 
@@ -169,8 +190,16 @@ export const useGarminData = () => {
    * @returns {Promise<Object>} Toutes les données (activities, dailyMetrics)
    */
   const exportAll = useCallback(async () => {
-    return await loadAllData(dbReady);
-  }, [dbReady]);
+    const [coreData, forcedHistory] = await Promise.all([
+      loadAllDataWrapper(),
+      loadForcedRangesHistoryWrapper(FORCED_HISTORY_LIMIT)
+    ]);
+
+    return {
+      ...coreData,
+      forcedRangesHistory: forcedHistory
+    };
+  }, [loadAllDataWrapper, loadForcedRangesHistoryWrapper]);
 
   /**
    * Importe des données dans IndexedDB
@@ -184,6 +213,9 @@ export const useGarminData = () => {
     if (!dbReady) return;
     if (data.activities) await saveActivities(data.activities, dbReady);
     if (data.dailyMetrics) await saveDailyMetrics(data.dailyMetrics, dbReady);
+    if (Array.isArray(data.forcedRangesHistory) && data.forcedRangesHistory.length > 0) {
+      await importForcedRangesHistory(data.forcedRangesHistory);
+    }
   }, [dbReady]);
 
   /**
@@ -268,5 +300,8 @@ export const useGarminData = () => {
     getSyncStartDate: getSyncStartDateWrapper,
     getLastSyncTimestampForDate: getLastSyncTimestampForDateWrapper,
     deleteMockActivities: deleteMockActivitiesWrapper,
+    saveForcedRangeEntry: saveForcedRangeEntryWrapper,
+    loadForcedRangesHistory: loadForcedRangesHistoryWrapper,
+    clearForcedRangesHistory: clearForcedRangesHistoryWrapper,
   };
 };

@@ -1708,6 +1708,9 @@ def parse_jump_rope_metrics(entry_base: Dict[str, Any], summary_dto: Dict[str, A
     else:
         print_debug(f"❌ Final jump rope activity {act_id} - NO JUMPS FOUND after all searches")
     
+    # Toujours retourner un tuple (entry_base, connect_iq) pour le pipeline en amont
+    # Utiliser un dict vide plutôt que None pour simplifier l'exploitation côté appelant
+    return entry_base, (connect_iq if connect_iq else {})
 
 def extract_activity_heart_rate_time_series(act_details: Optional[Dict[str, Any]], act_summary: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     """

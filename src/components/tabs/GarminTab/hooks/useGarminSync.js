@@ -22,7 +22,13 @@ import logger from '../../../../utils/logger';
 import { tryFetch } from './garminSyncFetch';
 import { isDataEmptyForDate } from './garminSyncValidation';
 import { processSyncResponse } from './garminSyncProcessor';
-import { getTodayDateStr, getDateFromStr } from './garminDateUtils';
+import {
+  getTodayDateStr,
+  getDateFromStr,
+  subtractDaysFromDateStr,
+  isDateValid,
+  isDateBeforeOrEqual
+} from './garminDateUtils';
 import {
   calculateSyncDateRange,
   applySyncDelay,
@@ -68,7 +74,8 @@ export const clearFrontendCache = () => {
  * @returns {string|null} returns.baseUrl - Base URL utilisée pour la dernière requête
  * @returns {Function} returns.clearCache - Fonction pour vider le cache
  */
-export function useGarminSync(setGarminData, setStatus, importToEndurance) {
+export function useGarminSync(setGarminData, setStatus, importToEndurance, options = {}) {
+  const { onForcedRangeRecorded = null } = options;
   const [loading, setLoading] = useState(false);
   const [baseUrl, setBaseUrl] = useState(null);
   
@@ -81,13 +88,70 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
     setLastSyncDate,
     getSyncStartDate,
     getLastSyncTimestampForDate,
-    loadDataForTab
+    loadDataForTab,
+    saveForcedRangeEntry
   } = useGarminData();
 
   // Calculer todayStr une seule fois pour éviter de recalculer
   const todayStr = useMemo(() => {
     return getTodayDateStr();
   }, []);
+
+  const recordForcedSyncHistory = useCallback(async (response, context) => {
+    if (!response || !context) {
+      return null;
+    }
+
+    const forcedInfo = response.forcedRange || null;
+    const isForced = Boolean(context.forceMode || (forcedInfo && (forcedInfo.mode || forcedInfo.forceRefresh)));
+    if (!isForced) {
+      return null;
+    }
+
+    const effectiveStart = forcedInfo?.start || context.effectiveStart || context.requestStart;
+    const effectiveEnd = forcedInfo?.end || context.effectiveEnd || context.requestEnd;
+
+    if (!effectiveStart || !effectiveEnd || !isDateValid(effectiveStart) || !isDateValid(effectiveEnd)) {
+      return null;
+    }
+
+    const activitiesCount = Object.values(response.data?.activities || {}).reduce((sum, arr) => {
+      if (!Array.isArray(arr)) return sum;
+      return sum + arr.length;
+    }, 0);
+    const metricsCount = Object.keys(response.data?.dailyMetrics || {}).length;
+
+    const entry = {
+      mode: forcedInfo?.mode || context.forceMode || null,
+      start: effectiveStart,
+      end: effectiveEnd,
+      includeToday: forcedInfo?.includeToday ?? context.includeToday ?? false,
+      forceRefresh: true,
+      lastSync: response.lastSync || null,
+      triggeredAt: forcedInfo?.triggeredAt || response.diagnostic?.requestTimestamp || new Date().toISOString(),
+      requestTimestamp: response.diagnostic?.requestTimestamp || null,
+      ok: response.ok !== false,
+      cached: !!response.cached,
+      activitiesCount,
+      metricsCount,
+      pythonDuration: response.diagnostic?.pythonDuration ?? null,
+      totalDuration: response.diagnostic?.totalDuration ?? null,
+      cachePurge: forcedInfo?.cachePurge || response.diagnostic?.resolve?.cachePurge || null,
+      diagnostic: response.diagnostic || null,
+      source: context.source || 'syncNow'
+    };
+
+    try {
+      const saved = await saveForcedRangeEntry(entry);
+      if (saved && typeof onForcedRangeRecorded === 'function') {
+        onForcedRangeRecorded(saved);
+      }
+      return saved;
+    } catch (err) {
+      log.warn('[useGarminSync] Impossible d\'enregistrer l\'historique de forçage', err);
+      return null;
+    }
+  }, [onForcedRangeRecorded, saveForcedRangeEntry]);
 
   /**
    * Synchronise les données Garmin maintenant
@@ -107,52 +171,182 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
    * @returns {Promise<void>} Promise résolue quand la sync est terminée
    */
   const syncNow = useCallback(async (options = {}) => {
-    let forceRefresh = false;
-    let skipDelay = false;
+    const optionsIsBoolean = typeof options === 'boolean';
+    const optionObject = !optionsIsBoolean && typeof options === 'object' ? options : {};
 
-    if (typeof options === 'boolean') {
-      forceRefresh = options;
-    } else if (options && typeof options === 'object') {
-      forceRefresh = !!options.forceRefresh;
-      skipDelay = !!options.skipDelay;
+    let forceRefresh = optionsIsBoolean ? options : !!optionObject.forceRefresh;
+    let skipDelay = !!optionObject.skipDelay;
+    const forceMode = optionObject.mode || null;
+    const includeToday = optionObject.includeToday ?? optionObject.meta?.includeToday ?? false;
+    const forceRange = optionObject.range || ((optionObject.start || optionObject.end) ? { start: optionObject.start, end: optionObject.end } : null);
+    const extraPayload = optionObject.payload && typeof optionObject.payload === 'object' ? optionObject.payload : null;
+    const requestSource = optionObject.source || (forceMode ? 'force-sync' : 'manual');
+
+    if (forceMode) {
+      if (optionObject.forceRefresh === undefined) {
+        forceRefresh = true;
+      }
+      if (optionObject.skipDelay === undefined) {
+        skipDelay = true;
+      }
     }
 
-    // Vérifier que IndexedDB est prêt
     if (!dbReady) {
       setStatus({ ok: false, message: 'Base de données non prête', error: 'IndexedDB non initialisé' });
       return;
     }
 
-    // Vider le cache si forceRefresh
     if (forceRefresh) {
       clearFrontendCache();
     }
 
-    // Appliquer délai optionnel (Phase 5.2)
     if (!skipDelay) {
       await applySyncDelay(forceRefresh, setStatus);
     }
 
-    // Calculer plage de dates
-    const dateRange = await calculateSyncDateRange(getSyncStartDate);
-    const { startDate, endDate, isValid, wasAdjusted } = dateRange;
-    
-    // Si plage invalide et ajustée, faire sync avec plage ajustée
-    if (!isValid && wasAdjusted) {
-      try {
-        setLoading(true);
-        const query = `?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`;
-        const json = await tryFetch(`/api/garmin/sync${query}`, { method: 'POST' }, undefined, setBaseUrl);
-        
+    const resolveForcedRange = () => {
+      if (!forceMode) {
+        return null;
+      }
+
+      const sanitize = (value) => {
+        if (!value || typeof value !== 'string') {
+          return null;
+        }
+        return value;
+      };
+
+      const baseRange = forceRange || {};
+      const rawStart = sanitize(baseRange.start);
+      const rawEnd = sanitize(baseRange.end);
+
+      if (rawStart && rawEnd) {
+        let adjustedEnd = rawEnd;
+        if (includeToday && isDateValid(adjustedEnd) && isDateBeforeOrEqual(adjustedEnd, todayStr)) {
+          adjustedEnd = todayStr;
+        }
+        if (!isDateValid(rawStart) || !isDateValid(adjustedEnd) || !isDateBeforeOrEqual(rawStart, adjustedEnd)) {
+          return null;
+        }
+        return { start: rawStart, end: adjustedEnd };
+      }
+
+      switch (forceMode) {
+        case 'today':
+          return { start: todayStr, end: todayStr };
+        case 'yesterday': {
+          const yesterday = subtractDaysFromDateStr(todayStr, 1);
+          return { start: yesterday, end: yesterday };
+        }
+        case 'range': {
+          if (!rawStart || !isDateValid(rawStart)) {
+            return null;
+          }
+          let resolvedEnd = rawEnd && isDateValid(rawEnd) ? rawEnd : rawStart;
+          if (includeToday && isDateBeforeOrEqual(resolvedEnd, todayStr)) {
+            resolvedEnd = todayStr;
+          }
+          if (!isDateBeforeOrEqual(rawStart, resolvedEnd)) {
+            return null;
+          }
+          return { start: rawStart, end: resolvedEnd };
+        }
+        default:
+          return null;
+      }
+    };
+
+    let startDate = null;
+    let endDate = null;
+    let usingForcedRange = false;
+    let dateRangeMeta = null;
+
+    if (forceMode) {
+      const resolvedForcedRange = resolveForcedRange();
+      if (resolvedForcedRange) {
+        startDate = resolvedForcedRange.start;
+        endDate = resolvedForcedRange.end;
+        usingForcedRange = true;
+      }
+    }
+
+    if (!usingForcedRange) {
+      dateRangeMeta = await calculateSyncDateRange(getSyncStartDate);
+      const { startDate: rangeStart, endDate: rangeEnd, isValid, wasAdjusted } = dateRangeMeta;
+      startDate = rangeStart;
+      endDate = rangeEnd;
+
+      if (!forceMode && !isValid && wasAdjusted) {
+        try {
+          setLoading(true);
+          const queryParts = [];
+          if (rangeStart) queryParts.push(`start=${encodeURIComponent(rangeStart)}`);
+          if (rangeEnd) queryParts.push(`end=${encodeURIComponent(rangeEnd)}`);
+          const query = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+          const json = await tryFetch(`/api/garmin/sync${query}`, { method: 'POST' }, undefined, setBaseUrl);
+
+          setStatus({
+            lastSync: json.lastSync,
+            ok: json.ok,
+            message: json.ok ? 'Sync OK' : 'Erreur sync',
+            error: json.error
+          });
+
+          await processSyncResponse(
+            json,
+            { startDate: rangeStart, endDate: rangeEnd },
+            dbReady,
+            saveActivities,
+            saveDailyMetrics,
+            setGarminData,
+            setLastSyncDate,
+            loadAllData,
+            importToEndurance
+          );
+        } catch (e) {
+          setStatus({ ok: false, message: 'Erreur sync', error: e.message });
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+    }
+
+    if (!startDate) {
+      startDate = todayStr;
+    }
+    if (!endDate) {
+      endDate = todayStr;
+    }
+
+    const syncStartTime = new Date().toISOString();
+    const syncStartTimestamp = Date.now();
+    log.info(`[🔍 DIAGNOSTIC] Début synchronisation - Timestamp: ${syncStartTime}, ForceRefresh: ${forceRefresh}, Mode forcé: ${forceMode || 'none'}`);
+    log.info(`[🔍 DIAGNOSTIC] Plage de dates: ${startDate} → ${endDate}`);
+    log.debug(`Synchronisation incrémentale depuis ${startDate} jusqu'à ${endDate}`);
+
+    const lastSyncTimestamp = endDate === todayStr
+      ? await getLastSyncTimestampForToday(endDate, todayStr, getLastSyncTimestampForDate)
+      : null;
+
+    if (!usingForcedRange) {
+      const existingDataResult = await checkExistingData(
+        forceRefresh,
+        lastSyncTimestamp,
+        endDate,
+        todayStr,
+        loadAllData
+      );
+
+      if (existingDataResult) {
         setStatus({
-          lastSync: json.lastSync,
-          ok: json.ok,
-          message: json.ok ? 'Sync OK' : 'Erreur sync',
-          error: json.error
+          lastSync: existingDataResult.mockResponse.lastSync,
+          ok: true,
+          message: `Sync OK (données existantes, ${existingDataResult.ageSeconds}s)`
         });
-        
+
         await processSyncResponse(
-          json,
+          existingDataResult.mockResponse,
           { startDate, endDate },
           dbReady,
           saveActivities,
@@ -162,138 +356,142 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
           loadAllData,
           importToEndurance
         );
-      } catch (e) {
-        setStatus({ ok: false, message: 'Erreur sync', error: e.message });
-      } finally {
-        setLoading(false);
+        return;
       }
-      return;
-    }
 
-    // Logging détaillé pour diagnostic
-    const syncStartTime = new Date().toISOString();
-    const syncStartTimestamp = Date.now();
-    log.info(`[🔍 DIAGNOSTIC] Début synchronisation - Timestamp: ${syncStartTime}, ForceRefresh: ${forceRefresh}`);
-    log.info(`[🔍 DIAGNOSTIC] Plage de dates: ${startDate} → ${endDate}`);
-    log.debug(`Synchronisation incrémentale depuis ${startDate} jusqu'à ${endDate}`);
-
-    // Récupérer timestamp de dernière sync pour aujourd'hui
-    const lastSyncTimestamp = await getLastSyncTimestampForToday(
-      endDate,
-      todayStr,
-      getLastSyncTimestampForDate
-    );
-
-    // Vérifier données existantes (Phase 3.1) - optimisation
-    const existingDataResult = await checkExistingData(
-      forceRefresh,
-      lastSyncTimestamp,
-      endDate,
-      todayStr,
-      loadAllData
-    );
-    
-    if (existingDataResult) {
-      // Utiliser données existantes
-      setStatus({
-        lastSync: existingDataResult.mockResponse.lastSync,
-        ok: true,
-        message: `Sync OK (données existantes, ${existingDataResult.ageSeconds}s)`
-      });
-      
-      await processSyncResponse(
-        existingDataResult.mockResponse,
-        { startDate, endDate },
-        dbReady,
-        saveActivities,
-        saveDailyMetrics,
-        setGarminData,
-        setLastSyncDate,
-        loadAllData,
-        importToEndurance
-      );
-      return;
-    }
-
-    // Vérifier cache frontend
-    const cachedData = checkFrontendCache(
-      frontendCache,
-      startDate,
-      endDate,
-      lastSyncTimestamp,
-      todayStr,
-      forceRefresh,
-      isDataEmptyForDate
-    );
-    
-    if (cachedData) {
-      // Utiliser données du cache
-      setStatus({
-        lastSync: cachedData.data.lastSync,
-        ok: true,
-        message: 'Sync OK (cached)'
-      });
-      
-      await processSyncResponse(
-        cachedData.data,
-        { startDate, endDate },
-        dbReady,
-        saveActivities,
-        saveDailyMetrics,
-        setGarminData,
-        setLastSyncDate,
-        loadAllData,
-        importToEndurance
-      );
-      return;
-    }
-
-    // Effectuer requête serveur
-    try {
-      setLoading(true);
-      
-      const json = await performSyncRequest(
+      const cachedData = checkFrontendCache(
+        frontendCache,
         startDate,
         endDate,
         lastSyncTimestamp,
+        todayStr,
         forceRefresh,
-        (path, options) => tryFetch(path, options, undefined, setBaseUrl),
+        isDataEmptyForDate
+      );
+
+      if (cachedData) {
+        setStatus({
+          lastSync: cachedData.data.lastSync,
+          ok: true,
+          message: 'Sync OK (cached)'
+        });
+
+        await processSyncResponse(
+          cachedData.data,
+          { startDate, endDate },
+          dbReady,
+          saveActivities,
+          saveDailyMetrics,
+          setGarminData,
+          setLastSyncDate,
+          loadAllData,
+          importToEndurance
+        );
+        return;
+      }
+    }
+
+    const requestBody = {};
+    if (forceMode) {
+      requestBody.mode = forceMode;
+      requestBody.forceRefresh = true;
+      requestBody.includeToday = includeToday;
+      if (forceRange && (forceRange.start || forceRange.end)) {
+        requestBody.range = { ...forceRange };
+        if (forceRange.start) {
+          requestBody.rangeStart = forceRange.start;
+        }
+        if (forceRange.end) {
+          requestBody.rangeEnd = forceRange.end;
+        }
+      }
+      if (startDate) {
+        requestBody.start = startDate;
+      }
+      if (endDate) {
+        requestBody.end = endDate;
+      }
+      if (extraPayload) {
+        Object.assign(requestBody, extraPayload);
+      }
+    }
+    if (lastSyncTimestamp) {
+      requestBody.lastSyncTimestamp = lastSyncTimestamp;
+    }
+
+    const requestBodyPayload = Object.keys(requestBody).length > 0 ? requestBody : null;
+
+    try {
+      setLoading(true);
+
+      const json = await performSyncRequest(
+        {
+          startDate,
+          endDate,
+          lastSyncTimestamp,
+          forceRefresh,
+          requestBody: requestBodyPayload
+        },
+        (path, fetchOptions) => tryFetch(path, fetchOptions, undefined, setBaseUrl),
         frontendCache,
         todayStr,
         setStatus
       );
-      
+
+      const effectiveStart = json?.forcedRange?.start || startDate;
+      const effectiveEnd = json?.forcedRange?.end || endDate;
+      const shouldSkipLastSyncUpdate = Boolean(
+        forceMode &&
+        effectiveEnd &&
+        isDateValid(effectiveEnd) &&
+        effectiveEnd < todayStr
+      );
+
       const processStartTime = Date.now();
       await processSyncResponse(
         json,
-        { startDate, endDate },
+        { startDate: effectiveStart, endDate: effectiveEnd },
         dbReady,
         saveActivities,
         saveDailyMetrics,
         setGarminData,
         setLastSyncDate,
         loadAllData,
-        importToEndurance
+        importToEndurance,
+        shouldSkipLastSyncUpdate
       );
       const processDuration = Date.now() - processStartTime;
       const totalDuration = Date.now() - syncStartTimestamp;
       log.info(`[🔍 DIAGNOSTIC] Synchronisation terminée - Durée traitement: ${processDuration}ms, Durée totale: ${totalDuration}ms`);
-      
-      // Gérer retry automatique si données vides (Phase 5.1)
-      const cacheKey = `sync_${startDate}_${endDate}_${lastSyncTimestamp || 'none'}`;
-      const isToday = endDate === todayStr;
+
+      await recordForcedSyncHistory(json, {
+        forceMode,
+        includeToday,
+        requestedRange: forceRange,
+        requestStart: startDate,
+        requestEnd: endDate,
+        effectiveStart,
+        effectiveEnd,
+        forceRefresh,
+        source: requestSource
+      });
+
+      const cacheKey = `sync_${startDate || 'none'}_${endDate || 'none'}_${lastSyncTimestamp || 'none'}`;
+      const retryEnd = effectiveEnd || endDate;
+      const retryStart = effectiveStart || startDate;
+      const isToday = retryEnd === todayStr;
       const adaptiveTtl = isToday ? 30000 : CACHE_TTL_MS;
-      
+
       await handleAutomaticRetry(
         json,
-        endDate,
+        retryEnd,
         todayStr,
-        startDate,
+        retryStart,
         forceRefresh,
-        (path, options) => tryFetch(path, options, undefined, setBaseUrl),
+        (path, fetchOptions) => tryFetch(path, fetchOptions, undefined, setBaseUrl),
         isDataEmptyForDate,
-        (json, syncDateRange) => processSyncResponse(
-          json,
+        (retryJson, syncDateRange) => processSyncResponse(
+          retryJson,
           syncDateRange,
           dbReady,
           saveActivities,
@@ -308,37 +506,63 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
         adaptiveTtl,
         setStatus
       );
-      
-    } catch (e) {
-      // Fallback GET avec dates
+    } catch (error) {
       try {
-        const query = `?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`;
-        const json = await tryFetch(`/api/garmin/sync${query}`, {}, undefined, setBaseUrl);
-        
-        // Mettre à jour le cache même en cas de fallback GET
+        const queryParts = [];
+        if (startDate) queryParts.push(`start=${encodeURIComponent(startDate)}`);
+        if (endDate) queryParts.push(`end=${encodeURIComponent(endDate)}`);
+        const query = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+        const fallbackOptions = requestBodyPayload
+          ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBodyPayload) }
+          : { method: 'POST' };
+
+        const json = await tryFetch(`/api/garmin/sync${query}`, fallbackOptions, undefined, setBaseUrl);
+
         frontendCache.data = json;
         frontendCache.timestamp = Date.now();
-        frontendCache.cacheKey = `sync_${startDate}_${endDate}_none`;
-        
+        frontendCache.cacheKey = `sync_${startDate || 'none'}_${endDate || 'none'}_${lastSyncTimestamp || 'none'}`;
+
+        const effectiveStart = json?.forcedRange?.start || startDate;
+        const effectiveEnd = json?.forcedRange?.end || endDate;
+        const shouldSkipLastSyncUpdate = Boolean(
+          forceMode &&
+          effectiveEnd &&
+          isDateValid(effectiveEnd) &&
+          effectiveEnd < todayStr
+        );
+
         setStatus({
           lastSync: json.lastSync,
           ok: json.ok !== false,
-          message: `Sync (GET) OK (${startDate} → ${endDate})`
+          message: `Sync (fallback) OK (${startDate} → ${endDate})`
         });
-        
+
         await processSyncResponse(
           json,
-          { startDate, endDate },
+          { startDate: effectiveStart, endDate: effectiveEnd },
           dbReady,
           saveActivities,
           saveDailyMetrics,
           setGarminData,
           setLastSyncDate,
           loadAllData,
-          importToEndurance
+          importToEndurance,
+          shouldSkipLastSyncUpdate
         );
-      } catch (e2) {
-        setStatus({ ok: false, message: 'Erreur sync', error: e2.message });
+
+        await recordForcedSyncHistory(json, {
+          forceMode,
+          includeToday,
+          requestedRange: forceRange,
+          requestStart: startDate,
+          requestEnd: endDate,
+          effectiveStart,
+          effectiveEnd,
+          forceRefresh,
+          source: requestSource
+        });
+      } catch (fallbackError) {
+        setStatus({ ok: false, message: 'Erreur sync', error: fallbackError.message });
       }
     } finally {
       setLoading(false);
@@ -354,7 +578,8 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance) {
     setGarminData,
     setLastSyncDate,
     importToEndurance,
-    setStatus
+    setStatus,
+    recordForcedSyncHistory
   ]);
 
   /**

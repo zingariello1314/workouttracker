@@ -29,7 +29,7 @@ export const DB_NAME = 'GarminDataDB';
  * Version de la base de données IndexedDB
  * @constant {number}
  */
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 /**
  * Nom de l'object store pour les activités
@@ -48,6 +48,12 @@ export const STORE_DAILY_METRICS = 'dailyMetrics';
  * @constant {string}
  */
 export const STORE_DEVICE_META = 'deviceMeta';
+
+/**
+ * Nom de l'object store pour l'historique des plages forcées
+ * @constant {string}
+ */
+export const STORE_FORCED_RANGES = 'forcedRangesHistory';
 
 // ==================== ÉTAT GLOBAL ====================
 
@@ -144,8 +150,8 @@ export const enqueueSave = (fn) => {
     saveQueue.push({
       fn: async () => {
         try {
-          await fn();
-          resolve();
+          const result = await fn();
+          resolve(result);
         } catch (err) {
           reject(err);
         }
@@ -319,6 +325,18 @@ const openDBInternal = () => {
               keyPath: 'key', 
               autoIncrement: false 
             });
+          }
+
+          // Store: forcedRangesHistory (historique synchronisations forcées)
+          if (!db.objectStoreNames.contains(STORE_FORCED_RANGES)) {
+            const forcedStore = db.createObjectStore(STORE_FORCED_RANGES, {
+              keyPath: 'id',
+              autoIncrement: true
+            });
+            forcedStore.createIndex('triggeredAt', 'triggeredAt', { unique: false });
+            forcedStore.createIndex('mode', 'mode', { unique: false });
+            forcedStore.createIndex('start', 'start', { unique: false });
+            forcedStore.createIndex('end', 'end', { unique: false });
           }
         } catch (upgradeError) {
           log.error('[openDB] Upgrade error:', upgradeError);

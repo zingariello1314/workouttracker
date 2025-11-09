@@ -115,9 +115,9 @@ export const workoutProgram = {
       soir: "2 min pendule bras + hanche + 2 min relâchement lombaire (genoux pliés, bascule douce bassin) + 2 min jambe à la verticale (décompression veineuse + bassin)"
     },
     exercices: [
-      { id: 501, name: "Tractions supination", series: "4×3", materiel: "barre + gilet lesté", notes: "Avec gilet lesté" },
+      { id: 501, name: "Tractions supination", series: "4×4-6", materiel: "barre", notes: "Focus traction contrôlée" },
       { id: 502, name: "Tractions australiennes pieds surélevés", series: "4×10-12", materiel: "barre", notes: "Pieds surélevés" },
-      { id: 503, name: "Dips sur barre parallèle avec gilet", series: "3×6-8", materiel: "parallèles + gilet lesté", notes: "Avec gilet lesté" },
+      { id: 503, name: "Dips sur barre parallèle avec gilet", series: "4×12", materiel: "parallèles + gilet lesté", notes: "Gilet si disponible" },
       { id: 504, name: "Pompes déclinées (pieds sur banc)", series: "5×10", materiel: "banc", notes: "Haut des pecs" },
       { id: 505, name: "Relevés de genoux à la barre", series: "3×20", materiel: "barre" },
       { id: 506, name: "Relevés de genoux aux parallèles", series: "2×20", materiel: "parallèles" },
@@ -126,8 +126,7 @@ export const workoutProgram = {
       { id: 509, name: "Crunch bicyclettes", series: "12×", materiel: "poids du corps", type: "circuit_abdos" },
       { id: 510, name: "Gainage latéral dynamique", series: "30 sec", materiel: "poids du corps", type: "circuit_abdos" },
       { id: 511, name: "Crunch inversés", series: "12×", materiel: "poids du corps", type: "circuit_abdos" },
-      { id: 512, name: "Vacuum", series: "5 cycles", materiel: "poids du corps", type: "circuit_abdos" },
-      { id: 513, name: "Boxe", series: "1×90min", materiel: "Gants de boxe", type: "cardio_technique", notes: "19h30-21h - coordination, cardio, stress_relief" }
+      { id: 512, name: "Vacuum", series: "5 cycles", materiel: "poids du corps", type: "circuit_abdos" }
     ],
     duree: "~1 h",
     complementaryActivity: {
