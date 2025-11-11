@@ -2,7 +2,7 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ReferenceArea } from 'recharts';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
 import { 
   prepareTimeSeriesForDisplay, 
   enrichHeartRateTimeSeriesForVisualization
@@ -675,14 +675,5 @@ function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDat
 }
 
 // 🟡 FIX #13: Memoization avec comparaison optimisée
-export default React.memo(GarminHeartRateTimeSeriesChart, (prevProps, nextProps) => {
-  return prevProps.selectedDate === nextProps.selectedDate &&
-         prevProps.periodFilter === nextProps.periodFilter &&
-         prevProps.customStartDate === nextProps.customStartDate &&
-         prevProps.customEndDate === nextProps.customEndDate &&
-         // Comparaison optimisée : seulement les timeSeries de la date sélectionnée
-         JSON.stringify(prevProps.dailyMetrics?.[prevProps.selectedDate]?.heartRate?.timeSeries) ===
-         JSON.stringify(nextProps.dailyMetrics?.[nextProps.selectedDate]?.heartRate?.timeSeries) &&
-         prevProps.colors === nextProps.colors;
-});
+export default React.memo(GarminHeartRateTimeSeriesChart, areDerivedChartPropsEqual);
 

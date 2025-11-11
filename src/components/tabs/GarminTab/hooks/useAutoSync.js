@@ -17,15 +17,17 @@ const MIN_INTERVAL_MS = 60000; // Minimum 1 minute entre syncs
  * @param {boolean} enabled - Si la sync auto est activée
  * @param {string} schedule - 'daily', 'weekly', 'custom'
  * @param {string} customTime - Heure personnalisée (HH:mm) pour schedule='custom'
+ * @param {number} delayBeforeSync - Délai optionnel (minutes) avant d'exécuter la synchronisation
  * @returns {Object} { isActive, nextSyncTime, lastSyncTime, error }
  */
-export function useAutoSync(syncFunction, enabled, schedule = 'daily', customTime = '08:00') {
+export function useAutoSync(syncFunction, enabled, schedule = 'daily', customTime = '08:00', delayBeforeSync = 0) {
   const [isActive, setIsActive] = useState(false);
   const [nextSyncTime, setNextSyncTime] = useState(null);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [error, setError] = useState(null);
   
   const intervalRef = useRef(null);
+  const delayTimeoutRef = useRef(null);
   const lastSyncRef = useRef(null);
 
   /**
@@ -93,6 +95,23 @@ export function useAutoSync(syncFunction, enabled, schedule = 'daily', customTim
       setIsActive(true);
       setError(null);
       
+      if (delayBeforeSync > 0) {
+        log.debug(`[useAutoSync] Délai configuré (${delayBeforeSync}min) avant synchronisation.`);
+        await new Promise((resolve) => {
+          if (delayTimeoutRef.current) {
+            clearTimeout(delayTimeoutRef.current);
+          }
+          delayTimeoutRef.current = setTimeout(() => {
+            delayTimeoutRef.current = null;
+            resolve();
+          }, delayBeforeSync * 60000);
+        });
+        if (intervalRef.current === null) {
+          log.debug('[useAutoSync] Synchronisation annulée pendant le délai (auto-sync désactivée).');
+          return;
+        }
+      }
+
       log.debug('Synchronisation automatique en cours...');
       await syncFunction();
       
@@ -115,7 +134,7 @@ export function useAutoSync(syncFunction, enabled, schedule = 'daily', customTim
     } finally {
       setIsActive(false);
     }
-  }, [syncFunction, schedule, customTime, calculateNextSync]);
+  }, [syncFunction, schedule, customTime, calculateNextSync, delayBeforeSync]);
 
   /**
    * Démarre la synchronisation automatique
@@ -127,6 +146,10 @@ export function useAutoSync(syncFunction, enabled, schedule = 'daily', customTim
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+      }
+      if (delayTimeoutRef.current) {
+        clearTimeout(delayTimeoutRef.current);
+        delayTimeoutRef.current = null;
       }
       setIsActive(false);
       return;
@@ -153,6 +176,10 @@ export function useAutoSync(syncFunction, enabled, schedule = 'daily', customTim
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+      }
+      if (delayTimeoutRef.current) {
+        clearTimeout(delayTimeoutRef.current);
+        delayTimeoutRef.current = null;
       }
     };
   }, [enabled, schedule, customTime, syncFunction, calculateNextSync, performSync]);

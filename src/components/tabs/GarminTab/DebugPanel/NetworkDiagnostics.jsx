@@ -46,15 +46,27 @@ const formatDurationMs = (ms) => {
   return `${ms}ms`;
 };
 
-export const NetworkDiagnostics = () => {
-  const stats = React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+function NetworkDiagnostics({ networkStats, onRefresh }) {
+  const storeStats = React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const stats = networkStats || storeStats;
   const events = stats.events ? [...stats.events].slice(-5).reverse() : [];
 
   return (
     <div className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 space-y-3">
-      <div>
-        <div className="font-semibold text-slate-100">Réseau</div>
-        <div className="text-xs text-slate-400">Historique des requêtes Garmin (tryFetch)</div>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-semibold text-slate-100">Réseau</div>
+          <div className="text-xs text-slate-400">Historique des requêtes Garmin (tryFetch)</div>
+        </div>
+        {onRefresh && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors"
+          >
+            Rafraîchir
+          </button>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-wide">
@@ -127,5 +139,8 @@ export const NetworkDiagnostics = () => {
       )}
     </div>
   );
-};
+}
+
+export default NetworkDiagnostics;
+export { NetworkDiagnostics };
 

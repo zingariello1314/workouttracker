@@ -7,7 +7,7 @@ import { generateDailyPDF, generateWeeklyPDF } from '../utils/pdfGenerator';
 import { ARIA_LABELS } from '../constants';
 import logger from '../../../../utils/logger';
 import { useGarminSelectors } from '../hooks/useGarminSelectors';
-import { buildGarminChartDataset } from '../utils/chartDataBuilders';
+import { buildDerivedDataset } from '../utils/chartDataBuilders';
 
 const log = logger.component('PDFExport');
 
@@ -32,24 +32,12 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
     activities: activitiesByType
   }), [dailyMetrics, activitiesByType]);
 
-  const buildDerivedDataset = React.useCallback((dates, anchorDate) => {
-    if (!dates || dates.length === 0) {
-      return buildGarminChartDataset({
-        dailyMetrics,
-        activities: activitiesByType,
-        filteredDates: [],
-        selectedDate: anchorDate,
-        effectiveSelectedDate: anchorDate,
-        displayInfo: null
-      });
-    }
-    return buildGarminChartDataset({
+  const getDerivedDataset = React.useCallback((dates, anchorDate) => {
+    return buildDerivedDataset({
       dailyMetrics,
       activities: activitiesByType,
-      filteredDates: dates,
-      selectedDate: anchorDate,
-      effectiveSelectedDate: anchorDate,
-      displayInfo: null
+      dates,
+      anchorDate
     });
   }, [dailyMetrics, activitiesByType]);
 
@@ -98,7 +86,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
       }
 
       if (type === 'daily' && selectedDate) {
-        const derived = buildDerivedDataset([selectedDate], selectedDate);
+        const derived = getDerivedDataset([selectedDate], selectedDate);
         blob = await generateDailyPDF(baseData, selectedDate, { derived });
         log.debug(`PDF quotidien généré: ${blob ? 'OK' : 'NULL'}`);
       } else if (type === 'weekly' || type === 'custom') {
@@ -113,7 +101,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
 
         const rangeDates = enumerateDates(startDate, endDate).filter((date) => dailyMetrics[date]);
         const anchor = selectedDate && rangeDates.includes(selectedDate) ? selectedDate : rangeDates[rangeDates.length - 1];
-        const derived = buildDerivedDataset(rangeDates, anchor || endDate);
+        const derived = getDerivedDataset(rangeDates, anchor || endDate);
         blob = await generateWeeklyPDF(baseData, startDate, endDate, { derived });
         log.debug(`PDF hebdomadaire généré: ${blob ? 'OK' : 'NULL'}`);
       }
@@ -151,7 +139,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
     } finally {
       setIsGenerating(false);
     }
-  }, [dailyMetrics, activitiesByType, selectedDate, customStartDate, customEndDate, baseData, buildDerivedDataset, enumerateDates]);
+  }, [dailyMetrics, activitiesByType, selectedDate, customStartDate, customEndDate, baseData, getDerivedDataset, enumerateDates]);
 
   /**
    * Calcule le début de la semaine (lundi)

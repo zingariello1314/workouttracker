@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGarminChartSelectors } from '../../hooks/useGarminChartSelectors';
+import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 
 const GarminHeartRateTimeSeriesChart = React.lazy(() => import('../charts/GarminHeartRateTimeSeriesChart'));
 const GarminHeartRateChart = React.lazy(() => import('../charts/GarminHeartRateChart'));
@@ -11,6 +12,8 @@ const GarminActivityHeatmap = React.lazy(() => import('../charts/GarminActivityH
 const GarminCorrelationCharts = React.lazy(() => import('../charts/GarminCorrelationCharts'));
 
 const ChartsSection = ({ fallback = null }) => {
+  useUIMetricsTelemetry('ChartsSection');
+
   const {
     dailyMetrics,
     selectedDate,
@@ -41,71 +44,34 @@ const ChartsSection = ({ fallback = null }) => {
         )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <GarminHeartRateChart
-            dailyMetrics={dailyMetrics}
-            selectedDate={selectedDate}
-            periodFilter={periodFilter}
-            customStartDate={customRange?.start}
-            customEndDate={customRange?.end}
             colors={colors}
             precomputed={chartData.heartRateTrend}
           />
           <GarminBodyBatteryChart
-            dailyMetrics={dailyMetrics}
-            selectedDate={selectedDate}
-            periodFilter={periodFilter}
-            customStartDate={customRange?.start}
-            customEndDate={customRange?.end}
             colors={colors}
             precomputed={chartData.bodyBatteryTrend}
           />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <GarminStressChart
-            dailyMetrics={dailyMetrics}
-            selectedDate={selectedDate}
-            periodFilter={periodFilter}
-            customStartDate={customRange?.start}
-            customEndDate={customRange?.end}
             colors={colors}
             precomputed={chartData.stressTrend}
           />
           <GarminSleepChart
-            dailyMetrics={dailyMetrics}
-            selectedDate={selectedDate}
-            periodFilter={periodFilter}
-            customStartDate={customRange?.start}
-            customEndDate={customRange?.end}
             colors={colors}
             precomputed={chartData.sleepTrend}
           />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <GarminRespirationChart
-            dailyMetrics={dailyMetrics}
-            selectedDate={selectedDate}
-            periodFilter={periodFilter}
-            customStartDate={customRange?.start}
-            customEndDate={customRange?.end}
             colors={colors}
             precomputed={chartData.respirationTrend}
           />
           <GarminActivityHeatmap
-            activities={activitiesByType}
-            dailyMetrics={dailyMetrics}
-            selectedDate={selectedDate}
-            periodFilter={periodFilter}
-            customStartDate={customRange?.start}
-            customEndDate={customRange?.end}
-            colors={colors}
             precomputed={chartData.activityHeatmap}
           />
         </div>
         <GarminCorrelationCharts
-          dailyMetrics={dailyMetrics}
-          selectedDate={selectedDate}
-          periodFilter={periodFilter}
-          customStartDate={customRange?.start}
-          customEndDate={customRange?.end}
           colors={colors}
           precomputed={chartData.correlation}
         />
@@ -113,6 +79,3 @@ const ChartsSection = ({ fallback = null }) => {
     </div>
   );
 };
-
-export default ChartsSection;
-

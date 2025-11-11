@@ -15,9 +15,17 @@ export function Toast({ message, type = 'success', duration = 3000, onClose }) {
 
   const bgColor = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
   const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  const role = type === 'error' ? 'alert' : 'status';
+  const ariaLive = type === 'error' ? 'assertive' : 'polite';
 
   return (
-    <div className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg z-50 min-w-[300px] max-w-[500px]`} style={{ animation: 'slideInRight 0.3s ease-out' }}>
+    <div
+      className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg z-50 min-w-[300px] max-w-[500px]`}
+      style={{ animation: 'slideInRight 0.3s ease-out' }}
+      role={role}
+      aria-live={ariaLive}
+      aria-atomic="true"
+    >
       <div className="flex items-start gap-3">
         <span className="text-xl flex-shrink-0">{icon}</span>
         <div className="flex-1">
@@ -28,6 +36,7 @@ export function Toast({ message, type = 'success', duration = 3000, onClose }) {
           )}
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="text-white/80 hover:text-white flex-shrink-0 ml-2"
           aria-label="Fermer"

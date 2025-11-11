@@ -1,115 +1,18 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar, BarChart, ReferenceLine } from 'recharts';
-import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
 
 /**
  * Graphiques de corrélation (sommeil/performance, Body Battery/intensité)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminCorrelationCharts({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
-  const fallbackFiltered = useFilteredDates(
-    dailyMetrics,
-    selectedDate,
-    periodFilter,
-    customStartDate,
-    customEndDate,
-    7
-  );
-
-  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
-  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
-
-  const extractNumeric = React.useCallback((value) => {
-    if (value === null || value === undefined) return null;
-    if (typeof value === 'number') {
-      return Number.isFinite(value) ? value : null;
-    }
-    if (typeof value === 'string') {
-      const parsed = parseFloat(value);
-      return Number.isFinite(parsed) ? parsed : null;
-    }
-    if (typeof value === 'object') {
-      if (value.current !== undefined) return extractNumeric(value.current);
-      if (value.value !== undefined) return extractNumeric(value.value);
-      if (value.total !== undefined) return extractNumeric(value.total);
-      if (value.avg !== undefined) return extractNumeric(value.avg);
-      if (value.average !== undefined) return extractNumeric(value.average);
-      if (value.min !== undefined && value.max !== undefined) {
-        const min = extractNumeric(value.min);
-        const max = extractNumeric(value.max);
-        if (min !== null && max !== null) {
-          return (min + max) / 2;
-        }
-      }
-      if (Array.isArray(value)) {
-        const candidates = value
-          .map(extractNumeric)
-          .filter((num) => num !== null);
-        if (candidates.length > 0) {
-          const sum = candidates.reduce((acc, num) => acc + num, 0);
-          return sum / candidates.length;
-        }
-      }
-    }
-    return null;
-  }, []);
-
-  // Préparer données pour corrélation sommeil/performance
-  const sleepPerformanceData = React.useMemo(() => {
-    if (precomputed?.sleepPerformanceData) {
-      return precomputed.sleepPerformanceData;
-    }
-
-    if (!dailyMetrics || filteredDates.length === 0) return [];
-    
-    return filteredDates.map(date => {
-      const dm = dailyMetrics[date] || {};
-      const sleep = dm.sleep || {};
-      return {
-        date,
-        sleepDuration: sleep?.duration ? Math.round(sleep.duration * 60) : null, // minutes
-        sleepQuality: extractNumeric(sleep?.quality),
-        steps: extractNumeric(dm.steps),
-        intensityMinutes: extractNumeric(dm.intensityMinutes?.total ?? dm.intensityMinutes),
-        bodyBattery: extractNumeric(dm.bodyBattery),
-        isSelected: date === effectiveSelectedDate
-      };
-    }).filter(d => d.sleepDuration !== null || d.steps !== null);
-  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate, extractNumeric]);
-
-  // Préparer données pour corrélation Body Battery/intensité
-  const batteryIntensityData = React.useMemo(() => {
-    if (precomputed?.batteryIntensityData) {
-      return precomputed.batteryIntensityData;
-    }
-
-    if (!dailyMetrics || filteredDates.length === 0) return [];
-    
-    return filteredDates.map(date => {
-      const dm = dailyMetrics[date] || {};
-      return {
-        date,
-        bodyBattery: extractNumeric(dm.bodyBattery),
-        intensityTotal: extractNumeric(dm.intensityMinutes?.total ?? dm.intensityMinutes),
-        intensityModerate: extractNumeric(dm.intensityMinutes?.moderate),
-        intensityVigorous: extractNumeric(dm.intensityMinutes?.vigorous),
-        steps: extractNumeric(dm.steps),
-        isSelected: date === effectiveSelectedDate
-      };
-    }).filter(d => d.bodyBattery !== null && d.intensityTotal !== null);
-  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate, extractNumeric]);
-
-  if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
-    return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée disponible pour les corrélations.
-      </div>
-    );
-  }
+function GarminCorrelationCharts({ precomputed, colors }) {
+  const displayInfo = precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
+  const sleepPerformanceData = precomputed?.sleepPerformanceData ?? [];
+  const batteryIntensityData = precomputed?.batteryIntensityData ?? [];
 
   // 🟡 FIX : Hauteur augmentée maintenant que le conteneur n'a plus de limite fixe
   const chartHeight = 360;
@@ -142,9 +45,9 @@ function GarminCorrelationCharts({ precomputed, dailyMetrics, selectedDate, peri
         <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-white font-semibold">😴 Corrélation Sommeil / Performance</h4>
-            {displayInfo && (
-              <div className="text-slate-400 text-xs">{displayInfo}</div>
-            )}
+          {displayInfo && (
+            <div className="text-slate-400 text-xs">{displayInfo}</div>
+          )}
           </div>
           <div 
             ref={containerRef1} 
@@ -360,5 +263,5 @@ function GarminCorrelationCharts({ precomputed, dailyMetrics, selectedDate, peri
   );
 }
 
-export default React.memo(GarminCorrelationCharts, areChartPropsEqual);
+export default React.memo(GarminCorrelationCharts, areDerivedChartPropsEqual);
 

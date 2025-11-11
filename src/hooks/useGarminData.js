@@ -36,7 +36,7 @@ import {
   importForcedRangesHistory,
   FORCED_HISTORY_LIMIT
 } from './garminForcedHistory';
-import { buildGarminChartDataset } from '../components/tabs/GarminTab/utils/chartDataBuilders';
+import { buildDerivedDataset } from '../components/tabs/GarminTab/utils/chartDataBuilders';
 
 /**
  * Hook principal pour la gestion des données Garmin dans IndexedDB
@@ -217,13 +217,11 @@ export const useGarminData = () => {
     const derivedDates = Object.keys(coreData.dailyMetrics || {}).sort();
     const lastDate = derivedDates.length ? derivedDates[derivedDates.length - 1] : null;
     const exportDates = derivedDates.slice(-30);
-    const derivedCharts = buildGarminChartDataset({
+    const derivedCharts = buildDerivedDataset({
       dailyMetrics: coreData.dailyMetrics || {},
       activities: coreData.activities || {},
-      filteredDates: exportDates,
-      selectedDate: lastDate,
-      effectiveSelectedDate: lastDate,
-      displayInfo: null
+      dates: exportDates,
+      anchorDate: lastDate
     });
 
     return {

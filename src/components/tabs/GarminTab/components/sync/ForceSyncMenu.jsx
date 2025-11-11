@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useMemo, Suspense } from 'react';
+import React, { useState, useCallback, useMemo, Suspense, useRef, useEffect } from 'react';
 import { Zap, Moon, CalendarRange, Bot } from 'lucide-react';
 import {
   mapPresetToRequest,
   mapRangeToRequest,
   restoreLastRange
 } from './forceSyncUtils';
+import useFocusTrap from '../../hooks/useFocusTrap';
 
 const ForceRangeDialog = React.lazy(() => import('./ForceRangeDialog'));
 
@@ -55,6 +56,20 @@ export default function ForceSyncMenu({
   }, [loading]);
 
   const closeMenu = useCallback(() => setOpen(false), []);
+  const menuRef = useRef(null);
+  const triggerRef = useRef(null);
+  useFocusTrap({
+    active: open,
+    containerRef: menuRef,
+    autoFocusSelector: 'button[data-autofocus="true"]',
+    onEscape: () => closeMenu()
+  });
+
+  useEffect(() => {
+    if (!open && triggerRef.current) {
+      triggerRef.current.focus();
+    }
+  }, [open]);
 
   const handlePreset = useCallback((mode) => {
     if (mode === 'range') {
@@ -92,6 +107,7 @@ export default function ForceSyncMenu({
         type="button"
         onClick={toggleMenu}
         disabled={loading}
+        ref={triggerRef}
         aria-haspopup="menu"
         aria-expanded={open}
         className={`px-4 py-2 rounded-md text-white font-medium text-sm flex items-center gap-1 ${
@@ -106,6 +122,7 @@ export default function ForceSyncMenu({
       {open && (
         <div
           role="menu"
+          ref={menuRef}
           className="absolute z-20 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-lg shadow-lg overflow-hidden"
         >
           <div className="py-1">
@@ -116,6 +133,7 @@ export default function ForceSyncMenu({
                   key={option.mode}
                   type="button"
                   onClick={() => handlePreset(option.mode)}
+                  data-autofocus={option.mode === 'today'}
                   className="w-full flex items-start gap-3 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
                 >
                   <Icon className="w-4 h-4 mt-0.5 text-orange-400 shrink-0" />

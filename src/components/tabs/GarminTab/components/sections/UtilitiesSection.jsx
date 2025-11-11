@@ -1,4 +1,5 @@
 import React from 'react';
+import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 
 const AutoSyncSettings = React.lazy(() => import('../AutoSyncSettings'));
 const PDFExport = React.lazy(() => import('../PDFExport'));
@@ -11,6 +12,8 @@ const UtilitiesSection = ({
   customEndDate,
   fallback = null
 }) => {
+  useUIMetricsTelemetry('UtilitiesSection');
+
   const resolvedFallback = fallback || (
     <div
       className="rounded-lg border border-slate-700 bg-slate-800/60 flex items-center justify-center text-slate-300 text-sm"

@@ -1,108 +1,24 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areChartPropsEqual } from '../../../../../utils/chartComparison';
-import { DATE_RANGE, ARIA_LABELS } from '../../constants';
+import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { ARIA_LABELS } from '../../constants';
 
 /**
  * Graphique de respiration (éveillé et sommeil)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminRespirationChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
-  // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
-  // 🔴 FIX #51-60: Utiliser constante pour contextDays
-  const fallbackFiltered = useFilteredDates(
-    dailyMetrics,
-    selectedDate,
-    periodFilter,
-    customStartDate,
-    customEndDate,
-    DATE_RANGE.ACTIVITIES_DAYS
-  );
-
-  // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
+function GarminRespirationChart({ precomputed, colors }) {
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
-  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
-
-  const chartData = React.useMemo(() => {
-    if (precomputed?.data) {
-      return precomputed.data;
-    }
-
-    if (!dailyMetrics || filteredDates.length === 0) return [];
-    
-    const normalizeRespValue = (value) => {
-      if (value === null || value === undefined) return null;
-      if (typeof value === 'number') {
-        return Number.isFinite(value) ? value : null;
-      }
-      if (typeof value === 'string') {
-        const parsed = parseFloat(value);
-        return Number.isFinite(parsed) ? parsed : null;
-      }
-      if (typeof value === 'object') {
-        if (value.value !== undefined) return normalizeRespValue(value.value);
-        if (value.avg !== undefined) return normalizeRespValue(value.avg);
-        if (value.average !== undefined) return normalizeRespValue(value.average);
-        if (value.mean !== undefined) return normalizeRespValue(value.mean);
-        if (Array.isArray(value)) {
-          const samples = value
-            .map((sample) => normalizeRespValue(sample))
-            .filter((num) => num !== null);
-          if (samples.length === 0) return null;
-          const sum = samples.reduce((acc, num) => acc + num, 0);
-          return sum / samples.length;
-        }
-      }
-      return null;
-    };
-
-    return filteredDates.map(date => {
-      const dm = dailyMetrics[date] || {};
-      const resp = dm.respiration || {};
-      const awake = resp.awake || {};
-      const sleep = resp.sleep || {};
-      return {
-        date,
-        awakeMin: normalizeRespValue(awake.min),
-        awakeAvg: normalizeRespValue(awake.avg ?? awake.average ?? awake.mean),
-        awakeMax: normalizeRespValue(awake.max),
-        sleepMin: normalizeRespValue(sleep.min),
-        sleepAvg: normalizeRespValue(sleep.avg ?? sleep.average ?? sleep.mean),
-        sleepMax: normalizeRespValue(sleep.max),
-        isSelected: date === effectiveSelectedDate
-      };
-    }).filter(d => d.awakeAvg !== null || d.sleepAvg !== null);
-  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate]);
-
-  const avgAwake = React.useMemo(() => {
-    if (precomputed?.avgAwake !== undefined) {
-      return precomputed.avgAwake;
-    }
-    const awakeData = chartData.filter(d => d.awakeAvg !== null);
-    return awakeData.length ? awakeData.reduce((sum, d) => sum + d.awakeAvg, 0) / awakeData.length : 0;
-  }, [precomputed, chartData]);
-
-  const avgSleep = React.useMemo(() => {
-    if (precomputed?.avgSleep !== undefined) {
-      return precomputed.avgSleep;
-    }
-    const sleepData = chartData.filter(d => d.sleepAvg !== null);
-    return sleepData.length ? sleepData.reduce((sum, d) => sum + d.sleepAvg, 0) / sleepData.length : 0;
-  }, [precomputed, chartData]);
-
-  if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
-    return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée de respiration disponible.
-      </div>
-    );
-  }
+  const chartData = precomputed?.data ?? [];
+  const displayInfo = precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
+  const avgAwake = precomputed?.avgAwake ?? (chartData.filter(d => d.awakeAvg !== null)
+    .reduce((sum, d, _, arr) => sum + d.awakeAvg / arr.length, 0));
+  const avgSleep = precomputed?.avgSleep ?? (chartData.filter(d => d.sleepAvg !== null)
+    .reduce((sum, d, _, arr) => sum + d.sleepAvg / arr.length, 0));
 
   if (chartData.length === 0) {
     return (
@@ -295,5 +211,5 @@ function GarminRespirationChart({ precomputed, dailyMetrics, selectedDate, perio
   );
 }
 
-export default React.memo(GarminRespirationChart, areChartPropsEqual);
+export default React.memo(GarminRespirationChart, areDerivedChartPropsEqual);
 

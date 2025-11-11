@@ -1,73 +1,26 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, ReferenceLine } from 'recharts';
-import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
 import { formatSleepDuration } from '../../utils/garminFormatters';
-import { DATE_RANGE, ARIA_LABELS } from '../../constants';
+import { ARIA_LABELS } from '../../constants';
 
 /**
  * Graphique de sommeil (durée et phases)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminSleepChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
-  // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
-  // 🔴 FIX #51-60: Utiliser constante pour contextDays
-  const fallbackFiltered = useFilteredDates(
-    dailyMetrics,
-    selectedDate,
-    periodFilter,
-    customStartDate,
-    customEndDate,
-    DATE_RANGE.ACTIVITIES_DAYS
-  );
-
-  // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
+function GarminSleepChart({ precomputed, colors }) {
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
-  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
-
-  const chartData = React.useMemo(() => {
-    if (precomputed?.data) {
-      return precomputed.data;
-    }
-
-    if (!dailyMetrics || filteredDates.length === 0) return [];
-    
-    return filteredDates.map(date => {
-      const dm = dailyMetrics[date] || {};
-      const sleep = dm.sleep || {};
-      return {
-        date,
-        duration: sleep.duration ? Math.round(sleep.duration * 60) : null, // en minutes
-        deepSleep: sleep.deepSleep ? Math.round(sleep.deepSleep * 60) : null,
-        lightSleep: sleep.lightSleep ? Math.round(sleep.lightSleep * 60) : null,
-        remSleep: sleep.remSleep ? Math.round(sleep.remSleep * 60) : null,
-        quality: sleep.quality || null,
-        isSelected: date === effectiveSelectedDate
-      };
-    }).filter(d => d.duration !== null || d.quality !== null);
-  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate]);
-
-  const avgDuration = React.useMemo(() => {
-    if (precomputed?.averageDuration !== undefined) {
-      return precomputed.averageDuration;
-    }
+  const chartData = precomputed?.data ?? [];
+  const displayInfo = precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
+  const avgDuration = precomputed?.averageDuration ?? (() => {
     const filtered = chartData.filter(d => d.duration !== null);
     if (filtered.length === 0) return 0;
     return filtered.reduce((sum, d) => sum + d.duration, 0) / filtered.length;
-  }, [precomputed, chartData]);
-
-  if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
-    return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée de sommeil disponible.
-      </div>
-    );
-  }
+  })();
 
   if (chartData.length === 0) {
     return (
@@ -230,5 +183,5 @@ function GarminSleepChart({ precomputed, dailyMetrics, selectedDate, periodFilte
   );
 }
 
-export default React.memo(GarminSleepChart, areChartPropsEqual);
+export default React.memo(GarminSleepChart, areDerivedChartPropsEqual);
 

@@ -15,6 +15,7 @@ import MetricsSection from './GarminTab/components/sections/MetricsSection';
 import ChartsSection from './GarminTab/components/sections/ChartsSection';
 import UtilitiesSection from './GarminTab/components/sections/UtilitiesSection';
 import TabNavigation from './GarminTab/components/TabNavigation';
+import useUIMetricsTelemetry from './GarminTab/hooks/useUIMetricsTelemetry';
 
 const GarminDashboard = React.lazy(() => import('./GarminTab/components/GarminDashboard'));
 const GarminActivities = React.lazy(() => import('./GarminTab/components/GarminActivities'));
@@ -112,6 +113,8 @@ const GarminTab = () => {
   const [customStartDate, setCustomStartDate] = React.useState('');
   const [customEndDate, setCustomEndDate] = React.useState('');
   const [showDebugPanel, setShowDebugPanel] = React.useState(false); // ✅ PHASE 1 : Panneau de diagnostic
+
+  useUIMetricsTelemetry('GarminTab');
   
   // 🟡 FIX #33: Suivre l'état précédent du loading pour détecter la fin de sync
   const prevLoadingRef = React.useRef(false);
@@ -164,7 +167,19 @@ const GarminTab = () => {
     }
   }, [clearForcedRangesHistory]);
 
-  const { syncNow, backfill, fetchStatus, loading, baseUrl, clearCache, cacheMeta, resetCircuit } = useGarminSync(
+  const {
+    syncNow,
+    backfill,
+    fetchStatus,
+    loading,
+    baseUrl,
+    clearCache,
+    cacheMeta,
+    resetCircuit,
+    getNetworkStatsSnapshot,
+    getUIMetricsSnapshot,
+    refreshDiagnostics
+  } = useGarminSync(
     setGarminData,
     setStatus,
     importToEndurance,
@@ -175,6 +190,34 @@ const GarminTab = () => {
   // ✅ FIX : useToast() déplacé AVANT tous les useEffect pour respecter les règles de React
   const { showToast, ToastContainer } = useToast();
   const prefetchedTabsRef = React.useRef(new Set());
+  const [networkStats, setNetworkStats] = React.useState(() => (getNetworkStatsSnapshot ? getNetworkStatsSnapshot() : null));
+  const [uiMetrics, setUiMetrics] = React.useState(() => (getUIMetricsSnapshot ? getUIMetricsSnapshot() : null));
+  const [serverDebug, setServerDebug] = React.useState(null);
+
+  const handleRefreshDiagnostics = React.useCallback(async () => {
+    if (!refreshDiagnostics) {
+      return;
+    }
+    try {
+      const data = await refreshDiagnostics();
+      setServerDebug(data);
+    } catch (error) {
+      console.warn('[GarminTab] refreshDiagnostics failed', error);
+    } finally {
+      if (getNetworkStatsSnapshot) {
+        setNetworkStats(getNetworkStatsSnapshot());
+      }
+      if (getUIMetricsSnapshot) {
+        setUiMetrics(getUIMetricsSnapshot());
+      }
+    }
+  }, [refreshDiagnostics, getNetworkStatsSnapshot, getUIMetricsSnapshot]);
+
+  React.useEffect(() => {
+    if (showDebugPanel) {
+      handleRefreshDiagnostics();
+    }
+  }, [showDebugPanel, handleRefreshDiagnostics]);
 
   const prefetchTabModules = React.useCallback((tab) => {
     if (prefetchedTabsRef.current.has(tab)) {
@@ -722,7 +765,14 @@ const GarminTab = () => {
         {/* ✅ PHASE 1 : Panneau de diagnostic */}
         {showDebugPanel && (
           <React.Suspense fallback={<SectionFallback label="du panneau de diagnostic" minHeight="240px" />}>
-            <DebugPanel onClose={() => setShowDebugPanel(false)} cacheMeta={cacheMeta} />
+            <DebugPanel
+              onClose={() => setShowDebugPanel(false)}
+              cacheMeta={cacheMeta}
+              networkStats={networkStats}
+              uiMetrics={uiMetrics}
+              serverDebug={serverDebug}
+              onRefresh={handleRefreshDiagnostics}
+            />
           </React.Suspense>
         )}
       </GarminProvider>

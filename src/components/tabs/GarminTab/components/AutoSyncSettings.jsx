@@ -3,37 +3,28 @@
  * UI claire et accessible, logique optimisée
  */
 import React from 'react';
-import { useAutoSync, saveAutoSyncSettings, getAutoSyncSettings } from '../hooks/useAutoSync';
-import { ARIA_LABELS } from '../constants';
+import { useAutoSync } from '../hooks/useAutoSync';
+import { useGarminSelectors } from '../hooks/useGarminSelectors';
+import { useAutoSyncSettings } from '../hooks/useAutoSyncSettings';
 
 export default function AutoSyncSettings({ syncFunction }) {
-  const [settings, setSettings] = React.useState(() => getAutoSyncSettings());
-  const [hasChanges, setHasChanges] = React.useState(false);
+  const { settings, updateSettings, persistSettings, resetSettings, isDirty } = useAutoSyncSettings();
+  const { cacheSource, latestDate } = useGarminSelectors();
 
   const { isActive, nextSyncTime, lastSyncTime, error } = useAutoSync(
     syncFunction,
     settings.enabled,
     settings.schedule,
-    settings.customTime
+    settings.customTime,
+    settings.delayBeforeSync
   );
 
-  /**
-   * Mise à jour des settings avec sauvegarde automatique
-   * Optimisé : debounce pour éviter trop d'écritures
-   */
-  const updateSettings = React.useCallback((updates) => {
-    const newSettings = { ...settings, ...updates };
-    setSettings(newSettings);
-    setHasChanges(true);
-    
-    // Sauvegarder après un court délai (debounce)
-    const timeoutId = setTimeout(() => {
-      saveAutoSyncSettings(newSettings);
-      setHasChanges(false);
-    }, 500);
-    
-    return () => clearTimeout(timeoutId);
-  }, [settings]);
+  const handleUpdate = React.useCallback(
+    (updates) => {
+      updateSettings(updates);
+    },
+    [updateSettings]
+  );
 
   /**
    * Formatage de la date pour affichage
@@ -79,7 +70,7 @@ export default function AutoSyncSettings({ syncFunction }) {
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-white font-semibold">⏰ Synchronisation Automatique</h3>
-        {hasChanges && (
+        {isDirty && (
           <span className="text-xs text-slate-400" aria-live="polite">
             Modifications non sauvegardées...
           </span>
@@ -92,7 +83,7 @@ export default function AutoSyncSettings({ syncFunction }) {
           <input
             type="checkbox"
             checked={settings.enabled}
-            onChange={(e) => updateSettings({ enabled: e.target.checked })}
+            onChange={(e) => handleUpdate({ enabled: e.target.checked })}
             className="w-5 h-5 rounded bg-slate-700 border-slate-600 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
             aria-label="Activer la synchronisation automatique"
           />
@@ -119,7 +110,7 @@ export default function AutoSyncSettings({ syncFunction }) {
             <select
               id="sync-schedule"
               value={settings.schedule}
-              onChange={(e) => updateSettings({ schedule: e.target.value })}
+              onChange={(e) => handleUpdate({ schedule: e.target.value })}
               disabled={!settings.enabled}
               className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Sélectionner la fréquence de synchronisation"
@@ -147,7 +138,7 @@ export default function AutoSyncSettings({ syncFunction }) {
               id="sync-time"
               type="time"
               value={settings.customTime}
-              onChange={(e) => updateSettings({ customTime: e.target.value })}
+              onChange={(e) => handleUpdate({ customTime: e.target.value })}
               disabled={!settings.enabled}
               className="px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Heure de synchronisation"
@@ -169,7 +160,7 @@ export default function AutoSyncSettings({ syncFunction }) {
               max="60"
               step="1"
               value={settings.delayBeforeSync || 0}
-              onChange={(e) => updateSettings({ delayBeforeSync: parseInt(e.target.value, 10) || 0 })}
+              onChange={(e) => handleUpdate({ delayBeforeSync: parseInt(e.target.value, 10) || 0 })}
               disabled={!settings.enabled}
               className="px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed w-full"
               aria-label="Délai avant synchronisation en minutes"
@@ -230,10 +221,37 @@ export default function AutoSyncSettings({ syncFunction }) {
 
       {/* Info aide */}
       <div className="mt-4 pt-4 border-t border-slate-700">
+        <div className="flex flex-col gap-1 text-xs text-slate-400 mb-2">
+          <span>
+            Source actuelle : <strong>{cacheSource.source || '—'}</strong>
+            {cacheSource.degraded ? ' (mode dégradé)' : ''}
+          </span>
+          <span>
+            Dernière date synchronisée : <strong>{latestDate || '—'}</strong>
+          </span>
+        </div>
         <p className="text-slate-400 text-xs">
           💡 La synchronisation automatique se déclenche à l'heure configurée. 
           En cas d'échec, une nouvelle tentative sera effectuée 30 minutes plus tard.
         </p>
+        {isDirty && (
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              type="button"
+              onClick={persistSettings}
+              className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+            >
+              Sauvegarder maintenant
+            </button>
+            <button
+              type="button"
+              onClick={resetSettings}
+              className="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded transition-colors"
+            >
+              Annuler
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

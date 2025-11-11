@@ -1,126 +1,50 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areChartPropsEqual } from '../../../../../utils/chartComparison';
-import { DATE_RANGE, ARIA_LABELS } from '../../constants';
-import logger from '../../../../../utils/logger';
-
-const log = logger.component('GarminHeartRateChart');
+import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { ARIA_LABELS } from '../../constants';
 
 /**
  * Graphique de fréquence cardiaque 24h
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminHeartRateChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
-  // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
-  // Sinon l'ordre des hooks change entre les rendus
-  // 🔴 FIX #51-60: Utiliser constante pour contextDays
-  const fallbackFiltered = useFilteredDates(
-    dailyMetrics,
-    selectedDate,
-    periodFilter,
-    customStartDate,
-    customEndDate,
-    DATE_RANGE.ACTIVITIES_DAYS // contextDays par défaut
-  );
-
-  // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
+function GarminHeartRateChart({ precomputed, colors }) {
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
-  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
-
-  const chartData = React.useMemo(() => {
-    if (precomputed?.data) {
-      return precomputed.data;
-    }
-
-    if (!dailyMetrics || filteredDates.length === 0) return [];
-
-    const data = filteredDates.map(date => {
-      const dm = dailyMetrics[date] || {};
-      const hr = dm.heartRate || {};
-      return {
-        date,
-        resting: hr.resting || dm.restingHeartRate || dm.restingHR || null,
-        max: hr.max || dm.maxHeartRate || dm.maxHR || null,
-        avg: hr.avg || hr.average || dm.avgHeartRate || dm.averageHeartRate || null,
-        isSelected: date === effectiveSelectedDate
-      };
-    }).filter(d => d.resting !== null || d.max !== null || d.avg !== null);
-
-    // Debug log pour identifier les problèmes de données
-    if (data.length === 0 && filteredDates.length > 0) {
-      log.warn('No HR data for filtered dates:', filteredDates.map(date => {
-        const dm = dailyMetrics[date] || {};
-        const hr = dm.heartRate || {};
-        return { date, hasHR: !!hr, resting: hr.resting, max: hr.max, avg: hr.avg };
-      }));
-    }
-
-    return data;
-  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate]);
+  const chartData = precomputed?.data ?? [];
+  const displayInfo = precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
 
   // ✅ FIX : Calculer le domaine Y avec marge pour éviter que les valeurs ne touchent le bord
   const yAxisDomain = React.useMemo(() => {
-    if (precomputed?.yAxisDomain) {
-      return precomputed.yAxisDomain;
-    }
-
+    if (precomputed?.yAxisDomain) return precomputed.yAxisDomain;
     if (!chartData || chartData.length === 0) return [0, 180];
 
-    // Trouver les valeurs min et max parmi toutes les valeurs FC (resting, max, avg)
     let minValue = Infinity;
     let maxValue = -Infinity;
 
     chartData.forEach(d => {
-      if (d.resting !== null && d.resting !== undefined) {
-        minValue = Math.min(minValue, d.resting);
-        maxValue = Math.max(maxValue, d.resting);
-      }
-      if (d.max !== null && d.max !== undefined) {
-        minValue = Math.min(minValue, d.max);
-        maxValue = Math.max(maxValue, d.max);
-      }
-      if (d.avg !== null && d.avg !== undefined) {
-        minValue = Math.min(minValue, d.avg);
-        maxValue = Math.max(maxValue, d.avg);
-      }
+      ['resting', 'max', 'avg'].forEach((key) => {
+        const value = d[key];
+        if (value !== null && value !== undefined) {
+          minValue = Math.min(minValue, value);
+          maxValue = Math.max(maxValue, value);
+        }
+      });
     });
 
-    // Si aucune valeur trouvée, utiliser des valeurs par défaut
-    if (minValue === Infinity || maxValue === -Infinity) {
-      return [0, 180];
-    }
+    if (minValue === Infinity || maxValue === -Infinity) return [0, 180];
 
-    // Calculer la marge : 10% de la plage ou minimum 10 bpm
     const range = maxValue - minValue;
-    const margin = Math.max(range * 0.1, 10); // 10% ou minimum 10 bpm
-
-    // Calculer le domaine avec marge
+    const margin = Math.max(range * 0.1, 10);
     const domainMin = Math.max(0, Math.floor(minValue - margin));
-    const domainMax = Math.ceil(maxValue + margin);
+    const domainMax = Math.min(220, Math.ceil(maxValue + margin));
 
-    // S'assurer que le domaine ne dépasse pas les limites physiologiques raisonnables
-    // (0-220 bpm pour un adulte)
-    const finalMin = Math.max(0, domainMin);
-    const finalMax = Math.min(220, domainMax);
-
-    return [finalMin, finalMax];
+    return [domainMin, domainMax];
   }, [precomputed, chartData]);
 
-  if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
-    return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée de fréquence cardiaque disponible.
-      </div>
-    );
-  }
-
-  if (chartData.length === 0) {
+  if (!chartData.length) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
         Aucune donnée de fréquence cardiaque disponible pour cette période.
@@ -187,8 +111,8 @@ function GarminHeartRateChart({ precomputed, dailyMetrics, selectedDate, periodF
           minWidth={400}
           aria-label={ARIA_LABELS.HEART_RATE_CHART}
         >
-          <LineChart 
-            data={chartData} 
+          <LineChart
+            data={chartData}
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             aria-label={ARIA_LABELS.HEART_RATE_CHART}
           >
@@ -300,5 +224,5 @@ function GarminHeartRateChart({ precomputed, dailyMetrics, selectedDate, periodF
   );
 }
 
-export default React.memo(GarminHeartRateChart, areChartPropsEqual);
+export default React.memo(GarminHeartRateChart, areDerivedChartPropsEqual);
 

@@ -486,3 +486,32 @@ export const buildGarminChartDataset = ({
   };
 };
 
+export const buildDerivedDataset = ({
+  dailyMetrics = {},
+  activities = {},
+  dates = [],
+  anchorDate = null,
+  displayInfo = null
+} = {}) => {
+  const filteredDates = Array.isArray(dates) ? [...dates] : [];
+  if (filteredDates.length === 0 && dailyMetrics && typeof dailyMetrics === 'object') {
+    filteredDates.push(...Object.keys(dailyMetrics).sort());
+  } else {
+    filteredDates.sort();
+  }
+
+  const fallbackDate = filteredDates.length ? filteredDates[filteredDates.length - 1] : null;
+  const effectiveSelectedDate = filteredDates.includes(anchorDate)
+    ? anchorDate
+    : anchorDate || fallbackDate;
+
+  return buildGarminChartDataset({
+    dailyMetrics,
+    activities,
+    filteredDates,
+    selectedDate: effectiveSelectedDate,
+    effectiveSelectedDate,
+    displayInfo
+  });
+};
+

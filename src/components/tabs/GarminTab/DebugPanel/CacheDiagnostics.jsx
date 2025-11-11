@@ -1,14 +1,27 @@
 import React from 'react';
 
-export function CacheDiagnostics({ meta }) {
+function CacheDiagnostics({ meta, onRefresh }) {
   const stats = typeof window !== 'undefined' ? window.__GARMIN_CACHE_STATS__ : null;
   const history = stats?.history ? [...stats.history].slice(-5).reverse() : [];
 
   if (!meta) {
     return (
       <div className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300">
-        <div className="font-semibold text-slate-100">Source des données</div>
-        <div>Aucune synchronisation en mémoire.</div>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-semibold text-slate-100">Source des données</div>
+            <div>Aucune synchronisation en mémoire.</div>
+          </div>
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors"
+            >
+              Rafraîchir
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -19,8 +32,21 @@ export function CacheDiagnostics({ meta }) {
 
   return (
     <div className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 space-y-1">
-      <div className="font-semibold text-slate-100">Source des données</div>
-      <div className="text-xs text-slate-400">Dernier hit cache / live.</div>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-semibold text-slate-100">Source des données</div>
+          <div className="text-xs text-slate-400">Dernier hit cache / live.</div>
+        </div>
+        {onRefresh && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors"
+          >
+            Rafraîchir
+          </button>
+        )}
+      </div>
       <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
         {rows.map(({ key, value }) => (
           <React.Fragment key={key}>
@@ -37,7 +63,10 @@ export function CacheDiagnostics({ meta }) {
             <div className="text-xs text-slate-400">Hits cumulés depuis le chargement de l’application.</div>
             <ul className="text-xs text-slate-300 grid grid-cols-2 gap-2 mt-1">
               {Object.entries(stats.hits || {}).map(([source, value]) => (
-                <li key={source} className="flex items-center justify-between bg-slate-800/40 border border-slate-700 rounded px-2 py-1">
+                <li
+                  key={source}
+                  className="flex items-center justify-between bg-slate-800/40 border border-slate-700 rounded px-2 py-1"
+                >
                   <span className="uppercase tracking-wide text-slate-500">{source}</span>
                   <span className="font-mono text-slate-100">{value}</span>
                 </li>
@@ -50,14 +79,21 @@ export function CacheDiagnostics({ meta }) {
               <div className="font-semibold text-slate-100">Derniers événements</div>
               <ul className="mt-1 space-y-1 text-xs text-slate-300">
                 {history.map((event, index) => (
-                  <li key={`${event.timestamp}-${event.source}-${index}`} className="bg-slate-800/30 border border-slate-700 rounded px-2 py-1">
+                  <li
+                    key={`${event.timestamp}-${event.source}-${index}`}
+                    className="bg-slate-800/30 border border-slate-700 rounded px-2 py-1"
+                  >
                     <div className="flex justify-between">
                       <span className="uppercase tracking-wide text-slate-500">{event.source}</span>
-                      <span className="text-slate-400 font-mono">{new Date(event.timestamp).toLocaleTimeString()}</span>
+                      <span className="text-slate-400 font-mono">
+                        {new Date(event.timestamp).toLocaleTimeString()}
+                      </span>
                     </div>
                     <div className="text-slate-400">
                       {event.startDate || event.endDate ? (
-                        <span>{event.startDate || '—'} → {event.endDate || '—'}</span>
+                        <span>
+                          {event.startDate || '—'} → {event.endDate || '—'}
+                        </span>
                       ) : (
                         <span>Plage inconnue</span>
                       )}
@@ -80,3 +116,6 @@ export function CacheDiagnostics({ meta }) {
     </div>
   );
 }
+
+export default CacheDiagnostics;
+export { CacheDiagnostics };

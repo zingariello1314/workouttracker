@@ -1,88 +1,23 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ReferenceLine } from 'recharts';
-import { useFilteredDates } from '../../hooks/useFilteredDates';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areChartPropsEqual } from '../../../../../utils/chartComparison';
-import { DATE_RANGE, ARIA_LABELS } from '../../constants';
-import logger from '../../../../../utils/logger';
-
-const log = logger.component('GarminBodyBatteryChart');
+import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { ARIA_LABELS } from '../../constants';
 
 /**
  * Graphique d'évolution du Body Battery
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminBodyBatteryChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
-  // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
-  // 🔴 FIX #51-60: Utiliser constante pour contextDays
-  const fallbackFiltered = useFilteredDates(
-    dailyMetrics,
-    selectedDate,
-    periodFilter,
-    customStartDate,
-    customEndDate,
-    DATE_RANGE.ACTIVITIES_DAYS
-  );
-
-  // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
+function GarminBodyBatteryChart({ precomputed, colors }) {
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
-  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
-
-  const chartData = React.useMemo(() => {
-    if (precomputed?.data) {
-      return precomputed.data;
-    }
-
-    if (!dailyMetrics || filteredDates.length === 0) return [];
-    
-    const data = filteredDates.map(date => {
-      const dm = dailyMetrics[date] || {};
-      // PHASE 3.1 : Gérer nouveau format (dict avec current + timeSeries) et ancien format (int)
-      let bodyBatteryValue = null;
-      if (dm.bodyBattery !== undefined && dm.bodyBattery !== null) {
-        if (typeof dm.bodyBattery === 'object' && dm.bodyBattery.current !== undefined) {
-          bodyBatteryValue = dm.bodyBattery.current;
-        } else if (typeof dm.bodyBattery === 'number') {
-          bodyBatteryValue = dm.bodyBattery;
-        }
-      }
-      return {
-        date,
-        bodyBattery: bodyBatteryValue,
-        isSelected: date === effectiveSelectedDate
-      };
-    }).filter(d => d.bodyBattery !== null);
-    
-    // Debug log pour identifier les problèmes de données
-    if (data.length === 0 && filteredDates.length > 0) {
-      log.warn('No Body Battery data for filtered dates:', filteredDates.map(date => {
-        const dm = dailyMetrics[date] || {};
-        return { date, bodyBattery: dm.bodyBattery, hasBodyBattery: dm.bodyBattery !== undefined && dm.bodyBattery !== null };
-      }));
-    }
-    
-    return data;
-  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate]);
-
-  const avgValue = React.useMemo(() => {
-    if (precomputed?.average !== undefined) {
-      return precomputed.average;
-    }
-    if (chartData.length === 0) return 0;
-    return chartData.reduce((sum, d) => sum + d.bodyBattery, 0) / chartData.length;
-  }, [precomputed, chartData]);
-
-  if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
-    return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée Body Battery disponible.
-      </div>
-    );
-  }
+  const chartData = precomputed?.data ?? [];
+  const displayInfo = precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
+  const avgValue = precomputed?.average ?? (chartData.length === 0
+    ? 0
+    : chartData.reduce((sum, d) => sum + d.bodyBattery, 0) / chartData.length);
 
   if (chartData.length === 0) {
     return (
@@ -214,5 +149,5 @@ function GarminBodyBatteryChart({ precomputed, dailyMetrics, selectedDate, perio
   );
 }
 
-export default React.memo(GarminBodyBatteryChart, areChartPropsEqual);
+export default React.memo(GarminBodyBatteryChart, areDerivedChartPropsEqual);
 

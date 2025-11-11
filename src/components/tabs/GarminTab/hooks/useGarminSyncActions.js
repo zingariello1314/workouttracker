@@ -22,6 +22,7 @@ import { SyncRequestService } from '../services/sync/SyncRequestService';
 import { SyncRetryService } from '../services/sync/SyncRetryService';
 import { SyncHistoryRecorder } from '../services/sync/SyncHistoryRecorder';
 import { MemoryCacheAdapter } from '../services/cache/MemoryCacheAdapter';
+import { updateUIMetricsStore, getUIMetricsSnapshot as getUIMetricsStoreSnapshot } from '../utils/uiMetricsStore';
 
 const IS_DEV = typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
 
@@ -77,6 +78,26 @@ export const useGarminSyncActions = (deps) => {
     failureCount: circuitBreaker.getFailureCount()
   }), []);
 
+  const recordUIMetric = useCallback((partial) => {
+    updateUIMetricsStore((store) => {
+      const timestamp = Date.now();
+      const updates = { ...partial, timestamp };
+
+      if (partial?.lastStatusMessage) {
+        const historyEntry = {
+          timestamp,
+          message: partial.lastStatusMessage,
+          ok: partial.lastStatusOk ?? null,
+          error: partial.lastStatusError ?? null
+        };
+        const history = Array.isArray(store.history) ? [historyEntry, ...store.history] : [historyEntry];
+        store.history = history.slice(0, 5);
+      }
+
+      return updates;
+    });
+  }, []);
+
   const syncNow = useCallback(async (options = {}) => {
     const optionsIsBoolean = typeof options === 'boolean';
     const optionObject = !optionsIsBoolean && typeof options === 'object' ? options : {};
@@ -99,7 +120,9 @@ export const useGarminSyncActions = (deps) => {
     }
 
     if (!dbReady) {
-      setStatus({ ok: false, message: 'Base de données non prête', error: 'IndexedDB non initialisé' });
+      const status = { ok: false, message: 'Base de données non prête', error: 'IndexedDB non initialisé' };
+      setStatus(status);
+      recordUIMetric({ lastStatusMessage: status.message });
       return;
     }
 
@@ -202,12 +225,14 @@ export const useGarminSyncActions = (deps) => {
           ok: true,
           message: `${prefix}${message}`
         });
+        recordUIMetric({ lastStatusMessage: `${prefix}${message}` });
       };
 
       switch (source) {
         case 'existingData': {
           const existingDataResult = payload;
-          setStatusWithDegrade(`Sync OK (données existantes, ${existingDataResult.ageSeconds ?? '?'}s)`, {
+          const cacheMessage = `Sync OK (données existantes, ${existingDataResult.ageSeconds ?? '?'}s)`;
+          setStatusWithDegrade(cacheMessage, {
             lastSync: existingDataResult.mockResponse?.lastSync,
             source
           });
@@ -223,6 +248,10 @@ export const useGarminSyncActions = (deps) => {
             loadAllData,
             importToEndurance
           );
+          recordUIMetric({
+            lastSyncTimestamp: Date.now(),
+            lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
+          });
           return true;
         }
         case 'memory': {
@@ -249,6 +278,10 @@ export const useGarminSyncActions = (deps) => {
             loadAllData,
             importToEndurance
           );
+          recordUIMetric({
+            lastSyncTimestamp: Date.now(),
+            lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
+          });
           return true;
         }
         case 'indexeddb': {
@@ -277,6 +310,10 @@ export const useGarminSyncActions = (deps) => {
             loadAllData,
             importToEndurance
           );
+          recordUIMetric({
+            lastSyncTimestamp: Date.now(),
+            lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
+          });
           return true;
         }
         case 'server': {
@@ -300,6 +337,10 @@ export const useGarminSyncActions = (deps) => {
             loadAllData,
             importToEndurance
           );
+          recordUIMetric({
+            lastSyncTimestamp: Date.now(),
+            lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
+          });
           return true;
         }
         default:
@@ -363,6 +404,7 @@ export const useGarminSyncActions = (deps) => {
       forceDegradeThresholdMs: FORCE_SYNC_DEGRADE_THRESHOLD_MS
     };
 
+    const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
     const { rangeInfo, cacheResult, result: orchestratorResult } = await orchestrator.execute(orchestratorContext);
 
     let {
@@ -427,6 +469,12 @@ export const useGarminSyncActions = (deps) => {
     }
 
     if (await handleCacheHit(cacheResult)) {
+      const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      recordUIMetric({
+        lastSyncDuration: Math.round(endTime - startTime),
+        lastSyncTimestamp: Date.now(),
+        lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
+      });
       return;
     }
 
@@ -647,6 +695,7 @@ export const useGarminSyncActions = (deps) => {
           message: 'Erreur de connexion au serveur Garmin. Consulte le diagnostic (/api/garmin/debug).',
           error: fallbackError.message
         });
+        recordUIMetric({ lastStatusMessage: 'Erreur de connexion au serveur Garmin. Consulte le diagnostic (/api/garmin/debug).' });
       }
     } finally {
       log.info('[syncNow] setLoading(false) – main network branch');
@@ -655,6 +704,12 @@ export const useGarminSyncActions = (deps) => {
         // eslint-disable-next-line no-console
         console.info('[useGarminSyncActions] loading ← false (main network branch)');
       }
+      const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      recordUIMetric({
+        lastSyncDuration: Math.round(endTime - startTime),
+        lastSyncTimestamp: Date.now(),
+        lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
+      });
     }
   }, [
     dbReady,
@@ -674,25 +729,29 @@ export const useGarminSyncActions = (deps) => {
     frontendCache,
     setLastSourceMeta,
     cacheService,
-    buildNetworkMeta
+    buildNetworkMeta,
+    recordUIMetric
   ]);
 
   const fetchStatus = useCallback(async () => {
     try {
       const json = await tryFetch('/api/garmin/status');
-      setStatus({
+      const status = {
         lastSync: json.lastSync,
         ok: json.ok,
         message: json.ok ? 'Status OK' : 'Status erreur',
         error: json.error,
         diagnostic: json
-      });
+      };
+      setStatus(status);
+      recordUIMetric({ lastStatusMessage: status.message });
       return json;
     } catch (error) {
       setStatus({ ok: false, message: 'Erreur status', error: error.message });
+      recordUIMetric({ lastStatusMessage: 'Erreur status' });
       throw error;
     }
-  }, [setStatus]);
+  }, [setStatus, recordUIMetric]);
 
   const backfill = useCallback(async (startDate, endDate, setSelectedDate) => {
     if (!startDate || !endDate) return;
@@ -734,6 +793,7 @@ export const useGarminSyncActions = (deps) => {
       }
     } catch (error) {
       setStatus({ ok: false, message: 'Backfill erreur', error: error.message });
+      recordUIMetric({ lastStatusMessage: 'Backfill erreur' });
     } finally {
       log.info('[backfill] setLoading(false)');
       setLoading(false);
@@ -753,7 +813,8 @@ export const useGarminSyncActions = (deps) => {
     setGarminData,
     setLastSyncDate,
     loadAllData,
-    importToEndurance
+    importToEndurance,
+    recordUIMetric
   ]);
 
   const resetCircuit = useCallback(() => {
@@ -766,6 +827,23 @@ export const useGarminSyncActions = (deps) => {
     }));
   }, [setLastSourceMeta, buildNetworkMeta]);
 
+  const getNetworkStatsSnapshot = useCallback(() => {
+    if (typeof window === 'undefined' || !window.__GARMIN_NETWORK_STATS__) {
+      return null;
+    }
+    return { ...window.__GARMIN_NETWORK_STATS__ };
+  }, []);
+
+  const getUIMetricsSnapshot = useCallback(() => {
+    const snapshot = getUIMetricsStoreSnapshot();
+    return snapshot ? snapshot : null;
+  }, []);
+
+  const refreshDiagnostics = useCallback(async () => {
+    const json = await tryFetch('/api/garmin/debug');
+    return json;
+  }, []);
+
   return {
     loading,
     baseUrl,
@@ -773,6 +851,9 @@ export const useGarminSyncActions = (deps) => {
     backfill,
     fetchStatus,
     clearFrontendCache,
-    resetCircuit
+    resetCircuit,
+    getNetworkStatsSnapshot,
+    getUIMetricsSnapshot,
+    refreshDiagnostics
   };
 };

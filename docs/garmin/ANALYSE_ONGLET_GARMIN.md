@@ -100,6 +100,7 @@ Quatre lignes directrices gouvernent l’architecture :
    - Déclare tous les états dérivés : `status`, `garminData`, `activeTab`, `selectedDate`, `periodFilter`, `forcedRangesHistory`, `showDebugPanel`, etc.  
    - Mémoïse les références (ex. `prefetchedTabsRef`, `autoSyncExecutedRef`) pour éviter les boucles infinies.  
    - Monte `ToastContainer` pour les notifications globales (succès/erreurs sync).  
+   - Chaque toast publie un message `aria-live` adapté (succès/info → `status` polite, erreur → `alert` assertive) avec bouton de fermeture dédié (`type="button"`) pour garantir un feedback auditif sans perturber la navigation clavier.
 
 2. **Chargement IndexedDB intelligent**  
    - Dès que `dbReady` passe à `true`, exécute `loadDataForTab(activeTab, selectedDate, periodFilter, customStartDate, customEndDate)`.  
@@ -155,12 +156,15 @@ Quatre lignes directrices gouvernent l’architecture :
      - `range` → ouverture `ForceRangeDialog`.  
      - `auto` → délègue à `onRequestAuto` ou envoie `mode:auto` avec `skipDelay`.  
    - `customRange` et `includeToday` sont conservés entre les sessions grâce au SessionStorage.  
+   - Accessibilité : `useFocusTrap` (boucle tab + Esc), `aria-haspopup="menu"`, focus rendu au bouton déclencheur à la fermeture.  
+   - `SyncControls` publie le statut courant via une région `aria-live="polite"` (message SR-only concaténant disponibilité, dernière sync, source cache, mode dégradé) et expose les erreurs via `role="alert"`.  
 
 2. **`ForceRangeDialog` (plage personnalisée)**  
    - Inputs `type="date"` forwardRef (focus auto sur start).  
    - `describeRange` calcule `spanDays`, message d’estimation (`≈ N appels API`) basé sur `ESTIMATED_CALLS_PER_DAY`.  
    - `validateRange` bloque les cas : date manquante, format invalide, start > end, plage > `maxSpanDays`.  
    - Nouveau message contextuel : si `includeToday` coché, affiche “La date de fin sera automatiquement fixée à today” pour clarifier la logique.  
+   - Accessibilité : `useFocusTrap` + `aria-modal="true"` (tab loop + `Escape`), restauration du focus précédent lors de la fermeture.  
    - `handleConfirm` :  
      1. recalcul `effectiveEnd` (withToday ? today : end),  
      2. revalide,  
@@ -233,12 +237,14 @@ Quatre lignes directrices gouvernent l’architecture :
   - downsampling / smoothing pour series volumineuses ;
   - overlays (zones zénith, intensité activités) ;
   - narration accessible (aria, descriptions).
-- `ChartsSection` assemble l’ensemble via `Suspense` et consomme `useGarminChartSelectors` pour fournir séries/time-range/couleurs sans props massifs. Les données proviennent de `buildGarminChartDataset` (utilitaire pur mutualisé) qui fabrique les séries dérivées (trends, heatmap, corrélations) réutilisées par l’export JSON et le PDF.
+- `ChartsSection` assemble l’ensemble via `Suspense` et consomme `useGarminChartSelectors` pour fournir séries/time-range/couleurs sans props massifs. Les données proviennent de `buildDerivedDataset`/`buildGarminChartDataset` (fabrique dérivée mutualisée) qui sert désormais aussi bien l’UI que l’export JSON et le module PDF. `useGarminSyncActions` alimente `window.__GARMIN_UI_METRICS__` (durée sync, statut) pour le debug runtime.
+- Tous les graphiques consomment désormais un objet `precomputed` (dataset dérivé) : plus de recalcul `useFilteredDates`/dérivations locales, les `React.memo` s’appuient sur l’identité de `precomputed` pour éviter les re-renders inutiles.
 
 ### 4.5 Modules utilitaires
-- **`AutoSyncSettings`** : configuration délais auto-sync (slider minutes, toggle push). Interaction avec `useAutoSync` (stockage localStorage, remonte toast).
-- **`PDFExport`** : export complet (activités + métriques + charts) basé sur `buildGarminChartDataset` ; transmet les séries dérivées (`options.derived`) à `pdfGenerator.js` (jsPDF) pour garantir la cohérence avec l’UI (min/max FC, tendances, intensités).
-- **`DebugPanel`** : snapshot état serveur + caches + diagnostics front ; intègre `NetworkDiagnostics` (timeline des fetch, compteurs succès/échecs, état circuit + cooldown) et `CacheDiagnostics` (lecture `cacheMeta`, compteurs `window.__GARMIN_CACHE_STATS__`, historique des 5 derniers événements), logs TTL, entrées cache serveur, dernier statut ; rafraîchissement 5s.
+- **`AutoSyncSettings`** : configuration délais auto-sync (slider minutes, toggle push). Interaction via `useAutoSync` + `useAutoSyncSettings` (auto-save débouncé) et exposition des infos `latestDate` / `cacheSource` issues des selectors.
+- **`PDFExport`** : export complet (activités + métriques + charts) basé sur la même fabrique `buildDerivedDataset` ; transmet les séries dérivées (`options.derived`) à `pdfGenerator.js` (jsPDF) pour garantir la cohérence avec l’UI (min/max FC, tendances, intensités) sans recalcul local.
+- **`DebugPanel`** : snapshot état serveur + caches + diagnostics front ; compose `CacheDiagnostics` (lecture `cacheMeta`, compteurs `window.__GARMIN_CACHE_STATS__`, historique), `NetworkDiagnostics` (timeline des fetch, compteurs succès/échecs, état circuit + cooldown), `UIMetrics` (lecture `window.__GARMIN_UI_METRICS__`, durée/derniers statuts, compteur de renders + historique des 5 derniers rendus via hook `useUIMetricsTelemetry`) et `ServerDiagnostics` (snapshot `/api/garmin/debug`). Chargé lazy, focus trap (`useFocusTrap` + bouton fermer autofocused), rafraîchissement manuel via `refreshDiagnostics`.
+- **Sections instrumentées** : `DashboardSection`, `ActivitiesSection`, `MetricsSection`, `ChartsSection`, `UtilitiesSection` appellent `useUIMetricsTelemetry` dès chaque montage/rerender, ce qui alimente l’historique et les compteurs exposés dans `DebugPanel` pour corréler perf UI ↔ data source.
 - **Overlay de synchronisation** : `GarminTabLayout` observe l’état `loading` exposé par `useGarminSyncState` (trace console en mode DEV) et lève l’overlay dès la fin de `processSyncResponse`. Les écritures d’historique (`SyncHistoryRecorder.record`) sont désormais lancées en arrière-plan pour éviter de bloquer l’UI après un forçage massif.
 
 ### 4.6 UtilitiesSection

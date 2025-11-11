@@ -826,6 +826,33 @@ SyncOrchestrator
 - `buildGarminChartDataset` (utilitaire pur) fabrique les séries dérivées (trend, timeSeries, heatmap, corrélations) exploitées par les graphiques, l’export JSON (`derivedCharts`) et le module PDF (options `derived`).
 - `UtilitiesSection` regroupe `AutoSyncSettings` + `PDFExport` (Suspense unique, fallback homogène) et consomme les sélecteurs internes au lieu de props massifs (`garminData`).
 
+#### 5.2.2 Priorités opérationnelles (2025-11-11)
+
+| Axe | Constats | Plan d’action (en mode incrémental, chaque étape documentée + testée) |
+|-----|----------|------------------------------------------|
+| **Selectors dérivés unifiés** | `useGarminChartSelectors` expose `chartData` global (via `buildGarminChartDataset`), mais plusieurs charts tombent encore sur des recalculs locaux (ex. `GarminHeartRateTimeSeriesChart` ré-applique `prepareTimeSeriesForDisplay` / `enrichHeartRate…` quand `precomputed` est partiel). | 1. Étendre `buildGarminChartDataset` pour garantir, pour chaque visu, un objet complet (`trend`, `stats`, `yAxis`, `timeSeries`, `meta`), documenté et typé.<br>2. Adapter `useGarminChartSelectors` pour exposer explicitement les dérivés nécessaires (min/max, domaines Y, temps forts, séries downsamplées).<br>3. Refactorer chaque chart pour consommer **exclusivement** `precomputed` (suppression des fallback coûteux) + mettre en place `React.memo`/comparateurs précis.<br>4. Vérifier synchronisation IndexedDB ↔ selectors (pas de recalcul/decompression côté rendu). |
+| **Harmonisation export JSON / PDF** | `exportAll()` réutilise `buildGarminChartDataset` mais seulement sur les 30 derniers jours, et `PDFExport` reconstruit encore un dataset local (dates/anchor). Risque de divergence si structure évolue. | 1. Créer un helper partagé (`buildDerivedDataset({ dailyMetrics, activities, dates, anchor })`) pour centraliser la génération dérivée (JSON, PDF, UI).<br>2. Étendre `exportAll` pour référencer la même fonction (et documenter clairement les champs exportés).<br>3. Adapter `PDFExport` / `pdfGenerator` pour consommer les dérivés fournis (min/max FC, stats respiration, heatmap agrégée) sans recalcul.<br>4. Vérifier cohérence avec export JSON : pour chaque nouveau champ (ex. `heartRateTimeSeries.stats`), décider s’il doit être persisté dans IndexedDB ou recalculé à la volée, et documenter dans la section Export. |
+| **Modularisation utilitaires (AutoSync, PDF, Debug)** | Les modules consomment encore des fragments de `garminData` ou manipulent localStorage directement. | 1. Injecter les selectors pertinents (`useGarminSelectors`, `useGarminChartSelectors`) pour éviter les accès directs au blob global.<br>2. Encapsuler la configuration (autsync delay, maintenance summaries) dans des hooks dédiés (`useAutoSyncSettings`) exposant getter/setter mémoïsés.<br>3. Simplifier `DebugPanel` : lecture unique des stores globaux, subscription unique via `useEffect`, dériver UI depuis `cacheMeta`/`networkStats` fournis par `useGarminSync`.<br>4. Vérifier l’impact sur IndexedDB (aucune nouvelle écriture non instrumentée) et sur l’export (ajouter tout champ utile si non présent). |
+| **Accessibilité & feedback** | `ForceRangeDialog` utilise encore des focus traps maison; certains badges manquent d’aria-live. | 1. Choisir une solution focus trap (Radix ou hook interne) et l’appliquer aux dialogues/menus.<br>2. Généraliser `aria-live="polite"` pour les messages de status (SyncControls).<br>3. Ajouter instrumentation `window.__GARMIN_UI_METRICS__` (temps de render, taille arbre) pour suivre les KPI Phase 5. |
+
+#### 5.2.3 Avancement (2025-11-11)
+
+- `ChartsSection` ne transmet plus le blob `dailyMetrics` aux charts (hors time-series historique) : toutes les visualisations consomment directement les datasets dérivés `precomputed` exposés par `useGarminChartSelectors`.
+- Nouveaux comparateurs `areDerivedChartPropsEqual` basés sur l’identité de `precomputed` → plus de mémoires stables (`React.memo`) et absence de recomputations liées à `dailyMetrics`.
+- `GarminHeartRateChart`, `GarminBodyBatteryChart`, `GarminStressChart`, `GarminSleepChart`, `GarminRespirationChart`, `GarminActivityHeatmap`, `GarminCorrelationCharts` : suppression des `useFilteredDates` redondants, reliance totale sur les dérivés (`data`, `average`, `yAxisDomain`, `weeks`, etc.), affichage intact.
+- `GarminHeartRateTimeSeriesChart` reste compatible avec `precomputed` (memo via `areDerivedChartPropsEqual`) ; le fallback legacy est conservé mais ne s’exécute plus tant que le dataset dérivé est présent.
+- Mutualisation dérivés (`buildDerivedDataset`) : l’UI, `exportAll()` (JSON) et `PDFExport` consomment désormais la même fabrique (dates triées, ancre fiable). Plus aucune reconstitution locale dans `PDFExport`.
+- `AutoSyncSettings` consomme `useGarminSelectors` (source cache, dernière date) + nouveau hook `useAutoSyncSettings` (auto-save centralisé). `useAutoSync` gère désormais `delayBeforeSync` nativement (attente côté hook + cancellation propre).
+- `DebugPanel` bascule sur composants lazy (`CacheDiagnostics`, `NetworkDiagnostics`, `UIMetrics`) et lit directement `window.__GARMIN_NETWORK_STATS__` / `window.__GARMIN_UI_METRICS__` via événements (`garmin-network-update`, `garmin-ui-metrics-update`).
+- Ajout `ServerDiagnostics` (résumé backend) et boutons de rafraîchissement (tryFetch `/api/garmin/debug`) reliés à `useGarminSyncActions.refreshDiagnostics`. Les snapshots réseau/UI sont fournis par `getNetworkStatsSnapshot` / `getUIMetricsSnapshot`.
+- Nouveau hook `useFocusTrap` (gestion tab/escape + restauration focus) intégré dans `ForceRangeDialog` et `DebugPanel` (`role="dialog"`, `aria-modal="true"`), garantissant navigation clavier conforme WCAG.
+- `ForceSyncMenu` utilise `useFocusTrap` + `data-autofocus` (première entrée active), restauration du focus sur le bouton déclencheur, gestion `Escape`.
+- `SyncControls` expose désormais un canal `aria-live` (`polite` + `sr-only`) pour annoncer le statut courant, la dernière sync et la source cache, avec conteneur d’erreur `role="alert"` afin de garantir une lecture immédiate par les lecteurs d’écran.
+- `Toast` / `ToastContainer` : chaque notification embarque désormais `role="status"`/`role="alert"` + `aria-live` paramétré selon la sévérité (succès/info = polite, erreur = assertive) et bouton de fermeture explicite (`type="button"`), offrant un feedback non bloquant mais audible pour les lecteurs d’écran.
+- Centralisation `uiMetricsStore` : export `ensure/update/reset/get` (immutables) + hook `useUIMetricsTelemetry` (profilage `performance.now`) injecté dans `GarminTab`. Le store conserve `renderCount`, `lastRenderComponent`, historique des 5 derniers rendus (ms arrondies) et déclenche `garmin-ui-metrics-update` sur chaque mise à jour.
+- `DebugPanel/UIMetrics` affiche maintenant les métriques de rendu (durée, composant, compteur) et liste les 5 derniers rendus pour corréler re-renders et sync.
+- Toutes les sections principales (`DashboardSection`, `ActivitiesSection`, `MetricsSection`, `ChartsSection`, `UtilitiesSection`) intègrent `useUIMetricsTelemetry` afin de profiler précisément leurs re-renders dès l’activation de `GarminTab`.
+
 ### 5.3 Sélecteurs & memoization
 
 - Créer `useGarminSelectors()` :
@@ -889,4 +916,19 @@ SyncOrchestrator
 
 ### 5.7 Monitoring
 
-- Ajouter instrumentation `window.__GARMIN_UI_METRICS__` (`lastRenderDuration`, `
+- Ajouter instrumentation `window.__GARMIN_UI_METRICS__` (`lastRenderDuration`, `renderCount`, `lastDatasetHash`) pour observer l’impact UI des selectors dérivés.
+- Exposer un hook debug (`useUIMetrics`) pour afficher ces métriques dans le `DebugPanel`.
+
+### 5.8 Journal de validation
+
+- **2025-11-11 · 04:28** — `npx vitest run` (43 tests passés / 4 suites legacy `describe.skip`). Confirme la stabilité post-refactor des charts dérivés (Phase 5 · Étape 1).
+- **2025-11-11 · 04:34** — `npx vitest run` après mutualisation `buildDerivedDataset` (UI/JSON/PDF). Résultat identique (43 passés, 4 skipped) → aucune régression export.
+- **2025-11-11 · 04:50** — `npx vitest run` après refonte AutoSync (hook dédié + selectors). 43 tests passés / 4 skipped.
+- **2025-11-11 · 04:54** — `npx vitest run` après instrumentation `window.__GARMIN_UI_METRICS__` (enregistrement status/durée). 43 tests passés / 4 skipped.
+- **2025-11-11 · 05:00** — `npx vitest run` après refonte `DebugPanel` (lazy + consumption UI/network metrics). 43 tests passés / 4 skipped.
+- **2025-11-11 · 05:10** — `npx vitest run` après ajout ServerDiagnostics + refresh boutons. 43 tests passés / 4 skipped.
+- **2025-11-11 · 05:14** — `npx vitest run` après intégration focus trap (`useFocusTrap`) ForceRangeDialog/DebugPanel + lazy loaders. 43 tests passés / 4 skipped.
+- **2025-11-11 · 05:28** — `npx vitest run` après amélioration accessibilité menus (focus trap ForceSyncMenu + restauration focus). 43 tests passés / 4 skipped.
+- **2025-11-11 · 05:35** — `npx vitest run` après ajout canal `aria-live` et alertes accessibles dans `SyncControls`. 43 tests passés / 4 skipped.
+- **2025-11-11 · 05:39** — `npx vitest run` après accessibilisation des toasts (roles dynamiques + aria-live). 43 tests passés / 4 skipped.
+- **2025-11-11 · 05:51** — `npx vitest run` après instrumentation UI étendue (store centralisé + hooks `useUIMetricsTelemetry` dans toutes les sections + DebugPanel). 43 tests passés / 4 skipped.

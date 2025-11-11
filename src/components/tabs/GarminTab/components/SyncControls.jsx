@@ -169,6 +169,19 @@ export default function SyncControls({
     if (!cacheStats?.history?.length) return [];
     return [...cacheStats.history].slice(-3).reverse();
   }, [cacheStats]);
+
+  const statusAnnouncement = React.useMemo(() => {
+    if (!status) {
+      return 'Statut de synchronisation inconnu.';
+    }
+    const base = status.ok ? 'Synchronisation disponible.' : `Synchronisation indisponible: ${status.message || 'erreur inconnue'}.`;
+    const lastSync = status.lastSync
+      ? `Dernière synchronisation le ${new Date(status.lastSync).toLocaleString('fr-FR')}.`
+      : '';
+    const source = cacheMeta?.source ? `Source actuelle des données: ${cacheMeta.source}.` : '';
+    const degraded = cacheMeta?.degraded ? 'Mode dégradé actif.' : '';
+    return [base, lastSync, source, degraded].filter(Boolean).join(' ');
+  }, [status, cacheMeta]);
  
   return (
     <div className="mb-6 space-y-4">
@@ -184,7 +197,10 @@ export default function SyncControls({
             Actualiser
           </button>
         </div>
-        <div className="text-sm">
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {statusAnnouncement}
+        </div>
+        <div className="text-sm" aria-live="polite" aria-atomic="true">
           <div className={`${status?.ok ? 'text-green-400' : 'text-red-400'}`}>
             Statut: {status?.ok ? 'Disponible' : status?.message || 'Indisponible'}
           </div>
@@ -195,7 +211,7 @@ export default function SyncControls({
           )}
           {/* 🟡 FIX #16: Erreurs affichées clairement avec bouton Réessayer */}
           {status?.error && (
-            <div className="mt-3 bg-red-900/30 border border-red-500/50 rounded-lg p-3">
+            <div className="mt-3 bg-red-900/30 border border-red-500/50 rounded-lg p-3" role="alert" aria-live="assertive">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <p className="text-red-300 font-medium text-sm mb-1">Erreur de synchronisation</p>

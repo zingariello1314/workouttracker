@@ -1,103 +1,15 @@
 import React from 'react';
-import { useFilteredDates } from '../../hooks/useFilteredDates';
-import { areChartPropsEqual, areActivitiesEqual, normalizeActivityValue } from '../../../../../utils/chartComparison';
+import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
 
 /**
  * Graphique heatmap calendrier des activités Garmin
  */
 const DAY_ORDER = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
-function GarminActivityHeatmap({ precomputed, activities, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
-  const fallbackFiltered = useFilteredDates(
-    dailyMetrics,
-    selectedDate,
-    periodFilter,
-    customStartDate,
-    customEndDate,
-    7
-  );
-
-  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
-  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
-
-  // Calculer les statistiques pour chaque jour
-  const activityData = React.useMemo(() => {
-    if (precomputed?.activityByDate) {
-      return precomputed.activityByDate;
-    }
-
-    const result = {};
-
-    const incrementDay = (date, field) => {
-      if (!result[date]) {
-        result[date] = {
-          date,
-          total: 0,
-          swimming: 0,
-          jumpRope: 0,
-          cardio: 0,
-          distance: 0,
-          duration: 0
-        };
-      }
-      result[date].total += 1;
-      result[date][field] += 1;
-    };
-
-    const addMetrics = (date, act) => {
-      if (!result[date]) return;
-      result[date].distance += normalizeActivityValue(act.distance);
-      result[date].duration += normalizeActivityValue(act.duration);
-    };
-
-    ['swimming', 'jumpRope', 'cardio'].forEach(type => {
-      const acts = activities?.[type] || [];
-      acts.forEach(act => {
-        const date = act.date;
-        if (!date || !filteredDates.includes(date)) return;
-        const field = type === 'swimming' ? 'swimming' : type === 'jumpRope' ? 'jumpRope' : 'cardio';
-        incrementDay(date, field);
-        addMetrics(date, act);
-      });
-    });
-
-    return result;
-  }, [precomputed, activities, filteredDates]);
-
-  const weeks = React.useMemo(() => {
-    if (precomputed?.weeks) {
-      return precomputed.weeks;
-    }
-
-    const weeklyData = {};
-    filteredDates.forEach(date => {
-      const d = new Date(date);
-      const weekStart = new Date(d);
-      weekStart.setDate(d.getDate() - d.getDay()); // Dimanche
-      const weekKey = weekStart.toISOString().split('T')[0];
-      
-      if (!weeklyData[weekKey]) {
-        weeklyData[weekKey] = {
-          week: weekKey,
-          days: {},
-          total: 0
-        };
-      }
-      
-      const dayName = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'][d.getDay()];
-      weeklyData[weekKey].days[dayName] = activityData[date] || { date, total: 0, swimming: 0, jumpRope: 0, cardio: 0, distance: 0, duration: 0 };
-      weeklyData[weekKey].total += (activityData[date]?.total || 0);
-    });
-    return Object.values(weeklyData).sort((a, b) => a.week.localeCompare(b.week)).slice(-8); // 8 dernières semaines
-  }, [precomputed, filteredDates, activityData]);
-
-  if (!activities || !dailyMetrics) {
-    return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée disponible pour le calendrier.
-      </div>
-    );
-  }
+function GarminActivityHeatmap({ precomputed }) {
+  const displayInfo = precomputed?.displayInfo ?? null;
+  const activityData = precomputed?.activityByDate ?? {};
+  const weeks = precomputed?.weeks ?? [];
   const getIntensityColor = React.useCallback((total) => {
     if (total === 0) return 'bg-slate-800';
     if (total === 1) return 'bg-green-600';
@@ -125,7 +37,7 @@ function GarminActivityHeatmap({ precomputed, activities, dailyMetrics, selected
             </tr>
           </thead>
           <tbody>
-            {weeks.map((week, weekIdx) => (
+            {weeks.map((week) => (
               <tr key={week.week}>
                 <td className="text-slate-400 px-2 py-1 text-right">
                   {new Date(week.week).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
@@ -171,10 +83,5 @@ function GarminActivityHeatmap({ precomputed, activities, dailyMetrics, selected
   );
 }
 
-export default React.memo(GarminActivityHeatmap, (prevProps, nextProps) => {
-  return (
-    areActivitiesEqual(prevProps.activities, nextProps.activities) &&
-    areChartPropsEqual(prevProps, nextProps)
-  );
-});
+export default React.memo(GarminActivityHeatmap, areDerivedChartPropsEqual);
 

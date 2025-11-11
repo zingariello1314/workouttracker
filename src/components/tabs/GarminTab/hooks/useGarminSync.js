@@ -38,6 +38,15 @@ export function useGarminSync(setGarminData, setStatus, importToEndurance, optio
     baseUrl: state.baseUrl,
     clearCache: state.clearFrontendCache,
     cacheMeta: state.lastSourceMeta,
-    resetCircuit: actions.resetCircuit
-  }), [actions, state.loading, state.baseUrl, state.clearFrontendCache, state.lastSourceMeta]);
+    resetCircuit: actions.resetCircuit,
+    getNetworkStatsSnapshot: actions.getNetworkStatsSnapshot,
+    getUIMetricsSnapshot: actions.getUIMetricsSnapshot,
+    refreshDiagnostics: actions.refreshDiagnostics
+  }), [
+    actions,
+    state.loading,
+    state.baseUrl,
+    state.clearFrontendCache,
+    state.lastSourceMeta
+  ]);
 }

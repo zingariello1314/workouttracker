@@ -57,6 +57,19 @@ export function areChartPropsEqual(prevProps, nextProps) {
 }
 
 /**
+ * Comparateur spécialisé pour les graphiques basés sur les datasets dérivés
+ * (pré-calculés via useGarminChartSelectors/buildGarminChartDataset).
+ * On s'appuie sur l'identité référentielle de `precomputed` qui ne change
+ * que lorsque les données sous-jacentes ont été recalculées.
+ */
+export function areDerivedChartPropsEqual(prevProps, nextProps) {
+  return (
+    prevProps.precomputed === nextProps.precomputed &&
+    prevProps.colors === nextProps.colors
+  );
+}
+
+/**
  * Compare deux tableaux de manière shallow (ordre strict)
  */
 export function shallowArrayEqual(a = [], b = []) {

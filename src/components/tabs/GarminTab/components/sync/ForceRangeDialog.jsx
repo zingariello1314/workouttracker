@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Suspense, useId } from 'react';
 import { X } from 'lucide-react';
 import { describeRange, estimateApiCalls, validateRange, storeLastRange } from './forceSyncUtils';
 import { getTodayDateStr } from '../../hooks/garminDateUtils';
+import useFocusTrap from '../../hooks/useFocusTrap';
 
 const ForceRangeCalendar = React.lazy(() => import('./ForceRangeCalendar'));
 
@@ -48,11 +49,28 @@ export default function ForceRangeDialog({
     onConfirm({ start, end }, withToday);
   };
 
+  const headingId = useId();
+  const descriptionId = useId();
+  const dialogRef = useFocusTrap({
+    initialFocusRef: startRef,
+    onEscape: onCancel
+  });
+
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
-      <div className="w-[90vw] max-w-md bg-slate-900 border border-slate-700 rounded-xl shadow-2xl">
+      <div
+        ref={dialogRef}
+        className="w-[90vw] max-w-md bg-slate-900 border border-slate-700 rounded-xl shadow-2xl focus:outline-none"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        aria-describedby={descriptionId}
+        tabIndex={-1}
+      >
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-          <h2 className="text-white font-semibold text-lg">Recalculer une plage de dates</h2>
+          <h2 id={headingId} className="text-white font-semibold text-lg">
+            Recalculer une plage de dates
+          </h2>
           <button
             type="button"
             onClick={onCancel}
@@ -123,6 +141,9 @@ export default function ForceRangeDialog({
             La synchronisation forcée vide le cache pour la plage sélectionnée, puis relance l’ensemble du pipeline
             (backend + Python + export IndexedDB). Utilise cette option lorsqu’une journée n’a pas été synchronisée ou
             pour rafraîchir des données obsolètes.
+          </p>
+          <p id={descriptionId} className="sr-only">
+            Dialogue modal pour sélectionner une plage de dates à synchroniser depuis Garmin.
           </p>
         </div>
 
