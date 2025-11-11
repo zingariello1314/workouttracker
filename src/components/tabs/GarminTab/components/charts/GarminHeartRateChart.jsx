@@ -13,11 +13,11 @@ const log = logger.component('GarminHeartRateChart');
  * Graphique de fréquence cardiaque 24h
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminHeartRateChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
   // Sinon l'ordre des hooks change entre les rendus
   // 🔴 FIX #51-60: Utiliser constante pour contextDays
-  const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
+  const fallbackFiltered = useFilteredDates(
     dailyMetrics,
     selectedDate,
     periodFilter,
@@ -29,21 +29,29 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
   // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
   const { containerRef, containerSize } = useChartContainerSize();
 
+  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
+  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
+
   const chartData = React.useMemo(() => {
+    if (precomputed?.data) {
+      return precomputed.data;
+    }
+
     if (!dailyMetrics || filteredDates.length === 0) return [];
-    
+
     const data = filteredDates.map(date => {
       const dm = dailyMetrics[date] || {};
       const hr = dm.heartRate || {};
       return {
         date,
-        resting: hr.resting || null,
-        max: hr.max || null,
-        avg: hr.avg || null,
+        resting: hr.resting || dm.restingHeartRate || dm.restingHR || null,
+        max: hr.max || dm.maxHeartRate || dm.maxHR || null,
+        avg: hr.avg || hr.average || dm.avgHeartRate || dm.averageHeartRate || null,
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.resting !== null || d.max !== null || d.avg !== null);
-    
+
     // Debug log pour identifier les problèmes de données
     if (data.length === 0 && filteredDates.length > 0) {
       log.warn('No HR data for filtered dates:', filteredDates.map(date => {
@@ -52,18 +60,22 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
         return { date, hasHR: !!hr, resting: hr.resting, max: hr.max, avg: hr.avg };
       }));
     }
-    
+
     return data;
-  }, [dailyMetrics, filteredDates, effectiveSelectedDate]);
+  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate]);
 
   // ✅ FIX : Calculer le domaine Y avec marge pour éviter que les valeurs ne touchent le bord
   const yAxisDomain = React.useMemo(() => {
+    if (precomputed?.yAxisDomain) {
+      return precomputed.yAxisDomain;
+    }
+
     if (!chartData || chartData.length === 0) return [0, 180];
-    
+
     // Trouver les valeurs min et max parmi toutes les valeurs FC (resting, max, avg)
     let minValue = Infinity;
     let maxValue = -Infinity;
-    
+
     chartData.forEach(d => {
       if (d.resting !== null && d.resting !== undefined) {
         minValue = Math.min(minValue, d.resting);
@@ -78,27 +90,27 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
         maxValue = Math.max(maxValue, d.avg);
       }
     });
-    
+
     // Si aucune valeur trouvée, utiliser des valeurs par défaut
     if (minValue === Infinity || maxValue === -Infinity) {
       return [0, 180];
     }
-    
+
     // Calculer la marge : 10% de la plage ou minimum 10 bpm
     const range = maxValue - minValue;
     const margin = Math.max(range * 0.1, 10); // 10% ou minimum 10 bpm
-    
+
     // Calculer le domaine avec marge
     const domainMin = Math.max(0, Math.floor(minValue - margin));
     const domainMax = Math.ceil(maxValue + margin);
-    
+
     // S'assurer que le domaine ne dépasse pas les limites physiologiques raisonnables
     // (0-220 bpm pour un adulte)
     const finalMin = Math.max(0, domainMin);
     const finalMax = Math.min(220, domainMax);
-    
+
     return [finalMin, finalMax];
-  }, [chartData]);
+  }, [precomputed, chartData]);
 
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
@@ -203,75 +215,84 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
                 label={{ value: "Sélectionné", position: "top", fill: "#FCD34D", fontSize: 10 }}
               />
             )}
-            {chartData.some(d => d.resting !== null) && (
-              <Line
-                type="monotone"
-                dataKey="resting"
-                stroke={colors?.green || '#10B981'}
-                strokeWidth={2}
-                name="FC Repos"
-                dot={(props) => {
-                  const { key, ...restProps } = props;
-                  return (
-                    <CustomDot
-                      key={key}
-                      {...restProps}
-                      fill={colors?.green || '#10B981'}
-                      stroke={colors?.green || '#10B981'}
-                      strokeWidth={2}
-                      r={4}
-                    />
-                  );
-                }}
-                activeDot={{ r: 7, stroke: colors?.green || '#10B981', strokeWidth: 2 }}
-              />
-            )}
-            {chartData.some(d => d.avg !== null) && (
-              <Line
-                type="monotone"
-                dataKey="avg"
-                stroke={colors?.primary || '#3B82F6'}
-                strokeWidth={2}
-                name="FC Moyenne"
-                dot={(props) => {
-                  const { key, ...restProps } = props;
-                  return (
-                    <CustomDot
-                      key={key}
-                      {...restProps}
-                      fill={colors?.primary || '#3B82F6'}
-                      stroke={colors?.primary || '#3B82F6'}
-                      strokeWidth={2}
-                      r={4}
-                    />
-                  );
-                }}
-                activeDot={{ r: 7, stroke: colors?.primary || '#3B82F6', strokeWidth: 2 }}
-              />
-            )}
-            {chartData.some(d => d.max !== null) && (
-              <Line
-                type="monotone"
-                dataKey="max"
-                stroke={colors?.red || '#EF4444'}
-                strokeWidth={2}
-                name="FC Max"
-                dot={(props) => {
-                  const { key, ...restProps } = props;
-                  return (
-                    <CustomDot
-                      key={key}
-                      {...restProps}
-                      fill={colors?.red || '#EF4444'}
-                      stroke={colors?.red || '#EF4444'}
-                      strokeWidth={2}
-                      r={4}
-                    />
-                  );
-                }}
-                activeDot={{ r: 7, stroke: colors?.red || '#EF4444', strokeWidth: 2 }}
-              />
-            )}
+            <Line
+              type="monotone"
+              dataKey="resting"
+              stroke={colors?.sky || '#38BDF8'}
+              strokeWidth={3}
+              dot={(props) => {
+                const { key: _omittedKey, payload, index, ...restProps } = props;
+                const dotKey =
+                  payload?.timestamp ??
+                  payload?.date ??
+                  `${payload?.time || ''}-${payload?.hour ?? ''}-${payload?.minute ?? ''}-${index ?? 0}`;
+                return (
+                  <CustomDot
+                    key={dotKey}
+                    payload={payload}
+                    index={index}
+                    {...restProps}
+                    fill={colors?.sky || '#38BDF8'}
+                    stroke={colors?.sky || '#38BDF8'}
+                    strokeWidth={2}
+                    r={4}
+                  />
+                );
+              }}
+              name="Repos"
+            />
+            <Line
+              type="monotone"
+              dataKey="avg"
+              stroke={colors?.emerald || '#22C55E'}
+              strokeWidth={3}
+              dot={(props) => {
+                const { key: _omittedKey, payload, index, ...restProps } = props;
+                const dotKey =
+                  payload?.timestamp ??
+                  payload?.date ??
+                  `${payload?.time || ''}-${payload?.hour ?? ''}-${payload?.minute ?? ''}-${index ?? 0}`;
+                return (
+                  <CustomDot
+                    key={dotKey}
+                    payload={payload}
+                    index={index}
+                    {...restProps}
+                    fill={colors?.emerald || '#22C55E'}
+                    stroke={colors?.emerald || '#22C55E'}
+                    strokeWidth={2}
+                    r={4}
+                  />
+                );
+              }}
+              name="Moyenne"
+            />
+            <Line
+              type="monotone"
+              dataKey="max"
+              stroke={colors?.rose || '#F43F5E'}
+              strokeWidth={3}
+              dot={(props) => {
+                const { key: _omittedKey, payload, index, ...restProps } = props;
+                const dotKey =
+                  payload?.timestamp ??
+                  payload?.date ??
+                  `${payload?.time || ''}-${payload?.hour ?? ''}-${payload?.minute ?? ''}-${index ?? 0}`;
+                return (
+                  <CustomDot
+                    key={dotKey}
+                    payload={payload}
+                    index={index}
+                    {...restProps}
+                    fill={colors?.rose || '#F43F5E'}
+                    stroke={colors?.rose || '#F43F5E'}
+                    strokeWidth={2}
+                    r={4}
+                  />
+                );
+              }}
+              name="Maximum"
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -279,6 +300,5 @@ function GarminHeartRateChart({ dailyMetrics, selectedDate, periodFilter, custom
   );
 }
 
-// 🟡 FIX #13: Memoization avec comparaison optimisée des props
 export default React.memo(GarminHeartRateChart, areChartPropsEqual);
 

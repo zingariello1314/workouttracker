@@ -27,8 +27,27 @@ export default function ForceSyncMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [includeToday, setIncludeToday] = useState(false);
-  const [initialRange] = useState(() => restoreLastRange() || lastForcedRange);
+  const restoredRangeRef = React.useRef(restoreLastRange() || lastForcedRange || null);
+  const [customRange, setCustomRange] = useState(() => {
+    const initial = restoredRangeRef.current;
+    if (!initial) return null;
+    return { start: initial.start, end: initial.end };
+  });
+  const [includeToday, setIncludeToday] = useState(() => {
+    const initial = restoredRangeRef.current;
+    return initial?.includeToday ?? false;
+  });
+
+  React.useEffect(() => {
+    if (!lastForcedRange) {
+      return;
+    }
+    restoredRangeRef.current = lastForcedRange;
+    setCustomRange(lastForcedRange.start || lastForcedRange.end ? { start: lastForcedRange.start, end: lastForcedRange.end } : null);
+    if (typeof lastForcedRange.includeToday === 'boolean') {
+      setIncludeToday(lastForcedRange.includeToday);
+    }
+  }, [lastForcedRange]);
 
   const toggleMenu = useCallback(() => {
     if (loading) return;
@@ -40,7 +59,6 @@ export default function ForceSyncMenu({
   const handlePreset = useCallback((mode) => {
     if (mode === 'range') {
       setDialogOpen(true);
-      setIncludeToday(false);
       closeMenu();
       return;
     }
@@ -52,6 +70,9 @@ export default function ForceSyncMenu({
 
   const handleRangeConfirm = useCallback((range, withToday) => {
     const request = mapRangeToRequest(range, withToday);
+    const effectiveRange = request.range || range;
+    setCustomRange(effectiveRange ? { start: effectiveRange.start, end: effectiveRange.end } : null);
+    setIncludeToday(withToday);
     onSync?.(request);
   }, [onSync]);
 
@@ -135,7 +156,7 @@ export default function ForceSyncMenu({
       <Suspense fallback={null}>
         {dialogOpen && (
           <ForceRangeDialog
-            initialRange={initialRange}
+            initialRange={customRange}
             includeToday={includeToday}
             onCancel={() => setDialogOpen(false)}
             onConfirm={(range, withToday) => {

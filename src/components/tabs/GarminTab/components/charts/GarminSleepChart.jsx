@@ -11,10 +11,10 @@ import { DATE_RANGE, ARIA_LABELS } from '../../constants';
  * Graphique de sommeil (durée et phases)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminSleepChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
   // 🔴 FIX #51-60: Utiliser constante pour contextDays
-  const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
+  const fallbackFiltered = useFilteredDates(
     dailyMetrics,
     selectedDate,
     periodFilter,
@@ -26,7 +26,15 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
   // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
   const { containerRef, containerSize } = useChartContainerSize();
 
+  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
+  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
+
   const chartData = React.useMemo(() => {
+    if (precomputed?.data) {
+      return precomputed.data;
+    }
+
     if (!dailyMetrics || filteredDates.length === 0) return [];
     
     return filteredDates.map(date => {
@@ -42,13 +50,16 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.duration !== null || d.quality !== null);
-  }, [dailyMetrics, filteredDates, effectiveSelectedDate]);
+  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate]);
 
   const avgDuration = React.useMemo(() => {
+    if (precomputed?.averageDuration !== undefined) {
+      return precomputed.averageDuration;
+    }
     const filtered = chartData.filter(d => d.duration !== null);
     if (filtered.length === 0) return 0;
     return filtered.reduce((sum, d) => sum + d.duration, 0) / filtered.length;
-  }, [chartData]);
+  }, [precomputed, chartData]);
 
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
@@ -162,7 +173,6 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
               yAxisId="right"
               orientation="right"
               stroke="#9CA3AF"
-              domain={[0, 100]}
               label={{ value: 'Qualité', angle: 90, position: 'insideRight', style: { fill: '#9CA3AF' } }}
             />
             <Tooltip content={renderTooltip} />
@@ -176,55 +186,41 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
                 label={{ value: "Sélectionné", position: "top", fill: "#FCD34D", fontSize: 10 }}
               />
             )}
+            <Bar yAxisId="left" dataKey="duration" fill={colors?.indigo || '#6366F1'} name="Durée (min)" />
             {chartData.some(d => d.deepSleep !== null) && (
-              <Bar
-                yAxisId="left"
-                dataKey="deepSleep"
-                stackId="a"
-                fill={colors?.blue || '#3B82F6'}
-                name="Sommeil profond"
-              />
+              <Bar yAxisId="left" dataKey="deepSleep" stackId="sleep" fill={colors?.purple || '#8B5CF6'} name="Sommeil profond" />
             )}
             {chartData.some(d => d.lightSleep !== null) && (
-              <Bar
-                yAxisId="left"
-                dataKey="lightSleep"
-                stackId="a"
-                fill={colors?.cyan || '#06B6D4'}
-                name="Sommeil léger"
-              />
+              <Bar yAxisId="left" dataKey="lightSleep" stackId="sleep" fill={colors?.sky || '#38BDF8'} name="Sommeil léger" />
             )}
             {chartData.some(d => d.remSleep !== null) && (
-              <Bar
-                yAxisId="left"
-                dataKey="remSleep"
-                stackId="a"
-                fill={colors?.purple || '#8B5CF6'}
-                name="REM"
-              />
+              <Bar yAxisId="left" dataKey="remSleep" stackId="sleep" fill={colors?.pink || '#EC4899'} name="Sommeil REM" />
             )}
             {chartData.some(d => d.quality !== null) && (
               <Line
                 yAxisId="right"
                 type="monotone"
                 dataKey="quality"
-                stroke={colors?.yellow || '#FCD34D'}
-                strokeWidth={2}
+                stroke={colors?.amber || '#F59E0B'}
+                strokeWidth={3}
                 name="Qualité"
                 dot={(props) => {
-                  const { key, ...restProps } = props;
+                  const { key: _omittedKey, payload, index, ...restProps } = props;
+                  const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
                   return (
                     <CustomDot
-                      key={key}
+                      key={dotKey}
+                      payload={payload}
+                      index={index}
                       {...restProps}
-                      fill={colors?.yellow || '#FCD34D'}
-                      stroke={colors?.yellow || '#FCD34D'}
+                      fill={colors?.amber || '#F59E0B'}
+                      stroke={colors?.amber || '#F59E0B'}
                       strokeWidth={2}
                       r={4}
                     />
                   );
                 }}
-                activeDot={{ r: 7, stroke: colors?.yellow || '#FCD34D', strokeWidth: 2 }}
+                activeDot={{ r: 8, stroke: colors?.amber || '#F59E0B', strokeWidth: 2 }}
               />
             )}
           </ComposedChart>
@@ -234,6 +230,5 @@ function GarminSleepChart({ dailyMetrics, selectedDate, periodFilter, customStar
   );
 }
 
-// 🟡 FIX #13: Memoization avec comparaison optimisée
 export default React.memo(GarminSleepChart, areChartPropsEqual);
 

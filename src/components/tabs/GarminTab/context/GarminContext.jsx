@@ -31,7 +31,8 @@ export const useGarminContext = () => {
       colors: {},
       forcedRangesHistory: [],
       addForcedRangeEntry: () => {},
-      clearForcedRangesHistory: () => {}
+      clearForcedRangesHistory: () => {},
+      cacheMeta: null
     };
   }
   return context;
@@ -56,7 +57,8 @@ export const GarminProvider = ({
   colors = {},
   forcedRangesHistory = [],
   addForcedRangeEntry = () => {},
-  clearForcedRangesHistory = () => {}
+  clearForcedRangesHistory = () => {},
+  cacheMeta = null
 }) => {
   const value = React.useMemo(() => ({
     dailyMetrics,
@@ -76,7 +78,8 @@ export const GarminProvider = ({
     colors,
     forcedRangesHistory,
     addForcedRangeEntry,
-    clearForcedRangesHistory
+    clearForcedRangesHistory,
+    cacheMeta
   }), [
     dailyMetrics,
     activities,
@@ -95,7 +98,8 @@ export const GarminProvider = ({
     colors,
     forcedRangesHistory,
     addForcedRangeEntry,
-    clearForcedRangesHistory
+    clearForcedRangesHistory,
+    cacheMeta
   ]);
 
   return (

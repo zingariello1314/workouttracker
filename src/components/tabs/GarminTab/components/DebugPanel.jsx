@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, X, AlertCircle, CheckCircle, Clock, Database, Server } from 'lucide-react';
+import { CacheDiagnostics } from '../DebugPanel/CacheDiagnostics';
 
 /**
  * ✅ PHASE 1 : Panneau de diagnostic pour comprendre le comportement de la synchronisation
@@ -9,7 +10,7 @@ import { RefreshCw, X, AlertCircle, CheckCircle, Clock, Database, Server } from 
  * - Timestamps de dernière synchronisation
  * - Informations détaillées sur les requêtes
  */
-export default function DebugPanel({ onClose }) {
+export default function DebugPanel({ onClose, cacheMeta }) {
   const [debugData, setDebugData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -123,6 +124,10 @@ export default function DebugPanel({ onClose }) {
             <p className="text-red-300">❌ Erreur: {error}</p>
           </div>
         )}
+
+        <div className="mb-6">
+          <CacheDiagnostics meta={cacheMeta} />
+        </div>
 
         {debugData && (
           <div className="space-y-6">

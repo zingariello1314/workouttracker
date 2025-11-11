@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { X } from 'lucide-react';
 import { describeRange, estimateApiCalls, validateRange, storeLastRange } from './forceSyncUtils';
-import { getTodayDateStr } from '../../../hooks/garminDateUtils';
+import { getTodayDateStr } from '../../hooks/garminDateUtils';
 
 const ForceRangeCalendar = React.lazy(() => import('./ForceRangeCalendar'));
 
@@ -92,6 +92,11 @@ export default function ForceRangeDialog({
             />
             Inclure aujourd’hui ({today})
           </label>
+          {withToday && (
+            <p className="text-xs text-slate-400" role="status" aria-live="polite">
+              La date de fin sera automatiquement fixée à {today} pour garantir une synchronisation complète de la journée.
+            </p>
+          )}
           {spanDays && (
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 space-y-1">
               <div>

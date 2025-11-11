@@ -22,8 +22,8 @@ echo USE_PYTHON=%USE_PYTHON%
 echo (Ferme cette fenetre pour arreter)
 echo --------------------------------------------------
 
-REM Lancer Node (la variable USE_PYTHON sera héritée par Node)
-node garmin-server.js
+REM Lancer Node avec un heap élargi pour éviter les OOM lors des forçages lourds
+node --max-old-space-size=8192 garmin-server.js
 
 echo.
 echo Serveur arrete. Appuie sur une touche pour fermer.

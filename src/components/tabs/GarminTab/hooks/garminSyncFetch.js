@@ -16,16 +16,143 @@
  * @module garminSyncFetch
  */
 
-import { SYNC_TIMEOUT_MS, RETRY_BASE_DELAY_MS, RETRY_MAX_ATTEMPTS } from '../constants';
+import { SYNC_TIMEOUT_MS, RETRY_BASE_DELAY_MS, RETRY_MAX_ATTEMPTS, CIRCUIT_BREAKER } from '../constants';
 import logger from '../../../../utils/logger';
+import { CircuitBreaker } from '../services/network/CircuitBreaker';
 
 const log = logger.module('garminSyncFetch');
 
 /**
- * Bases URL pour le serveur Garmin (fallback automatique)
- * @constant {Array<string>}
+ * Construit la liste des bases URL à utiliser pour les requêtes.
+ * Priorités :
+ * 1. Variable d'environnement `VITE_GARMIN_SERVER_URL` (permet configuration custom)
+ * 2. Origine courante (utile en dev via proxy Vite ou en prod si backend même domaine)
+ * 3. Fallback local classique sur port 3031
+ *
+ * On évite de cibler directement le port 3001 (frontend Vite) sans proxy,
+ * car cela générait des 404 quand le proxy n'était pas configuré.
  */
-const BASES = ['http://localhost:3031', 'http://localhost:3001'];
+const buildBaseList = () => {
+  const bases = new Set();
+
+  const envBase = import.meta.env?.VITE_GARMIN_SERVER_URL;
+  if (envBase && typeof envBase === 'string') {
+    bases.add(envBase.replace(/\/+$/, ''));
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    bases.add(window.location.origin.replace(/\/+$/, ''));
+  }
+
+  bases.add('http://localhost:3031');
+
+  return Array.from(bases);
+};
+
+class BaseUrlRegistry {
+  constructor(defaults = []) {
+    this.defaults = [...defaults];
+    this.bases = [...defaults];
+  }
+
+  getAll() {
+    return [...this.bases];
+  }
+
+  add(baseUrl) {
+    const normalized = typeof baseUrl === 'string' ? baseUrl.replace(/\/+$/, '') : null;
+    if (!normalized || !normalized.startsWith('http')) {
+      throw new Error('Base URL must be a valid HTTP(S) URL');
+    }
+    if (!this.bases.includes(normalized)) {
+      this.bases.push(normalized);
+    }
+    return this.getAll();
+  }
+
+  promote(baseUrl) {
+    const index = this.bases.indexOf(baseUrl);
+    if (index > 0) {
+      this.bases.splice(index, 1);
+      this.bases.unshift(baseUrl);
+    }
+  }
+
+  reset(defaults = this.defaults) {
+    this.defaults = [...defaults];
+    this.bases = [...defaults];
+  }
+}
+
+export const baseUrlRegistry = new BaseUrlRegistry(buildBaseList());
+export const circuitBreaker = new CircuitBreaker({
+  maxFailures: CIRCUIT_BREAKER.MAX_FAILURES,
+  cooldownMs: CIRCUIT_BREAKER.COOLDOWN_MS
+});
+
+const MAX_NETWORK_EVENTS = 50;
+const ensureNetworkStore = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const defaultStore = {
+    totals: {
+      success: 0,
+      failure: 0,
+      blocked: 0
+    },
+    lastSuccess: null,
+    lastError: null,
+    events: [],
+    lastUpdate: null
+  };
+  if (!window.__GARMIN_NETWORK_STATS__) {
+    window.__GARMIN_NETWORK_STATS__ = defaultStore;
+  } else {
+    window.__GARMIN_NETWORK_STATS__ = {
+      ...defaultStore,
+      ...window.__GARMIN_NETWORK_STATS__,
+      totals: {
+        ...defaultStore.totals,
+        ...(window.__GARMIN_NETWORK_STATS__?.totals || {})
+      },
+      events: window.__GARMIN_NETWORK_STATS__?.events || []
+    };
+  }
+  return window.__GARMIN_NETWORK_STATS__;
+};
+
+const dispatchNetworkUpdate = () => {
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent('garmin-network-update'));
+  }
+};
+
+const recordNetworkEvent = (event) => {
+  const store = ensureNetworkStore();
+  if (!store) {
+    return;
+  }
+  const normalizedEvent = {
+    timestamp: Date.now(),
+    ...event
+  };
+  store.events.push(normalizedEvent);
+  if (store.events.length > MAX_NETWORK_EVENTS) {
+    store.events.splice(0, store.events.length - MAX_NETWORK_EVENTS);
+  }
+  store.lastUpdate = normalizedEvent.timestamp;
+  if (normalizedEvent.status === 'success') {
+    store.totals.success += 1;
+    store.lastSuccess = normalizedEvent;
+  } else if (normalizedEvent.status === 'failure') {
+    store.totals.failure += 1;
+    store.lastError = normalizedEvent;
+  } else if (normalizedEvent.status === 'blocked') {
+    store.totals.blocked += 1;
+  }
+  dispatchNetworkUpdate();
+};
 
 /**
  * Fetch avec retry automatique, exponential backoff et timeout
@@ -64,12 +191,31 @@ export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS,
     throw new Error('Retries must be at least 1');
   }
   
+  ensureNetworkStore();
+  if (!circuitBreaker.canAttempt()) {
+    const remaining = circuitBreaker.getCooldownRemaining();
+    recordNetworkEvent({
+      status: 'blocked',
+      path,
+      reason: 'circuit-open',
+      cooldownMs: remaining,
+      circuit: circuitBreaker.getState(),
+      failureCount: circuitBreaker.getFailureCount()
+    });
+    const error = new Error(`Circuit ouvert: nouvelle tentative dans ${Math.ceil(remaining / 1000)}s`);
+    error.code = 'GARMIN_CIRCUIT_OPEN';
+    throw error;
+  }
+
   log.debug(`[tryFetch] Starting fetch for ${path} with ${retries} max retries`);
   
   // Essayer chaque tentative
   for (let attempt = 0; attempt < retries; attempt++) {
+    let attemptSucceeded = false;
     // Essayer chaque base URL
-    for (const baseUrl of BASES) {
+    const bases = baseUrlRegistry.getAll();
+    for (let baseIndex = 0; baseIndex < bases.length; baseIndex++) {
+      const baseUrl = bases[baseIndex];
       try {
         // Timeout avec AbortController
         const controller = new AbortController();
@@ -81,6 +227,7 @@ export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS,
         const fullUrl = `${baseUrl}${path}`;
         log.debug(`[tryFetch] Attempt ${attempt + 1}/${retries} - Fetching ${fullUrl}`);
         
+        const attemptStart = Date.now();
         const res = await fetch(fullUrl, { 
           ...options, 
           signal: controller.signal 
@@ -101,10 +248,24 @@ export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS,
           onBaseUrlChange(baseUrl);
         }
         
+        baseUrlRegistry.promote(baseUrl);
+        circuitBreaker.recordSuccess();
+        recordNetworkEvent({
+          status: 'success',
+          path,
+          baseUrl,
+          attempt: attempt + 1,
+          baseAttempt: baseIndex + 1,
+          duration: Date.now() - attemptStart,
+          circuit: circuitBreaker.getState(),
+          failureCount: circuitBreaker.getFailureCount()
+        });
         log.debug(`[tryFetch] ✅ Success on attempt ${attempt + 1} with base ${baseUrl}`);
+        attemptSucceeded = true;
         return json;
         
       } catch (e) {
+        const attemptDuration = Date.now() - attemptStart;
         // Gérer les erreurs selon leur type
         if (e.name === 'AbortError') {
           // Timeout
@@ -119,24 +280,67 @@ export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS,
           lastErr = e;
           log.debug(`[tryFetch] ❌ Error for ${baseUrl}${path}: ${e.message}`);
         }
-        
-        // Exponential backoff avant le prochain retry (sauf dernière tentative)
-        if (attempt < retries - 1) {
-          const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt); // 1s, 2s, 4s...
-          log.debug(`[tryFetch] ⏳ Retry in ${delay}ms (exponential backoff)`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-        
-        // Continuer avec la prochaine base URL
+        recordNetworkEvent({
+          status: 'failure',
+          path,
+          baseUrl,
+          attempt: attempt + 1,
+          baseAttempt: baseIndex + 1,
+          duration: attemptDuration,
+          error: lastErr?.message || e.message,
+          circuit: circuitBreaker.getState(),
+          failureCount: circuitBreaker.getFailureCount()
+        });
         continue;
+      }
+    }
+
+    if (!attemptSucceeded) {
+      circuitBreaker.recordFailure();
+      recordNetworkEvent({
+        status: 'failure',
+        path,
+        attempt: attempt + 1,
+        duration: null,
+        reason: 'attempt-failed',
+        error: lastErr?.message,
+        circuit: circuitBreaker.getState(),
+        failureCount: circuitBreaker.getFailureCount(),
+        cooldownMs: circuitBreaker.getState() === 'open' ? circuitBreaker.getCooldownRemaining() : 0
+      });
+      if (attempt < retries - 1) {
+        const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt); // 1s, 2s, 4s...
+        log.debug(`[tryFetch] ⏳ Retry in ${delay}ms (exponential backoff)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
   
   // Toutes les tentatives ont échoué
-  const errorMessage = `Échec après ${retries} tentatives: ${lastErr?.message || 'Serveur inaccessible'}`;
+  const troubleshootingHint =
+    'Impossible de contacter le serveur Garmin. Vérifie qu’il tourne sur http://localhost:3031 (ou configure VITE_GARMIN_SERVER_URL) et consulte http://localhost:3001/api/garmin/debug.';
+  const errorMessage = `${troubleshootingHint} Détails: ${lastErr?.message || 'Serveur inaccessible'}`;
   log.error(`[tryFetch] ❌ All attempts failed: ${errorMessage}`);
-  throw new Error(errorMessage);
+  if (typeof console !== 'undefined') {
+    console.error('[GarminSyncFetch] Tous les essais ont échoué', {
+      retries,
+      bases: baseUrlRegistry.getAll(),
+      lastError: lastErr?.message
+    });
+  }
+  recordNetworkEvent({
+    status: 'failure',
+    path,
+    attempt: retries,
+    reason: 'all-attempts-failed',
+    error: lastErr?.message,
+    circuit: circuitBreaker.getState(),
+    failureCount: circuitBreaker.getFailureCount(),
+    cooldownMs: circuitBreaker.getState() === 'open' ? circuitBreaker.getCooldownRemaining() : 0
+  });
+  const enhancedError = new Error(errorMessage);
+  enhancedError.code = 'GARMIN_SYNC_UNREACHABLE';
+  throw enhancedError;
 };
 
 /**
@@ -144,7 +348,7 @@ export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS,
  * 
  * @returns {Array<string>} Liste des bases URL
  */
-export const getBases = () => [...BASES];
+export const getBases = () => baseUrlRegistry.getAll();
 
 /**
  * Ajoute une base URL supplémentaire (pour tests ou configuration dynamique)
@@ -152,21 +356,15 @@ export const getBases = () => [...BASES];
  * @param {string} baseUrl - Base URL à ajouter
  */
 export const addBase = (baseUrl) => {
-  if (typeof baseUrl !== 'string' || !baseUrl.startsWith('http')) {
-    throw new Error('Base URL must be a valid HTTP(S) URL');
-  }
-  if (!BASES.includes(baseUrl)) {
-    BASES.push(baseUrl);
-    log.info(`[tryFetch] Added base URL: ${baseUrl}`);
-  }
+  baseUrlRegistry.add(baseUrl);
+  log.info(`[tryFetch] Added base URL: ${baseUrl}`);
 };
 
 /**
  * Réinitialise les bases URL à la configuration par défaut
  */
 export const resetBases = () => {
-  BASES.length = 0;
-  BASES.push('http://localhost:3031', 'http://localhost:3001');
+  baseUrlRegistry.reset(buildBaseList());
   log.info('[tryFetch] Reset bases to default');
 };
 

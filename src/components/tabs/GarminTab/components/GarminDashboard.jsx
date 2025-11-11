@@ -1,25 +1,34 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { formatDistance, formatSleepDuration } from '../utils/garminFormatters';
 import GanttChart from './GanttChart';
 import AdvancedStatistics from './AdvancedStatistics';
 import logger from '../../../../utils/logger';
+import { useGarminSelectors } from '../hooks/useGarminSelectors';
+import { useGarminContext } from '../context/GarminContext';
 
 const log = logger.component('GarminDashboard');
 
 /**
  * Composant Dashboard pour afficher les métriques quotidiennes principales
  */
-export default function GarminDashboard({ 
-  dailyMetrics, 
-  selectedDate, 
-  comparisonMode, 
-  compareDate,
-  activities = { swimming: [], jumpRope: [], cardio: [] }, 
-  periodFilter = 'all', 
-  customStartDate = null, 
-  customEndDate = null 
-}) {
+export default function GarminDashboard() {
+  const {
+    allDailyMetrics: dailyMetrics,
+    dateKeys,
+    latestDate,
+    currentMetrics,
+    comparisonMetrics,
+    activitiesByType,
+    periodFilter,
+    customRange,
+    comparisonMode,
+    compareDate
+  } = useGarminSelectors();
+
+  const { selectedDate } = useGarminContext();
+  const activities = activitiesByType;
+  const customStartDate = customRange.start;
+  const customEndDate = customRange.end;
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
@@ -31,7 +40,7 @@ export default function GarminDashboard({
   // Debug log (seulement en développement)
   React.useEffect(() => {
     // 🔴 FIX : Éviter de logger des objets complexes qui pourraient causer des problèmes
-    const sampleDate = dailyMetrics && Object.keys(dailyMetrics).length > 0 ? Object.keys(dailyMetrics)[0] : null;
+    const sampleDate = dateKeys.length > 0 ? dateKeys[0] : null;
     const sampleMetrics = sampleDate ? dailyMetrics[sampleDate] : null;
     // Nettoyer les objets complexes pour éviter problèmes de sérialisation
     const cleanedSample = sampleMetrics ? {
@@ -51,15 +60,14 @@ export default function GarminDashboard({
     
     log.debug('Props:', {
       hasDailyMetrics: !!dailyMetrics,
-      dateKeys: dailyMetrics ? Object.keys(dailyMetrics).sort() : [],
+      dateKeys,
       selectedDate,
       sampleMetrics: cleanedSample
     });
-  }, [dailyMetrics, selectedDate]);
+  }, [dailyMetrics, selectedDate, dateKeys]);
 
-  const dateKeys = Object.keys(dailyMetrics).sort();
-  const displayDate = selectedDate || dateKeys[dateKeys.length - 1];
-  const d = dailyMetrics[displayDate] || {};
+  const displayDate = latestDate;
+  const d = currentMetrics || {};
   
   // Helper pour extraire une valeur numérique d'un objet ou valeur
   // Gère récursivement les cas où même les sous-propriétés sont des objets
@@ -180,7 +188,7 @@ export default function GarminDashboard({
   }, [displayDate, d, calories]);
 
   // Données de comparaison si mode activé
-  const compareData = comparisonMode && compareDate ? dailyMetrics[compareDate] || {} : null;
+  const compareData = comparisonMetrics || null;
   
   // 🔴 FIX : Extraire les valeurs numériques pour comparaison aussi
   const rawCompareCalories = compareData?.calories || {};
@@ -461,23 +469,5 @@ export default function GarminDashboard({
       </div>
     </div>
   );
-}
-
-// 🔴 FIX : Validation PropTypes (seulement en développement)
-if (process.env.NODE_ENV === 'development') {
-  GarminDashboard.propTypes = {
-    dailyMetrics: PropTypes.objectOf(PropTypes.object).isRequired,
-    selectedDate: PropTypes.string,
-    comparisonMode: PropTypes.bool,
-    compareDate: PropTypes.string,
-    activities: PropTypes.shape({
-      swimming: PropTypes.array,
-      jumpRope: PropTypes.array,
-      cardio: PropTypes.array
-    }),
-    periodFilter: PropTypes.oneOf(['all', 'week', 'month', 'year', 'custom']),
-    customStartDate: PropTypes.string,
-    customEndDate: PropTypes.string
-  };
 }
 

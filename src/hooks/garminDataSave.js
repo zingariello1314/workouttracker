@@ -31,8 +31,10 @@ import {
 
 import {
   mergeDailyMetrics,
-  deduplicateTimeSeries
+  deduplicateTimeSeries,
+  mergeActivityRecord
 } from './garminDataFusion';
+import { batchStorageManager } from './garmin/storage/BatchStorageManager';
 
 import { retryWithBackoff } from './garminRetryUtils';
 import { logIndexedDBError } from './garminErrorHandler';
@@ -127,41 +129,7 @@ const putToStoreWithRetry = async (store, data, context = {}) => {
  * @param {string} type - Type forcé (swimming, jumpRope, cardio)
  * @returns {Object} Activité fusionnée
  */
-const mergeActivity = (existing, newItem, type) => {
-  const existingSync = existing ? new Date(existing.lastSynced || 0) : null;
-  const newSync = new Date(newItem.lastSynced || new Date().toISOString());
-  
-  // Fusionner seulement si nouvelle version plus récente OU type changé
-  const shouldUpdate = !existing || newSync > existingSync || existing.type !== type;
-  
-  if (!shouldUpdate) {
-    return existing; // Garder existante
-  }
-  
-  // Fusionner intelligemment
-  return {
-    ...existing,
-    ...newItem,
-    type: type, // FORCER le type selon la catégorie (corrige natation -> cardio)
-    source: newItem.source || existing?.source || 'garmin',
-    lastSynced: newSync.toISOString(),
-    // Fusionner objets imbriqués (préférer nouvelles si plus récentes)
-    calories: (newSync > existingSync ? newItem.calories : existing?.calories) || newItem.calories || existing?.calories,
-    intensityMinutes: (newSync > existingSync ? newItem.intensityMinutes : existing?.intensityMinutes) || newItem.intensityMinutes || existing?.intensityMinutes,
-    connectIQ: newItem.connectIQ || existing?.connectIQ,
-    swimmingMetrics: newItem.swimmingMetrics || existing?.swimmingMetrics,
-    timeMetrics: newItem.timeMetrics || existing?.timeMetrics,
-    // Préserver zones de FC (garder la plus récente)
-    heartRateZones: (newSync > existingSync ? newItem.heartRateZones : existing?.heartRateZones) || newItem.heartRateZones || existing?.heartRateZones,
-    // Préserver métriques de performance (garder la plus récente)
-    trainingEffect: (newSync > existingSync ? newItem.trainingEffect : existing?.trainingEffect) || newItem.trainingEffect || existing?.trainingEffect,
-    recoveryTime: (newSync > existingSync ? newItem.recoveryTime : existing?.recoveryTime) ?? newItem.recoveryTime ?? existing?.recoveryTime,
-    vo2Max: (newSync > existingSync ? newItem.vo2Max : existing?.vo2Max) ?? newItem.vo2Max ?? existing?.vo2Max,
-    trainingStatus: (newSync > existingSync ? newItem.trainingStatus : existing?.trainingStatus) || newItem.trainingStatus || existing?.trainingStatus,
-    trainingLoad: (newSync > existingSync ? newItem.trainingLoad : existing?.trainingLoad) ?? newItem.trainingLoad ?? existing?.trainingLoad,
-    performanceCondition: (newSync > existingSync ? newItem.performanceCondition : existing?.performanceCondition) || newItem.performanceCondition || existing?.performanceCondition
-  };
-};
+const mergeActivity = (existing, newItem, type) => mergeActivityRecord(existing, newItem, type);
 
 /**
  * Sauvegarde les activités dans localStorage (fallback)
@@ -169,17 +137,6 @@ const mergeActivity = (existing, newItem, type) => {
  * @param {Object} activities - Activités par type
  * @returns {Promise<void>} Promise résolue quand sauvegarde terminée
  */
-const BATCH_SIZE_ACTIVITIES = 25;
-const BATCH_SIZE_DAILY_METRICS = 50;
-
-const chunkArray = (array, size) => {
-  const result = [];
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size));
-  }
-  return result;
-};
-
 const saveActivitiesToLocalStorage = async (activities) => {
   try {
     const bucket = readStorageBucket(STORE_ACTIVITIES);
@@ -234,70 +191,16 @@ const saveActivitiesToLocalStorage = async (activities) => {
 const saveActivitiesToIndexedDB = async (activities) => {
   try {
     const start = now();
-    let savedCount = 0;
-    let errorCount = 0;
-
-    const db = await openDB();
-    if (!db) {
-      // Si openDB retourne null, utiliser fallback
-      setUseFallback(true);
-      return saveActivitiesToLocalStorage(activities);
-    }
-    
-    const tx = db.transaction([STORE_ACTIVITIES], 'readwrite');
-    const store = tx.objectStore(STORE_ACTIVITIES);
-    
-    const activityEntries = [];
-    for (const type of ['swimming', 'jumpRope', 'cardio']) {
-      const items = activities[type] || [];
-      for (const item of items) {
-        if (!item || !item.id) {
-          console.warn('[GarminDataSave] Activity missing id, skipping:', item);
-          continue;
-        }
-        activityEntries.push({ item, type });
-      }
-    }
-    
-    for (const batch of chunkArray(activityEntries, BATCH_SIZE_ACTIVITIES)) {
-      await Promise.all(batch.map(async ({ item, type }) => {
-        try {
-          const existing = await getFromStoreWithRetry(store, item.id, {
-            store: STORE_ACTIVITIES,
-            activityId: item.id,
-            type
-          });
-          
-          const merged = mergeActivity(existing, item, type);
-          
-          await putToStoreWithRetry(store, merged, {
-            store: STORE_ACTIVITIES,
-            activityId: item.id,
-            type
-          });
-          savedCount += 1;
-        } catch (e) {
-          logIndexedDBError(e, {
-            store: STORE_ACTIVITIES,
-            activityId: item.id,
-            type,
-            operation: 'saveActivityBatch'
-          }, 'warn');
-          errorCount += 1;
-        }
-      }));
-    }
-    
-    logDuration('saveActivitiesToIndexedDB', start, { savedCount, errorCount });
+    const result = await batchStorageManager.saveActivitiesBatch(activities);
+    logDuration('saveActivitiesToIndexedDB', start, result);
   } catch (err) {
-    // Erreur globale : log détaillé et fallback
     logIndexedDBError(err, {
       store: STORE_ACTIVITIES,
       operation: 'saveActivitiesToIndexedDB'
     }, 'error');
     log.warn('[saveActivitiesToIndexedDB] Falling back to localStorage');
     setUseFallback(true);
-    throw err; // La queue gérera le retry si nécessaire
+    throw err;
   }
 };
 
@@ -395,63 +298,16 @@ const saveDailyMetricsToLocalStorage = async (dailyMetrics) => {
 const saveDailyMetricsToIndexedDB = async (dailyMetrics) => {
   try {
     const start = now();
-    let savedCount = 0;
-    let errorCount = 0;
-
-    const db = await openDB();
-    if (!db) {
-      setUseFallback(true);
-      return saveDailyMetricsToLocalStorage(dailyMetrics);
-    }
-    
-    const tx = db.transaction([STORE_DAILY_METRICS], 'readwrite');
-    const store = tx.objectStore(STORE_DAILY_METRICS);
-    
-    const metricEntries = Object.entries(dailyMetrics)
-      .filter(([date, metrics]) => {
-        if (!date || !metrics) {
-          console.warn('[GarminDataSave] Invalid date or metrics, skipping:', date);
-          return false;
-        }
-        return true;
-      });
-    
-    for (const batch of chunkArray(metricEntries, BATCH_SIZE_DAILY_METRICS)) {
-      await Promise.all(batch.map(async ([date, metrics]) => {
-        try {
-          const existing = await getFromStoreWithRetry(store, date, {
-            store: STORE_DAILY_METRICS,
-            date
-          });
-          
-          const merged = mergeDailyMetrics(metrics, existing, date);
-          
-          await putToStoreWithRetry(store, merged, {
-            store: STORE_DAILY_METRICS,
-            date
-          });
-          savedCount += 1;
-        } catch (e) {
-          logIndexedDBError(e, {
-            store: STORE_DAILY_METRICS,
-            date,
-            operation: 'saveDailyMetricsBatch'
-          }, 'warn');
-          errorCount += 1;
-        }
-      }));
-    }
-    
-    logDuration('saveDailyMetricsToIndexedDB', start, { savedCount, errorCount });
+    const result = await batchStorageManager.saveDailyMetricsBatch(dailyMetrics);
+    logDuration('saveDailyMetricsToIndexedDB', start, result);
   } catch (err) {
-    // Erreur globale : log détaillé et fallback
     logIndexedDBError(err, {
       store: STORE_DAILY_METRICS,
       operation: 'saveDailyMetricsToIndexedDB'
     }, 'error');
     log.warn('[saveDailyMetricsToIndexedDB] Falling back to localStorage');
     setUseFallback(true);
-    throw err; // La queue gérera le retry si nécessaire
+    throw err;
   }
 };
 

@@ -1,3 +1,5 @@
+import { describe, test } from 'vitest';
+
 /**
  * 🔴 FIX #40: Tests unitaires pour useAdvancedFilters
  * Tests pour valider la logique de filtrage et recherche
@@ -170,4 +172,10 @@ export function testUseAdvancedFilters() {
 if (typeof window !== 'undefined') {
   window.testUseAdvancedFilters = testUseAdvancedFilters;
 }
+
+describe.skip('useAdvancedFilters hook (TODO)', () => {
+  test('placeholder - à migrer vers Vitest', () => {
+    // Ces tests seront implémentés via Vitest lorsque la batterie de filtres sera finalisée.
+  });
+});
 

@@ -30,16 +30,16 @@ import {
  * Nombre de jours avant purge automatique
  * @constant {number}
  */
-const PURGE_DAYS = 90;
+const DEFAULT_PURGE_DAYS = 90;
 
 /**
  * Calcule la date de coupure pour la purge (PURGE_DAYS jours avant aujourd'hui)
  * 
  * @returns {string} Date de coupure au format YYYY-MM-DD
  */
-const getCutoffDate = () => {
+const getCutoffDate = (purgeDays = DEFAULT_PURGE_DAYS) => {
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - PURGE_DAYS);
+  cutoff.setDate(cutoff.getDate() - purgeDays);
   return cutoff.toISOString().split('T')[0];
 };
 
@@ -155,7 +155,8 @@ const isMockMetric = (metric) => {
  * @returns {number} Nombre d'éléments purgés
  */
 const purgeFromLocalStorage = (cutoffStr) => {
-  let purgedCount = 0;
+  let purgedActivities = 0;
+  let purgedMetrics = 0;
   
   try {
     // Purger activités
@@ -167,7 +168,7 @@ const purgeFromLocalStorage = (cutoffStr) => {
           const item = JSON.parse(itemStr);
           if (item.date && item.date < cutoffStr) {
             localStorage.removeItem(getStorageKey(STORE_ACTIVITIES, key));
-            purgedCount++;
+            purgedActivities++;
           }
         }
       } catch (e) {
@@ -181,7 +182,7 @@ const purgeFromLocalStorage = (cutoffStr) => {
       try {
         if (key < cutoffStr) {
           localStorage.removeItem(getStorageKey(STORE_DAILY_METRICS, key));
-          purgedCount++;
+          purgedMetrics++;
         }
       } catch (e) {
         console.warn('[GarminDataPurge] Error purging metric from localStorage:', key, e);
@@ -191,7 +192,7 @@ const purgeFromLocalStorage = (cutoffStr) => {
     console.error('[GarminDataPurge] Error purging from localStorage:', err);
   }
   
-  return purgedCount;
+  return { activities: purgedActivities, metrics: purgedMetrics };
 };
 
 /**
@@ -202,7 +203,8 @@ const purgeFromLocalStorage = (cutoffStr) => {
  * @returns {Promise<number>} Nombre d'éléments purgés
  */
 const purgeFromIndexedDB = async (db, cutoffStr) => {
-  let purgedCount = 0;
+  let purgedActivities = 0;
+  let purgedMetrics = 0;
   
   try {
     // Purger activités
@@ -220,7 +222,7 @@ const purgeFromIndexedDB = async (db, cutoffStr) => {
                 delReq.onsuccess = () => res();
                 delReq.onerror = () => rej(delReq.error);
               });
-              purgedCount++;
+              purgedActivities++;
             } catch (e) {
               console.warn('[GarminDataPurge] Error deleting old activity:', item.id, e);
             }
@@ -246,7 +248,7 @@ const purgeFromIndexedDB = async (db, cutoffStr) => {
                 delReq.onsuccess = () => res();
                 delReq.onerror = () => rej(delReq.error);
               });
-              purgedCount++;
+              purgedMetrics++;
             } catch (e) {
               console.warn('[GarminDataPurge] Error deleting old metric:', item.date, e);
             }
@@ -260,56 +262,78 @@ const purgeFromIndexedDB = async (db, cutoffStr) => {
     console.error('[GarminDataPurge] Error purging from IndexedDB:', err);
   }
   
-  return purgedCount;
+  return { activities: purgedActivities, metrics: purgedMetrics };
 };
 
-/**
- * Purge automatiquement les données > 90 jours
- * 
- * Cette fonction :
- * - Supprime activités et métriques > 90 jours
- * - Libère de l'espace IndexedDB/localStorage
- * - S'exécute automatiquement une fois par jour (géré par hook)
- * 
- * @param {boolean} dbReady - Si la base de données est prête
- * @returns {Promise<void>} Promise résolue quand la purge est terminée
- * 
- * @example
- * await autoPurge(true);
- */
-export const autoPurge = async (dbReady) => {
-  if (!dbReady) return;
-  
-  const cutoffStr = getCutoffDate();
+const autoPurgeInternal = async (dbReady, { purgeDays = DEFAULT_PURGE_DAYS } = {}) => {
+  const summary = {
+    activitiesPurged: 0,
+    metricsPurged: 0,
+    cutoff: null,
+    fallbackUsed: false
+  };
+
+  if (!dbReady) return summary;
+
+  const cutoffStr = getCutoffDate(purgeDays);
+  summary.cutoff = cutoffStr;
   const useFallback = getUseFallback();
-  
+
   try {
     if (useFallback || !window.indexedDB) {
-      // Fallback localStorage
-      const purgedCount = purgeFromLocalStorage(cutoffStr);
-      if (purgedCount > 0) {
-        console.log(`[GarminDataPurge] Purged ${purgedCount} old items from localStorage (older than ${cutoffStr})`);
+      const result = purgeFromLocalStorage(cutoffStr);
+      summary.activitiesPurged = result.activities;
+      summary.metricsPurged = result.metrics;
+      summary.fallbackUsed = true;
+      try {
+        localStorage.setItem('garmin_lastPurgeSummary', JSON.stringify(summary));
+      } catch (storageError) {
+        console.warn('[GarminDataPurge] Unable to persist purge summary:', storageError);
       }
-      return;
+      if (summary.activitiesPurged + summary.metricsPurged > 0) {
+        console.log(`[GarminDataPurge] Purged ${summary.activitiesPurged + summary.metricsPurged} old items from localStorage (older than ${cutoffStr})`);
+      }
+      return summary;
     }
-    
-    // IndexedDB
+
     const db = await openDB();
     if (!db) {
       setUseFallback(true);
-      const purgedCount = purgeFromLocalStorage(cutoffStr);
-      if (purgedCount > 0) {
-        console.log(`[GarminDataPurge] Purged ${purgedCount} old items from localStorage (fallback, older than ${cutoffStr})`);
+      const fallbackResult = purgeFromLocalStorage(cutoffStr);
+      summary.activitiesPurged = fallbackResult.activities;
+      summary.metricsPurged = fallbackResult.metrics;
+      summary.fallbackUsed = true;
+      try {
+        localStorage.setItem('garmin_lastPurgeSummary', JSON.stringify(summary));
+      } catch (storageError) {
+        console.warn('[GarminDataPurge] Unable to persist purge summary:', storageError);
       }
-      return;
+      if (summary.activitiesPurged + summary.metricsPurged > 0) {
+        console.log(`[GarminDataPurge] Purged ${summary.activitiesPurged + summary.metricsPurged} old items from localStorage (fallback, older than ${cutoffStr})`);
+      }
+      return summary;
     }
-    
-    const purgedCount = await purgeFromIndexedDB(db, cutoffStr);
-    if (purgedCount > 0) {
-      console.log(`[GarminDataPurge] Purged ${purgedCount} old items from IndexedDB (older than ${cutoffStr})`);
+
+    const result = await purgeFromIndexedDB(db, cutoffStr);
+    summary.activitiesPurged = result.activities;
+    summary.metricsPurged = result.metrics;
+    try {
+      localStorage.setItem('garmin_lastPurgeSummary', JSON.stringify(summary));
+    } catch (storageError) {
+      console.warn('[GarminDataPurge] Unable to persist purge summary:', storageError);
     }
+    if (summary.activitiesPurged + summary.metricsPurged > 0) {
+      console.log(`[GarminDataPurge] Purged ${summary.activitiesPurged + summary.metricsPurged} old items from IndexedDB (older than ${cutoffStr})`);
+    }
+    return summary;
   } catch (err) {
     console.error('[GarminDataPurge] Auto-purge error:', err);
+    try {
+      localStorage.setItem('garmin_lastPurgeSummary', JSON.stringify(summary));
+    } catch (storageError) {
+      console.warn('[GarminDataPurge] Unable to persist purge summary after error:', storageError);
+    }
+    return summary;
   }
 };
 
@@ -329,19 +353,27 @@ export const autoPurge = async (dbReady) => {
  * @example
  * await purgeOldTimeSeries(true);
  */
-export const purgeOldTimeSeries = async (dbReady) => {
+const purgeOldTimeSeriesInternal = async (dbReady) => {
   if (!dbReady) return;
   
   try {
     const db = await openDB();
     if (!db) {
       console.warn('[GarminDataPurge] Cannot purge time series, DB not available');
-      return;
+      const summary = { entriesUpdated: 0, seriesCleared: 0, cutoff: getCutoffDate() };
+      try {
+        localStorage.setItem('garmin_lastTimeSeriesPurge', JSON.stringify(summary));
+      } catch (storageError) {
+        console.warn('[GarminDataPurge] Unable to persist time-series purge summary:', storageError);
+      }
+      return summary;
     }
     
     const tx = db.transaction([STORE_DAILY_METRICS], 'readwrite');
     const store = tx.objectStore(STORE_DAILY_METRICS);
     const cutoffStr = getCutoffDate();
+    let entriesUpdated = 0;
+    let seriesCleared = 0;
     
     const req = store.openCursor();
     await new Promise((resolve, reject) => {
@@ -356,22 +388,27 @@ export const purgeOldTimeSeries = async (dbReady) => {
             if (metric.heartRate?.timeSeries && metric.heartRate.timeSeries.length > 0) {
               metric.heartRate.timeSeries = [];
               updated = true;
+              seriesCleared += 1;
             }
             if (metric.bodyBattery?.timeSeries && metric.bodyBattery.timeSeries.length > 0) {
               metric.bodyBattery.timeSeries = [];
               updated = true;
+              seriesCleared += 1;
             }
             if (metric.stress?.timeSeries && metric.stress.timeSeries.length > 0) {
               metric.stress.timeSeries = [];
               updated = true;
+              seriesCleared += 1;
             }
             if (metric.respiration?.timeSeries && metric.respiration.timeSeries.length > 0) {
               metric.respiration.timeSeries = [];
               updated = true;
+              seriesCleared += 1;
             }
             
             if (updated) {
               cursor.update(metric);
+              entriesUpdated += 1;
             }
           }
           cursor.continue();
@@ -382,13 +419,27 @@ export const purgeOldTimeSeries = async (dbReady) => {
       req.onerror = () => reject(req.error);
     });
     
-    console.log(`[GarminDataPurge] Purged old time series from metrics older than ${cutoffStr}`);
+    const summary = { entriesUpdated, seriesCleared, cutoff: cutoffStr };
+    if (entriesUpdated > 0) {
+      console.log(`[GarminDataPurge] Purged time series for ${entriesUpdated} metrics older than ${cutoffStr}`);
+    }
+    try {
+      localStorage.setItem('garmin_lastTimeSeriesPurge', JSON.stringify(summary));
+    } catch (storageError) {
+      console.warn('[GarminDataPurge] Unable to persist time-series purge summary:', storageError);
+    }
+    return summary;
   } catch (err) {
     console.error('[GarminDataPurge] Purge time series error:', err);
+    const summary = { entriesUpdated: 0, seriesCleared: 0, cutoff: getCutoffDate() };
+    try {
+      localStorage.setItem('garmin_lastTimeSeriesPurge', JSON.stringify(summary));
+    } catch (storageError) {
+      console.warn('[GarminDataPurge] Unable to persist time-series purge summary after error:', storageError);
+    }
+    return summary;
   }
 };
-
-// ==================== SUPPRESSION DONNÉES MOCK ====================
 
 /**
  * Supprime les données mock depuis localStorage
@@ -545,9 +596,9 @@ const deleteMockFromIndexedDB = async (db) => {
  * const result = await deleteMockActivities(true);
  * console.log(`Supprimé ${result.activities} activités et ${result.metrics} métriques mock`);
  */
-export const deleteMockActivities = async (dbReady) => {
+const deleteMockActivitiesInternal = async (dbReady) => {
   if (!dbReady) {
-    return { activities: 0, metrics: 0 };
+    return { activities: 0, metrics: 0, fallbackUsed: false };
   }
   
   const useFallback = getUseFallback();
@@ -557,7 +608,13 @@ export const deleteMockActivities = async (dbReady) => {
       // Fallback localStorage
       const result = deleteMockFromLocalStorage();
       console.log(`[GarminDataPurge] Supprimé ${result.activities} activités et ${result.metrics} métriques mock depuis localStorage`);
-      return result;
+      const summary = { ...result, fallbackUsed: true };
+      try {
+        localStorage.setItem('garmin_lastMockCleanup', JSON.stringify(summary));
+      } catch (storageError) {
+        console.warn('[GarminDataPurge] Unable to persist mock cleanup summary:', storageError);
+      }
+      return summary;
     }
     
     // IndexedDB
@@ -566,15 +623,54 @@ export const deleteMockActivities = async (dbReady) => {
       setUseFallback(true);
       const result = deleteMockFromLocalStorage();
       console.log(`[GarminDataPurge] Supprimé ${result.activities} activités et ${result.metrics} métriques mock depuis localStorage (fallback)`);
-      return result;
+      const summary = { ...result, fallbackUsed: true };
+      try {
+        localStorage.setItem('garmin_lastMockCleanup', JSON.stringify(summary));
+      } catch (storageError) {
+        console.warn('[GarminDataPurge] Unable to persist mock cleanup summary:', storageError);
+      }
+      return summary;
     }
     
     const result = await deleteMockFromIndexedDB(db);
     console.log(`[GarminDataPurge] Supprimé ${result.activities} activités et ${result.metrics} métriques mock depuis IndexedDB`);
-    return result;
+    const summary = { ...result, fallbackUsed: false };
+    try {
+      localStorage.setItem('garmin_lastMockCleanup', JSON.stringify(summary));
+    } catch (storageError) {
+      console.warn('[GarminDataPurge] Unable to persist mock cleanup summary:', storageError);
+    }
+    return summary;
   } catch (err) {
     console.error('[GarminDataPurge] Error deleting mock data:', err);
-    return { activities: 0, metrics: 0 };
+    return { activities: 0, metrics: 0, fallbackUsed: false };
   }
 };
+
+class PurgeManager {
+  constructor(options = {}) {
+    this.purgeDays = options.purgeDays ?? DEFAULT_PURGE_DAYS;
+  }
+
+  async autoPurge(dbReady, options = {}) {
+    const finalOptions = {
+      purgeDays: options.purgeDays ?? this.purgeDays
+    };
+    return autoPurgeInternal(dbReady, finalOptions);
+  }
+
+  async purgeOldTimeSeries(dbReady) {
+    return purgeOldTimeSeriesInternal(dbReady);
+  }
+
+  async deleteMockActivities(dbReady) {
+    return deleteMockActivitiesInternal(dbReady);
+  }
+}
+
+export const purgeManager = new PurgeManager();
+
+export const autoPurge = (dbReady, options) => purgeManager.autoPurge(dbReady, options);
+export const purgeOldTimeSeries = (dbReady) => purgeManager.purgeOldTimeSeries(dbReady);
+export const deleteMockActivities = (dbReady) => purgeManager.deleteMockActivities(dbReady);
 

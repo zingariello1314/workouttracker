@@ -10,10 +10,10 @@ import { DATE_RANGE, ARIA_LABELS } from '../../constants';
  * Graphique de respiration (éveillé et sommeil)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminRespirationChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
   // 🔴 FIX #51-60: Utiliser constante pour contextDays
-  const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
+  const fallbackFiltered = useFilteredDates(
     dailyMetrics,
     selectedDate,
     periodFilter,
@@ -25,35 +25,43 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
   // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const normalizeRespValue = React.useCallback((value) => {
-    if (value === null || value === undefined) return null;
-    if (typeof value === 'number') {
-      return Number.isFinite(value) ? value : null;
-    }
-    if (typeof value === 'string') {
-      const parsed = parseFloat(value);
-      return Number.isFinite(parsed) ? parsed : null;
-    }
-    if (typeof value === 'object') {
-      if (value.value !== undefined) return normalizeRespValue(value.value);
-      if (value.avg !== undefined) return normalizeRespValue(value.avg);
-      if (value.average !== undefined) return normalizeRespValue(value.average);
-      if (value.mean !== undefined) return normalizeRespValue(value.mean);
-      if (Array.isArray(value)) {
-        const samples = value
-          .map((sample) => normalizeRespValue(sample))
-          .filter((num) => num !== null);
-        if (samples.length === 0) return null;
-        const sum = samples.reduce((acc, num) => acc + num, 0);
-        return sum / samples.length;
-      }
-    }
-    return null;
-  }, []);
+  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
+  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
 
   const chartData = React.useMemo(() => {
+    if (precomputed?.data) {
+      return precomputed.data;
+    }
+
     if (!dailyMetrics || filteredDates.length === 0) return [];
     
+    const normalizeRespValue = (value) => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : null;
+      }
+      if (typeof value === 'string') {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+      if (typeof value === 'object') {
+        if (value.value !== undefined) return normalizeRespValue(value.value);
+        if (value.avg !== undefined) return normalizeRespValue(value.avg);
+        if (value.average !== undefined) return normalizeRespValue(value.average);
+        if (value.mean !== undefined) return normalizeRespValue(value.mean);
+        if (Array.isArray(value)) {
+          const samples = value
+            .map((sample) => normalizeRespValue(sample))
+            .filter((num) => num !== null);
+          if (samples.length === 0) return null;
+          const sum = samples.reduce((acc, num) => acc + num, 0);
+          return sum / samples.length;
+        }
+      }
+      return null;
+    };
+
     return filteredDates.map(date => {
       const dm = dailyMetrics[date] || {};
       const resp = dm.respiration || {};
@@ -70,7 +78,23 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.awakeAvg !== null || d.sleepAvg !== null);
-  }, [dailyMetrics, filteredDates, effectiveSelectedDate, normalizeRespValue]);
+  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate]);
+
+  const avgAwake = React.useMemo(() => {
+    if (precomputed?.avgAwake !== undefined) {
+      return precomputed.avgAwake;
+    }
+    const awakeData = chartData.filter(d => d.awakeAvg !== null);
+    return awakeData.length ? awakeData.reduce((sum, d) => sum + d.awakeAvg, 0) / awakeData.length : 0;
+  }, [precomputed, chartData]);
+
+  const avgSleep = React.useMemo(() => {
+    if (precomputed?.avgSleep !== undefined) {
+      return precomputed.avgSleep;
+    }
+    const sleepData = chartData.filter(d => d.sleepAvg !== null);
+    return sleepData.length ? sleepData.reduce((sum, d) => sum + d.sleepAvg, 0) / sleepData.length : 0;
+  }, [precomputed, chartData]);
 
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
@@ -108,8 +132,6 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
   const hasSleepData = chartData.some(d => d.sleepAvg !== null);
 
   // 🔴 FIX #39: ARIA labels pour accessibilité
-  const avgAwake = chartData.filter(d => d.awakeAvg !== null).reduce((sum, d) => sum + d.awakeAvg, 0) / chartData.filter(d => d.awakeAvg !== null).length || 0;
-  const avgSleep = chartData.filter(d => d.sleepAvg !== null).reduce((sum, d) => sum + d.sleepAvg, 0) / chartData.filter(d => d.sleepAvg !== null).length || 0;
   const chartDescription = `Graphique montrant l'évolution de la respiration (éveillé et sommeil) sur la période sélectionnée. ${chartData.length} point(s) de données disponible(s). Moyenne éveillé: ${avgAwake.toFixed(1)} resp/min, sommeil: ${avgSleep.toFixed(1)} resp/min.`;
   
   return (
@@ -191,10 +213,13 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
                 strokeWidth={3}
                 name="Éveillé Moy"
                 dot={(props) => {
-                  const { key, ...restProps } = props;
+                  const { key: _omittedKey, payload, index, ...restProps } = props;
+                  const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
                   return (
                     <CustomDot
-                      key={key}
+                      key={dotKey}
+                      payload={payload}
+                      index={index}
                       {...restProps}
                       fill={colors?.green || '#10B981'}
                       stroke={colors?.green || '#10B981'}
@@ -203,7 +228,6 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
                     />
                   );
                 }}
-                activeDot={{ r: 7, stroke: colors?.green || '#10B981', strokeWidth: 2 }}
               />
             )}
             {hasAwakeData && chartData.some(d => d.awakeMax !== null) && (
@@ -212,7 +236,7 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
                 dataKey="awakeMax"
                 stroke={colors?.green || '#10B981'}
                 strokeWidth={1}
-                strokeDasharray="5 5"
+                strokeDasharray="3 3"
                 name="Éveillé Max"
                 dot={false}
               />
@@ -236,10 +260,13 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
                 strokeWidth={3}
                 name="Sommeil Moy"
                 dot={(props) => {
-                  const { key, ...restProps } = props;
+                  const { key: _omittedKey, payload, index, ...restProps } = props;
+                  const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
                   return (
                     <CustomDot
-                      key={key}
+                      key={dotKey}
+                      payload={payload}
+                      index={index}
                       {...restProps}
                       fill={colors?.blue || '#3B82F6'}
                       stroke={colors?.blue || '#3B82F6'}
@@ -248,7 +275,6 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
                     />
                   );
                 }}
-                activeDot={{ r: 7, stroke: colors?.blue || '#3B82F6', strokeWidth: 2 }}
               />
             )}
             {hasSleepData && chartData.some(d => d.sleepMax !== null) && (
@@ -257,7 +283,7 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
                 dataKey="sleepMax"
                 stroke={colors?.blue || '#3B82F6'}
                 strokeWidth={1}
-                strokeDasharray="5 5"
+                strokeDasharray="3 3"
                 name="Sommeil Max"
                 dot={false}
               />
@@ -269,6 +295,5 @@ function GarminRespirationChart({ dailyMetrics, selectedDate, periodFilter, cust
   );
 }
 
-// 🟡 FIX #13: Memoization avec comparaison optimisée
 export default React.memo(GarminRespirationChart, areChartPropsEqual);
 

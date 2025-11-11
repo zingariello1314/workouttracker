@@ -13,7 +13,7 @@ import {
  * Affiche la fréquence cardiaque tout au long de la journée sélectionnée
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors, activities }) {
+function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors, activities }) {
   // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
   // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
   // 🔴 FIX : Hauteur minimale augmentée à 550px pour éviter coupure verticale
@@ -21,6 +21,10 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
 
   // 🔴 NOUVEAU : Création d'une courbe continue comme Garmin Connect
   const enrichedData = React.useMemo(() => {
+    if (precomputed?.enriched) {
+      return precomputed.enriched;
+    }
+
     if (!dailyMetrics || !selectedDate) return null;
     
     const dayMetrics = dailyMetrics[selectedDate];
@@ -111,14 +115,29 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
     
     // ✅ PHASE 1.2 : Marquer si on a peu de données (< 10 points) pour affichage conditionnel
     // Le composant affichera uniquement les points (pas de courbe) si enriched.timeSeries.length < 10
-    return {
+    const hasEnoughDataForCurve = enriched.timeSeries.length >= 10;
+    const enrichedWithMeta = {
       ...enriched,
-      hasEnoughDataForCurve: enriched.timeSeries.length >= 10,
+      hasEnoughDataForCurve,
       realPointsCount: timeSeries.length
     };
-  }, [dailyMetrics, selectedDate, activities]);
+
+    if (!enrichedWithMeta.stats && avgHR !== null) {
+      enrichedWithMeta.stats = {
+        resting: restingHR,
+        max: maxHR,
+        avg: avgHR
+      };
+    }
+
+    return enrichedWithMeta;
+  }, [precomputed, dailyMetrics, selectedDate, activities]);
 
   const timeSeriesData = React.useMemo(() => {
+    if (precomputed?.chartData) {
+      return precomputed.chartData;
+    }
+
     if (!enrichedData || !enrichedData.timeSeries || enrichedData.timeSeries.length === 0) return [];
     
     // 🔴 FIX : Décompression et transformation des données pour le graphique
@@ -207,7 +226,7 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
     }
     
     return transformed;
-  }, [enrichedData, selectedDate]);
+  }, [precomputed, enrichedData, selectedDate]);
 
   // ✅ CORRECTION: Afficher même avec données partielles - permettre les espaces vides
   const validTimeSeries = React.useMemo(() => {
@@ -580,8 +599,7 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
               // ✅ PLAN INTÉGRATION : connectNulls={false} pour créer des gaps visuels
               // Les points virtuels (bpm: null) créeront des gaps dans la courbe
               dot={(props) => {
-                const { key, ...restProps } = props;
-                const payload = props.payload;
+                const { key: _omittedKey, payload, index, ...restProps } = props;
                 const isReal = payload?.isReal;
                 const isActivity = payload?.isActivity;
                 
@@ -590,9 +608,15 @@ function GarminHeartRateTimeSeriesChart({ dailyMetrics, selectedDate, periodFilt
                 // 🔴 FIX : Utiliser enrichedData?.hasEnoughDataForCurve directement pour éviter problème de closure
                 const enoughData = enrichedData?.hasEnoughDataForCurve === true;
                 if (!enoughData || isReal || isActivity) {
+                  const dotKey =
+                    payload?.timestamp ??
+                    payload?.time ??
+                    `${payload?.hour ?? ''}-${payload?.minute ?? ''}-${index ?? 0}`;
                   return (
                     <CustomDot
-                      key={key}
+                      key={dotKey}
+                      payload={payload}
+                      index={index}
                       {...restProps}
                       fill={isActivity ? '#10B981' : (isReal ? '#EF4444' : '#6B7280')}
                       stroke={isActivity ? '#10B981' : (isReal ? '#EF4444' : '#6B7280')}

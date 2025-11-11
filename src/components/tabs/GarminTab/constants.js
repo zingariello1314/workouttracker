@@ -4,11 +4,19 @@
  */
 
 // ==================== TEMPS & DÉLAIS ====================
-export const SYNC_TIMEOUT_MS = 30000; // 30 secondes
+export const SYNC_TIMEOUT_MS = 90000; // 90 secondes pour couvrir les forçages lourds
 export const DEBOUNCE_DELAY_MS = 100; // 100ms pour navigation temporelle
 export const CACHE_TTL_MS = 60000; // 60 secondes pour cache frontend
 export const RETRY_BASE_DELAY_MS = 1000; // 1 seconde de base pour retry
 export const RETRY_MAX_ATTEMPTS = 3; // 3 tentatives max
+export const FORCE_SYNC_DEGRADE_THRESHOLD_MS = 30000; // 30 secondes avant passage en mode dégradé pour un forçage
+
+export const CIRCUIT_BREAKER = {
+  MAX_FAILURES: 3,
+  COOLDOWN_MS: 30000
+};
+
+export const CACHE_SCHEMA_VERSION = 'v1';
 
 // ==================== RANGES DE DONNÉES ====================
 export const DATE_RANGE = {

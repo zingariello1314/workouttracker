@@ -7,8 +7,8 @@ import { areChartPropsEqual, areActivitiesEqual, normalizeActivityValue } from '
  */
 const DAY_ORDER = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
-function GarminActivityHeatmap({ activities, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
-  const { filteredDates, displayInfo } = useFilteredDates(
+function GarminActivityHeatmap({ precomputed, activities, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+  const fallbackFiltered = useFilteredDates(
     dailyMetrics,
     selectedDate,
     periodFilter,
@@ -17,8 +17,15 @@ function GarminActivityHeatmap({ activities, dailyMetrics, selectedDate, periodF
     7
   );
 
+  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
+  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
+
   // Calculer les statistiques pour chaque jour
   const activityData = React.useMemo(() => {
+    if (precomputed?.activityByDate) {
+      return precomputed.activityByDate;
+    }
+
     const result = {};
 
     const incrementDay = (date, field) => {
@@ -55,19 +62,22 @@ function GarminActivityHeatmap({ activities, dailyMetrics, selectedDate, periodF
     });
 
     return result;
-  }, [activities, filteredDates]);
+  }, [precomputed, activities, filteredDates]);
 
-  // Grouper par semaine (seulement pour les dates filtrées)
-  const weeklyData = React.useMemo(() => {
-    const result = {};
+  const weeks = React.useMemo(() => {
+    if (precomputed?.weeks) {
+      return precomputed.weeks;
+    }
+
+    const weeklyData = {};
     filteredDates.forEach(date => {
       const d = new Date(date);
       const weekStart = new Date(d);
       weekStart.setDate(d.getDate() - d.getDay()); // Dimanche
       const weekKey = weekStart.toISOString().split('T')[0];
       
-      if (!result[weekKey]) {
-        result[weekKey] = {
+      if (!weeklyData[weekKey]) {
+        weeklyData[weekKey] = {
           week: weekKey,
           days: {},
           total: 0
@@ -75,15 +85,11 @@ function GarminActivityHeatmap({ activities, dailyMetrics, selectedDate, periodF
       }
       
       const dayName = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'][d.getDay()];
-      result[weekKey].days[dayName] = activityData[date] || { date, total: 0, swimming: 0, jumpRope: 0, cardio: 0, distance: 0, duration: 0 };
-      result[weekKey].total += (activityData[date]?.total || 0);
+      weeklyData[weekKey].days[dayName] = activityData[date] || { date, total: 0, swimming: 0, jumpRope: 0, cardio: 0, distance: 0, duration: 0 };
+      weeklyData[weekKey].total += (activityData[date]?.total || 0);
     });
-    return result;
-  }, [filteredDates, activityData]);
-
-  const weeks = React.useMemo(() => {
     return Object.values(weeklyData).sort((a, b) => a.week.localeCompare(b.week)).slice(-8); // 8 dernières semaines
-  }, [weeklyData]);
+  }, [precomputed, filteredDates, activityData]);
 
   if (!activities || !dailyMetrics) {
     return (

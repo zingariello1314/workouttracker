@@ -5,13 +5,16 @@
   "description": "Application de suivi d'entraînement Cycle 3+1",
   "main": "index.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 3001",
     "build": "vite build",
     "preview": "vite preview",
     "start": "vite",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "bench:save": "node scripts/bench/saveActivities.js",
+    "bench:load": "node scripts/bench/loadData.js",
+    "bench:network": "node scripts/bench/networkResilience.js"
   },
   "dependencies": {
     "@mediapipe/pose": "^0.5.1635988167",
@@ -37,7 +40,8 @@
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.27",
     "tailwindcss": "^3.3.3",
-    "vite": "^4.4.5"
+    "vite": "^4.4.5",
+    "fake-indexeddb": "^5.0.1"
   },
   "keywords": [
     "workout",

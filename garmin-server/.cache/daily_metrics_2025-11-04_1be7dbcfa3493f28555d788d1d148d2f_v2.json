@@ -1168,15 +1168,113 @@
   },
   "respiration": {
     "awake": {
-      "min": 7.0,
-      "max": 19.0,
-      "avg": 15.5
+      "min": 7,
+      "max": 20,
+      "avg": 13.0
     },
     "sleep": {
       "min": 7,
-      "max": 19,
+      "max": 20,
       "avg": 15.0
-    }
+    },
+    "timeSeries": [
+      {
+        "timestamp": null,
+        "value": 19.0
+      },
+      {
+        "timestamp": null,
+        "value": 19.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      }
+    ]
   },
   "intensityMinutes": {
     "moderate": 83,
@@ -1184,103 +1282,31 @@
     "total": 92
   },
   "bodyBattery": {
-    "current": 69,
+    "current": 40,
     "timeSeries": [
       {
-        "timestamp": null,
+        "timestamp": "2025-11-04T03:48:00Z",
         "value": 11
       },
       {
-        "timestamp": null,
-        "value": 11
+        "timestamp": "2025-11-04T06:54:00Z",
+        "value": 36
       },
       {
-        "timestamp": null,
-        "value": 11
+        "timestamp": "2025-11-04T07:00:00Z",
+        "value": 37
       },
       {
-        "timestamp": null,
-        "value": 11
+        "timestamp": "2025-11-04T12:24:00Z",
+        "value": 69
       },
       {
-        "timestamp": null,
-        "value": 12
+        "timestamp": "2025-11-04T15:00:00Z",
+        "value": 61
       },
       {
-        "timestamp": null,
-        "value": 13
-      },
-      {
-        "timestamp": null,
-        "value": 13
-      },
-      {
-        "timestamp": null,
-        "value": 13
-      },
-      {
-        "timestamp": null,
-        "value": 13
-      },
-      {
-        "timestamp": null,
-        "value": 14
-      },
-      {
-        "timestamp": null,
-        "value": 14
-      },
-      {
-        "timestamp": null,
-        "value": 14
-      },
-      {
-        "timestamp": null,
-        "value": 15
-      },
-      {
-        "timestamp": null,
-        "value": 15
-      },
-      {
-        "timestamp": null,
-        "value": 16
-      },
-      {
-        "timestamp": null,
-        "value": 16
-      },
-      {
-        "timestamp": null,
-        "value": 16
-      },
-      {
-        "timestamp": null,
-        "value": 17
-      },
-      {
-        "timestamp": null,
-        "value": 17
-      },
-      {
-        "timestamp": null,
-        "value": 18
-      },
-      {
-        "timestamp": null,
-        "value": 18
-      },
-      {
-        "timestamp": null,
-        "value": 19
-      },
-      {
-        "timestamp": null,
-        "value": 19
-      },
-      {
-        "timestamp": null,
-        "value": 19
+        "timestamp": "2025-11-04T22:57:00Z",
+        "value": 40
       }
     ]
   },
@@ -1354,7 +1380,7 @@
     "phasesDetails": null
   },
   "date": "2025-11-04",
-  "_cached_at": 1762299296.3693206,
+  "_cached_at": 1762829080.2362494,
   "_cache_version": 2,
   "_raw_data_hash": "1be7dbcfa3493f28555d788d1d148d2f"
 }

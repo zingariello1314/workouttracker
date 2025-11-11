@@ -8,6 +8,9 @@ const { spawn } = require('child_process');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
+const compression = require('compression');
+const os = require('os');
+const { Readable } = require('stream');
 
 // ==========================================
 // PHASE 4.1 : RATE LIMITING
@@ -93,10 +96,12 @@ class ServerCache {
     if (!shouldUseCache) {
       // Cache expiré
       this.cache.delete(key);
+      serverMetrics.cache.misses += 1;
       console.log(`[CACHE] Entry expired: ${key} (age: ${Math.round(cacheAge / 1000)}s, TTL: ${Math.round(effectiveTtl / 1000)}s)`);
       return null;
     }
     
+    serverMetrics.cache.hits += 1;
     console.log(`[CACHE] Hit for key: ${key} (age: ${Math.round(cacheAge / 1000)}s, TTL: ${Math.round(effectiveTtl / 1000)}s, ${isTodayCache ? 'aujourd\'hui' : 'passé'})`);
     return entry.data;
   }
@@ -145,40 +150,279 @@ setInterval(() => {
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const CACHE_DIR = path.join(__dirname, '.cache');
+const FORCE_REFRESH_COOLDOWN_MS = 2 * 60 * 1000;
+const FORCED_DELTA_THRESHOLD_MS = 30 * 1000;
+
+const buildRangeKey = (start, end) => `${start || 'none'}|${end || 'none'}`;
+
+const isIsoDate = (value) => {
+  if (!value || typeof value !== 'string') {
+    return false;
+  }
+  const parsed = Date.parse(value);
+  return !Number.isNaN(parsed);
+};
+
+const toIsoString = (timestampMs) => {
+  const date = new Date(timestampMs);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toISOString();
+};
+
+const decodeHeartRateSeries = (series = []) => {
+  if (!Array.isArray(series) || series.length === 0) {
+    return [];
+  }
+
+  const decoded = [];
+  let currentTimestamp = null;
+  let currentValue = null;
+
+  series.forEach((entry, index) => {
+    if (index === 0) {
+      if (!isIsoDate(entry?.timestamp) || entry?.bpm == null) {
+        return;
+      }
+      currentTimestamp = Date.parse(entry.timestamp);
+      currentValue = Number(entry.bpm);
+      if (Number.isNaN(currentTimestamp) || Number.isNaN(currentValue)) {
+        return;
+      }
+      decoded.push({
+        timestamp: currentTimestamp,
+        value: currentValue
+      });
+      return;
+    }
+
+    const deltaTs = Number(entry?.d_ts ?? 0);
+    const deltaVal = Number(entry?.d_val ?? 0);
+    if (Number.isNaN(deltaTs) || Number.isNaN(deltaVal)) {
+      return;
+    }
+
+    currentTimestamp += deltaTs;
+    currentValue += deltaVal;
+
+    decoded.push({
+      timestamp: currentTimestamp,
+      value: currentValue
+    });
+  });
+
+  return decoded;
+};
+
+const encodeHeartRateSeries = (points = []) => {
+  if (!Array.isArray(points) || points.length === 0) {
+    return [];
+  }
+
+  const encoded = [];
+  const [firstPoint, ...rest] = points;
+  const firstIso = toIsoString(firstPoint.timestamp);
+
+  if (!firstIso || Number.isNaN(firstPoint.value)) {
+    return [];
+  }
+
+  encoded.push({
+    timestamp: firstIso,
+    bpm: Math.round(firstPoint.value)
+  });
+
+  rest.reduce((prev, point) => {
+    const deltaTs = point.timestamp - prev.timestamp;
+    const deltaVal = point.value - prev.value;
+
+    encoded.push({
+      d_ts: Math.round(deltaTs),
+      d_val: Math.round(deltaVal)
+    });
+
+    return point;
+  }, firstPoint);
+
+  return encoded;
+};
+
+const filterSeriesFromTimestamp = (series = [], thresholdMs) => {
+  if (!Array.isArray(series) || !Number.isFinite(thresholdMs)) {
+    return { filtered: series, removed: 0 };
+  }
+
+  const decoded = decodeHeartRateSeries(series);
+  if (decoded.length === 0) {
+    return { filtered: series, removed: 0 };
+  }
+
+  const filteredDecoded = decoded.filter(point => point.timestamp > thresholdMs);
+
+  if (filteredDecoded.length === 0 || filteredDecoded.length === decoded.length) {
+    return { filtered: series, removed: 0 };
+  }
+
+  const encoded = encodeHeartRateSeries(filteredDecoded);
+  if (encoded.length === 0) {
+    return { filtered: series, removed: 0 };
+  }
+
+  return {
+    filtered: encoded,
+    removed: decoded.length - filteredDecoded.length
+  };
+};
+
+const filterTimeSeriesWithIsoTimestamp = (series = [], thresholdMs) => {
+  if (!Array.isArray(series) || !Number.isFinite(thresholdMs)) {
+    return { filtered: series, removed: 0 };
+  }
+
+  const filtered = [];
+  let removed = 0;
+
+  for (const entry of series) {
+    const timestamp = entry?.timestamp;
+    if (!timestamp || !isIsoDate(timestamp)) {
+      filtered.push(entry);
+      continue;
+    }
+    const tsMs = Date.parse(timestamp);
+    if (tsMs > thresholdMs) {
+      filtered.push(entry);
+    } else {
+      removed += 1;
+    }
+  }
+
+  if (removed === 0) {
+    return { filtered: series, removed };
+  }
+
+  return { filtered, removed };
+};
+
+const applyForcedDeltaReduction = (payload = null, lastSyncTimestamp = null) => {
+  if (!payload || typeof payload !== 'object' || !lastSyncTimestamp) {
+    return { payload, meta: { applied: false } };
+  }
+
+  const thresholdMs = Date.parse(lastSyncTimestamp);
+  if (Number.isNaN(thresholdMs)) {
+    return { payload, meta: { applied: false } };
+  }
+
+  const clone = JSON.parse(JSON.stringify(payload));
+  const dailyMetrics = clone?.data?.dailyMetrics;
+
+  if (!dailyMetrics || typeof dailyMetrics !== 'object') {
+    return { payload: clone, meta: { applied: false } };
+  }
+
+  let totalRemoved = 0;
+  let daysUpdated = 0;
+
+  for (const dateKey of Object.keys(dailyMetrics)) {
+    const metrics = dailyMetrics[dateKey];
+    if (!metrics || typeof metrics !== 'object') {
+      continue;
+    }
+
+    if (metrics.heartRate?.timeSeries?.length) {
+      const { filtered, removed } = filterSeriesFromTimestamp(metrics.heartRate.timeSeries, thresholdMs);
+      if (removed > 0) {
+        metrics.heartRate.timeSeries = filtered;
+        totalRemoved += removed;
+        daysUpdated += 1;
+      }
+    }
+
+    if (metrics.bodyBattery?.timeSeries?.length) {
+      const { filtered, removed } = filterTimeSeriesWithIsoTimestamp(metrics.bodyBattery.timeSeries, thresholdMs);
+      if (removed > 0) {
+        metrics.bodyBattery.timeSeries = filtered;
+        totalRemoved += removed;
+        daysUpdated += 1;
+      }
+    }
+
+    if (metrics.respiration?.timeSeries?.length) {
+      const { filtered, removed } = filterTimeSeriesWithIsoTimestamp(metrics.respiration.timeSeries, thresholdMs);
+      if (removed > 0) {
+        metrics.respiration.timeSeries = filtered;
+        totalRemoved += removed;
+        daysUpdated += 1;
+      }
+    }
+  }
+
+  return {
+    payload: clone,
+    meta: {
+      applied: totalRemoved > 0,
+      removedPoints: totalRemoved,
+      daysUpdated
+    }
+  };
+};
+
+const sendJsonStream = (res, payload) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Transfer-Encoding', 'chunked');
+  const jsonString = JSON.stringify(payload);
+  Readable.from(jsonString).pipe(res);
+};
 
 function formatDateStr(date) {
-  if (date instanceof Date && !isNaN(date.getTime())) {
-    return date.toISOString().split('T')[0];
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return null;
   }
-  return null;
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateStr(str) {
+  if (!str || typeof str !== 'string' || !DATE_REGEX.test(str)) {
+    return null;
+  }
+  const [y, m, d] = str.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (
+    date.getUTCFullYear() !== y ||
+    date.getUTCMonth() !== m - 1 ||
+    date.getUTCDate() !== d
+  ) {
+    return null;
+  }
+  return date;
 }
 
 function isValidDateStr(str) {
-  if (!str || typeof str !== 'string' || !DATE_REGEX.test(str)) return false;
-  const [y, m, d] = str.split('-').map(Number);
-  const test = new Date(y, m - 1, d);
-  return (
-    test.getFullYear() === y &&
-    test.getMonth() === m - 1 &&
-    test.getDate() === d
-  );
+  return parseDateStr(str) !== null;
 }
 
 function shiftDateStr(str, deltaDays) {
-  if (!isValidDateStr(str)) return null;
-  const [y, m, d] = str.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-  date.setDate(date.getDate() + deltaDays);
+  const date = parseDateStr(str);
+  if (!date) return null;
+  date.setUTCDate(date.getUTCDate() + deltaDays);
   return formatDateStr(date);
 }
 
 function enumerateDates(start, end) {
-  if (!isValidDateStr(start) || !isValidDateStr(end)) return [];
+  const startDate = parseDateStr(start);
+  const endDate = parseDateStr(end);
+  if (!startDate || !endDate || startDate > endDate) {
+    return [];
+  }
   const dates = [];
-  let cursor = start;
-  while (cursor && cursor <= end) {
-    dates.push(cursor);
-    cursor = shiftDateStr(cursor, 1);
+  const cursor = new Date(startDate.getTime());
+  while (cursor <= endDate) {
+    dates.push(formatDateStr(cursor));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return dates;
 }
@@ -451,6 +695,7 @@ async function runPythonScript(args = []) {
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(compression());
 
 // Forcer USE_PYTHON si pas défini
 if (!process.env.USE_PYTHON) {
@@ -462,6 +707,101 @@ let lastStatus = {
   lastSync: null,
   ok: true,
   message: 'En attente de synchronisation',
+};
+let lastForcedResponse = null;
+
+// ==========================================
+// STRUCTURED LOGGING & MÉTRIQUES SERVEUR
+// ==========================================
+
+const LOG_DIR = path.join(__dirname, 'logs');
+const LOG_FILE = path.join(LOG_DIR, 'garmin-sync.log');
+
+if (!fs.existsSync(LOG_DIR)) {
+  try {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+  } catch (error) {
+    console.error('[SERVER] Unable to create log directory:', error.message);
+  }
+}
+
+const serverMetrics = {
+  upSince: new Date().toISOString(),
+  sync: {
+    total: 0,
+    success: 0,
+    failure: 0,
+    cacheHit: 0,
+    servedFromCooldown: 0,
+    python: {
+      count: 0,
+      totalDurationMs: 0,
+      lastDurationMs: null
+    },
+    forcedDelta: {
+      appliedCount: 0,
+      removedPoints: 0
+    },
+    lastRequest: null,
+    lastError: null
+  },
+  cache: {
+    hits: 0,
+    misses: 0,
+    bypass: 0
+  }
+};
+
+const appendStructuredLog = (event, details = {}) => {
+  const entry = {
+    ts: new Date().toISOString(),
+    event,
+    ...details
+  };
+
+  console.log(`[STRUCTURED:${event}]`, JSON.stringify(details));
+
+  fs.appendFile(LOG_FILE, JSON.stringify(entry) + os.EOL, (err) => {
+    if (err) {
+      console.error('[SERVER] Failed to append structured log:', err.message);
+    }
+  });
+};
+
+const buildMetricsSnapshot = () => {
+  const pythonCount = serverMetrics.sync.python.count || 0;
+  const pythonAvg = pythonCount > 0
+    ? Math.round(serverMetrics.sync.python.totalDurationMs / pythonCount)
+    : 0;
+
+  return {
+    upSince: serverMetrics.upSince,
+    lastStatus,
+    sync: {
+      total: serverMetrics.sync.total,
+      success: serverMetrics.sync.success,
+      failure: serverMetrics.sync.failure,
+      cacheHit: serverMetrics.sync.cacheHit,
+      servedFromCooldown: serverMetrics.sync.servedFromCooldown,
+      forcedDelta: {
+        appliedCount: serverMetrics.sync.forcedDelta.appliedCount,
+        removedPoints: serverMetrics.sync.forcedDelta.removedPoints
+      },
+      python: {
+        count: serverMetrics.sync.python.count,
+        lastDurationMs: serverMetrics.sync.python.lastDurationMs,
+        averageDurationMs: pythonAvg
+      },
+      lastRequest: serverMetrics.sync.lastRequest,
+      lastError: serverMetrics.sync.lastError
+    },
+    cache: {
+      hits: serverMetrics.cache.hits,
+      misses: serverMetrics.cache.misses,
+      bypass: serverMetrics.cache.bypass,
+      size: serverCache.cache.size
+    }
+  };
 };
 
 // ==========================================
@@ -484,6 +824,9 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
   console.log(`[🔍 DIAGNOSTIC SERVEUR] ${requestTimestamp} - POST /api/garmin/sync`);
   console.log('[SERVER] POST /api/garmin/sync');
   console.log('[SERVER] USE_PYTHON env var:', process.env.USE_PYTHON);
+
+  serverMetrics.sync.total += 1;
+  serverMetrics.sync.lastError = null;
   
   try {
     const payload = {
@@ -495,6 +838,16 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
     const end = resolution.end || payload.end || null;
     const lastSyncTimestamp = payload.lastSyncTimestamp || null;
     const forceRefresh = resolution.forceRefresh ? 'true' : (payload.forceRefresh === 'true' ? 'true' : 'false');
+
+    appendStructuredLog('sync_request_received', {
+      timestamp: requestTimestamp,
+      mode: resolution.mode || null,
+      start,
+      end,
+      includeToday: resolution.includeToday || false,
+      forceRefresh: forceRefresh === 'true',
+      lastSyncTimestamp: lastSyncTimestamp || null
+    });
 
     console.log('[SERVER] Payload reçu:', payload);
     console.log('[SERVER] Plage normalisée - start:', start, 'end:', end, 'mode:', resolution.mode || 'default');
@@ -516,6 +869,24 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
       console.log(`[🔍 DIAGNOSTIC SERVEUR] ⚠️ CACHE SERVEUR UTILISÉ - Clé: ${cacheKey}, Âge: ${cacheAgeSeconds}s, TTL restant: ${ttlRemaining}s (${isTodayCache ? 'aujourd\'hui' : 'passé'})`);
       console.log('[SERVER] Returning cached result');
       lastStatus = { lastSync: cachedResult.lastSync, ok: true, message: 'Synchronisation terminée (cache)' };
+      serverMetrics.sync.cacheHit += 1;
+      const durationMs = Date.now() - requestStartTime;
+      serverMetrics.sync.success += 1;
+      serverMetrics.sync.lastRequest = {
+        timestamp: requestTimestamp,
+        durationMs,
+        cacheHit: true,
+        mode: resolution.mode || null,
+        forceRefresh: false,
+        cacheKey,
+        source: 'server-cache'
+      };
+      appendStructuredLog('sync_served_from_cache', {
+        cacheKey,
+        cacheAgeSeconds,
+        ttlRemainingSeconds: ttlRemaining,
+        durationMs
+      });
       return res.json({
         ...cachedResult,
         cached: true,
@@ -527,8 +898,10 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
         }
       });
     } else if (forceRefresh === 'true') {
+      serverMetrics.cache.bypass += 1;
       console.log(`[🔍 DIAGNOSTIC SERVEUR] ForceRefresh activé - bypass du cache serveur`);
     } else {
+      serverMetrics.cache.misses += 1;
       console.log(`[🔍 DIAGNOSTIC SERVEUR] Cache serveur - Pas de cache valide pour la clé: ${cacheKey}`);
     }
 
@@ -538,6 +911,49 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
     }
 
     if (process.env.USE_PYTHON === '1') {
+      const rangeKey = buildRangeKey(start, end);
+      const isForceRequest = forceRefresh === 'true';
+      if (isForceRequest && lastForcedResponse && lastForcedResponse.rangeKey === rangeKey) {
+        const now = Date.now();
+        const ageMs = now - lastForcedResponse.timestamp;
+        if (ageMs < FORCE_REFRESH_COOLDOWN_MS) {
+          console.log(`[🔍 DIAGNOSTIC SERVEUR] ForceRefresh court-circuité - réponse réutilisée (${Math.round(ageMs / 1000)}s)`);
+          serverMetrics.sync.servedFromCooldown += 1;
+          serverMetrics.sync.success += 1;
+          const durationMs = Date.now() - requestStartTime;
+          serverMetrics.sync.lastRequest = {
+            timestamp: requestTimestamp,
+            durationMs,
+          cacheHit: true,
+            mode: resolution.mode || null,
+            forceRefresh: true,
+            cacheKey,
+            source: 'cooldown'
+          };
+          appendStructuredLog('sync_served_from_cooldown', {
+            rangeKey,
+            durationMs,
+            cooldownAgeMs: ageMs
+          });
+          lastStatus = {
+            lastSync: lastForcedResponse.payload?.lastSync || lastStatus.lastSync,
+            ok: true,
+            message: 'Synchronisation servie depuis le cooldown force'
+          };
+          return res.json({
+            ...lastForcedResponse.payload,
+            cached: true,
+            diagnostic: {
+              cacheUsed: true,
+              servedFromCooldown: true,
+              cooldownAgeSeconds: Math.round(ageMs / 1000),
+              cooldownRemainingSeconds: Math.max(0, Math.round((FORCE_REFRESH_COOLDOWN_MS - ageMs) / 1000)),
+              previousCacheKey: lastForcedResponse.cacheKey || null
+            }
+          });
+        }
+      }
+
       console.log('[SERVER] Using Python script...');
       const pythonStartTime = Date.now();
       const args = ['fetch_garmin_data.py'];
@@ -559,6 +975,14 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
       
       console.log('[SERVER] Python script result:', result?.ok ? 'OK' : 'FAILED');
       console.log(`[🔍 DIAGNOSTIC SERVEUR] Script Python terminé - Durée: ${pythonDuration}ms, OK: ${result?.ok || false}`);
+      serverMetrics.sync.python.lastDurationMs = pythonDuration;
+      serverMetrics.sync.python.totalDurationMs += pythonDuration;
+      serverMetrics.sync.python.count += 1;
+      appendStructuredLog('python_execution_completed', {
+        durationMs: pythonDuration,
+        ok: !!result?.ok,
+        mode: resolution.mode || null
+      });
       
       if (result && result.ok) {
         // ✅ PHASE 1 : Logging détaillé des données Python
@@ -588,7 +1012,7 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
         }
         lastStatus = { lastSync: result.lastSync, ok: true, message: 'Synchronisation terminée (Python)' };
         const totalDuration = Date.now() - requestStartTime;
-        return res.json({
+        const responsePayload = {
           ...result,
           forcedRange,
           diagnostic: {
@@ -603,11 +1027,93 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
               cachePurge: cachePurgeInfo
             }
           }
+        };
+
+        let outboundPayload = responsePayload;
+
+        if (forceRefresh === 'true' && lastSyncTimestamp) {
+          const { payload: reducedPayload, meta: deltaMeta } = applyForcedDeltaReduction(responsePayload, lastSyncTimestamp);
+          outboundPayload = reducedPayload;
+          outboundPayload.diagnostic = {
+            ...(outboundPayload.diagnostic || {}),
+            forcedDelta: {
+              applied: deltaMeta.applied,
+              removedPoints: deltaMeta.removedPoints || 0,
+              daysUpdated: deltaMeta.daysUpdated || 0,
+              threshold: lastSyncTimestamp
+            }
+          };
+          if (deltaMeta.applied) {
+            serverMetrics.sync.forcedDelta.appliedCount += 1;
+            serverMetrics.sync.forcedDelta.removedPoints += deltaMeta.removedPoints || 0;
+            appendStructuredLog('forced_delta_applied', {
+              removedPoints: deltaMeta.removedPoints || 0,
+              daysUpdated: deltaMeta.daysUpdated || 0,
+              threshold: lastSyncTimestamp
+            });
+          }
+        }
+
+        let forcedPayloadClone = null;
+        if (forceRefresh === 'true') {
+          forcedPayloadClone = JSON.parse(JSON.stringify(outboundPayload));
+        }
+
+        sendJsonStream(res, outboundPayload);
+
+        if (forceRefresh === 'true') {
+          lastForcedResponse = {
+            timestamp: Date.now(),
+            rangeKey,
+            payload: forcedPayloadClone,
+            cacheKey
+          };
+
+          // Libérer au plus vite les objets lourds du heap (surtout en mode forçage).
+          if (responsePayload.data) {
+            responsePayload.data = null;
+          }
+          if (typeof global.gc === 'function') {
+            setImmediate(() => {
+              try {
+                global.gc();
+              } catch (gcError) {
+                console.warn('[SERVER] GC manual call failed:', gcError.message);
+              }
+            });
+          }
+        }
+        const durationMs = Date.now() - requestStartTime;
+        serverMetrics.sync.success += 1;
+        serverMetrics.sync.lastRequest = {
+          timestamp: requestTimestamp,
+          durationMs: durationMs,
+          cacheHit: false,
+          mode: resolution.mode || null,
+          forceRefresh: forceRefresh === 'true',
+          cacheKey,
+          pythonDuration,
+          source: 'python'
+        };
+        appendStructuredLog('sync_success', {
+          durationMs,
+          pythonDuration,
+          mode: resolution.mode || null,
+          forceRefresh: forceRefresh === 'true',
+          cacheKey
         });
+        return;
       } else {
         console.error('[SERVER] Python run failed:', result);
         console.error(`[🔍 DIAGNOSTIC SERVEUR] ❌ Échec script Python - Erreur: ${result?.error || 'Unknown error'}`);
         lastStatus = { lastSync: lastStatus.lastSync, ok: false, message: 'Python error' };
+        serverMetrics.sync.failure += 1;
+        serverMetrics.sync.lastError = result?.error || 'python failed';
+        appendStructuredLog('sync_python_error', {
+          error: result?.error || 'python failed',
+          mode: resolution.mode || null,
+          forceRefresh: forceRefresh === 'true'
+        });
         return res.json({ ok: false, error: result.error || 'python failed', lastSync: new Date().toISOString() });
       }
     } else {
@@ -620,10 +1126,34 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
       serverCache.set(cacheKey, mockResult);
       
       lastStatus = { lastSync: now, ok: true, message: 'Synchronisation terminée (mock Node)' };
+      serverMetrics.sync.success += 1;
+      serverMetrics.sync.lastRequest = {
+        timestamp: requestTimestamp,
+        durationMs: Date.now() - requestStartTime,
+        cacheHit: false,
+        mode: resolution.mode || null,
+        forceRefresh: forceRefresh === 'true',
+        cacheKey,
+        source: 'mock-node'
+      };
       return res.json(mockResult);
     }
   } catch (e) {
     lastStatus = { lastSync: lastStatus.lastSync, ok: false, message: e.message };
+    serverMetrics.sync.failure += 1;
+    serverMetrics.sync.lastError = e.message;
+    serverMetrics.sync.lastRequest = {
+      timestamp: requestTimestamp,
+      durationMs: Date.now() - requestStartTime,
+      cacheHit: false,
+      error: e.message,
+      source: 'exception'
+    };
+    appendStructuredLog('sync_error', {
+      error: e.message,
+      stack: e.stack,
+      timestamp: new Date().toISOString()
+    });
     res.status(500).json({ ok: false, error: e.message });
   }
 });
@@ -660,6 +1190,17 @@ app.get('/api/garmin/cache/stats', (req, res) => {
       ageSeconds: Math.round((Date.now() - entry.timestamp) / 1000),
       expiresInSeconds: Math.round((serverCache.ttlMs - (Date.now() - entry.timestamp)) / 1000)
     }))
+  });
+});
+
+app.get('/api/garmin/metrics', (req, res) => {
+  console.log('[SERVER] GET /api/garmin/metrics');
+  const snapshot = buildMetricsSnapshot();
+  appendStructuredLog('metrics_requested', { requester: req.ip });
+  res.json({
+    ok: true,
+    timestamp: new Date().toISOString(),
+    metrics: snapshot
   });
 });
 

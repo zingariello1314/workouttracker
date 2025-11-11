@@ -13,10 +13,10 @@ const log = logger.component('GarminBodyBatteryChart');
  * Graphique d'évolution du Body Battery
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+function GarminBodyBatteryChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
   // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
   // 🔴 FIX #51-60: Utiliser constante pour contextDays
-  const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
+  const fallbackFiltered = useFilteredDates(
     dailyMetrics,
     selectedDate,
     periodFilter,
@@ -28,7 +28,15 @@ function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, cust
   // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
   const { containerRef, containerSize } = useChartContainerSize();
 
+  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
+  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
+
   const chartData = React.useMemo(() => {
+    if (precomputed?.data) {
+      return precomputed.data;
+    }
+
     if (!dailyMetrics || filteredDates.length === 0) return [];
     
     const data = filteredDates.map(date => {
@@ -58,12 +66,15 @@ function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, cust
     }
     
     return data;
-  }, [dailyMetrics, filteredDates, effectiveSelectedDate]);
+  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate]);
 
   const avgValue = React.useMemo(() => {
+    if (precomputed?.average !== undefined) {
+      return precomputed.average;
+    }
     if (chartData.length === 0) return 0;
     return chartData.reduce((sum, d) => sum + d.bodyBattery, 0) / chartData.length;
-  }, [chartData]);
+  }, [precomputed, chartData]);
 
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
@@ -179,10 +190,13 @@ function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, cust
               fill="url(#batteryGradient)"
               name="Body Battery"
               dot={(props) => {
-                const { key, ...restProps } = props;
+                const { key: _omittedKey, payload, index, ...restProps } = props;
+                const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
                 return (
                   <CustomDot
-                    key={key}
+                    key={dotKey}
+                    payload={payload}
+                    index={index}
                     {...restProps}
                     fill={colors?.green || '#10B981'}
                     stroke={colors?.green || '#10B981'}
@@ -200,6 +214,5 @@ function GarminBodyBatteryChart({ dailyMetrics, selectedDate, periodFilter, cust
   );
 }
 
-// 🟡 FIX #13: Memoization avec comparaison optimisée
 export default React.memo(GarminBodyBatteryChart, areChartPropsEqual);
 

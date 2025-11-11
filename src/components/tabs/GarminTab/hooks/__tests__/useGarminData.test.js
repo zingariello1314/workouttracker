@@ -1,3 +1,5 @@
+import { describe, test } from 'vitest';
+
 /**
  * 🔴 FIX #40: Tests unitaires pour useGarminData
  * Tests pour valider la logique IndexedDB et chargement de données
@@ -128,4 +130,10 @@ export function testUseGarminData() {
 if (typeof window !== 'undefined') {
   window.testUseGarminData = testUseGarminData;
 }
+
+describe.skip('useGarminData hook (TODO)', () => {
+  test('placeholder - batterie Vitest à implémenter', () => {
+    // Les tests historiques seront migrés dans une suite structurée prochainement.
+  });
+});
 

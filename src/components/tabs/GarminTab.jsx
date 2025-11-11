@@ -8,21 +8,18 @@ import { useToast } from './GarminTab/components/Toast';
 import { GarminProvider } from './GarminTab/context/GarminContext';
 import GarminErrorBoundary from './GarminTab/components/ErrorBoundary';
 import { ARIA_LABELS } from './GarminTab/constants';
+import GarminTabLayout from './GarminTab/components/layout/GarminTabLayout';
+import DashboardSection from './GarminTab/components/sections/DashboardSection';
+import ActivitiesSection from './GarminTab/components/sections/ActivitiesSection';
+import MetricsSection from './GarminTab/components/sections/MetricsSection';
+import ChartsSection from './GarminTab/components/sections/ChartsSection';
+import UtilitiesSection from './GarminTab/components/sections/UtilitiesSection';
+import TabNavigation from './GarminTab/components/TabNavigation';
 
 const GarminDashboard = React.lazy(() => import('./GarminTab/components/GarminDashboard'));
 const GarminActivities = React.lazy(() => import('./GarminTab/components/GarminActivities'));
 const GarminDailyMetrics = React.lazy(() => import('./GarminTab/components/GarminDailyMetrics'));
-const GarminHeartRateChart = React.lazy(() => import('./GarminTab/components/charts/GarminHeartRateChart'));
-const GarminHeartRateTimeSeriesChart = React.lazy(() => import('./GarminTab/components/charts/GarminHeartRateTimeSeriesChart'));
-const GarminBodyBatteryChart = React.lazy(() => import('./GarminTab/components/charts/GarminBodyBatteryChart'));
-const GarminStressChart = React.lazy(() => import('./GarminTab/components/charts/GarminStressChart'));
-const GarminSleepChart = React.lazy(() => import('./GarminTab/components/charts/GarminSleepChart'));
-const GarminRespirationChart = React.lazy(() => import('./GarminTab/components/charts/GarminRespirationChart'));
-const GarminActivityHeatmap = React.lazy(() => import('./GarminTab/components/charts/GarminActivityHeatmap'));
-const GarminCorrelationCharts = React.lazy(() => import('./GarminTab/components/charts/GarminCorrelationCharts'));
 const AdvancedStatistics = React.lazy(() => import('./GarminTab/components/AdvancedStatistics'));
-const AutoSyncSettings = React.lazy(() => import('./GarminTab/components/AutoSyncSettings'));
-const PDFExport = React.lazy(() => import('./GarminTab/components/PDFExport'));
 const DebugPanel = React.lazy(() => import('./GarminTab/components/DebugPanel'));
 
 const SectionFallback = ({ label, minHeight = '240px' }) => (
@@ -59,8 +56,7 @@ const TAB_PREFETCHERS = {
 };
 
 const UTILITY_PREFETCHERS = [
-  () => import('./GarminTab/components/AutoSyncSettings'),
-  () => import('./GarminTab/components/PDFExport'),
+  () => import('./GarminTab/components/sections/UtilitiesSection'),
   () => import('./GarminTab/components/DebugPanel')
 ];
 
@@ -73,6 +69,33 @@ const EMPTY_ACTIVITIES = Object.freeze({
 const EMPTY_DAILY_METRICS = Object.freeze({});
 
 const FORCED_HISTORY_DISPLAY_LIMIT = 200;
+
+const TAB_ITEMS = Object.freeze([
+  {
+    id: 'dashboard',
+    label: '📊 Dashboard',
+    ariaLabel: ARIA_LABELS.TAB_DASHBOARD,
+    panelId: 'garmin-dashboard-panel'
+  },
+  {
+    id: 'activities',
+    label: '🏃 Activités',
+    ariaLabel: ARIA_LABELS.TAB_ACTIVITIES,
+    panelId: 'garmin-activities-panel'
+  },
+  {
+    id: 'metrics',
+    label: '📈 Métriques',
+    ariaLabel: ARIA_LABELS.TAB_METRICS,
+    panelId: 'garmin-metrics-panel'
+  },
+  {
+    id: 'charts',
+    label: '📊 Graphiques',
+    ariaLabel: ARIA_LABELS.TAB_CHARTS,
+    panelId: 'garmin-charts-panel'
+  }
+]);
 
 const GarminTab = () => {
   const [status, setStatus] = React.useState(null);
@@ -94,6 +117,8 @@ const GarminTab = () => {
   const prevLoadingRef = React.useRef(false);
   const prevGarminDataRef = React.useRef(null);
   const autoSyncExecutedRef = React.useRef(false); // 🟢 NOUVEAU : Éviter auto-sync multiple
+
+  const tabItems = React.useMemo(() => TAB_ITEMS, []);
 
   // ✅ FIX : Tous les hooks personnalisés dans un ordre constant (RÈGLE REACT)
   // Les hooks doivent TOUJOURS être appelés dans le même ordre à chaque rendu
@@ -139,7 +164,7 @@ const GarminTab = () => {
     }
   }, [clearForcedRangesHistory]);
 
-  const { syncNow, backfill, fetchStatus, loading, baseUrl, clearCache } = useGarminSync(
+  const { syncNow, backfill, fetchStatus, loading, baseUrl, clearCache, cacheMeta, resetCircuit } = useGarminSync(
     setGarminData,
     setStatus,
     importToEndurance,
@@ -150,6 +175,22 @@ const GarminTab = () => {
   // ✅ FIX : useToast() déplacé AVANT tous les useEffect pour respecter les règles de React
   const { showToast, ToastContainer } = useToast();
   const prefetchedTabsRef = React.useRef(new Set());
+
+  const prefetchTabModules = React.useCallback((tab) => {
+    if (prefetchedTabsRef.current.has(tab)) {
+      return;
+    }
+    const loaders = TAB_PREFETCHERS[tab];
+    if (!loaders) {
+      return;
+    }
+    prefetchedTabsRef.current.add(tab);
+    loaders.forEach((load) => {
+      load().catch(() => {
+        // Ignorer silencieusement les erreurs de prefetch
+      });
+    });
+  }, []);
   
   // 🔴 FIX : Exposer clearCache globalement pour permettre vidage depuis SyncControls
   React.useEffect(() => {
@@ -376,22 +417,6 @@ const GarminTab = () => {
       return undefined;
     }
 
-    const prefetchTabModules = (tab) => {
-      if (prefetchedTabsRef.current.has(tab)) {
-        return;
-      }
-      const loaders = TAB_PREFETCHERS[tab];
-      if (!loaders) {
-        return;
-      }
-      prefetchedTabsRef.current.add(tab);
-      loaders.forEach((load) => {
-        load().catch(() => {
-          // Ignorer silencieusement les erreurs de prefetch
-        });
-      });
-    };
-
     // Prefetch pour l'onglet actif (assure que le chunk est prêt après la première suspension)
     prefetchTabModules(activeTab);
 
@@ -410,7 +435,7 @@ const GarminTab = () => {
     return () => {
       cancelIdleCallback(idleHandle);
     };
-  }, [activeTab]);
+  }, [activeTab, prefetchTabModules]);
 
   const handleBackfill = React.useCallback(() => {
     // 🟡 FIX #28: Validation des entrées backfill
@@ -539,44 +564,15 @@ const GarminTab = () => {
         forcedRangesHistory={forcedRangesHistory}
         addForcedRangeEntry={handleForcedRangeRecorded}
         clearForcedRangesHistory={handleClearForcedHistory}
+        cacheMeta={cacheMeta}
       >
-        <div className="max-w-7xl mx-auto p-4">
-        {/* 🟡 FIX #33: Container pour les toasts */}
-        <ToastContainer />
-        
-        <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700 p-6">
-        {/* En-tête */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">Garmin Connect</h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowRaw((v) => !v)}
-              className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm"
-            >
-              {showRaw ? 'Masquer JSON' : 'Voir JSON'}
-            </button>
-          </div>
-        </div>
-
-        {/* 🟡 FIX #15: Loading state visuel pendant la synchronisation */}
-        {loading && (
-          <div className="relative mb-6">
-            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
-                <p className="text-white font-medium">Synchronisation en cours...</p>
-                <p className="text-slate-400 text-sm mt-2">Veuillez patienter</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Statut serveur */}
-        {baseUrl && (
-          <div className="mb-4 text-sm text-slate-400">
-            Serveur: {baseUrl}
-          </div>
-        )}
+        <GarminTabLayout
+          loading={loading}
+          baseUrl={baseUrl}
+          showRaw={showRaw}
+          onToggleRaw={() => setShowRaw((v) => !v)}
+          toastContainer={<ToastContainer />}
+        >
 
         {/* Navigation temporelle avancée */}
         {garminData && garminData.dailyMetrics && memoizedDateKeys.length > 0 && (
@@ -600,74 +596,14 @@ const GarminTab = () => {
         {/* Onglets de navigation */}
         {/* 🔴 FIX #39: ARIA labels et navigation clavier pour les tabs */}
         {garminData && (
-          <div className="mt-6 border-b border-slate-700" role="tablist" aria-label="Navigation principale Garmin">
-            <div className="flex gap-4">
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                role="tab"
-                id="dashboard-tab"
-                aria-selected={activeTab === 'dashboard'}
-                aria-controls="garmin-dashboard-panel"
-                aria-label={ARIA_LABELS.TAB_DASHBOARD}
-                tabIndex={activeTab === 'dashboard' ? 0 : -1}
-                className={`px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  activeTab === 'dashboard'
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-              >
-                📊 Dashboard
-              </button>
-              <button
-                onClick={() => setActiveTab('activities')}
-                role="tab"
-                id="activities-tab"
-                aria-selected={activeTab === 'activities'}
-                aria-controls="garmin-activities-panel"
-                aria-label={ARIA_LABELS.TAB_ACTIVITIES}
-                tabIndex={activeTab === 'activities' ? 0 : -1}
-                className={`px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  activeTab === 'activities'
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-              >
-                🏃 Activités
-              </button>
-              <button
-                onClick={() => setActiveTab('metrics')}
-                role="tab"
-                id="metrics-tab"
-                aria-selected={activeTab === 'metrics'}
-                aria-controls="garmin-metrics-panel"
-                aria-label={ARIA_LABELS.TAB_METRICS}
-                tabIndex={activeTab === 'metrics' ? 0 : -1}
-                className={`px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  activeTab === 'metrics'
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-              >
-                📈 Métriques
-              </button>
-              <button
-                onClick={() => setActiveTab('charts')}
-                role="tab"
-                id="charts-tab"
-                aria-selected={activeTab === 'charts'}
-                aria-controls="garmin-charts-panel"
-                aria-label={ARIA_LABELS.TAB_CHARTS}
-                tabIndex={activeTab === 'charts' ? 0 : -1}
-                className={`px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  activeTab === 'charts'
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-              >
-                📊 Graphiques
-              </button>
-            </div>
-          </div>
+          <TabNavigation
+            tabs={tabItems}
+            activeTab={activeTab}
+            onSelect={setActiveTab}
+            ariaLabel="Navigation principale Garmin"
+            onTabHover={prefetchTabModules}
+            onTabFocus={prefetchTabModules}
+          />
         )}
 
         {/* Contenu selon l'onglet actif */}
@@ -675,135 +611,44 @@ const GarminTab = () => {
         {garminData && (
           <div className="mt-6">
             {activeTab === 'dashboard' && (
-              <div role="tabpanel" id="garmin-dashboard-panel" aria-labelledby="dashboard-tab">
-                <React.Suspense fallback={<SectionFallback label="du tableau de bord" minHeight="320px" />}>
-                  <GarminDashboard
-                    dailyMetrics={memoizedDailyMetrics}
-                    selectedDate={selectedDate}
-                    comparisonMode={comparisonMode}
-                    compareDate={compareDate}
-                    activities={memoizedActivities}
-                    periodFilter={periodFilter}
-                    customStartDate={customStartDate}
-                    customEndDate={customEndDate}
-                  />
-                </React.Suspense>
-              </div>
+              <DashboardSection fallback={<SectionFallback label="du tableau de bord" minHeight="320px" />}>
+                <GarminDashboard />
+              </DashboardSection>
             )}
 
             {activeTab === 'activities' && (
-              <div role="tabpanel" id="garmin-activities-panel" aria-labelledby="activities-tab">
-                <React.Suspense fallback={<SectionFallback label="des activités" minHeight="280px" />}>
-                  <GarminActivities
-                    activities={memoizedActivities}
-                    selectedDate={selectedDate}
-                  />
-                </React.Suspense>
-              </div>
+              <ActivitiesSection fallback={<SectionFallback label="des activités" minHeight="280px" />}>
+                <GarminActivities
+                  activities={memoizedActivities}
+                  selectedDate={selectedDate}
+                />
+              </ActivitiesSection>
             )}
 
             {activeTab === 'metrics' && (
-              <div role="tabpanel" id="garmin-metrics-panel" aria-labelledby="metrics-tab">
-                <React.Suspense fallback={<SectionFallback label="des métriques" minHeight="360px" />}>
-                  {/* 🔴 FIX #71-80: Statistiques avancées */}
-                  <AdvancedStatistics
+              <MetricsSection fallback={<SectionFallback label="des métriques" minHeight="360px" />}>
+                <AdvancedStatistics
+                  dailyMetrics={memoizedDailyMetrics}
+                  selectedDate={selectedDate}
+                  periodFilter={periodFilter}
+                  customStartDate={customStartDate}
+                  customEndDate={customEndDate}
+                />
+                <div className="mt-6">
+                  <GarminDailyMetrics
                     dailyMetrics={memoizedDailyMetrics}
+                  dateKeys={memoizedDateKeys}
                     selectedDate={selectedDate}
-                    periodFilter={periodFilter}
-                    customStartDate={customStartDate}
-                    customEndDate={customEndDate}
+                    setSelectedDate={setSelectedDate}
+                    comparisonMode={comparisonMode}
+                    compareDate={compareDate}
                   />
-                  <div className="mt-6">
-                    <GarminDailyMetrics
-                      dailyMetrics={memoizedDailyMetrics}
-                    dateKeys={memoizedDateKeys}
-                      selectedDate={selectedDate}
-                      setSelectedDate={setSelectedDate}
-                      comparisonMode={comparisonMode}
-                      compareDate={compareDate}
-                    />
-                  </div>
-                </React.Suspense>
-              </div>
+                </div>
+              </MetricsSection>
             )}
 
             {activeTab === 'charts' && (
-              <div role="tabpanel" id="garmin-charts-panel" aria-labelledby="charts-tab" className="space-y-6">
-                <React.Suspense fallback={<SectionFallback label="des graphiques" minHeight="620px" />}>
-                  {/* 🔴 FIX #8: Heart Rate Time Series Chart avec toutes les props */}
-                  {/* 🔴 NOUVEAU : Afficher même si pas de timeSeries (courbe enrichie sera créée avec métriques agrégées) */}
-                  {selectedDate && memoizedDailyMetrics && memoizedDailyMetrics[selectedDate] && (
-                    <GarminHeartRateTimeSeriesChart
-                      dailyMetrics={memoizedDailyMetrics}
-                      selectedDate={selectedDate}
-                      periodFilter={periodFilter}
-                      customStartDate={customStartDate}
-                      customEndDate={customEndDate}
-                      colors={colors}
-                      activities={memoizedActivities}
-                    />
-                  )}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <GarminHeartRateChart
-                      dailyMetrics={memoizedDailyMetrics}
-                      selectedDate={selectedDate}
-                      periodFilter={periodFilter}
-                      customStartDate={customStartDate}
-                      customEndDate={customEndDate}
-                      colors={colors}
-                    />
-                    <GarminBodyBatteryChart
-                      dailyMetrics={garminData.dailyMetrics}
-                      selectedDate={selectedDate}
-                      periodFilter={periodFilter}
-                      customStartDate={customStartDate}
-                      customEndDate={customEndDate}
-                      colors={colors}
-                    />
-                    <GarminStressChart
-                      dailyMetrics={garminData.dailyMetrics}
-                      selectedDate={selectedDate}
-                      periodFilter={periodFilter}
-                      customStartDate={customStartDate}
-                      customEndDate={customEndDate}
-                      colors={colors}
-                    />
-                    <GarminSleepChart
-                      dailyMetrics={garminData.dailyMetrics}
-                      selectedDate={selectedDate}
-                      periodFilter={periodFilter}
-                      customStartDate={customStartDate}
-                      customEndDate={customEndDate}
-                      colors={colors}
-                    />
-                  </div>
-                  <GarminRespirationChart
-                    dailyMetrics={memoizedDailyMetrics}
-                    selectedDate={selectedDate}
-                    periodFilter={periodFilter}
-                    customStartDate={customStartDate}
-                    customEndDate={customEndDate}
-                    colors={colors}
-                  />
-                  <GarminActivityHeatmap
-                    activities={memoizedActivities}
-                    dailyMetrics={memoizedDailyMetrics}
-                    selectedDate={selectedDate}
-                    periodFilter={periodFilter}
-                    customStartDate={customStartDate}
-                    customEndDate={customEndDate}
-                    colors={colors}
-                  />
-                  <GarminCorrelationCharts
-                    dailyMetrics={memoizedDailyMetrics}
-                    selectedDate={selectedDate}
-                    periodFilter={periodFilter}
-                    customStartDate={customStartDate}
-                    customEndDate={customEndDate}
-                    colors={colors}
-                  />
-                </React.Suspense>
-              </div>
+              <ChartsSection fallback={<SectionFallback label="des graphiques" minHeight="620px" />} />
             )}
 
             {/* Vue JSON brute */}
@@ -858,31 +703,26 @@ const GarminTab = () => {
             forcedRangesHistory={forcedRangesHistory}
             onClearForcedHistory={handleClearForcedHistory}
             onRefreshForcedHistory={refreshForcedRangesHistory}
+            cacheMeta={cacheMeta}
+            onResetCircuit={resetCircuit}
           />
 
           {/* 🔴 FIX #81-87: Synchronisation automatique */}
-          <React.Suspense fallback={<SectionFallback label="des paramètres d'auto-sync" minHeight="160px" />}>
-            <AutoSyncSettings syncFunction={syncNow} />
-          </React.Suspense>
-
-          {/* 🔴 FIX #81-87: Export PDF */}
-          <React.Suspense fallback={<SectionFallback label="de l'export PDF" minHeight="160px" />}>
-            <PDFExport
-              garminData={garminData}
-              selectedDate={selectedDate}
-              periodFilter={periodFilter}
-              customStartDate={customStartDate}
-              customEndDate={customEndDate}
-            />
-          </React.Suspense>
+          <UtilitiesSection
+            syncNow={syncNow}
+            selectedDate={selectedDate}
+            periodFilter={periodFilter}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
+            fallback={<SectionFallback label="des utilitaires" minHeight="160px" />}
+          />
         </div>
-        </div>
-        </div>
+        </GarminTabLayout>
 
         {/* ✅ PHASE 1 : Panneau de diagnostic */}
         {showDebugPanel && (
           <React.Suspense fallback={<SectionFallback label="du panneau de diagnostic" minHeight="240px" />}>
-            <DebugPanel onClose={() => setShowDebugPanel(false)} />
+            <DebugPanel onClose={() => setShowDebugPanel(false)} cacheMeta={cacheMeta} />
           </React.Suspense>
         )}
       </GarminProvider>

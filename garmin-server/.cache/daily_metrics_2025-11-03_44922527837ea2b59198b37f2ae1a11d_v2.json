@@ -1168,15 +1168,113 @@
   },
   "respiration": {
     "awake": {
-      "min": 14.0,
-      "max": 20.0,
-      "avg": 16.6
+      "min": 9,
+      "max": 20,
+      "avg": 13.0
     },
     "sleep": {
-      "min": 14,
+      "min": 9,
       "max": 20,
       "avg": 17.0
-    }
+    },
+    "timeSeries": [
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 16.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      },
+      {
+        "timestamp": null,
+        "value": 19.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 18.0
+      },
+      {
+        "timestamp": null,
+        "value": 17.0
+      }
+    ]
   },
   "intensityMinutes": {
     "moderate": 81,
@@ -1184,103 +1282,31 @@
     "total": 188
   },
   "bodyBattery": {
-    "current": 94,
+    "current": 24,
     "timeSeries": [
       {
-        "timestamp": null,
-        "value": 33
+        "timestamp": "2025-11-03T03:15:00Z",
+        "value": 29
       },
       {
-        "timestamp": null,
-        "value": 33
+        "timestamp": "2025-11-03T06:57:00Z",
+        "value": 44
       },
       {
-        "timestamp": null,
-        "value": 33
+        "timestamp": "2025-11-03T07:00:00Z",
+        "value": 44
       },
       {
-        "timestamp": null,
-        "value": 34
+        "timestamp": "2025-11-03T12:06:00Z",
+        "value": 94
       },
       {
-        "timestamp": null,
-        "value": 34
+        "timestamp": "2025-11-03T15:00:00Z",
+        "value": 75
       },
       {
-        "timestamp": null,
-        "value": 34
-      },
-      {
-        "timestamp": null,
-        "value": 35
-      },
-      {
-        "timestamp": null,
-        "value": 35
-      },
-      {
-        "timestamp": null,
-        "value": 36
-      },
-      {
-        "timestamp": null,
-        "value": 36
-      },
-      {
-        "timestamp": null,
-        "value": 36
-      },
-      {
-        "timestamp": null,
-        "value": 37
-      },
-      {
-        "timestamp": null,
-        "value": 38
-      },
-      {
-        "timestamp": null,
-        "value": 38
-      },
-      {
-        "timestamp": null,
-        "value": 38
-      },
-      {
-        "timestamp": null,
-        "value": 38
-      },
-      {
-        "timestamp": null,
-        "value": 38
-      },
-      {
-        "timestamp": null,
-        "value": 38
-      },
-      {
-        "timestamp": null,
-        "value": 39
-      },
-      {
-        "timestamp": null,
-        "value": 39
-      },
-      {
-        "timestamp": null,
-        "value": 41
-      },
-      {
-        "timestamp": null,
-        "value": 41
-      },
-      {
-        "timestamp": null,
-        "value": 42
-      },
-      {
-        "timestamp": null,
-        "value": 42
+        "timestamp": "2025-11-03T22:51:00Z",
+        "value": 24
       }
     ]
   },
@@ -1290,6 +1316,57 @@
     "timeSeries": []
   },
   "spo2": null,
+  "heartRateZones": {
+    "zone1": {
+      "time": 1,
+      "percentage": 100.0
+    },
+    "zone2": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone3": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone4": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone5": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "total": 1,
+    "zonesDefinition": {
+      "zone1": {
+        "min": 0,
+        "max": 93,
+        "name": "Zone 1 - \u00c9chauffement"
+      },
+      "zone2": {
+        "min": 93,
+        "max": 108,
+        "name": "Zone 2 - Br\u00fblage graisses"
+      },
+      "zone3": {
+        "min": 108,
+        "max": 124,
+        "name": "Zone 3 - A\u00e9robie"
+      },
+      "zone4": {
+        "min": 124,
+        "max": 139,
+        "name": "Zone 4 - Seuil"
+      },
+      "zone5": {
+        "min": 139,
+        "max": 155,
+        "name": "Zone 5 - Maximale"
+      }
+    },
+    "calculatedFromTimeSeries": true
+  },
   "sleep": {
     "duration": 6.35,
     "quality": 0,
@@ -1297,10 +1374,13 @@
     "lightSleep": 3.35,
     "remSleep": 1.53,
     "bedTime": "06:40",
-    "wakeTime": "13:09"
+    "wakeTime": "13:09",
+    "awakenings": null,
+    "movements": null,
+    "phasesDetails": null
   },
   "date": "2025-11-03",
-  "_cached_at": 1762273591.3949165,
+  "_cached_at": 1762829080.8017778,
   "_cache_version": 2,
   "_raw_data_hash": "44922527837ea2b59198b37f2ae1a11d"
 }

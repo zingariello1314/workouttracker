@@ -36,6 +36,7 @@ import {
   importForcedRangesHistory,
   FORCED_HISTORY_LIMIT
 } from './garminForcedHistory';
+import { buildGarminChartDataset } from '../components/tabs/GarminTab/utils/chartDataBuilders';
 
 /**
  * Hook principal pour la gestion des données Garmin dans IndexedDB
@@ -91,7 +92,15 @@ export const useGarminData = () => {
     const now = new Date().toISOString().split('T')[0];
     
     if (lastPurge !== now) {
-      autoPurge(dbReady);
+      autoPurge(dbReady)
+        .then((summary) => {
+          if (summary && (summary.activitiesPurged || summary.metricsPurged)) {
+            console.debug('[GarminData] autoPurge summary', summary);
+          }
+        })
+        .catch((error) => {
+          console.error('[GarminData] autoPurge error', error);
+        });
       localStorage.setItem('lastGarminPurge', now);
     }
   }, [dbReady]);
@@ -195,9 +204,37 @@ export const useGarminData = () => {
       loadForcedRangesHistoryWrapper(FORCED_HISTORY_LIMIT)
     ]);
 
+    const parseSummary = (key) => {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        console.warn('[GarminData] Unable to parse maintenance summary', key, error);
+        return null;
+      }
+    };
+ 
+    const derivedDates = Object.keys(coreData.dailyMetrics || {}).sort();
+    const lastDate = derivedDates.length ? derivedDates[derivedDates.length - 1] : null;
+    const exportDates = derivedDates.slice(-30);
+    const derivedCharts = buildGarminChartDataset({
+      dailyMetrics: coreData.dailyMetrics || {},
+      activities: coreData.activities || {},
+      filteredDates: exportDates,
+      selectedDate: lastDate,
+      effectiveSelectedDate: lastDate,
+      displayInfo: null
+    });
+
     return {
       ...coreData,
-      forcedRangesHistory: forcedHistory
+      forcedRangesHistory: forcedHistory,
+      maintenance: {
+        purgeSummary: parseSummary('garmin_lastPurgeSummary'),
+        lastPurge: localStorage.getItem('garmin_lastPurge'),
+        purgeErrors: parseSummary('garmin_purgeErrors')
+      },
+      derivedCharts
     };
   }, [loadAllDataWrapper, loadForcedRangesHistoryWrapper]);
 
@@ -215,6 +252,22 @@ export const useGarminData = () => {
     if (data.dailyMetrics) await saveDailyMetrics(data.dailyMetrics, dbReady);
     if (Array.isArray(data.forcedRangesHistory) && data.forcedRangesHistory.length > 0) {
       await importForcedRangesHistory(data.forcedRangesHistory);
+    }
+    if (data.maintenance) {
+      const { purgeSummary, timeSeriesSummary, mockCleanupSummary } = data.maintenance;
+      try {
+        if (purgeSummary) {
+          localStorage.setItem('garmin_lastPurgeSummary', JSON.stringify(purgeSummary));
+        }
+        if (timeSeriesSummary) {
+          localStorage.setItem('garmin_lastTimeSeriesPurge', JSON.stringify(timeSeriesSummary));
+        }
+        if (mockCleanupSummary) {
+          localStorage.setItem('garmin_lastMockCleanup', JSON.stringify(mockCleanupSummary));
+        }
+      } catch (error) {
+        console.warn('[GarminData] Unable to import maintenance summaries', error);
+      }
     }
   }, [dbReady]);
 

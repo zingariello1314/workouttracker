@@ -348,7 +348,7 @@ function drawTable(doc, x, y, headers, rows, columnWidths) {
 /**
  * Génère un rapport PDF quotidien PREMIUM
  */
-export async function generateDailyPDF(data, date) {
+export async function generateDailyPDF(data, date, options = {}) {
   try {
     const jsPDFModule = await loadJsPDF();
     if (!jsPDFModule || typeof jsPDFModule !== 'function') {
@@ -360,6 +360,8 @@ export async function generateDailyPDF(data, date) {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
     const contentWidth = pageWidth - 2 * margin;
+    
+    const derived = options?.derived || null;
     
     let yPos = margin;
 
@@ -398,6 +400,16 @@ export async function generateDailyPDF(data, date) {
       }
     }
 
+    if (!metrics && derived) {
+      metrics = {};
+    }
+
+    const derivedHeartRateStats = derived?.heartRateTimeSeries?.stats || null;
+    const derivedBodyBatteryEntry = derived?.bodyBatteryTrend?.data?.find((entry) => entry.date === date) || derived?.bodyBatteryTrend?.data?.[0] || null;
+    const derivedStressEntry = derived?.stressTrend?.data?.find((entry) => entry.date === date) || derived?.stressTrend?.data?.[0] || null;
+    const derivedSleepEntry = derived?.sleepTrend?.data?.find((entry) => entry.date === date) || derived?.sleepTrend?.data?.[0] || null;
+    const derivedRespEntry = derived?.respirationTrend?.data?.find((entry) => entry.date === date) || derived?.respirationTrend?.data?.[0] || null;
+
     // === MÉTRIQUES PRINCIPALES (Cartes premium) ===
     if (metrics) {
       doc.setFontSize(18);
@@ -411,6 +423,45 @@ export async function generateDailyPDF(data, date) {
       const distance = metrics.distance ?? (metrics.totalDistanceMeters ? metrics.totalDistanceMeters / 1000 : 0);
       const calories = extractCalories(metrics);
       const heartRate = extractHeartRate(metrics);
+
+      if (derivedHeartRateStats) {
+        heartRate.resting = heartRate.resting || derivedHeartRateStats.resting || 0;
+        heartRate.max = heartRate.max || derivedHeartRateStats.max || 0;
+        heartRate.avg = heartRate.avg || derivedHeartRateStats.avg || 0;
+      }
+
+      if (!metrics.bodyBattery && derivedBodyBatteryEntry && derivedBodyBatteryEntry.bodyBattery !== undefined && derivedBodyBatteryEntry.bodyBattery !== null) {
+        metrics.bodyBattery = { current: derivedBodyBatteryEntry.bodyBattery };
+      }
+
+      if ((!metrics.stress || metrics.stress.average === undefined) && derivedStressEntry && derivedStressEntry.stress !== null && derivedStressEntry.stress !== undefined) {
+        metrics.stress = { average: derivedStressEntry.stress };
+      }
+
+      if (!metrics.sleep && derivedSleepEntry) {
+        metrics.sleep = {
+          duration: derivedSleepEntry.duration ? derivedSleepEntry.duration / 60 : null,
+          deepSleep: derivedSleepEntry.deepSleep ? derivedSleepEntry.deepSleep / 60 : null,
+          lightSleep: derivedSleepEntry.lightSleep ? derivedSleepEntry.lightSleep / 60 : null,
+          remSleep: derivedSleepEntry.remSleep ? derivedSleepEntry.remSleep / 60 : null,
+          quality: derivedSleepEntry.quality ?? null
+        };
+      }
+
+      if (!metrics.respiration && derivedRespEntry) {
+        metrics.respiration = {
+          awake: {
+            min: derivedRespEntry.awakeMin,
+            avg: derivedRespEntry.awakeAvg,
+            max: derivedRespEntry.awakeMax
+          },
+          sleep: {
+            min: derivedRespEntry.sleepMin,
+            avg: derivedRespEntry.sleepAvg,
+            max: derivedRespEntry.sleepMax
+          }
+        };
+      }
       
       // Cartes métriques
       const cardSpacing = 8;
@@ -731,7 +782,7 @@ export async function generateDailyPDF(data, date) {
 /**
  * Génère un rapport PDF hebdomadaire PREMIUM
  */
-export async function generateWeeklyPDF(data, startDate, endDate) {
+export async function generateWeeklyPDF(data, startDate, endDate, options = {}) {
   try {
     const jsPDFModule = await loadJsPDF();
     if (!jsPDFModule || typeof jsPDFModule !== 'function') {
@@ -745,6 +796,8 @@ export async function generateWeeklyPDF(data, startDate, endDate) {
     const contentWidth = pageWidth - 2 * margin;
     
     let yPos = margin;
+
+    const derived = options?.derived || null;
 
     // === EN-TÊTE PREMIUM ===
     doc.setFillColor(59, 130, 246);
@@ -910,13 +963,15 @@ export async function generateWeeklyPDF(data, startDate, endDate) {
           const distance = m?.distance ?? (m?.totalDistanceMeters ? m.totalDistanceMeters / 1000 : 0);
           const calories = extractCalories(m);
           const heartRate = extractHeartRate(m);
+          const derivedTrendEntry = derived?.heartRateTrend?.data?.find((entry) => entry.date === d);
+          const restingValue = heartRate.resting || derivedTrendEntry?.resting || 0;
           
           return [
             formatDateForPDF(d),
             formatNumber(steps),
             formatDecimal(distance),
             formatNumber(calories.total),
-            heartRate.resting > 0 ? heartRate.resting.toString() : '-'
+            restingValue > 0 ? restingValue.toString() : '-'
           ];
         });
         

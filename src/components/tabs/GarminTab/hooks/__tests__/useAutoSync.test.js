@@ -1,3 +1,5 @@
+import { describe, test } from 'vitest';
+
 /**
  * 🔴 FIX #40: Tests unitaires pour useAutoSync
  * Tests pour valider la logique de synchronisation automatique
@@ -134,4 +136,10 @@ export function testUseAutoSync() {
 if (typeof window !== 'undefined') {
   window.testUseAutoSync = testUseAutoSync;
 }
+
+describe.skip('useAutoSync hook (TODO)', () => {
+  test('placeholder - à migrer vers Vitest', () => {
+    // Cette suite sera implémentée avec de véritables tests Vitest ultérieurement.
+  });
+});
 

@@ -67,21 +67,27 @@ export function mapPresetToRequest(mode) {
         forceRefresh: true,
         skipDelay: true,
         mode,
-        range: { start: today, end: today }
+        range: { start: today, end: today },
+        includeToday: true,
+        meta: { includeToday: true }
       };
     case 'yesterday':
       return {
         forceRefresh: true,
         skipDelay: true,
         mode,
-        range: { start: yesterday, end: yesterday }
+        range: { start: yesterday, end: yesterday },
+        includeToday: false,
+        meta: { includeToday: false }
       };
     default:
       return {
         forceRefresh: true,
         skipDelay: true,
         mode,
-        range: { start: today, end: today }
+        range: { start: today, end: today },
+        includeToday: false,
+        meta: { includeToday: false }
       };
   }
 }
@@ -103,6 +109,7 @@ export function mapRangeToRequest(range, includeToday = false) {
     skipDelay: true,
     mode: 'range',
     range: { start, end },
+    includeToday,
     meta: { includeToday }
   };
 }

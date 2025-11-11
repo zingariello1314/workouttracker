@@ -6,17 +6,70 @@ import React from 'react';
 import { generateDailyPDF, generateWeeklyPDF } from '../utils/pdfGenerator';
 import { ARIA_LABELS } from '../constants';
 import logger from '../../../../utils/logger';
+import { useGarminSelectors } from '../hooks/useGarminSelectors';
+import { buildGarminChartDataset } from '../utils/chartDataBuilders';
 
 const log = logger.component('PDFExport');
 
-export default function PDFExport({ garminData, selectedDate, periodFilter, customStartDate, customEndDate }) {
+export default function PDFExport({ selectedDate: selectedDateProp, periodFilter: periodFilterProp, customStartDate: customStartDateProp, customEndDate: customEndDateProp }) {
   const [isGenerating, setIsGenerating] = React.useState(false);
+
+  const {
+    allDailyMetrics: dailyMetrics,
+    activitiesByType,
+    selectedDate: selectedDateContext,
+    periodFilter: periodFilterContext,
+    customRange
+  } = useGarminSelectors();
+
+  const selectedDate = selectedDateProp || selectedDateContext;
+  const periodFilter = periodFilterProp || periodFilterContext;
+  const customStartDate = customStartDateProp || customRange?.start;
+  const customEndDate = customEndDateProp || customRange?.end;
+
+  const baseData = React.useMemo(() => ({
+    dailyMetrics,
+    activities: activitiesByType
+  }), [dailyMetrics, activitiesByType]);
+
+  const buildDerivedDataset = React.useCallback((dates, anchorDate) => {
+    if (!dates || dates.length === 0) {
+      return buildGarminChartDataset({
+        dailyMetrics,
+        activities: activitiesByType,
+        filteredDates: [],
+        selectedDate: anchorDate,
+        effectiveSelectedDate: anchorDate,
+        displayInfo: null
+      });
+    }
+    return buildGarminChartDataset({
+      dailyMetrics,
+      activities: activitiesByType,
+      filteredDates: dates,
+      selectedDate: anchorDate,
+      effectiveSelectedDate: anchorDate,
+      displayInfo: null
+    });
+  }, [dailyMetrics, activitiesByType]);
+
+  const enumerateDates = React.useCallback((start, end) => {
+    if (!start || !end) return [];
+    const result = [];
+    const cursor = new Date(start);
+    const endDate = new Date(end);
+    while (cursor <= endDate) {
+      result.push(cursor.toISOString().split('T')[0]);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return result;
+  }, []);
 
   /**
    * Génère et télécharge le PDF
    */
   const handleExport = React.useCallback(async (type) => {
-    if (!garminData) {
+    if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
       alert('Aucune donnée disponible pour l\'export');
       return;
     }
@@ -26,29 +79,27 @@ export default function PDFExport({ garminData, selectedDate, periodFilter, cust
       let blob = null;
 
       log.debug(`Début export PDF - Type: ${type}`);
-      log.debug('Structure garminData:', {
-        hasActivities: !!garminData.activities,
-        hasDailyMetrics: !!garminData.dailyMetrics,
-        dailyMetricsKeys: garminData.dailyMetrics ? Object.keys(garminData.dailyMetrics) : [],
-        activitiesCount: {
-          swimming: garminData.activities?.swimming?.length || 0,
-          jumpRope: garminData.activities?.jumpRope?.length || 0,
-          cardio: garminData.activities?.cardio?.length || 0
+      log.debug('Structure des données (base):', {
+        dates: Object.keys(dailyMetrics || {}),
+        activities: {
+          swimming: activitiesByType?.swimming?.length || 0,
+          jumpRope: activitiesByType?.jumpRope?.length || 0,
+          cardio: activitiesByType?.cardio?.length || 0
         }
       });
       
-      // Vérifier si la date existe
       if (type === 'daily' && selectedDate) {
-        if (garminData.dailyMetrics && garminData.dailyMetrics[selectedDate]) {
+        if (dailyMetrics[selectedDate]) {
           log.debug(`Données trouvées pour ${selectedDate}`);
         } else {
           log.warn(`Aucune donnée pour la date ${selectedDate}`);
-          log.debug('Dates disponibles:', Object.keys(garminData.dailyMetrics || {}));
+          log.debug('Dates disponibles:', Object.keys(dailyMetrics || {}));
         }
       }
 
       if (type === 'daily' && selectedDate) {
-        blob = await generateDailyPDF(garminData, selectedDate);
+        const derived = buildDerivedDataset([selectedDate], selectedDate);
+        blob = await generateDailyPDF(baseData, selectedDate, { derived });
         log.debug(`PDF quotidien généré: ${blob ? 'OK' : 'NULL'}`);
       } else if (type === 'weekly' || type === 'custom') {
         const startDate = type === 'custom' ? customStartDate : calculateWeekStart(selectedDate || new Date().toISOString().split('T')[0]);
@@ -60,7 +111,10 @@ export default function PDFExport({ garminData, selectedDate, periodFilter, cust
           return;
         }
 
-        blob = await generateWeeklyPDF(garminData, startDate, endDate);
+        const rangeDates = enumerateDates(startDate, endDate).filter((date) => dailyMetrics[date]);
+        const anchor = selectedDate && rangeDates.includes(selectedDate) ? selectedDate : rangeDates[rangeDates.length - 1];
+        const derived = buildDerivedDataset(rangeDates, anchor || endDate);
+        blob = await generateWeeklyPDF(baseData, startDate, endDate, { derived });
         log.debug(`PDF hebdomadaire généré: ${blob ? 'OK' : 'NULL'}`);
       }
 
@@ -97,7 +151,7 @@ export default function PDFExport({ garminData, selectedDate, periodFilter, cust
     } finally {
       setIsGenerating(false);
     }
-  }, [garminData, selectedDate, customStartDate, customEndDate]);
+  }, [dailyMetrics, activitiesByType, selectedDate, customStartDate, customEndDate, baseData, buildDerivedDataset, enumerateDates]);
 
   /**
    * Calcule le début de la semaine (lundi)

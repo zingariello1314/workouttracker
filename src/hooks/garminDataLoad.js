@@ -28,6 +28,7 @@ import {
   STORE_DEVICE_META,
   readStorageBucket
 } from './garminDataUtils';
+import { multiStoreLoader } from './garmin/storage/MultiStoreLoader';
 
 import { DATE_RANGE } from '../components/tabs/GarminTab/constants';
 
@@ -573,23 +574,9 @@ export const loadDataByRange = async (startDate, endDate, dbReady) => {
     }
   }
   
-  // IndexedDB avec range queries
+  // IndexedDB avec transaction multi-store
   try {
-    const db = await openDB();
-    if (!db) {
-      setUseFallback(true);
-      // Charger depuis localStorage directement
-      const loadedActivities = loadActivitiesFromLocalStorage(startDate, endDate);
-      const loadedMetrics = loadDailyMetricsFromLocalStorage(startDate, endDate);
-      return { activities: loadedActivities, dailyMetrics: loadedMetrics };
-    }
-    
-    // Charger activités et métriques en parallèle
-    const [loadedActivities, loadedMetrics] = await Promise.all([
-      loadActivitiesFromIndexedDB(db, startDate, endDate),
-      loadDailyMetricsFromIndexedDB(db, startDate, endDate)
-    ]);
-    
+    const { activities: loadedActivities, metrics: loadedMetrics } = await multiStoreLoader.loadDataByRange(startDate, endDate);
     return { activities: loadedActivities, dailyMetrics: loadedMetrics };
   } catch (err) {
     logIndexedDBError(err, {
@@ -599,7 +586,14 @@ export const loadDataByRange = async (startDate, endDate, dbReady) => {
     }, 'error');
     log.error('[loadDataByRange] Load by range error:', err);
     setUseFallback(true);
-    return { activities, dailyMetrics };
+    try {
+      const loadedActivities = loadActivitiesFromLocalStorage(startDate, endDate);
+      const loadedMetrics = loadDailyMetricsFromLocalStorage(startDate, endDate);
+      return { activities: loadedActivities, dailyMetrics: loadedMetrics };
+    } catch (fallbackError) {
+      log.error('[loadDataByRange] LocalStorage fallback error:', fallbackError);
+      return { activities, dailyMetrics };
+    }
   }
 };
 

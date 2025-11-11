@@ -327,6 +327,48 @@ export const mergeTimeSeriesIntelligently = (
   ]);
 };
 
+// ==================== FUSION ACTIVITÉS ====================
+
+/**
+ * Fusionne intelligemment une activité existante avec une nouvelle activité.
+ * Préserve les métadonnées importantes et ne remplace que si la nouvelle
+ * version est plus récente ou si le type change.
+ *
+ * @param {Object|null} existing - Activité existante dans la base.
+ * @param {Object} newItem - Nouvelle activité à fusionner.
+ * @param {string} type - Type d’activité (swimming, jumpRope, cardio).
+ * @returns {Object} Activité fusionnée.
+ */
+export const mergeActivityRecord = (existing, newItem, type) => {
+  const existingSync = existing ? new Date(existing.lastSynced || 0) : null;
+  const newSync = new Date(newItem.lastSynced || new Date().toISOString());
+
+  const shouldUpdate = !existing || newSync > existingSync || existing.type !== type;
+  if (!shouldUpdate) {
+    return existing || newItem;
+  }
+
+  return {
+    ...existing,
+    ...newItem,
+    type,
+    source: newItem.source || existing?.source || 'garmin',
+    lastSynced: newSync.toISOString(),
+    calories: (newSync > existingSync ? newItem.calories : existing?.calories) || newItem.calories || existing?.calories,
+    intensityMinutes: (newSync > existingSync ? newItem.intensityMinutes : existing?.intensityMinutes) || newItem.intensityMinutes || existing?.intensityMinutes,
+    connectIQ: newItem.connectIQ || existing?.connectIQ,
+    swimmingMetrics: newItem.swimmingMetrics || existing?.swimmingMetrics,
+    timeMetrics: newItem.timeMetrics || existing?.timeMetrics,
+    heartRateZones: (newSync > existingSync ? newItem.heartRateZones : existing?.heartRateZones) || newItem.heartRateZones || existing?.heartRateZones,
+    trainingEffect: (newSync > existingSync ? newItem.trainingEffect : existing?.trainingEffect) || newItem.trainingEffect || existing?.trainingEffect,
+    recoveryTime: (newSync > existingSync ? newItem.recoveryTime : existing?.recoveryTime) ?? newItem.recoveryTime ?? existing?.recoveryTime,
+    vo2Max: (newSync > existingSync ? newItem.vo2Max : existing?.vo2Max) ?? newItem.vo2Max ?? existing?.vo2Max,
+    trainingStatus: (newSync > existingSync ? newItem.trainingStatus : existing?.trainingStatus) || newItem.trainingStatus || existing?.trainingStatus,
+    trainingLoad: (newSync > existingSync ? newItem.trainingLoad : existing?.trainingLoad) ?? newItem.trainingLoad ?? existing?.trainingLoad,
+    performanceCondition: (newSync > existingSync ? newItem.performanceCondition : existing?.performanceCondition) || newItem.performanceCondition || existing?.performanceCondition
+  };
+};
+
 // ==================== FUSION MÉTRIQUES SIMPLES ====================
 
 /**

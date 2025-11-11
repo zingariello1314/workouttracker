@@ -25,7 +25,9 @@ export default function SyncControls({
   onConfigureDelay, // ✅ PHASE 5.3 : Fonction pour ouvrir paramètres de délai
   forcedRangesHistory = [],
   onClearForcedHistory = null,
-  onRefreshForcedHistory = null
+  onRefreshForcedHistory = null,
+  cacheMeta = null,
+  onResetCircuit = () => {}
 }) {
   const [deletingMocks, setDeletingMocks] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(false);
@@ -107,6 +109,67 @@ export default function SyncControls({
     }
   }, [dateTimeFormatter]);
 
+  const formatDuration = React.useCallback((ms) => {
+    if (ms === null || ms === undefined) return null;
+    const seconds = Math.max(0, Math.round(Number(ms) / 1000));
+    if (!Number.isFinite(seconds)) return null;
+    if (seconds >= 60) {
+      const minutes = (seconds / 60).toFixed(seconds >= 600 ? 0 : 1);
+      return `${minutes} min`;
+    }
+    return `${seconds}s`;
+  }, []);
+
+  const cacheMetaEntries = React.useMemo(() => {
+    if (!cacheMeta) return [];
+    const entries = [];
+    if (cacheMeta.timestamp) {
+      entries.push(['Horodatage', formatTimestamp(cacheMeta.timestamp)]);
+    }
+    if (cacheMeta.lastSyncTimestamp) {
+      entries.push(['LastSync', formatTimestamp(cacheMeta.lastSyncTimestamp)]);
+    }
+    if (cacheMeta.baseUrl) {
+      entries.push(['Base URL', cacheMeta.baseUrl]);
+    }
+    if (cacheMeta.ttlMs !== undefined && cacheMeta.ttlMs !== null) {
+      const formatted = formatDuration(cacheMeta.ttlMs);
+      if (formatted) {
+        entries.push(['TTL restant', formatted]);
+      }
+    }
+    if (cacheMeta.cacheKey) {
+      entries.push(['Cache key', cacheMeta.cacheKey]);
+    }
+    if (cacheMeta.ageSeconds !== undefined && cacheMeta.ageSeconds !== null) {
+      entries.push(['Âge', `${cacheMeta.ageSeconds}s`]);
+    }
+    if (cacheMeta.cooldownMs !== undefined && cacheMeta.cooldownMs !== null) {
+      const formattedCooldown = formatDuration(cacheMeta.cooldownMs);
+      if (formattedCooldown) {
+        entries.push(['Cooldown', formattedCooldown]);
+      }
+    }
+    if (cacheMeta.failureCount !== undefined && cacheMeta.failureCount !== null) {
+      entries.push(['Échecs consécutifs', cacheMeta.failureCount]);
+    }
+    return entries.map(([label, value]) => {
+      let formattedValue = value;
+      if (typeof value === 'string' && value.length > 48) {
+        formattedValue = `${value.slice(0, 48)}…`;
+      }
+      return [label, formattedValue];
+    });
+  }, [cacheMeta, formatTimestamp, formatDuration]);
+ 
+  const cacheStats = React.useMemo(() => (
+    typeof window !== 'undefined' ? window.__GARMIN_CACHE_STATS__ || null : null
+  ), [cacheMeta]);
+  const latestCacheEvents = React.useMemo(() => {
+    if (!cacheStats?.history?.length) return [];
+    return [...cacheStats.history].slice(-3).reverse();
+  }, [cacheStats]);
+ 
   return (
     <div className="mb-6 space-y-4">
       {/* Statut */}
@@ -161,6 +224,102 @@ export default function SyncControls({
             onRetry={() => syncNow({ forceRefresh: false, skipDelay: true })}
             onConfigureDelay={onConfigureDelay}
           />
+
+          {cacheMeta && (
+            <div className="mt-3 bg-slate-900/40 border border-slate-700 rounded-lg p-3 text-xs text-slate-300">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded bg-slate-700 text-white font-semibold uppercase tracking-wide text-[10px]">
+                  {cacheMeta.source ? cacheMeta.source : 'N/A'}
+                </span>
+                {cacheMeta.degraded && (
+                  <span className="px-2 py-0.5 rounded bg-orange-900/40 border border-orange-600/40 text-orange-200 uppercase tracking-wide text-[10px]">
+                    Mode dégradé
+                  </span>
+                )}
+                {cacheMeta.circuit === 'closed' && (
+                  <span className="px-2 py-0.5 rounded bg-emerald-900/40 border border-emerald-600/40 text-emerald-200 uppercase tracking-wide text-[10px]">
+                    Circuit OK
+                  </span>
+                )}
+                {cacheMeta.circuit === 'open' && (
+                  <span className="px-2 py-0.5 rounded bg-red-900/40 border border-red-600/40 text-red-200 uppercase tracking-wide text-[10px]">
+                    Circuit ouvert
+                  </span>
+                )}
+                {cacheMeta.circuit === 'half-open' && (
+                  <span className="px-2 py-0.5 rounded bg-yellow-900/40 border border-yellow-600/40 text-yellow-200 uppercase tracking-wide text-[10px]">
+                    Circuit test
+                  </span>
+                )}
+              </div>
+              {cacheMeta.circuit === 'open' && (
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={onResetCircuit}
+                    className="px-3 py-1 text-[11px] bg-red-700 hover:bg-red-600 text-white rounded"
+                  >
+                    Réinitialiser le circuit
+                  </button>
+                  {typeof cacheMeta.cooldownMs === 'number' && cacheMeta.cooldownMs > 0 && (
+                    <span className="text-slate-400 text-[11px]">
+                      Nouvel essai auto dans {formatDuration(cacheMeta.cooldownMs)}
+                    </span>
+                  )}
+                </div>
+              )}
+              {cacheMetaEntries.length > 0 && (
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
+                  {cacheMetaEntries.map(([label, value]) => (
+                    <React.Fragment key={`${label}-${value}`}>
+                      <dt className="text-slate-500 uppercase tracking-wide text-[10px]">{label}</dt>
+                      <dd className="text-slate-200 text-[11px] break-words">{value}</dd>
+                    </React.Fragment>
+                  ))}
+                </dl>
+              )}
+              {cacheStats && (
+                <div className="mt-3 space-y-2">
+                  <div>
+                    <div className="uppercase tracking-wide text-slate-500 text-[10px] mb-1">Compteurs cache (session)</div>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(cacheStats.hits || {}).map(([source, value]) => (
+                        <span
+                          key={source}
+                          className="px-2 py-0.5 rounded bg-slate-800/60 border border-slate-700 text-slate-200 text-[10px] font-mono"
+                        >
+                          {source}:{value}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  {latestCacheEvents.length > 0 && (
+                    <div>
+                      <div className="uppercase tracking-wide text-slate-500 text-[10px] mb-1">Derniers hits</div>
+                      <ul className="space-y-1">
+                        {latestCacheEvents.map((event, index) => (
+                          <li
+                            key={`${event.timestamp}-${event.source}-${index}`}
+                            className="bg-slate-800/40 border border-slate-700 rounded px-2 py-1 text-slate-300 text-[11px]"
+                          >
+                            <div className="flex justify-between">
+                              <span className="uppercase tracking-wide text-slate-500">{event.source}</span>
+                              <span className="text-slate-500 font-mono">{formatTimestamp(event.timestamp)}</span>
+                            </div>
+                            {(event.startDate || event.endDate) && (
+                              <div className="text-slate-400">
+                                {event.startDate || '—'} → {event.endDate || '—'}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

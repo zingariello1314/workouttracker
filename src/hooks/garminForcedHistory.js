@@ -229,7 +229,9 @@ const saveToIndexedDB = async (entry) => {
     if (data.id) {
       request = store.put(data);
     } else {
-      request = store.add(data);
+      const payload = { ...data };
+      delete payload.id;
+      request = store.add(payload);
     }
 
     const id = await requestToPromise(request);

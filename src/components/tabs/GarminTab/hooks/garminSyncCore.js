@@ -19,7 +19,7 @@
  * @module garminSyncCore
  */
 
-import { CACHE_TTL_MS } from '../constants';
+import { CACHE_TTL_MS, FORCE_SYNC_DEGRADE_THRESHOLD_MS } from '../constants';
 import { getAutoSyncSettings } from './useAutoSync';
 import { isDataEmptyForDate } from './garminSyncValidation';
 import { getTodayDateStr, getDateStr, getMidnight, isDateBeforeOrEqual, subtractDaysFromDateStr, getMinutesSinceMidnight } from './garminDateUtils';
@@ -410,7 +410,8 @@ export const performSyncRequest = async (
   tryFetch,
   frontendCache,
   todayStr,
-  setStatus
+  setStatus,
+  extraOptions = {}
 ) => {
   const {
     startDate = null,
@@ -419,6 +420,44 @@ export const performSyncRequest = async (
     forceRefresh = false,
     requestBody = null
   } = params || {};
+
+  const {
+    onForcedDegrade = null,
+    forceDegradeThresholdMs = FORCE_SYNC_DEGRADE_THRESHOLD_MS
+  } = extraOptions || {};
+
+  const effectiveDegradeThreshold = Number.isFinite(forceDegradeThresholdMs)
+    ? Math.max(1000, forceDegradeThresholdMs)
+    : FORCE_SYNC_DEGRADE_THRESHOLD_MS;
+
+  let degradeTimer = null;
+
+  const scheduleDegradeNotification = () => {
+    if (!forceRefresh || typeof onForcedDegrade !== 'function') {
+      return;
+    }
+
+    degradeTimer = setTimeout(() => {
+      try {
+        onForcedDegrade({
+          startDate,
+          endDate,
+          lastSyncTimestamp,
+          thresholdMs: effectiveDegradeThreshold,
+          triggeredAt: new Date().toISOString()
+        });
+      } catch (notificationError) {
+        log.warn(`[🔍 DIAGNOSTIC] Notification mode dégradé forcé échouée: ${notificationError.message}`);
+      }
+    }, effectiveDegradeThreshold);
+  };
+
+  const clearDegradeTimer = () => {
+    if (degradeTimer) {
+      clearTimeout(degradeTimer);
+      degradeTimer = null;
+    }
+  };
 
   const queryParts = [];
   if (startDate) {
@@ -446,7 +485,14 @@ export const performSyncRequest = async (
   const requestStartTime = Date.now();
   log.info(`[🔍 DIAGNOSTIC] Envoi requête au serveur: POST /api/garmin/sync${query}`);
 
-  const json = await tryFetch(`/api/garmin/sync${query}`, fetchOptions);
+  scheduleDegradeNotification();
+
+  let json;
+  try {
+    json = await tryFetch(`/api/garmin/sync${query}`, fetchOptions);
+  } finally {
+    clearDegradeTimer();
+  }
 
   const requestDuration = Date.now() - requestStartTime;
 

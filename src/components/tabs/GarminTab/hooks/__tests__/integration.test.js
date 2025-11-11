@@ -1,3 +1,5 @@
+import { describe, test } from 'vitest';
+
 /**
  * 🔴 FIX #40: Tests d'intégration pour le système Garmin
  * Tests du flux complet de synchronisation et gestion de données
@@ -220,6 +222,12 @@ export async function testFullSyncFlow() {
 
   return results;
 }
+
+describe.skip('GarminTab integration tests (TODO)', () => {
+  test('placeholder - suite à implémenter', () => {
+    // Ces tests seront migrés vers Vitest une fois la batterie d’intégration finalisée.
+  });
+});
 
 // Exporter pour exécution manuelle
 if (typeof window !== 'undefined') {

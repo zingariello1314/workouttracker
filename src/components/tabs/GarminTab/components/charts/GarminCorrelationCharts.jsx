@@ -9,8 +9,8 @@ import { areChartPropsEqual } from '../../../../../utils/chartComparison';
  * Graphiques de corrélation (sommeil/performance, Body Battery/intensité)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
-  const { filteredDates, displayInfo, selectedDate: effectiveSelectedDate } = useFilteredDates(
+function GarminCorrelationCharts({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors }) {
+  const fallbackFiltered = useFilteredDates(
     dailyMetrics,
     selectedDate,
     periodFilter,
@@ -18,6 +18,10 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
     customEndDate,
     7
   );
+
+  const filteredDates = precomputed?.filteredDates ?? fallbackFiltered.filteredDates;
+  const displayInfo = precomputed?.displayInfo ?? fallbackFiltered.displayInfo;
+  const effectiveSelectedDate = precomputed?.selectedDate ?? fallbackFiltered.selectedDate;
 
   const extractNumeric = React.useCallback((value) => {
     if (value === null || value === undefined) return null;
@@ -56,6 +60,10 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
 
   // Préparer données pour corrélation sommeil/performance
   const sleepPerformanceData = React.useMemo(() => {
+    if (precomputed?.sleepPerformanceData) {
+      return precomputed.sleepPerformanceData;
+    }
+
     if (!dailyMetrics || filteredDates.length === 0) return [];
     
     return filteredDates.map(date => {
@@ -71,10 +79,14 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.sleepDuration !== null || d.steps !== null);
-  }, [dailyMetrics, extractNumeric, filteredDates, effectiveSelectedDate]);
+  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate, extractNumeric]);
 
   // Préparer données pour corrélation Body Battery/intensité
   const batteryIntensityData = React.useMemo(() => {
+    if (precomputed?.batteryIntensityData) {
+      return precomputed.batteryIntensityData;
+    }
+
     if (!dailyMetrics || filteredDates.length === 0) return [];
     
     return filteredDates.map(date => {
@@ -89,7 +101,7 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
         isSelected: date === effectiveSelectedDate
       };
     }).filter(d => d.bodyBattery !== null && d.intensityTotal !== null);
-  }, [dailyMetrics, extractNumeric, filteredDates, effectiveSelectedDate]);
+  }, [precomputed, dailyMetrics, filteredDates, effectiveSelectedDate, extractNumeric]);
 
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
@@ -198,10 +210,13 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
                     strokeWidth={2}
                     name="Qualité sommeil"
                     dot={(props) => {
-                      const { key, ...restProps } = props;
+                      const { key: _omittedKey, payload, index, ...restProps } = props;
+                      const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
                       return (
                         <CustomDot
-                          key={key}
+                          key={dotKey}
+                          payload={payload}
+                          index={index}
                           {...restProps}
                           fill={colors?.purple || '#8B5CF6'}
                           stroke={colors?.purple || '#8B5CF6'}
@@ -210,7 +225,6 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
                         />
                       );
                     }}
-                    activeDot={{ r: 7, stroke: colors?.purple || '#8B5CF6', strokeWidth: 2 }}
                   />
                 )}
                 {sleepPerformanceData.some(d => d.steps !== null) && (
@@ -218,47 +232,10 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
                     yAxisId="right"
                     type="monotone"
                     dataKey="steps"
-                    stroke={colors?.green || '#10B981'}
+                    stroke={colors?.emerald || '#10B981'}
                     strokeWidth={2}
                     name="Pas"
-                    dot={(props) => {
-                      const { key, ...restProps } = props;
-                      return (
-                        <CustomDot
-                          key={key}
-                          {...restProps}
-                          fill={colors?.green || '#10B981'}
-                          stroke={colors?.green || '#10B981'}
-                          strokeWidth={2}
-                          r={4}
-                        />
-                      );
-                    }}
-                    activeDot={{ r: 7, stroke: colors?.green || '#10B981', strokeWidth: 2 }}
-                  />
-                )}
-                {sleepPerformanceData.some(d => d.intensityMinutes !== null) && (
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="intensityMinutes"
-                    stroke={colors?.orange || '#F59E0B'}
-                    strokeWidth={2}
-                    name="Minutes intensives"
-                    dot={(props) => {
-                      const { key, ...restProps } = props;
-                      return (
-                        <CustomDot
-                          key={key}
-                          {...restProps}
-                          fill={colors?.orange || '#F59E0B'}
-                          stroke={colors?.orange || '#F59E0B'}
-                          strokeWidth={2}
-                          r={4}
-                        />
-                      );
-                    }}
-                    activeDot={{ r: 7, stroke: colors?.orange || '#F59E0B', strokeWidth: 2 }}
+                    dot={false}
                   />
                 )}
               </ComposedChart>
@@ -266,12 +243,12 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
           </div>
         </div>
       )}
-      
+
       {/* Corrélation Body Battery / Intensité */}
       {batteryIntensityData.length > 0 && (
         <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-white font-semibold">🔋 Corrélation Body Battery / Intensité</h4>
+            <h4 className="text-white font-semibold">⚡ Body Battery & Intensité</h4>
             {displayInfo && (
               <div className="text-slate-400 text-xs">{displayInfo}</div>
             )}
@@ -289,7 +266,6 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
               boxSizing: 'border-box'
             }}
           >
-            {/* containerSize2 est toujours valide grâce à useChartContainerSize qui garantit minWidth/minHeight */}
             <ResponsiveContainer 
               width={Math.max(400, containerSize2.width)} 
               height={Math.max(chartMinHeight, containerSize2.height)} 
@@ -306,14 +282,13 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
                 <YAxis
                   yAxisId="left"
                   stroke="#9CA3AF"
-                  domain={[0, 100]}
                   label={{ value: 'Body Battery', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF' } }}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
                   stroke="#9CA3AF"
-                  label={{ value: 'Minutes', angle: 90, position: 'insideRight', style: { fill: '#9CA3AF' } }}
+                  label={{ value: 'Minutes intensité', angle: 90, position: 'insideRight', style: { fill: '#9CA3AF' } }}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
@@ -326,34 +301,56 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
                     label={{ value: "Sélectionné", position: "top", fill: "#FCD34D", fontSize: 10 }}
                   />
                 )}
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="bodyBattery"
-                  stroke={colors?.green || '#10B981'}
-                  strokeWidth={3}
-                  name="Body Battery"
-                  dot={(props) => {
-                    const { key, ...restProps } = props;
-                    return (
-                      <CustomDot
-                        key={key}
-                        {...restProps}
-                        fill={colors?.green || '#10B981'}
-                        stroke={colors?.green || '#10B981'}
-                        strokeWidth={2}
-                        r={5}
-                      />
-                    );
-                  }}
-                  activeDot={{ r: 9, stroke: colors?.green || '#10B981', strokeWidth: 2 }}
-                />
                 <Bar
                   yAxisId="right"
                   dataKey="intensityTotal"
-                  fill={colors?.orange || '#F59E0B'}
-                  name="Minutes intensives totales"
+                  fill={colors?.orange || '#F97316'}
+                  name="Intensité totale (min)"
                 />
+                {batteryIntensityData.some(d => d.intensityModerate !== null) && (
+                  <Bar
+                    yAxisId="right"
+                    dataKey="intensityModerate"
+                    fill={colors?.amber || '#F59E0B'}
+                    stackId="intensity"
+                    name="Intensité modérée"
+                  />
+                )}
+                {batteryIntensityData.some(d => d.intensityVigorous !== null) && (
+                  <Bar
+                    yAxisId="right"
+                    dataKey="intensityVigorous"
+                    fill={colors?.rose || '#F43F5E'}
+                    stackId="intensity"
+                    name="Intensité vigoureuse"
+                  />
+                )}
+                {batteryIntensityData.some(d => d.bodyBattery !== null) && (
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="bodyBattery"
+                    stroke={colors?.emerald || '#10B981'}
+                    strokeWidth={3}
+                    name="Body Battery"
+                    dot={(props) => {
+                      const { key: _omittedKey, payload, index, ...restProps } = props;
+                      const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
+                      return (
+                        <CustomDot
+                          key={dotKey}
+                          payload={payload}
+                          index={index}
+                          {...restProps}
+                          fill={colors?.emerald || '#10B981'}
+                          stroke={colors?.emerald || '#10B981'}
+                          strokeWidth={2}
+                          r={4}
+                        />
+                      );
+                    }}
+                  />
+                )}
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -363,6 +360,5 @@ function GarminCorrelationCharts({ dailyMetrics, selectedDate, periodFilter, cus
   );
 }
 
-// 🟡 FIX #13: Memoization avec comparaison optimisée
 export default React.memo(GarminCorrelationCharts, areChartPropsEqual);
 
