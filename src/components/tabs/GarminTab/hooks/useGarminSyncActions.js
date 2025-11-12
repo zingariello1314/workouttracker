@@ -10,10 +10,7 @@ import { isDataEmptyForDate } from './garminSyncValidation';
 import { processSyncResponse } from './garminSyncProcessor';
 import {
   getTodayDateStr,
-  getDateFromStr,
-  subtractDaysFromDateStr,
-  isDateValid,
-  isDateBeforeOrEqual
+  isDateValid
 } from './garminDateUtils';
 import { SyncRangeService } from '../services/sync/SyncRangeService';
 import { SyncCacheService } from '../services/sync/SyncCacheService';
@@ -22,6 +19,8 @@ import { SyncRequestService } from '../services/sync/SyncRequestService';
 import { SyncRetryService } from '../services/sync/SyncRetryService';
 import { SyncHistoryRecorder } from '../services/sync/SyncHistoryRecorder';
 import { MemoryCacheAdapter } from '../services/cache/MemoryCacheAdapter';
+import { DegradedModePolicy } from '../services/sync/DegradedModePolicy';
+import { handleCacheHit as handleCacheHitHelper } from '../services/sync/CacheHitHandler';
 import { updateUIMetricsStore, getUIMetricsSnapshot as getUIMetricsStoreSnapshot } from '../utils/uiMetricsStore';
 
 const IS_DEV = typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
@@ -69,14 +68,34 @@ export const useGarminSyncActions = (deps) => {
   const cacheService = useMemo(() => new SyncCacheService(), []);
   const requestService = useMemo(() => new SyncRequestService(), []);
   const retryService = useMemo(() => new SyncRetryService(), []);
+  const degradedModePolicy = useMemo(() => new DegradedModePolicy({
+    degradeThresholdMs: FORCE_SYNC_DEGRADE_THRESHOLD_MS,
+    circuitBreaker
+  }), []);
   const orchestrator = useMemo(() => new SyncOrchestrator({ rangeService, cacheService, requestService, retryService }), [rangeService, cacheService, requestService, retryService]);
   const historyRecorder = useMemo(() => new SyncHistoryRecorder({ saveForcedRangeEntry, onForcedRangeRecorded }), [saveForcedRangeEntry, onForcedRangeRecorded]);
   const todayStr = useMemo(() => getTodayDateStr(), []);
-  const buildNetworkMeta = useCallback(() => ({
-    circuit: circuitBreaker.getState(),
-    cooldownMs: circuitBreaker.getCooldownRemaining(),
-    failureCount: circuitBreaker.getFailureCount()
-  }), []);
+  
+  // Mémoïser MemoryCacheAdapter pour éviter les réinstanciations
+  const memoryCacheAdapter = useMemo(() => {
+    return new MemoryCacheAdapter(frontendCache, { schemaVersion: CACHE_SCHEMA_VERSION });
+  }, [frontendCache]);
+  const buildNetworkMeta = useCallback(() => {
+    const circuitState = circuitBreaker.getState();
+    const snapshot = degradedModePolicy.getSnapshot({
+      currentDurationMs: null,
+      forceRefresh: false
+    });
+    return {
+      circuit: circuitState,
+      cooldownMs: snapshot.currentCooldown,
+      failureCount: circuitBreaker.getFailureCount(),
+      degraded: snapshot.isDegraded,
+      degradedReason: snapshot.degradedReason,
+      nextRetry: snapshot.nextRetry,
+      nextRetryTimestamp: snapshot.nextRetryTimestamp
+    };
+  }, [degradedModePolicy]);
 
   const recordUIMetric = useCallback((partial) => {
     updateUIMetricsStore((store) => {
@@ -99,25 +118,17 @@ export const useGarminSyncActions = (deps) => {
   }, []);
 
   const syncNow = useCallback(async (options = {}) => {
-    const optionsIsBoolean = typeof options === 'boolean';
-    const optionObject = !optionsIsBoolean && typeof options === 'object' ? options : {};
-
-    let forceRefresh = optionsIsBoolean ? options : !!optionObject.forceRefresh;
-    let skipDelay = !!optionObject.skipDelay;
-    const forceMode = optionObject.mode || null;
-    const includeToday = optionObject.includeToday ?? optionObject.meta?.includeToday ?? false;
-    const forceRange = optionObject.range || ((optionObject.start || optionObject.end) ? { start: optionObject.start, end: optionObject.end } : null);
-    const extraPayload = optionObject.payload && typeof optionObject.payload === 'object' ? optionObject.payload : null;
-    const requestSource = optionObject.source || (forceMode ? 'force-sync' : 'manual');
-
-    if (forceMode) {
-      if (optionObject.forceRefresh === undefined) {
-        forceRefresh = true;
-      }
-      if (optionObject.skipDelay === undefined) {
-        skipDelay = true;
-      }
-    }
+    // Utiliser SyncRangeService pour normaliser les options
+    const normalizedOptions = rangeService.buildSyncOptions(options, todayStr);
+    const {
+      forceRefresh,
+      skipDelay,
+      forceMode,
+      includeToday,
+      forceRange,
+      extraPayload,
+      requestSource
+    } = normalizedOptions;
 
     if (!dbReady) {
       const status = { ok: false, message: 'Base de données non prête', error: 'IndexedDB non initialisé' };
@@ -130,59 +141,13 @@ export const useGarminSyncActions = (deps) => {
       clearFrontendCache();
     }
 
-    const resolveForcedRange = () => {
-      if (!forceMode) {
-        return null;
-      }
-
-      const sanitize = (value) => {
-        if (!value || typeof value !== 'string') {
-          return null;
-        }
-        return value;
-      };
-
-      const baseRange = forceRange || {};
-      const rawStart = sanitize(baseRange.start);
-      const rawEnd = sanitize(baseRange.end);
-
-      if (rawStart && rawEnd) {
-        let adjustedEnd = rawEnd;
-        if (includeToday && isDateValid(adjustedEnd) && isDateBeforeOrEqual(adjustedEnd, todayStr)) {
-          adjustedEnd = todayStr;
-        }
-        if (!isDateValid(rawStart) || !isDateValid(adjustedEnd) || !isDateBeforeOrEqual(rawStart, adjustedEnd)) {
-          return null;
-        }
-        return { start: rawStart, end: adjustedEnd };
-      }
-
-      switch (forceMode) {
-        case 'today':
-          return { start: todayStr, end: todayStr };
-        case 'yesterday': {
-          const yesterday = subtractDaysFromDateStr(todayStr, 1);
-          return { start: yesterday, end: yesterday };
-        }
-        case 'range': {
-          if (!rawStart || !isDateValid(rawStart)) {
-            return null;
-          }
-          let resolvedEnd = rawEnd && isDateValid(rawEnd) ? rawEnd : rawStart;
-          if (includeToday && isDateBeforeOrEqual(resolvedEnd, todayStr)) {
-            resolvedEnd = todayStr;
-          }
-          if (!isDateBeforeOrEqual(rawStart, resolvedEnd)) {
-            return null;
-          }
-          return { start: rawStart, end: resolvedEnd };
-        }
-        default:
-          return null;
-      }
-    };
-
-    const resolvedRange = forceMode ? resolveForcedRange() : null;
+    // Utiliser SyncRangeService pour résoudre la plage forcée
+    const resolvedRange = rangeService.resolveForcedRange({
+      forceMode,
+      forceRange,
+      includeToday,
+      todayStr
+    });
 
     const fetcher = (path, fetchOptions) => tryFetch(path, fetchOptions, undefined, setBaseUrl);
 
@@ -190,8 +155,8 @@ export const useGarminSyncActions = (deps) => {
       if (!payload?.cached) {
         return;
       }
-      const memoryAdapter = new MemoryCacheAdapter(frontendCache, { schemaVersion: CACHE_SCHEMA_VERSION });
-      memoryAdapter.set(range, payload.data, { forceMode, includeToday });
+      // Utiliser l'adapter mémoïsé
+      memoryCacheAdapter.set(range, payload.data, { forceMode, includeToday });
     };
 
     const processResponseForRetry = async (data, syncRange) => {
@@ -211,12 +176,6 @@ export const useGarminSyncActions = (deps) => {
     const handleCacheHit = async (cacheResult, { degraded = false } = {}) => {
       if (!cacheResult) return false;
       const { source, payload, meta } = cacheResult;
-      const metaWithFlags = {
-        ...(meta || {}),
-        source,
-        degraded,
-        ...buildNetworkMeta()
-      };
 
       const setStatusWithDegrade = (message, extra = {}) => {
         const prefix = degraded ? 'Mode dégradé – ' : '';
@@ -228,129 +187,49 @@ export const useGarminSyncActions = (deps) => {
         recordUIMetric({ lastStatusMessage: `${prefix}${message}` });
       };
 
-      switch (source) {
-        case 'existingData': {
-          const existingDataResult = payload;
-          const cacheMessage = `Sync OK (données existantes, ${existingDataResult.ageSeconds ?? '?'}s)`;
-          setStatusWithDegrade(cacheMessage, {
-            lastSync: existingDataResult.mockResponse?.lastSync,
-            source
-          });
-          setLastSourceMeta(metaWithFlags);
-          await processSyncResponse(
-            existingDataResult.mockResponse,
-            { startDate, endDate },
-            dbReady,
-            saveActivities,
-            saveDailyMetrics,
-            setGarminData,
-            setLastSyncDate,
-            loadAllData,
-            importToEndurance
-          );
-          recordUIMetric({
-            lastSyncTimestamp: Date.now(),
-            lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
-          });
-          return true;
-        }
-        case 'memory': {
-          if (!payload?.data) {
-            return false;
-          }
-          setStatusWithDegrade('Sync OK (cache mémoire)', {
-            lastSync: payload.data.lastSync,
-            source,
-            ttlMs: metaWithFlags.ttlMs ?? null
-          });
-          setLastSourceMeta({
-            ...metaWithFlags,
-            ttlMs: payload.remainingMs ?? null
-          });
-          await processSyncResponse(
-            payload.data,
-            { startDate, endDate },
-            dbReady,
-            saveActivities,
-            saveDailyMetrics,
-            setGarminData,
-            setLastSyncDate,
-            loadAllData,
-            importToEndurance
-          );
-          recordUIMetric({
-            lastSyncTimestamp: Date.now(),
-            lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
-          });
-          return true;
-        }
-        case 'indexeddb': {
-          if (!payload?.data) {
-            return false;
-          }
-          const mockResponse = {
-            ok: true,
-            cached: true,
-            lastSync: payload.lastSyncTimestamp || lastSyncTimestamp,
-            data: payload.data
-          };
-          setStatusWithDegrade('Sync OK (cache IndexedDB)', {
-            lastSync: mockResponse.lastSync,
-            source
-          });
-          setLastSourceMeta(metaWithFlags);
-          await processSyncResponse(
-            mockResponse,
-            { startDate, endDate },
-            dbReady,
-            saveActivities,
-            saveDailyMetrics,
-            setGarminData,
-            setLastSyncDate,
-            loadAllData,
-            importToEndurance
-          );
-          recordUIMetric({
-            lastSyncTimestamp: Date.now(),
-            lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
-          });
-          return true;
-        }
-        case 'server': {
-          if (!payload?.data) {
-            return false;
-          }
-          setStatusWithDegrade('Sync OK (cache serveur)', {
-            lastSync: payload.data.lastSync,
-            source,
-            ttlMs: payload.ttl ?? null
-          });
-          setLastSourceMeta(metaWithFlags);
-          await processSyncResponse(
-            payload.data,
-            { startDate, endDate },
-            dbReady,
-            saveActivities,
-            saveDailyMetrics,
-            setGarminData,
-            setLastSyncDate,
-            loadAllData,
-            importToEndurance
-          );
-          recordUIMetric({
-            lastSyncTimestamp: Date.now(),
-            lastSyncOptions: { forceMode, forceRefresh, includeToday, resolvedRange }
-          });
-          return true;
-        }
-        default:
-          return false;
-      }
+      // Utiliser le helper centralisé pour réduire la duplication
+      return await handleCacheHitHelper({
+        source,
+        payload,
+        meta,
+        context: {
+          buildNetworkMeta,
+          dbReady,
+          saveActivities,
+          saveDailyMetrics,
+          setGarminData,
+          setLastSyncDate,
+          loadAllData,
+          importToEndurance
+        },
+        setStatusWithDegrade,
+        setLastSourceMeta,
+        processSyncResponse,
+        recordUIMetric,
+        rangeInfo: { startDate, endDate, lastSyncTimestamp },
+        syncOptions: { forceMode, forceRefresh, includeToday, resolvedRange },
+        degraded
+      });
     };
 
     const handleForcedDegrade = (meta = {}) => {
       const triggeredAt = meta.triggeredAt || new Date().toISOString();
       const lastSyncFromCache = frontendCache?.data?.lastSync || null;
+
+      // Générer un ID de session unique pour cette dégradation
+      const sessionId = `degraded-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Enregistrer la session dans DegradedModePolicy
+      degradedModePolicy.recordDegradedSession({
+        sessionId,
+        metadata: {
+          triggeredAt,
+          thresholdMs: meta.thresholdMs ?? FORCE_SYNC_DEGRADE_THRESHOLD_MS,
+          startDate: meta.startDate ?? null,
+          endDate: meta.endDate ?? null,
+          reason: 'duration_threshold_exceeded'
+        }
+      });
 
       const degradedMessage = 'Mode dégradé – données locales conservées (forçage prolongé)';
       setStatus({
@@ -365,9 +244,17 @@ export const useGarminSyncActions = (deps) => {
           triggeredAt,
           thresholdMs: meta.thresholdMs ?? FORCE_SYNC_DEGRADE_THRESHOLD_MS,
           startDate: meta.startDate ?? null,
-          endDate: meta.endDate ?? null
+          endDate: meta.endDate ?? null,
+          sessionId
         };
       }
+
+      // Obtenir le snapshot complet avec toutes les métriques
+      const degradedSnapshot = degradedModePolicy.getSnapshot({
+        sessionId,
+        currentDurationMs: meta.thresholdMs ?? FORCE_SYNC_DEGRADE_THRESHOLD_MS,
+        forceRefresh: true
+      });
 
       setLastSourceMeta({
         source: 'degraded',
@@ -376,6 +263,11 @@ export const useGarminSyncActions = (deps) => {
         startDate: meta.startDate ?? null,
         endDate: meta.endDate ?? null,
         thresholdMs: meta.thresholdMs ?? FORCE_SYNC_DEGRADE_THRESHOLD_MS,
+        sessionId,
+        currentCooldown: degradedSnapshot.currentCooldown,
+        nextRetry: degradedSnapshot.nextRetry,
+        nextRetryTimestamp: degradedSnapshot.nextRetryTimestamp,
+        degradedReason: degradedSnapshot.degradedReason,
         ...buildNetworkMeta()
       });
     };
@@ -405,7 +297,19 @@ export const useGarminSyncActions = (deps) => {
     };
 
     const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    log.debug('[syncNow] Exécution orchestrateur...');
     const { rangeInfo, cacheResult, result: orchestratorResult } = await orchestrator.execute(orchestratorContext);
+    log.debug('[syncNow] Orchestrateur terminé', { 
+      hasCacheResult: !!cacheResult, 
+      hasOrchestratorResult: !!orchestratorResult,
+      orchestratorResultType: typeof orchestratorResult,
+      hasJson: !!orchestratorResult?.json
+    });
+
+    if (!orchestratorResult) {
+      log.error('[syncNow] Orchestrateur a retourné un résultat null/undefined');
+      throw new Error('Résultat orchestrateur invalide');
+    }
 
     let {
       startDate,
@@ -544,10 +448,13 @@ export const useGarminSyncActions = (deps) => {
         console.info('[useGarminSyncActions] loading ← true (main network branch)');
       }
 
+      log.debug('[syncNow] Extraction JSON du résultat orchestrateur...');
       const json = orchestratorResult?.json;
       if (!json) {
+        log.error('[syncNow] JSON manquant dans orchestratorResult', orchestratorResult);
         throw new Error('Réponse réseau invalide (json manquant)');
       }
+      log.debug('[syncNow] JSON extrait', { ok: json.ok, lastSync: json.lastSync, hasData: !!json.data });
 
       const effectiveStart = json?.forcedRange?.start || startDate;
       const effectiveEnd = json?.forcedRange?.end || endDate;
@@ -634,8 +541,8 @@ export const useGarminSyncActions = (deps) => {
           : { method: 'POST' };
 
         const json = await fetcher(`/api/garmin/sync${query}`, fallbackOptions);
-        const memoryAdapter = new MemoryCacheAdapter(frontendCache, { schemaVersion: CACHE_SCHEMA_VERSION });
-        memoryAdapter.set({
+        // Utiliser l'adapter mémoïsé
+        memoryCacheAdapter.set({
           startDate,
           endDate,
           lastSyncTimestamp: rangeInfo.lastSyncTimestamp
@@ -730,7 +637,10 @@ export const useGarminSyncActions = (deps) => {
     setLastSourceMeta,
     cacheService,
     buildNetworkMeta,
-    recordUIMetric
+    recordUIMetric,
+    rangeService,
+    memoryCacheAdapter,
+    todayStr
   ]);
 
   const fetchStatus = useCallback(async () => {

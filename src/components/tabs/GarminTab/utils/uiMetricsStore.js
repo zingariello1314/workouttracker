@@ -1,3 +1,6 @@
+// ✅ Tâche 10 : Import du système d'événements uniformisé
+import telemetryEvents from './telemetryEvents';
+
 const DEFAULT_STORE = {
   lastSyncDuration: null,
   lastSyncTimestamp: null,
@@ -67,9 +70,8 @@ export const updateUIMetricsStore = (updatesOrUpdater) => {
   }
 
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(
-      new CustomEvent('garmin-ui-metrics-update', { detail: store })
-    );
+    // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
+    telemetryEvents.uiMetricsUpdate(store, { source: 'uiMetricsStore' });
   }
 
   return store;
@@ -80,11 +82,8 @@ export const resetUIMetricsStore = () => {
     return;
   }
   window.__GARMIN_UI_METRICS__ = JSON.parse(JSON.stringify(DEFAULT_STORE));
-  window.dispatchEvent(
-    new CustomEvent('garmin-ui-metrics-update', {
-      detail: window.__GARMIN_UI_METRICS__
-    })
-  );
+  // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
+  telemetryEvents.uiMetricsUpdate(window.__GARMIN_UI_METRICS__, { source: 'uiMetricsStore' });
 };
 
 const roundMetric = (value) => {

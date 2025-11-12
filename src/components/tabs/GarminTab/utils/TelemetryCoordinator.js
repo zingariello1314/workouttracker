@@ -5,6 +5,7 @@ import {
   TELEMETRY_DEFAULTS
 } from '../constants';
 import { persistTelemetrySnapshot } from '../../../../hooks/garminTelemetryHistory';
+import telemetryEvents from './telemetryEvents';
 
 const DEFAULT_OPTIONS = {
   throttleMs: TELEMETRY_DEFAULTS.THROTTLE_MS,
@@ -154,6 +155,7 @@ const ensureObservabilityStore = () => {
       lastPushResponse: null,
       pendingPush: false,
       history: [],
+      events: [],
       lastSnapshot: null
     };
   } else {
@@ -166,6 +168,9 @@ const ensureObservabilityStore = () => {
     }
     if (!Array.isArray(store.history)) {
       store.history = [];
+    }
+    if (!Array.isArray(store.events)) {
+      store.events = [];
     }
     if (store.lastPushStatus === undefined) {
       store.lastPushStatus = null;
@@ -199,14 +204,20 @@ const notifyListeners = (snapshot) => {
     }
   });
 
-  if (
-    typeof window !== 'undefined' &&
-    typeof window.dispatchEvent === 'function' &&
-    typeof CustomEvent !== 'undefined'
-  ) {
-    window.dispatchEvent(
-      new CustomEvent('garmin-telemetry-update', { detail: snapshot })
-    );
+  // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
+  if (telemetryEvents && typeof telemetryEvents.telemetryUpdate === 'function') {
+    telemetryEvents.telemetryUpdate(snapshot, { source: 'TelemetryCoordinator' });
+  } else {
+    // Fallback si le module n'est pas disponible
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.dispatchEvent === 'function' &&
+      typeof CustomEvent !== 'undefined'
+    ) {
+      window.dispatchEvent(
+        new CustomEvent('garmin-telemetry-update', { detail: snapshot })
+      );
+    }
   }
 };
 
@@ -518,6 +529,47 @@ const configureAutoPush = (options = {}) => {
   updateAutoPushOptions(options);
 };
 
+/**
+ * Enregistre un événement dans le store d'observabilité
+ * 
+ * @param {string} eventName - Nom de l'événement (ex: 'toast_shown', 'toast_closed')
+ * @param {Object} eventData - Données de l'événement
+ */
+const recordEvent = (eventName, eventData = {}) => {
+  if (!state.running) {
+    // Si le coordinator n'est pas démarré, ignorer silencieusement
+    return;
+  }
+
+  const store = ensureObservabilityStore();
+  if (!store) {
+    return;
+  }
+
+  // Initialiser le tableau d'événements s'il n'existe pas
+  if (!Array.isArray(store.events)) {
+    store.events = [];
+  }
+
+  // Créer l'entrée d'événement
+  const eventEntry = {
+    name: eventName,
+    data: eventData,
+    timestamp: new Date().toISOString()
+  };
+
+  // Ajouter l'événement au début du tableau
+  store.events.unshift(eventEntry);
+
+  // Limiter à 100 événements pour éviter la croissance infinie
+  if (store.events.length > 100) {
+    store.events = store.events.slice(0, 100);
+  }
+
+  // Déclencher un snapshot planifié (throttlé) pour inclure cet événement
+  scheduleSnapshot('event-recorded');
+};
+
 export default {
   start,
   stop,
@@ -527,7 +579,8 @@ export default {
   computeNow,
   getOptions,
   configureAutoPush,
-  pushSnapshot
+  pushSnapshot,
+  recordEvent
 };
 
 export const __internal = {

@@ -1,7 +1,8 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { CustomDot } from './CustomDot';
+import { CustomDot, getCustomDotKey } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
+import { useChartData } from '../../hooks/useChartData';
 import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
 import { ARIA_LABELS } from '../../constants';
 import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
@@ -9,35 +10,43 @@ import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 /**
  * Graphique de respiration (éveillé et sommeil)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
+ * ✅ Optimisé avec useChartData et getCustomDotKey
  */
 function GarminRespirationChart({ precomputed, selector, colors }) {
   useUIMetricsTelemetry('GarminRespirationChart');
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const trend = selector?.trend ?? selector ?? precomputed ?? {};
-  const chartData = Array.isArray(trend?.data) ? trend.data : precomputed?.data ?? [];
-  const displayInfo = trend?.displayInfo ?? precomputed?.displayInfo ?? null;
-  const effectiveSelectedDate = trend?.selectedDate ?? precomputed?.selectedDate ?? null;
+  // Utiliser useChartData pour pré-calculer domaines et métadonnées
+  const chartDataConfig = useChartData({
+    selector: selector?.trend ?? selector,
+    precomputed,
+    chartType: 'respiration',
+    dataKeys: ['awakeAvg', 'awakeMin', 'awakeMax', 'sleepAvg', 'sleepMin', 'sleepMax'],
+    defaultDomain: [0, 30] // Domaine par défaut pour respiration (resp/min)
+  });
+
+  const chartData = chartDataConfig.data;
+  const yAxisDomain = chartDataConfig.yAxisDomain;
+  const displayInfo = chartDataConfig.displayInfo;
+  const effectiveSelectedDate = chartDataConfig.selectedDate;
 
   const avgAwake = React.useMemo(() => {
-    if (typeof trend?.avgAwake === 'number') return trend.avgAwake;
     const awakeValues = chartData
       .map((d) => d.awakeAvg)
       .filter((value) => typeof value === 'number' && Number.isFinite(value));
     if (awakeValues.length === 0) return 0;
     const total = awakeValues.reduce((sum, value) => sum + value, 0);
     return total / awakeValues.length;
-  }, [trend?.avgAwake, chartData]);
+  }, [chartData]);
 
   const avgSleep = React.useMemo(() => {
-    if (typeof trend?.avgSleep === 'number') return trend.avgSleep;
     const sleepValues = chartData
       .map((d) => d.sleepAvg)
       .filter((value) => typeof value === 'number' && Number.isFinite(value));
     if (sleepValues.length === 0) return 0;
     const total = sleepValues.reduce((sum, value) => sum + value, 0);
     return total / sleepValues.length;
-  }, [trend?.avgSleep, chartData]);
+  }, [chartData]);
 
   if (chartData.length === 0) {
     return (
@@ -116,12 +125,14 @@ function GarminRespirationChart({ precomputed, selector, colors }) {
             />
             <YAxis
               stroke="#9CA3AF"
+              domain={yAxisDomain}
               label={{ value: 'resp/min', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF' } }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             {effectiveSelectedDate && chartData.some(d => d.date === effectiveSelectedDate) && (
               <ReferenceLine
+                key={`ref-line-${effectiveSelectedDate}`}
                 x={effectiveSelectedDate}
                 stroke="#FCD34D"
                 strokeWidth={2}
@@ -149,7 +160,7 @@ function GarminRespirationChart({ precomputed, selector, colors }) {
                 name="Éveillé Moy"
                 dot={(props) => {
                   const { key: _omittedKey, payload, index, ...restProps } = props;
-                  const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
+                  const dotKey = getCustomDotKey(payload, index);
                   return (
                     <CustomDot
                       key={dotKey}
@@ -196,7 +207,7 @@ function GarminRespirationChart({ precomputed, selector, colors }) {
                 name="Sommeil Moy"
                 dot={(props) => {
                   const { key: _omittedKey, payload, index, ...restProps } = props;
-                  const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
+                  const dotKey = getCustomDotKey(payload, index);
                   return (
                     <CustomDot
                       key={dotKey}

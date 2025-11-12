@@ -7,17 +7,19 @@ import { generateDailyPDF, generateWeeklyPDF } from '../utils/pdfGenerator';
 import { ARIA_LABELS } from '../constants';
 import logger from '../../../../utils/logger';
 import { useGarminSelectors } from '../hooks/useGarminSelectors';
-import { buildDerivedDataset } from '../utils/chartDataBuilders';
+import { useGarminDerivedDataset, getDerivedDatasetSync } from '../hooks/useGarminDerivedDataset';
 import {
   getUIMetricsSnapshot,
   serializeUIMetricsSnapshot
 } from '../utils/uiMetricsStore';
 import { loadTelemetryHistory } from '../../../../hooks/garminTelemetryHistory';
+import { useToast } from './Toast';
 
 const log = logger.component('PDFExport');
 
 export default function PDFExport({ selectedDate: selectedDateProp, periodFilter: periodFilterProp, customStartDate: customStartDateProp, customEndDate: customEndDateProp }) {
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const { showToast, ToastContainer } = useToast();
 
   const {
     allDailyMetrics: dailyMetrics,
@@ -37,12 +39,25 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
     activities: activitiesByType
   }), [dailyMetrics, activitiesByType]);
 
+  // Utiliser le hook centralisé pour le dataset par défaut (dates filtrées actuelles)
+  const defaultDerivedDataset = useGarminDerivedDataset({
+    dates: null, // Utilise les dates filtrées par défaut
+    anchorDate: selectedDate,
+    displayInfo: null // Utilise displayInfo par défaut
+  });
+
+  // Fonction pour obtenir un dataset dérivé pour des dates/ancrage spécifiques
+  // (utilisée pour les exports hebdomadaires avec plages personnalisées)
+  // Utilise la version sync pour pouvoir être appelée dans un callback
   const getDerivedDataset = React.useCallback((dates, anchorDate) => {
-    return buildDerivedDataset({
+    // Utiliser la version sync qui partage le même cache que le hook
+    return getDerivedDatasetSync({
       dailyMetrics,
       activities: activitiesByType,
       dates,
-      anchorDate
+      anchorDate,
+      displayInfo: null,
+      colors: null // Les couleurs ne sont pas critiques pour les exports
     });
   }, [dailyMetrics, activitiesByType]);
 
@@ -63,7 +78,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
    */
   const handleExport = React.useCallback(async (type) => {
     if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
-      alert('Aucune donnée disponible pour l\'export');
+      showToast('ℹ️ Aucune donnée disponible pour l\'export', 'info', 3000);
       return;
     }
 
@@ -120,7 +135,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
         const endDate = type === 'custom' ? customEndDate : calculateWeekEnd(selectedDate || new Date().toISOString().split('T')[0]);
         
         if (!startDate || !endDate) {
-          alert('Dates invalides pour l\'export');
+          showToast('❌ Dates invalides pour l\'export', 'error', 3000);
           setIsGenerating(false);
           return;
         }
@@ -134,10 +149,13 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
 
       if (!blob) {
         log.error('Blob est null - la génération a probablement échoué silencieusement');
-        alert('Erreur lors de la génération du PDF. Vérifiez la console du navigateur (F12) pour plus de détails.');
+        showToast('❌ Erreur lors de la génération du PDF. Vérifiez la console du navigateur (F12) pour plus de détails.', 'error', 5000);
         setIsGenerating(false);
         return;
       }
+
+      // Succès
+      showToast('✅ PDF généré et téléchargé avec succès', 'success', 3000);
 
       // Télécharger le fichier
       const url = URL.createObjectURL(blob);
@@ -161,11 +179,11 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
         errorMessage += '\n\nVérifiez que jspdf est bien installé:\nnpm install jspdf';
       }
       
-      alert(errorMessage);
+      showToast(`❌ ${errorMessage}`, 'error', 6000);
     } finally {
       setIsGenerating(false);
     }
-  }, [dailyMetrics, activitiesByType, selectedDate, customStartDate, customEndDate, baseData, getDerivedDataset, enumerateDates]);
+  }, [dailyMetrics, activitiesByType, selectedDate, customStartDate, customEndDate, baseData, getDerivedDataset, enumerateDates, showToast]);
 
   /**
    * Calcule le début de la semaine (lundi)
@@ -237,6 +255,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
       <p className="text-slate-400 text-xs mt-4">
         💡 Les rapports PDF incluent toutes les métriques et activités de la période sélectionnée.
       </p>
+      <ToastContainer />
     </div>
   );
 }

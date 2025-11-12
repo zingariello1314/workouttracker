@@ -1,7 +1,8 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, ReferenceLine } from 'recharts';
-import { CustomDot } from './CustomDot';
+import { CustomDot, getCustomDotKey } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
+import { useChartData } from '../../hooks/useChartData';
 import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
 import { formatSleepDuration } from '../../utils/garminFormatters';
 import { ARIA_LABELS } from '../../constants';
@@ -10,20 +11,32 @@ import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 /**
  * Graphique de sommeil (durée et phases)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
+ * ✅ Optimisé avec useChartData et getCustomDotKey
  */
 function GarminSleepChart({ precomputed, selector, colors }) {
   useUIMetricsTelemetry('GarminSleepChart');
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const trend = selector?.trend ?? selector ?? precomputed ?? {};
-  const chartData = Array.isArray(trend?.data) ? trend.data : precomputed?.data ?? [];
-  const displayInfo = trend?.displayInfo ?? precomputed?.displayInfo ?? null;
-  const effectiveSelectedDate = trend?.selectedDate ?? precomputed?.selectedDate ?? null;
-  const avgDuration = (trend?.averageDuration ?? precomputed?.averageDuration) ?? (() => {
+  // Utiliser useChartData pour pré-calculer domaines et métadonnées
+  // Note: Ce chart utilise deux axes Y (left pour durée/phases, right pour qualité)
+  const chartDataConfig = useChartData({
+    selector: selector?.trend ?? selector,
+    precomputed,
+    chartType: 'sleep',
+    dataKeys: ['duration', 'deepSleep', 'lightSleep', 'remSleep', 'quality'],
+    defaultDomain: [0, 600] // Domaine par défaut pour durée en minutes
+  });
+
+  const chartData = chartDataConfig.data;
+  const displayInfo = chartDataConfig.displayInfo;
+  const effectiveSelectedDate = chartDataConfig.selectedDate;
+  
+  // Calculer la moyenne de durée si nécessaire (mémoïsé pour éviter recalculs)
+  const avgDuration = React.useMemo(() => {
     const filtered = chartData.filter(d => d.duration !== null);
     if (filtered.length === 0) return 0;
     return filtered.reduce((sum, d) => sum + d.duration, 0) / filtered.length;
-  })();
+  }, [chartData]);
 
   if (chartData.length === 0) {
     return (
@@ -135,6 +148,7 @@ function GarminSleepChart({ precomputed, selector, colors }) {
             <Legend />
             {effectiveSelectedDate && chartData.some(d => d.date === effectiveSelectedDate) && (
               <ReferenceLine
+                key={`ref-line-${effectiveSelectedDate}`}
                 x={effectiveSelectedDate}
                 stroke="#FCD34D"
                 strokeWidth={2}
@@ -162,7 +176,7 @@ function GarminSleepChart({ precomputed, selector, colors }) {
                 name="Qualité"
                 dot={(props) => {
                   const { key: _omittedKey, payload, index, ...restProps } = props;
-                  const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
+                  const dotKey = getCustomDotKey(payload, index);
                   return (
                     <CustomDot
                       key={dotKey}

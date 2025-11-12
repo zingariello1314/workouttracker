@@ -1,7 +1,8 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { CustomDot } from './CustomDot';
+import { CustomDot, getCustomDotKey } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
+import { useChartData } from '../../hooks/useChartData';
 import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
 import { ARIA_LABELS } from '../../constants';
 import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
@@ -14,39 +15,19 @@ function GarminHeartRateChart({ precomputed, selector, colors }) {
   useUIMetricsTelemetry('GarminHeartRateChart');
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const trend = selector?.trend ?? selector ?? precomputed ?? {};
-  const chartData = Array.isArray(trend?.data) ? trend.data : precomputed?.data ?? [];
-  const displayInfo = trend?.displayInfo ?? precomputed?.displayInfo ?? null;
-  const effectiveSelectedDate = trend?.selectedDate ?? precomputed?.selectedDate ?? null;
+  // Utiliser useChartData pour pré-calculer domaines et métadonnées
+  const chartDataConfig = useChartData({
+    selector: selector?.trend ?? selector,
+    precomputed,
+    chartType: 'heartRate',
+    dataKeys: ['resting', 'max', 'avg'],
+    defaultDomain: [0, 180]
+  });
 
-  // ✅ FIX : Calculer le domaine Y avec marge pour éviter que les valeurs ne touchent le bord
-  const yAxisDomain = React.useMemo(() => {
-    if (Array.isArray(trend?.yAxisDomain)) return trend.yAxisDomain;
-    if (precomputed?.yAxisDomain) return precomputed.yAxisDomain;
-    if (!chartData || chartData.length === 0) return [0, 180];
-
-    let minValue = Infinity;
-    let maxValue = -Infinity;
-
-    chartData.forEach(d => {
-      ['resting', 'max', 'avg'].forEach((key) => {
-        const value = d[key];
-        if (value !== null && value !== undefined) {
-          minValue = Math.min(minValue, value);
-          maxValue = Math.max(maxValue, value);
-        }
-      });
-    });
-
-    if (minValue === Infinity || maxValue === -Infinity) return [0, 180];
-
-    const range = maxValue - minValue;
-    const margin = Math.max(range * 0.1, 10);
-    const domainMin = Math.max(0, Math.floor(minValue - margin));
-    const domainMax = Math.min(220, Math.ceil(maxValue + margin));
-
-    return [domainMin, domainMax];
-  }, [precomputed, chartData]);
+  const chartData = chartDataConfig.data;
+  const yAxisDomain = chartDataConfig.yAxisDomain;
+  const displayInfo = chartDataConfig.displayInfo;
+  const effectiveSelectedDate = chartDataConfig.selectedDate;
 
   if (!chartData.length) {
     return (
@@ -136,6 +117,7 @@ function GarminHeartRateChart({ precomputed, selector, colors }) {
             <Legend />
             {effectiveSelectedDate && chartData.some(d => d.date === effectiveSelectedDate) && (
               <ReferenceLine
+                key={`ref-line-${effectiveSelectedDate}`}
                 x={effectiveSelectedDate}
                 stroke="#FCD34D"
                 strokeWidth={2}
@@ -150,10 +132,7 @@ function GarminHeartRateChart({ precomputed, selector, colors }) {
               strokeWidth={3}
               dot={(props) => {
                 const { key: _omittedKey, payload, index, ...restProps } = props;
-                const dotKey =
-                  payload?.timestamp ??
-                  payload?.date ??
-                  `${payload?.time || ''}-${payload?.hour ?? ''}-${payload?.minute ?? ''}-${index ?? 0}`;
+                const dotKey = getCustomDotKey(payload, index);
                 return (
                   <CustomDot
                     key={dotKey}

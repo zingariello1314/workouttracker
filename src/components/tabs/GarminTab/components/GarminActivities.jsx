@@ -6,6 +6,8 @@ import { normalizeGarminDate } from '../utils/garminFormatters';
 import AdvancedFilters from './AdvancedFilters';
 import ActivitySearch from './ActivitySearch';
 import { useAdvancedFilters } from '../hooks/useAdvancedFilters';
+import { usePaginatedActivities } from '../hooks/usePaginatedActivities';
+import { VirtualizedActivityList } from './VirtualizedActivityList';
 import { PAGINATION } from '../constants';
 import logger from '../../../../utils/logger';
 
@@ -30,8 +32,7 @@ export default function GarminActivities({ activities, selectedDate }) {
   });
   const [searchTerm, setSearchTerm] = React.useState('');
 
-  // 🟡 FIX #19: État de pagination - utilise constante
-  const [page, setPage] = React.useState(PAGINATION.INITIAL_PAGE);
+  // ✅ Remplacé par usePaginatedActivities (voir plus bas)
   // Debug log (seulement en développement)
   React.useEffect(() => {
     log.debug('Props:', {
@@ -113,16 +114,31 @@ export default function GarminActivities({ activities, selectedDate }) {
     });
   }, [filteredActivities]);
 
-  // 🟡 FIX #19: Pagination - utilise constante
-  // 🔴 FIX #71-80: Reset à la page 1 si filtres/recherche changent
-  React.useEffect(() => {
-    setPage(PAGINATION.INITIAL_PAGE);
-  }, [selectedDate, filters, searchTerm]);
+  // ✅ Optimisation : Utiliser le hook de pagination avec virtualisation
+  const {
+    paginatedActivities,
+    currentPage,
+    totalPages,
+    paginationInfo,
+    shouldVirtualize,
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    setCurrentPage
+  } = usePaginatedActivities({
+    allActivities,
+    itemsPerPage: PAGINATION.ACTIVITIES_PER_PAGE,
+    enableVirtualization: true,
+    virtualizationThreshold: 100
+  });
 
-  const totalPages = Math.ceil(allActivities.length / PAGINATION.ACTIVITIES_PER_PAGE);
-  const startIndex = (page - 1) * PAGINATION.ACTIVITIES_PER_PAGE;
-  const endIndex = startIndex + PAGINATION.ACTIVITIES_PER_PAGE;
-  const paginatedActivities = allActivities.slice(startIndex, endIndex);
+  // 🔴 FIX #71-80: Reset à la page 1 si filtres/recherche changent
+  // Utiliser setCurrentPage directement pour éviter dépendance sur goToPage
+  React.useEffect(() => {
+    if (!shouldVirtualize) {
+      setCurrentPage(PAGINATION.INITIAL_PAGE);
+    }
+  }, [selectedDate, filters, searchTerm, shouldVirtualize, setCurrentPage]);
 
   const hasActivities = allActivities.length > 0;
 
@@ -145,9 +161,14 @@ export default function GarminActivities({ activities, selectedDate }) {
           🏃 Activités{selectedDate ? ` - ${selectedDate}` : ''}
         </h3>
         {/* 🟡 FIX #19: Info pagination */}
-        {allActivities.length > PAGINATION.ACTIVITIES_PER_PAGE && (
+        {!shouldVirtualize && paginationInfo.total > PAGINATION.ACTIVITIES_PER_PAGE && (
           <div className="text-slate-400 text-sm">
-            {startIndex + 1}-{Math.min(endIndex, allActivities.length)} sur {allActivities.length}
+            {paginationInfo.startIndex + 1}-{paginationInfo.endIndex} sur {paginationInfo.total}
+          </div>
+        )}
+        {shouldVirtualize && (
+          <div className="text-slate-400 text-sm">
+            {paginationInfo.total} activité{paginationInfo.total > 1 ? 's' : ''} (mode virtualisé)
           </div>
         )}
       </div>
@@ -158,36 +179,46 @@ export default function GarminActivities({ activities, selectedDate }) {
         </div>
       )}
 
-      {/* 🟡 FIX #19: Afficher activités paginées */}
+      {/* 🟡 FIX #19: Afficher activités paginées ou virtualisées */}
       {hasActivities && (
-        <div className="space-y-4">
-          {paginatedActivities.map((activity) => {
-            const ActivityComponent = 
-              activity.type === 'swimming' ? SwimmingActivityCard :
-              activity.type === 'jumpRope' ? JumpRopeActivityCard :
-              CardioActivityCard;
-            
-            return (
-              <ActivityComponent 
-                key={activity.id || `${activity.date}_${activity.time}`} 
-                activity={activity} 
-              />
-            );
-          })}
-        </div>
+        shouldVirtualize ? (
+          <VirtualizedActivityList
+            activities={paginatedActivities}
+            height={600}
+            itemHeight={200}
+            overscanCount={5}
+          />
+        ) : (
+          <div className="space-y-4">
+            {paginatedActivities.map((activity) => {
+              const ActivityComponent = 
+                activity.type === 'swimming' ? SwimmingActivityCard :
+                activity.type === 'jumpRope' ? JumpRopeActivityCard :
+                CardioActivityCard;
+              
+              return (
+                <ActivityComponent 
+                  key={activity.id || `${activity.date}_${activity.time}`} 
+                  activity={activity} 
+                />
+              );
+            })}
+          </div>
+        )
       )}
 
-      {/* 🟡 FIX #19: Contrôles de pagination */}
-      {totalPages > 1 && (
+      {/* 🟡 FIX #19: Contrôles de pagination (uniquement en mode non-virtualisé) */}
+      {!shouldVirtualize && totalPages > 1 && (
         <div className="mt-6 flex items-center justify-center gap-2">
           <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
+            onClick={goToPreviousPage}
+            disabled={currentPage === 1}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              page === 1
+              currentPage === 1
                 ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
                 : 'bg-slate-700 text-white hover:bg-slate-600'
             }`}
+            aria-label="Page précédente"
           >
             ← Précédent
           </button>
@@ -197,23 +228,25 @@ export default function GarminActivities({ activities, selectedDate }) {
               let pageNum;
               if (totalPages <= 5) {
                 pageNum = i + 1;
-              } else if (page <= 3) {
+              } else if (currentPage <= 3) {
                 pageNum = i + 1;
-              } else if (page >= totalPages - 2) {
+              } else if (currentPage >= totalPages - 2) {
                 pageNum = totalPages - 4 + i;
               } else {
-                pageNum = page - 2 + i;
+                pageNum = currentPage - 2 + i;
               }
               
               return (
                 <button
                   key={pageNum}
-                  onClick={() => setPage(pageNum)}
+                  onClick={() => goToPage(pageNum)}
                   className={`px-3 py-2 rounded-lg font-medium transition-colors ${
-                    page === pageNum
+                    currentPage === pageNum
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}
+                  aria-label={`Page ${pageNum}`}
+                  aria-current={currentPage === pageNum ? 'page' : undefined}
                 >
                   {pageNum}
                 </button>
@@ -222,13 +255,14 @@ export default function GarminActivities({ activities, selectedDate }) {
           </div>
           
           <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              page === totalPages
+              currentPage === totalPages
                 ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
                 : 'bg-slate-700 text-white hover:bg-slate-600'
             }`}
+            aria-label="Page suivante"
           >
             Suivant →
           </button>

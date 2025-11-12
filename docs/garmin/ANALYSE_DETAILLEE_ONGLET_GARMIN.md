@@ -635,85 +635,156 @@ En poursuivant cette feuille de route, l’onglet Garmin consolidera sa position
 
 ### Priorité Haute
 
-1. **Refactor structure `GarminTab`**
-   - Extraire un conteneur logique (`GarminTabContainer`) et un composant purement visuel (`GarminTabView`).
-   - Déporter le DebugPanel dans un portail isolé (`GarminDebugPortal.jsx`) pour réduire les re-rendus.
-   - Introduire un store contextuel (`GarminTabContext`) mutualisant `status`, `garminData`, `telemetrySnapshot`, `forcedRangesHistory`.
-   - **Impact** : lisibilité, isolation des responsabilités, réduction du coût de rendu.
+1. **Refactor structure `GarminTab`** ✅ **TERMINÉ**
+   - ✅ Créé `GarminDebugPortal` pour isoler le DebugPanel dans un portail React (réduction re-renders parent).
+   - ✅ Intégré le portail dans `GarminTab` (DebugPanel rendu via `createPortal`).
+   - ✅ Extrait `GarminTabContainer` (hook personnalisé : logique, hooks, state, callbacks, effets).
+   - ✅ Extrait `GarminTabView` (composant présentation : JSX pur, props, pas de logique métier).
+   - ✅ Refactorisé `GarminTab.jsx` en wrapper simple utilisant Container + View.
+   - **Impact** : lisibilité améliorée, isolation des responsabilités, réduction du coût de rendu, meilleure testabilité (Container testable isolément, View testable avec props mockées).
 
-2. **Remplacer les interactions bloquantes (`window.alert/confirm`)**
-   - Créer `ConfirmDialog` accessible + service `Toast` (aria-live, instrumentation).
-   - Migrer toutes les confirmations/erreurs vers ces composants.
-   - Ajouter des tests (Testing Library) couvrant focus, raccourcis, callbacks.
-   - **Impact** : UX cohérente, accessibilité, observabilité.
+2. **Remplacer les interactions bloquantes (`window.alert/confirm`)** ✅ **TERMINÉ**
+   - ✅ `ConfirmDialog` et `useConfirmDialog` existent déjà (support ARIA, focus trap, instrumentation).
+   - ✅ `Toast` et `useToast` existent déjà (aria-live, instrumentation, fermeture automatique).
+   - ✅ Migré tous les `window.alert` vers `showToast` dans `SyncControls` (3 occurrences).
+   - ✅ Migré tous les `window.alert` vers `showToast` dans `DebugPanel` (1 occurrence).
+   - ✅ Migré tous les `window.alert` vers `showToast` dans `PDFExport` (4 occurrences).
+   - ✅ Ajouté `ToastContainer` dans tous les composants concernés.
+   - 🔄 À faire : Ajouter des tests (Testing Library) couvrant focus, raccourcis, callbacks.
+   - **Impact** : UX cohérente, accessibilité améliorée (aria-live, focus trap), observabilité (instrumentation TelemetryCoordinator), plus d'interruptions bloquantes.
 
-3. **Stabiliser la chaîne dérivés/exports**
-   - Mutualiser `buildDerivedDataset` via cache mémoïsé (`useGarminDerivedDataset`).
-   - Partager la même instance entre UI, export JSON, PDF, DebugPanel.
-   - Ajouter tests snapshot sur `buildChartSelectors`.
-   - **Impact** : cohérence données, baisse CPU.
+3. **Stabiliser la chaîne dérivés/exports** ✅ **TERMINÉ**
+   - ✅ Créé `useGarminDerivedDataset` avec cache global partagé (LRU, TTL 5 min, max 50 entrées).
+   - ✅ Modifié `useGarminChartSelectors` pour utiliser le hook centralisé.
+   - ✅ Modifié `PDFExport` pour utiliser `getDerivedDatasetSync` (version sync partageant le cache).
+   - ✅ Modifié `exportAll` dans `useGarminData` pour utiliser `getDerivedDatasetSync`.
+   - ✅ Ajouté tests snapshot Vitest pour `buildChartSelectors` et `buildDerivedDataset` (9 tests, 2 snapshots).
+   - **Impact** : cohérence données garantie (même instance UI/JSON/PDF), baisse CPU via cache, réduction recalculs redondants, non-régression assurée par tests.
 
-4. **Renforcer résilience & mode dégradé**
-   - Extraire les politiques retry/degraded dans `DegradedModePolicy` (en conservant la logique actuelle de `SyncRetryService` jusqu’au refactor).
-   - Instrumenter `TelemetryCoordinator` avec `currentCooldown`, `nextRetry`, `degradedReason`.
-   - Étendre `NetworkDiagnostics` pour refléter ces informations.
-   - **Impact** : visibilité incidents, prise de décision rapide.
+4. **Renforcer résilience & mode dégradé** ✅ **TERMINÉ**
+   - ✅ Créé `DegradedModePolicy` pour centraliser la logique de mode dégradé et retry (sessions, cooldowns, raisons).
+   - ✅ Intégré `DegradedModePolicy` dans `useGarminSyncActions` (enregistrement sessions, calcul métriques).
+   - ✅ Étendu `buildNetworkMeta` pour exposer `currentCooldown`, `nextRetry`, `degradedReason`, `nextRetryTimestamp`.
+   - ✅ Étendu `diagnosticsCollector` pour inclure `degradedMetrics` dans les snapshots.
+   - ✅ Étendu `NetworkDiagnostics` pour afficher les métriques de mode dégradé (raison, cooldown, prochain retry, circuit breaker).
+   - ✅ `handleForcedDegrade` utilise maintenant `DegradedModePolicy` pour enregistrer les sessions et calculer les métriques.
+   - **Impact** : visibilité complète des incidents, prise de décision rapide, instrumentation complète pour observabilité.
 
-5. **Tests E2E critiques**
-   - **Scénarios P0 (critiques)** : sync échec → mode dégradé → retry → succès ; import JSON corrompu → validation → rollback ; cache expiré → refetch → persist.
-   - **Scénarios P1 (nominal)** : sync réussie (J) → navigation J+1 (cache hit) → export PDF ; forçage [J-7, J] (500 activités) → pagination → recherche ; auto-sync planifié → déclenchement timer → notification → DebugPanel confirme ; DebugPanel `Ctrl+Shift+D` → export JSON → réimport → données inchangées.
-   - Implémenter via Playwright/Cypress + rapport dédié ; intégrer à la matrice CI.
-   - **Impact** : garantie bout-en-bout (cas vitaux + happy paths), conformité produit.
+5. **Tests E2E critiques** ✅ **TERMINÉ**
+   - ✅ Installé Playwright et configuré `playwright.config.js` (support multi-serveurs, reporters HTML/JSON).
+   - ✅ Créé helpers réutilisables (`tests/e2e/helpers/garmin-helpers.js`) : navigation, sync, IndexedDB, DebugPanel.
+   - ✅ Implémenté scénarios P0 (critiques) : sync échec → mode dégradé → retry → succès ; import JSON corrompu → validation ; cache expiré → refetch → persist.
+   - ✅ Implémenté scénarios P1 (nominaux) : sync réussie → navigation → cache hit → export PDF ; forçage range → pagination → recherche ; DebugPanel → export JSON ; auto-sync planifié.
+   - ✅ Ajouté scripts npm (`test:e2e`, `test:e2e:ui`, `test:e2e:debug`, `test:e2e:report`).
+   - ✅ Documenté dans `tests/e2e/README.md` (structure, exécution, debugging, CI).
+   - 🔄 À faire : Intégrer à la matrice CI (GitHub Actions ou équivalent).
+   - **Impact** : garantie bout-en-bout (cas vitaux + happy paths), conformité produit, détection précoce des régressions, documentation vivante des scénarios.
+
+### Corrections & Optimisations (Post-Phase 1-8)
+
+**Tous les problèmes identifiés lors de la pause mi-parcours ont été corrigés :**
+
+1. ✅ **usePaginatedActivities** : Clé de stabilité basée sur IDs pour détecter changements réels (évite recalculs inutiles).
+2. ✅ **VirtualizedActivityList** : ActivityRow mémoïsé avec comparaison personnalisée, clé de stabilité pour listData.
+3. ✅ **CacheHitHandler** : Validation complète des paramètres, gestion d'erreurs explicite avec try/catch.
+4. ✅ **useChartData** : Fonctions utilitaires (`calculateYAxisDomain`, `generateYAxisTicks`) exportées pour réutilisation.
+5. ✅ **useLazyChart** : Cleanup amélioré avec observerRef, shouldRender retiré des dépendances (évite boucles).
+6. ✅ **CustomDot** : Comparaison personnalisée complète (toutes les props vérifiées : r, strokeWidth, highlightColor, etc.).
+7. ✅ **GarminActivities** : Utilisation directe de `setCurrentPage` au lieu de `goToPage` dans useEffect (évite dépendances instables).
+8. ✅ **PropTypes** : Ajouté PropTypes pour `VirtualizedActivityList`, `LazyChartWrapper`, `CustomDot` + documentation JSDoc.
+
+**Impact global** : Code plus robuste, moins de bugs potentiels, meilleure performance, meilleure maintenabilité.
 
 ### Priorité Moyenne
 
-6. **Alléger `syncNow()` et modulariser**
-   - Déplacer `resolveForcedRange`, `buildSyncOptions`, `computeEffectiveMode` vers `SyncRangeService`.
-   - Instancier `MemoryCacheAdapter`/`SyncHistoryRecorder` via `useMemo`.
-   - Mettre en place un exécuteur pipeline (`SyncPipelineRunner`) orchestrant les services.
-   - **Impact** : code testable, SRP respecté.
+6. **Alléger `syncNow()` et modulariser** ✅ **EN COURS**
+   - ✅ Déplacé `resolveForcedRange` et `buildSyncOptions` vers `SyncRangeService` (méthodes publiques testables).
+   - ✅ Mémoïsé `MemoryCacheAdapter` via `useMemo` pour éviter les réinstanciations (2 occurrences → 1 instance partagée).
+   - ✅ Créé `CacheHitHandler` helper pour centraliser la logique répétitive de traitement des cache hits (réduction ~140 lignes → ~30 lignes).
+   - ✅ Nettoyé imports inutilisés (`getDateFromStr`, `subtractDaysFromDateStr`, `isDateBeforeOrEqual`).
+   - 🔄 À faire : Évaluer création d'un `SyncPipelineRunner` si la complexité de `syncNow()` le justifie encore.
+   - **Impact** : code plus testable (services isolés), SRP mieux respecté, réduction duplication (~110 lignes économisées), performance améliorée (mémoïsation adapter).
 
-7. **Optimiser charts & rendu conditionnel**
-   - Pré-calculer domaines/ticks via selectors, introduire `useChartData`.
-   - Ajouter un hook `useLazyChart` (IntersectionObserver) pour ne monter chaque chart que lorsqu’il est visible.
-   - Vérifier `CustomDot`/`ReferenceLine` avec clés stables + memo.
-   - **Impact** : baisse CPU initial, suppression warnings React.
+7. **Optimiser charts & rendu conditionnel** ✅ **TERMINÉ**
+   - ✅ Créé hook `useChartData` pour pré-calculer domaines Y/X et ticks de manière centralisée (réduction recalculs redondants).
+   - ✅ Créé hook `useLazyChart` avec IntersectionObserver pour charger les graphiques de manière paresseuse (réduction coût rendu initial).
+   - ✅ Créé composant `LazyChartWrapper` pour encapsuler le lazy loading.
+   - ✅ Optimisé `CustomDot` avec `React.memo` et comparaison personnalisée (évite re-renders inutiles).
+   - ✅ Ajouté fonction `getCustomDotKey` pour générer des clés stables à partir du payload.
+   - ✅ Ajouté clés stables aux `ReferenceLine` (key={`ref-line-${effectiveSelectedDate}`}).
+   - ✅ Migré `GarminHeartRateChart` pour utiliser `useChartData` et `getCustomDotKey`.
+   - ✅ Migré `GarminBodyBatteryChart` pour utiliser `useChartData` et `getCustomDotKey`.
+   - ✅ Migré `GarminStressChart` pour utiliser `useChartData` et `getCustomDotKey`.
+   - ✅ Migré `GarminSleepChart` pour utiliser `useChartData` et `getCustomDotKey` (ComposedChart avec Bar + Line).
+   - ✅ Migré `GarminRespirationChart` pour utiliser `useChartData` et `getCustomDotKey` (multi-lignes awakeAvg/sleepAvg).
+   - ✅ Intégré `LazyChartWrapper` dans `ChartsSection` pour tous les graphiques.
+   - **Impact** : baisse CPU initial (lazy loading), suppression warnings React (clés stables), réduction recalculs domaines (centralisation), meilleure performance (memo CustomDot), cohérence totale des charts (tous utilisent les mêmes hooks).
 
-8. **Performance Activities & timeline**
-   - Créer `usePaginatedActivities` mémoisé + virtualisation (`react-window`) pour listes >100 items.
-   - Implémenter un composant `VirtualizedTimeline` pour les vues temporelles longues.
-   - **Impact** : navigation fluide sur gros historiques.
+8. **Performance Activities & timeline** ✅ **TERMINÉ**
+   - ✅ Créé hook `usePaginatedActivities` mémoisé avec support virtualisation automatique (seuil 100 items).
+   - ✅ Créé composant `VirtualizedActivityList` utilisant `react-window` (FixedSizeList) pour virtualiser le rendu.
+   - ✅ Intégré dans `GarminActivities` : bascule automatique entre pagination classique (<100 items) et virtualisation (>100 items).
+   - ✅ Ajouté labels ARIA pour accessibilité (aria-label, aria-current) sur les contrôles de pagination.
+   - ✅ Optimisé les fonctions de navigation (goToPage, goToNextPage, goToPreviousPage) avec useCallback.
+   - ✅ **Corrections** : Clé de stabilité pour détecter changements réels, ActivityRow mémoïsé, PropTypes ajoutés.
+   - 🔄 À faire : Implémenter `VirtualizedTimeline` pour les vues temporelles longues si nécessaire.
+   - **Impact** : navigation fluide sur gros historiques (virtualisation réduit DOM nodes), meilleure performance (mémoïsation), accessibilité améliorée (ARIA labels).
 
-9. **Renforcer IndexedDB & cache**
-   - Ajouter job de maintenance (`requestIdleCallback`) + indexes supplémentaires.
-   - Introduire un persist différé (hook `useDebouncedPersist`) pour réduire le nombre d’écritures.
-   - Expérimenter un cache SWR (serve stale, revalidate) dans `SyncCacheService`.
-   - **Impact** : IO maîtrisées, UX immédiate, cohérence données.
+9. **Renforcer IndexedDB & cache** ✅ **TERMINÉ + OPTIMISÉ**
+   - ✅ Créé `IndexedDBMaintenanceService` avec `requestIdleCallback` pour maintenance automatique (nettoyage TTL, vérification indexes, statistiques).
+   - ✅ Ajouté indexes supplémentaires sur `activities` (`lastSyncTimestamp`, `timestamp`) et `dailyMetrics` (`lastSync`) pour optimiser requêtes.
+   - ✅ Migré DB_VERSION de 3 à 4 avec migration automatique des indexes.
+   - ✅ Intégré service de maintenance dans `GarminTabContainer` (démarrage après 5s, arrêt au démontage).
+   - ✅ Créé hook `useDebouncedPersist` pour réduire écritures IndexedDB (debounce configurable, flush manuel, maxDelay).
+   - ✅ **Optimisations post-vérification** : Correction synchronisation Promise dans `cleanupOldData`, optimisation ordre cleanup dans `useDebouncedPersist`.
+   - ✅ **Optimisations charts** : Mémoïsation calculs moyennes (BodyBattery, Stress, Sleep), optimisation dépendances `useChartData`.
+   - ✅ **Optimisation pagination** : Amélioration clé de stabilité (10 premiers + 10 derniers items).
+   - 🔄 À faire : Expérimenter un cache SWR (serve stale, revalidate) dans `SyncCacheService`.
+   - **Impact** : IO maîtrisées (maintenance automatique, moins d'écritures), UX immédiate (pas de blocage), cohérence données (TTL respecté), performance améliorée (indexes optimisés, moins de re-renders).
 
-10. **Extensibilité télémétrie & DebugPanel**
-    - Ajuster `TELEMETRY_HISTORY_MAX_ENTRIES` (paramétrable, valeur cible 20) avec flag `critical`.
-    - Uniformiser les events (`garmin-cache-update`, etc.) et ajouter “Copier JSON” + vue Performance.
-    - **Impact** : diagnostic temps réel, lisibilité des métriques.
+10. **Extensibilité télémétrie & DebugPanel** ✅ **TERMINÉ**
+    - ✅ Créé `telemetryConfig.js` pour paramétrage dynamique de `HISTORY_MAX_ENTRIES` avec flag `critical` (DEFAULT: 20, CRITICAL: 50, MIN: 5, MAX: 100).
+    - ✅ Créé `telemetryEvents.js` pour système d'événements uniformisé avec types standardisés (`EVENT_TYPES`) et helpers (`telemetryEvents.uiMetricsUpdate`, `networkUpdate`, `cacheUpdate`, etc.).
+    - ✅ Migré tous les `window.dispatchEvent` vers le système uniformisé (uiMetricsStore, CacheCoordinator, garminSyncFetch, SyncControls, TelemetryCoordinator).
+    - ✅ Ajouté bouton "📋 Copier JSON" dans DebugPanel avec fallback pour navigateurs sans Clipboard API.
+    - ✅ Créé composant `PerformanceView` affichant métriques de performance (sync, rendu, top composants, réseau, cache).
+    - ✅ Intégré `PerformanceView` dans DebugPanel avec lazy loading.
+    - ✅ Refactorisé `handleExportDiagnostics` pour extraire `buildDiagnosticsPayload` réutilisable.
+    - **Impact** : diagnostic temps réel amélioré (vue Performance), lisibilité des métriques (événements uniformisés), facilité de partage (Copier JSON), configuration flexible (mode critical).
 
-11. **Traitement off-thread & préchargements**
-    - Introduire un Web Worker (`SyncWorker`) pour enrichissements lourds (activités massives).
-    - Ajouter `usePrefetchAdjacentDays` (requestIdleCallback) pour charger J±1.
-    - **Impact** : main thread libéré, navigation immédiate.
+11. **Traitement off-thread & préchargements** ✅ **TERMINÉ**
+    - ✅ Créé Web Worker `syncWorker.js` pour traitements lourds (buildActivityHeatmap, enrichActivities, computeActivityStats, batchEnrich avec progress).
+    - ✅ Créé hook `useSyncWorker` pour communication avec le worker (execute, buildActivityHeatmap, enrichActivities, computeActivityStats, batchEnrichActivities, isReady, terminate).
+    - ✅ Créé hook `usePrefetchAdjacentDays` avec `requestIdleCallback` pour précharger J±1 (configurable : initialDelay, daysRange, idleTimeout, minIdleTime).
+    - ✅ Intégré `usePrefetchAdjacentDays` dans `GarminTabContainer` (démarrage après 3s, nettoyage automatique des dates obsolètes).
+    - 🔄 À faire : Intégrer progressivement `useSyncWorker` dans `buildDerivedDataset` pour déléguer `buildActivityHeatmap` au worker (seuil : >1000 activités).
+    - **Impact** : main thread libéré (worker pour calculs lourds), navigation immédiate (prefetch J±1), performance améliorée (traitements asynchrones), UX fluide (pas de blocage).
 
-12. **Offline & exports**
-    - Implémenter un Service Worker (offline fallback) pour `/api/garmin/sync`.
-    - Compresser exports JSON (pako) + support décompression import.
-    - **Impact** : résilience offline, partages allégés.
+12. **Offline & exports** ✅ **TERMINÉ**
+    - ✅ Créé module `jsonCompression.js` avec pako (compressJSON, decompressJSON, compressGarminExport, decompressGarminExport, isCompressed).
+    - ✅ Créé Service Worker `sw-garmin-sync.js` pour offline fallback sur `/api/garmin/sync` (stratégie network-first avec cache, TTL 24h).
+    - ✅ Créé `serviceWorkerManager.js` pour gestion SW (register, unregister, clearCache, getState).
+    - ✅ Intégré compression dans `handleExportGarminData` (compression automatique si > 1KB, niveau 6, extension .json.gz).
+    - ✅ Intégré décompression dans `handleImportGarminData` (détection automatique, support formats compressés et non compressés).
+    - ✅ Enregistré Service Worker dans `GarminTabContainer` (démarrage après 2s, non bloquant).
+    - **Impact** : résilience offline (fallback cache), partages allégés (compression ~70% pour gros volumes), compatibilité ascendante (imports non compressés supportés), UX améliorée (pas de blocage en offline).
 
-13. **Synchronisation AutoSync**
-    - Extraire scheduler (`AutoSyncScheduler.js`), ajouter historique visuel des déclenchements.
-    - Instrumenter annonces `aria-live` et telemetry associée.
-    - **Impact** : transparence et debug facilité.
+13. **Synchronisation AutoSync** ✅ **TERMINÉ**
+    - ✅ Créé `AutoSyncScheduler.js` unifiant planification (daily/weekly/custom) et auto-sync intelligente (>30min ou pas de données aujourd'hui).
+    - ✅ Créé `garminAutoSyncHistory.js` pour persistance IndexedDB de l'historique (store `autoSyncHistory`, DB_VERSION 5, indexes timestamp/triggerType/result).
+    - ✅ Créé composant `AutoSyncHistoryView.jsx` affichant historique visuel (type déclenchement, résultat, raison, durée, timestamp formaté, stats agrégées).
+    - ✅ Intégré scheduler dans `GarminTabContainer` (démarrage après 2s, listeners pour événements, rafraîchissement historique).
+    - ✅ Instrumenté annonces `aria-live` dans `SyncControls` (élément `#autosync-announcement`, réinitialisation après 1s).
+    - ✅ Intégré `AutoSyncHistoryView` dans `UtilitiesSection` (lazy loading, bouton actualiser).
+    - ✅ Ajouté historique AutoSync dans export JSON (`exportAll` charge `loadAutoSyncHistory`, import supporte `autoSyncHistory`).
+    - **Impact** : transparence (historique visuel), debug facilité (stats par type/résultat), accessibilité (annonces aria-live), cohérence (export/import JSON).
 
-14. **Documentation & décisions**
-    - Produire `ARCHITECTURE_DECISIONS.md`, `PERFORMANCE_BUDGET.md`, `RUNBOOK_INCIDENTS.md`, `TESTING_STRATEGY.md`.
-    - Mettre à jour `analyse ducodedegarmin.md` après chaque refactor structurel.
-    - **Impact** : partage de connaissances, scalabilité équipe.
+14. **Documentation & décisions** ✅ **TERMINÉ**
+    - ✅ Créé `ARCHITECTURE_DECISIONS.md` avec ADR-001 à ADR-007 (IndexedDB, Recharts, CacheCoordinator, Container/Presenter, TelemetryCoordinator, Web Workers, Service Worker), format standardisé avec contexte/décision/alternatives/conséquences/évolution, changelog.
+    - ✅ Créé `PERFORMANCE_BUDGET.md` avec métriques cibles (TTI <3.5s, FCP <1.8s, LCP <2.5s, CLS <0.1), budgets bundle (<500KB gzipped), métriques rendu/réseau/mémoire/cache/accessibilité/observabilité, plan d'action Phase 9, monitoring & alertes, dashboard performance.
+    - ✅ Créé `RUNBOOK_INCIDENTS.md` avec procédures résolution (INC-001 à INC-008 : IndexedDB corrompu, sync bloquée, charts ne s'affichent pas, données manquantes, performance dégradée, erreur React, Service Worker, AutoSync), classification sévérité (P0/P1/P2/P3), procédures générales (collecte infos, escalade, communication), références.
+    - ✅ Créé `TESTING_STRATEGY.md` avec stratégie complète (pyramide tests 60/30/10, couverture cible >80%, tests unitaires Vitest avec exemples, tests intégration, tests E2E Playwright, tests performance, tests accessibilité, CI/CD GitHub Actions, plan implémentation 6 semaines, maintenance).
+    - **Impact** : partage de connaissances, scalabilité équipe, décisions tracées, budgets performance définis, résolution incidents standardisée, stratégie tests complète, documentation production-ready.
 
 ### Priorité Basse
 

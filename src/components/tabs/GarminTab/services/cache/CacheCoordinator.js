@@ -1,3 +1,8 @@
+import telemetryEventsModule from '../../utils/telemetryEvents';
+
+// Protection : s'assurer que telemetryEvents est toujours défini (même si null)
+const telemetryEvents = telemetryEventsModule || null;
+
 const MAX_HISTORY = 20;
 
 const ensureStatsStore = () => {
@@ -61,9 +66,15 @@ const recordCacheEvent = (source, rangeInfo, meta = {}) => {
       history: store.history.slice(),
       lastEvent: { ...event }
     };
-    window.dispatchEvent(
-      new CustomEvent('garmin-cache-update', { detail })
-    );
+    // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
+    if (telemetryEvents && typeof telemetryEvents.cacheUpdate === 'function') {
+      telemetryEvents.cacheUpdate(detail, { source: 'CacheCoordinator' });
+    } else {
+      // Fallback si le module n'est pas disponible
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('garmin-cache-update', { detail }));
+      }
+    }
   }
 };
 

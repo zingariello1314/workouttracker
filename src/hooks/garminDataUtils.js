@@ -28,8 +28,14 @@ export const DB_NAME = 'GarminDataDB';
 /**
  * Version de la base de données IndexedDB
  * @constant {number}
+ * 
+ * Version 4 : Ajout d'indexes supplémentaires pour optimiser les requêtes
+ * - Index `lastSyncTimestamp` sur activities pour requêtes par date de sync
+ * - Index `timestamp` sur activities pour requêtes temporelles
+ * - Index `lastSync` sur dailyMetrics pour requêtes par date de sync
+ * Version 5 : Ajout du store autoSyncHistory pour l'historique des déclenchements AutoSync
  */
-export const DB_VERSION = 3;
+export const DB_VERSION = 5;
 
 /**
  * Nom de l'object store pour les activités
@@ -60,6 +66,12 @@ export const STORE_FORCED_RANGES = 'forcedRangesHistory';
  * @constant {string}
  */
 export const STORE_TELEMETRY_HISTORY = 'telemetryHistory';
+
+/**
+ * Nom de l'object store pour l'historique AutoSync
+ * @constant {string}
+ */
+export const STORE_AUTO_SYNC_HISTORY = 'autoSyncHistory';
 
 // ==================== ÉTAT GLOBAL ====================
 
@@ -301,9 +313,10 @@ const openDBInternal = () => {
         try {
           const db = event.target.result;
 
-          // Store: activities (index: date, type, date_type)
+          // Store: activities (index: date, type, date_type, lastSyncTimestamp, timestamp)
+          let activityStore;
           if (!db.objectStoreNames.contains(STORE_ACTIVITIES)) {
-            const activityStore = db.createObjectStore(STORE_ACTIVITIES, { 
+            activityStore = db.createObjectStore(STORE_ACTIVITIES, { 
               keyPath: 'id', 
               autoIncrement: false 
             });
@@ -313,16 +326,51 @@ const openDBInternal = () => {
             activityStore.createIndex('type', 'type', { unique: false });
             // Index composite pour requêtes combinées
             activityStore.createIndex('date_type', ['date', 'type'], { unique: false });
+          } else {
+            activityStore = event.target.transaction.objectStore(STORE_ACTIVITIES);
+          }
+          
+          // ✅ Version 4 : Ajouter indexes supplémentaires si absents
+          const activityIndexNames = Array.from(activityStore.indexNames);
+          if (!activityIndexNames.includes('lastSyncTimestamp')) {
+            try {
+              activityStore.createIndex('lastSyncTimestamp', 'lastSyncTimestamp', { unique: false });
+              log.debug('[openDB] Index lastSyncTimestamp créé sur activities');
+            } catch (err) {
+              log.warn('[openDB] Erreur création index lastSyncTimestamp:', err);
+            }
+          }
+          if (!activityIndexNames.includes('timestamp')) {
+            try {
+              activityStore.createIndex('timestamp', 'timestamp', { unique: false });
+              log.debug('[openDB] Index timestamp créé sur activities');
+            } catch (err) {
+              log.warn('[openDB] Erreur création index timestamp:', err);
+            }
           }
 
-          // Store: dailyMetrics (index: date unique)
+          // Store: dailyMetrics (index: date unique, lastSync)
+          let metricsStore;
           if (!db.objectStoreNames.contains(STORE_DAILY_METRICS)) {
-            const metricsStore = db.createObjectStore(STORE_DAILY_METRICS, { 
+            metricsStore = db.createObjectStore(STORE_DAILY_METRICS, { 
               keyPath: 'date', 
               autoIncrement: false 
             });
             // Index unique sur date pour accès rapide
             metricsStore.createIndex('date', 'date', { unique: true });
+          } else {
+            metricsStore = event.target.transaction.objectStore(STORE_DAILY_METRICS);
+          }
+          
+          // ✅ Version 4 : Ajouter index lastSync si absent
+          const metricsIndexNames = Array.from(metricsStore.indexNames);
+          if (!metricsIndexNames.includes('lastSync')) {
+            try {
+              metricsStore.createIndex('lastSync', 'lastSync', { unique: false });
+              log.debug('[openDB] Index lastSync créé sur dailyMetrics');
+            } catch (err) {
+              log.warn('[openDB] Erreur création index lastSync:', err);
+            }
           }
 
           // Store: deviceMeta (métadonnées)
@@ -352,6 +400,17 @@ const openDBInternal = () => {
               autoIncrement: false
             });
             telemetryStore.createIndex('timestamp', 'timestamp', { unique: true });
+          }
+
+          // ✅ Tâche 13 : Store pour l'historique AutoSync
+          if (!db.objectStoreNames.contains(STORE_AUTO_SYNC_HISTORY)) {
+            const autoSyncStore = db.createObjectStore(STORE_AUTO_SYNC_HISTORY, {
+              keyPath: 'id',
+              autoIncrement: false
+            });
+            autoSyncStore.createIndex('timestamp', 'timestamp', { unique: false });
+            autoSyncStore.createIndex('triggerType', 'triggerType', { unique: false });
+            autoSyncStore.createIndex('result', 'result', { unique: false });
           }
         } catch (upgradeError) {
           log.error('[openDB] Upgrade error:', upgradeError);

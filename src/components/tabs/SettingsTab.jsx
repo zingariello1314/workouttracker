@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useGarminData } from '../../hooks/useGarminData';
+import { compressGarminExport, decompressGarminExport, isCompressed } from './GarminTab/utils/jsonCompression';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -298,13 +299,27 @@ const SettingsTab = () => {
         }
       };
 
-      const jsonString = JSON.stringify(exportObject, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
+      // ✅ Tâche 12 : Compression JSON avec pako
+      const compressedExport = compressGarminExport(exportObject, {
+        level: 6, // Bon compromis vitesse/taille
+        force: false // Compression automatique si > 1KB
+      });
+
+      const jsonString = compressedExport.compressed
+        ? JSON.stringify(compressedExport, null, 2)
+        : JSON.stringify(exportObject, null, 2);
+
+      const blob = new Blob([jsonString], { 
+        type: compressedExport.compressed 
+          ? 'application/json+gzip' 
+          : 'application/json' 
+      });
       const url = URL.createObjectURL(blob);
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `garmin-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      const fileExtension = compressedExport.compressed ? '.json.gz' : '.json';
+      link.download = `garmin-data-export-${new Date().toISOString().split('T')[0]}${fileExtension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -323,7 +338,24 @@ const SettingsTab = () => {
   const handleImportGarminData = async (jsonData) => {
     try {
       setGarminImportStatus('loading');
-      const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+      
+      // ✅ Tâche 12 : Décompression automatique si nécessaire
+      let parsed;
+      if (typeof jsonData === 'string') {
+        // Vérifier si c'est compressé
+        if (isCompressed(jsonData)) {
+          parsed = decompressGarminExport(jsonData);
+        } else {
+          parsed = JSON.parse(jsonData);
+        }
+      } else {
+        // Objet : vérifier si compressé
+        if (jsonData.format === 'garmin-compressed' || jsonData.compressed === true) {
+          parsed = decompressGarminExport(jsonData);
+        } else {
+          parsed = jsonData;
+        }
+      }
       
       // Vérifier la structure - supporte à la fois le format d'export (avec .data) et le format brut
       const garminData = parsed.data || parsed;

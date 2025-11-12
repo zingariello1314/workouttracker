@@ -34,14 +34,29 @@ export class SyncOrchestrator {
       };
     }
 
+    log.debug('[execute] Pas de cache hit, requête réseau...');
     const networkResult = await this.requestService.fetch(rangeInfo, context);
+    log.debug('[execute] Réponse réseau reçue', { 
+      hasJson: !!networkResult?.json, 
+      jsonOk: networkResult?.json?.ok,
+      jsonLastSync: networkResult?.json?.lastSync 
+    });
 
+    if (!networkResult || !networkResult.json) {
+      log.error('[execute] Réponse réseau invalide', networkResult);
+      throw new Error('Réponse réseau invalide (json manquant)');
+    }
+
+    log.debug('[execute] Finalisation retry...');
     await this.retryService.finalize(networkResult.json, rangeInfo, context);
+    log.debug('[execute] Retry finalisé');
 
     if (typeof this.cacheService?.recordServerHit === 'function') {
+      log.debug('[execute] Enregistrement cache serveur...');
       await this.cacheService.recordServerHit(rangeInfo, networkResult.json, context);
     }
 
+    log.debug('[execute] Retour résultat orchestrateur');
     return {
       rangeInfo,
       cacheResult: null,

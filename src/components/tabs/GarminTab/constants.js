@@ -24,7 +24,14 @@ export const TELEMETRY_DEFAULTS = {
   HISTORY_LIMIT: 50,
   RENDER_HISTORY_LIMIT: 50,
   SNAPSHOT_HISTORY_LIMIT: 10,
-  AUTO_PUSH_INTERVAL_MS: 60000
+  AUTO_PUSH_INTERVAL_MS: 60000,
+  // ✅ Tâche 10 : Paramétrage avec flag critical
+  HISTORY_MAX_ENTRIES: {
+    DEFAULT: 20, // Valeur cible recommandée
+    CRITICAL: 50, // Valeur élevée pour diagnostics critiques
+    MIN: 5, // Minimum pour fonctionnement de base
+    MAX: 100 // Maximum pour éviter surcharge mémoire
+  }
 };
 
 // ==================== RANGES DE DONNÉES ====================

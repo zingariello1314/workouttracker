@@ -18,6 +18,7 @@
 
 import { SYNC_TIMEOUT_MS, RETRY_BASE_DELAY_MS, RETRY_MAX_ATTEMPTS, CIRCUIT_BREAKER } from '../constants';
 import logger from '../../../../utils/logger';
+import telemetryEvents from '../utils/telemetryEvents';
 import { CircuitBreaker } from '../services/network/CircuitBreaker';
 
 const log = logger.module('garminSyncFetch');
@@ -123,8 +124,14 @@ const ensureNetworkStore = () => {
 };
 
 const dispatchNetworkUpdate = () => {
-  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-    window.dispatchEvent(new CustomEvent('garmin-network-update'));
+  // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
+  if (telemetryEvents && typeof telemetryEvents.networkUpdate === 'function') {
+    telemetryEvents.networkUpdate({}, { source: 'garminSyncFetch' });
+  } else {
+    // Fallback si le module n'est pas disponible
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('garmin-network-update'));
+    }
   }
 };
 

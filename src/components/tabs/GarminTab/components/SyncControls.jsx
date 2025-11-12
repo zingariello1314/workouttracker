@@ -5,6 +5,9 @@ import GarminInfoMessage from './GarminInfoMessage'; // ✅ PHASE 5.3 : Message 
 import ForceSyncMenu from './sync/ForceSyncMenu';
 import { describeRange } from './sync/forceSyncUtils';
 import { collectDiagnosticsSnapshot } from '../utils/diagnosticsCollector';
+import { useConfirmDialog } from './modals/ConfirmDialog';
+import { useToast } from './Toast';
+import telemetryEvents from '../utils/telemetryEvents';
 
 /**
  * Composant pour les contrôles de synchronisation Garmin
@@ -36,6 +39,8 @@ export default function SyncControls({
   const [deletingMocks, setDeletingMocks] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(false);
   const debugShortcutHintId = React.useId();
+  const { showConfirm, ConfirmDialogComponent } = useConfirmDialog();
+  const { showToast, ToastContainer } = useToast();
 
   const lastForcedRange = forcedRangesHistory?.[0] || null;
   const dateFormatter = React.useMemo(() => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }), []);
@@ -71,9 +76,18 @@ export default function SyncControls({
   }, [dateFormatter]);
   
   const handleDeleteMocks = async () => {
-    if (!window.confirm('Supprimer toutes les données de test (mock) : activités ET métriques quotidiennes ? Cette action est irréversible.\n\nAprès suppression, une synchronisation sera effectuée pour récupérer vos vraies données.')) {
+    const confirmed = await showConfirm({
+      title: 'Supprimer les données de test',
+      message: 'Supprimer toutes les données de test (mock) : activités ET métriques quotidiennes ?\n\nCette action est irréversible.\n\nAprès suppression, une synchronisation sera effectuée pour récupérer vos vraies données.',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler'
+    });
+
+    if (!confirmed) {
       return;
     }
+
     setDeletingMocks(true);
     try {
       const result = await deleteMockActivities();
@@ -86,20 +100,24 @@ export default function SyncControls({
       
       // 🔴 FIX : Forcer une synchronisation après suppression pour récupérer les vraies données
       if (total > 0) {
-        alert(`✅ ${result.activities} activité(s) et ${result.metrics} métrique(s) mock supprimée(s) (${total} au total).\n\nSynchronisation en cours pour récupérer vos vraies données...`);
+        showToast(
+          `✅ ${result.activities} activité(s) et ${result.metrics} métrique(s) mock supprimée(s) (${total} au total).\n\nSynchronisation en cours pour récupérer vos vraies données...`,
+          'success',
+          5000
+        );
         // Forcer une sync sans cache
         if (syncNow) {
           await syncNow({ forceRefresh: true, skipDelay: true }); // forceRefresh = true, pas de délai
         }
       } else {
-        alert('ℹ️ Aucune donnée mock trouvée. Vos données sont déjà propres.');
+        showToast('ℹ️ Aucune donnée mock trouvée. Vos données sont déjà propres.', 'info', 3000);
       }
       
       // Recharger la page pour voir les changements
       window.location.reload();
     } catch (err) {
       console.error('Error deleting mock data:', err);
-      alert('❌ Erreur lors de la suppression des données mock');
+      showToast('❌ Erreur lors de la suppression des données mock', 'error', 5000);
     } finally {
       setDeletingMocks(false);
     }
@@ -198,11 +216,11 @@ export default function SyncControls({
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('[SyncControls] Export history failed:', error);
-      alert('Impossible de générer le fichier d’historique. Consulte la console pour plus de détails.');
-    }
-  }, [cacheMeta, forcedRangesHistory, historyLimit]);
+      } catch (error) {
+        console.error('[SyncControls] Export history failed:', error);
+        showToast('Impossible de générer le fichier d\'historique. Consulte la console pour plus de détails.', 'error', 5000);
+      }
+  }, [cacheMeta, forcedRangesHistory, historyLimit, showToast]);
 
   const handleImportHistory = React.useCallback(
     async (event) => {
@@ -227,27 +245,39 @@ export default function SyncControls({
 
         if (parsed.networkStats && typeof window !== 'undefined') {
           window.__GARMIN_NETWORK_STATS__ = parsed.networkStats;
-          window.dispatchEvent(
-            new CustomEvent('garmin-network-update', { detail: parsed.networkStats })
-          );
+          // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
+          if (telemetryEvents && typeof telemetryEvents.networkUpdate === 'function') {
+            telemetryEvents.networkUpdate(parsed.networkStats, { source: 'SyncControls' });
+          } else {
+            // Fallback
+            if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('garmin-network-update', { detail: parsed.networkStats }));
+            }
+          }
         }
 
         if (parsed.uiMetrics && typeof window !== 'undefined') {
           window.__GARMIN_UI_METRICS__ = parsed.uiMetrics;
-          window.dispatchEvent(
-            new CustomEvent('garmin-ui-metrics-update', { detail: parsed.uiMetrics })
-          );
+          // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
+          if (telemetryEvents && typeof telemetryEvents.uiMetricsUpdate === 'function') {
+            telemetryEvents.uiMetricsUpdate(parsed.uiMetrics, { source: 'SyncControls' });
+          } else {
+            // Fallback
+            if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('garmin-ui-metrics-update', { detail: parsed.uiMetrics }));
+            }
+          }
         }
 
-        alert('Snapshot diagnostic importé. Les données ont été rechargées pour analyse.');
+        showToast('✅ Snapshot diagnostic importé. Les données ont été rechargées pour analyse.', 'success', 4000);
       } catch (error) {
         console.error('[SyncControls] Import history failed:', error);
-        alert('Import impossible : fichier invalide ou corrompu.');
+        showToast('❌ Import impossible : fichier invalide ou corrompu.', 'error', 5000);
       } finally {
         event.target.value = '';
       }
     },
-    [setForcedRangesHistory, setLastSourceMeta]
+    [setForcedRangesHistory, setLastSourceMeta, showToast]
   );
 
   const statusAnnouncement = React.useMemo(() => {
@@ -280,6 +310,8 @@ export default function SyncControls({
         <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
           {statusAnnouncement}
         </div>
+        {/* ✅ Tâche 13 : Annonce aria-live pour AutoSync */}
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true" id="autosync-announcement" />
         <div className="text-sm" aria-live="polite" aria-atomic="true">
           <div className={`${status?.ok ? 'text-green-400' : 'text-red-400'}`}>
             Statut: {status?.ok ? 'Disponible' : status?.message || 'Indisponible'}
@@ -644,7 +676,7 @@ export default function SyncControls({
               <button
                 onClick={() => {
                   clearCache();
-                  alert('✅ Cache frontend vidé. Une nouvelle synchronisation récupérera les données fraîches.');
+                  showToast('✅ Cache frontend vidé. Une nouvelle synchronisation récupérera les données fraîches.', 'success', 4000);
                 }}
                 disabled={loading}
                 className={`px-4 py-2 rounded-md text-white text-sm ${
@@ -680,11 +712,13 @@ export default function SyncControls({
             Ouvrir le panneau de diagnostic
           </button>
           <p id={debugShortcutHintId} className="text-slate-500 text-xs mt-2">
-            Raccourci clavier : <kbd className="font-mono">Ctrl</kbd> +{' '}
+            Raccourci clavier : <kbd className="font-mono">Ctrl</kbd> +{' '}
             <kbd className="font-mono">Maj</kbd> + <kbd className="font-mono">D</kbd>
           </p>
         </div>
       )}
+      <ConfirmDialogComponent />
+      <ToastContainer />
     </div>
   );
 }

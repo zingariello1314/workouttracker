@@ -51,7 +51,8 @@ function NetworkDiagnostics({
   onRefresh,
   onFetchServerDebug,
   serverDebug = null,
-  isRefreshing = false
+  isRefreshing = false,
+  degradedMetrics = null
 }) {
   const storeStats = React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const stats = networkStats || storeStats;
@@ -125,6 +126,58 @@ function NetworkDiagnostics({
           </span>
         </div>
       </div>
+
+      {degradedMetrics && (degradedMetrics.isDegraded || degradedMetrics.currentCooldown > 0) && (
+        <div className="bg-yellow-900/20 border border-yellow-600/40 rounded px-2 py-2 text-xs text-slate-300">
+          <div className="uppercase tracking-wide text-yellow-400 text-[10px] mb-1 flex items-center gap-2">
+            <span>⚠️ Mode dégradé</span>
+            {degradedMetrics.isDegraded && (
+              <span className="px-1.5 py-0.5 rounded bg-yellow-600/40 text-yellow-200 text-[9px]">
+                ACTIF
+              </span>
+            )}
+          </div>
+          <div className="space-y-1">
+            {degradedMetrics.degradedReason && (
+              <div>
+                <span className="text-slate-500">Raison :</span>{' '}
+                <span className="font-mono text-yellow-200 text-[10px]">
+                  {degradedMetrics.degradedReason.replace(/_/g, ' ')}
+                </span>
+              </div>
+            )}
+            {degradedMetrics.currentCooldown > 0 && (
+              <div>
+                <span className="text-slate-500">Cooldown restant :</span>{' '}
+                <span className="font-mono text-yellow-200">
+                  {formatDurationMs(degradedMetrics.currentCooldown)}
+                </span>
+              </div>
+            )}
+            {degradedMetrics.nextRetryTimestamp && (
+              <div>
+                <span className="text-slate-500">Prochain retry :</span>{' '}
+                <span className="font-mono text-yellow-200">
+                  {formatDateTime(degradedMetrics.nextRetryTimestamp)}
+                </span>
+              </div>
+            )}
+            {degradedMetrics.circuitState && (
+              <div>
+                <span className="text-slate-500">Circuit breaker :</span>{' '}
+                <span className="font-mono text-yellow-200">
+                  {degradedMetrics.circuitState}
+                </span>
+                {degradedMetrics.failureCount !== null && (
+                  <span className="text-slate-500 ml-2">
+                    ({degradedMetrics.failureCount} échec{degradedMetrics.failureCount > 1 ? 's' : ''})
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {serverLastStatus && (
         <div className="bg-slate-900/40 border border-slate-700 rounded px-2 py-2 text-xs text-slate-300">

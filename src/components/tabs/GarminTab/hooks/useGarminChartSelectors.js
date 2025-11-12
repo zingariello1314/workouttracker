@@ -3,8 +3,14 @@ import { useGarminSelectors } from './useGarminSelectors';
 import { useGarminContext } from '../context/GarminContext';
 import { useFilteredDates } from './useFilteredDates';
 import { DATE_RANGE } from '../constants';
-import { buildGarminChartDataset, buildChartSelectors } from '../utils/chartDataBuilders';
+import { useGarminDerivedDataset } from './useGarminDerivedDataset';
 
+/**
+ * Hook pour obtenir les selectors de graphiques Garmin
+ * 
+ * Utilise `useGarminDerivedDataset` pour centraliser le calcul et garantir
+ * la cohérence entre UI, exports JSON et PDF.
+ */
 export const useGarminChartSelectors = () => {
   const {
     allDailyMetrics: dailyMetrics,
@@ -29,27 +35,33 @@ export const useGarminChartSelectors = () => {
     DATE_RANGE.ACTIVITIES_DAYS
   );
 
-  const chartData = useMemo(() => (
-    buildGarminChartDataset({
-      dailyMetrics,
-      activities: activitiesByType,
-      filteredDates,
-      selectedDate,
-      effectiveSelectedDate,
-      displayInfo
-    })
-  ), [dailyMetrics, activitiesByType, filteredDates, selectedDate, effectiveSelectedDate, displayInfo]);
+  // Utiliser le hook centralisé pour obtenir le dataset dérivé
+  const derivedDataset = useGarminDerivedDataset({
+    dates: filteredDates,
+    anchorDate: selectedDate || effectiveSelectedDate,
+    displayInfo
+  });
 
-  const selectors = useMemo(() => (
-    buildChartSelectors({
-      dataset: chartData,
-      filteredDates,
-      displayInfo,
-      effectiveSelectedDate,
-      colors,
-      selectedDateRaw: selectedDate ?? null
-    })
-  ), [chartData, filteredDates, displayInfo, effectiveSelectedDate, colors, selectedDate]);
+  // Extraire chartData et selectors depuis le dataset dérivé
+  const chartData = useMemo(() => {
+    // Le dataset dérivé contient déjà chartData (via buildGarminChartDataset)
+    // On extrait les propriétés nécessaires pour compatibilité ascendante
+    return {
+      heartRateTrend: derivedDataset.heartRateTrend,
+      heartRateTimeSeries: derivedDataset.heartRateTimeSeries,
+      bodyBatteryTrend: derivedDataset.bodyBatteryTrend,
+      stressTrend: derivedDataset.stressTrend,
+      sleepTrend: derivedDataset.sleepTrend,
+      respirationTrend: derivedDataset.respirationTrend,
+      activityHeatmap: derivedDataset.activityHeatmap,
+      correlation: derivedDataset.correlation
+    };
+  }, [derivedDataset]);
+
+  const selectors = useMemo(() => {
+    // Les selectors sont déjà calculés dans le dataset dérivé
+    return derivedDataset.selectors || null;
+  }, [derivedDataset]);
 
   const selectedDailyMetrics = useMemo(() => (
     selectedDate ? dailyMetrics[selectedDate] || null : null

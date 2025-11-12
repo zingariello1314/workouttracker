@@ -2,12 +2,14 @@ import React, { useEffect, useState, useId, useCallback } from 'react';
 import useFocusTrap from '../hooks/useFocusTrap';
 import { collectDiagnosticsSnapshot } from '../utils/diagnosticsCollector';
 import TelemetryCoordinator from '../utils/TelemetryCoordinator';
+import { useToast } from './Toast';
 const CacheDiagnostics = React.lazy(() => import('../DebugPanel/CacheDiagnostics'));
 const NetworkDiagnostics = React.lazy(() => import('../DebugPanel/NetworkDiagnostics'));
 const UIMetrics = React.lazy(() => import('../DebugPanel/UIMetrics'));
 const ServerDiagnostics = React.lazy(() => import('../DebugPanel/ServerDiagnostics'));
 const ObservabilityDiagnostics = React.lazy(() => import('../DebugPanel/ObservabilityDiagnostics'));
 const ServerMetricsDashboard = React.lazy(() => import('../DebugPanel/ServerMetricsDashboard'));
+const PerformanceView = React.lazy(() => import('../DebugPanel/PerformanceView'));
 
 const sanitizeTelemetryStore = (store) => {
   if (!store) {
@@ -42,6 +44,7 @@ export default function DebugPanel({
   const liveRegionId = useId();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [liveMessage, setLiveMessage] = React.useState('');
+  const { showToast, ToastContainer } = useToast();
   const dialogRef = useFocusTrap({
     autoFocusSelector: '[data-autofocus="true"]',
     onEscape: onClose,
@@ -144,7 +147,10 @@ export default function DebugPanel({
     };
   }, []);
 
-  const handleExportDiagnostics = useCallback(() => {
+  /**
+   * Construit le payload de diagnostic complet
+   */
+  const buildDiagnosticsPayload = useCallback(() => {
     const payload = collectDiagnosticsSnapshot({
       cacheMeta,
       networkStats: networkSnapshot,
@@ -165,7 +171,7 @@ export default function DebugPanel({
     const telemetrySnapshot =
       TelemetryCoordinator?.getSnapshot?.() || null;
 
-    const enrichedPayload = {
+    return {
       ...payload,
       telemetry: {
         snapshot: telemetrySnapshot
@@ -174,8 +180,46 @@ export default function DebugPanel({
         store: telemetryStore
       }
     };
+  }, [cacheMeta, networkSnapshot, serverDebug, uiSnapshot]);
 
+  /**
+   * Copie le diagnostic JSON dans le presse-papier
+   */
+  const handleCopyDiagnostics = useCallback(async () => {
     try {
+      const enrichedPayload = buildDiagnosticsPayload();
+      const jsonString = JSON.stringify(enrichedPayload, null, 2);
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(jsonString);
+        setLiveMessage('Diagnostic copié dans le presse-papier.');
+        showToast('✅ Diagnostic copié dans le presse-papier.', 'success', 3000);
+      } else {
+        // Fallback pour navigateurs sans Clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = jsonString;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setLiveMessage('Diagnostic copié dans le presse-papier (méthode fallback).');
+        showToast('✅ Diagnostic copié dans le presse-papier.', 'success', 3000);
+      }
+    } catch (error) {
+      console.error('[DebugPanel] Copy diagnostics failed:', error);
+      showToast('❌ Impossible de copier le diagnostic. Consulte la console pour plus de détails.', 'error', 5000);
+      setLiveMessage('Échec de la copie du diagnostic.');
+    }
+  }, [buildDiagnosticsPayload, showToast]);
+
+  /**
+   * Exporte le diagnostic en fichier JSON
+   */
+  const handleExportDiagnostics = useCallback(() => {
+    try {
+      const enrichedPayload = buildDiagnosticsPayload();
       const blob = new Blob([JSON.stringify(enrichedPayload, null, 2)], {
         type: 'application/json'
       });
@@ -190,14 +234,13 @@ export default function DebugPanel({
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
       setLiveMessage('Diagnostic exporté au format JSON.');
+      showToast('✅ Diagnostic exporté au format JSON.', 'success', 3000);
     } catch (error) {
       console.error('[DebugPanel] Export diagnostics failed:', error);
-      alert(
-        'Impossible de générer le fichier de diagnostic. Consulte la console pour plus de détails.'
-      );
-      setLiveMessage('Échec de l’export du diagnostic.');
+      showToast('❌ Impossible de générer le fichier de diagnostic. Consulte la console pour plus de détails.', 'error', 5000);
+      setLiveMessage('Échec de l\'export du diagnostic.');
     }
-  }, [cacheMeta, networkSnapshot, serverDebug, uiSnapshot]);
+  }, [buildDiagnosticsPayload, showToast]);
 
   useEffect(() => {
     const handleNetworkUpdate = (event) => {
@@ -268,10 +311,19 @@ export default function DebugPanel({
             )}
             <button
               type="button"
+              onClick={handleCopyDiagnostics}
+              className="px-3 py-2 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+              title="Copier le diagnostic JSON dans le presse-papier"
+            >
+              📋 Copier JSON
+            </button>
+            <button
+              type="button"
               onClick={handleExportDiagnostics}
               className="px-3 py-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors"
+              title="Télécharger le diagnostic JSON"
             >
-              Export JSON
+              💾 Export JSON
             </button>
             <button
               type="button"
@@ -300,13 +352,29 @@ export default function DebugPanel({
               onFetchServerDebug={refreshFromServer}
               serverDebug={serverDebug}
               isRefreshing={isRefreshing}
+              degradedMetrics={cacheMeta ? {
+                isDegraded: Boolean(cacheMeta.degraded),
+                degradedReason: cacheMeta.degradedReason || null,
+                currentCooldown: cacheMeta.cooldownMs || cacheMeta.currentCooldown || 0,
+                nextRetry: cacheMeta.nextRetry || null,
+                nextRetryTimestamp: cacheMeta.nextRetryTimestamp || null,
+                circuitState: cacheMeta.circuit || null,
+                failureCount: cacheMeta.failureCount || null,
+                sessionId: cacheMeta.sessionId || null
+              } : null}
             />
             <UIMetrics metrics={uiSnapshot} />
+            <PerformanceView 
+              uiMetrics={uiSnapshot}
+              networkStats={networkSnapshot}
+              cacheMeta={cacheMeta}
+            />
             <ObservabilityDiagnostics />
             <ServerMetricsDashboard />
             {serverDebug && <ServerDiagnostics data={serverDebug} />}
           </div>
         </React.Suspense>
+        <ToastContainer />
       </div>
     </div>
   );

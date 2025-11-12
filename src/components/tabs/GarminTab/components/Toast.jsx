@@ -1,17 +1,37 @@
 import React, { useEffect } from 'react';
+import TelemetryCoordinator from '../utils/TelemetryCoordinator';
 
 /**
- * 🟡 FIX #33: Composant Toast pour feedback visuel
+ * Composant Toast accessible pour feedback visuel
+ * Supporte aria-live, instrumentation, et fermeture automatique
  */
-export function Toast({ message, type = 'success', duration = 3000, onClose }) {
+export function Toast({ message, type = 'success', duration = 3000, onClose, id }) {
   useEffect(() => {
+    // Instrumentation : enregistrer l'affichage du toast
+    if (id && typeof window !== 'undefined') {
+      TelemetryCoordinator.recordEvent('toast_shown', {
+        type,
+        messageLength: typeof message === 'string' ? message.length : 0,
+        duration,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     if (duration > 0) {
       const timer = setTimeout(() => {
         onClose?.();
+        // Instrumentation : enregistrer la fermeture automatique
+        if (id && typeof window !== 'undefined') {
+          TelemetryCoordinator.recordEvent('toast_closed', {
+            type,
+            reason: 'auto',
+            timestamp: new Date().toISOString()
+          });
+        }
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [duration, onClose]);
+  }, [duration, onClose, type, message, id]);
 
   const bgColor = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
   const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
@@ -37,9 +57,19 @@ export function Toast({ message, type = 'success', duration = 3000, onClose }) {
         </div>
         <button
           type="button"
-          onClick={onClose}
-          className="text-white/80 hover:text-white flex-shrink-0 ml-2"
-          aria-label="Fermer"
+          onClick={() => {
+            // Instrumentation : enregistrer la fermeture manuelle
+            if (id && typeof window !== 'undefined') {
+              TelemetryCoordinator.recordEvent('toast_closed', {
+                type,
+                reason: 'manual',
+                timestamp: new Date().toISOString()
+              });
+            }
+            onClose?.();
+          }}
+          className="text-white/80 hover:text-white flex-shrink-0 ml-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 rounded"
+          aria-label="Fermer le message"
         >
           ✕
         </button>
@@ -55,7 +85,7 @@ export function useToast() {
   const [toasts, setToasts] = React.useState([]);
 
   const showToast = React.useCallback((message, type = 'success', duration = 3000) => {
-    const id = Date.now();
+    const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setToasts(prev => [...prev, { id, message, type, duration }]);
     return id;
   }, []);
@@ -69,6 +99,7 @@ export function useToast() {
       {toasts.map(toast => (
         <Toast
           key={toast.id}
+          id={toast.id}
           message={toast.message}
           type={toast.type}
           duration={toast.duration}

@@ -1,0 +1,69 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`chartDataBuilders > buildChartSelectors > devrait produire un snapshot stable pour buildChartSelectors 1`] = `
+{
+  "heartRateTimeSeries": {
+    "hasChartData": true,
+    "hasEnoughData": true,
+    "hasEnriched": true,
+    "realPointsCount": 0,
+  },
+  "heartRateTrend": {
+    "dataLength": 3,
+    "hasData": true,
+    "hasStats": false,
+    "hasYAxisDomain": true,
+  },
+  "metadata": {
+    "filteredDatesLength": 3,
+    "hasColors": true,
+    "hasDisplayInfo": true,
+    "selectedDate": "2025-01-16",
+  },
+  "structure": {
+    "hasActivity": true,
+    "hasBodyBattery": true,
+    "hasHeartRate": true,
+    "hasMetadata": true,
+    "hasRespiration": true,
+    "hasSleep": true,
+    "hasStress": true,
+  },
+}
+`;
+
+exports[`chartDataBuilders > buildDerivedDataset > devrait produire un snapshot stable pour buildDerivedDataset 1`] = `
+{
+  "dataLengths": {
+    "bodyBatteryTrend": 3,
+    "heartRateTrend": 3,
+    "respirationTrend": 0,
+    "sleepTrend": 3,
+    "stressTrend": 3,
+  },
+  "hasChartData": {
+    "activityHeatmap": true,
+    "bodyBatteryTrend": true,
+    "heartRateTimeSeries": true,
+    "heartRateTrend": true,
+    "respirationTrend": true,
+    "sleepTrend": true,
+    "stressTrend": true,
+  },
+  "hasSelectors": true,
+  "metadata": {
+    "effectiveSelectedDate": "2025-01-16",
+    "filteredDatesLength": 3,
+    "selectorsSelectedDate": "2025-01-16",
+  },
+  "selectorsStructure": {
+    "hasActivity": true,
+    "hasBodyBattery": true,
+    "hasHeartRate": true,
+    "hasMetadata": true,
+    "hasRespiration": true,
+    "hasSleep": true,
+    "hasStress": true,
+  },
+}
+`;

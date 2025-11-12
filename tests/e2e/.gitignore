@@ -1,0 +1,7 @@
+# Fichiers temporaires de tests E2E
+*.json
+playwright-report/
+test-results/
+playwright/.cache/
+
+

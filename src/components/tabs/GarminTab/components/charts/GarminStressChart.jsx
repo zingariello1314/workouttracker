@@ -1,7 +1,8 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ReferenceLine } from 'recharts';
-import { CustomDot } from './CustomDot';
+import { CustomDot, getCustomDotKey } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
+import { useChartData } from '../../hooks/useChartData';
 import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
 import { ARIA_LABELS } from '../../constants';
 import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
@@ -9,18 +10,31 @@ import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 /**
  * Graphique d'évolution du Stress
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
+ * ✅ Optimisé avec useChartData et getCustomDotKey
  */
 function GarminStressChart({ precomputed, selector, colors }) {
   useUIMetricsTelemetry('GarminStressChart');
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const trend = selector?.trend ?? selector ?? precomputed ?? {};
-  const chartData = Array.isArray(trend?.data) ? trend.data : precomputed?.data ?? [];
-  const displayInfo = trend?.displayInfo ?? precomputed?.displayInfo ?? null;
-  const effectiveSelectedDate = trend?.selectedDate ?? precomputed?.selectedDate ?? null;
-  const avgValue = (trend?.average ?? precomputed?.average) ?? (chartData.length === 0
-    ? 0
-    : chartData.reduce((sum, d) => sum + d.stress, 0) / chartData.length);
+  // Utiliser useChartData pour pré-calculer domaines et métadonnées
+  const chartDataConfig = useChartData({
+    selector: selector?.trend ?? selector,
+    precomputed,
+    chartType: 'stress',
+    dataKeys: ['stress'],
+    defaultDomain: [0, 100]
+  });
+
+  const chartData = chartDataConfig.data;
+  const yAxisDomain = chartDataConfig.yAxisDomain;
+  const displayInfo = chartDataConfig.displayInfo;
+  const effectiveSelectedDate = chartDataConfig.selectedDate;
+  
+  // Calculer la moyenne si nécessaire (mémoïsé pour éviter recalculs)
+  const avgValue = React.useMemo(() => {
+    if (chartData.length === 0) return 0;
+    return chartData.reduce((sum, d) => sum + (d.stress || 0), 0) / chartData.length;
+  }, [chartData]);
 
   if (chartData.length === 0) {
     return (
@@ -124,13 +138,14 @@ function GarminStressChart({ precomputed, selector, colors }) {
             />
             <YAxis
               stroke="#9CA3AF"
-              domain={[0, 100]}
+              domain={yAxisDomain}
               label={{ value: 'Stress', angle: -90, position: 'insideLeft', style: { fill: '#9CA3AF' } }}
             />
             <Tooltip content={renderTooltip} />
             <Legend />
             {effectiveSelectedDate && chartData.some(d => d.date === effectiveSelectedDate) && (
               <ReferenceLine
+                key={`ref-line-${effectiveSelectedDate}`}
                 x={effectiveSelectedDate}
                 stroke="#FCD34D"
                 strokeWidth={2}
@@ -147,7 +162,7 @@ function GarminStressChart({ precomputed, selector, colors }) {
               name="Stress"
               dot={(props) => {
                 const { key: _omittedKey, payload, index, ...restProps } = props;
-                const dotKey = payload?.date ?? `${payload?.timestamp ?? ''}-${index ?? 0}`;
+                const dotKey = getCustomDotKey(payload, index);
                 return (
                   <CustomDot
                     key={dotKey}

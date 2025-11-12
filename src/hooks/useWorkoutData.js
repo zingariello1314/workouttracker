@@ -650,12 +650,26 @@ export const useWorkoutData = () => {
     }
   };
 
+  // ✅ Protection contre les doubles appels (React StrictMode)
+  const initializedRef = useRef(false);
+  
   // Effet pour le chargement initial des données
   useEffect(() => {
+    // Éviter les doubles appels en développement (React StrictMode)
+    if (initializedRef.current) {
+      return;
+    }
+    initializedRef.current = true;
+    
     loadData();
     
-    // Nettoyage automatique au démarrage
+    // Nettoyage automatique au démarrage (une seule fois)
     cleanupLocalStorage();
+    
+    return () => {
+      // Réinitialiser le flag si le composant est démonté (pour remontage propre)
+      initializedRef.current = false;
+    };
   }, []);
 
   // Effet pour la sauvegarde automatique à chaque changement de données

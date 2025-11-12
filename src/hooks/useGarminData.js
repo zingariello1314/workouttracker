@@ -36,13 +36,14 @@ import {
   importForcedRangesHistory,
   FORCED_HISTORY_LIMIT
 } from './garminForcedHistory';
-import { buildDerivedDataset } from '../components/tabs/GarminTab/utils/chartDataBuilders';
+import { getDerivedDatasetSync } from '../components/tabs/GarminTab/hooks/useGarminDerivedDataset';
 import { collectDiagnosticsSnapshot } from '../components/tabs/GarminTab/utils/diagnosticsCollector';
 import {
   getUIMetricsSnapshot,
   serializeUIMetricsSnapshot
 } from '../components/tabs/GarminTab/utils/uiMetricsStore';
 import { loadTelemetryHistory } from './garminTelemetryHistory';
+import { loadAutoSyncHistory, persistAutoSyncHistory, AUTO_SYNC_HISTORY_LIMIT } from './garminAutoSyncHistory';
 
 /**
  * Hook principal pour la gestion des données Garmin dans IndexedDB
@@ -223,11 +224,14 @@ export const useGarminData = () => {
     const derivedDates = Object.keys(coreData.dailyMetrics || {}).sort();
     const lastDate = derivedDates.length ? derivedDates[derivedDates.length - 1] : null;
     const exportDates = derivedDates.slice(-30);
-    const derivedCharts = buildDerivedDataset({
+    // Utiliser la version sync qui partage le cache avec les hooks React
+    const derivedCharts = getDerivedDatasetSync({
       dailyMetrics: coreData.dailyMetrics || {},
       activities: coreData.activities || {},
       dates: exportDates,
-      anchorDate: lastDate
+      anchorDate: lastDate,
+      displayInfo: null,
+      colors: null
     });
 
     const rawUIMetrics = getUIMetricsSnapshot();
@@ -251,6 +255,9 @@ export const useGarminData = () => {
         ? window.__GARMIN_OBSERVABILITY__
         : null;
     const telemetryHistory = await loadTelemetryHistory(20);
+    
+    // ✅ Tâche 13 : Charger l'historique AutoSync pour export
+    const autoSyncHistory = await loadAutoSyncHistory(AUTO_SYNC_HISTORY_LIMIT);
 
     return {
       ...coreData,
@@ -274,7 +281,9 @@ export const useGarminData = () => {
         history: telemetryHistory
       },
       telemetrySessionId: telemetryStore?.sessionId ?? null,
-      telemetrySchemaVersion: telemetryStore?.schemaVersion ?? null
+      telemetrySchemaVersion: telemetryStore?.schemaVersion ?? null,
+      // ✅ Tâche 13 : Historique AutoSync
+      autoSyncHistory
     };
   }, [loadAllDataWrapper, loadForcedRangesHistoryWrapper]);
 
@@ -292,6 +301,12 @@ export const useGarminData = () => {
     if (data.dailyMetrics) await saveDailyMetrics(data.dailyMetrics, dbReady);
     if (Array.isArray(data.forcedRangesHistory) && data.forcedRangesHistory.length > 0) {
       await importForcedRangesHistory(data.forcedRangesHistory);
+    }
+    // ✅ Tâche 13 : Importer l'historique AutoSync
+    if (Array.isArray(data.autoSyncHistory) && data.autoSyncHistory.length > 0) {
+      for (const entry of data.autoSyncHistory) {
+        await persistAutoSyncHistory(entry);
+      }
     }
     if (data.maintenance) {
       const { purgeSummary, timeSeriesSummary, mockCleanupSummary } = data.maintenance;

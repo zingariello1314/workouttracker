@@ -765,8 +765,17 @@ export const useHomepageImages = () => {
     };
   };
 
+  // ✅ Protection contre les doubles appels (React StrictMode)
+  const initializedRef = useRef(false);
+  
   // Initialisation du système
   useEffect(() => {
+    // Éviter les doubles appels en développement (React StrictMode)
+    if (initializedRef.current) {
+      return;
+    }
+    initializedRef.current = true;
+    
     const initializeSystem = async () => {
       await loadImagesWithRecovery();
       await checkSystemHealth();
@@ -776,7 +785,11 @@ export const useHomepageImages = () => {
     
     // Démarrer la sauvegarde automatique
     const cleanup = startAutoSave();
-    return cleanup;
+    return () => {
+      cleanup();
+      // Réinitialiser le flag si le composant est démonté (pour remontage propre)
+      initializedRef.current = false;
+    };
   }, []);
 
   return {

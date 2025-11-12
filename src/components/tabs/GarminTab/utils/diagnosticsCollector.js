@@ -53,6 +53,20 @@ export const collectDiagnosticsSnapshot = ({
     renderHistoryLimit
   });
 
+  // Extraire les métriques de mode dégradé depuis cacheMeta
+  const degradedMetrics = cacheMeta
+    ? {
+        isDegraded: Boolean(cacheMeta.degraded),
+        degradedReason: cacheMeta.degradedReason || null,
+        currentCooldown: cacheMeta.cooldownMs || cacheMeta.currentCooldown || null,
+        nextRetry: cacheMeta.nextRetry || null,
+        nextRetryTimestamp: cacheMeta.nextRetryTimestamp || null,
+        circuitState: cacheMeta.circuit || null,
+        failureCount: cacheMeta.failureCount || null,
+        sessionId: cacheMeta.sessionId || null
+      }
+    : null;
+
   return {
     generatedAt: new Date().toISOString(),
     cacheMeta: cacheMeta ? cloneIfPossible(cacheMeta) : null,
@@ -63,6 +77,7 @@ export const collectDiagnosticsSnapshot = ({
       ? forcedRangesHistory.slice()
       : [],
     serverDebug: includeServer ? cloneIfPossible(serverDebug) : null,
+    degradedMetrics: degradedMetrics ? cloneIfPossible(degradedMetrics) : null,
     telemetryInfo: telemetryStore
       ? {
           sessionId: telemetryStore.sessionId ?? null,
