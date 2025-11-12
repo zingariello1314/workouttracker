@@ -29,7 +29,7 @@ export const DB_NAME = 'GarminDataDB';
  * Version de la base de données IndexedDB
  * @constant {number}
  */
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 /**
  * Nom de l'object store pour les activités
@@ -54,6 +54,12 @@ export const STORE_DEVICE_META = 'deviceMeta';
  * @constant {string}
  */
 export const STORE_FORCED_RANGES = 'forcedRangesHistory';
+
+/**
+ * Nom de l'object store pour l'historique télémétrie
+ * @constant {string}
+ */
+export const STORE_TELEMETRY_HISTORY = 'telemetryHistory';
 
 // ==================== ÉTAT GLOBAL ====================
 
@@ -337,6 +343,15 @@ const openDBInternal = () => {
             forcedStore.createIndex('mode', 'mode', { unique: false });
             forcedStore.createIndex('start', 'start', { unique: false });
             forcedStore.createIndex('end', 'end', { unique: false });
+          }
+
+          // Store: telemetryHistory (persist snapshots)
+          if (!db.objectStoreNames.contains(STORE_TELEMETRY_HISTORY)) {
+            const telemetryStore = db.createObjectStore(STORE_TELEMETRY_HISTORY, {
+              keyPath: 'timestamp',
+              autoIncrement: false
+            });
+            telemetryStore.createIndex('timestamp', 'timestamp', { unique: true });
           }
         } catch (upgradeError) {
           log.error('[openDB] Upgrade error:', upgradeError);

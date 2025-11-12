@@ -17,6 +17,15 @@ export const CIRCUIT_BREAKER = {
 };
 
 export const CACHE_SCHEMA_VERSION = 'v1';
+export const TELEMETRY_SCHEMA_VERSION = 'v1';
+
+export const TELEMETRY_DEFAULTS = {
+  THROTTLE_MS: 250,
+  HISTORY_LIMIT: 50,
+  RENDER_HISTORY_LIMIT: 50,
+  SNAPSHOT_HISTORY_LIMIT: 10,
+  AUTO_PUSH_INTERVAL_MS: 60000
+};
 
 // ==================== RANGES DE DONNÉES ====================
 export const DATE_RANGE = {
@@ -84,7 +93,8 @@ export const ACTIVITY = {
 // ==================== API ENDPOINTS ====================
 export const API_ENDPOINTS = {
   SYNC: '/api/garmin/sync',
-  STATUS: '/api/garmin/status'
+  STATUS: '/api/garmin/status',
+  METRICS: '/api/garmin/metrics'
 };
 
 // ==================== MESSAGES ====================

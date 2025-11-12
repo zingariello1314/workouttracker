@@ -9,7 +9,8 @@ const DEFAULT_STORE = {
   lastRenderComponent: null,
   renderCount: 0,
   history: [],
-  renderHistory: []
+  renderHistory: [],
+  components: {}
 };
 
 export const ensureUIMetricsStore = () => {
@@ -22,9 +23,16 @@ export const ensureUIMetricsStore = () => {
     const store = window.__GARMIN_UI_METRICS__;
     for (const key of Object.keys(DEFAULT_STORE)) {
       if (store[key] === undefined) {
-        store[key] = Array.isArray(DEFAULT_STORE[key])
-          ? []
-          : DEFAULT_STORE[key];
+        if (Array.isArray(DEFAULT_STORE[key])) {
+          store[key] = [];
+        } else if (
+          DEFAULT_STORE[key] &&
+          typeof DEFAULT_STORE[key] === 'object'
+        ) {
+          store[key] = {};
+        } else {
+          store[key] = DEFAULT_STORE[key];
+        }
       }
     }
   }
@@ -54,6 +62,10 @@ export const updateUIMetricsStore = (updatesOrUpdater) => {
     Object.assign(store, updates);
   }
 
+  if (!store.components) {
+    store.components = {};
+  }
+
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
       new CustomEvent('garmin-ui-metrics-update', { detail: store })
@@ -73,5 +85,75 @@ export const resetUIMetricsStore = () => {
       detail: window.__GARMIN_UI_METRICS__
     })
   );
+};
+
+const roundMetric = (value) => {
+  if (value === null || value === undefined) return null;
+  if (!Number.isFinite(value)) return null;
+  return Math.round(value);
+};
+
+export const serializeUIMetricsSnapshot = (
+  snapshot,
+  {
+    historyLimit = 10,
+    renderHistoryLimit = 10,
+    includeComponents = true
+  } = {}
+) => {
+  if (!snapshot) {
+    return null;
+  }
+
+  const safeHistory = Array.isArray(snapshot.history)
+    ? snapshot.history.slice(0, historyLimit).map((entry) => ({
+        timestamp: entry?.timestamp ?? null,
+        message: entry?.message ?? '',
+        ok: entry?.ok ?? null,
+        error: entry?.error ?? null
+      }))
+    : [];
+
+  const safeRenderHistory = Array.isArray(snapshot.renderHistory)
+    ? snapshot.renderHistory.slice(0, renderHistoryLimit).map((entry) => ({
+        timestamp: entry?.timestamp ?? null,
+        component: entry?.component ?? null,
+        duration: roundMetric(entry?.duration)
+      }))
+    : [];
+
+  let components = undefined;
+  if (includeComponents) {
+    components = Object.entries(snapshot.components || {}).reduce(
+      (acc, [name, stats]) => {
+        acc[name] = {
+          count: stats?.count ?? 0,
+          avgDuration: roundMetric(stats?.avgDuration),
+          maxDuration: roundMetric(stats?.maxDuration),
+          minDuration: roundMetric(stats?.minDuration),
+          lastDuration: roundMetric(stats?.lastDuration),
+          totalDuration: roundMetric(stats?.totalDuration),
+          lastUpdated: stats?.lastUpdated ?? null
+        };
+        return acc;
+      },
+      {}
+    );
+  }
+
+  return {
+    lastSyncDuration: roundMetric(snapshot.lastSyncDuration),
+    lastSyncTimestamp: snapshot.lastSyncTimestamp ?? null,
+    lastSyncOptions: snapshot.lastSyncOptions ?? null,
+    lastStatusMessage: snapshot.lastStatusMessage ?? null,
+    lastStatusOk: snapshot.lastStatusOk ?? null,
+    lastStatusError: snapshot.lastStatusError ?? null,
+    lastRenderDuration: roundMetric(snapshot.lastRenderDuration),
+    lastRenderComponent: snapshot.lastRenderComponent ?? null,
+    renderCount: snapshot.renderCount ?? 0,
+    history: safeHistory,
+    renderHistory: safeRenderHistory,
+    components
+  };
 };
 

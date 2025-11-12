@@ -749,6 +749,12 @@ const serverMetrics = {
     hits: 0,
     misses: 0,
     bypass: 0
+  },
+  telemetry: {
+    ingested: 0,
+    lastIngest: null,
+    lastPayload: null,
+    history: []
   }
 };
 
@@ -800,9 +806,486 @@ const buildMetricsSnapshot = () => {
       misses: serverMetrics.cache.misses,
       bypass: serverMetrics.cache.bypass,
       size: serverCache.cache.size
+    },
+    telemetry: {
+      ingested: serverMetrics.telemetry.ingested,
+      lastIngest: serverMetrics.telemetry.lastIngest,
+      lastPayload: serverMetrics.telemetry.lastPayload,
+      history: serverMetrics.telemetry.history
     }
   };
 };
+
+const ADMIN_METRICS_REFRESH_INTERVAL_MS = 5000;
+const ADMIN_METRICS_PAGE_HTML = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tableau de bord métriques Garmin</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-soft: #16213e;
+      --border: rgba(148, 163, 184, 0.25);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #34d399;
+      --danger: #f87171;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body {
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.08), transparent 60%), var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    header p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .grid.cols-3 {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .card {
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.35);
+      backdrop-filter: blur(12px);
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      color: #f1f5f9;
+    }
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stat label {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .stat span {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .stat small {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .status {
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.6);
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+    .status strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .lists {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .lists ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .lists li {
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      background: rgba(15, 23, 42, 0.65);
+      font-size: 0.85rem;
+      line-height: 1.35;
+      color: #cbd5f5;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent);
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .error {
+      color: var(--danger);
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+    @media (max-width: 640px) {
+      body {
+        padding: 16px;
+      }
+      header h1 {
+        font-size: 1.35rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <div class="badge">/api/garmin/metrics</div>
+      <h1>Tableau de bord métriques Garmin</h1>
+      <p>
+        Actualisation automatique toutes les ${(ADMIN_METRICS_REFRESH_INTERVAL_MS / 1000).toFixed(0)} secondes.
+        Données consolidées front + serveur pour supervision temps réel.
+      </p>
+      <div class="status">
+        <strong>Message :</strong> <span id="status-message">—</span><br />
+        <strong>Dernière actualisation :</strong> <span id="updated-at">—</span><br />
+        <strong>Serveur actif depuis :</strong> <span id="uptime">—</span>
+      </div>
+      <div id="error-banner" class="error"></div>
+    </header>
+
+    <section class="grid cols-3">
+      <article class="card">
+        <h2>Synchronisations</h2>
+        <div class="grid">
+          <div class="stat">
+            <label>Total</label>
+            <span id="sync-total">0</span>
+          </div>
+          <div class="stat">
+            <label>Succès</label>
+            <span id="sync-success">0</span>
+          </div>
+          <div class="stat">
+            <label>Échecs</label>
+            <span id="sync-failure">0</span>
+          </div>
+          <div class="stat">
+            <label>Cache (serveur)</label>
+            <span id="sync-cache-hit">0</span>
+          </div>
+          <div class="stat">
+            <label>Cooldown</label>
+            <span id="sync-cooldown">0</span>
+          </div>
+          <div class="stat">
+            <label>Delta forcé</label>
+            <span id="sync-forced-delta">0</span>
+            <small id="sync-forced-delta-removed">points retirés : 0</small>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Python</h2>
+        <div class="grid">
+          <div class="stat">
+            <label>Appels</label>
+            <span id="python-count">0</span>
+          </div>
+          <div class="stat">
+            <label>Durée moyenne</label>
+            <span id="python-average">0 ms</span>
+          </div>
+          <div class="stat">
+            <label>Dernière durée</label>
+            <span id="python-last">0 ms</span>
+          </div>
+          <div class="stat">
+            <label>Dernière requête</label>
+            <span id="last-request">—</span>
+            <small id="last-request-meta">—</small>
+          </div>
+          <div class="stat">
+            <label>Dernière erreur</label>
+            <span id="last-error">—</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Cache serveur</h2>
+        <div class="grid">
+          <div class="stat">
+            <label>Hits</label>
+            <span id="cache-hits">0</span>
+          </div>
+          <div class="stat">
+            <label>Misses</label>
+            <span id="cache-misses">0</span>
+          </div>
+          <div class="stat">
+            <label>Bypass</label>
+            <span id="cache-bypass">0</span>
+          </div>
+          <div class="stat">
+            <label>Entrées</label>
+            <span id="cache-size">0</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid cols-3">
+      <article class="card" style="grid-column: span 2;">
+        <h2>Télémétrie client</h2>
+        <div class="grid">
+          <div class="stat">
+            <label>Payloads ingérés</label>
+            <span id="telemetry-ingested">0</span>
+          </div>
+          <div class="stat">
+            <label>Dernière ingestion</label>
+            <span id="telemetry-last-ingest">—</span>
+          </div>
+          <div class="stat">
+            <label>Session</label>
+            <span id="telemetry-session">—</span>
+            <small id="telemetry-schema">—</small>
+          </div>
+          <div class="stat">
+            <label>Dernier motif</label>
+            <span id="telemetry-reason">—</span>
+            <small id="telemetry-generated-at">—</small>
+          </div>
+        </div>
+
+        <div class="lists" style="margin-top: 16px;">
+          <h3 style="font-size: 0.95rem; color: var(--text-muted);">Historique des 10 dernières ingestions</h3>
+          <ul id="telemetry-history"></ul>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Export brut</h2>
+        <div class="grid">
+          <button id="download-json" style="
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: var(--accent);
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+          ">
+            Télécharger JSON
+          </button>
+          <small style="color: var(--text-muted); display:block;">Récupère le snapshot courant depuis l'API Metrics.</small>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const refreshMs = ${ADMIN_METRICS_REFRESH_INTERVAL_MS};
+      const dateFormatter = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'medium' });
+      const relativeFormatter = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' });
+
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.textContent = value;
+        }
+      };
+
+      const formatDate = (value) => {
+        if (!value) return '—';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return dateFormatter.format(date);
+      };
+
+      const formatRelative = (value) => {
+        if (!value) return '—';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        const diffMs = Date.now() - date.getTime();
+        const diffSeconds = Math.round(diffMs / 1000);
+        if (Math.abs(diffSeconds) < 60) {
+          return relativeFormatter.format(-diffSeconds, 'second');
+        }
+        const diffMinutes = Math.round(diffSeconds / 60);
+        if (Math.abs(diffMinutes) < 60) {
+          return relativeFormatter.format(-diffMinutes, 'minute');
+        }
+        const diffHours = Math.round(diffMinutes / 60);
+        if (Math.abs(diffHours) < 24) {
+          return relativeFormatter.format(-diffHours, 'hour');
+        }
+        const diffDays = Math.round(diffHours / 24);
+        return relativeFormatter.format(-diffDays, 'day');
+      };
+
+      const renderHistory = (history) => {
+        const list = document.getElementById('telemetry-history');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!Array.isArray(history) || history.length === 0) {
+          const li = document.createElement('li');
+          li.textContent = 'Historique vide';
+          list.appendChild(li);
+          return;
+        }
+        history.slice(0, 10).forEach((entry) => {
+          const li = document.createElement('li');
+          li.textContent = \`\${formatDate(entry.acceptedAt)} — \${entry.sessionId || '—'} (\${entry.reason || '—'})\`;
+          list.appendChild(li);
+        });
+      };
+
+      const updateMetrics = (payload, timestamp) => {
+        if (!payload) return;
+        setText('updated-at', formatDate(timestamp));
+        setText('uptime', formatRelative(payload.upSince));
+        setText('status-message', payload.lastStatus?.message || '—');
+
+        setText('sync-total', payload.sync?.total ?? 0);
+        setText('sync-success', payload.sync?.success ?? 0);
+        setText('sync-failure', payload.sync?.failure ?? 0);
+        setText('sync-cache-hit', payload.sync?.cacheHit ?? 0);
+        setText('sync-cooldown', payload.sync?.servedFromCooldown ?? 0);
+        const forcedDeltaCount = payload.sync?.forcedDelta?.appliedCount ?? 0;
+        const forcedDeltaRemoved = payload.sync?.forcedDelta?.removedPoints ?? 0;
+        setText('sync-forced-delta', forcedDeltaCount);
+        setText('sync-forced-delta-removed', \`points retirés : \${forcedDeltaRemoved}\`);
+
+        setText('python-count', payload.sync?.python?.count ?? 0);
+        setText('python-average', \`\${payload.sync?.python?.averageDurationMs ?? 0} ms\`);
+        setText('python-last', \`\${payload.sync?.python?.lastDurationMs ?? 0} ms\`);
+        setText('last-request', formatDate(payload.sync?.lastRequest?.timestamp));
+        setText('last-request-meta', payload.sync?.lastRequest?.source || '—');
+        setText('last-error', payload.sync?.lastError || '—');
+
+        setText('cache-hits', payload.cache?.hits ?? 0);
+        setText('cache-misses', payload.cache?.misses ?? 0);
+        setText('cache-bypass', payload.cache?.bypass ?? 0);
+        setText('cache-size', payload.cache?.size ?? 0);
+
+        setText('telemetry-ingested', payload.telemetry?.ingested ?? 0);
+        setText('telemetry-last-ingest', formatDate(payload.telemetry?.lastIngest));
+        setText('telemetry-session', payload.telemetry?.lastPayload?.sessionId || '—');
+        setText('telemetry-schema', payload.telemetry?.lastPayload?.schemaVersion ? \`schema \${payload.telemetry.lastPayload.schemaVersion}\` : '—');
+        setText('telemetry-reason', payload.telemetry?.lastPayload?.reason || '—');
+        setText('telemetry-generated-at', formatDate(payload.telemetry?.lastPayload?.generatedAt));
+
+        renderHistory(payload.telemetry?.history);
+      };
+
+      const setError = (message) => {
+        const el = document.getElementById('error-banner');
+        if (el) {
+          el.textContent = message || '';
+        }
+      };
+
+      const loadMetrics = async () => {
+        try {
+          setError('');
+          const response = await fetch('/api/garmin/metrics', { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error(\`HTTP \${response.status}\`);
+          }
+          const data = await response.json();
+          updateMetrics(data.metrics, data.timestamp);
+        } catch (error) {
+          setError(\`Erreur de chargement : \${error.message || error}\`);
+        }
+      };
+
+      const downloadJson = async () => {
+        try {
+          const response = await fetch('/api/garmin/metrics', { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error(\`HTTP \${response.status}\`);
+          }
+          const data = await response.json();
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = \`garmin-metrics-\${new Date().toISOString()}.json\`;
+          document.body.appendChild(anchor);
+          anchor.click();
+          document.body.removeChild(anchor);
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          setError(\`Téléchargement impossible : \${error.message || error}\`);
+        }
+      };
+
+      const init = () => {
+        const downloadBtn = document.getElementById('download-json');
+        if (downloadBtn) {
+          downloadBtn.addEventListener('click', downloadJson);
+        }
+        loadMetrics();
+        setInterval(loadMetrics, refreshMs);
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            loadMetrics();
+          }
+        });
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>`;
+
 
 // ==========================================
 // ENDPOINTS
@@ -1202,6 +1685,61 @@ app.get('/api/garmin/metrics', (req, res) => {
     timestamp: new Date().toISOString(),
     metrics: snapshot
   });
+});
+
+app.get('/admin/metrics', (req, res) => {
+  console.log('[SERVER] GET /admin/metrics');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(ADMIN_METRICS_PAGE_HTML);
+});
+
+app.post('/api/garmin/metrics', async (req, res) => {
+  console.log('[SERVER] POST /api/garmin/metrics');
+  const acceptedAt = new Date().toISOString();
+  try {
+    const payload = req.body || {};
+
+    serverMetrics.telemetry.ingested += 1;
+    serverMetrics.telemetry.lastIngest = acceptedAt;
+    serverMetrics.telemetry.lastPayload = {
+      sessionId: payload.sessionId ?? null,
+      schemaVersion: payload.schemaVersion ?? null,
+      generatedAt: payload.generatedAt ?? null,
+      reason: payload.reason ?? null
+    };
+
+    if (!Array.isArray(serverMetrics.telemetry.history)) {
+      serverMetrics.telemetry.history = [];
+    }
+    serverMetrics.telemetry.history.unshift({
+      acceptedAt,
+      sessionId: payload.sessionId ?? null,
+      reason: payload.reason ?? null
+    });
+    serverMetrics.telemetry.history = serverMetrics.telemetry.history.slice(0, 50);
+
+    appendStructuredLog('metrics_ingested', {
+      acceptedAt,
+      sessionId: payload.sessionId ?? null,
+      schemaVersion: payload.schemaVersion ?? null,
+      reason: payload.reason ?? null,
+      from: req.ip
+    });
+
+    const snapshot = buildMetricsSnapshot();
+    res.json({
+      ok: true,
+      acceptedAt,
+      metrics: snapshot,
+      telemetry: serverMetrics.telemetry.lastPayload
+    });
+  } catch (error) {
+    appendStructuredLog('metrics_ingest_error', {
+      acceptedAt,
+      error: error.message
+    });
+    res.status(500).json({ ok: false, error: error.message });
+  }
 });
 
 // ✅ PHASE 1 : Endpoint de diagnostic complet

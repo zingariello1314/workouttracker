@@ -4,7 +4,7 @@
  * ✅ PHASE 1.4 : Optimisé avec cache LRU pour éviter décompressions redondantes
  */
 
-import { getDecompressed } from './garminTimeSeriesCache';
+import { getDecompressed } from './garminTimeSeriesCache.js';
 
 /**
  * Décompresse une time series compressée avec delta encoding

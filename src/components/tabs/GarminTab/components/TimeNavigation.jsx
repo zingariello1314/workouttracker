@@ -1,4 +1,12 @@
-import React, { useRef, useCallback, useTransition } from 'react';
+import React, {
+  useRef,
+  useCallback,
+  useTransition,
+  useId,
+  useMemo,
+  useState,
+  useEffect
+} from 'react';
 import { useThrottle } from '../../../../hooks/useThrottle';
 import { DEBOUNCE_DELAY_MS, DATE_RANGE, ARIA_LABELS, KEYBOARD } from '../constants';
 import { areTimeNavigationPropsEqual } from '../../../../utils/chartComparison';
@@ -27,6 +35,57 @@ function TimeNavigation({
 }) {
   const [showFilters, setShowFilters] = React.useState(false);
   const [showComparison, setShowComparison] = React.useState(false);
+  const filtersSectionId = useId();
+  const filtersHeadingId = useId();
+  const comparisonSectionId = useId();
+  const comparisonHeadingId = useId();
+  const statusRegionId = useId();
+
+  const dateFormatterVerbose = useMemo(
+    () => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }),
+    []
+  );
+
+  const periodLabels = useMemo(() => {
+    const customLabel =
+      customStartDate && customEndDate
+        ? `Période personnalisée du ${customStartDate} au ${customEndDate}`
+        : 'Période personnalisée';
+    return {
+      all: 'Toutes les dates disponibles',
+      week: '7 derniers jours',
+      month: '30 derniers jours',
+      '3months': '90 derniers jours',
+      '6months': '180 derniers jours',
+      year: '365 derniers jours',
+      custom: customLabel
+    };
+  }, [customStartDate, customEndDate]);
+
+  const [liveMessage, setLiveMessage] = useState('');
+  useEffect(() => {
+    const dateLabel = selectedDate
+      ? dateFormatterVerbose.format(new Date(`${selectedDate}T00:00:00`))
+      : 'aucune date sélectionnée';
+    const periodLabel = periodLabels[periodFilter] || 'période inconnue';
+    const comparisonLabel = comparisonMode
+      ? compareDate
+        ? `Comparaison avec ${dateFormatterVerbose.format(
+            new Date(`${compareDate}T00:00:00`)
+          )}`
+        : 'Comparaison activée'
+      : 'Comparaison désactivée';
+    setLiveMessage(
+      `Date sélectionnée : ${dateLabel}. Filtre période : ${periodLabel}. ${comparisonLabel}.`
+    );
+  }, [
+    selectedDate,
+    periodFilter,
+    comparisonMode,
+    compareDate,
+    periodLabels,
+    dateFormatterVerbose
+  ]);
   
   // 🟡 FIX #17 : useTransition pour navigation non-bloquante
   const [isPending, startTransition] = useTransition();
@@ -182,6 +241,15 @@ function TimeNavigation({
 
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4 mb-6">
+      <div
+        id={statusRegionId}
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {liveMessage}
+      </div>
       <div className="flex items-center justify-between flex-wrap gap-4">
         {/* Navigation principale */}
         <div className="flex items-center gap-2">
@@ -264,6 +332,7 @@ function TimeNavigation({
           <button
             onClick={goToToday}
             className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
+          aria-label="Aller à aujourd'hui"
             title="Aujourd'hui"
           >
             Aujourd'hui
@@ -279,6 +348,9 @@ function TimeNavigation({
                 ? 'bg-blue-600 text-white'
                 : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
             }`}
+            aria-expanded={showFilters}
+            aria-controls={filtersSectionId}
+            aria-label={showFilters ? 'Masquer les filtres de période' : 'Afficher les filtres de période'}
           >
             🔍 Filtres
           </button>
@@ -289,6 +361,10 @@ function TimeNavigation({
                 ? 'bg-purple-600 text-white'
                 : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
             }`}
+            aria-expanded={showComparison}
+            aria-controls={comparisonSectionId}
+            aria-label={showComparison ? 'Masquer les options de comparaison' : 'Afficher les options de comparaison'}
+            aria-pressed={comparisonMode}
           >
             📊 Comparer
           </button>
@@ -297,8 +373,15 @@ function TimeNavigation({
 
       {/* Panneau Filtres */}
       {showFilters && (
-        <div className="mt-4 pt-4 border-t border-slate-700">
-          <h5 className="text-white font-medium mb-3">Filtres de période</h5>
+        <div
+          className="mt-4 pt-4 border-t border-slate-700"
+          id={filtersSectionId}
+          role="region"
+          aria-labelledby={filtersHeadingId}
+        >
+          <h5 id={filtersHeadingId} className="text-white font-medium mb-3">
+            Filtres de période
+          </h5>
           <div className="flex flex-wrap gap-2 mb-3">
             <button
               onClick={() => applyPeriodFilter('week')}
@@ -307,6 +390,7 @@ function TimeNavigation({
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
               }`}
+              aria-pressed={periodFilter === 'week'}
             >
               7 derniers jours
             </button>
@@ -317,6 +401,7 @@ function TimeNavigation({
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
               }`}
+              aria-pressed={periodFilter === 'month'}
             >
               30 derniers jours
             </button>
@@ -327,6 +412,7 @@ function TimeNavigation({
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
               }`}
+              aria-pressed={periodFilter === '3months'}
             >
               3 derniers mois
             </button>
@@ -337,6 +423,7 @@ function TimeNavigation({
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
               }`}
+              aria-pressed={periodFilter === '6months'}
             >
               6 derniers mois
             </button>
@@ -347,6 +434,7 @@ function TimeNavigation({
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
               }`}
+              aria-pressed={periodFilter === 'year'}
             >
               1 an
             </button>
@@ -357,6 +445,7 @@ function TimeNavigation({
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
               }`}
+              aria-pressed={periodFilter === 'all' || !periodFilter}
             >
               Toutes les dates
             </button>
@@ -424,8 +513,15 @@ function TimeNavigation({
 
       {/* Panneau Comparaison */}
       {showComparison && (
-        <div className="mt-4 pt-4 border-t border-slate-700">
-          <h5 className="text-white font-medium mb-3">Mode Comparaison</h5>
+        <div
+          className="mt-4 pt-4 border-t border-slate-700"
+          id={comparisonSectionId}
+          role="region"
+          aria-labelledby={comparisonHeadingId}
+        >
+          <h5 id={comparisonHeadingId} className="text-white font-medium mb-3">
+            Mode Comparaison
+          </h5>
           <div className="flex items-center gap-3 mb-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input

@@ -2,22 +2,26 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
 import { ARIA_LABELS } from '../../constants';
+import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 
 /**
  * Graphique de fréquence cardiaque 24h
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminHeartRateChart({ precomputed, colors }) {
+function GarminHeartRateChart({ precomputed, selector, colors }) {
+  useUIMetricsTelemetry('GarminHeartRateChart');
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const chartData = precomputed?.data ?? [];
-  const displayInfo = precomputed?.displayInfo ?? null;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
+  const trend = selector?.trend ?? selector ?? precomputed ?? {};
+  const chartData = Array.isArray(trend?.data) ? trend.data : precomputed?.data ?? [];
+  const displayInfo = trend?.displayInfo ?? precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = trend?.selectedDate ?? precomputed?.selectedDate ?? null;
 
   // ✅ FIX : Calculer le domaine Y avec marge pour éviter que les valeurs ne touchent le bord
   const yAxisDomain = React.useMemo(() => {
+    if (Array.isArray(trend?.yAxisDomain)) return trend.yAxisDomain;
     if (precomputed?.yAxisDomain) return precomputed.yAxisDomain;
     if (!chartData || chartData.length === 0) return [0, 180];
 
@@ -224,5 +228,8 @@ function GarminHeartRateChart({ precomputed, colors }) {
   );
 }
 
-export default React.memo(GarminHeartRateChart, areDerivedChartPropsEqual);
+const MemoizedGarminHeartRateChart = React.memo(GarminHeartRateChart, areSelectorChartPropsEqual);
+
+export default MemoizedGarminHeartRateChart;
+export { MemoizedGarminHeartRateChart as GarminHeartRateChart };
 

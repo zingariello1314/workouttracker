@@ -62,7 +62,8 @@ export default function ForceSyncMenu({
     active: open,
     containerRef: menuRef,
     autoFocusSelector: 'button[data-autofocus="true"]',
-    onEscape: () => closeMenu()
+    onEscape: () => closeMenu(),
+    returnFocus: true
   });
 
   useEffect(() => {

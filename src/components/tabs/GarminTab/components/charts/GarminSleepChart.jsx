@@ -2,21 +2,24 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, ReferenceLine } from 'recharts';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
 import { formatSleepDuration } from '../../utils/garminFormatters';
 import { ARIA_LABELS } from '../../constants';
+import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 
 /**
  * Graphique de sommeil (durée et phases)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminSleepChart({ precomputed, colors }) {
+function GarminSleepChart({ precomputed, selector, colors }) {
+  useUIMetricsTelemetry('GarminSleepChart');
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const chartData = precomputed?.data ?? [];
-  const displayInfo = precomputed?.displayInfo ?? null;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
-  const avgDuration = precomputed?.averageDuration ?? (() => {
+  const trend = selector?.trend ?? selector ?? precomputed ?? {};
+  const chartData = Array.isArray(trend?.data) ? trend.data : precomputed?.data ?? [];
+  const displayInfo = trend?.displayInfo ?? precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = trend?.selectedDate ?? precomputed?.selectedDate ?? null;
+  const avgDuration = (trend?.averageDuration ?? precomputed?.averageDuration) ?? (() => {
     const filtered = chartData.filter(d => d.duration !== null);
     if (filtered.length === 0) return 0;
     return filtered.reduce((sum, d) => sum + d.duration, 0) / filtered.length;
@@ -183,5 +186,8 @@ function GarminSleepChart({ precomputed, colors }) {
   );
 }
 
-export default React.memo(GarminSleepChart, areDerivedChartPropsEqual);
+const MemoizedGarminSleepChart = React.memo(GarminSleepChart, areSelectorChartPropsEqual);
+
+export default MemoizedGarminSleepChart;
+export { MemoizedGarminSleepChart as GarminSleepChart };
 

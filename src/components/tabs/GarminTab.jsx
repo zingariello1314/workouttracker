@@ -16,6 +16,9 @@ import ChartsSection from './GarminTab/components/sections/ChartsSection';
 import UtilitiesSection from './GarminTab/components/sections/UtilitiesSection';
 import TabNavigation from './GarminTab/components/TabNavigation';
 import useUIMetricsTelemetry from './GarminTab/hooks/useUIMetricsTelemetry';
+import useKeyboardShortcut from './GarminTab/hooks/useKeyboardShortcut';
+import TelemetryCoordinator from './GarminTab/utils/TelemetryCoordinator';
+import { updateUIMetricsStore } from './GarminTab/utils/uiMetricsStore';
 
 const GarminDashboard = React.lazy(() => import('./GarminTab/components/GarminDashboard'));
 const GarminActivities = React.lazy(() => import('./GarminTab/components/GarminActivities'));
@@ -114,7 +117,76 @@ const GarminTab = () => {
   const [customEndDate, setCustomEndDate] = React.useState('');
   const [showDebugPanel, setShowDebugPanel] = React.useState(false); // ✅ PHASE 1 : Panneau de diagnostic
 
+  const announceDebugPanelChange = React.useCallback((isOpen, source = 'manual') => {
+    const sourceLabels = {
+      shortcut: 'raccourci clavier',
+      button: 'bouton de diagnostic',
+      'panel-close': 'fermeture panneau',
+      'panel-refresh': 'rafraîchissement',
+      'server-debug': 'snapshot serveur',
+      manual: 'action utilisateur'
+    };
+    const label = sourceLabels[source] || source;
+    const message = isOpen
+      ? `Panneau de diagnostic ouvert (${label}).`
+      : `Panneau de diagnostic fermé (${label}).`;
+
+    updateUIMetricsStore((store) => {
+      const entry = {
+        timestamp: Date.now(),
+        message,
+        ok: isOpen,
+        source
+      };
+
+      const history = Array.isArray(store.history) ? [entry, ...store.history] : [entry];
+      store.history = history.slice(0, 20);
+
+      return {
+        lastStatusMessage: entry.message,
+        lastStatusOk: isOpen,
+        lastStatusError: isOpen ? null : store.lastStatusError ?? null
+      };
+    });
+  }, []);
+
+  const handleToggleDebugPanel = React.useCallback(
+    (nextState = null, origin = 'manual') => {
+      setShowDebugPanel((previous) => {
+        const resolved = nextState === null ? !previous : Boolean(nextState);
+        if (resolved !== previous) {
+          announceDebugPanelChange(resolved, origin);
+        }
+        return resolved;
+      });
+    },
+    [announceDebugPanelChange]
+  );
+
   useUIMetricsTelemetry('GarminTab');
+
+  useKeyboardShortcut(
+    [
+      {
+        key: 'd',
+        ctrlKey: true,
+        shiftKey: true,
+        handler: () => handleToggleDebugPanel(null, 'shortcut'),
+        description: 'Ouvrir ou fermer le panneau de diagnostic Garmin'
+      }
+    ],
+    { enabled: true, allowInInputs: false }
+  );
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    TelemetryCoordinator.start();
+    return () => {
+      TelemetryCoordinator.stop();
+    };
+  }, []);
   
   // 🟡 FIX #33: Suivre l'état précédent du loading pour détecter la fin de sync
   const prevLoadingRef = React.useRef(false);
@@ -175,6 +247,7 @@ const GarminTab = () => {
     baseUrl,
     clearCache,
     cacheMeta,
+    setLastSourceMeta,
     resetCircuit,
     getNetworkStatsSnapshot,
     getUIMetricsSnapshot,
@@ -742,12 +815,15 @@ const GarminTab = () => {
               }
             }} // ✅ PHASE 5.3 : Fonction pour ouvrir paramètres de délai
             clearCache={clearCache}
-            onOpenDebug={() => setShowDebugPanel(true)} // ✅ PHASE 1 : Ouvrir le panneau de diagnostic
+            onOpenDebug={() => handleToggleDebugPanel(true, 'button')} // ✅ PHASE 1 : Ouvrir le panneau de diagnostic
             forcedRangesHistory={forcedRangesHistory}
             onClearForcedHistory={handleClearForcedHistory}
             onRefreshForcedHistory={refreshForcedRangesHistory}
             cacheMeta={cacheMeta}
             onResetCircuit={resetCircuit}
+          setForcedRangesHistory={setForcedRangesHistory}
+          setLastSourceMeta={setLastSourceMeta}
+          historyLimit={FORCED_HISTORY_DISPLAY_LIMIT}
           />
 
           {/* 🔴 FIX #81-87: Synchronisation automatique */}
@@ -766,7 +842,7 @@ const GarminTab = () => {
         {showDebugPanel && (
           <React.Suspense fallback={<SectionFallback label="du panneau de diagnostic" minHeight="240px" />}>
             <DebugPanel
-              onClose={() => setShowDebugPanel(false)}
+              onClose={() => handleToggleDebugPanel(false, 'panel-close')}
               cacheMeta={cacheMeta}
               networkStats={networkStats}
               uiMetrics={uiMetrics}

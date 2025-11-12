@@ -27,6 +27,7 @@ export function useFocusTrap({
   containerRef: externalRef,
   initialFocusRef,
   autoFocusSelector,
+  returnFocus = true,
   onEscape
 } = {}) {
   const internalRef = useRef(null);
@@ -94,12 +95,14 @@ export function useFocusTrap({
 
     return () => {
       container.removeEventListener('keydown', handleKeyDown);
-      const previous = lastFocusedElementRef.current;
-      if (previous && typeof previous.focus === 'function') {
-        previous.focus();
+      if (returnFocus) {
+        const previous = lastFocusedElementRef.current;
+        if (previous && typeof previous.focus === 'function') {
+          previous.focus();
+        }
       }
     };
-  }, [active, externalRef, initialFocusRef, autoFocusSelector, onEscape]);
+  }, [active, externalRef, initialFocusRef, autoFocusSelector, onEscape, returnFocus]);
 
   return externalRef || internalRef;
 }

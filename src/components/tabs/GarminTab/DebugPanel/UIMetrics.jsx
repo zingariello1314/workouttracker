@@ -31,6 +31,24 @@ export default function UIMetrics({ metrics }) {
     }
   };
 
+  const componentStats = metrics.components || {};
+  const topComponents = Object.entries(componentStats)
+    .map(([name, stats]) => ({
+      name,
+      avg: stats?.avgDuration ?? null,
+      count: stats?.count ?? 0,
+      last: stats?.lastDuration ?? null,
+      max: stats?.maxDuration ?? null,
+      total: stats?.totalDuration ?? null
+    }))
+    .filter((entry) => entry.count > 0)
+    .sort((a, b) => {
+      const avgA = typeof a.avg === 'number' ? a.avg : -Infinity;
+      const avgB = typeof b.avg === 'number' ? b.avg : -Infinity;
+      return avgB - avgA;
+    })
+    .slice(0, 5);
+
   return (
     <div className="bg-slate-700/40 border border-slate-600/60 rounded-lg p-4">
       <h3 className="text-lg font-semibold text-white mb-3">🎯 Télémétrie UI</h3>
@@ -60,6 +78,38 @@ export default function UIMetrics({ metrics }) {
         <dt className="text-slate-400">Nombre de renders</dt>
         <dd className="text-white">{typeof metrics.renderCount === 'number' ? metrics.renderCount : '—'}</dd>
       </dl>
+
+      {topComponents.length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-sm font-semibold text-slate-200 mb-2 uppercase tracking-wide">
+            Composants les plus coûteux (moyenne)
+          </h4>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-xs text-slate-300 border border-slate-600/60 rounded-lg">
+              <thead>
+                <tr className="bg-slate-800/60 text-slate-200">
+                  <th className="px-3 py-2 text-left font-semibold">Composant</th>
+                  <th className="px-3 py-2 text-right font-semibold">Durée moy.</th>
+                  <th className="px-3 py-2 text-right font-semibold">Durée max.</th>
+                  <th className="px-3 py-2 text-right font-semibold">Dernière</th>
+                  <th className="px-3 py-2 text-right font-semibold">Rendus</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topComponents.map((entry) => (
+                  <tr key={entry.name} className="odd:bg-slate-800/30">
+                    <td className="px-3 py-2 text-left font-medium text-slate-100">{entry.name}</td>
+                    <td className="px-3 py-2 text-right">{formatDuration(entry.avg)}</td>
+                    <td className="px-3 py-2 text-right">{formatDuration(entry.max)}</td>
+                    <td className="px-3 py-2 text-right">{formatDuration(entry.last)}</td>
+                    <td className="px-3 py-2 text-right">{entry.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {Array.isArray(metrics.renderHistory) && metrics.renderHistory.length > 0 && (
         <div className="mt-4">

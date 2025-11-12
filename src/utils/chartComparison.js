@@ -70,6 +70,20 @@ export function areDerivedChartPropsEqual(prevProps, nextProps) {
 }
 
 /**
+ * Comparateur pour les graphiques consommant les nouveaux selectors dérivés.
+ * On s'appuie sur l'identité référentielle des selectors (mémoïsés) tout en
+ * conservant la compatibilité avec l'ancien prop `precomputed` pendant la
+ * phase de migration.
+ */
+export function areSelectorChartPropsEqual(prevProps, nextProps) {
+  return (
+    prevProps.selector === nextProps.selector &&
+    prevProps.precomputed === nextProps.precomputed &&
+    prevProps.colors === nextProps.colors
+  );
+}
+
+/**
  * Compare deux tableaux de manière shallow (ordre strict)
  */
 export function shallowArrayEqual(a = [], b = []) {

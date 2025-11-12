@@ -2,17 +2,22 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar, BarChart, ReferenceLine } from 'recharts';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
+import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 
 /**
  * Graphiques de corrélation (sommeil/performance, Body Battery/intensité)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminCorrelationCharts({ precomputed, colors }) {
-  const displayInfo = precomputed?.displayInfo ?? null;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
-  const sleepPerformanceData = precomputed?.sleepPerformanceData ?? [];
-  const batteryIntensityData = precomputed?.batteryIntensityData ?? [];
+function GarminCorrelationCharts({ precomputed, selector, colors }) {
+  useUIMetricsTelemetry('GarminCorrelationCharts');
+  const metadata = selector?.metadata ?? {};
+  const displayInfo = metadata?.displayInfo ?? precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = metadata?.selectedDateRaw ?? precomputed?.selectedDate ?? null;
+  const sleepPerformanceData = selector?.sleep?.correlation?.sleepPerformanceData
+    ?? precomputed?.sleepPerformanceData ?? [];
+  const batteryIntensityData = selector?.activity?.correlation?.batteryIntensityData
+    ?? precomputed?.batteryIntensityData ?? [];
 
   // 🟡 FIX : Hauteur augmentée maintenant que le conteneur n'a plus de limite fixe
   const chartHeight = 360;
@@ -263,5 +268,8 @@ function GarminCorrelationCharts({ precomputed, colors }) {
   );
 }
 
-export default React.memo(GarminCorrelationCharts, areDerivedChartPropsEqual);
+const MemoizedGarminCorrelationCharts = React.memo(GarminCorrelationCharts, areSelectorChartPropsEqual);
+
+export default MemoizedGarminCorrelationCharts;
+export { MemoizedGarminCorrelationCharts as GarminCorrelationCharts };
 

@@ -345,6 +345,170 @@ function drawTable(doc, x, y, headers, rows, columnWidths) {
   return currentY;
 }
 
+function formatDurationMs(value) {
+  if (value === null || value === undefined) return '—';
+  if (!Number.isFinite(value)) return '—';
+  return `${Math.round(value)} ms`;
+}
+
+function formatTimestampForPDF(timestamp) {
+  if (!timestamp) return '—';
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  return date.toLocaleString('fr-FR');
+}
+
+function drawUIMetricsTelemetrySection(doc, margin, yPos, contentWidth, pageHeight, telemetry) {
+  if (!telemetry) {
+    return yPos;
+  }
+
+  if (yPos > pageHeight - 120) {
+    doc.addPage();
+    yPos = margin;
+  }
+
+  drawDivider(doc, margin, yPos, contentWidth, [180, 180, 180]);
+  yPos += 10;
+
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(40, 40, 40);
+  doc.text('OBSERVABILITE UI', margin, yPos);
+  yPos += 10;
+
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(60, 60, 60);
+
+  doc.text(
+    `Session: ${telemetry.sessionId || '—'} (schema ${telemetry.schemaVersion || '—'})`,
+    margin,
+    yPos
+  );
+  yPos += 6;
+
+  doc.text(
+    `Dernier push: ${formatTimestampForPDF(telemetry.lastPush)} (statut: ${telemetry.lastPushStatus || '—'})`,
+    margin,
+    yPos
+  );
+  yPos += 6;
+
+  if (telemetry.lastPushError) {
+    doc.setTextColor(180, 50, 50);
+    doc.text(`Erreur push: ${telemetry.lastPushError}`, margin, yPos);
+    doc.setTextColor(60, 60, 60);
+    yPos += 6;
+  }
+
+  doc.text(
+    `Dernier statut: ${telemetry.lastStatusMessage || '—'}${telemetry.lastStatusOk === false ? ' (erreur)' : telemetry.lastStatusOk === true ? ' (OK)' : ''}`,
+    margin,
+    yPos
+  );
+  yPos += 6;
+
+  if (telemetry.lastStatusError) {
+    doc.setTextColor(180, 50, 50);
+    doc.text(`Erreur: ${telemetry.lastStatusError}`, margin, yPos);
+    doc.setTextColor(60, 60, 60);
+    yPos += 6;
+  }
+
+  if (telemetry.lastSyncTimestamp) {
+    doc.text(
+      `Dernière synchronisation: ${formatTimestampForPDF(telemetry.lastSyncTimestamp)} (${formatDurationMs(telemetry.lastSyncDuration)})`,
+      margin,
+      yPos
+    );
+    yPos += 6;
+  }
+
+  doc.text(
+    `Dernier rendu: ${telemetry.lastRenderComponent || '—'} (${formatDurationMs(telemetry.lastRenderDuration)})`,
+    margin,
+    yPos
+  );
+  yPos += 6;
+
+  doc.text(
+    `Nombre total de rendus: ${formatNumber(telemetry.renderCount || 0)}`,
+    margin,
+    yPos
+  );
+  yPos += 8;
+
+  const statusHistory = Array.isArray(telemetry.history) ? telemetry.history.slice(0, 3) : [];
+  if (statusHistory.length > 0) {
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(59, 130, 246);
+    doc.text('Derniers statuts', margin, yPos);
+    yPos += 7;
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(60, 60, 60);
+
+    statusHistory.forEach((entry) => {
+      const line = `• ${formatTimestampForPDF(entry.timestamp)} — ${entry.message || '—'}${entry.ok === false ? ' (erreur)' : entry.ok === true ? ' (OK)' : ''}`;
+      doc.text(line, margin + 3, yPos);
+      yPos += 6;
+      if (entry.error) {
+        doc.setTextColor(180, 50, 50);
+        doc.text(`   ${entry.error}`, margin + 3, yPos);
+        doc.setTextColor(60, 60, 60);
+        yPos += 6;
+      }
+    });
+    yPos += 6;
+  }
+
+  const componentEntries = telemetry.components
+    ? Object.entries(telemetry.components)
+    : [];
+  const topComponents = componentEntries
+    .sort(
+      (a, b) =>
+        (b[1]?.avgDuration ?? 0) - (a[1]?.avgDuration ?? 0)
+    )
+    .slice(0, 5);
+
+  if (topComponents.length > 0) {
+    if (yPos > pageHeight - 80) {
+      doc.addPage();
+      yPos = margin;
+    }
+
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(59, 130, 246);
+    doc.text('Top 5 composants (durée moyenne)', margin, yPos);
+    yPos += 8;
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(60, 60, 60);
+
+    const headers = [
+      'Composant',
+      'Durée moy.',
+      'Durée max.',
+      'Dernière',
+      'Rendus'
+    ];
+    const rows = topComponents.map(([name, stats]) => [
+      name,
+      formatDurationMs(stats.avgDuration),
+      formatDurationMs(stats.maxDuration),
+      formatDurationMs(stats.lastDuration),
+      formatNumber(stats.count || 0)
+    ]);
+    const colWidths = [70, 35, 35, 35, 25];
+    yPos = drawTable(doc, margin, yPos, headers, rows, colWidths);
+    yPos += 8;
+  }
+
+  return yPos;
+}
+
 /**
  * Génère un rapport PDF quotidien PREMIUM
  */
@@ -362,6 +526,7 @@ export async function generateDailyPDF(data, date, options = {}) {
     const contentWidth = pageWidth - 2 * margin;
     
     const derived = options?.derived || null;
+    const uiTelemetry = options?.uiTelemetry || null;
     
     let yPos = margin;
 
@@ -753,6 +918,10 @@ export async function generateDailyPDF(data, date, options = {}) {
       yPos = drawTable(doc, margin, yPos, headers, rows, colWidths);
       yPos += 10;
     }
+
+    yPos = drawUIMetricsTelemetrySection(doc, margin, yPos, contentWidth, pageHeight, uiTelemetry);
+
+    yPos = drawUIMetricsTelemetrySection(doc, margin, yPos, contentWidth, pageHeight, uiTelemetry);
 
     // === PIED DE PAGE ===
     const pageCount = doc.internal.getNumberOfPages();

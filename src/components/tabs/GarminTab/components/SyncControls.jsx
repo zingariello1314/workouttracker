@@ -4,6 +4,7 @@ import { ARIA_LABELS } from '../constants';
 import GarminInfoMessage from './GarminInfoMessage'; // ✅ PHASE 5.3 : Message informatif
 import ForceSyncMenu from './sync/ForceSyncMenu';
 import { describeRange } from './sync/forceSyncUtils';
+import { collectDiagnosticsSnapshot } from '../utils/diagnosticsCollector';
 
 /**
  * Composant pour les contrôles de synchronisation Garmin
@@ -27,10 +28,14 @@ export default function SyncControls({
   onClearForcedHistory = null,
   onRefreshForcedHistory = null,
   cacheMeta = null,
-  onResetCircuit = () => {}
+  onResetCircuit = () => {},
+  setForcedRangesHistory = () => {},
+  setLastSourceMeta = () => {},
+  historyLimit = 200
 }) {
   const [deletingMocks, setDeletingMocks] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(false);
+  const debugShortcutHintId = React.useId();
 
   const lastForcedRange = forcedRangesHistory?.[0] || null;
   const dateFormatter = React.useMemo(() => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }), []);
@@ -169,6 +174,81 @@ export default function SyncControls({
     if (!cacheStats?.history?.length) return [];
     return [...cacheStats.history].slice(-3).reverse();
   }, [cacheStats]);
+
+  const handleExportHistory = React.useCallback(() => {
+    const payload = collectDiagnosticsSnapshot({
+      cacheMeta,
+      forcedRangesHistory: forcedRangesHistory.slice(0, historyLimit),
+      options: {
+        includeServer: false,
+        historyLimit: 20,
+        renderHistoryLimit: 20
+      }
+    });
+
+    try {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `garmin-history-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('[SyncControls] Export history failed:', error);
+      alert('Impossible de générer le fichier d’historique. Consulte la console pour plus de détails.');
+    }
+  }, [cacheMeta, forcedRangesHistory, historyLimit]);
+
+  const handleImportHistory = React.useCallback(
+    async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        if (Array.isArray(parsed.forcedRangesHistory)) {
+          setForcedRangesHistory(parsed.forcedRangesHistory);
+        }
+
+        if (parsed.cacheMeta) {
+          setLastSourceMeta(parsed.cacheMeta);
+        }
+
+        if (parsed.cacheStats && typeof window !== 'undefined') {
+          window.__GARMIN_CACHE_STATS__ = parsed.cacheStats;
+        }
+
+        if (parsed.networkStats && typeof window !== 'undefined') {
+          window.__GARMIN_NETWORK_STATS__ = parsed.networkStats;
+          window.dispatchEvent(
+            new CustomEvent('garmin-network-update', { detail: parsed.networkStats })
+          );
+        }
+
+        if (parsed.uiMetrics && typeof window !== 'undefined') {
+          window.__GARMIN_UI_METRICS__ = parsed.uiMetrics;
+          window.dispatchEvent(
+            new CustomEvent('garmin-ui-metrics-update', { detail: parsed.uiMetrics })
+          );
+        }
+
+        alert('Snapshot diagnostic importé. Les données ont été rechargées pour analyse.');
+      } catch (error) {
+        console.error('[SyncControls] Import history failed:', error);
+        alert('Import impossible : fichier invalide ou corrompu.');
+      } finally {
+        event.target.value = '';
+      }
+    },
+    [setForcedRangesHistory, setLastSourceMeta]
+  );
 
   const statusAnnouncement = React.useMemo(() => {
     if (!status) {
@@ -389,6 +469,34 @@ export default function SyncControls({
                 Rafraîchir
               </button>
             )}
+            <button
+              type="button"
+              onClick={handleExportHistory}
+              disabled={loading}
+              className={`px-3 py-1 rounded ${
+                loading
+                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                  : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+              }`}
+            >
+              Export JSON
+            </button>
+            <label
+              className={`px-3 py-1 rounded cursor-pointer ${
+                loading
+                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                  : 'bg-indigo-700 hover:bg-indigo-600 text-white'
+              }`}
+            >
+              Import JSON
+              <input
+                type="file"
+                accept="application/json"
+                onChange={handleImportHistory}
+                className="hidden"
+                disabled={loading}
+              />
+            </label>
             {onClearForcedHistory && forcedRangesHistory.length > 0 && (
               <button
                 type="button"
@@ -440,12 +548,12 @@ export default function SyncControls({
               onClick={() => setShowHistory((prev) => !prev)}
               className="text-xs text-slate-300 underline underline-offset-4"
             >
-              {showHistory ? 'Masquer' : 'Afficher'} les {Math.min(5, forcedRangesHistory.length)} dernières entrées
+              {showHistory ? 'Masquer' : 'Afficher'} les {Math.min(historyLimit, forcedRangesHistory.length)} dernières entrées
             </button>
 
             {showHistory && (
               <ul className="mt-2 divide-y divide-slate-800 text-xs text-slate-300">
-                {forcedRangesHistory.slice(0, 5).map((entry) => {
+            {forcedRangesHistory.slice(0, historyLimit).map((entry) => {
                   const key = entry.id || `${entry.triggeredAt}-${entry.mode || 'custom'}-${entry.start}`;
                   return (
                     <li key={key} className="py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-3">
@@ -459,7 +567,7 @@ export default function SyncControls({
                     </li>
                   );
                 })}
-                {forcedRangesHistory.length > 5 && (
+                {forcedRangesHistory.length > historyLimit && (
                   <li className="py-2 text-slate-500 italic">
                     … {forcedRangesHistory.length - 5} entrée{forcedRangesHistory.length - 5 > 1 ? 's' : ''} supplémentaire{forcedRangesHistory.length - 5 > 1 ? 's' : ''}
                   </li>
@@ -565,11 +673,16 @@ export default function SyncControls({
           </p>
           <button
             onClick={onOpenDebug}
+            aria-describedby={debugShortcutHintId}
             className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md text-sm flex items-center gap-2"
           >
             <AlertCircle className="w-4 h-4" />
             Ouvrir le panneau de diagnostic
           </button>
+          <p id={debugShortcutHintId} className="text-slate-500 text-xs mt-2">
+            Raccourci clavier : <kbd className="font-mono">Ctrl</kbd> +{' '}
+            <kbd className="font-mono">Maj</kbd> + <kbd className="font-mono">D</kbd>
+          </p>
         </div>
       )}
     </div>

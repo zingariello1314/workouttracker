@@ -14,7 +14,9 @@
     "test:coverage": "vitest --coverage",
     "bench:save": "node scripts/bench/saveActivities.js",
     "bench:load": "node scripts/bench/loadData.js",
-    "bench:network": "node scripts/bench/networkResilience.js"
+    "bench:network": "node scripts/bench/networkResilience.js",
+    "bench:metrics": "node scripts/bench/exportServerMetrics.js",
+    "bench:metrics:diff": "node scripts/bench/compareMetrics.js"
   },
   "dependencies": {
     "@mediapipe/pose": "^0.5.1635988167",

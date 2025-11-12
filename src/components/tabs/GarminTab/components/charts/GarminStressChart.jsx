@@ -2,20 +2,23 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ReferenceLine } from 'recharts';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
 import { ARIA_LABELS } from '../../constants';
+import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 
 /**
  * Graphique d'évolution du Stress
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminStressChart({ precomputed, colors }) {
+function GarminStressChart({ precomputed, selector, colors }) {
+  useUIMetricsTelemetry('GarminStressChart');
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const chartData = precomputed?.data ?? [];
-  const displayInfo = precomputed?.displayInfo ?? null;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
-  const avgValue = precomputed?.average ?? (chartData.length === 0
+  const trend = selector?.trend ?? selector ?? precomputed ?? {};
+  const chartData = Array.isArray(trend?.data) ? trend.data : precomputed?.data ?? [];
+  const displayInfo = trend?.displayInfo ?? precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = trend?.selectedDate ?? precomputed?.selectedDate ?? null;
+  const avgValue = (trend?.average ?? precomputed?.average) ?? (chartData.length === 0
     ? 0
     : chartData.reduce((sum, d) => sum + d.stress, 0) / chartData.length);
 
@@ -167,5 +170,8 @@ function GarminStressChart({ precomputed, colors }) {
   );
 }
 
-export default React.memo(GarminStressChart, areDerivedChartPropsEqual);
+const MemoizedGarminStressChart = React.memo(GarminStressChart, areSelectorChartPropsEqual);
+
+export default MemoizedGarminStressChart;
+export { MemoizedGarminStressChart as GarminStressChart };
 

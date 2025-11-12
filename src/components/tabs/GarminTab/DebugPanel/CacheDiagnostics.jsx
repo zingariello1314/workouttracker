@@ -1,12 +1,19 @@
 import React from 'react';
 
-function CacheDiagnostics({ meta, onRefresh }) {
+function CacheDiagnostics({ meta, onRefresh, serverDebug = null, isRefreshing = false }) {
   const stats = typeof window !== 'undefined' ? window.__GARMIN_CACHE_STATS__ : null;
   const history = stats?.history ? [...stats.history].slice(-5).reverse() : [];
+  const serverCache = serverDebug?.server?.cache ?? null;
+  const serverCacheEntries = Array.isArray(serverCache?.entries)
+    ? serverCache.entries.slice(0, 3)
+    : [];
 
   if (!meta) {
     return (
-      <div className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300">
+      <div
+        className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300"
+        aria-busy={isRefreshing}
+      >
         <div className="flex items-center justify-between">
           <div>
             <div className="font-semibold text-slate-100">Source des données</div>
@@ -16,11 +23,13 @@ function CacheDiagnostics({ meta, onRefresh }) {
             <button
               type="button"
               onClick={onRefresh}
-              className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors"
+              disabled={isRefreshing}
+              className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Rafraîchir
+              {isRefreshing ? 'Rafraîchissement…' : 'Rafraîchir'}
             </button>
           )}
+          <div className="text-xs text-slate-500">(raccourci : Ctrl+Maj+D)</div>
         </div>
       </div>
     );
@@ -31,21 +40,34 @@ function CacheDiagnostics({ meta, onRefresh }) {
     .map(([key, value]) => ({ key, value }));
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 space-y-1">
-      <div className="flex items-center justify-between">
+    <div
+      className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 space-y-1"
+      aria-busy={isRefreshing}
+    >
+      <div className="flex items-center justify-between gap-2">
         <div>
           <div className="font-semibold text-slate-100">Source des données</div>
           <div className="text-xs text-slate-400">Dernier hit cache / live.</div>
         </div>
-        {onRefresh && (
-          <button
-            type="button"
-            onClick={onRefresh}
+        <div className="flex items-center gap-2">
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors"
+            >
+              Rafraîchir
+            </button>
+          )}
+          <a
+            href="/api/garmin/debug"
+            target="_blank"
+            rel="noopener noreferrer"
             className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors"
           >
-            Rafraîchir
-          </button>
-        )}
+            Ouvrir /api/garmin/debug
+          </a>
+        </div>
       </div>
       <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
         {rows.map(({ key, value }) => (
@@ -110,6 +132,55 @@ function CacheDiagnostics({ meta, onRefresh }) {
                 ))}
               </ul>
             </div>
+          )}
+        </div>
+      )}
+
+      {serverCache && (
+        <div className="mt-3 space-y-2 text-xs text-slate-300">
+          <div className="flex flex-wrap items-center gap-2 uppercase tracking-wide text-slate-500 text-[10px]">
+            <span>Cache serveur</span>
+            {Number.isFinite(serverCache.ttlMinutes) && (
+              <span className="px-2 py-0.5 rounded bg-slate-900/60 border border-slate-700 font-mono">
+                TTL : {serverCache.ttlMinutes} min
+              </span>
+            )}
+            {Number.isFinite(serverCache.size) && (
+              <span className="px-2 py-0.5 rounded bg-slate-900/60 border border-slate-700 font-mono">
+                Entrées : {serverCache.size}
+              </span>
+            )}
+          </div>
+          {serverCacheEntries.length > 0 && (
+            <ul className="space-y-1 text-[11px]">
+              {serverCacheEntries.map((entry) => (
+                <li
+                  key={entry.key}
+                  className="bg-slate-900/40 border border-slate-700 rounded px-2 py-1"
+                >
+                  <div className="flex justify-between gap-2">
+                    <span className="font-mono text-slate-200 truncate" title={entry.key}>
+                      {entry.key}
+                    </span>
+                    <span className="text-slate-500">
+                      Expires dans {entry.expiresInSeconds}s
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-slate-500 mt-1">
+                    <span>Âge : {entry.ageSeconds}s</span>
+                    {entry.dataSummary?.activitiesCount > 0 && (
+                      <span>Activités : {entry.dataSummary.activitiesCount}</span>
+                    )}
+                    {entry.dataSummary?.dailyMetricsCount > 0 && (
+                      <span>Jours: {entry.dataSummary.dailyMetricsCount}</span>
+                    )}
+                    {entry.dataSummary?.lastSync && (
+                      <span>LastSync : {entry.dataSummary.lastSync}</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}

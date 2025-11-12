@@ -51,6 +51,20 @@ const recordCacheEvent = (source, rangeInfo, meta = {}) => {
   if (store.history.length > MAX_HISTORY) {
     store.history.splice(0, store.history.length - MAX_HISTORY);
   }
+
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.dispatchEvent === 'function'
+  ) {
+    const detail = {
+      hits: { ...store.hits },
+      history: store.history.slice(),
+      lastEvent: { ...event }
+    };
+    window.dispatchEvent(
+      new CustomEvent('garmin-cache-update', { detail })
+    );
+  }
 };
 
 export class CacheCoordinator {

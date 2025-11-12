@@ -1,15 +1,18 @@
 import React from 'react';
-import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
+import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 
 /**
  * Graphique heatmap calendrier des activités Garmin
  */
 const DAY_ORDER = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
-function GarminActivityHeatmap({ precomputed }) {
-  const displayInfo = precomputed?.displayInfo ?? null;
-  const activityData = precomputed?.activityByDate ?? {};
-  const weeks = precomputed?.weeks ?? [];
+function GarminActivityHeatmap({ precomputed, selector }) {
+  useUIMetricsTelemetry('GarminActivityHeatmap');
+  const heatmap = selector?.heatmap ?? selector ?? precomputed ?? {};
+  const displayInfo = heatmap?.displayInfo ?? precomputed?.displayInfo ?? null;
+  const activityData = heatmap?.activityByDate ?? precomputed?.activityByDate ?? {};
+  const weeks = Array.isArray(heatmap?.weeks) ? heatmap.weeks : precomputed?.weeks ?? [];
   const getIntensityColor = React.useCallback((total) => {
     if (total === 0) return 'bg-slate-800';
     if (total === 1) return 'bg-green-600';
@@ -83,5 +86,8 @@ function GarminActivityHeatmap({ precomputed }) {
   );
 }
 
-export default React.memo(GarminActivityHeatmap, areDerivedChartPropsEqual);
+const MemoizedGarminActivityHeatmap = React.memo(GarminActivityHeatmap, areSelectorChartPropsEqual);
+
+export default MemoizedGarminActivityHeatmap;
+export { MemoizedGarminActivityHeatmap as GarminActivityHeatmap };
 

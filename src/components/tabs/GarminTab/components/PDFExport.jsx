@@ -8,6 +8,11 @@ import { ARIA_LABELS } from '../constants';
 import logger from '../../../../utils/logger';
 import { useGarminSelectors } from '../hooks/useGarminSelectors';
 import { buildDerivedDataset } from '../utils/chartDataBuilders';
+import {
+  getUIMetricsSnapshot,
+  serializeUIMetricsSnapshot
+} from '../utils/uiMetricsStore';
+import { loadTelemetryHistory } from '../../../../hooks/garminTelemetryHistory';
 
 const log = logger.component('PDFExport');
 
@@ -85,9 +90,30 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
         }
       }
 
+      const telemetryStore =
+        typeof window !== 'undefined' && window.__GARMIN_OBSERVABILITY__
+          ? window.__GARMIN_OBSERVABILITY__
+          : null;
+      const telemetryHistory = await loadTelemetryHistory(10);
+      const telemetryMeta = {
+        sessionId: telemetryStore?.sessionId ?? null,
+        schemaVersion: telemetryStore?.schemaVersion ?? null,
+        lastUpdate: telemetryStore?.lastUpdate ?? null,
+        lastPush: telemetryStore?.lastPush ?? null,
+        lastPushStatus: telemetryStore?.lastPushStatus ?? null,
+        lastPushError: telemetryStore?.lastPushError ?? null,
+        pendingPush: Boolean(telemetryStore?.pendingPush),
+        history: telemetryHistory
+      };
+
+      const uiTelemetry = serializeUIMetricsSnapshot(
+        getUIMetricsSnapshot(),
+        { historyLimit: 10, renderHistoryLimit: 10 }
+      );
+
       if (type === 'daily' && selectedDate) {
         const derived = getDerivedDataset([selectedDate], selectedDate);
-        blob = await generateDailyPDF(baseData, selectedDate, { derived });
+        blob = await generateDailyPDF(baseData, selectedDate, { derived, uiTelemetry, telemetry: telemetryMeta });
         log.debug(`PDF quotidien généré: ${blob ? 'OK' : 'NULL'}`);
       } else if (type === 'weekly' || type === 'custom') {
         const startDate = type === 'custom' ? customStartDate : calculateWeekStart(selectedDate || new Date().toISOString().split('T')[0]);
@@ -102,7 +128,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
         const rangeDates = enumerateDates(startDate, endDate).filter((date) => dailyMetrics[date]);
         const anchor = selectedDate && rangeDates.includes(selectedDate) ? selectedDate : rangeDates[rangeDates.length - 1];
         const derived = getDerivedDataset(rangeDates, anchor || endDate);
-        blob = await generateWeeklyPDF(baseData, startDate, endDate, { derived });
+        blob = await generateWeeklyPDF(baseData, startDate, endDate, { derived, uiTelemetry, telemetry: telemetryMeta });
         log.debug(`PDF hebdomadaire généré: ${blob ? 'OK' : 'NULL'}`);
       }
 

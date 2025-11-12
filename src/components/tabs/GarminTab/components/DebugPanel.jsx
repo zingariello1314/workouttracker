@@ -1,9 +1,34 @@
-import React, { useEffect, useState, useId } from 'react';
+import React, { useEffect, useState, useId, useCallback } from 'react';
 import useFocusTrap from '../hooks/useFocusTrap';
+import { collectDiagnosticsSnapshot } from '../utils/diagnosticsCollector';
+import TelemetryCoordinator from '../utils/TelemetryCoordinator';
 const CacheDiagnostics = React.lazy(() => import('../DebugPanel/CacheDiagnostics'));
 const NetworkDiagnostics = React.lazy(() => import('../DebugPanel/NetworkDiagnostics'));
 const UIMetrics = React.lazy(() => import('../DebugPanel/UIMetrics'));
 const ServerDiagnostics = React.lazy(() => import('../DebugPanel/ServerDiagnostics'));
+const ObservabilityDiagnostics = React.lazy(() => import('../DebugPanel/ObservabilityDiagnostics'));
+const ServerMetricsDashboard = React.lazy(() => import('../DebugPanel/ServerMetricsDashboard'));
+
+const sanitizeTelemetryStore = (store) => {
+  if (!store) {
+    return null;
+  }
+  return {
+    sessionId: store.sessionId ?? null,
+    schemaVersion: store.schemaVersion ?? null,
+    lastUpdate: store.lastUpdate ?? null,
+    lastPush: store.lastPush ?? null,
+    lastPushStatus: store.lastPushStatus ?? null,
+    lastPushError: store.lastPushError ?? null,
+    pendingPush: Boolean(store.pendingPush),
+    history: Array.isArray(store.history)
+      ? store.history.slice(0, 10).map((entry) => ({
+          generatedAt: entry?.generatedAt ?? null,
+          reason: entry?.reason ?? null
+        }))
+      : []
+  };
+};
 
 export default function DebugPanel({
   onClose,
@@ -14,9 +39,13 @@ export default function DebugPanel({
   onRefresh
 }) {
   const headingId = useId();
+  const liveRegionId = useId();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [liveMessage, setLiveMessage] = React.useState('');
   const dialogRef = useFocusTrap({
     autoFocusSelector: '[data-autofocus="true"]',
-    onEscape: onClose
+    onEscape: onClose,
+    returnFocus: true
   });
 
   const [networkSnapshot, setNetworkSnapshot] = useState(() => {
@@ -35,6 +64,52 @@ export default function DebugPanel({
     return null;
   });
 
+  const handleRefreshDiagnostics = useCallback(
+    async (origin = 'panel-refresh') => {
+      if (!onRefresh) {
+        return;
+      }
+      setIsRefreshing(true);
+      try {
+        await onRefresh();
+        setLiveMessage(
+          origin === 'keyboard'
+            ? 'Diagnostic rafraîchi (raccourci clavier).'
+            : 'Diagnostic rafraîchi.'
+        );
+      } catch (error) {
+        setLiveMessage(
+          error?.message
+            ? `Échec du rafraîchissement: ${error.message}`
+            : 'Échec du rafraîchissement des diagnostics.'
+        );
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
+    [onRefresh]
+  );
+
+  const refreshFromHeader = useCallback(
+    () => handleRefreshDiagnostics('panel-button'),
+    [handleRefreshDiagnostics]
+  );
+
+  const refreshFromNetwork = useCallback(
+    () => handleRefreshDiagnostics('network-panel'),
+    [handleRefreshDiagnostics]
+  );
+
+  const refreshFromCache = useCallback(
+    () => handleRefreshDiagnostics('cache-panel'),
+    [handleRefreshDiagnostics]
+  );
+
+  const refreshFromServer = useCallback(
+    () => handleRefreshDiagnostics('server-debug'),
+    [handleRefreshDiagnostics]
+  );
+
   useEffect(() => {
     if (networkStats) {
       setNetworkSnapshot(networkStats);
@@ -46,6 +121,83 @@ export default function DebugPanel({
       setUiSnapshot(uiMetrics);
     }
   }, [uiMetrics]);
+
+  useEffect(() => {
+    if (!isRefreshing && serverDebug) {
+      setLiveMessage('Diagnostic serveur mis à jour.');
+    }
+  }, [serverDebug, isRefreshing]);
+
+  useEffect(() => {
+    if (!isRefreshing && (networkStats || uiMetrics)) {
+      setLiveMessage('Instantané réseau/UI mis à jour.');
+    }
+  }, [networkStats, uiMetrics, isRefreshing]);
+
+  useEffect(() => {
+    TelemetryCoordinator.configureAutoPush({
+      enableAutoPush: true,
+      autoPushIntervalMs: 60000
+    });
+    return () => {
+      TelemetryCoordinator.configureAutoPush({ enableAutoPush: false });
+    };
+  }, []);
+
+  const handleExportDiagnostics = useCallback(() => {
+    const payload = collectDiagnosticsSnapshot({
+      cacheMeta,
+      networkStats: networkSnapshot,
+      uiMetrics: uiSnapshot,
+      serverDebug,
+      options: {
+        includeServer: Boolean(serverDebug),
+        historyLimit: 20,
+        renderHistoryLimit: 20
+      }
+    });
+
+    const telemetryStore =
+      typeof window !== 'undefined' && window.__GARMIN_OBSERVABILITY__
+        ? sanitizeTelemetryStore(window.__GARMIN_OBSERVABILITY__)
+        : null;
+
+    const telemetrySnapshot =
+      TelemetryCoordinator?.getSnapshot?.() || null;
+
+    const enrichedPayload = {
+      ...payload,
+      telemetry: {
+        snapshot: telemetrySnapshot
+          ? JSON.parse(JSON.stringify(telemetrySnapshot))
+          : null,
+        store: telemetryStore
+      }
+    };
+
+    try {
+      const blob = new Blob([JSON.stringify(enrichedPayload, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `garmin-diagnostics-${new Date()
+        .toISOString()
+        .replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setLiveMessage('Diagnostic exporté au format JSON.');
+    } catch (error) {
+      console.error('[DebugPanel] Export diagnostics failed:', error);
+      alert(
+        'Impossible de générer le fichier de diagnostic. Consulte la console pour plus de détails.'
+      );
+      setLiveMessage('Échec de l’export du diagnostic.');
+    }
+  }, [cacheMeta, networkSnapshot, serverDebug, uiSnapshot]);
 
   useEffect(() => {
     const handleNetworkUpdate = (event) => {
@@ -87,8 +239,18 @@ export default function DebugPanel({
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
+        aria-busy={isRefreshing}
         tabIndex={-1}
       >
+        <div
+          id={liveRegionId}
+          className="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {isRefreshing ? 'Mise à jour du diagnostic…' : liveMessage}
+        </div>
         <div className="flex items-center justify-between">
           <h2 id={headingId} className="text-2xl font-bold text-white">
             🔍 Panneau de Diagnostic Garmin
@@ -97,12 +259,20 @@ export default function DebugPanel({
             {onRefresh && (
               <button
                 type="button"
-                onClick={onRefresh}
-                className="px-3 py-2 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                onClick={refreshFromHeader}
+                disabled={isRefreshing}
+                className="px-3 py-2 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Rafraîchir
+                {isRefreshing ? 'Rafraîchissement…' : 'Rafraîchir'}
               </button>
             )}
+            <button
+              type="button"
+              onClick={handleExportDiagnostics}
+              className="px-3 py-2 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors"
+            >
+              Export JSON
+            </button>
             <button
               type="button"
               onClick={onClose}
@@ -118,9 +288,22 @@ export default function DebugPanel({
 
         <React.Suspense fallback={<div className="text-slate-400 text-sm">Chargement des diagnostics…</div>}>
           <div className="space-y-6">
-            <CacheDiagnostics meta={cacheMeta} onRefresh={onRefresh} />
-            <NetworkDiagnostics networkStats={networkSnapshot} onRefresh={onRefresh} />
+            <CacheDiagnostics
+              meta={cacheMeta}
+              onRefresh={refreshFromCache}
+              serverDebug={serverDebug}
+              isRefreshing={isRefreshing}
+            />
+            <NetworkDiagnostics
+              networkStats={networkSnapshot}
+              onRefresh={refreshFromNetwork}
+              onFetchServerDebug={refreshFromServer}
+              serverDebug={serverDebug}
+              isRefreshing={isRefreshing}
+            />
             <UIMetrics metrics={uiSnapshot} />
+            <ObservabilityDiagnostics />
+            <ServerMetricsDashboard />
             {serverDebug && <ServerDiagnostics data={serverDebug} />}
           </div>
         </React.Suspense>

@@ -53,7 +53,8 @@ export default function ForceRangeDialog({
   const descriptionId = useId();
   const dialogRef = useFocusTrap({
     initialFocusRef: startRef,
-    onEscape: onCancel
+    onEscape: onCancel,
+    returnFocus: true
   });
 
   return (

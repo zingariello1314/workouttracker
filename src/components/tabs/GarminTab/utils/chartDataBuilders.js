@@ -1,5 +1,5 @@
-import { prepareTimeSeriesForDisplay, enrichHeartRateTimeSeriesForVisualization } from '../../../../utils/garminTimeSeriesUtils';
-import { normalizeActivityValue } from '../../../../utils/chartComparison';
+import { prepareTimeSeriesForDisplay, enrichHeartRateTimeSeriesForVisualization } from '../../../../utils/garminTimeSeriesUtils.js';
+import { normalizeActivityValue } from '../../../../utils/chartComparison.js';
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
@@ -486,12 +486,232 @@ export const buildGarminChartDataset = ({
   };
 };
 
+const EMPTY_ARRAY = Object.freeze([]);
+const EMPTY_OBJECT = Object.freeze({});
+const DEFAULT_HEART_RATE_DOMAIN = Object.freeze([0, 180]);
+
+const EMPTY_TREND_SELECTOR = Object.freeze({
+  data: EMPTY_ARRAY,
+  yAxisDomain: DEFAULT_HEART_RATE_DOMAIN,
+  filteredDates: EMPTY_ARRAY,
+  displayInfo: null,
+  selectedDate: null,
+  stats: null
+});
+
+const EMPTY_TIME_SERIES_SELECTOR = Object.freeze({
+  enriched: null,
+  chartData: EMPTY_ARRAY,
+  stats: null,
+  hasEnoughDataForCurve: false,
+  realPointsCount: 0,
+  selectedDate: null
+});
+
+const EMPTY_NUMERIC_TREND_SELECTOR = Object.freeze({
+  data: EMPTY_ARRAY,
+  average: 0,
+  filteredDates: EMPTY_ARRAY,
+  displayInfo: null,
+  selectedDate: null
+});
+
+const EMPTY_RESPIRATION_SELECTOR = Object.freeze({
+  data: EMPTY_ARRAY,
+  avgAwake: 0,
+  avgSleep: 0,
+  filteredDates: EMPTY_ARRAY,
+  displayInfo: null,
+  selectedDate: null
+});
+
+const EMPTY_SLEEP_SELECTOR = Object.freeze({
+  data: EMPTY_ARRAY,
+  averageDuration: 0,
+  filteredDates: EMPTY_ARRAY,
+  displayInfo: null,
+  selectedDate: null
+});
+
+const EMPTY_ACTIVITY_HEATMAP_SELECTOR = Object.freeze({
+  activityByDate: EMPTY_OBJECT,
+  weeks: EMPTY_ARRAY
+});
+
+const EMPTY_CORRELATION_SELECTOR = Object.freeze({
+  sleepPerformanceData: EMPTY_ARRAY,
+  batteryIntensityData: EMPTY_ARRAY
+});
+
+export const buildChartSelectors = ({
+  dataset = {},
+  filteredDates = [],
+  displayInfo = null,
+  effectiveSelectedDate = null,
+  colors = null,
+  selectedDateRaw = null
+} = {}) => {
+  const heartRateTrend = dataset?.heartRateTrend;
+  const heartRateTimeSeries = dataset?.heartRateTimeSeries;
+  const respirationTrend = dataset?.respirationTrend;
+  const bodyBatteryTrend = dataset?.bodyBatteryTrend;
+  const stressTrend = dataset?.stressTrend;
+  const sleepTrend = dataset?.sleepTrend;
+  const correlationData = dataset?.correlation;
+  const activityHeatmap = dataset?.activityHeatmap;
+
+  const safeHeartRateTrend = heartRateTrend
+    ? {
+        data: Array.isArray(heartRateTrend.data) ? heartRateTrend.data : EMPTY_ARRAY,
+        yAxisDomain: Array.isArray(heartRateTrend.yAxisDomain) ? heartRateTrend.yAxisDomain : DEFAULT_HEART_RATE_DOMAIN,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate,
+        stats: heartRateTrend.stats ?? null
+      }
+    : {
+        ...EMPTY_TREND_SELECTOR,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate
+      };
+
+  const safeHeartRateTimeSeries = heartRateTimeSeries
+    ? {
+        enriched: heartRateTimeSeries.enriched ?? null,
+        chartData: Array.isArray(heartRateTimeSeries.chartData) ? heartRateTimeSeries.chartData : EMPTY_ARRAY,
+        stats: heartRateTimeSeries.stats ?? null,
+        hasEnoughDataForCurve: Boolean(heartRateTimeSeries.hasEnoughDataForCurve),
+        realPointsCount: heartRateTimeSeries.realPointsCount ?? 0,
+        selectedDate: heartRateTimeSeries.selectedDate ?? selectedDateRaw ?? null
+      }
+    : {
+        ...EMPTY_TIME_SERIES_SELECTOR,
+        selectedDate: selectedDateRaw ?? null
+      };
+
+  const safeRespirationTrend = respirationTrend
+    ? {
+        data: Array.isArray(respirationTrend.data) ? respirationTrend.data : EMPTY_ARRAY,
+        avgAwake: respirationTrend.avgAwake ?? 0,
+        avgSleep: respirationTrend.avgSleep ?? 0,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate
+      }
+    : {
+        ...EMPTY_RESPIRATION_SELECTOR,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate
+      };
+
+  const safeBodyBatteryTrend = bodyBatteryTrend
+    ? {
+        data: Array.isArray(bodyBatteryTrend.data) ? bodyBatteryTrend.data : EMPTY_ARRAY,
+        average: bodyBatteryTrend.average ?? 0,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate
+      }
+    : {
+        ...EMPTY_NUMERIC_TREND_SELECTOR,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate
+      };
+
+  const safeStressTrend = stressTrend
+    ? {
+        data: Array.isArray(stressTrend.data) ? stressTrend.data : EMPTY_ARRAY,
+        average: stressTrend.average ?? 0,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate
+      }
+    : {
+        ...EMPTY_NUMERIC_TREND_SELECTOR,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate
+      };
+
+  const safeSleepTrend = sleepTrend
+    ? {
+        data: Array.isArray(sleepTrend.data) ? sleepTrend.data : EMPTY_ARRAY,
+        averageDuration: sleepTrend.averageDuration ?? 0,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate
+      }
+    : {
+        ...EMPTY_SLEEP_SELECTOR,
+        filteredDates,
+        displayInfo,
+        selectedDate: effectiveSelectedDate
+      };
+
+  const safeActivityHeatmap = activityHeatmap
+    ? {
+        activityByDate: activityHeatmap.activityByDate ?? EMPTY_OBJECT,
+        weeks: Array.isArray(activityHeatmap.weeks) ? activityHeatmap.weeks : EMPTY_ARRAY
+      }
+    : EMPTY_ACTIVITY_HEATMAP_SELECTOR;
+
+  const safeCorrelation = correlationData
+    ? {
+        sleepPerformanceData: Array.isArray(correlationData.sleepPerformanceData)
+          ? correlationData.sleepPerformanceData
+          : EMPTY_ARRAY,
+        batteryIntensityData: Array.isArray(correlationData.batteryIntensityData)
+          ? correlationData.batteryIntensityData
+          : EMPTY_ARRAY
+      }
+    : EMPTY_CORRELATION_SELECTOR;
+
+  return {
+    heartRate: {
+      trend: safeHeartRateTrend,
+      timeSeries: safeHeartRateTimeSeries
+    },
+    respiration: {
+      trend: safeRespirationTrend
+    },
+    bodyBattery: {
+      trend: safeBodyBatteryTrend
+    },
+    stress: {
+      trend: safeStressTrend
+    },
+    sleep: {
+      trend: safeSleepTrend,
+      correlation: {
+        sleepPerformanceData: safeCorrelation.sleepPerformanceData
+      }
+    },
+    activity: {
+      heatmap: safeActivityHeatmap,
+      correlation: {
+        batteryIntensityData: safeCorrelation.batteryIntensityData
+      }
+    },
+    metadata: {
+      filteredDates,
+      displayInfo,
+      selectedDate: effectiveSelectedDate,
+      selectedDateRaw: selectedDateRaw ?? effectiveSelectedDate ?? null,
+      colors: colors ?? null
+    }
+  };
+};
+
 export const buildDerivedDataset = ({
   dailyMetrics = {},
   activities = {},
   dates = [],
   anchorDate = null,
-  displayInfo = null
+  displayInfo = null,
+  colors = null
 } = {}) => {
   const filteredDates = Array.isArray(dates) ? [...dates] : [];
   if (filteredDates.length === 0 && dailyMetrics && typeof dailyMetrics === 'object') {
@@ -505,7 +725,7 @@ export const buildDerivedDataset = ({
     ? anchorDate
     : anchorDate || fallbackDate;
 
-  return buildGarminChartDataset({
+  const dataset = buildGarminChartDataset({
     dailyMetrics,
     activities,
     filteredDates,
@@ -513,5 +733,17 @@ export const buildDerivedDataset = ({
     effectiveSelectedDate,
     displayInfo
   });
+
+  return {
+    ...dataset,
+    selectors: buildChartSelectors({
+      dataset,
+      filteredDates,
+      displayInfo,
+      effectiveSelectedDate,
+      colors,
+      selectedDateRaw: anchorDate ?? effectiveSelectedDate ?? null
+    })
+  };
 };
 

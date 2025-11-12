@@ -3,7 +3,7 @@ import { useGarminSelectors } from './useGarminSelectors';
 import { useGarminContext } from '../context/GarminContext';
 import { useFilteredDates } from './useFilteredDates';
 import { DATE_RANGE } from '../constants';
-import { buildGarminChartDataset } from '../utils/chartDataBuilders';
+import { buildGarminChartDataset, buildChartSelectors } from '../utils/chartDataBuilders';
 
 export const useGarminChartSelectors = () => {
   const {
@@ -40,6 +40,17 @@ export const useGarminChartSelectors = () => {
     })
   ), [dailyMetrics, activitiesByType, filteredDates, selectedDate, effectiveSelectedDate, displayInfo]);
 
+  const selectors = useMemo(() => (
+    buildChartSelectors({
+      dataset: chartData,
+      filteredDates,
+      displayInfo,
+      effectiveSelectedDate,
+      colors,
+      selectedDateRaw: selectedDate ?? null
+    })
+  ), [chartData, filteredDates, displayInfo, effectiveSelectedDate, colors, selectedDate]);
+
   const selectedDailyMetrics = useMemo(() => (
     selectedDate ? dailyMetrics[selectedDate] || null : null
   ), [selectedDate, dailyMetrics]);
@@ -55,7 +66,8 @@ export const useGarminChartSelectors = () => {
     filteredDates,
     displayInfo,
     effectiveSelectedDate,
-    chartData
+    chartData,
+    selectors
   };
 };
 

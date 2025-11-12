@@ -2,23 +2,42 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
 import { ARIA_LABELS } from '../../constants';
+import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 
 /**
  * Graphique de respiration (éveillé et sommeil)
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminRespirationChart({ precomputed, colors }) {
+function GarminRespirationChart({ precomputed, selector, colors }) {
+  useUIMetricsTelemetry('GarminRespirationChart');
   const { containerRef, containerSize } = useChartContainerSize();
 
-  const chartData = precomputed?.data ?? [];
-  const displayInfo = precomputed?.displayInfo ?? null;
-  const effectiveSelectedDate = precomputed?.selectedDate ?? null;
-  const avgAwake = precomputed?.avgAwake ?? (chartData.filter(d => d.awakeAvg !== null)
-    .reduce((sum, d, _, arr) => sum + d.awakeAvg / arr.length, 0));
-  const avgSleep = precomputed?.avgSleep ?? (chartData.filter(d => d.sleepAvg !== null)
-    .reduce((sum, d, _, arr) => sum + d.sleepAvg / arr.length, 0));
+  const trend = selector?.trend ?? selector ?? precomputed ?? {};
+  const chartData = Array.isArray(trend?.data) ? trend.data : precomputed?.data ?? [];
+  const displayInfo = trend?.displayInfo ?? precomputed?.displayInfo ?? null;
+  const effectiveSelectedDate = trend?.selectedDate ?? precomputed?.selectedDate ?? null;
+
+  const avgAwake = React.useMemo(() => {
+    if (typeof trend?.avgAwake === 'number') return trend.avgAwake;
+    const awakeValues = chartData
+      .map((d) => d.awakeAvg)
+      .filter((value) => typeof value === 'number' && Number.isFinite(value));
+    if (awakeValues.length === 0) return 0;
+    const total = awakeValues.reduce((sum, value) => sum + value, 0);
+    return total / awakeValues.length;
+  }, [trend?.avgAwake, chartData]);
+
+  const avgSleep = React.useMemo(() => {
+    if (typeof trend?.avgSleep === 'number') return trend.avgSleep;
+    const sleepValues = chartData
+      .map((d) => d.sleepAvg)
+      .filter((value) => typeof value === 'number' && Number.isFinite(value));
+    if (sleepValues.length === 0) return 0;
+    const total = sleepValues.reduce((sum, value) => sum + value, 0);
+    return total / sleepValues.length;
+  }, [trend?.avgSleep, chartData]);
 
   if (chartData.length === 0) {
     return (
@@ -211,5 +230,8 @@ function GarminRespirationChart({ precomputed, colors }) {
   );
 }
 
-export default React.memo(GarminRespirationChart, areDerivedChartPropsEqual);
+const MemoizedGarminRespirationChart = React.memo(GarminRespirationChart, areSelectorChartPropsEqual);
+
+export default MemoizedGarminRespirationChart;
+export { MemoizedGarminRespirationChart as GarminRespirationChart };
 

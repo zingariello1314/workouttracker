@@ -19,7 +19,7 @@
  * @module garminTimeSeriesCache
  */
 
-import logger from './logger';
+import logger from './logger.js';
 
 const log = logger.module('garminTimeSeriesCache');
 

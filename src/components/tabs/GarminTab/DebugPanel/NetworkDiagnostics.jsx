@@ -46,27 +46,56 @@ const formatDurationMs = (ms) => {
   return `${ms}ms`;
 };
 
-function NetworkDiagnostics({ networkStats, onRefresh }) {
+function NetworkDiagnostics({
+  networkStats,
+  onRefresh,
+  onFetchServerDebug,
+  serverDebug = null,
+  isRefreshing = false
+}) {
   const storeStats = React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const stats = networkStats || storeStats;
   const events = stats.events ? [...stats.events].slice(-5).reverse() : [];
+  const serverLastStatus = serverDebug?.server?.lastStatus ?? null;
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 space-y-3">
-      <div className="flex items-center justify-between">
+    <div
+      className="bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 space-y-3"
+      aria-busy={isRefreshing}
+    >
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {isRefreshing
+          ? 'Requêtes réseau en cours…'
+          : stats.lastSuccess?.timestamp
+            ? `Dernier succès le ${formatDateTime(stats.lastSuccess.timestamp)}.`
+            : 'Aucune requête récente.'}
+      </div>
+      <div className="flex items-center justify-between gap-2">
         <div>
           <div className="font-semibold text-slate-100">Réseau</div>
           <div className="text-xs text-slate-400">Historique des requêtes Garmin (tryFetch)</div>
         </div>
-        {onRefresh && (
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors"
-          >
-            Rafraîchir
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isRefreshing ? 'Rafraîchissement…' : 'Rafraîchir'}
+            </button>
+          )}
+          {onFetchServerDebug && (
+            <button
+              type="button"
+              onClick={onFetchServerDebug}
+              className="px-2 py-1 text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded hover:bg-slate-800 transition-colors"
+            >
+              Snapshot serveur
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-wide">
@@ -96,6 +125,34 @@ function NetworkDiagnostics({ networkStats, onRefresh }) {
           </span>
         </div>
       </div>
+
+      {serverLastStatus && (
+        <div className="bg-slate-900/40 border border-slate-700 rounded px-2 py-2 text-xs text-slate-300">
+          <div className="uppercase tracking-wide text-slate-500 text-[10px] mb-1">Statut serveur</div>
+          {serverDebug?.timestamp && (
+            <div className="text-slate-500 text-[10px] mb-1">
+              Snapshot: {formatDateTime(serverDebug.timestamp)}
+            </div>
+          )}
+          <div className="grid gap-1 sm:grid-cols-2">
+            <span>
+              <span className="text-slate-500">Mode :</span>{' '}
+              <span className="font-mono text-slate-200">
+                {serverLastStatus.mode || '—'}
+              </span>
+            </span>
+            <span>
+              <span className="text-slate-500">Durée :</span>{' '}
+              <span className="font-mono text-slate-200">
+                {formatDurationMs(serverLastStatus.durationMs)}
+              </span>
+            </span>
+          </div>
+          {serverLastStatus.message && (
+            <div className="mt-1 text-slate-400">{serverLastStatus.message}</div>
+          )}
+        </div>
+      )}
 
       {events.length > 0 && (
         <div>

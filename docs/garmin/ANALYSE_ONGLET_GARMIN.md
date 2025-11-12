@@ -50,7 +50,7 @@ Quatre lignes directrices gouvernent l’architecture :
   - Schéma optimisé : stores séparés pour activités, dailyMetrics, timeSeries, forcedRangeHistory. Indexes sur la date pour range queries.  
   - `autoPurge` exécuté au premier rendu de la journée : supprime time series > 90 jours, nettoie activités obsolètes, préserve la cohérence.  
   - `purgeOldTimeSeries` accessible manuellement via `SyncControls` pour les cas extrêmes.  
-  - Export/import global réunissant données et historique de forçages pour debugging ou duplication d’environnement. Ajoute désormais `derivedCharts` (30 derniers jours) issu de `buildGarminChartDataset` pour garantir la parité avec l’UI/exports PDF.
+- Export/import global réunissant données et historique de forçages pour debugging ou duplication d’environnement. Ajoute désormais `derivedCharts` (30 derniers jours) issu de `buildGarminChartDataset` pour garantir la parité avec l’UI/exports PDF, ainsi que `uiTelemetry` et `diagnostics` (payload complet `collectDiagnosticsSnapshot` : cache/network/ui/forçages) pour reconstituer un état observabilité offline.
 
 - **Cache mémoire `frontendCache`** :
   - Objet partagé dans le module `useGarminSync`.  
@@ -242,9 +242,15 @@ Quatre lignes directrices gouvernent l’architecture :
 
 ### 4.5 Modules utilitaires
 - **`AutoSyncSettings`** : configuration délais auto-sync (slider minutes, toggle push). Interaction via `useAutoSync` + `useAutoSyncSettings` (auto-save débouncé) et exposition des infos `latestDate` / `cacheSource` issues des selectors.
-- **`PDFExport`** : export complet (activités + métriques + charts) basé sur la même fabrique `buildDerivedDataset` ; transmet les séries dérivées (`options.derived`) à `pdfGenerator.js` (jsPDF) pour garantir la cohérence avec l’UI (min/max FC, tendances, intensités) sans recalcul local.
-- **`DebugPanel`** : snapshot état serveur + caches + diagnostics front ; compose `CacheDiagnostics` (lecture `cacheMeta`, compteurs `window.__GARMIN_CACHE_STATS__`, historique), `NetworkDiagnostics` (timeline des fetch, compteurs succès/échecs, état circuit + cooldown), `UIMetrics` (lecture `window.__GARMIN_UI_METRICS__`, durée/derniers statuts, compteur de renders + historique des 5 derniers rendus via hook `useUIMetricsTelemetry`) et `ServerDiagnostics` (snapshot `/api/garmin/debug`). Chargé lazy, focus trap (`useFocusTrap` + bouton fermer autofocused), rafraîchissement manuel via `refreshDiagnostics`.
+- **`PDFExport`** : export complet (activités + métriques + charts) basé sur la même fabrique `buildDerivedDataset` ; transmet les séries dérivées (`options.derived`) et la télémétrie UI sérialisée (`options.uiTelemetry`) à `pdfGenerator.js` pour garantir la cohérence avec l’UI (min/max FC, tendances, intensités, observabilité). Le PDF inclut une section “Observabilité UI” (statuts récents, temps de rendu, Top 5 composants).
+- **`DebugPanel`** : snapshot état serveur + caches + diagnostics front ; compose `CacheDiagnostics` (lecture `cacheMeta`, compteurs `window.__GARMIN_CACHE_STATS__`, historique), `NetworkDiagnostics` (timeline des fetch, compteurs succès/échecs, état circuit + cooldown), `UIMetrics` (lecture `window.__GARMIN_UI_METRICS__`, durée/derniers statuts, compteur de renders + historique des 5 derniers rendus via hook `useUIMetricsTelemetry`) et `ServerDiagnostics` (snapshot `/api/garmin/debug`). Chargé lazy, focus trap (`useFocusTrap` + bouton fermer autofocused), rafraîchissement manuel via `refreshDiagnostics`, export JSON “diagnostics” (cache/network/ui/server) disponible en un clic.
+- Export instantané dans `SyncControls` : bouton “Export JSON” (historique forçages, `cacheMeta`, `__GARMIN_CACHE_STATS__`, `__GARMIN_NETWORK_STATS__`, télémétrie UI sérialisée) pour partager un snapshot opérationnel sans quitter la vue. Import JSON disponible pour rejouer un diagnostic offline (rehydratation des compteurs/cache/ui).
+- Utilitaire `collectDiagnosticsSnapshot` centralise la collecte (cache/network/ui/server/forced history) et alimente DebugPanel, SyncControls et les exports off-line pour assurer un format homogène.
+- `TimeNavigation` : annonces vocales via `aria-live`, boutons “Filtres/Comparer” instrumentés (`aria-expanded`/`aria-controls`), sections filtrage/comparaison marquées `role="region"`, boutons période avec `aria-pressed`, libellé explicite du bouton “Aujourd’hui”.
+- `AutoSyncSettings` : région `aria-live` synthétisant l’état, descriptions associées aux contrôles (fréquence, délai), réutilisation du même message pour les lecteurs d’écran et gestion d’erreur `role="alert"`.
+- `useFocusTrap` apporte `returnFocus` et est implémenté dans `ForceSyncMenu`, `ForceRangeDialog`, `DebugPanel` pour garantir le retour focus sur l’élément déclencheur. 
 - **Sections instrumentées** : `DashboardSection`, `ActivitiesSection`, `MetricsSection`, `ChartsSection`, `UtilitiesSection` appellent `useUIMetricsTelemetry` dès chaque montage/rerender, ce qui alimente l’historique et les compteurs exposés dans `DebugPanel` pour corréler perf UI ↔ data source.
+- **Télémétrie fine** : chaque composant graphique (TimeSeries, HeartRate, BodyBattery, Stress, Sleep, Respiration, Heatmap, Correlation) invoque aussi `useUIMetricsTelemetry`, ce qui permet d’identifier la visualisation précise responsable d’un pic de rendu sans instrumentation supplémentaire. `DebugPanel › UIMetrics` liste le Top 5 (durée moy./max, dernière valeur, nombre de rendus) pour prioriser les optimisations.
 - **Overlay de synchronisation** : `GarminTabLayout` observe l’état `loading` exposé par `useGarminSyncState` (trace console en mode DEV) et lève l’overlay dès la fin de `processSyncResponse`. Les écritures d’historique (`SyncHistoryRecorder.record`) sont désormais lancées en arrière-plan pour éviter de bloquer l’UI après un forçage massif.
 
 ### 4.6 UtilitiesSection
@@ -314,3 +320,36 @@ Quatre lignes directrices gouvernent l’architecture :
    - Stopper backend ; lancer forçage `today`.
    - Après 30s : badge “mode dégradé”, `cacheMeta.degraded=true`, aucun hit `live`.
    - Redémarrer backend, `syncNow()` : circuit se referme, badge `live`, stats `server` ++.
+
+### 6.3 Phase 6 – Roadmap observabilité & tests
+
+- **Couverture de tests** : ajouter suites Vitest ciblant `uiMetricsStore`, `diagnosticsCollector`, `TelemetryCoordinator` (à créer) et `pushMetricsSnapshot`. Utiliser `renderHook` + mocks `performance.now()` pour valider `useUIMetricsTelemetry`.
+- **TelemetryCoordinator** : orchestrer `garmin-ui-metrics-update`, `garmin-cache-update`, `garmin-network-update`, appliquer un throttle (250 ms) et exposer `start/stop/pushNow`. Il alimentera le DebugPanel (carte Observability) et l’export JSON.
+- **Push serveur** : enrichir `/api/garmin/metrics` pour accepter un POST `clientTelemetry`, fusionner avec `serverMetrics`, loguer `telemetry_ingested` (payload, sessionId, payloadBytes). Côté front : service `pushMetricsSnapshot` avec double retry exponentiel.
+- **Exports** : harmoniser export JSON/PDF avec les nouveaux champs (`telemetrySessionId`, `telemetrySchemaVersion`, `network.timeline`). Décider si les 10 derniers snapshots diagnostics doivent être persistés dans IndexedDB (`garmin_diagnostics_history`).
+- **Documentation** : compléter cette section avec un diagramme sequence (PlantUML) du flux `sync → TelemetryCoordinator → /api/garmin/metrics`, et une checklist “How to debug” intégrant les nouveaux outils d’observabilité.
+
+### 6.4 Observabilité runtime (implémenté)
+
+- `TelemetryCoordinator` (front) écoute `garmin-ui-metrics-update`, `garmin-network-update`, `garmin-cache-update`, applique un throttle (250 ms par défaut) et publie `garmin-telemetry-update` avec un snapshot aggregé (`sessionId`, `schemaVersion`, diagnostics via `collectDiagnosticsSnapshot`).  
+- `window.__GARMIN_OBSERVABILITY__` conserve le snapshot courant, l’historique borné (10 entrées), l’horodatage `lastUpdate`, ainsi que les métas `lastPush` / `pendingPush` pour l’intégration serveur à venir.  
+- `CacheCoordinator` diffuse désormais `garmin-cache-update` (hits + history) pour aligner les chronologies avec celles du réseau et de l’UI.  
+- `GarminTab` initialise/nettoie le coordinateur via `useEffect` afin d’éviter les listeners orphelins lors des navigations ou hot reload.  
+- Tests Vitest dédiés (`TelemetryCoordinator.test.js`) valident le démarrage, le throttle, l’abonnement/désabonnement, `computeNow` et l’arrêt.  
+- `DebugPanel › ObservabilityDiagnostics` expose en UI la session courante (sessionId, schema, lastUpdate, pendingPush), un résumé cache/réseau/UI, l’historique des 5 derniers snapshots et un CTA `Recalculer maintenant` (trigger `TelemetryCoordinator.computeNow`).  
+- L’export JSON `DebugPanel` inclut désormais un bloc `telemetry` (snapshot courant + store complet) afin de partager un diagnostic complet avec l’équipe backend/ops.
+- Backend : ajout `POST /api/garmin/metrics` — ingestion des snapshots client (`metrics_ingested` log structuré, historique des 50 dernières demandes) et réponse enrichie (`acceptedAt`, snapshot serveur mis à jour).
+- Auto-push : `TelemetryCoordinator.configureAutoPush` déclenche un envoi périodique (≤60 s) quand le DebugPanel est ouvert, avec garde `pendingPush` et persistance IndexedDB (`telemetryHistory`).
+- PDF/JSON : export harmonisé (`telemetrySessionId`, `telemetrySchemaVersion`, statut push, erreurs et historique tronqué) pour garantir la cohérence avec l’observabilité front/back.
+- `DebugPanel › ServerMetricsDashboard` (nouveau) consomme `GET /api/garmin/metrics` : rafraîchissement manuel + écoute `garmin-telemetry-update`, affiche compteurs sync (total/success/cacheHit), télémétrie serveur (session/schema, derniers pushs), historique des 10 dernières ingestions et CTA “Rafraîchir”. Tests Vitest (`ServerMetricsDashboard.test.jsx`) valident fetch, refresh, gestion d’erreur et réactions events.
+- Backend : `/admin/metrics` fournit un tableau de bord HTML responsif (auto-refresh 5 s, export JSON, résumé sync/cache/telemetry + historique ingestion) pour supervision directe côté bridge Node.
+- Script CLI `bench:metrics` (`node scripts/bench/exportServerMetrics.js`) capture le snapshot `/api/garmin/metrics`, affiche un résumé chiffré et sauvegarde optionnellement un JSON pour documenter les scénarios manuels Phase 6.
+  - Exemple : `npm run bench:metrics -- --base=http://localhost:3001 --out logs/garmin/metrics-today.json --quiet` (exécuter après chaque scénario manuel pour tracer les deltas).
+- Script `bench:metrics:diff` (`node scripts/bench/compareMetrics.js`) compare deux snapshots successifs et calcule les deltas des compteurs clés (`sync.*`, `cache.*`, `telemetry.ingested`). Idéal pour joindre une synthèse au journal de validation :  
+  `npm run bench:metrics:diff -- --previous logs/garmin/metrics-before.json --current logs/garmin/metrics-after.json`
+- Exemple « Mode dégradé » : enchaîner deux `forceRefresh=true` sur la même plage (<120 s) → `sync.servedFromCooldown` +1, `cache.bypass` +3, snapshot API annonce `diagnostic.servedFromCooldown=true`. Capturé/validé via `logs/garmin/metrics-before-degraded.json` → `logs/garmin/metrics-after-degraded.json`.
+- Exemple « Backend offline » : stop serveur, `bench:metrics` retourne `HTTP 500`; la synchro forcée côté client passe en mode dégradé. Après relance, le snapshot `logs/garmin/metrics-after-offline.json` affiche des compteurs remis à zéro → redémarrage sain observé.
+- Référence migration : voir `docs/garmin/PHASE_7_MIGRATION_PLAN.md` pour le déroulé détaillé (paliers, métriques à surveiller, runbook).
+- Feature flag migration : `VITE_GARMIN_SYNC_V7_ROLLOUT` (0 → désactivé, 1 → 100 %, valeur décimale pour échantillons). Décision mémorisée localement afin de garantir la stabilité par utilisateur.
+
+Prochaine étape : lancement de la Phase 7 (migration progressive et hardening).

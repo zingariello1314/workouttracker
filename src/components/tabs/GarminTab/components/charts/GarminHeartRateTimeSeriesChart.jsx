@@ -2,25 +2,39 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ReferenceArea } from 'recharts';
 import { CustomDot } from './CustomDot';
 import { useChartContainerSize } from './useChartContainerSize';
-import { areDerivedChartPropsEqual } from '../../../../../utils/chartComparison';
+import { areSelectorChartPropsEqual } from '../../../../../utils/chartComparison';
 import { 
   prepareTimeSeriesForDisplay, 
   enrichHeartRateTimeSeriesForVisualization
 } from '../../../../../utils/garminTimeSeriesUtils';
+import useUIMetricsTelemetry from '../../hooks/useUIMetricsTelemetry';
 
 /**
  * Graphique Heart Rate Time Series 24h (courbe FC minute par minute)
  * Affiche la fréquence cardiaque tout au long de la journée sélectionnée
  * 🟡 FIX #13: Wrapped dans React.memo pour éviter re-renders excessifs
  */
-function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors, activities }) {
+function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, selectedDate, periodFilter, customStartDate, customEndDate, colors, activities }) {
   // 🔴 FIX: Tous les hooks doivent être appelés AVANT les early returns
   // 🔴 FIX #20: useChartContainerSize doit être appelé AVANT les early returns
   // 🔴 FIX : Hauteur minimale augmentée à 550px pour éviter coupure verticale
+  useUIMetricsTelemetry('GarminHeartRateTimeSeriesChart');
   const { containerRef, containerSize } = useChartContainerSize(550, 400);
 
   // 🔴 NOUVEAU : Création d'une courbe continue comme Garmin Connect
+  const timeSeriesSelector = selector?.timeSeries ?? selector ?? precomputed ?? {};
+
   const enrichedData = React.useMemo(() => {
+    if (timeSeriesSelector?.enriched) {
+      const selectorStats = timeSeriesSelector.stats ?? timeSeriesSelector.enriched?.stats ?? null;
+      return {
+        ...timeSeriesSelector.enriched,
+        stats: selectorStats,
+        hasEnoughDataForCurve: Boolean(timeSeriesSelector.hasEnoughDataForCurve ?? timeSeriesSelector.enriched?.hasEnoughDataForCurve),
+        realPointsCount: timeSeriesSelector.realPointsCount ?? timeSeriesSelector.enriched?.realPointsCount ?? (Array.isArray(timeSeriesSelector.chartData) ? timeSeriesSelector.chartData.length : 0)
+      };
+    }
+
     if (precomputed?.enriched) {
       return precomputed.enriched;
     }
@@ -131,9 +145,13 @@ function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDat
     }
 
     return enrichedWithMeta;
-  }, [precomputed, dailyMetrics, selectedDate, activities]);
+  }, [timeSeriesSelector, precomputed, dailyMetrics, selectedDate, activities]);
 
   const timeSeriesData = React.useMemo(() => {
+    if (Array.isArray(timeSeriesSelector?.chartData)) {
+      return timeSeriesSelector.chartData;
+    }
+
     if (precomputed?.chartData) {
       return precomputed.chartData;
     }
@@ -226,7 +244,7 @@ function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDat
     }
     
     return transformed;
-  }, [precomputed, enrichedData, selectedDate]);
+  }, [timeSeriesSelector?.chartData, precomputed, enrichedData, selectedDate]);
 
   // ✅ CORRECTION: Afficher même avec données partielles - permettre les espaces vides
   const validTimeSeries = React.useMemo(() => {
@@ -336,7 +354,8 @@ function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDat
   }, [validTimeSeries, enrichedData, selectedDate]);
   
   // ✅ PHASE 1.2 : Utiliser hasEnoughDataForCurve au lieu de isEnriched
-  const hasEnoughDataForCurve = enrichedData?.hasEnoughDataForCurve === true;
+  const hasEnoughDataForCurve = enrichedData?.hasEnoughDataForCurve === true
+    || timeSeriesSelector?.hasEnoughDataForCurve === true;
   
   // Afficher avec avertissement si données partielles (mais suffisantes pour une courbe)
   const isPartialData = validTimeSeries.length > 0 && validTimeSeries.length < 100 && hasEnoughDataForCurve;
@@ -355,43 +374,15 @@ function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDat
     ? Math.min(220, enrichedData.stats.max + 10) 
     : (bpmValues.length > 0 ? Math.min(220, Math.max(...bpmValues) + 10) : 180);
 
-  // ✅ CORRECTION: Afficher le graphique même avec peu de données (courbe enrichie si nécessaire)
-  if (!dailyMetrics || !selectedDate) {
-    return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        <p>Aucune donnée de fréquence cardiaque disponible pour {selectedDate}.</p>
-        <p className="text-xs mt-2">Synchronisez vos données Garmin pour afficher le graphique.</p>
-      </div>
-    );
-  }
-  
-  // Si pas de données du tout (pas même de métriques agrégées), afficher message
-  const dayMetrics = dailyMetrics[selectedDate];
-  if (!dayMetrics || (!dayMetrics?.heartRate?.timeSeries?.length && !dayMetrics?.heartRate?.resting)) {
-    return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        <p>Aucune donnée de fréquence cardiaque disponible pour {selectedDate}.</p>
-        <p className="text-xs mt-2">Synchronisez vos données Garmin pour afficher le graphique.</p>
-      </div>
-    );
-  }
-  
-  // Si pas de timeSeries mais on peut créer une courbe enrichie, continuer
-  if (validTimeSeries.length === 0 && !hasEnoughDataForCurve) {
-    // Essayer de créer une courbe enrichie avec les métriques agrégées
-    const restingHR = dayMetrics?.heartRate?.resting;
-    const avgHR = dayMetrics?.heartRate?.avg;
-    const maxHR = dayMetrics?.heartRate?.max;
-    
-    if (!restingHR) {
-      return (
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-          <p>Aucune donnée de fréquence cardiaque disponible pour {selectedDate}.</p>
-          <p className="text-xs mt-2">Synchronisez vos données Garmin pour afficher le graphique.</p>
-        </div>
-      );
-    }
-  }
+  // Pré-calculer les états d'affichage (évite les hooks conditionnels)
+  const dayMetrics = selectedDate && dailyMetrics ? dailyMetrics[selectedDate] : null;
+  const hasHeartRateMetrics =
+    !!(dayMetrics && (dayMetrics?.heartRate?.timeSeries?.length || dayMetrics?.heartRate?.resting));
+  const lacksTimeSeriesAndCurve = validTimeSeries.length === 0 && !hasEnoughDataForCurve;
+  const canNotBuildFromAggregates = lacksTimeSeriesAndCurve && !dayMetrics?.heartRate?.resting;
+
+  const shouldShowMissingDailyMetrics = !dailyMetrics || !selectedDate;
+  const shouldShowNoHeartRateData = !hasHeartRateMetrics;
 
   // 🟢 PRIORITÉ 3 - TÂCHE 2 : Tooltip enrichi avec zone FC et statistiques
   const renderTooltip = React.useCallback(({ active, payload, label }) => {
@@ -447,6 +438,36 @@ function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDat
       </div>
     );
   }, [enrichedData]);
+
+  // ✅ CORRECTION: Afficher le graphique même avec peu de données (courbe enrichie si nécessaire)
+  if (shouldShowMissingDailyMetrics) {
+    return (
+      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+        <p>Aucune donnée de fréquence cardiaque disponible pour {selectedDate}.</p>
+        <p className="text-xs mt-2">Synchronisez vos données Garmin pour afficher le graphique.</p>
+      </div>
+    );
+  }
+
+  // Si pas de données du tout (pas même de métriques agrégées), afficher message
+  if (shouldShowNoHeartRateData) {
+    return (
+      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+        <p>Aucune donnée de fréquence cardiaque disponible pour {selectedDate}.</p>
+        <p className="text-xs mt-2">Synchronisez vos données Garmin pour afficher le graphique.</p>
+      </div>
+    );
+  }
+
+  // Si pas de timeSeries mais on ne peut pas créer de courbe enrichie, afficher message
+  if (canNotBuildFromAggregates) {
+    return (
+      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+        <p>Aucune donnée de fréquence cardiaque disponible pour {selectedDate}.</p>
+        <p className="text-xs mt-2">Synchronisez vos données Garmin pour afficher le graphique.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 pb-12">
@@ -515,7 +536,7 @@ function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDat
           </div>
         </div>
       )}
-      <div ref={containerRef} className="h-[550px] min-h-[550px] px-2 pb-2">
+      <div ref={containerRef} className="h-[550px] min-h-[550px] w-full px-2 pb-2">
         <ResponsiveContainer 
           width={Math.max(400, containerSize.width)} 
           height={Math.max(550, containerSize.height)} 
@@ -675,5 +696,8 @@ function GarminHeartRateTimeSeriesChart({ precomputed, dailyMetrics, selectedDat
 }
 
 // 🟡 FIX #13: Memoization avec comparaison optimisée
-export default React.memo(GarminHeartRateTimeSeriesChart, areDerivedChartPropsEqual);
+const MemoizedGarminHeartRateTimeSeriesChart = React.memo(GarminHeartRateTimeSeriesChart, areSelectorChartPropsEqual);
+
+export default MemoizedGarminHeartRateTimeSeriesChart;
+export { MemoizedGarminHeartRateTimeSeriesChart as GarminHeartRateTimeSeriesChart };
 

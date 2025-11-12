@@ -37,6 +37,12 @@ import {
   FORCED_HISTORY_LIMIT
 } from './garminForcedHistory';
 import { buildDerivedDataset } from '../components/tabs/GarminTab/utils/chartDataBuilders';
+import { collectDiagnosticsSnapshot } from '../components/tabs/GarminTab/utils/diagnosticsCollector';
+import {
+  getUIMetricsSnapshot,
+  serializeUIMetricsSnapshot
+} from '../components/tabs/GarminTab/utils/uiMetricsStore';
+import { loadTelemetryHistory } from './garminTelemetryHistory';
 
 /**
  * Hook principal pour la gestion des données Garmin dans IndexedDB
@@ -224,6 +230,28 @@ export const useGarminData = () => {
       anchorDate: lastDate
     });
 
+    const rawUIMetrics = getUIMetricsSnapshot();
+    const uiTelemetrySnapshot = serializeUIMetricsSnapshot(
+      rawUIMetrics,
+      { historyLimit: 20, renderHistoryLimit: 20 }
+    );
+
+    const diagnosticsSnapshot = collectDiagnosticsSnapshot({
+      forcedRangesHistory: forcedHistory,
+      uiMetrics: rawUIMetrics,
+      options: {
+        includeServer: false,
+        historyLimit: 20,
+        renderHistoryLimit: 20
+      }
+    });
+
+    const telemetryStore =
+      typeof window !== 'undefined' && window.__GARMIN_OBSERVABILITY__
+        ? window.__GARMIN_OBSERVABILITY__
+        : null;
+    const telemetryHistory = await loadTelemetryHistory(20);
+
     return {
       ...coreData,
       forcedRangesHistory: forcedHistory,
@@ -232,7 +260,21 @@ export const useGarminData = () => {
         lastPurge: localStorage.getItem('garmin_lastPurge'),
         purgeErrors: parseSummary('garmin_purgeErrors')
       },
-      derivedCharts
+      derivedCharts,
+      uiTelemetry: uiTelemetrySnapshot,
+      diagnostics: diagnosticsSnapshot,
+      telemetry: {
+        sessionId: telemetryStore?.sessionId ?? null,
+        schemaVersion: telemetryStore?.schemaVersion ?? null,
+        lastUpdate: telemetryStore?.lastUpdate ?? null,
+        lastPush: telemetryStore?.lastPush ?? null,
+        lastPushStatus: telemetryStore?.lastPushStatus ?? null,
+        lastPushError: telemetryStore?.lastPushError ?? null,
+        pendingPush: Boolean(telemetryStore?.pendingPush),
+        history: telemetryHistory
+      },
+      telemetrySessionId: telemetryStore?.sessionId ?? null,
+      telemetrySchemaVersion: telemetryStore?.schemaVersion ?? null
     };
   }, [loadAllDataWrapper, loadForcedRangesHistoryWrapper]);
 

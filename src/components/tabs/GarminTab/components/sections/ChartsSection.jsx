@@ -22,7 +22,8 @@ const ChartsSection = ({ fallback = null }) => {
     periodFilter,
     customRange,
     colors,
-    chartData
+    chartData,
+    selectors
   } = useGarminChartSelectors();
 
   const hasSelectedMetrics = Boolean(selectedDate && selectedDailyMetrics);
@@ -40,42 +41,52 @@ const ChartsSection = ({ fallback = null }) => {
             colors={colors}
             activities={activitiesByType}
             precomputed={chartData.heartRateTimeSeries}
+            selector={selectors?.heartRate?.timeSeries ? selectors.heartRate : null}
           />
         )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <GarminHeartRateChart
             colors={colors}
             precomputed={chartData.heartRateTrend}
+            selector={selectors?.heartRate ?? null}
           />
           <GarminBodyBatteryChart
             colors={colors}
             precomputed={chartData.bodyBatteryTrend}
+            selector={selectors?.bodyBattery ?? null}
           />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <GarminStressChart
             colors={colors}
             precomputed={chartData.stressTrend}
+            selector={selectors?.stress ?? null}
           />
           <GarminSleepChart
             colors={colors}
             precomputed={chartData.sleepTrend}
+            selector={selectors?.sleep ?? null}
           />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <GarminRespirationChart
             colors={colors}
             precomputed={chartData.respirationTrend}
+            selector={selectors?.respiration ?? null}
           />
           <GarminActivityHeatmap
             precomputed={chartData.activityHeatmap}
+            selector={selectors?.activity ?? null}
           />
         </div>
         <GarminCorrelationCharts
           colors={colors}
           precomputed={chartData.correlation}
+          selector={selectors ?? null}
         />
       </React.Suspense>
     </div>
   );
 };
+
+export default ChartsSection;

@@ -61,6 +61,41 @@ export default function AutoSyncSettings({ syncFunction }) {
     return `${minutes}min`;
   }, [nextSyncTime]);
 
+  const statusRegionId = React.useId();
+  const scheduleDescriptionId = React.useId();
+  const delayDescriptionId = React.useId();
+  const [liveMessage, setLiveMessage] = React.useState('');
+
+  React.useEffect(() => {
+    const parts = [];
+    parts.push(
+      settings.enabled
+        ? 'Synchronisation automatique activée.'
+        : 'Synchronisation automatique désactivée.'
+    );
+    if (settings.schedule) {
+      const scheduleMap = {
+        daily: 'Fréquence quotidienne.',
+        weekly: 'Fréquence hebdomadaire (lundi).',
+        custom: 'Fréquence personnalisée.'
+      };
+      parts.push(scheduleMap[settings.schedule] || `Fréquence ${settings.schedule}.`);
+    }
+    if (settings.customTime) {
+      parts.push(`Heure configurée ${settings.customTime}.`);
+    }
+    if (typeof settings.delayBeforeSync === 'number' && settings.delayBeforeSync > 0) {
+      parts.push(`Délai avant synchronisation ${settings.delayBeforeSync} minutes.`);
+    }
+    if (nextSyncTime) {
+      parts.push(`Prochaine synchronisation le ${formatDateTime(nextSyncTime)}.`);
+    }
+    if (lastSyncTime) {
+      parts.push(`Dernière synchronisation le ${formatDateTime(lastSyncTime)}.`);
+    }
+    setLiveMessage(parts.join(' '));
+  }, [settings, nextSyncTime, lastSyncTime, formatDateTime]);
+
   return (
     <div 
       id="autosync-settings" // ✅ PHASE 5.3 : ID pour navigation depuis message informatif
@@ -68,6 +103,15 @@ export default function AutoSyncSettings({ syncFunction }) {
       role="region"
       aria-label="Paramètres de synchronisation automatique"
     >
+      <div
+        id={statusRegionId}
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {liveMessage}
+      </div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-white font-semibold">⏰ Synchronisation Automatique</h3>
         {isDirty && (
@@ -114,12 +158,13 @@ export default function AutoSyncSettings({ syncFunction }) {
               disabled={!settings.enabled}
               className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Sélectionner la fréquence de synchronisation"
+            aria-describedby={scheduleDescriptionId}
             >
               <option value="daily">Quotidienne</option>
               <option value="weekly">Hebdomadaire (Lundi)</option>
               <option value="custom">Personnalisée</option>
             </select>
-            <p className="text-slate-400 text-xs mt-1">
+            <p id={scheduleDescriptionId} className="text-slate-400 text-xs mt-1">
               {settings.schedule === 'daily' && 'Synchronisation tous les jours'}
               {settings.schedule === 'weekly' && 'Synchronisation tous les lundis'}
               {settings.schedule === 'custom' && 'Synchronisation selon l\'heure personnalisée'}
@@ -164,8 +209,9 @@ export default function AutoSyncSettings({ syncFunction }) {
               disabled={!settings.enabled}
               className="px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed w-full"
               aria-label="Délai avant synchronisation en minutes"
+              aria-describedby={delayDescriptionId}
             />
-            <p className="text-slate-400 text-xs mt-1">
+            <p id={delayDescriptionId} className="text-slate-400 text-xs mt-1">
               {settings.delayBeforeSync === 0 
                 ? 'Pas de délai - synchronisation immédiate' 
                 : `Attente de ${settings.delayBeforeSync} minute${settings.delayBeforeSync > 1 ? 's' : ''} avant la synchronisation (pour laisser Garmin traiter les données)`}
