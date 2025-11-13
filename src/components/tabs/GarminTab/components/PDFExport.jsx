@@ -14,6 +14,7 @@ import {
 } from '../utils/uiMetricsStore';
 import { loadTelemetryHistory } from '../../../../hooks/garminTelemetryHistory';
 import { useToast } from './Toast';
+import { isBrowser, getWindow } from '../../../../utils/isBrowser';
 
 const log = logger.component('PDFExport');
 
@@ -105,9 +106,11 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
         }
       }
 
+      // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+      const win = getWindow();
       const telemetryStore =
-        typeof window !== 'undefined' && window.__GARMIN_OBSERVABILITY__
-          ? window.__GARMIN_OBSERVABILITY__
+        isBrowser() && win.__GARMIN_OBSERVABILITY__
+          ? win.__GARMIN_OBSERVABILITY__
           : null;
       const telemetryHistory = await loadTelemetryHistory(10);
       const telemetryMeta = {

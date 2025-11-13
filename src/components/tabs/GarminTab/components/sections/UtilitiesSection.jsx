@@ -17,19 +17,26 @@ const UtilitiesSection = ({
 }) => {
   useUIMetricsTelemetry('UtilitiesSection');
 
-  const resolvedFallback = fallback || (
+  // ✅ Optimisation : Mémoïser le fallback par défaut pour éviter recréation
+  const defaultFallback = React.useMemo(() => (
     <div
       className="rounded-lg border border-slate-700 bg-slate-800/60 flex items-center justify-center text-slate-300 text-sm"
       style={{ minHeight: '160px' }}
       role="status"
       aria-live="polite"
+      aria-busy="true"
     >
       <div className="flex items-center gap-3">
-        <span className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin"></span>
+        <span 
+          className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin"
+          aria-hidden="true"
+        />
         <span>Chargement…</span>
       </div>
     </div>
-  );
+  ), []);
+  
+  const resolvedFallback = fallback || defaultFallback;
 
   const handleRefreshHistory = React.useCallback(() => {
     // Recharger l'historique depuis le scheduler

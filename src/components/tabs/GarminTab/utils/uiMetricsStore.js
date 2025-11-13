@@ -1,5 +1,7 @@
 // ✅ Tâche 10 : Import du système d'événements uniformisé
 import telemetryEvents from './telemetryEvents';
+// ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+import { isBrowser, getWindow } from '../../../../utils/isBrowser';
 
 const DEFAULT_STORE = {
   lastSyncDuration: null,
@@ -17,13 +19,17 @@ const DEFAULT_STORE = {
 };
 
 export const ensureUIMetricsStore = () => {
-  if (typeof window === 'undefined') {
+  // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées + fallback no-op
+  if (!isBrowser()) {
+    // Fallback no-op : retourner un store mock pour SSR/tests
     return null;
   }
-  if (!window.__GARMIN_UI_METRICS__) {
-    window.__GARMIN_UI_METRICS__ = JSON.parse(JSON.stringify(DEFAULT_STORE));
+  
+  const win = getWindow();
+  if (!win.__GARMIN_UI_METRICS__) {
+    win.__GARMIN_UI_METRICS__ = JSON.parse(JSON.stringify(DEFAULT_STORE));
   } else {
-    const store = window.__GARMIN_UI_METRICS__;
+    const store = win.__GARMIN_UI_METRICS__;
     for (const key of Object.keys(DEFAULT_STORE)) {
       if (store[key] === undefined) {
         if (Array.isArray(DEFAULT_STORE[key])) {
@@ -39,7 +45,7 @@ export const ensureUIMetricsStore = () => {
       }
     }
   }
-  return window.__GARMIN_UI_METRICS__;
+  return win.__GARMIN_UI_METRICS__;
 };
 
 export const getUIMetricsSnapshot = () => {
@@ -69,7 +75,8 @@ export const updateUIMetricsStore = (updatesOrUpdater) => {
     store.components = {};
   }
 
-  if (typeof window !== 'undefined') {
+  // ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées
+  if (isBrowser()) {
     // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
     telemetryEvents.uiMetricsUpdate(store, { source: 'uiMetricsStore' });
   }
@@ -78,12 +85,15 @@ export const updateUIMetricsStore = (updatesOrUpdater) => {
 };
 
 export const resetUIMetricsStore = () => {
-  if (typeof window === 'undefined') {
-    return;
+  // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées + fallback no-op
+  if (!isBrowser()) {
+    return; // Fallback no-op pour SSR/tests
   }
-  window.__GARMIN_UI_METRICS__ = JSON.parse(JSON.stringify(DEFAULT_STORE));
+  
+  const win = getWindow();
+  win.__GARMIN_UI_METRICS__ = JSON.parse(JSON.stringify(DEFAULT_STORE));
   // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
-  telemetryEvents.uiMetricsUpdate(window.__GARMIN_UI_METRICS__, { source: 'uiMetricsStore' });
+  telemetryEvents.uiMetricsUpdate(win.__GARMIN_UI_METRICS__, { source: 'uiMetricsStore' });
 };
 
 const roundMetric = (value) => {

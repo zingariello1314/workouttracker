@@ -12,6 +12,9 @@ import { usePrefetchAdjacentDays } from '../hooks/usePrefetchAdjacentDays';
 import { registerServiceWorker } from '../utils/serviceWorkerManager';
 import { startScheduler, stopScheduler, recordManualTrigger, getHistory, getStats, addListener, TRIGGER_TYPES, RESULT_TYPES } from '../services/sync/AutoSyncScheduler';
 import { ARIA_LABELS } from '../constants';
+import { KEYBOARD_SHORTCUTS, KEYBOARD_OPTIONS, createKeyboardShortcut } from '../constants/keyboard';
+import { isBrowser } from '../../../../utils/isBrowser';
+import { getActivitiesStabilityKey, getDailyMetricsStabilityKey } from '../utils/dataStability';
 
 // Constante locale (était dans GarminTab.jsx)
 const FORCED_HISTORY_DISPLAY_LIMIT = 200;
@@ -261,22 +264,26 @@ export function useGarminTabContainer(options = {}) {
   }, [refreshDiagnostics, getNetworkStatsSnapshot, getUIMetricsSnapshot]);
 
   // ==================== KEYBOARD SHORTCUT ====================
+  // ✅ Tâche 15 : Utiliser constantes centralisées pour raccourcis clavier
+  const debugPanelHandler = React.useCallback(
+    () => handleToggleDebugPanel(null, 'shortcut'),
+    [handleToggleDebugPanel]
+  );
+
+  const debugPanelShortcut = React.useMemo(
+    () => createKeyboardShortcut(KEYBOARD_SHORTCUTS.DEBUG_PANEL, debugPanelHandler),
+    [debugPanelHandler]
+  );
+
   useKeyboardShortcut(
-    [
-      {
-        key: 'd',
-        ctrlKey: true,
-        shiftKey: true,
-        handler: () => handleToggleDebugPanel(null, 'shortcut'),
-        description: 'Ouvrir ou fermer le panneau de diagnostic Garmin'
-      }
-    ],
-    { enabled: true, allowInInputs: false }
+    [debugPanelShortcut],
+    KEYBOARD_OPTIONS.DEFAULT
   );
 
   // ==================== TELEMETRY ====================
+  // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
   React.useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (!isBrowser()) {
       return;
     }
     TelemetryCoordinator.start();
@@ -313,13 +320,24 @@ export function useGarminTabContainer(options = {}) {
   }, [showDebugPanel, handleRefreshDiagnostics]);
 
   // Charger les données depuis IndexedDB au montage
+  // ✅ Micro-optimisation : Support AbortController pour annulation async
   React.useEffect(() => {
-    let cancelled = false;
-    if (!cancelled) {
-      fetchStatus();
-    }
+    let aborted = false;
+    
+    const loadStatus = async () => {
+      try {
+        await fetchStatus();
+      } catch (error) {
+        if (!aborted) {
+          console.warn('[GarminTabContainer] Erreur fetchStatus (non bloquant)', error);
+        }
+      }
+    };
+    
+    loadStatus();
+    
     return () => {
-      cancelled = true;
+      aborted = true;
     };
   }, [fetchStatus]);
 
@@ -555,6 +573,7 @@ export function useGarminTabContainer(options = {}) {
   }, [loading, garminData, status, showToast]);
 
   // S'assurer que la date sélectionnée pointe toujours vers une journée disponible
+  // ✅ Micro-optimisation : setSelectedDate est stable (setState), pas besoin dans dépendances
   React.useEffect(() => {
     if (!garminData?.dailyMetrics) {
       return;
@@ -567,15 +586,17 @@ export function useGarminTabContainer(options = {}) {
     if (!selectedDate || !garminData.dailyMetrics[selectedDate]) {
       setSelectedDate(latestDate);
     }
-  }, [garminData?.dailyMetrics, selectedDate, setSelectedDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [garminData?.dailyMetrics, selectedDate]); // setSelectedDate retiré (stable)
 
   // Exposer clearCache globalement
+  // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (isBrowser()) {
       window.clearFrontendCache = clearCache;
     }
     return () => {
-      if (typeof window !== 'undefined' && window.clearFrontendCache) {
+      if (isBrowser() && window.clearFrontendCache) {
         delete window.clearFrontendCache;
       }
     };
@@ -599,8 +620,9 @@ export function useGarminTabContainer(options = {}) {
   }, []);
 
   // Prefetch intelligent (onglet actif + idle callback)
+  // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
   React.useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (!isBrowser()) {
       return undefined;
     }
 
@@ -670,15 +692,48 @@ export function useGarminTabContainer(options = {}) {
     blue: '#3B82F6'
   }), []);
 
-  const memoizedActivities = React.useMemo(
-    () => garminData?.activities || { swimming: [], jumpRope: [], cardio: [] },
+  // ✅ Optimisation : Utiliser clés de stabilité basées sur contenu pour éviter recalculs inutiles
+  // Refs pour stocker les valeurs précédentes et leurs clés de stabilité
+  const previousActivitiesRef = React.useRef(null);
+  const previousActivitiesKeyRef = React.useRef(null);
+  const previousMetricsRef = React.useRef(null);
+  const previousMetricsKeyRef = React.useRef(null);
+
+  const activitiesStabilityKey = React.useMemo(
+    () => getActivitiesStabilityKey(garminData?.activities),
     [garminData?.activities]
   );
 
-  const memoizedDailyMetrics = React.useMemo(
-    () => garminData?.dailyMetrics || {},
+  const memoizedActivities = React.useMemo(() => {
+    const currentKey = activitiesStabilityKey;
+    // Si la clé de stabilité n'a pas changé, retourner la valeur précédente (évite recalcul)
+    if (previousActivitiesKeyRef.current === currentKey && previousActivitiesRef.current !== null) {
+      return previousActivitiesRef.current;
+    }
+    // Clé changée ou première fois : calculer et stocker
+    const newValue = garminData?.activities || { swimming: [], jumpRope: [], cardio: [] };
+    previousActivitiesKeyRef.current = currentKey;
+    previousActivitiesRef.current = newValue;
+    return newValue;
+  }, [activitiesStabilityKey, garminData?.activities]);
+
+  const metricsStabilityKey = React.useMemo(
+    () => getDailyMetricsStabilityKey(garminData?.dailyMetrics),
     [garminData?.dailyMetrics]
   );
+
+  const memoizedDailyMetrics = React.useMemo(() => {
+    const currentKey = metricsStabilityKey;
+    // Si la clé de stabilité n'a pas changé, retourner la valeur précédente (évite recalcul)
+    if (previousMetricsKeyRef.current === currentKey && previousMetricsRef.current !== null) {
+      return previousMetricsRef.current;
+    }
+    // Clé changée ou première fois : calculer et stocker
+    const newValue = garminData?.dailyMetrics || {};
+    previousMetricsKeyRef.current = currentKey;
+    previousMetricsRef.current = newValue;
+    return newValue;
+  }, [metricsStabilityKey, garminData?.dailyMetrics]);
 
   const memoizedDateKeys = React.useMemo(
     () => Object.keys(memoizedDailyMetrics).sort((a, b) => a.localeCompare(b)),

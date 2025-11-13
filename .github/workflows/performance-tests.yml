@@ -1,0 +1,91 @@
+name: Performance Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run performance tests
+        run: npm run test:perf
+        continue-on-error: true
+
+      - name: Compare with baseline
+        run: node scripts/perf/compare-baseline.js
+        continue-on-error: true
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-report
+          path: |
+            logs/garmin/perf-*.json
+            playwright-report/
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const baselineFile = path.join(process.cwd(), 'logs', 'garmin', 'perf-baseline.json');
+            const resultsFile = path.join(process.cwd(), 'logs', 'garmin', 'perf-results.json');
+            
+            let comment = '## 📊 Performance Test Results\n\n';
+            
+            try {
+              if (fs.existsSync(resultsFile)) {
+                const results = JSON.parse(fs.readFileSync(resultsFile, 'utf-8'));
+                const baseline = fs.existsSync(baselineFile) 
+                  ? JSON.parse(fs.readFileSync(baselineFile, 'utf-8'))
+                  : null;
+                
+                comment += '| Metric | Current | Baseline | Change | Status |\n';
+                comment += '|--------|---------|----------|--------|--------|\n';
+                
+                const metrics = ['tti', 'chartRender', 'indexedDBWrite', 'syncRoundTrip'];
+                metrics.forEach(metric => {
+                  const current = results[metric];
+                  const base = baseline?.[metric];
+                  if (current) {
+                    const change = base ? ((current - base) / base * 100).toFixed(1) : 'N/A';
+                    const status = base && current > base * 1.1 ? '❌' : '✅';
+                    comment += `| ${metric} | ${current.toFixed(0)}ms | ${base ? base + 'ms' : 'N/A'} | ${change}% | ${status} |\n`;
+                  }
+                });
+              } else {
+                comment += '⚠️ No performance results found.\n';
+              }
+            } catch (error) {
+              comment += `❌ Error processing results: ${error.message}\n`;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+

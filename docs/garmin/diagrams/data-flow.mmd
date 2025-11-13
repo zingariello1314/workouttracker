@@ -1,0 +1,74 @@
+graph TD
+    subgraph "Trigger"
+        User[User Action<br/>Button / AutoSync / Import]
+    end
+
+    subgraph "Orchestration"
+        SyncActions[useGarminSyncActions<br/>syncNow]
+        Pipeline[SyncPipelineRunner<br/>12 Steps]
+    end
+
+    subgraph "Services"
+        RangeService[SyncRangeService<br/>Compute range]
+        CacheService[SyncCacheService<br/>Resolve cache]
+        RequestService[SyncRequestService<br/>Fetch API]
+        RetryService[SyncRetryService<br/>Retry logic]
+    end
+
+    subgraph "Persistence"
+        Process[processSyncResponse<br/>Normalize data]
+        Save[garminDataSave<br/>IndexedDB]
+        Update[setGarminData<br/>In-memory state]
+    end
+
+    subgraph "Selection & Derivation"
+        Selectors[useGarminSelectors<br/>Filter & aggregate]
+        ChartSelectors[useGarminChartSelectors<br/>Build chartData]
+        Derived[useGarminDerivedDataset<br/>Centralized cache]
+    end
+
+    subgraph "Rendering"
+        UI[Dashboard/Charts<br/>Activities/Metrics]
+        Exports[JSON/PDF Exports<br/>Same source]
+    end
+
+    subgraph "Instrumentation"
+        Telemetry[TelemetryCoordinator<br/>Aggregate metrics]
+        DebugPanel[DebugPanel<br/>Real-time view]
+    end
+
+    User --> SyncActions
+    SyncActions --> Pipeline
+    
+    Pipeline --> RangeService
+    Pipeline --> CacheService
+    Pipeline --> RequestService
+    Pipeline --> RetryService
+    
+    RequestService --> Process
+    Process --> Save
+    Save --> Update
+    
+    Update --> Selectors
+    Update --> ChartSelectors
+    ChartSelectors --> Derived
+    
+    Selectors --> UI
+    Derived --> UI
+    Derived --> Exports
+    
+    RangeService --> Telemetry
+    CacheService --> Telemetry
+    RequestService --> Telemetry
+    RetryService --> Telemetry
+    Process --> Telemetry
+    
+    Telemetry --> DebugPanel
+
+    style User fill:#3b82f6,stroke:#1e40af,color:#fff
+    style Pipeline fill:#10b981,stroke:#059669,color:#fff
+    style Save fill:#f59e0b,stroke:#d97706,color:#fff
+    style Derived fill:#8b5cf6,stroke:#6d28d9,color:#fff
+    style UI fill:#3b82f6,stroke:#1e40af,color:#fff
+    style Telemetry fill:#ef4444,stroke:#dc2626,color:#fff
+

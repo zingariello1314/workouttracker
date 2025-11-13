@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useCallback } from 'react';
+import { isBrowser } from '../../../../utils/isBrowser';
 
 const isFocusableElement = (element) => {
   if (!element) return false;
@@ -68,66 +69,91 @@ const useKeyboardShortcut = (shortcuts = [], { enabled = true, allowInInputs = f
     [shortcuts]
   );
 
-  useEffect(() => {
-    if (!enabled || normalizedShortcuts.length === 0) {
-      return undefined;
+  // ✅ Optimisation : Mémoïser handleKeyDown avec useCallback pour éviter recréation
+  const handleKeyDown = useCallback((event) => {
+    const { allowInInputs: allow } = optionsRef.current;
+    if (!allow && isFocusableElement(event.target)) {
+      return;
     }
 
-    const handleKeyDown = (event) => {
-      const { allowInInputs: allow } = optionsRef.current;
-      if (!allow && isFocusableElement(event.target)) {
-        return;
+    const key = normalizeKey(event.key);
+    const code = event.code ? String(event.code) : null;
+
+    // Utiliser shortcutsRef.current pour toujours avoir la dernière version
+    const currentShortcuts = shortcutsRef.current;
+    
+    for (const shortcut of currentShortcuts) {
+      const normalized = {
+        key: normalizeKey(shortcut.key),
+        code: shortcut.code ? String(shortcut.code) : null,
+        ctrlKey: Boolean(shortcut.ctrlKey),
+        shiftKey: Boolean(shortcut.shiftKey),
+        altKey: Boolean(shortcut.altKey),
+        metaKey: Boolean(shortcut.metaKey)
+      };
+
+      // Vérifier correspondance touche
+      if (normalized.key && normalized.key !== key) {
+        continue;
+      }
+      if (normalized.code && normalized.code !== code) {
+        continue;
+      }
+      if (!normalized.key && !normalized.code) {
+        continue;
       }
 
-      const key = normalizeKey(event.key);
-      const code = event.code ? String(event.code) : null;
+      // Vérifier correspondance modificateurs
+      const matchesModifiers =
+        normalized.ctrlKey === Boolean(event.ctrlKey) &&
+        normalized.shiftKey === Boolean(event.shiftKey) &&
+        normalized.altKey === Boolean(event.altKey) &&
+        normalized.metaKey === Boolean(event.metaKey);
 
-      for (const shortcut of normalizedShortcuts) {
-        if (!shortcut.handler || (shortcut.key && shortcut.key !== key)) {
-          if (shortcut.code && shortcut.code !== code) {
-            continue;
-          }
-          if (shortcut.key && shortcut.key !== key) {
-            continue;
-          }
-          if (!shortcut.key && !shortcut.code) {
-            continue;
-          }
-        }
+      if (!matchesModifiers) {
+        continue;
+      }
 
-        const matchesModifiers =
-          shortcut.ctrlKey === Boolean(event.ctrlKey) &&
-          shortcut.shiftKey === Boolean(event.shiftKey) &&
-          shortcut.altKey === Boolean(event.altKey) &&
-          shortcut.metaKey === Boolean(event.metaKey);
+      // Appliquer preventDefault/stopPropagation
+      const preventDefault = shortcut.preventDefault !== false;
+      const stopPropagation = Boolean(shortcut.stopPropagation);
 
-        if (!matchesModifiers) {
-          continue;
-        }
+      if (preventDefault) {
+        event.preventDefault();
+      }
+      if (stopPropagation) {
+        event.stopPropagation();
+      }
 
-        if (shortcut.preventDefault) {
-          event.preventDefault();
-        }
-        if (shortcut.stopPropagation) {
-          event.stopPropagation();
-        }
-
+      // Exécuter le handler
+      if (typeof shortcut.handler === 'function') {
         try {
           shortcut.handler(event);
         } catch (error) {
           // eslint-disable-next-line no-console
           console.error('[useKeyboardShortcut] handler error:', error);
         }
-        break;
       }
-    };
+      break;
+    }
+  }, []); // Pas de dépendances : utilise refs pour toujours avoir les dernières valeurs
+
+  useEffect(() => {
+    if (!enabled || normalizedShortcuts.length === 0) {
+      return undefined;
+    }
+
+    // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
+    if (!isBrowser()) {
+      return undefined;
+    }
 
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [enabled, normalizedShortcuts]);
+  }, [enabled, normalizedShortcuts, handleKeyDown]);
 };
 
 export default useKeyboardShortcut;

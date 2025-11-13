@@ -439,17 +439,93 @@ Implémenter **Service Worker** pour :
 
 ---
 
+## ADR-008 : Évaluation migration partielle vers React Query/SWR
+
+**Statut** : 🔄 En évaluation (Phase 9+)  
+**Date** : 2024-12-20  
+**Auteur** : Équipe Garmin  
+**Version** : 0.1 (Draft)
+
+### Contexte
+
+L'onglet Garmin utilise actuellement un système de cache custom (`CacheCoordinator`, `SyncCacheService`) qui fonctionne bien mais nécessite ~500+ LOC de maintenance. Les alternatives modernes comme React Query ou SWR offrent :
+- Cache réseau intégré avec TTL
+- DevTools pour debugging
+- Support SSR natif
+- Communauté active et maintenance continue
+
+**Questions à évaluer** :
+- Migration partielle (uniquement cache réseau) vs complète
+- Compatibilité avec IndexedDB (store principal)
+- Impact sur circuit breaker et mode dégradé custom
+- Bundle size et performance
+
+### Décision (Provisoire)
+
+**Phase actuelle (Phase 8)** : Conserver `CacheCoordinator` custom.
+
+**Phase 9+ (Évaluation)** :
+1. Créer POC avec React Query pour cache réseau uniquement
+2. Comparer performance/maintenabilité vs solution actuelle
+3. Documenter résultats dans ADR-008 v1.0
+4. Décider migration partielle ou non
+
+**Critères d'évaluation** :
+- Performance (TTI, bundle size, latence)
+- Maintenabilité (LOC, complexité, tests)
+- Compatibilité (IndexedDB, circuit breaker, mode dégradé)
+- DX (DevTools, debugging, documentation)
+
+### Alternatives considérées
+
+1. **React Query (TanStack Query)**
+   - ✅ Cache réseau intégré, DevTools, SSR
+   - ⚠️ Nécessite adaptation pour IndexedDB
+   - ⚠️ Bundle size ~15 KB gzipped
+
+2. **SWR (Vercel)**
+   - ✅ Légère (~5 KB), simple API
+   - ⚠️ Moins de features que React Query
+   - ⚠️ Nécessite adaptation pour IndexedDB
+
+3. **Conserver solution custom**
+   - ✅ Contrôle total, aligné besoins spécifiques
+   - ⚠️ Maintenance continue (~500 LOC)
+   - ⚠️ Pas de DevTools intégrés
+
+### Conséquences (Provisoires)
+
+**Si migration partielle** :
+- ✅ Réduction code custom (~200-300 LOC)
+- ✅ DevTools pour debugging
+- ⚠️ Adaptation nécessaire pour IndexedDB
+- ⚠️ Migration progressive (risque régressions)
+
+**Si conservation solution custom** :
+- ✅ Contrôle total, pas de dépendance externe
+- ⚠️ Maintenance continue
+- ⚠️ Pas de DevTools intégrés
+
+### Évolution future
+
+- **Phase 9** : POC React Query, benchmark performance
+- **Phase 10** : Décision finale (migration ou conservation)
+- **Phase 11+** : Implémentation si migration validée
+
+---
+
 ## Changelog
 
 | Version | Date | Auteur | Changements |
 |---------|------|--------|-------------|
 | 1.0 | 2024-02-25 | Équipe Garmin | Création initiale (ADR-001 à ADR-007) |
+| 1.1 | 2024-12-20 | Équipe Garmin | Ajout ADR-008 (évaluation React Query/SWR) |
 
 ---
 
 ## Prochaines ADR prévues
 
-- **ADR-008** : Migration partielle vers React Query (Phase 9)
+- **ADR-008** : ✅ Créé (évaluation React Query/SWR - Phase 9+)
 - **ADR-009** : Optimisation compression time series (Phase 10)
 - **ADR-010** : Intégration Sentry pour erreurs critiques (Phase 9)
 

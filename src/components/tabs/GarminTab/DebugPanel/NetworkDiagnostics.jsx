@@ -13,14 +13,16 @@ const DEFAULT_STATS = {
 };
 
 const getSnapshot = () => {
-  if (typeof window === 'undefined') {
+  // ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées
+  if (!isBrowser()) {
     return DEFAULT_STATS;
   }
   return window.__GARMIN_NETWORK_STATS__ || DEFAULT_STATS;
 };
 
 const subscribe = (callback) => {
-  if (typeof window === 'undefined') {
+  // ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées
+  if (!isBrowser()) {
     return () => {};
   }
   window.addEventListener('garmin-network-update', callback);

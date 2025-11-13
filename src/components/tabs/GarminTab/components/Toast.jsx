@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import TelemetryCoordinator from '../utils/TelemetryCoordinator';
+// ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées
+import { isBrowser } from '../../../../utils/isBrowser';
 
 /**
  * Composant Toast accessible pour feedback visuel
@@ -8,7 +10,8 @@ import TelemetryCoordinator from '../utils/TelemetryCoordinator';
 export function Toast({ message, type = 'success', duration = 3000, onClose, id }) {
   useEffect(() => {
     // Instrumentation : enregistrer l'affichage du toast
-    if (id && typeof window !== 'undefined') {
+    // ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées
+    if (id && isBrowser()) {
       TelemetryCoordinator.recordEvent('toast_shown', {
         type,
         messageLength: typeof message === 'string' ? message.length : 0,
@@ -21,7 +24,8 @@ export function Toast({ message, type = 'success', duration = 3000, onClose, id 
       const timer = setTimeout(() => {
         onClose?.();
         // Instrumentation : enregistrer la fermeture automatique
-        if (id && typeof window !== 'undefined') {
+        // ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées
+        if (id && isBrowser()) {
           TelemetryCoordinator.recordEvent('toast_closed', {
             type,
             reason: 'auto',
@@ -59,7 +63,8 @@ export function Toast({ message, type = 'success', duration = 3000, onClose, id 
           type="button"
           onClick={() => {
             // Instrumentation : enregistrer la fermeture manuelle
-            if (id && typeof window !== 'undefined') {
+            // ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées
+            if (id && isBrowser()) {
               TelemetryCoordinator.recordEvent('toast_closed', {
                 type,
                 reason: 'manual',

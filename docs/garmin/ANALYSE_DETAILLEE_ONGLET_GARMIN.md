@@ -39,9 +39,11 @@
 
 ---
 
-## 1. Architecture d’ensemble
+## 1. Architecture d'ensemble
 
 ### 1.1 Couches principales
+
+![Architecture globale](./diagrams/architecture-global.mmd)
 
 | Couche | Rôle | Principaux modules | Détails clés |
 | ------ | ---- | ------------------ | ------------ |
@@ -72,6 +74,8 @@
 
 ### 1.3 Flux de données (de la requête au rendu)
 
+![Flux de données](./diagrams/data-flow.mmd)
+
 1. **Déclencheur** : utilisateur (bouton “Synchroniser” / “Forcer”), auto-sync (`useAutoSync`), ou import JSON.
 2. **Orchestrateur sync** (`useGarminSyncActions.syncNow`) :
    - Calcule le range (`SyncRangeService`), vérifie caches (`SyncCacheService`), invoque API si nécessaire (`SyncRequestService` + `tryFetch` + circuit breaker).
@@ -87,6 +91,8 @@
    - `useUIMetricsTelemetry` mesure le temps de rendu de chaque composant (exposé dans DebugPanel).
 6. **Instrumentation** :
    - Chaque étape (cache hit, fetch, retry, render) envoie un événement à `TelemetryCoordinator` → stores globaux → DebugPanel / `/api/garmin/metrics`.
+
+![Pipeline de synchronisation](./diagrams/sync-pipeline.mmd)
 
 ```
 ┌───────────┐     (1) déclencheur UI / auto-sync / import
@@ -161,6 +167,8 @@
 - **Lazy/Suspense** : sections lourdes chargées à la demande, fallback minimal pour réduire TTI.
 - **Virtualisation (prévue §11)** : planifiée pour la liste activités lorsque >100 entrées.
 - **Cache multi-niveaux** : mémoire (TTL 60s), IndexedDB, serveur (TTL 5 min). Orchestrés par `CacheCoordinator` avec politique LRU.
+
+![Hiérarchie de cache](./diagrams/cache-hierarchy.mmd)
 - **Budgets cibles (production)** :
   - TTI (Time to Interactive) < **2.0 s** (P95).
   - Bundle JS initial < **350 Ko gzippés**.

@@ -1,0 +1,38 @@
+graph LR
+    Start([syncNow<br/>Triggered]) --> Validate[1. ValidateStep<br/>Check dbReady<br/>Validate options]
+    
+    Validate --> Normalize[2. NormalizeStep<br/>Normalize options<br/>Set defaults]
+    
+    Normalize --> ClearCache[3. ClearCacheStep<br/>Purge if forceRefresh<br/>Clear memory cache]
+    
+    ClearCache --> ResolveRange[4. ResolveRangeStep<br/>Compute date range<br/>Get lastSyncTimestamp<br/>Apply auto-sync delay]
+    
+    ResolveRange --> BuildContext[5. BuildContextStep<br/>Build orchestrator context<br/>Initialize services]
+    
+    BuildContext --> Execute[6. ExecuteOrchestratorStep<br/>Run SyncOrchestrator<br/>Range → Cache → Request → Retry]
+    
+    Execute --> HandleAdjusted[7. HandleAdjustedRangeStep<br/>Handle range adjustments<br/>Update state]
+    
+    HandleAdjusted --> HandleCache[8. HandleCacheHitStep<br/>Early return if cache hit<br/>Skip network request]
+    
+    HandleCache -->|Cache Miss| ProcessNetwork[9. ProcessNetworkResponseStep<br/>Process API response<br/>Save to IndexedDB<br/>Update garminData]
+    
+    HandleCache -->|Cache Hit| RecordHistory
+    ProcessNetwork --> HandleError[10. HandleErrorStep<br/>Handle network errors<br/>Apply retry logic<br/>Degraded mode]
+    
+    HandleError --> RecordHistory[11. RecordHistoryStep<br/>Record forced ranges<br/>Update sync history]
+    
+    RecordHistory --> UpdateMetrics[12. UpdateMetricsStep<br/>Update UI metrics<br/>Record telemetry<br/>Push to backend]
+    
+    UpdateMetrics --> End([Complete<br/>Return result])
+    
+    HandleError -->|Error| End
+    HandleCache -->|Early Return| End
+
+    style Start fill:#3b82f6,stroke:#1e40af,color:#fff
+    style Validate fill:#8b5cf6,stroke:#6d28d9,color:#fff
+    style Execute fill:#10b981,stroke:#059669,color:#fff
+    style ProcessNetwork fill:#f59e0b,stroke:#d97706,color:#fff
+    style HandleError fill:#ef4444,stroke:#dc2626,color:#fff
+    style End fill:#3b82f6,stroke:#1e40af,color:#fff
+

@@ -1,0 +1,70 @@
+graph TD
+    subgraph "UI Layer - React Components"
+        UI[GarminTab<br/>Container/View Pattern]
+        Sections[Dashboard/Charts/Activities<br/>Lazy Loaded]
+        Controls[SyncControls<br/>TimeNavigation]
+    end
+
+    subgraph "Orchestration Layer - Custom Hooks"
+        Hooks[useGarminSyncActions<br/>useGarminData<br/>useGarminSelectors]
+        ChartHooks[useGarminChartSelectors<br/>useGarminDerivedDataset]
+        AutoSync[useAutoSync<br/>AutoSyncScheduler]
+    end
+
+    subgraph "Services Layer - Business Logic"
+        Sync[SyncOrchestrator<br/>SyncPipelineRunner]
+        Range[SyncRangeService]
+        Cache[SyncCacheService<br/>CacheCoordinator]
+        Request[SyncRequestService<br/>CircuitBreaker]
+        Retry[SyncRetryService<br/>DegradedModePolicy]
+    end
+
+    subgraph "Storage Layer - Persistence"
+        IDB[IndexedDB<br/>idb library]
+        Fallback[localStorage<br/>Fallback]
+        History[ForcedRangesHistory<br/>AutoSyncHistory]
+    end
+
+    subgraph "Observability Layer - Telemetry"
+        Telemetry[TelemetryCoordinator<br/>telemetryEvents]
+        Debug[DebugPanel<br/>Diagnostics]
+        Stores[window.__GARMIN_*<br/>Global Stores]
+    end
+
+    UI --> Hooks
+    Sections --> ChartHooks
+    Controls --> Hooks
+    Hooks --> Sync
+    ChartHooks --> Cache
+    AutoSync --> Sync
+    
+    Sync --> Range
+    Sync --> Cache
+    Sync --> Request
+    Sync --> Retry
+    
+    Cache --> IDB
+    Request --> IDB
+    Retry --> IDB
+    IDB --> Fallback
+    
+    Sync --> History
+    AutoSync --> History
+    
+    Sync --> Telemetry
+    Cache --> Telemetry
+    Request --> Telemetry
+    Retry --> Telemetry
+    
+    Telemetry --> Debug
+    Telemetry --> Stores
+    
+    Stores -.feedback.-> Hooks
+    Debug -.feedback.-> UI
+
+    style UI fill:#3b82f6,stroke:#1e40af,color:#fff
+    style Hooks fill:#8b5cf6,stroke:#6d28d9,color:#fff
+    style Sync fill:#10b981,stroke:#059669,color:#fff
+    style IDB fill:#f59e0b,stroke:#d97706,color:#fff
+    style Telemetry fill:#ef4444,stroke:#dc2626,color:#fff
+

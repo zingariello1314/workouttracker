@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { updateUIMetricsStore } from '../utils/uiMetricsStore';
+// ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées + fallback no-op
+import { isBrowser } from '../../../../utils/isBrowser';
 
 const roundDuration = (value) => {
   if (!Number.isFinite(value)) {
@@ -61,6 +63,11 @@ const updateComponentStats = (store, componentName, duration) => {
 };
 
 export const useUIMetricsTelemetry = (componentName = 'GarminTab') => {
+  // ✅ Item 16 : Fallback no-op pour SSR/tests
+  if (!isBrowser()) {
+    return; // Ne rien faire si pas dans un navigateur
+  }
+
   const startRef = useRef(null);
 
   if (typeof performance !== 'undefined') {
@@ -68,7 +75,8 @@ export const useUIMetricsTelemetry = (componentName = 'GarminTab') => {
   }
 
   useEffect(() => {
-    if (typeof performance === 'undefined') {
+    // ✅ Item 16 : Double vérification pour sécurité
+    if (!isBrowser() || typeof performance === 'undefined') {
       return;
     }
 

@@ -23,6 +23,7 @@ import { DegradedModePolicy } from '../services/sync/DegradedModePolicy';
 import { handleCacheHit as handleCacheHitHelper } from '../services/sync/CacheHitHandler';
 import { updateUIMetricsStore, getUIMetricsSnapshot as getUIMetricsStoreSnapshot } from '../utils/uiMetricsStore';
 import { syncNowWithPipeline } from './syncNowWithPipeline';
+import { isBrowser } from '../../../../utils/isBrowser';
 
 const IS_DEV = typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
 
@@ -795,7 +796,8 @@ export const useGarminSyncActions = (deps) => {
   }, [setLastSourceMeta, buildNetworkMeta]);
 
   const getNetworkStatsSnapshot = useCallback(() => {
-    if (typeof window === 'undefined' || !window.__GARMIN_NETWORK_STATS__) {
+    // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
+    if (!isBrowser() || !window.__GARMIN_NETWORK_STATS__) {
       return null;
     }
     return { ...window.__GARMIN_NETWORK_STATS__ };

@@ -18,19 +18,37 @@ const GarminDailyMetrics = React.lazy(() => import('./GarminDailyMetrics'));
 const AdvancedStatistics = React.lazy(() => import('./AdvancedStatistics'));
 const DebugPanel = React.lazy(() => import('./DebugPanel'));
 
-const SectionFallback = ({ label, minHeight = '240px' }) => (
+/**
+ * Composant de fallback pour Suspense (skeleton loading)
+ * 
+ * ✅ Optimisation : Mémoïsé pour éviter re-renders inutiles
+ * 
+ * @param {Object} props
+ * @param {string} props.label - Label à afficher dans le message de chargement
+ * @param {string} props.minHeight - Hauteur minimale du conteneur
+ */
+const SectionFallback = React.memo(({ label = 'du contenu', minHeight = '240px' }) => (
   <div
     className="rounded-lg border border-slate-700 bg-slate-800/60 flex items-center justify-center text-slate-300 text-sm"
     style={{ minHeight }}
     role="status"
     aria-live="polite"
+    aria-busy="true"
   >
     <div className="flex items-center gap-3">
-      <span className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin"></span>
+      <span 
+        className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin" 
+        aria-hidden="true"
+      />
       <span>Chargement {label}…</span>
     </div>
   </div>
-);
+), (prevProps, nextProps) => {
+  // Comparaison optimisée : ne re-render que si label ou minHeight change
+  return prevProps.label === nextProps.label && prevProps.minHeight === nextProps.minHeight;
+});
+
+SectionFallback.displayName = 'SectionFallback';
 
 /**
  * Composant de présentation pure pour GarminTab
@@ -112,6 +130,30 @@ export function GarminTabView({
   // Callbacks pour Provider
   handleForcedRangeRecorded
 }) {
+  // ✅ Optimisation : Mémoïser tous les handlers pour éviter création fonctions inline
+  const handleToggleRaw = React.useCallback(() => {
+    setShowRaw((v) => !v);
+  }, [setShowRaw]);
+
+  const handleConfigureDelay = React.useCallback(() => {
+    const settingsElement = document.getElementById('autosync-settings');
+    if (settingsElement) {
+      settingsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      settingsElement.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
+      setTimeout(() => {
+        settingsElement.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
+      }, 2000);
+    }
+  }, []);
+
+  const handleOpenDebug = React.useCallback(() => {
+    handleToggleDebugPanel(true, 'button');
+  }, [handleToggleDebugPanel]);
+
+  const handleSetForcedRangesHistory = React.useCallback(() => {
+    // Géré par le Container via le callback - no-op ici
+  }, []);
+
   return (
     <GarminErrorBoundary>
       <GarminProvider
@@ -131,10 +173,11 @@ export function GarminTabView({
         setCompareDate={setCompareDate}
         colors={colors}
         forcedRangesHistory={forcedRangesHistory}
-        addForcedRangeEntry={(entry) => {
+        addForcedRangeEntry={React.useCallback((entry) => {
           // Cette fonction sera gérée par le Container via le callback
           // Ici on laisse le Provider gérer l'état
-        }}
+          handleForcedRangeRecorded?.(entry);
+        }, [handleForcedRangeRecorded])}
         clearForcedRangesHistory={handleClearForcedHistory}
         cacheMeta={cacheMeta}
       >
@@ -142,7 +185,7 @@ export function GarminTabView({
           loading={loading}
           baseUrl={baseUrl}
           showRaw={showRaw}
-          onToggleRaw={() => setShowRaw((v) => !v)}
+          onToggleRaw={handleToggleRaw}
           toastContainer={<ToastContainer />}
         >
           {/* Navigation temporelle avancée */}
@@ -254,26 +297,15 @@ export function GarminTabView({
               fetchStatus={fetchStatus}
               deleteMockActivities={deleteMockActivities}
               garminData={garminData}
-              onConfigureDelay={() => {
-                const settingsElement = document.getElementById('autosync-settings');
-                if (settingsElement) {
-                  settingsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  settingsElement.classList.add('ring-2', 'ring-blue-500', 'ring-opacity-50');
-                  setTimeout(() => {
-                    settingsElement.classList.remove('ring-2', 'ring-blue-500', 'ring-opacity-50');
-                  }, 2000);
-                }
-              }}
+              onConfigureDelay={handleConfigureDelay}
               clearCache={clearCache}
-              onOpenDebug={() => handleToggleDebugPanel(true, 'button')}
+              onOpenDebug={handleOpenDebug}
               forcedRangesHistory={forcedRangesHistory}
               onClearForcedHistory={handleClearForcedHistory}
               onRefreshForcedHistory={refreshForcedRangesHistory}
               cacheMeta={cacheMeta}
               onResetCircuit={resetCircuit}
-              setForcedRangesHistory={(history) => {
-                // Géré par le Container via le callback
-              }}
+              setForcedRangesHistory={handleSetForcedRangesHistory}
               setLastSourceMeta={setLastSourceMeta}
               historyLimit={200}
             />

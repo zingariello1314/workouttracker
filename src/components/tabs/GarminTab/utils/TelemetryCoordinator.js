@@ -6,6 +6,7 @@ import {
 } from '../constants';
 import { persistTelemetrySnapshot } from '../../../../hooks/garminTelemetryHistory';
 import telemetryEvents from './telemetryEvents';
+import { isBrowser, getWindow, hasWindowFunction, hasDispatchEvent } from '../../../../utils/isBrowser';
 
 const DEFAULT_OPTIONS = {
   throttleMs: TELEMETRY_DEFAULTS.THROTTLE_MS,
@@ -87,12 +88,18 @@ const determineRolloutEligibility = (rolloutValue) => {
     return true;
   }
 
-  if (typeof window === 'undefined' || !window.localStorage) {
+  // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+  if (!isBrowser()) {
+    return Math.random() < rolloutValue;
+  }
+  
+  const win = getWindow();
+  if (!win.localStorage) {
     return Math.random() < rolloutValue;
   }
 
   try {
-    const raw = window.localStorage.getItem(ROLLOUT_STORAGE_KEY);
+    const raw = win.localStorage.getItem(ROLLOUT_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (
@@ -112,7 +119,7 @@ const determineRolloutEligibility = (rolloutValue) => {
   const eligible = Math.random() < rolloutValue;
 
   try {
-    window.localStorage.setItem(
+    win.localStorage.setItem(
       ROLLOUT_STORAGE_KEY,
       JSON.stringify({
         version: ROLLOUT_STORAGE_VERSION,
@@ -140,12 +147,14 @@ const generateSessionId = () => {
 };
 
 const ensureObservabilityStore = () => {
-  if (typeof window === 'undefined') {
+  // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+  if (!isBrowser()) {
     return null;
   }
 
-  if (!window.__GARMIN_OBSERVABILITY__) {
-    window.__GARMIN_OBSERVABILITY__ = {
+  const win = getWindow();
+  if (!win.__GARMIN_OBSERVABILITY__) {
+    win.__GARMIN_OBSERVABILITY__ = {
       sessionId: generateSessionId(),
       schemaVersion: TELEMETRY_SCHEMA_VERSION,
       lastUpdate: null,
@@ -159,7 +168,7 @@ const ensureObservabilityStore = () => {
       lastSnapshot: null
     };
   } else {
-    const store = window.__GARMIN_OBSERVABILITY__;
+    const store = win.__GARMIN_OBSERVABILITY__;
     if (!store.sessionId) {
       store.sessionId = generateSessionId();
     }
@@ -183,7 +192,7 @@ const ensureObservabilityStore = () => {
     }
   }
 
-  const store = window.__GARMIN_OBSERVABILITY__;
+  const store = win.__GARMIN_OBSERVABILITY__;
   const rolloutValue = resolveRolloutEnvValue();
   const rolloutEligible = determineRolloutEligibility(rolloutValue);
   store.rolloutValue = rolloutValue;
@@ -192,7 +201,7 @@ const ensureObservabilityStore = () => {
   state.rolloutEligible = rolloutEligible;
   state.rolloutValue = rolloutValue;
 
-  return window.__GARMIN_OBSERVABILITY__;
+  return win.__GARMIN_OBSERVABILITY__;
 };
 
 const notifyListeners = (snapshot) => {
@@ -209,12 +218,10 @@ const notifyListeners = (snapshot) => {
     telemetryEvents.telemetryUpdate(snapshot, { source: 'TelemetryCoordinator' });
   } else {
     // Fallback si le module n'est pas disponible
-    if (
-      typeof window !== 'undefined' &&
-      typeof window.dispatchEvent === 'function' &&
-      typeof CustomEvent !== 'undefined'
-    ) {
-      window.dispatchEvent(
+    // ✅ Item 16 : Utiliser isBrowser() et helpers pour vérifications centralisées
+    if (isBrowser() && hasDispatchEvent() && typeof CustomEvent !== 'undefined') {
+      const win = getWindow();
+      win.dispatchEvent(
         new CustomEvent('garmin-telemetry-update', { detail: snapshot })
       );
     }
@@ -222,6 +229,11 @@ const notifyListeners = (snapshot) => {
 };
 
 const computeSnapshot = (reason = 'manual') => {
+  // ✅ Item 16 : Fallback no-op pour SSR/tests
+  if (!isBrowser()) {
+    return null; // Ne rien faire si pas dans un navigateur
+  }
+  
   const store = ensureObservabilityStore();
   if (!store) {
     return null;
@@ -302,22 +314,26 @@ const handleSourceEvent = (event) => {
 };
 
 const attachListeners = () => {
-  if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+  // ✅ Item 16 : Utiliser isBrowser() et hasWindowFunction() pour vérifications centralisées
+  if (!isBrowser() || !hasWindowFunction('addEventListener')) {
     return;
   }
 
+  const win = getWindow();
   SOURCE_EVENTS.forEach((eventName) => {
-    window.addEventListener(eventName, handleSourceEvent);
+    win.addEventListener(eventName, handleSourceEvent);
   });
 };
 
 const detachListeners = () => {
-  if (typeof window === 'undefined' || typeof window.removeEventListener !== 'function') {
+  // ✅ Item 16 : Utiliser isBrowser() et hasWindowFunction() pour vérifications centralisées
+  if (!isBrowser() || !hasWindowFunction('removeEventListener')) {
     return;
   }
 
+  const win = getWindow();
   SOURCE_EVENTS.forEach((eventName) => {
-    window.removeEventListener(eventName, handleSourceEvent);
+    win.removeEventListener(eventName, handleSourceEvent);
   });
 };
 
@@ -441,6 +457,11 @@ const pushSnapshot = async ({
 };
 
 const start = (customOptions = {}) => {
+  // ✅ Item 16 : Fallback no-op pour SSR/tests
+  if (!isBrowser()) {
+    // Retourner un objet no-op pour compatibilité SSR/tests
+    return;
+  }
   const {
     enableAutoPush,
     autoPushIntervalMs,
@@ -512,7 +533,12 @@ const getSnapshot = () => {
   if (state.lastSnapshot) {
     return state.lastSnapshot;
   }
-  const store = typeof window !== 'undefined' ? window.__GARMIN_OBSERVABILITY__ : null;
+  // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+  if (!isBrowser()) {
+    return null;
+  }
+  const win = getWindow();
+  const store = win.__GARMIN_OBSERVABILITY__;
   return store?.lastSnapshot ?? null;
 };
 

@@ -8,6 +8,7 @@
  */
 
 import logger from '../../../../utils/logger';
+import { isBrowser, hasDispatchEvent, hasCustomEvent } from '../../../../utils/isBrowser';
 
 const log = logger.module('telemetryEvents');
 
@@ -70,12 +71,13 @@ export const createTelemetryEvent = (type, detail = {}, options = {}) => {
  * @returns {boolean} True si l'événement a été dispatché
  */
 export const dispatchTelemetryEvent = (type, detail = {}, options = {}) => {
-  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') {
+  // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
+  if (!isBrowser() || !hasDispatchEvent()) {
     log.debug('[telemetryEvents] Window non disponible, événement ignoré', { type });
     return false;
   }
   
-  if (typeof CustomEvent === 'undefined') {
+  if (!hasCustomEvent()) {
     log.warn('[telemetryEvents] CustomEvent non supporté, événement ignoré', { type });
     return false;
   }

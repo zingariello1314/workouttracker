@@ -1,4 +1,5 @@
 import telemetryEventsModule from '../../utils/telemetryEvents';
+import { isBrowser, hasDispatchEvent, hasCustomEvent } from '../../../../../utils/isBrowser';
 
 // Protection : s'assurer que telemetryEvents est toujours défini (même si null)
 const telemetryEvents = telemetryEventsModule || null;
@@ -6,7 +7,7 @@ const telemetryEvents = telemetryEventsModule || null;
 const MAX_HISTORY = 20;
 
 const ensureStatsStore = () => {
-  if (typeof window === 'undefined') {
+  if (!isBrowser()) {
     return null;
   }
   const initial = {
@@ -57,10 +58,7 @@ const recordCacheEvent = (source, rangeInfo, meta = {}) => {
     store.history.splice(0, store.history.length - MAX_HISTORY);
   }
 
-  if (
-    typeof window !== 'undefined' &&
-    typeof window.dispatchEvent === 'function'
-  ) {
+  if (hasDispatchEvent()) {
     const detail = {
       hits: { ...store.hits },
       history: store.history.slice(),
@@ -71,7 +69,7 @@ const recordCacheEvent = (source, rangeInfo, meta = {}) => {
       telemetryEvents.cacheUpdate(detail, { source: 'CacheCoordinator' });
     } else {
       // Fallback si le module n'est pas disponible
-      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
+      if (hasDispatchEvent() && hasCustomEvent()) {
         window.dispatchEvent(new CustomEvent('garmin-cache-update', { detail }));
       }
     }

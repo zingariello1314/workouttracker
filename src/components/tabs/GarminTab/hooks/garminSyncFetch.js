@@ -20,6 +20,7 @@ import { SYNC_TIMEOUT_MS, RETRY_BASE_DELAY_MS, RETRY_MAX_ATTEMPTS, CIRCUIT_BREAK
 import logger from '../../../../utils/logger';
 import telemetryEvents from '../utils/telemetryEvents';
 import { CircuitBreaker } from '../services/network/CircuitBreaker';
+import { isBrowser, hasDispatchEvent, hasCustomEvent } from '../../../../utils/isBrowser';
 
 const log = logger.module('garminSyncFetch');
 
@@ -41,7 +42,8 @@ const buildBaseList = () => {
     bases.add(envBase.replace(/\/+$/, ''));
   }
 
-  if (typeof window !== 'undefined' && window.location?.origin) {
+  // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
+  if (isBrowser() && window.location?.origin) {
     bases.add(window.location.origin.replace(/\/+$/, ''));
   }
 
@@ -93,7 +95,8 @@ export const circuitBreaker = new CircuitBreaker({
 
 const MAX_NETWORK_EVENTS = 50;
 const ensureNetworkStore = () => {
-  if (typeof window === 'undefined') {
+  // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
+  if (!isBrowser()) {
     return null;
   }
   const defaultStore = {
@@ -129,7 +132,8 @@ const dispatchNetworkUpdate = () => {
     telemetryEvents.networkUpdate({}, { source: 'garminSyncFetch' });
   } else {
     // Fallback si le module n'est pas disponible
-    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
+    // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
+    if (hasDispatchEvent() && hasCustomEvent()) {
       window.dispatchEvent(new CustomEvent('garmin-network-update'));
     }
   }

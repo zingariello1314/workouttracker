@@ -12,6 +12,7 @@
 
 import logger from '../../../../../utils/logger';
 import telemetryEventsModule from '../../utils/telemetryEvents';
+import { isBrowser } from '../../../../../utils/isBrowser';
 
 const log = logger.module('SWRCacheAdapter');
 
@@ -150,7 +151,8 @@ export class SWRCacheAdapter {
    * Configure la revalidation automatique (focus, reconnect, interval)
    */
   setupAutoRevalidation() {
-    if (typeof window === 'undefined') {
+    // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
+    if (!isBrowser()) {
       return;
     }
 
@@ -185,7 +187,8 @@ export class SWRCacheAdapter {
    * Nettoie les listeners et timers
    */
   cleanup() {
-    if (typeof window !== 'undefined') {
+    // ✅ Tâche 16 : Utiliser isBrowser() pour vérifications centralisées
+    if (isBrowser()) {
       if (this.focusListener) {
         window.removeEventListener('focus', this.focusListener);
         this.focusListener = null;

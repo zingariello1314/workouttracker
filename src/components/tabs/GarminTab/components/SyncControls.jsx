@@ -8,6 +8,7 @@ import { collectDiagnosticsSnapshot } from '../utils/diagnosticsCollector';
 import { useConfirmDialog } from './modals/ConfirmDialog';
 import { useToast } from './Toast';
 import telemetryEvents from '../utils/telemetryEvents';
+import { isBrowser, getWindow, hasDispatchEvent, hasCustomEvent } from '../../../../utils/isBrowser';
 
 /**
  * Composant pour les contrôles de synchronisation Garmin
@@ -185,9 +186,12 @@ export default function SyncControls({
     });
   }, [cacheMeta, formatTimestamp, formatDuration]);
  
-  const cacheStats = React.useMemo(() => (
-    typeof window !== 'undefined' ? window.__GARMIN_CACHE_STATS__ || null : null
-  ), [cacheMeta]);
+  // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+  const cacheStats = React.useMemo(() => {
+    if (!isBrowser()) return null;
+    const win = getWindow();
+    return win.__GARMIN_CACHE_STATS__ || null;
+  }, [cacheMeta]);
   const latestCacheEvents = React.useMemo(() => {
     if (!cacheStats?.history?.length) return [];
     return [...cacheStats.history].slice(-3).reverse();
@@ -239,32 +243,36 @@ export default function SyncControls({
           setLastSourceMeta(parsed.cacheMeta);
         }
 
-        if (parsed.cacheStats && typeof window !== 'undefined') {
-          window.__GARMIN_CACHE_STATS__ = parsed.cacheStats;
+        // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+        if (parsed.cacheStats && isBrowser()) {
+          const win = getWindow();
+          win.__GARMIN_CACHE_STATS__ = parsed.cacheStats;
         }
 
-        if (parsed.networkStats && typeof window !== 'undefined') {
-          window.__GARMIN_NETWORK_STATS__ = parsed.networkStats;
+        if (parsed.networkStats && isBrowser()) {
+          const win = getWindow();
+          win.__GARMIN_NETWORK_STATS__ = parsed.networkStats;
           // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
           if (telemetryEvents && typeof telemetryEvents.networkUpdate === 'function') {
             telemetryEvents.networkUpdate(parsed.networkStats, { source: 'SyncControls' });
           } else {
             // Fallback
-            if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('garmin-network-update', { detail: parsed.networkStats }));
+            if (hasDispatchEvent() && hasCustomEvent()) {
+              win.dispatchEvent(new CustomEvent('garmin-network-update', { detail: parsed.networkStats }));
             }
           }
         }
 
-        if (parsed.uiMetrics && typeof window !== 'undefined') {
-          window.__GARMIN_UI_METRICS__ = parsed.uiMetrics;
+        if (parsed.uiMetrics && isBrowser()) {
+          const win = getWindow();
+          win.__GARMIN_UI_METRICS__ = parsed.uiMetrics;
           // ✅ Tâche 10 : Utiliser le système d'événements uniformisé
           if (telemetryEvents && typeof telemetryEvents.uiMetricsUpdate === 'function') {
             telemetryEvents.uiMetricsUpdate(parsed.uiMetrics, { source: 'SyncControls' });
           } else {
             // Fallback
-            if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('garmin-ui-metrics-update', { detail: parsed.uiMetrics }));
+            if (hasDispatchEvent() && hasCustomEvent()) {
+              win.dispatchEvent(new CustomEvent('garmin-ui-metrics-update', { detail: parsed.uiMetrics }));
             }
           }
         }

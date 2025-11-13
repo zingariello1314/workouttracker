@@ -3,6 +3,7 @@ import useFocusTrap from '../hooks/useFocusTrap';
 import { collectDiagnosticsSnapshot } from '../utils/diagnosticsCollector';
 import TelemetryCoordinator from '../utils/TelemetryCoordinator';
 import { useToast } from './Toast';
+import { isBrowser, getWindow } from '../../../../utils/isBrowser';
 const CacheDiagnostics = React.lazy(() => import('../DebugPanel/CacheDiagnostics'));
 const NetworkDiagnostics = React.lazy(() => import('../DebugPanel/NetworkDiagnostics'));
 const UIMetrics = React.lazy(() => import('../DebugPanel/UIMetrics'));
@@ -53,16 +54,20 @@ export default function DebugPanel({
 
   const [networkSnapshot, setNetworkSnapshot] = useState(() => {
     if (networkStats) return networkStats;
-    if (typeof window !== 'undefined' && window.__GARMIN_NETWORK_STATS__) {
-      return { ...window.__GARMIN_NETWORK_STATS__ };
+    // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+    const win = getWindow();
+    if (isBrowser() && win.__GARMIN_NETWORK_STATS__) {
+      return { ...win.__GARMIN_NETWORK_STATS__ };
     }
     return null;
   });
 
   const [uiSnapshot, setUiSnapshot] = useState(() => {
     if (uiMetrics) return uiMetrics;
-    if (typeof window !== 'undefined' && window.__GARMIN_UI_METRICS__) {
-      return { ...window.__GARMIN_UI_METRICS__ };
+    // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+    const win = getWindow();
+    if (isBrowser() && win.__GARMIN_UI_METRICS__) {
+      return { ...win.__GARMIN_UI_METRICS__ };
     }
     return null;
   });
@@ -163,9 +168,11 @@ export default function DebugPanel({
       }
     });
 
+    // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+    const win = getWindow();
     const telemetryStore =
-      typeof window !== 'undefined' && window.__GARMIN_OBSERVABILITY__
-        ? sanitizeTelemetryStore(window.__GARMIN_OBSERVABILITY__)
+      isBrowser() && win.__GARMIN_OBSERVABILITY__
+        ? sanitizeTelemetryStore(win.__GARMIN_OBSERVABILITY__)
         : null;
 
     const telemetrySnapshot =
@@ -243,11 +250,17 @@ export default function DebugPanel({
   }, [buildDiagnosticsPayload, showToast]);
 
   useEffect(() => {
+    // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
+    if (!isBrowser()) {
+      return;
+    }
+    
+    const win = getWindow();
     const handleNetworkUpdate = (event) => {
       setNetworkSnapshot(
         event?.detail ||
-          (typeof window !== 'undefined' && window.__GARMIN_NETWORK_STATS__
-            ? { ...window.__GARMIN_NETWORK_STATS__ }
+          (win.__GARMIN_NETWORK_STATS__
+            ? { ...win.__GARMIN_NETWORK_STATS__ }
             : null)
       );
     };
@@ -255,22 +268,18 @@ export default function DebugPanel({
     const handleUiUpdate = (event) => {
       setUiSnapshot(
         event?.detail ||
-          (typeof window !== 'undefined' && window.__GARMIN_UI_METRICS__
-            ? { ...window.__GARMIN_UI_METRICS__ }
+          (win.__GARMIN_UI_METRICS__
+            ? { ...win.__GARMIN_UI_METRICS__ }
             : null)
       );
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('garmin-network-update', handleNetworkUpdate);
-      window.addEventListener('garmin-ui-metrics-update', handleUiUpdate);
-    }
+    win.addEventListener('garmin-network-update', handleNetworkUpdate);
+    win.addEventListener('garmin-ui-metrics-update', handleUiUpdate);
 
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('garmin-network-update', handleNetworkUpdate);
-        window.removeEventListener('garmin-ui-metrics-update', handleUiUpdate);
-      }
+      win.removeEventListener('garmin-network-update', handleNetworkUpdate);
+      win.removeEventListener('garmin-ui-metrics-update', handleUiUpdate);
     };
   }, []);
 
@@ -338,7 +347,20 @@ export default function DebugPanel({
           </div>
         </div>
 
-        <React.Suspense fallback={<div className="text-slate-400 text-sm">Chargement des diagnostics…</div>}>
+        <React.Suspense fallback={
+          <div 
+            className="text-slate-400 text-sm p-4 rounded-lg border border-slate-700 bg-slate-800/60 flex items-center gap-3"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <span 
+              className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin"
+              aria-hidden="true"
+            />
+            <span>Chargement des diagnostics…</span>
+          </div>
+        }>
           <div className="space-y-6">
             <CacheDiagnostics
               meta={cacheMeta}

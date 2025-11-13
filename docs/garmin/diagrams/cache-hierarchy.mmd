@@ -1,0 +1,44 @@
+graph TD
+    Request[Sync Request<br/>Date Range] --> CheckExisting{Existing Data<br/>in State?}
+    
+    CheckExisting -->|Yes| Hit1[Cache Hit<br/>existingData]
+    CheckExisting -->|No| CheckMemory{Memory Cache<br/>TTL 60s<br/>30s for today}
+    
+    CheckMemory -->|Hit| Hit2[Cache Hit<br/>MemoryCacheAdapter]
+    CheckMemory -->|Miss| CheckIDB{IndexedDB Cache<br/>Persistent<br/>TTL 5min}
+    
+    CheckIDB -->|Hit| Hit3[Cache Hit<br/>IndexedDbCacheAdapter]
+    CheckIDB -->|Miss| CheckServer{Server Cache<br/>TTL 5min<br/>ETag support}
+    
+    CheckServer -->|Hit| Hit4[Cache Hit<br/>ServerCacheAdapter]
+    CheckServer -->|Miss| Fetch[Network Request<br/>tryFetch<br/>Circuit Breaker]
+    
+    Fetch --> SaveMemory[Save to Memory<br/>TTL 60s]
+    Fetch --> SaveIDB[Save to IndexedDB<br/>TTL 5min]
+    Fetch --> SaveServer[Update Server Cache<br/>ETag]
+    
+    SaveMemory --> Return[Return Data]
+    SaveIDB --> Return
+    SaveServer --> Return
+    
+    Hit1 --> Return
+    Hit2 --> Return
+    Hit3 --> Return
+    Hit4 --> Return
+    
+    Return --> SWR{SWR Enabled?<br/>Stale-While-Revalidate}
+    
+    SWR -->|Yes| Background[Background Revalidation<br/>Update cache async]
+    SWR -->|No| Complete[Complete]
+    
+    Background --> Complete
+
+    style Request fill:#3b82f6,stroke:#1e40af,color:#fff
+    style Hit1 fill:#10b981,stroke:#059669,color:#fff
+    style Hit2 fill:#10b981,stroke:#059669,color:#fff
+    style Hit3 fill:#10b981,stroke:#059669,color:#fff
+    style Hit4 fill:#10b981,stroke:#059669,color:#fff
+    style Fetch fill:#f59e0b,stroke:#d97706,color:#fff
+    style Return fill:#8b5cf6,stroke:#6d28d9,color:#fff
+    style Complete fill:#3b82f6,stroke:#1e40af,color:#fff
+

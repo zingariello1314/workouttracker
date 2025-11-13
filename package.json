@@ -16,6 +16,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
+    "test:perf": "playwright test tests/performance/regression.spec.js",
+    "perf:baseline": "node scripts/perf/create-baseline.js",
     "bench:save": "node scripts/bench/saveActivities.js",
     "bench:load": "node scripts/bench/loadData.js",
     "bench:network": "node scripts/bench/networkResilience.js",
