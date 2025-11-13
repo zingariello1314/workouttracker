@@ -1,9 +1,12 @@
 /**
  * 🔴 FIX #81-87: Composant Gantt Chart pour visualiser les activités
  * Timeline visuelle des activités Garmin
+ * 
+ * Utilise VirtualizedTimeline pour améliorer les performances avec >100 activités
  */
 import React from 'react';
 import { DATE_RANGE } from '../constants';
+import { VirtualizedTimeline } from './VirtualizedTimeline';
 
 export default function GanttChart({ activities, startDate, endDate }) {
   const [selectedPeriod, setSelectedPeriod] = React.useState('week');
@@ -160,6 +163,71 @@ export default function GanttChart({ activities, startDate, endDate }) {
     return maxY + BOTTOM_PADDING;
   }, [organizedActivities]);
 
+  /**
+   * Fonction pour rendre une activité (utilisée par VirtualizedTimeline)
+   */
+  const renderActivity = React.useCallback((activity, idx) => {
+    const position = getActivityPosition(activity);
+    const activityDate = new Date(activity.date || activity.startTimeLocal);
+    const durationMinutes = activity.duration ? Math.floor(activity.duration / 60) : 0;
+    
+    return (
+      <div
+        key={`${activity.type}-${activity.id || idx}`}
+        className="absolute rounded px-2 py-1 text-white text-xs cursor-pointer hover:opacity-80 transition-opacity shadow-lg z-20"
+        style={{
+          left: position.left,
+          top: `${activity.yPosition}px`,
+          width: `calc(${position.width} - 2px)`,
+          backgroundColor: activity.color,
+          minWidth: '60px',
+          maxWidth: '200px'
+        }}
+        title={`${activity.activityName || activity.type}\n${activityDate.toLocaleDateString('fr-FR')}\n${durationMinutes} min`}
+      >
+        <div className="font-medium truncate">
+          {activity.activityName || activity.type}
+        </div>
+        <div className="text-xs opacity-90">
+          {durationMinutes} min
+        </div>
+      </div>
+    );
+  }, [getActivityPosition]);
+
+  // État pour suivre le scroll horizontal
+  const [scrollLeft, setScrollLeft] = React.useState(0);
+  const [containerWidth, setContainerWidth] = React.useState(800);
+  const timelineContainerRef = React.useRef(null);
+
+  // Mettre à jour scrollLeft et containerWidth lors du scroll
+  React.useEffect(() => {
+    const container = timelineContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const updateScroll = () => {
+      setScrollLeft(container.scrollLeft || 0);
+      setContainerWidth(container.clientWidth || 800);
+    };
+
+    updateScroll();
+    container.addEventListener('scroll', updateScroll, { passive: true });
+    
+    // Observer les changements de taille
+    const resizeObserver = new ResizeObserver(updateScroll);
+    resizeObserver.observe(container);
+
+    return () => {
+      container.removeEventListener('scroll', updateScroll);
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Déterminer si la virtualisation est nécessaire
+  const shouldVirtualize = organizedActivities.length > 100;
+
   return (
     <div 
       className="bg-slate-800/60 border border-slate-700 rounded-lg p-4"
@@ -193,7 +261,10 @@ export default function GanttChart({ activities, startDate, endDate }) {
       ) : (
         <>
           {/* Timeline horizontale - SANS overflow-y, hauteur dynamique */}
-          <div className="mb-4 overflow-x-auto overflow-y-visible">
+          <div 
+            ref={timelineContainerRef}
+            className="mb-4 overflow-x-auto overflow-y-visible"
+          >
             <div 
               className="relative" 
               style={{ 
@@ -222,34 +293,18 @@ export default function GanttChart({ activities, startDate, endDate }) {
               })}
 
               {/* Activités avec positions calculées pour éviter superpositions */}
-              {organizedActivities.map((activity, idx) => {
-                const position = getActivityPosition(activity);
-                const activityDate = new Date(activity.date || activity.startTimeLocal);
-                const durationMinutes = activity.duration ? Math.floor(activity.duration / 60) : 0;
-                
-                return (
-                  <div
-                    key={`${activity.type}-${activity.id || idx}`}
-                    className="absolute rounded px-2 py-1 text-white text-xs cursor-pointer hover:opacity-80 transition-opacity shadow-lg z-20"
-                    style={{
-                      left: position.left,
-                      top: `${activity.yPosition}px`,
-                      width: `calc(${position.width} - 2px)`,
-                      backgroundColor: activity.color,
-                      minWidth: '60px',
-                      maxWidth: '200px'
-                    }}
-                    title={`${activity.activityName || activity.type}\n${activityDate.toLocaleDateString('fr-FR')}\n${durationMinutes} min`}
-                  >
-                    <div className="font-medium truncate">
-                      {activity.activityName || activity.type}
-                    </div>
-                    <div className="text-xs opacity-90">
-                      {durationMinutes} min
-                    </div>
-                  </div>
-                );
-              })}
+              {shouldVirtualize ? (
+                <VirtualizedTimeline
+                  activities={organizedActivities}
+                  containerWidth={containerWidth}
+                  scrollLeft={scrollLeft}
+                  renderActivity={renderActivity}
+                  dateRange={dateRange}
+                  enableVirtualization={true}
+                />
+              ) : (
+                organizedActivities.map((activity, idx) => renderActivity(activity, idx))
+              )}
             </div>
           </div>
 

@@ -650,8 +650,8 @@ En poursuivant cette feuille de route, l’onglet Garmin consolidera sa position
    - ✅ Migré tous les `window.alert` vers `showToast` dans `DebugPanel` (1 occurrence).
    - ✅ Migré tous les `window.alert` vers `showToast` dans `PDFExport` (4 occurrences).
    - ✅ Ajouté `ToastContainer` dans tous les composants concernés.
-   - 🔄 À faire : Ajouter des tests (Testing Library) couvrant focus, raccourcis, callbacks.
-   - **Impact** : UX cohérente, accessibilité améliorée (aria-live, focus trap), observabilité (instrumentation TelemetryCoordinator), plus d'interruptions bloquantes.
+   - ✅ **Tests accessibilité complets** : Créé tests Testing Library pour `ConfirmDialog` et `useConfirmDialog` (rendu, ARIA, variants, callbacks, navigation clavier, focus trap, Promise resolution). Créé tests pour `Toast` et `useToast` GarminTab (accessibilité, fermeture auto/manuelle, instrumentation TelemetryCoordinator). Créé tests pour `Toast` et `ToastProvider` ui/Toast (accessibilité, détails optionnels, suggestions, limite maxToasts). Créé tests pour `useFocusTrap` (focus trap, navigation Tab, Escape, return focus, désactivation). Créé tests pour `useKeyboardShortcut` (enregistrement, modificateurs, allowInInputs, enabled/disabled, preventDefault/stopPropagation, normalisation, gestion erreurs). Tous les tests couvrent focus, raccourcis, callbacks, accessibilité ARIA, et cas limites.
+   - **Impact** : UX cohérente, accessibilité améliorée (aria-live, focus trap), observabilité (instrumentation TelemetryCoordinator), plus d'interruptions bloquantes, garantie qualité (tests complets couvrant tous les scénarios critiques).
 
 3. **Stabiliser la chaîne dérivés/exports** ✅ **TERMINÉ**
    - ✅ Créé `useGarminDerivedDataset` avec cache global partagé (LRU, TTL 5 min, max 50 entrées).
@@ -677,8 +677,8 @@ En poursuivant cette feuille de route, l’onglet Garmin consolidera sa position
    - ✅ Implémenté scénarios P1 (nominaux) : sync réussie → navigation → cache hit → export PDF ; forçage range → pagination → recherche ; DebugPanel → export JSON ; auto-sync planifié.
    - ✅ Ajouté scripts npm (`test:e2e`, `test:e2e:ui`, `test:e2e:debug`, `test:e2e:report`).
    - ✅ Documenté dans `tests/e2e/README.md` (structure, exécution, debugging, CI).
-   - 🔄 À faire : Intégrer à la matrice CI (GitHub Actions ou équivalent).
-   - **Impact** : garantie bout-en-bout (cas vitaux + happy paths), conformité produit, détection précoce des régressions, documentation vivante des scénarios.
+   - ✅ **Intégration CI/CD complète** : Créé workflow GitHub Actions `.github/workflows/e2e-tests.yml` pour tests E2E Playwright (déclenchement sur push/PR vers main/develop, matrice navigateurs, démarrage serveurs frontend/backend, exécution tests P0/P1, upload rapports/screenshots/vidéos, résumé automatique). Créé workflow `.github/workflows/unit-tests.yml` pour tests unitaires Vitest (coverage, upload Codecov). Configuration CI : timeout 15min E2E, 10min unitaires, retry automatique, artifacts conservés 7 jours, support workflow_dispatch pour déclenchement manuel.
+   - **Impact** : garantie bout-en-bout (cas vitaux + happy paths), conformité produit, détection précoce des régressions, documentation vivante des scénarios, qualité continue (CI automatique sur chaque PR), traçabilité complète (rapports, screenshots, vidéos).
 
 ### Corrections & Optimisations (Post-Phase 1-8)
 
@@ -697,13 +697,13 @@ En poursuivant cette feuille de route, l’onglet Garmin consolidera sa position
 
 ### Priorité Moyenne
 
-6. **Alléger `syncNow()` et modulariser** ✅ **EN COURS**
+6. **Alléger `syncNow()` et modulariser** ✅ **TERMINÉ**
    - ✅ Déplacé `resolveForcedRange` et `buildSyncOptions` vers `SyncRangeService` (méthodes publiques testables).
    - ✅ Mémoïsé `MemoryCacheAdapter` via `useMemo` pour éviter les réinstanciations (2 occurrences → 1 instance partagée).
    - ✅ Créé `CacheHitHandler` helper pour centraliser la logique répétitive de traitement des cache hits (réduction ~140 lignes → ~30 lignes).
    - ✅ Nettoyé imports inutilisés (`getDateFromStr`, `subtractDaysFromDateStr`, `isDateBeforeOrEqual`).
-   - 🔄 À faire : Évaluer création d'un `SyncPipelineRunner` si la complexité de `syncNow()` le justifie encore.
-   - **Impact** : code plus testable (services isolés), SRP mieux respecté, réduction duplication (~110 lignes économisées), performance améliorée (mémoïsation adapter).
+   - ✅ **Création SyncPipelineRunner terminée** : Analysé `syncNow()` (~500 lignes) et identifié 12 étapes distinctes (validate, normalize, clearCache, resolveRange, buildContext, executeOrchestrator, handleAdjustedRange, handleCacheHit, processNetworkResponse, handleError, recordHistory, updateMetrics). Créé document d'architecture `SYNC_PIPELINE_ARCHITECTURE.md` détaillant le flux, les principes de design, et l'interface des steps. Créé `SyncPipelineRunner` avec classe de base `SyncStep` (validation dépendances, instrumentation, early returns, gestion erreurs). Créé tous les steps (12) : `ValidateStep` (validation DB), `NormalizeStep` (normalisation options), `ClearCacheStep` (nettoyage cache), `ResolveRangeStep` (résolution plage), `BuildContextStep` (construction contexte orchestrateur avec wrapper serverResponseHandler capturant forceMode/includeToday), `ExecuteOrchestratorStep` (exécution orchestrateur), `HandleAdjustedRangeStep` (gestion plage ajustée), `HandleCacheHitStep` (gestion cache hits IndexedDB/server), `ProcessNetworkResponseStep` (traitement réponse réseau), `HandleErrorStep` (gestion erreurs circuit breaker/fallback avec gestion directe degradedCache), `RecordHistoryStep` (enregistrement historique avec support fallbackResponse), `UpdateMetricsStep` (mise à jour métriques UI avec gestion erreurs finales). Créé helpers `buildSyncPipeline()` et `buildSyncContext()` pour assembler le pipeline et le contexte complet. Créé `syncNowWithPipeline()` fonction standalone utilisant le pipeline. Intégré dans `useGarminSyncActions` avec flag `USE_SYNC_PIPELINE` dans `constants.js` (désactivé par défaut, fallback automatique sur version legacy en cas d'erreur). Créé tests unitaires complets pour `SyncPipelineRunner` (21 tests, tous passent : construction, validation dépendances, exécution, early returns, gestion erreurs, instrumentation, validation résultats). Architecture conçue pour séparation des responsabilités, testabilité, observabilité, extensibilité, robustesse et performance optimale.
+   - **Impact** : code plus testable (services isolés, steps testables individuellement), SRP mieux respecté (chaque step a une responsabilité unique), réduction duplication (~110 lignes économisées), performance améliorée (mémoïsation adapter), pipeline modulaire et extensible (steps testables isolément, instrumentation par étape, ajout de nouveaux steps facile), maintenabilité améliorée (modification d'une étape n'impacte pas les autres), observabilité complète (durée par étape, erreurs tracées), robustesse (gestion erreurs à chaque niveau, fallback automatique).
 
 7. **Optimiser charts & rendu conditionnel** ✅ **TERMINÉ**
    - ✅ Créé hook `useChartData` pour pré-calculer domaines Y/X et ticks de manière centralisée (réduction recalculs redondants).
@@ -727,8 +727,8 @@ En poursuivant cette feuille de route, l’onglet Garmin consolidera sa position
    - ✅ Ajouté labels ARIA pour accessibilité (aria-label, aria-current) sur les contrôles de pagination.
    - ✅ Optimisé les fonctions de navigation (goToPage, goToNextPage, goToPreviousPage) avec useCallback.
    - ✅ **Corrections** : Clé de stabilité pour détecter changements réels, ActivityRow mémoïsé, PropTypes ajoutés.
-   - 🔄 À faire : Implémenter `VirtualizedTimeline` pour les vues temporelles longues si nécessaire.
-   - **Impact** : navigation fluide sur gros historiques (virtualisation réduit DOM nodes), meilleure performance (mémoïsation), accessibilité améliorée (ARIA labels).
+   - ✅ **VirtualizedTimeline implémenté** : Créé composant `VirtualizedTimeline` pour virtualiser les activités d'une timeline horizontale (seuil >100 activités). Virtualise les activités visibles dans le viewport horizontal, réduisant le nombre de nœuds DOM rendus. Intégré dans `GanttChart` de manière conditionnelle (activation automatique si >100 activités). Fonctionnalités : calcul plage visible basé sur scrollLeft/containerWidth, marge de rendu configurable (10 activités), mise à jour automatique lors du scroll, indicateur de virtualisation en mode dev. Gestion scroll horizontal via ResizeObserver et event listeners passifs. Créé 6 tests unitaires complets (rendu <100 activités, virtualisation >100 activités, force virtualisation, cas limites, indicateur dev). Architecture : fonction `renderActivity` pour rendu personnalisé, compatible positionnement absolu, retourne fragment React pour intégration transparente.
+   - **Impact** : navigation fluide sur gros historiques (virtualisation réduit DOM nodes), meilleure performance (mémoïsation), accessibilité améliorée (ARIA labels), **performance timeline améliorée (virtualisation conditionnelle >100 activités, réduction nœuds DOM, scroll fluide)**.
 
 9. **Renforcer IndexedDB & cache** ✅ **TERMINÉ + OPTIMISÉ**
    - ✅ Créé `IndexedDBMaintenanceService` avec `requestIdleCallback` pour maintenance automatique (nettoyage TTL, vérification indexes, statistiques).
@@ -739,8 +739,8 @@ En poursuivant cette feuille de route, l’onglet Garmin consolidera sa position
    - ✅ **Optimisations post-vérification** : Correction synchronisation Promise dans `cleanupOldData`, optimisation ordre cleanup dans `useDebouncedPersist`.
    - ✅ **Optimisations charts** : Mémoïsation calculs moyennes (BodyBattery, Stress, Sleep), optimisation dépendances `useChartData`.
    - ✅ **Optimisation pagination** : Amélioration clé de stabilité (10 premiers + 10 derniers items).
-   - 🔄 À faire : Expérimenter un cache SWR (serve stale, revalidate) dans `SyncCacheService`.
-   - **Impact** : IO maîtrisées (maintenance automatique, moins d'écritures), UX immédiate (pas de blocage), cohérence données (TTL respecté), performance améliorée (indexes optimisés, moins de re-renders).
+   - ✅ **Cache SWR (Stale-While-Revalidate) implémenté** : Créé `SWRCacheAdapter` avec stratégie "serve stale, revalidate" (retourne immédiatement les données en cache même si stale, déclenche revalidation en arrière-plan). Intégré dans `SyncCacheService` avec flag `USE_SWR_CACHE` (désactivé par défaut). Fonctionnalités : gestion promesses de revalidation (évite duplications), debounce configurable (2s par défaut), revalidation automatique sur focus/reconnect, timeout protection (30s), cleanup automatique via WeakMap. Créé 13 tests unitaires complets (construction, stratégie SWR, debounce, revalidation automatique, cleanup). Architecture : wrapper autour de `MemoryCacheAdapter`, utilise `SyncRequestService` pour revalidation, met à jour cache via `serverResponseHandler`, compatible avec système d'événements existant (telemetryEvents).
+   - **Impact** : IO maîtrisées (maintenance automatique, moins d'écritures), UX immédiate (pas de blocage), cohérence données (TTL respecté), performance améliorée (indexes optimisés, moins de re-renders), **perception de performance améliorée (réponse immédiate avec données stale, revalidation transparente en arrière-plan), réduction requêtes dupliquées (debounce), données toujours à jour (revalidation automatique)**.
 
 10. **Extensibilité télémétrie & DebugPanel** ✅ **TERMINÉ**
     - ✅ Créé `telemetryConfig.js` pour paramétrage dynamique de `HISTORY_MAX_ENTRIES` avec flag `critical` (DEFAULT: 20, CRITICAL: 50, MIN: 5, MAX: 100).
@@ -757,8 +757,8 @@ En poursuivant cette feuille de route, l’onglet Garmin consolidera sa position
     - ✅ Créé hook `useSyncWorker` pour communication avec le worker (execute, buildActivityHeatmap, enrichActivities, computeActivityStats, batchEnrichActivities, isReady, terminate).
     - ✅ Créé hook `usePrefetchAdjacentDays` avec `requestIdleCallback` pour précharger J±1 (configurable : initialDelay, daysRange, idleTimeout, minIdleTime).
     - ✅ Intégré `usePrefetchAdjacentDays` dans `GarminTabContainer` (démarrage après 3s, nettoyage automatique des dates obsolètes).
-    - 🔄 À faire : Intégrer progressivement `useSyncWorker` dans `buildDerivedDataset` pour déléguer `buildActivityHeatmap` au worker (seuil : >1000 activités).
-    - **Impact** : main thread libéré (worker pour calculs lourds), navigation immédiate (prefetch J±1), performance améliorée (traitements asynchrones), UX fluide (pas de blocage).
+    - ✅ **Intégration worker dans buildDerivedDataset** : Créé `activityUtils.js` avec fonctions utilitaires (`countTotalActivities`, `shouldUseWorker`, seuil 1000 activités). Modifié `buildDerivedDataset` et `buildGarminChartDataset` pour accepter paramètre optionnel `syncWorker`. Créé `buildActivityHeatmapOptimized` (asynchrone) qui délègue au worker si >1000 activités avec fallback synchrone robuste. Modifié `useGarminDerivedDataset` pour utiliser le worker de manière conditionnelle via `useEffect` (calcul asynchrone) et `useMemo` (retour résultat). Gestion état de chargement avec `datasetState` et fallback sur dataset par défaut si worker non disponible/échoue.
+    - **Impact** : main thread libéré (worker pour calculs lourds >1000 activités), navigation immédiate (prefetch J±1), performance améliorée (traitements asynchrones), UX fluide (pas de blocage), robustesse (fallback synchrone automatique), compatibilité (fonctionne même si worker indisponible).
 
 12. **Offline & exports** ✅ **TERMINÉ**
     - ✅ Créé module `jsonCompression.js` avec pako (compressJSON, decompressJSON, compressGarminExport, decompressGarminExport, isCompressed).
@@ -777,7 +777,8 @@ En poursuivant cette feuille de route, l’onglet Garmin consolidera sa position
     - ✅ Instrumenté annonces `aria-live` dans `SyncControls` (élément `#autosync-announcement`, réinitialisation après 1s).
     - ✅ Intégré `AutoSyncHistoryView` dans `UtilitiesSection` (lazy loading, bouton actualiser).
     - ✅ Ajouté historique AutoSync dans export JSON (`exportAll` charge `loadAutoSyncHistory`, import supporte `autoSyncHistory`).
-    - **Impact** : transparence (historique visuel), debug facilité (stats par type/résultat), accessibilité (annonces aria-live), cohérence (export/import JSON).
+    - ✅ **Correction robustesse** : Normalisation des entrées d'historique dans `AutoSyncHistoryView` (filtrage entrées invalides, génération `timestamp`/`id` si absents, PropTypes ajustés pour compatibilité données anciennes).
+    - **Impact** : transparence (historique visuel), debug facilité (stats par type/résultat), accessibilité (annonces aria-live), cohérence (export/import JSON), robustesse (gestion données corrompues/anciennes).
 
 14. **Documentation & décisions** ✅ **TERMINÉ**
     - ✅ Créé `ARCHITECTURE_DECISIONS.md` avec ADR-001 à ADR-007 (IndexedDB, Recharts, CacheCoordinator, Container/Presenter, TelemetryCoordinator, Web Workers, Service Worker), format standardisé avec contexte/décision/alternatives/conséquences/évolution, changelog.

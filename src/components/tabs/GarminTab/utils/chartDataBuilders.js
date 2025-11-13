@@ -1,5 +1,6 @@
 import { prepareTimeSeriesForDisplay, enrichHeartRateTimeSeriesForVisualization } from '../../../../utils/garminTimeSeriesUtils.js';
 import { normalizeActivityValue } from '../../../../utils/chartComparison.js';
+import { shouldUseWorker, countTotalActivities } from './activityUtils.js';
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
@@ -420,13 +421,50 @@ const buildHeartRateTimeSeries = (dailyMetrics, activities, selectedDate) => {
   };
 };
 
-export const buildGarminChartDataset = ({
+/**
+ * Construit la heatmap d'activités en utilisant le worker si disponible et si le seuil est atteint
+ * 
+ * @param {Object} activities - Activités groupées par type
+ * @param {Array} filteredDates - Dates filtrées
+ * @param {Object} syncWorker - Instance du worker (optionnel)
+ * @returns {Object} Heatmap d'activités
+ */
+/**
+ * Construit la heatmap d'activités en utilisant le worker si disponible et si le seuil est atteint
+ * Version asynchrone avec fallback synchrone
+ * 
+ * @param {Object} activities - Activités groupées par type
+ * @param {Array} filteredDates - Dates filtrées
+ * @param {Object} syncWorker - Instance du worker (optionnel)
+ * @returns {Promise<Object>} Heatmap d'activités
+ */
+const buildActivityHeatmapOptimized = async (activities = {}, filteredDates = [], syncWorker = null) => {
+  // Si le worker est disponible et qu'on dépasse le seuil, utiliser le worker
+  if (syncWorker && shouldUseWorker(activities)) {
+    try {
+      const result = await syncWorker.buildActivityHeatmap(activities, filteredDates, {
+        timeout: 5000 // Timeout de 5s pour éviter de bloquer trop longtemps
+      });
+      return result;
+    } catch (error) {
+      // Fallback sur la version synchrone en cas d'erreur
+      console.warn('[buildActivityHeatmapOptimized] Worker échoué, fallback synchrone', error);
+      return buildActivityHeatmap(activities, filteredDates);
+    }
+  }
+  
+  // Sinon, utiliser la version synchrone (rapide pour <1000 activités)
+  return Promise.resolve(buildActivityHeatmap(activities, filteredDates));
+};
+
+export const buildGarminChartDataset = async ({
   dailyMetrics = {},
   activities = {},
   filteredDates = [],
   selectedDate = null,
   effectiveSelectedDate = null,
-  displayInfo = null
+  displayInfo = null,
+  syncWorker = null
 } = {}) => {
   const heartRateTrend = buildHeartRateTrend(dailyMetrics, filteredDates, effectiveSelectedDate);
   const bodyBatteryTrend = buildBodyBatteryTrend(dailyMetrics, filteredDates, effectiveSelectedDate);
@@ -434,7 +472,7 @@ export const buildGarminChartDataset = ({
   const sleepTrend = buildSleepTrend(dailyMetrics, filteredDates, effectiveSelectedDate);
   const respirationTrend = buildRespirationTrend(dailyMetrics, filteredDates, effectiveSelectedDate);
   const correlation = buildCorrelationData(dailyMetrics, filteredDates, effectiveSelectedDate);
-  const activityHeatmap = buildActivityHeatmap(activities, filteredDates);
+  const activityHeatmap = await buildActivityHeatmapOptimized(activities, filteredDates, syncWorker);
   const heartRateTimeSeries = buildHeartRateTimeSeries(dailyMetrics, activities, selectedDate);
 
   return {
@@ -705,13 +743,14 @@ export const buildChartSelectors = ({
   };
 };
 
-export const buildDerivedDataset = ({
+export const buildDerivedDataset = async ({
   dailyMetrics = {},
   activities = {},
   dates = [],
   anchorDate = null,
   displayInfo = null,
-  colors = null
+  colors = null,
+  syncWorker = null
 } = {}) => {
   const filteredDates = Array.isArray(dates) ? [...dates] : [];
   if (filteredDates.length === 0 && dailyMetrics && typeof dailyMetrics === 'object') {
@@ -725,13 +764,14 @@ export const buildDerivedDataset = ({
     ? anchorDate
     : anchorDate || fallbackDate;
 
-  const dataset = buildGarminChartDataset({
+  const dataset = await buildGarminChartDataset({
     dailyMetrics,
     activities,
     filteredDates,
     selectedDate: effectiveSelectedDate,
     effectiveSelectedDate,
-    displayInfo
+    displayInfo,
+    syncWorker
   });
 
   return {

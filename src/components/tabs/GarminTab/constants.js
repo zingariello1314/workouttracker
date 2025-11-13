@@ -19,6 +19,30 @@ export const CIRCUIT_BREAKER = {
 export const CACHE_SCHEMA_VERSION = 'v1';
 export const TELEMETRY_SCHEMA_VERSION = 'v1';
 
+// ==================== FEATURE FLAGS ====================
+/**
+ * Active l'utilisation du SyncPipelineRunner pour syncNow()
+ * 
+ * Quand activé, syncNow() utilise le pipeline modulaire au lieu de la version monolithique.
+ * Permet de tester progressivement le nouveau système.
+ */
+export const USE_SYNC_PIPELINE = false; // TODO: Activer après tests complets
+
+/**
+ * Active l'utilisation du cache SWR (Stale-While-Revalidate) dans SyncCacheService.
+ * 
+ * Quand activé, le cache retourne immédiatement les données (même stale) et déclenche
+ * une revalidation en arrière-plan pour mettre à jour les données.
+ * 
+ * Avantages :
+ * - Réponse immédiate à l'utilisateur (meilleure perception de performance)
+ * - Données toujours à jour (revalidation automatique)
+ * - Réduction des requêtes dupliquées (debounce des revalidations)
+ * 
+ * Impact : Améliore l'UX pour les données fréquemment consultées (aujourd'hui, dernières 24h).
+ */
+export const USE_SWR_CACHE = false; // TODO: Activer après tests complets
+
 export const TELEMETRY_DEFAULTS = {
   THROTTLE_MS: 250,
   HISTORY_LIMIT: 50,

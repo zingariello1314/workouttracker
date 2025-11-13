@@ -1,9 +1,11 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { buildDerivedDataset } from '../utils/chartDataBuilders';
 import { useGarminSelectors } from './useGarminSelectors';
 import { useGarminContext } from '../context/GarminContext';
 import { useFilteredDates } from './useFilteredDates';
 import { DATE_RANGE } from '../constants';
+import { useSyncWorker } from './useSyncWorker';
+import { shouldUseWorker } from '../utils/activityUtils';
 
 /**
  * Cache global pour les datasets dérivés (partagé entre hooks React et fonctions async)
@@ -111,6 +113,109 @@ export const useGarminDerivedDataset = ({
   const lastDatasetRef = useRef(null);
   const lastCacheKeyRef = useRef(null);
 
+  // Initialiser le worker si nécessaire
+  const syncWorker = useSyncWorker();
+  const [isWorkerReady, setIsWorkerReady] = useState(false);
+  const [datasetState, setDatasetState] = useState(null);
+
+  // Vérifier si le worker est prêt et si on doit l'utiliser
+  useEffect(() => {
+    if (syncWorker && syncWorker.isReady) {
+      setIsWorkerReady(true);
+    }
+  }, [syncWorker]);
+
+  // Gérer le calcul asynchrone avec le worker si nécessaire
+  useEffect(() => {
+    const cached = derivedDatasetCache.get(cacheKey);
+    const now = Date.now();
+    
+    // Si cache valide, pas besoin de recalculer
+    if (cached && (now - cached.timestamp) < CACHE_TTL_MS) {
+      return;
+    }
+
+    // Si le worker est disponible et qu'on dépasse le seuil, utiliser le worker
+    const useWorker = isWorkerReady && syncWorker && shouldUseWorker(activitiesByType);
+    
+    if (useWorker) {
+      buildDerivedDataset({
+        dailyMetrics,
+        activities: activitiesByType,
+        dates,
+        anchorDate,
+        displayInfo,
+        colors,
+        syncWorker
+      }).then((dataset) => {
+        // Stocker dans le cache
+        derivedDatasetCache.set(cacheKey, {
+          dataset,
+          timestamp: Date.now(),
+          hitCount: 1
+        });
+        cleanupCache();
+        lastDatasetRef.current = dataset;
+        lastCacheKeyRef.current = cacheKey;
+        setDatasetState(dataset);
+      }).catch((error) => {
+        console.warn('[useGarminDerivedDataset] Erreur worker, fallback synchrone', error);
+        // Fallback synchrone en cas d'erreur
+        buildDerivedDataset({
+          dailyMetrics,
+          activities: activitiesByType,
+          dates,
+          anchorDate,
+          displayInfo,
+          colors,
+          syncWorker: null
+        }).then((dataset) => {
+          derivedDatasetCache.set(cacheKey, {
+            dataset,
+            timestamp: Date.now(),
+            hitCount: 1
+          });
+          cleanupCache();
+          lastDatasetRef.current = dataset;
+          lastCacheKeyRef.current = cacheKey;
+          setDatasetState(dataset);
+        });
+      });
+    } else {
+      // Version synchrone (rapide pour <1000 activités ou worker non disponible)
+      buildDerivedDataset({
+        dailyMetrics,
+        activities: activitiesByType,
+        dates,
+        anchorDate,
+        displayInfo,
+        colors,
+        syncWorker: null
+      }).then((dataset) => {
+        derivedDatasetCache.set(cacheKey, {
+          dataset,
+          timestamp: Date.now(),
+          hitCount: 1
+        });
+        cleanupCache();
+        lastDatasetRef.current = dataset;
+        lastCacheKeyRef.current = cacheKey;
+        setDatasetState(dataset);
+      });
+    }
+  }, [
+    cacheKey,
+    dailyMetrics,
+    activitiesByType,
+    dates,
+    anchorDate,
+    displayInfo,
+    colors,
+    isWorkerReady,
+    syncWorker
+  ]);
+
+  // Retourner le dataset depuis le cache ou l'état
   const derivedDataset = useMemo(() => {
     // Vérifier le cache global d'abord
     const cached = derivedDatasetCache.get(cacheKey);
@@ -124,37 +229,32 @@ export const useGarminDerivedDataset = ({
       return cached.dataset;
     }
 
-    // Cache miss ou expiré : recalculer
-    const dataset = buildDerivedDataset({
-      dailyMetrics,
-      activities: activitiesByType,
-      dates,
-      anchorDate,
+    // Si pas de cache, retourner le dernier dataset calculé ou un dataset par défaut
+    if (datasetState && lastCacheKeyRef.current === cacheKey) {
+      return datasetState;
+    }
+
+    // Retourner le dernier dataset en cache ou un dataset par défaut
+    return lastDatasetRef.current || {
+      filteredDates: dates,
       displayInfo,
-      colors
-    });
-
-    // Stocker dans le cache
-    derivedDatasetCache.set(cacheKey, {
-      dataset,
-      timestamp: now,
-      hitCount: 1
-    });
-
-    // Nettoyer si nécessaire
-    cleanupCache();
-
-    lastDatasetRef.current = dataset;
-    lastCacheKeyRef.current = cacheKey;
-    return dataset;
+      effectiveSelectedDate: anchorDate,
+      heartRateTrend: { data: [], filteredDates: dates, displayInfo, selectedDate: anchorDate },
+      bodyBatteryTrend: { data: [], filteredDates: dates, displayInfo, selectedDate: anchorDate },
+      stressTrend: { data: [], filteredDates: dates, displayInfo, selectedDate: anchorDate },
+      sleepTrend: { data: [], filteredDates: dates, displayInfo, selectedDate: anchorDate },
+      respirationTrend: { data: [], filteredDates: dates, displayInfo, selectedDate: anchorDate },
+      correlation: { sleepPerformanceData: [], batteryIntensityData: [], filteredDates: dates, displayInfo, selectedDate: anchorDate },
+      activityHeatmap: { activityByDate: {}, weeks: [] },
+      heartRateTimeSeries: { enriched: null, chartData: [], stats: null, hasEnoughDataForCurve: false, realPointsCount: 0 },
+      selectors: {}
+    };
   }, [
     cacheKey,
-    dailyMetrics,
-    activitiesByType,
+    datasetState,
     dates,
     anchorDate,
-    displayInfo,
-    colors
+    displayInfo
   ]);
 
   return derivedDataset;
@@ -164,6 +264,10 @@ export const useGarminDerivedDataset = ({
  * Fonction utilitaire pour obtenir un dataset dérivé en dehors d'un composant React
  * (utilisé par exportAll, etc.)
  * 
+ * Note: Cette fonction est maintenant asynchrone car buildDerivedDataset est async.
+ * Pour les exports, on n'utilise pas le worker (syncWorker: null) pour garantir
+ * la rapidité et la simplicité.
+ * 
  * @param {Object} params - Paramètres du dataset
  * @param {Object} params.dailyMetrics - Métriques quotidiennes
  * @param {Object} params.activities - Activités par type
@@ -171,9 +275,9 @@ export const useGarminDerivedDataset = ({
  * @param {string} params.anchorDate - Date d'ancrage
  * @param {string} params.displayInfo - Info d'affichage
  * @param {Object} params.colors - Palette de couleurs (optionnel)
- * @returns {Object} Dataset dérivé
+ * @returns {Promise<Object>} Dataset dérivé
  */
-export const getDerivedDatasetSync = ({
+export const getDerivedDatasetSync = async ({
   dailyMetrics,
   activities,
   dates,
@@ -193,15 +297,39 @@ export const getDerivedDatasetSync = ({
     return cached.dataset;
   }
 
-  // Cache miss : calculer
-  const dataset = buildDerivedDataset({
-    dailyMetrics,
-    activities,
-    dates,
-    anchorDate,
-    displayInfo,
-    colors
-  });
+  // Cache miss : calculer (version synchrone sans worker pour compatibilité exports)
+  // Note: buildDerivedDataset est maintenant async, mais on l'appelle sans worker pour rester synchrone
+  // Dans les exports, on préfère la rapidité et la simplicité plutôt que l'optimisation worker
+  let dataset;
+  try {
+    // Appel synchrone sans worker (rapide pour exports)
+    dataset = await buildDerivedDataset({
+      dailyMetrics,
+      activities,
+      dates,
+      anchorDate,
+      displayInfo,
+      colors,
+      syncWorker: null // Pas de worker pour version sync
+    });
+  } catch (error) {
+    console.error('[getDerivedDatasetSync] Erreur buildDerivedDataset', error);
+    // Retourner un dataset vide en cas d'erreur
+    dataset = {
+      filteredDates: dates || [],
+      displayInfo,
+      effectiveSelectedDate: anchorDate,
+      heartRateTrend: { data: [], filteredDates: dates || [], displayInfo, selectedDate: anchorDate },
+      bodyBatteryTrend: { data: [], filteredDates: dates || [], displayInfo, selectedDate: anchorDate },
+      stressTrend: { data: [], filteredDates: dates || [], displayInfo, selectedDate: anchorDate },
+      sleepTrend: { data: [], filteredDates: dates || [], displayInfo, selectedDate: anchorDate },
+      respirationTrend: { data: [], filteredDates: dates || [], displayInfo, selectedDate: anchorDate },
+      correlation: { sleepPerformanceData: [], batteryIntensityData: [], filteredDates: dates || [], displayInfo, selectedDate: anchorDate },
+      activityHeatmap: { activityByDate: {}, weeks: [] },
+      heartRateTimeSeries: { enriched: null, chartData: [], stats: null, hasEnoughDataForCurve: false, realPointsCount: 0 },
+      selectors: {}
+    };
+  }
 
   // Stocker dans le cache
   derivedDatasetCache.set(cacheKey, {

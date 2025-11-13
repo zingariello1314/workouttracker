@@ -3,7 +3,7 @@
  */
 
 import { useMemo, useCallback } from 'react';
-import { CACHE_SCHEMA_VERSION, FORCE_SYNC_DEGRADE_THRESHOLD_MS } from '../constants';
+import { CACHE_SCHEMA_VERSION, FORCE_SYNC_DEGRADE_THRESHOLD_MS, USE_SYNC_PIPELINE } from '../constants';
 import logger from '../../../../utils/logger';
 import { tryFetch, circuitBreaker } from './garminSyncFetch';
 import { isDataEmptyForDate } from './garminSyncValidation';
@@ -22,6 +22,7 @@ import { MemoryCacheAdapter } from '../services/cache/MemoryCacheAdapter';
 import { DegradedModePolicy } from '../services/sync/DegradedModePolicy';
 import { handleCacheHit as handleCacheHitHelper } from '../services/sync/CacheHitHandler';
 import { updateUIMetricsStore, getUIMetricsSnapshot as getUIMetricsStoreSnapshot } from '../utils/uiMetricsStore';
+import { syncNowWithPipeline } from './syncNowWithPipeline';
 
 const IS_DEV = typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
 
@@ -118,6 +119,62 @@ export const useGarminSyncActions = (deps) => {
   }, []);
 
   const syncNow = useCallback(async (options = {}) => {
+    // Utiliser le pipeline si activé
+    if (USE_SYNC_PIPELINE) {
+      try {
+        await syncNowWithPipeline({
+          state: {
+            baseUrl,
+            setBaseUrl,
+            frontendCache,
+            clearFrontendCache,
+            setLastSourceMeta
+          },
+          data: {
+            dbReady,
+            saveActivities,
+            saveDailyMetrics,
+            loadAllData,
+            loadDataByRange,
+            getLastSyncDate,
+            setLastSyncDate,
+            getSyncStartDate,
+            getLastSyncTimestampForDate,
+            loadDataForTab,
+            saveForcedRangeEntry,
+            setGarminData,
+            importToEndurance,
+            isDataEmptyForDate
+          },
+          services: {
+            rangeService,
+            cacheService,
+            orchestrator
+          },
+          callbacks: {
+            setStatus,
+            setLoading
+          },
+          options: {
+            onForcedRangeRecorded
+          },
+          todayStr,
+          buildNetworkMeta,
+          recordUIMetric,
+          degradedModePolicy,
+          memoryCacheAdapter,
+          historyRecorder,
+          rawOptions: options
+        });
+        return;
+      } catch (error) {
+        log.error('[syncNow] Pipeline execution failed, falling back to legacy:', error);
+        // Fallback sur l'ancienne version en cas d'erreur
+        // (on continue avec le code original ci-dessous)
+      }
+    }
+
+    // Version originale (legacy) - sera remplacée progressivement
     // Utiliser SyncRangeService pour normaliser les options
     const normalizedOptions = rangeService.buildSyncOptions(options, todayStr);
     const {

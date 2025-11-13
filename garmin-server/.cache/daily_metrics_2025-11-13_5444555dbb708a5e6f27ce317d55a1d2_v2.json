@@ -1,0 +1,164 @@
+{
+  "steps": 50,
+  "distance": 0.04,
+  "floors": 0,
+  "calories": {
+    "total": 25,
+    "active": 2,
+    "resting": 23
+  },
+  "heartRate": {
+    "resting": 61,
+    "max": 97,
+    "avg": 94,
+    "timeSeries": [
+      {
+        "timestamp": "2025-11-12T23:00:00Z",
+        "bpm": 97
+      },
+      {
+        "timestamp": "2025-11-12T23:02:00Z",
+        "bpm": 94
+      },
+      {
+        "timestamp": "2025-11-12T23:04:00Z",
+        "bpm": 93
+      },
+      {
+        "timestamp": "2025-11-12T23:06:00Z",
+        "bpm": 91
+      },
+      {
+        "timestamp": "2025-11-12T23:08:00Z",
+        "bpm": 92
+      },
+      {
+        "timestamp": "2025-11-12T23:10:00Z",
+        "bpm": 91
+      },
+      {
+        "timestamp": "2025-11-12T23:12:00Z",
+        "bpm": 94
+      },
+      {
+        "timestamp": "2025-11-12T23:14:00Z",
+        "bpm": 94
+      },
+      {
+        "timestamp": "2025-11-12T23:16:00Z",
+        "bpm": 96
+      }
+    ]
+  },
+  "respiration": {
+    "awake": {
+      "min": 12,
+      "max": 14,
+      "avg": 13.0
+    },
+    "sleep": {
+      "min": 12,
+      "max": 14,
+      "avg": null
+    }
+  },
+  "intensityMinutes": null,
+  "bodyBattery": {
+    "current": 41,
+    "timeSeries": [
+      {
+        "timestamp": "2025-11-12T23:00:00Z",
+        "value": 43
+      },
+      {
+        "timestamp": "2025-11-12T23:06:00Z",
+        "value": 43
+      },
+      {
+        "timestamp": "2025-11-12T23:09:00Z",
+        "value": 42
+      },
+      {
+        "timestamp": "2025-11-12T23:12:00Z",
+        "value": 42
+      },
+      {
+        "timestamp": "2025-11-12T23:15:00Z",
+        "value": 41
+      }
+    ]
+  },
+  "stress": {
+    "average": 85,
+    "max": 88,
+    "timeSeries": []
+  },
+  "spo2": null,
+  "heartRateZones": {
+    "zone1": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone2": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone3": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone4": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone5": {
+      "time": 1080,
+      "percentage": 100.0
+    },
+    "total": 1080.0,
+    "zonesDefinition": {
+      "zone1": {
+        "min": 0,
+        "max": 58,
+        "name": "Zone 1 - \u00c9chauffement"
+      },
+      "zone2": {
+        "min": 58,
+        "max": 67,
+        "name": "Zone 2 - Br\u00fblage graisses"
+      },
+      "zone3": {
+        "min": 67,
+        "max": 77,
+        "name": "Zone 3 - A\u00e9robie"
+      },
+      "zone4": {
+        "min": 77,
+        "max": 87,
+        "name": "Zone 4 - Seuil"
+      },
+      "zone5": {
+        "min": 87,
+        "max": 97,
+        "name": "Zone 5 - Maximale"
+      }
+    },
+    "calculatedFromTimeSeries": true
+  },
+  "sleep": {
+    "duration": 0,
+    "quality": 0,
+    "deepSleep": null,
+    "lightSleep": null,
+    "remSleep": null,
+    "bedTime": null,
+    "wakeTime": null,
+    "awakenings": null,
+    "movements": null,
+    "phasesDetails": null
+  },
+  "date": "2025-11-13",
+  "_cached_at": 1762989516.1652088,
+  "_cache_version": 2,
+  "_raw_data_hash": "5444555dbb708a5e6f27ce317d55a1d2"
+}

@@ -48,10 +48,10 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
 
   // Fonction pour obtenir un dataset dérivé pour des dates/ancrage spécifiques
   // (utilisée pour les exports hebdomadaires avec plages personnalisées)
-  // Utilise la version sync pour pouvoir être appelée dans un callback
-  const getDerivedDataset = React.useCallback((dates, anchorDate) => {
+  // Note: getDerivedDatasetSync est maintenant async, donc getDerivedDataset aussi
+  const getDerivedDataset = React.useCallback(async (dates, anchorDate) => {
     // Utiliser la version sync qui partage le même cache que le hook
-    return getDerivedDatasetSync({
+    return await getDerivedDatasetSync({
       dailyMetrics,
       activities: activitiesByType,
       dates,
@@ -127,7 +127,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
       );
 
       if (type === 'daily' && selectedDate) {
-        const derived = getDerivedDataset([selectedDate], selectedDate);
+        const derived = await getDerivedDataset([selectedDate], selectedDate);
         blob = await generateDailyPDF(baseData, selectedDate, { derived, uiTelemetry, telemetry: telemetryMeta });
         log.debug(`PDF quotidien généré: ${blob ? 'OK' : 'NULL'}`);
       } else if (type === 'weekly' || type === 'custom') {
@@ -142,7 +142,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
 
         const rangeDates = enumerateDates(startDate, endDate).filter((date) => dailyMetrics[date]);
         const anchor = selectedDate && rangeDates.includes(selectedDate) ? selectedDate : rangeDates[rangeDates.length - 1];
-        const derived = getDerivedDataset(rangeDates, anchor || endDate);
+        const derived = await getDerivedDataset(rangeDates, anchor || endDate);
         blob = await generateWeeklyPDF(baseData, startDate, endDate, { derived, uiTelemetry, telemetry: telemetryMeta });
         log.debug(`PDF hebdomadaire généré: ${blob ? 'OK' : 'NULL'}`);
       }

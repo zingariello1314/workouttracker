@@ -225,7 +225,7 @@ export const useGarminData = () => {
     const lastDate = derivedDates.length ? derivedDates[derivedDates.length - 1] : null;
     const exportDates = derivedDates.slice(-30);
     // Utiliser la version sync qui partage le cache avec les hooks React
-    const derivedCharts = getDerivedDatasetSync({
+    const derivedCharts = await getDerivedDatasetSync({
       dailyMetrics: coreData.dailyMetrics || {},
       activities: coreData.activities || {},
       dates: exportDates,
