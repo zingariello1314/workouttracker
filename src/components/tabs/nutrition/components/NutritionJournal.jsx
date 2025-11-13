@@ -22,6 +22,7 @@ import { typography } from '../../../../styles/typography';
 import DailyTotalsCard from './DailyTotalsCard';
 import MealList from './MealList';
 import MealEntryForm from './MealEntryForm';
+import HydrationTracker from './HydrationTracker';
 
 const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminData }) => {
   const [dailyMeal, setDailyMeal] = useState(null);
@@ -195,6 +196,13 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
           nutritionData={nutritionData}
         />
       )}
+
+      {/* Suivi Hydratation */}
+      <HydrationTracker
+        date={dateStr}
+        nutritionData={nutritionData}
+        onUpdate={loadDayData}
+      />
 
       {/* Liste des repas */}
       <MealList

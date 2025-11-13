@@ -17,14 +17,16 @@ import { useGarminData } from '../../hooks/useGarminData';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { Calendar, Plus, Target, TrendingUp, BarChart3 } from 'lucide-react';
+import { Calendar, Plus, Target, TrendingUp, BarChart3, Trophy } from 'lucide-react';
 import { typography } from '../../styles/typography';
 import NutritionJournal from './nutrition/components/NutritionJournal';
 import NutritionPrograms from './nutrition/components/NutritionPrograms';
 import NutritionAnalyses from './nutrition/components/NutritionAnalyses';
+import NutritionGamification from './nutrition/components/NutritionGamification';
+import { registerNutritionServiceWorker } from '../../utils/nutritionServiceWorkerManager';
 
 const NutritionTab = () => {
-  const [activeSection, setActiveSection] = useState('journal'); // 'journal' | 'programs' | 'analyses'
+  const [activeSection, setActiveSection] = useState('journal'); // 'journal' | 'programs' | 'analyses' | 'gamification'
   const [selectedDate, setSelectedDate] = useState(new Date());
   const nutritionData = useNutritionData();
   const garminData = useGarminData();
@@ -43,8 +45,20 @@ const NutritionTab = () => {
   const sections = [
     { id: 'journal', label: 'Journal', icon: Calendar },
     { id: 'programs', label: 'Programmes', icon: Target },
-    { id: 'analyses', label: 'Analyses', icon: BarChart3 }
+    { id: 'analyses', label: 'Analyses', icon: BarChart3 },
+    { id: 'gamification', label: 'Gamification', icon: Trophy }
   ];
+
+  // Enregistrer Service Worker pour cache API offline (après 2s, non bloquant)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      registerNutritionServiceWorker().catch(err => {
+        console.warn('[NutritionTab] Erreur enregistrement Service Worker (non bloquant):', err);
+      });
+    }, 2000); // Délai pour ne pas bloquer le rendu initial
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="space-y-6 p-6">
@@ -104,6 +118,10 @@ const NutritionTab = () => {
             nutritionData={nutritionData}
             garminData={garminData}
           />
+        )}
+        
+        {activeSection === 'gamification' && (
+          <NutritionGamification />
         )}
       </div>
     </div>

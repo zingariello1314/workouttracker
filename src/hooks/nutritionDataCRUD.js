@@ -480,14 +480,15 @@ export const getActiveProgram = async () => {
     }
     
     return new Promise((resolve, reject) => {
-      // Utiliser getAll avec IDBKeyRange.only(true) pour index booléen
-      const range = IDBKeyRange.only(true);
-      const request = index.getAll(range);
+      // ✅ CORRECTION : IDBKeyRange.only(true) ne fonctionne pas avec les booléens
+      // Récupérer tous les programmes et filtrer manuellement
+      const request = store.getAll();
       
       request.onsuccess = () => {
-        // Prendre le premier programme actif (normalement il n'y en a qu'un)
-        const results = request.result || [];
-        resolve(results.length > 0 ? results[0] : null);
+        const programs = request.result || [];
+        // Filtrer pour trouver le programme actif
+        const activeProgram = programs.find(p => p.isActive === true);
+        resolve(activeProgram || null);
       };
       request.onerror = () => reject(request.error);
     });
@@ -549,20 +550,42 @@ const deactivateAllPrograms = async (db = null) => {
 
     const tx = db.transaction([STORE_PROGRAMS], 'readwrite');
     const store = tx.objectStore(STORE_PROGRAMS);
-    const index = store.index('isActive');
     
     return new Promise((resolve, reject) => {
-      const request = index.openCursor(IDBKeyRange.only(true));
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
-        if (cursor) {
-          cursor.value.isActive = false;
-          cursor.update(cursor.value);
-          cursor.continue();
-        } else {
+      // ✅ CORRECTION : IDBKeyRange.only(true) ne fonctionne pas avec les booléens
+      // Récupérer tous les programmes actifs et les désactiver
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        const programs = request.result || [];
+        const activePrograms = programs.filter(p => p.isActive === true);
+        
+        if (activePrograms.length === 0) {
           resolve();
+          return;
         }
+        
+        // Désactiver tous les programmes actifs
+        let updateCount = 0;
+        activePrograms.forEach(program => {
+          program.isActive = false;
+          const updateRequest = store.put(program);
+          updateRequest.onsuccess = () => {
+            updateCount++;
+            if (updateCount === activePrograms.length) {
+              resolve();
+            }
+          };
+          updateRequest.onerror = () => {
+            log.warn(`Erreur désactivation programme ${program.id}`);
+            updateCount++;
+            if (updateCount === activePrograms.length) {
+              resolve(); // Résoudre quand même pour ne pas bloquer
+            }
+          };
+        });
       };
+      
       request.onerror = () => reject(request.error);
     });
   } catch (error) {
@@ -616,29 +639,32 @@ export const getFavoriteFoods = async (options = {}) => {
     const tx = db.transaction([STORE_FAVORITE_FOODS], 'readonly');
     const store = tx.objectStore(STORE_FAVORITE_FOODS);
     
-    let index = store;
-    let range = null;
-
-    // Filtrer par favoris uniquement
-    if (options.favoritesOnly) {
-      index = store.index('isFavorite');
-      range = IDBKeyRange.only(true);
-    }
-    // Filtrer par catégorie
-    else if (options.category) {
-      index = store.index('category');
-      range = IDBKeyRange.only(options.category);
-    }
-
     return new Promise((resolve, reject) => {
-      const request = range ? index.getAll(range) : store.getAll();
+      // ✅ CORRECTION : IDBKeyRange.only(true) ne fonctionne pas avec les booléens
+      // Récupérer tous les favoris et filtrer manuellement
+      let request;
+      
+      if (options.category) {
+        // Filtrer par catégorie avec index (string, donc OK)
+        const index = store.index('category');
+        request = index.getAll(IDBKeyRange.only(options.category));
+      } else {
+        // Récupérer tous les favoris
+        request = store.getAll();
+      }
+      
       request.onsuccess = () => {
         let results = request.result || [];
         
-        // Filtrer par catégorie si favoritesOnly est aussi activé
+        // Filtrer par favoris si demandé (filtrage manuel car booléen)
+        if (options.favoritesOnly) {
+          results = results.filter(food => food.isFavorite === true);
+        }
+        
+        // Filtrer par catégorie si favoritesOnly est aussi activé (double filtre)
         if (options.favoritesOnly && options.category) {
           results = results.filter(food => 
-            food.isFavorite && food.category === options.category
+            food.isFavorite === true && food.category === options.category
           );
         }
         
@@ -741,6 +767,204 @@ export const deleteFavoriteFood = async (foodId) => {
     });
   } catch (error) {
     log.error('Erreur deleteFavoriteFood:', error);
+    return false;
+  }
+};
+
+// ==================== HYDRATION LOG ====================
+
+/**
+ * Récupère l'entrée d'hydratation pour une date
+ * 
+ * @param {string} date - Date au format YYYY-MM-DD
+ * @returns {Promise<Object|null>} Entrée d'hydratation ou null
+ */
+export const getHydrationLog = async (date) => {
+  try {
+    const db = await openNutritionDB();
+    if (!db) return null;
+
+    const tx = db.transaction([STORE_HYDRATION_LOG], 'readonly');
+    const store = tx.objectStore(STORE_HYDRATION_LOG);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.get(date);
+      request.onsuccess = () => {
+        const result = request.result || null;
+        if (result) {
+          log.debug(`HydrationLog récupéré: ${date}`);
+        }
+        resolve(result);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    log.error('Erreur getHydrationLog:', error);
+    return null;
+  }
+};
+
+/**
+ * Sauvegarde ou met à jour une entrée d'hydratation
+ * 
+ * @param {Object} hydrationEntry - Données d'hydratation
+ * @param {string} hydrationEntry.date - Date au format YYYY-MM-DD (keyPath)
+ * @param {number} hydrationEntry.waterIntake - Quantité d'eau consommée (ml)
+ * @param {number} hydrationEntry.targetWater - Objectif d'eau (ml, optionnel, défaut: 2000ml)
+ * @param {Array<Object>} hydrationEntry.entries - Entrées détaillées (optionnel)
+ * @param {string} hydrationEntry.notes - Notes (optionnel)
+ * @returns {Promise<boolean>} true si succès
+ */
+export const saveHydrationLog = async (hydrationEntry) => {
+  try {
+    if (!hydrationEntry || !hydrationEntry.date) {
+      throw new Error('hydrationEntry doit contenir une date');
+    }
+
+    const db = await openNutritionDB();
+    if (!db) return false;
+
+    // Valeurs par défaut
+    const dataToSave = {
+      date: hydrationEntry.date,
+      waterIntake: hydrationEntry.waterIntake || 0,
+      targetWater: hydrationEntry.targetWater || 2000, // 2L par défaut
+      entries: hydrationEntry.entries || [],
+      notes: hydrationEntry.notes || '',
+      lastModified: new Date().toISOString(),
+      createdAt: hydrationEntry.createdAt || new Date().toISOString()
+    };
+
+    const tx = db.transaction([STORE_HYDRATION_LOG], 'readwrite');
+    const store = tx.objectStore(STORE_HYDRATION_LOG);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.put(dataToSave);
+      request.onsuccess = () => {
+        log.debug(`HydrationLog sauvegardé: ${dataToSave.date} (${dataToSave.waterIntake}ml)`);
+        resolve(true);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    log.error('Erreur saveHydrationLog:', error);
+    return false;
+  }
+};
+
+/**
+ * Ajoute une quantité d'eau à l'hydratation du jour
+ * 
+ * @param {string} date - Date au format YYYY-MM-DD
+ * @param {number} amount - Quantité d'eau à ajouter (ml)
+ * @param {Object} options - Options
+ * @param {string} options.entryType - Type d'entrée ('manual', 'bottle', 'glass', etc.)
+ * @param {string} options.notes - Notes pour cette entrée
+ * @returns {Promise<boolean>} true si succès
+ */
+export const addWaterIntake = async (date, amount, options = {}) => {
+  try {
+    if (!date || !amount || amount <= 0) {
+      throw new Error('date et amount (positif) requis');
+    }
+
+    // Récupérer entrée existante ou créer nouvelle
+    const existing = await getHydrationLog(date);
+    const currentIntake = existing?.waterIntake || 0;
+    const targetWater = existing?.targetWater || 2000;
+    const existingEntries = existing?.entries || [];
+
+    // Créer nouvelle entrée détaillée
+    const newEntry = {
+      id: `entry_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+      amount: amount,
+      type: options.entryType || 'manual',
+      notes: options.notes || ''
+    };
+
+    // Mettre à jour
+    const updated = {
+      date,
+      waterIntake: currentIntake + amount,
+      targetWater,
+      entries: [...existingEntries, newEntry],
+      notes: existing?.notes || '',
+      lastModified: new Date().toISOString(),
+      createdAt: existing?.createdAt || new Date().toISOString()
+    };
+
+    return await saveHydrationLog(updated);
+  } catch (error) {
+    log.error('Erreur addWaterIntake:', error);
+    return false;
+  }
+};
+
+/**
+ * Récupère les entrées d'hydratation sur une plage de dates
+ * 
+ * @param {string} startDate - Date de début (YYYY-MM-DD)
+ * @param {string} endDate - Date de fin (YYYY-MM-DD)
+ * @returns {Promise<Array>} Tableau d'entrées d'hydratation
+ */
+export const getHydrationLogByRange = async (startDate, endDate) => {
+  try {
+    const db = await openNutritionDB();
+    if (!db) return [];
+
+    const tx = db.transaction([STORE_HYDRATION_LOG], 'readonly');
+    const store = tx.objectStore(STORE_HYDRATION_LOG);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => {
+        const allEntries = request.result || [];
+        
+        // Filtrer par plage de dates
+        const filtered = allEntries.filter(entry => {
+          const entryDate = entry.date;
+          return entryDate >= startDate && entryDate <= endDate;
+        });
+        
+        // Trier par date (croissant)
+        filtered.sort((a, b) => a.date.localeCompare(b.date));
+        
+        log.debug(`HydrationLog récupéré: ${filtered.length} entrées entre ${startDate} et ${endDate}`);
+        resolve(filtered);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    log.error('Erreur getHydrationLogByRange:', error);
+    return [];
+  }
+};
+
+/**
+ * Supprime une entrée d'hydratation
+ * 
+ * @param {string} date - Date au format YYYY-MM-DD
+ * @returns {Promise<boolean>} true si succès
+ */
+export const deleteHydrationLog = async (date) => {
+  try {
+    const db = await openNutritionDB();
+    if (!db) return false;
+
+    const tx = db.transaction([STORE_HYDRATION_LOG], 'readwrite');
+    const store = tx.objectStore(STORE_HYDRATION_LOG);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.delete(date);
+      request.onsuccess = () => {
+        log.debug(`HydrationLog supprimé: ${date}`);
+        resolve(true);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    log.error('Erreur deleteHydrationLog:', error);
     return false;
   }
 };

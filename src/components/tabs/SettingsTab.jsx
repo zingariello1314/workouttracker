@@ -4,6 +4,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import { compressGarminExport, decompressGarminExport, isCompressed } from './GarminTab/utils/jsonCompression';
+import { compressNutritionExport, decompressNutritionExport } from '../../utils/nutritionCompression';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -257,7 +258,7 @@ const SettingsTab = () => {
   };
 
   // Fonction pour exporter les données Nutrition
-  const handleExportNutritionData = async () => {
+  const handleExportNutritionData = async (useCompression = true) => {
     try {
       setNutritionExportStatus('loading');
       const nutritionData = await exportNutritionData();
@@ -310,7 +311,8 @@ const SettingsTab = () => {
             dailyMeals: ['date', 'programId', 'isComplete', 'mealIds', 'dailyTotals', 'lastModified'],
             meals: ['id', 'date', 'type', 'timestamp', 'foods', 'totalCalories', 'totalProtein', 'totalCarbs', 'totalFat', 'notes'],
             programs: ['id', 'name', 'isActive', 'goal', 'targetCalories', 'targetProtein', 'targetCarbs', 'targetFat', 'startDate'],
-            favoriteFoods: ['id', 'name', 'category', 'isFavorite', 'caloriesPer100', 'proteinPer100', 'carbsPer100', 'fatPer100', 'usageCount']
+            favoriteFoods: ['id', 'name', 'category', 'isFavorite', 'caloriesPer100', 'proteinPer100', 'carbsPer100', 'fatPer100', 'usageCount'],
+            hydrationLogs: ['date', 'waterIntake', 'targetWater', 'entries', 'notes', 'lastModified']
           },
           
           // Notes
@@ -322,19 +324,39 @@ const SettingsTab = () => {
         }
       };
 
-      // Créer le fichier JSON
-      const jsonString = JSON.stringify(exportObject, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
+      // Compression optionnelle (comme Garmin)
+      const compressedExport = useCompression 
+        ? compressNutritionExport(exportObject, {
+            level: 6, // Bon compromis vitesse/taille
+            force: false // Compression automatique si > 1KB
+          })
+        : { compressed: false, data: JSON.stringify(exportObject, null, 2) };
+
+      const jsonString = compressedExport.compressed
+        ? JSON.stringify(compressedExport, null, 2)
+        : compressedExport.data;
+
+      const blob = new Blob([jsonString], { 
+        type: compressedExport.compressed 
+          ? 'application/json+gzip' 
+          : 'application/json' 
+      });
       const url = URL.createObjectURL(blob);
 
       // Créer le lien de téléchargement
       const link = document.createElement('a');
       link.href = url;
-      link.download = `nutrition-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      const fileExtension = compressedExport.compressed ? '.json.gz' : '.json';
+      link.download = `nutrition-data-export-${new Date().toISOString().split('T')[0]}${fileExtension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      // Log compression stats si compressé
+      if (compressedExport.compressed) {
+        console.log(`[Settings] Export Nutrition compressé: ${compressedExport.originalSize} → ${compressedExport.compressedSize} bytes (${compressedExport.savings.toFixed(1)}% économisés)`);
+      }
 
       setNutritionExportStatus('success');
       setTimeout(() => setNutritionExportStatus(null), 3000);

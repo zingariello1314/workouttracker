@@ -42,8 +42,15 @@ import {
   getFavoriteFoods,
   getFavoriteFood,
   saveFavoriteFood,
-  deleteFavoriteFood
+  deleteFavoriteFood,
+  // Hydration
+  getHydrationLog,
+  saveHydrationLog,
+  addWaterIntake,
+  getHydrationLogByRange,
+  deleteHydrationLog
 } from './nutritionDataCRUD';
+import { getGamificationData } from '../services/nutrition/nutritionGamification';
 import {
   calculateDailyTotals,
   calculateCaloricBalance,
@@ -120,11 +127,25 @@ export const useNutritionData = () => {
       
       // Si recalcul demandé ou dailyMeal inexistant, calculer depuis meals
       if (options.recalculateTotals || !dailyMeal) {
-        const meals = await getMealsByDate(date);
-        const activeProgram = await getActiveProgram();
+        const [meals, activeProgram, hydrationLog] = await Promise.all([
+          getMealsByDate(date),
+          getActiveProgram(),
+          getHydrationLog(date).catch(() => null) // Ne pas bloquer si erreur
+        ]);
         
-        // Calculer totaux
+        // Calculer totaux depuis meals
         const dailyTotals = calculateDailyTotals(meals, activeProgram);
+        
+        // Intégrer hydratation depuis hydrationLog (si disponible)
+        if (hydrationLog && hydrationLog.waterIntake) {
+          dailyTotals.waterIntake = hydrationLog.waterIntake;
+          // Utiliser targetWater depuis hydrationLog si défini, sinon depuis programme
+          if (hydrationLog.targetWater) {
+            dailyTotals.targetWater = hydrationLog.targetWater;
+          }
+          // Recalculer complianceWater
+          dailyTotals.complianceWater = dailyTotals.waterIntake - dailyTotals.targetWater;
+        }
         
         // Créer ou mettre à jour dailyMeal
         if (!dailyMeal) {
@@ -146,6 +167,16 @@ export const useNutritionData = () => {
         // Sauvegarder si modifié
         if (options.recalculateTotals) {
           await saveDailyMeal(dailyMeal);
+        }
+      } else if (dailyMeal && dailyMeal.dailyTotals) {
+        // Même si pas de recalcul, intégrer hydratation si disponible
+        const hydrationLog = await getHydrationLog(date).catch(() => null);
+        if (hydrationLog && hydrationLog.waterIntake) {
+          dailyMeal.dailyTotals.waterIntake = hydrationLog.waterIntake;
+          if (hydrationLog.targetWater) {
+            dailyMeal.dailyTotals.targetWater = hydrationLog.targetWater;
+          }
+          dailyMeal.dailyTotals.complianceWater = dailyMeal.dailyTotals.waterIntake - dailyMeal.dailyTotals.targetWater;
         }
       }
       
@@ -355,6 +386,8 @@ export const useNutritionData = () => {
         meals: [],
         programs: [],
         favoriteFoods: [],
+        gamification: { achievements: [], experience: { currentXP: 0, level: 1 }, streaks: {} },
+        hydrationLogs: [],
         exportDate: new Date().toISOString(),
         version: '1.0'
       };
@@ -362,13 +395,23 @@ export const useNutritionData = () => {
 
     try {
       // Charger toutes les données en parallèle
-      const [dailyMeals, allMeals, programs, favoriteFoods] = await Promise.all([
+      const [dailyMeals, allMeals, programs, favoriteFoods, gamification, hydrationLogs] = await Promise.all([
         // Récupérer tous les dailyMeals (plage large)
         getDailyMealsByRange('2020-01-01', '2099-12-31'),
         // Récupérer tous les meals directement
         getAllMeals(),
         getAllPrograms(),
-        getFavoriteFoods({})
+        getFavoriteFoods({}),
+        // Récupérer données gamification
+        getGamificationData().catch(err => {
+          console.warn('[useNutritionData] Erreur récupération gamification:', err);
+          return { achievements: [], experience: { currentXP: 0, level: 1 }, streaks: {} };
+        }),
+        // Récupérer données hydratation (plage large)
+        getHydrationLogByRange('2020-01-01', '2099-12-31').catch(err => {
+          console.warn('[useNutritionData] Erreur récupération hydratation:', err);
+          return [];
+        })
       ]);
 
       return {
@@ -376,17 +419,21 @@ export const useNutritionData = () => {
         meals: allMeals,
         programs,
         favoriteFoods,
+        gamification,
+        hydrationLogs,
         exportDate: new Date().toISOString(),
         version: '1.0',
         metadata: {
           totalDailyMeals: dailyMeals.length,
           totalMeals: allMeals.length,
-          totalPrograms: programs.length,
-          totalFavoriteFoods: favoriteFoods.length,
-          dateRange: dailyMeals.length > 0 ? {
-            earliest: dailyMeals.map(dm => dm.date).sort()[0],
-            latest: dailyMeals.map(dm => dm.date).sort().reverse()[0]
-          } : null
+        totalPrograms: programs.length,
+        totalFavoriteFoods: favoriteFoods.length,
+        totalAchievements: gamification.achievements?.length || 0,
+        totalHydrationLogs: hydrationLogs?.length || 0,
+        dateRange: dailyMeals.length > 0 ? {
+          earliest: dailyMeals.map(dm => dm.date).sort()[0],
+          latest: dailyMeals.map(dm => dm.date).sort().reverse()[0]
+        } : null
         }
       };
     } catch (error) {
@@ -396,6 +443,8 @@ export const useNutritionData = () => {
         meals: [],
         programs: [],
         favoriteFoods: [],
+        gamification: { achievements: [], experience: { currentXP: 0, level: 1 }, streaks: {} },
+        hydrationLogs: [],
         exportDate: new Date().toISOString(),
         version: '1.0',
         error: error.message
@@ -420,6 +469,7 @@ export const useNutritionData = () => {
     saveMeal: saveMealAndUpdateTotals,
     getMealsByDate,
     getMealsByDailyMealId,
+    getAllMeals,
     deleteMeal: deleteMealAndUpdateTotals,
     saveMealsBatch,
 
@@ -436,6 +486,13 @@ export const useNutritionData = () => {
     getFavoriteFood,
     saveFavoriteFood,
     deleteFavoriteFood,
+
+    // Hydration
+    getHydrationLog,
+    saveHydrationLog,
+    addWaterIntake,
+    getHydrationLogByRange,
+    deleteHydrationLog,
 
     // Calculs
     calculateDailyTotals,

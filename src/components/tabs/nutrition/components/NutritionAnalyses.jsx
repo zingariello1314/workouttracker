@@ -47,12 +47,32 @@ import { useNutritionData } from '../../../../hooks/useNutritionData';
 import { useGarminData } from '../../../../hooks/useGarminData';
 import { calculateDailyTotals, calculateProgramCompliance, getNutritionStats } from '../../../../hooks/nutritionCalculations';
 import { typography } from '../../../../styles/typography';
+import NutritionRecommendations from './NutritionRecommendations';
+import NutritionCorrelations from './NutritionCorrelations';
 
 const NutritionAnalyses = ({ nutritionData }) => {
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
   const [loading, setLoading] = useState(true);
   const [analysisData, setAnalysisData] = useState(null);
+  const [chartsReady, setChartsReady] = useState(false); // État pour différer le rendu des graphiques
   const { dbReady: garminDbReady, getDailyMetrics } = useGarminData();
+
+  // Attendre que le DOM soit prêt avant de rendre les graphiques
+  useEffect(() => {
+    // Double requestAnimationFrame pour garantir que le layout CSS est calculé
+    // 1er RAF : attendre que le layout soit calculé
+    // 2ème RAF : attendre que le paint soit fait
+    let raf1, raf2;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        setChartsReady(true);
+      });
+    });
+    return () => {
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, []);
 
   // Périodes disponibles
   const periods = [
@@ -320,6 +340,12 @@ const NutritionAnalyses = ({ nutritionData }) => {
         </div>
       </div>
 
+      {/* Recommandations personnalisées */}
+      <NutritionRecommendations />
+
+      {/* Corrélations nutritionnelles */}
+      <NutritionCorrelations />
+
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-slate-800/50 border-slate-700">
@@ -402,9 +428,10 @@ const NutritionAnalyses = ({ nutritionData }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={dailyData.filter(d => d.hasData)}>
+          <div className="w-full" style={{ height: '320px' }}>
+            {chartsReady ? (
+              <ResponsiveContainer width="100%" height={320} minHeight={320}>
+                <ComposedChart data={dailyData.filter(d => d.hasData)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
                   dataKey="dateLabel" 
@@ -462,7 +489,12 @@ const NutritionAnalyses = ({ nutritionData }) => {
                   label={{ value: 'Seuil 80%', position: 'right', fill: '#EF4444' }}
                 />
               </ComposedChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -477,9 +509,10 @@ const NutritionAnalyses = ({ nutritionData }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={dailyData.filter(d => d.hasData && d.caloriesBurned !== null)}>
+            <div className="w-full" style={{ height: '320px' }}>
+              {chartsReady ? (
+                <ResponsiveContainer width="100%" height={320} minHeight={320}>
+                  <ComposedChart data={dailyData.filter(d => d.hasData && d.caloriesBurned !== null)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis 
                     dataKey="dateLabel" 
@@ -522,7 +555,12 @@ const NutritionAnalyses = ({ nutritionData }) => {
                     strokeDasharray="3 3"
                   />
                 </ComposedChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              )}
             </div>
             <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
               <div className="flex items-start gap-2">
@@ -547,9 +585,10 @@ const NutritionAnalyses = ({ nutritionData }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dailyData.filter(d => d.hasData)}>
+          <div className="w-full" style={{ height: '320px' }}>
+            {chartsReady ? (
+              <ResponsiveContainer width="100%" height={320} minHeight={320}>
+                <AreaChart data={dailyData.filter(d => d.hasData)}>
                 <defs>
                   <linearGradient id="colorProtein" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
@@ -605,7 +644,12 @@ const NutritionAnalyses = ({ nutritionData }) => {
                   name="Lipides (g)"
                 />
               </AreaChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

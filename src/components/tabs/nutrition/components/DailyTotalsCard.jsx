@@ -224,25 +224,28 @@ const DailyTotalsCard = ({ dailyMeal, activeProgram, garminData, dateStr, nutrit
           </div>
         )}
 
-        {/* Eau */}
-        {totals.waterIntake > 0 && (
-          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700/50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Droplet size={18} className="text-blue-400" />
-                <span className="text-slate-300 font-medium">Hydratation</span>
-              </div>
-              <span className="text-white font-semibold">
-                {totals.waterIntake} ml / {totals.targetWater} ml
-              </span>
+        {/* Eau - Toujours afficher (même si 0) */}
+        <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700/50">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Droplet size={18} className="text-blue-400" />
+              <span className="text-slate-300 font-medium">Hydratation</span>
             </div>
-            <ProgressBar
-              value={totals.waterIntake}
-              max={totals.targetWater}
-              color="blue"
-            />
+            <span className="text-white font-semibold">
+              {totals.waterIntake || 0} ml / {totals.targetWater || 2000} ml
+            </span>
           </div>
-        )}
+          <ProgressBar
+            value={totals.waterIntake || 0}
+            max={totals.targetWater || 2000}
+            color="blue"
+          />
+          {(!totals.waterIntake || totals.waterIntake === 0) && (
+            <p className="text-xs text-slate-400 mt-2 text-center">
+              Utilisez le suivi d'hydratation ci-dessous pour ajouter de l'eau
+            </p>
+          )}
+        </div>
 
         {/* Message si pas de programme */}
         {!hasProgram && (

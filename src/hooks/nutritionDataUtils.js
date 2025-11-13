@@ -16,7 +16,7 @@
 // ==================== CONSTANTES ====================
 
 const DB_NAME = 'WorkoutTrackerDB';
-const DB_VERSION_NUTRITION = 3; // Version avec stores nutrition
+const DB_VERSION_NUTRITION = 4; // Version avec stores nutrition + gamification + index date
 
 // Stores nutrition
 const STORE_DAILY_MEALS = 'nutrition_dailyMeals';
@@ -26,6 +26,7 @@ const STORE_FAVORITE_FOODS = 'nutrition_favoriteFoods';
 const STORE_MEAL_PHOTOS = 'nutrition_mealPhotos';
 const STORE_HYDRATION_LOG = 'nutrition_hydrationLog';
 const STORE_API_CACHE = 'nutrition_apiCache';
+const STORE_GAMIFICATION = 'nutrition_gamification';
 
 // Instance singleton de la DB
 let dbInstance = null;
@@ -64,174 +65,104 @@ export const openNutritionDB = async () => {
 
   return new Promise((resolve, reject) => {
     try {
-      // ✅ STRATÉGIE SIMPLIFIÉE : Ouvrir d'abord sans version pour détecter la version réelle
-      // Puis utiliser cette version (ou supérieure si upgrade nécessaire)
-      const detectRequest = indexedDB.open(DB_NAME);
+      // ✅ STRATÉGIE ROBUSTE : Utiliser une version élevée et laisser IndexedDB gérer
+      // IndexedDB va nous donner la version actuelle dans event.oldVersion si upgrade nécessaire
+      // Sinon, on ouvre directement avec la version actuelle
       
-      detectRequest.onsuccess = (detectEvent) => {
-        const detectDB = detectEvent.result;
-        const detectedVersion = detectDB ? detectDB.version : 0;
+      // Essayer d'abord d'ouvrir avec une version très élevée pour forcer la détection
+      // Si la DB existe déjà, onupgradeneeded sera appelé avec oldVersion = version actuelle
+      // Si la DB n'existe pas, onupgradeneeded sera appelé avec oldVersion = 0
+      const HIGH_VERSION = 20; // Version élevée pour forcer la détection et upgrade
+      
+      log.debug('Tentative ouverture IndexedDB avec détection automatique...');
+      const request = indexedDB.open(DB_NAME, HIGH_VERSION);
+      
+      // Variable pour stocker la version actuelle (accessible dans tous les handlers)
+      let actualVersion = null;
+      
+      // onupgradeneeded : IndexedDB nous donne la version actuelle ici
+      request.onupgradeneeded = (event) => {
+        actualVersion = event.oldVersion || 0;
+        const newVersion = event.newVersion || HIGH_VERSION;
         
-        // Ne PAS fermer la DB ici, on va l'utiliser directement si les stores existent
-        // Sinon, on la fermera et on fera un upgrade
+        log.info(`Upgrade détecté: v${actualVersion} → v${newVersion}`);
         
-        log.info(`Version DB détectée: ${detectedVersion}`);
+        // Toujours appeler handleUpgrade pour créer/mettre à jour stores et indexes
+        // handleUpgrade vérifie lui-même si les stores/indexes existent avant de les créer
+        handleUpgrade(event);
+      };
+
+      // Gestion erreur ouverture
+      request.onerror = (event) => {
+        const error = event.target.error;
+        log.error('Erreur ouverture IndexedDB:', error);
         
-        // ✅ CORRECTION CRITIQUE : Toujours utiliser au minimum la version détectée
-        // Si la DB est à v4, on doit ouvrir avec au moins v4
-        const targetVersion = detectedVersion > 0 
-          ? Math.max(detectedVersion, DB_VERSION_NUTRITION)  // Utiliser la plus grande des deux
-          : DB_VERSION_NUTRITION;  // Si pas de DB, utiliser version nutrition
-        
-        // Si on a déjà la DB ouverte et que c'est la bonne version, vérifier les stores
-        if (detectDB && detectedVersion >= targetVersion) {
-          const nutritionStores = [
-            STORE_DAILY_MEALS,
-            STORE_MEALS,
-            STORE_PROGRAMS,
-            STORE_FAVORITE_FOODS,
-            STORE_MEAL_PHOTOS,
-            STORE_HYDRATION_LOG,
-            STORE_API_CACHE
-          ];
+        // Si erreur de version, essayer avec version détectée + 1
+        if (error.name === 'VersionError' && actualVersion !== null) {
+          log.warn(`VersionError détectée, tentative avec v${actualVersion + 1}...`);
+          const retryRequest = indexedDB.open(DB_NAME, actualVersion + 1);
           
-          const missingStores = nutritionStores.filter(storeName => 
-            !detectDB.objectStoreNames.contains(storeName)
-          );
+          retryRequest.onupgradeneeded = (retryEvent) => {
+            handleUpgrade(retryEvent);
+          };
           
-          if (missingStores.length === 0) {
-            // Tous les stores existent, utiliser la DB déjà ouverte
-            dbInstance = detectDB;
-            log.info('IndexedDB déjà ouverte avec stores nutrition présents');
-            log.debug(`Version DB: ${dbInstance.version}, Stores: ${Array.from(dbInstance.objectStoreNames).join(', ')}`);
+          retryRequest.onsuccess = (retryEvent) => {
+            dbInstance = retryEvent.target.result;
+            log.info(`✅ IndexedDB ouverte après retry: v${dbInstance.version}`);
             resolve(dbInstance);
-            return;
-          }
+          };
           
-          // Stores manquants, fermer et faire upgrade
-          detectDB.close();
+          retryRequest.onerror = () => {
+            log.error('Erreur retry ouverture IndexedDB');
+            resolve(null);
+          };
+        } else {
+          resolve(null);
+        }
+      };
+
+      // Succès ouverture
+      request.onsuccess = (event) => {
+        dbInstance = event.target.result;
+        
+        // Vérifier que la DB est prête
+        if (!dbInstance) {
+          log.error('Instance DB invalide après ouverture');
+          resolve(null);
+          return;
         }
         
-        // Ouvrir DB avec version cible (ou supérieure si upgrade nécessaire)
-        log.info(`Ouverture DB avec version cible: ${targetVersion}`);
-        const request = indexedDB.open(DB_NAME, targetVersion);
-
-        // Gestion erreur ouverture
-        request.onerror = (event) => {
-          const error = event.target.error;
-          log.error('Erreur ouverture IndexedDB:', error);
-          resolve(null);
-        };
-
-        // Succès ouverture
-        request.onsuccess = async (event) => {
-          dbInstance = event.target.result;
-          
-          // Vérifier que la DB est prête
-          if (!dbInstance) {
-            log.error('Instance DB invalide après ouverture');
-            resolve(null);
-            return;
-          }
-          
-          // ✅ VÉRIFICATION CRITIQUE : Si les stores nutrition n'existent pas, forcer upgrade
-          const nutritionStores = [
-            STORE_DAILY_MEALS,
-            STORE_MEALS,
-            STORE_PROGRAMS,
-            STORE_FAVORITE_FOODS,
-            STORE_MEAL_PHOTOS,
-            STORE_HYDRATION_LOG,
-            STORE_API_CACHE
-          ];
-          
-          const missingStores = nutritionStores.filter(storeName => 
-            !dbInstance.objectStoreNames.contains(storeName)
-          );
-          
-          if (missingStores.length > 0) {
-            log.warn(`Stores nutrition manquants détectés: ${missingStores.join(', ')}`);
-            log.info('Forcer upgrade pour créer les stores manquants...');
-            
-            // Récupérer la version actuelle AVANT de fermer
-            const currentVersion = dbInstance.version;
-            
-            // Fermer la DB actuelle
-            dbInstance.close();
-            dbInstance = null;
-            
-            // Forcer upgrade en incrémentant la version
-            const newVersion = Math.max(DB_VERSION_NUTRITION, currentVersion + 1);
-            
-            log.info(`Upgrade forcé: v${currentVersion} → v${newVersion}`);
-            
-            try {
-              const upgradeRequest = indexedDB.open(DB_NAME, newVersion);
-              
-              upgradeRequest.onupgradeneeded = (upgradeEvent) => {
-                handleUpgrade(upgradeEvent);
-              };
-              
-              upgradeRequest.onsuccess = (upgradeEvent) => {
-                dbInstance = upgradeEvent.target.result;
-                log.info(`✅ IndexedDB mise à jour avec succès: v${dbInstance.version}`);
-                log.info(`✅ Stores disponibles: ${Array.from(dbInstance.objectStoreNames).join(', ')}`);
-                resolve(dbInstance);
-              };
-              
-              upgradeRequest.onerror = (upgradeEvent) => {
-                log.error('Erreur lors de l\'upgrade forcé:', upgradeEvent.target.error);
-                resolve(null);
-              };
-              
-              return; // Ne pas continuer avec le resolve ci-dessous
-            } catch (upgradeError) {
-              log.error('Erreur dans le processus d\'upgrade forcé:', upgradeError);
-              resolve(null);
-              return;
-            }
-          }
-          
-          log.info('IndexedDB ouverte avec succès');
-          log.debug(`Version DB: ${dbInstance.version}, Stores: ${Array.from(dbInstance.objectStoreNames).join(', ')}`);
-          resolve(dbInstance);
-        };
-
-        // Création/mise à jour de la structure (onupgradeneeded)
-        request.onupgradeneeded = (event) => {
-          handleUpgrade(event);
-        };
-
-        // Gestion blocage (autre onglet avec version plus ancienne)
-        request.onblocked = () => {
-          log.warn('IndexedDB bloquée par un autre onglet');
-          // Ne pas reject, attendre que l'autre onglet ferme
-        };
+        // Vérifier que tous les stores nutrition existent
+        const nutritionStores = [
+          STORE_DAILY_MEALS,
+          STORE_MEALS,
+          STORE_PROGRAMS,
+          STORE_FAVORITE_FOODS,
+          STORE_MEAL_PHOTOS,
+          STORE_HYDRATION_LOG,
+          STORE_API_CACHE,
+          STORE_GAMIFICATION
+        ];
+        
+        const missingStores = nutritionStores.filter(storeName => 
+          !dbInstance.objectStoreNames.contains(storeName)
+        );
+        
+        if (missingStores.length > 0) {
+          log.warn(`Stores nutrition manquants après ouverture: ${missingStores.join(', ')}`);
+          log.warn('Cela ne devrait pas arriver si onupgradeneeded a été appelé correctement');
+          // Ne pas résoudre null, utiliser la DB quand même (stores seront créés au prochain upgrade)
+        }
+        
+        log.info(`✅ IndexedDB ouverte avec succès: v${dbInstance.version}`);
+        log.debug(`Stores disponibles: ${Array.from(dbInstance.objectStoreNames).join(', ')}`);
+        resolve(dbInstance);
       };
-      
-      detectRequest.onerror = () => {
-        // Si erreur détection, essayer directement avec version élevée
-        log.warn('Erreur détection version, tentative avec version élevée...');
-        const fallbackVersion = 10; // Version élevée pour forcer la détection par IndexedDB
-        const directRequest = indexedDB.open(DB_NAME, fallbackVersion);
-        
-        directRequest.onupgradeneeded = (event) => {
-          // IndexedDB va nous donner la version actuelle dans event.oldVersion
-          const actualVersion = event.oldVersion || 0;
-          log.info(`Upgrade détecté (fallback): v${actualVersion} → v${fallbackVersion}`);
-          handleUpgrade(event);
-        };
-        
-        directRequest.onsuccess = (event) => {
-          dbInstance = event.target.result;
-          log.info(`IndexedDB ouverte (fallback): v${dbInstance.version}`);
-          resolve(dbInstance);
-        };
-        
-        directRequest.onerror = (event) => {
-          log.error('Erreur ouverture fallback:', event.target.error);
-          resolve(null);
-        };
+
+      // Gestion blocage (autre onglet avec version plus ancienne)
+      request.onblocked = () => {
+        log.warn('IndexedDB bloquée par un autre onglet');
+        // Ne pas reject, attendre que l'autre onglet ferme
       };
 
     } catch (err) {
@@ -239,6 +170,36 @@ export const openNutritionDB = async () => {
       resolve(null);
     }
   });
+};
+
+/**
+ * Vérifie si des indexes manquants nécessitent un upgrade
+ * 
+ * @param {IDBDatabase} db - Base de données
+ * @param {IDBVersionChangeEvent} event - Événement upgrade
+ * @returns {boolean} true si upgrade nécessaire
+ */
+const checkMissingIndexes = (db, event) => {
+  try {
+    // Vérifier index 'date' sur dailyMeals
+    if (db.objectStoreNames.contains(STORE_DAILY_MEALS)) {
+      const store = event.target.transaction.objectStore(STORE_DAILY_MEALS);
+      const indexNames = Array.from(store.indexNames);
+      if (!indexNames.includes('date')) {
+        return true;
+      }
+    }
+    
+    // Vérifier si store gamification existe
+    if (!db.objectStoreNames.contains(STORE_GAMIFICATION)) {
+      return true;
+    }
+    
+    return false;
+  } catch (err) {
+    log.warn('Erreur vérification indexes:', err);
+    return false;
+  }
 };
 
 /**
@@ -262,6 +223,7 @@ const handleUpgrade = (event) => {
       });
       
       // Indexes pour requêtes fréquentes
+      dailyMealsStore.createIndex('date', 'date', { unique: false }); // Index principal pour requêtes par date
       dailyMealsStore.createIndex('programId', 'programId', { unique: false });
       dailyMealsStore.createIndex('isComplete', 'isComplete', { unique: false });
       dailyMealsStore.createIndex('lastModified', 'lastModified', { unique: false });
@@ -272,6 +234,9 @@ const handleUpgrade = (event) => {
       
       // Vérifier et ajouter indexes manquants
       const indexNames = Array.from(dailyMealsStore.indexNames);
+      if (!indexNames.includes('date')) {
+        dailyMealsStore.createIndex('date', 'date', { unique: false });
+      }
       if (!indexNames.includes('programId')) {
         dailyMealsStore.createIndex('programId', 'programId', { unique: false });
       }
@@ -423,6 +388,33 @@ const handleUpgrade = (event) => {
       });
     }
 
+    // ==================== STORE 8: gamification ====================
+    let gamificationStore;
+    if (!db.objectStoreNames.contains(STORE_GAMIFICATION)) {
+      gamificationStore = db.createObjectStore(STORE_GAMIFICATION, {
+        keyPath: 'id',
+        autoIncrement: false
+      });
+      
+      // Indexes pour requêtes fréquentes
+      gamificationStore.createIndex('type', 'type', { unique: false }); // 'achievement', 'xp', 'streak'
+      gamificationStore.createIndex('category', 'category', { unique: false }); // Pour badges
+      gamificationStore.createIndex('unlockedDate', 'unlockedDate', { unique: false }); // Tri par date déblocage
+      gamificationStore.createIndex('timestamp', 'timestamp', { unique: false }); // Pour XP/streaks
+      
+      log.debug(`Store ${STORE_GAMIFICATION} créé avec indexes`);
+    } else {
+      gamificationStore = event.target.transaction.objectStore(STORE_GAMIFICATION);
+      
+      // Vérifier et ajouter indexes manquants
+      const indexNames = Array.from(gamificationStore.indexNames);
+      ['type', 'category', 'unlockedDate', 'timestamp'].forEach(indexName => {
+        if (!indexNames.includes(indexName)) {
+          gamificationStore.createIndex(indexName, indexName, { unique: false });
+        }
+      });
+    }
+
     log.info('Migration IndexedDB terminée avec succès');
 
   } catch (upgradeError) {
@@ -471,6 +463,7 @@ export {
   STORE_FAVORITE_FOODS,
   STORE_MEAL_PHOTOS,
   STORE_HYDRATION_LOG,
-  STORE_API_CACHE
+  STORE_API_CACHE,
+  STORE_GAMIFICATION
 };
 

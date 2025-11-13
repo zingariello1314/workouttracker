@@ -11,11 +11,12 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Search, Loader2, AlertCircle, CheckCircle, X, Camera } from 'lucide-react';
 import { searchOpenFoodFacts, searchFoodWithFallback } from '../../../../services/nutrition/openFoodFactsService';
 import { searchUSDA } from '../../../../services/nutrition/usdaService';
 import { getFavoriteFoods } from '../../../../hooks/nutritionDataCRUD';
 import logger from '../../../../utils/logger';
+import BarcodeScanner from './BarcodeScanner';
 
 const log = logger.module('FoodSearch');
 
@@ -25,6 +26,7 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   // Recherche avec debounce
   useEffect(() => {
@@ -169,31 +171,80 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
     setSelectedIndex(-1);
   }, [results]);
 
+  // Gérer produit scanné
+  const handleProductScanned = useCallback((product) => {
+    if (!product || !product.nutritionPer100) {
+      log.warn('Produit scanné invalide:', product);
+      return;
+    }
+
+    // Formater pour MealEntryForm (même format que handleSelectFood)
+    const foodData = {
+      id: `food_${Date.now()}_${Math.random()}`,
+      name: product.name || product.product_name || 'Produit scanné',
+      quantity: 100, // Par défaut 100g
+      unit: 'g',
+      caloriesPer100: product.nutritionPer100?.calories || 0,
+      proteinPer100: product.nutritionPer100?.protein || 0,
+      carbsPer100: product.nutritionPer100?.carbs || 0,
+      fatPer100: product.nutritionPer100?.fat || 0,
+      fiberPer100: product.nutritionPer100?.fiber || 0,
+      sugarPer100: product.nutritionPer100?.sugar || 0,
+      sodiumPer100: product.nutritionPer100?.sodium || 0,
+      // Métadonnées
+      source: product.source || 'openfoodfacts',
+      sourceId: product.sourceId || product.code || null,
+      brand: product.brand || product.brands || '',
+      nutriScore: product.nutriScore || product.nutriscore_grade || null,
+    };
+
+    log.debug('Produit scanné sélectionné:', foodData);
+    onFoodSelected(foodData);
+    setShowBarcodeScanner(false);
+    
+    // Fermer le modal si onClose fourni
+    if (onClose) {
+      onClose();
+    }
+  }, [onFoodSelected, onClose]);
+
   return (
     <div className="space-y-4">
       {/* Barre de recherche */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher un aliment (ex: poulet, riz, pomme)..."
-          className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          autoFocus
-        />
-        {query && (
-          <button
-            onClick={() => {
-              setQuery('');
-              setResults([]);
-              setError(null);
-            }}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
-          >
-            <X size={18} />
-          </button>
-        )}
+      <div className="relative flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher un aliment (ex: poulet, riz, pomme)..."
+            className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            autoFocus
+          />
+          {query && (
+            <button
+              onClick={() => {
+                setQuery('');
+                setResults([]);
+                setError(null);
+              }}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
+        
+        {/* Bouton Scanner */}
+        <button
+          onClick={() => setShowBarcodeScanner(true)}
+          className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+          title="Scanner un code-barres"
+        >
+          <Camera size={18} />
+          <span className="hidden sm:inline">Scanner</span>
+        </button>
       </div>
 
       {/* État de chargement */}
@@ -239,8 +290,16 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
         <div className="text-center py-8 text-slate-500 text-sm">
           <p>Commencez à taper pour rechercher un aliment</p>
           <p className="mt-2">Recherche dans OpenFoodFacts et USDA</p>
+          <p className="mt-2 text-xs">ou utilisez le bouton "Scanner" pour scanner un code-barres</p>
         </div>
       )}
+
+      {/* Modal Scanner Code-Barres */}
+      <BarcodeScanner
+        isOpen={showBarcodeScanner}
+        onClose={() => setShowBarcodeScanner(false)}
+        onProductScanned={handleProductScanned}
+      />
     </div>
   );
 };
