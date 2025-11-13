@@ -7,6 +7,7 @@ import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 import HomePageImageSettings from '../HomePageImageSettings';
+import BannerExportImport from '../BannerExportImport';
 import { 
   prepareExportData, 
   downloadExportFile, 
@@ -1218,6 +1219,11 @@ const SettingsTab = () => {
             >
               Configurer les Images de la Page d'Accueil
             </Button>
+
+            {/* Section Export/Import Bannières */}
+            <div className="mt-4 pt-4 border-t border-slate-700">
+              <BannerExportImport />
+            </div>
           </div>
         </CardContent>
       </Card>

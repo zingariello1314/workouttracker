@@ -58,6 +58,7 @@ export function decompressTimeSeriesDelta(compressed) {
       const currVal = prevVal + (delta.d_val || 0);
       
       // 🔴 VALIDATION : Vérifier que les valeurs BPM sont dans les limites physiologiques
+      let finalVal = currVal;
       if (currVal < 30 || currVal > 220) {
         console.warn(`[decompressTimeSeriesDelta] ⚠️ Valeur BPM hors limites: ${currVal} bpm à ${new Date(currTs).toLocaleTimeString('fr-FR')}`);
         // Clamper la valeur plutôt que de l'ignorer
@@ -65,12 +66,12 @@ export function decompressTimeSeriesDelta(compressed) {
         if (clampedVal !== currVal) {
           console.log(`[decompressTimeSeriesDelta] 🔧 Valeur clampée: ${currVal} → ${clampedVal}`);
         }
-        currVal = clampedVal;
+        finalVal = clampedVal;
       }
 
       const point = {
         [timestampKey]: currTs,
-        [valueKey]: currVal
+        [valueKey]: finalVal
       };
 
       // Garder les autres clés

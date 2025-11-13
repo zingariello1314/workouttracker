@@ -1,10 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
+import { debouncedBatchSave, forceSave, saveBatchToIndexedDB, cleanupDebounce } from '../utils/bannerSaveOptimizer';
+import { rollbackToVersion, getVersionHistory } from '../utils/bannerVersioning';
+import { validateImageIntegrity, validateImagesBatch, detectAndRepairCorruption } from '../utils/bannerIntegrity';
+import logger from '../utils/logger';
+
+const log = logger.module('useHomepageImages');
 
 export const useHomepageImages = () => {
   const [backgroundImages, setBackgroundImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [systemHealth, setSystemHealth] = useState('unknown');
   const backgroundImagesRef = useRef([]);
+  const lastSaveTimeRef = useRef(0); // ✅ Phase 7: Protection contre sauvegardes trop rapprochées
 
   // Mettre à jour la ref quand backgroundImages change
   useEffect(() => {
@@ -40,9 +47,9 @@ export const useHomepageImages = () => {
         return;
       }
 
-      // ✅ FIX: Forcer upgrade vers version 2 pour garantir présence index
-      // Si base existe en v1, onupgradeneeded sera appelé automatiquement
-      const request = indexedDB.open('HomepageImagesDB', 2);
+      // ✅ Phase 3: Upgrade vers version 3 pour supporter thumbnails
+      // Si base existe en v1 ou v2, onupgradeneeded sera appelé automatiquement
+      const request = indexedDB.open('HomepageImagesDB', 3);
       
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
@@ -61,7 +68,7 @@ export const useHomepageImages = () => {
           console.log('✅ Object store "images" existe déjà');
           imageStore = event.target.transaction.objectStore('images');
           
-          // ✅ FIX: Créer index manquants (upgrade depuis v1)
+          // ✅ Créer index manquants (upgrade depuis v1)
           try {
             const indexNames = imageStore.indexNames;
             if (!indexNames.contains('type')) {
@@ -83,6 +90,14 @@ export const useHomepageImages = () => {
             // Peut échouer si index existe déjà ou transaction fermée, c'est OK
             console.warn('⚠️ Erreur création index (peut être normal):', indexError.message);
           }
+        }
+        
+        // ✅ Phase 3: Migration vers v3 (ajout support thumbnails)
+        if (oldVersion < 3) {
+          console.log('🔄 Migration v2 → v3: Ajout support thumbnails...');
+          // Les images existantes n'auront pas de thumbnail (null), c'est OK
+          // La structure est rétrocompatible (thumbnail optionnel)
+          console.log('✅ Migration v3: Structure compatible (thumbnail optionnel)');
         }
         
         console.log('✅ IndexedDB mis à jour pour les images');
@@ -126,7 +141,7 @@ export const useHomepageImages = () => {
         console.warn('⚠️ IndexedDB bloqué - fermez les autres onglets et rafraîchissez');
         // Attendre un peu puis réessayer
         setTimeout(() => {
-          const retryRequest = indexedDB.open('HomepageImagesDB', 2);
+          const retryRequest = indexedDB.open('HomepageImagesDB', 3);
           retryRequest.onsuccess = (e) => resolve(e.target.result);
           retryRequest.onerror = () => reject(new Error('IndexedDB bloqué'));
         }, 1000);
@@ -134,97 +149,30 @@ export const useHomepageImages = () => {
     });
   };
 
-  // Sauvegarde dans IndexedDB (niveau 1)
-  const saveImagesToIndexedDB = async (images) => {
+  // ✅ Phase 6: Sauvegarde optimisée dans IndexedDB (batch write)
+  // ✅ Phase 4: Avec versioning optionnel
+  const saveImagesToIndexedDB = async (images, options = {}) => {
     try {
-      console.log('💾 Sauvegarde niveau 1: IndexedDB...');
+      log.debug('💾 Sauvegarde niveau 1: IndexedDB (batch optimisé)...', options);
       
       const db = await openDB();
-      const transaction = db.transaction(['images'], 'readwrite');
-      const store = transaction.objectStore('images');
       
-      // ✅ FIX: Vérifier si index existe, sinon utiliser fallback
-      let hasTypeIndex = false;
-      try {
-        const indexNames = store.indexNames;
-        hasTypeIndex = indexNames.contains('type');
-      } catch (e) {
-        hasTypeIndex = false;
-      }
-      
-      // Supprimer les anciennes images de fond
-      let deletePromise;
-      if (hasTypeIndex) {
-        // ✅ Utiliser index si disponible
-        const deleteRequest = store.index('type').openCursor(IDBKeyRange.only('homepage_background'));
-        deletePromise = new Promise((resolve, reject) => {
-          deleteRequest.onsuccess = (event) => {
-            const cursor = event.target.result;
-            if (cursor) {
-              store.delete(cursor.primaryKey);
-              cursor.continue();
-            } else {
-              resolve();
-            }
-          };
-          deleteRequest.onerror = () => reject(deleteRequest.error);
-        });
-      } else {
-        // ✅ FALLBACK: Utiliser getAll() et filtrer manuellement
-        console.warn('⚠️ Index "type" non disponible, utilisation fallback pour suppression');
-        const allRequest = store.getAll();
-        deletePromise = new Promise((resolve, reject) => {
-          allRequest.onsuccess = (event) => {
-            const allItems = event.target.result;
-            const itemsToDelete = allItems.filter(item => item.type === 'homepage_background');
-            
-            if (itemsToDelete.length === 0) {
-              resolve();
-              return;
-            }
-            
-            // Supprimer items filtrés
-            const deletePromises = itemsToDelete.map(item => {
-              return new Promise((res, rej) => {
-                const delRequest = store.delete(item.id);
-                delRequest.onsuccess = () => res();
-                delRequest.onerror = () => rej(delRequest.error);
-              });
-            });
-            
-            Promise.all(deletePromises).then(() => resolve()).catch(reject);
-          };
-          allRequest.onerror = () => reject(allRequest.error);
-        });
-      }
-      
-      await deletePromise;
-      
-      // Sauvegarder les nouvelles images
-      const savePromises = images.map((image, index) => {
-        const imageData = {
-          id: `homepage_bg_${Date.now()}_${index}`,
-          type: 'homepage_background',
-          data: image,
-          timestamp: new Date().toISOString(),
-          quality: 'maximum',
-          compressed: false,
-          version: '2.0'
-        };
-        
-        return new Promise((resolve, reject) => {
-          const request = store.add(imageData);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        });
+      // ✅ Phase 6: Utiliser batch write optimisé (une transaction)
+      // ✅ Phase 4: Passer options pour versioning
+      const success = await saveBatchToIndexedDB(db, images, {
+        enableVersioning: options.enableVersioning || false,
+        action: options.action || 'upload',
+        existingImages: options.existingImages || backgroundImagesRef.current
       });
       
-      await Promise.all(savePromises);
-      console.log('✅ Sauvegarde IndexedDB réussie');
-      return true;
+      if (success) {
+        log.debug('✅ Sauvegarde batch IndexedDB réussie');
+      }
+      
+      return success;
       
     } catch (error) {
-      console.error('❌ Erreur sauvegarde IndexedDB:', error);
+      log.error('❌ Erreur sauvegarde IndexedDB', error);
       return false;
     }
   };
@@ -276,69 +224,47 @@ export const useHomepageImages = () => {
   };
 
   // Sauvegarde synchrone intelligente (métadonnées seulement si IndexedDB fonctionne)
-  const saveImagesSync = (images) => {
+  // ✅ Phase 6: Sauvegarde synchrone avec force save (bypass debounce)
+  const saveImagesSync = async (images) => {
     try {
-      // ✅ FIX: Utiliser openDB() pour garantir version avec index
-      openDB().then((db) => {
-        if (db.objectStoreNames.contains('images')) {
-          // IndexedDB fonctionne → Sauvegarde légère des métadonnées
-          const metadata = {
-            count: images.length,
-            timestamp: new Date().toISOString(),
-            version: '2.0',
-            storage: 'indexeddb_sync'
-          };
-          try {
-            localStorage.setItem('homepage_images_sync_metadata', JSON.stringify(metadata));
-            console.log('✅ Métadonnées de synchronisation sauvegardées');
-          } catch (error) {
-            console.warn('⚠️ Impossible de sauvegarder les métadonnées de sync:', error);
-          }
-          db.close();
-        } else {
-          db.close();
-        }
-      }).catch(() => {
-        // IndexedDB échoué → Sauvegarde complète d'urgence
+      // Force save : sauvegarder immédiatement (bypass debounce)
+      await forceSave(images, async (imagesToSave) => {
+        await executeSaveImagesRobust(imagesToSave);
+      });
+      log.debug('✅ Sauvegarde synchrone forcée');
+    } catch (error) {
+      log.error('❌ Erreur sauvegarde synchrone', error);
+      // Fallback : sauvegarde localStorage directe
+      try {
         const data = {
           images: images.slice(0, 3), // Limiter à 3 images max pour l'urgence
           timestamp: new Date().toISOString(),
-          version: '2.0',
+          version: '3.0', // ✅ Phase 6: Version 3.0
           storage: 'sync_emergency_limited'
         };
         
         try {
           localStorage.setItem('homepage_images_sync_emergency', JSON.stringify(data));
           console.log('✅ Sauvegarde d\'urgence limitée effectuée');
-        } catch (error) {
-          console.error('❌ Erreur sauvegarde d\'urgence:', error);
+        } catch (fallbackError) {
+          console.error('❌ Erreur sauvegarde d\'urgence:', fallbackError);
         }
-      });
+      } catch (fallbackError) {
+        console.error('❌ Erreur fallback localStorage:', fallbackError);
+      }
       
-      return true;
-    } catch (error) {
-      console.error('❌ Erreur sauvegarde synchrone:', error);
       return false;
     }
   };
 
   // Sauvegarde intelligente IndexedDB-first avec fallback léger
-  const saveImagesRobust = async (images) => {
+  // ✅ Phase 6: Fonction interne pour exécuter la sauvegarde effective
+  // ✅ Phase 4: Avec support versioning optionnel
+  const executeSaveImagesRobust = async (validImages, saveOptions = {}) => {
     try {
-      console.log('💾 Sauvegarde intelligente IndexedDB-first...');
-      
-      // Valider toutes les images
-      const validImages = images.filter(validateBase64Image);
-      if (validImages.length !== images.length) {
-        console.warn(`⚠️ ${images.length - validImages.length} images invalides supprimées`);
-      }
-      
-      if (validImages.length === 0) {
-        throw new Error('Aucune image valide à sauvegarder');
-      }
-      
       // Sauvegarde niveau 1: IndexedDB (PRINCIPAL)
-      const indexedDBSuccess = await saveImagesToIndexedDB(validImages);
+      // ✅ Phase 4: Passer options versioning
+      const indexedDBSuccess = await saveImagesToIndexedDB(validImages, saveOptions);
       
       if (indexedDBSuccess) {
         // IndexedDB fonctionne → Sauvegarde légère des métadonnées seulement
@@ -346,7 +272,7 @@ export const useHomepageImages = () => {
           const metadata = {
             count: validImages.length,
             timestamp: new Date().toISOString(),
-            version: '2.0',
+            version: '3.0', // ✅ Phase 6: Version 3.0
             storage: 'indexeddb_primary'
           };
           localStorage.setItem('homepage_images_metadata', JSON.stringify(metadata));
@@ -356,6 +282,9 @@ export const useHomepageImages = () => {
         }
         
         setSystemHealth('excellent');
+        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT pour éviter race condition
+        backgroundImagesRef.current = validImages;
+        lastSaveTimeRef.current = Date.now(); // ✅ Phase 7: Enregistrer timestamp de sauvegarde
         setBackgroundImages(validImages);
         console.log(`🎉 ${validImages.length} images sauvegardées dans IndexedDB avec succès`);
         return;
@@ -367,6 +296,9 @@ export const useHomepageImages = () => {
       
       if (localStorageSuccess) {
         setSystemHealth('good');
+        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT pour éviter race condition
+        backgroundImagesRef.current = validImages;
+        lastSaveTimeRef.current = Date.now(); // ✅ Phase 7: Enregistrer timestamp de sauvegarde
         setBackgroundImages(validImages);
         console.log(`🎉 ${validImages.length} images sauvegardées dans localStorage (fallback)`);
         return;
@@ -378,6 +310,9 @@ export const useHomepageImages = () => {
       
       if (sessionStorageSuccess) {
         setSystemHealth('good');
+        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT pour éviter race condition
+        backgroundImagesRef.current = validImages;
+        lastSaveTimeRef.current = Date.now(); // ✅ Phase 7: Enregistrer timestamp de sauvegarde
         setBackgroundImages(validImages);
         console.log(`🎉 ${validImages.length} images sauvegardées dans sessionStorage (fallback)`);
         return;
@@ -388,7 +323,68 @@ export const useHomepageImages = () => {
       throw new Error('Tous les systèmes de stockage ont échoué');
       
     } catch (error) {
-      console.error('❌ Erreur sauvegarde robuste:', error);
+      log.error('❌ Erreur sauvegarde robuste', error);
+      setSystemHealth('poor');
+      throw error;
+    }
+  };
+  
+  // ✅ Phase 6: Sauvegarde intelligente avec debouncing et batch write
+  // ✅ Phase 4: Avec support versioning optionnel
+  const saveImagesRobust = async (images, options = {}) => {
+    const { 
+      force = false,
+      enableVersioning = false,
+      action = 'upload'
+    } = options;
+    
+    try {
+      log.debug('💾 Sauvegarde intelligente IndexedDB-first...', { force, imageCount: images.length });
+      
+      // ✅ Phase 7: Valider images (support v2 string et v3 objet)
+      const validImages = images.filter(img => {
+        // Format v2 (string)
+        if (typeof img === 'string') {
+          return validateBase64Image(img);
+        }
+        // Format v3 (objet avec full)
+        if (typeof img === 'object' && img !== null && img.full) {
+          return validateBase64Image(img.full);
+        }
+        return false;
+      });
+      
+      if (validImages.length !== images.length) {
+        log.warn(`⚠️ ${images.length - validImages.length} images invalides supprimées`);
+      }
+      
+      // ✅ Phase 7: Permettre tableau vide (pour supprimer toutes les images)
+      if (validImages.length === 0 && images.length > 0) {
+        // Si on avait des images mais qu'elles sont toutes invalides, c'est une erreur
+        throw new Error('Aucune image valide à sauvegarder');
+      }
+      // Si images.length === 0, c'est OK (suppression de toutes les images)
+      
+      // ✅ Phase 6: Utiliser debounced batch save (sauf si force)
+      // ✅ Phase 4: Passer options versioning
+      if (!force) {
+        await debouncedBatchSave(
+          validImages, 
+          (imgs) => executeSaveImagesRobust(imgs, { enableVersioning, action }),
+          {
+            delay: 30000, // 30s debounce
+            maxDelay: 120000, // 2min max
+            force: false
+          }
+        );
+        return; // Sauvegarde programmée, sortir
+      }
+      
+      // Force : sauvegarder immédiatement
+      await executeSaveImagesRobust(validImages, { enableVersioning, action });
+      
+    } catch (error) {
+      log.error('❌ Erreur sauvegarde intelligente', error);
       setSystemHealth('poor');
       throw error;
     }
@@ -416,13 +412,69 @@ export const useHomepageImages = () => {
             const results = event.target.result;
             
             if (results && results.length > 0) {
+              // ✅ Phase 3: Charger images (format v3 avec thumbnail ou v2 string)
               const sortedImages = results
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                .map(item => item.data)
-                .filter(validateBase64Image);
+                .map(item => {
+                  // Format v3 : retourner objet { full, thumbnail }, Format v2 : retourner string
+                  if (item.version === '3.0' && item.thumbnail) {
+                    return {
+                      full: item.data,
+                      thumbnail: item.thumbnail,
+                      format: item.format,
+                      metadata: item.metadata
+                    };
+                  }
+                  // Format v2 ou v3 sans thumbnail : retourner string (compatibilité)
+                  return item.data;
+                })
+                .filter(img => {
+                  // Valider : string Base64 ou objet avec full Base64
+                  if (typeof img === 'string') {
+                    return validateBase64Image(img);
+                  }
+                  return img && img.full && validateBase64Image(img.full);
+                });
               
-              console.log(`✅ ${sortedImages.length} images chargées depuis IndexedDB (avec index)`);
-              resolve(sortedImages);
+              // ✅ Phase 5: Validation intégrité optionnelle (non bloquant pour performance)
+              // Valider seulement si images suspectes (taille anormale, etc.)
+              // Note: Utiliser .then() car onsuccess n'est pas async
+              Promise.all(
+                sortedImages.map(async (img) => {
+                  try {
+                    // Validation rapide (sans checksum ni test load pour performance)
+                    const validation = await validateImageIntegrity(img, {
+                      checkChecksum: false, // Skip checksum pour performance
+                      testLoad: false // Skip test load pour performance (fait par navigateur)
+                    });
+                    
+                    if (!validation.valid) {
+                      log.warn('⚠️ Image invalide détectée', validation.error);
+                      // Retourner null pour filtrer plus tard
+                      return null;
+                    }
+                    
+                    return img;
+                  } catch (error) {
+                    log.warn('⚠️ Erreur validation image (non bloquant)', error);
+                    // En cas d'erreur, garder l'image (fallback gracieux)
+                    return img;
+                  }
+                })
+              ).then((validatedImages) => {
+                const finalImages = validatedImages.filter(img => img !== null);
+                
+                if (finalImages.length < sortedImages.length) {
+                  log.warn(`⚠️ ${sortedImages.length - finalImages.length} images invalides filtrées`);
+                }
+                
+                console.log(`✅ ${finalImages.length} images chargées depuis IndexedDB (avec index)`);
+                resolve(finalImages);
+              }).catch((error) => {
+                log.warn('⚠️ Erreur validation batch (non bloquant), utiliser images non validées', error);
+                // En cas d'erreur, utiliser images non validées (fallback gracieux)
+                resolve(sortedImages);
+              });
             } else {
               console.log('📭 Aucune image trouvée dans IndexedDB');
               resolve([]);
@@ -448,13 +500,65 @@ export const useHomepageImages = () => {
             const filteredResults = allResults.filter(item => item.type === 'homepage_background');
             
             if (filteredResults.length > 0) {
+              // ✅ Phase 3: Charger images (format v3 avec thumbnail ou v2 string)
               const sortedImages = filteredResults
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                .map(item => item.data)
-                .filter(validateBase64Image);
+                .map(item => {
+                  // Format v3 : retourner objet { full, thumbnail }, Format v2 : retourner string
+                  if (item.version === '3.0' && item.thumbnail) {
+                    return {
+                      full: item.data,
+                      thumbnail: item.thumbnail,
+                      format: item.format,
+                      metadata: item.metadata
+                    };
+                  }
+                  // Format v2 ou v3 sans thumbnail : retourner string (compatibilité)
+                  return item.data;
+                })
+                .filter(img => {
+                  // Valider : string Base64 ou objet avec full Base64
+                  if (typeof img === 'string') {
+                    return validateBase64Image(img);
+                  }
+                  return img && img.full && validateBase64Image(img.full);
+                });
               
-              console.log(`✅ ${sortedImages.length} images chargées depuis IndexedDB (fallback)`);
-              resolve(sortedImages);
+              // ✅ Phase 5: Validation intégrité optionnelle (non bloquant pour performance)
+              // Note: Utiliser .then() car onsuccess n'est pas async
+              Promise.all(
+                sortedImages.map(async (img) => {
+                  try {
+                    const validation = await validateImageIntegrity(img, {
+                      checkChecksum: false,
+                      testLoad: false
+                    });
+                    
+                    if (!validation.valid) {
+                      log.warn('⚠️ Image invalide détectée', validation.error);
+                      return null;
+                    }
+                    
+                    return img;
+                  } catch (error) {
+                    log.warn('⚠️ Erreur validation image (non bloquant)', error);
+                    return img;
+                  }
+                })
+              ).then((validatedImages) => {
+                const finalImages = validatedImages.filter(img => img !== null);
+                
+                if (finalImages.length < sortedImages.length) {
+                  log.warn(`⚠️ ${sortedImages.length - finalImages.length} images invalides filtrées`);
+                }
+                
+                console.log(`✅ ${finalImages.length} images chargées depuis IndexedDB (fallback)`);
+                resolve(finalImages);
+              }).catch((error) => {
+                log.warn('⚠️ Erreur validation batch (non bloquant), utiliser images non validées', error);
+                // En cas d'erreur, utiliser images non validées (fallback gracieux)
+                resolve(sortedImages);
+              });
             } else {
               console.log('📭 Aucune image trouvée dans IndexedDB');
               resolve([]);
@@ -489,7 +593,16 @@ export const useHomepageImages = () => {
       
       const parsed = JSON.parse(data);
       if (parsed.images && Array.isArray(parsed.images)) {
-        const validImages = parsed.images.filter(validateBase64Image);
+        // ✅ Phase 7: Valider images (support v2 string et v3 objet)
+        const validImages = parsed.images.filter(img => {
+          if (typeof img === 'string') {
+            return validateBase64Image(img);
+          }
+          if (typeof img === 'object' && img !== null && img.full) {
+            return validateBase64Image(img.full);
+          }
+          return false;
+        });
         console.log(`✅ ${validImages.length} images chargées depuis localStorage`);
         return validImages;
       }
@@ -515,7 +628,16 @@ export const useHomepageImages = () => {
       
       const parsed = JSON.parse(data);
       if (parsed.images && Array.isArray(parsed.images)) {
-        const validImages = parsed.images.filter(validateBase64Image);
+        // ✅ Phase 7: Valider images (support v2 string et v3 objet)
+        const validImages = parsed.images.filter(img => {
+          if (typeof img === 'string') {
+            return validateBase64Image(img);
+          }
+          if (typeof img === 'object' && img !== null && img.full) {
+            return validateBase64Image(img.full);
+          }
+          return false;
+        });
         console.log(`✅ ${validImages.length} images chargées depuis sessionStorage`);
         return validImages;
       }
@@ -539,6 +661,8 @@ export const useHomepageImages = () => {
       if (images.length > 0) {
         console.log('✅ Images récupérées depuis IndexedDB');
         setSystemHealth('excellent');
+        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT lors du chargement
+        backgroundImagesRef.current = images;
         setBackgroundImages(images);
         setIsLoading(false);
         return;
@@ -547,20 +671,48 @@ export const useHomepageImages = () => {
       // 2. Essayer localStorage fallback
       images = await loadImagesFromLocalStorage();
       if (images.length > 0) {
-        console.log('✅ Images récupérées depuis localStorage, migration vers IndexedDB...');
-        setSystemHealth('good');
-        setBackgroundImages(images);
+        log.debug('✅ Images récupérées depuis localStorage, migration vers IndexedDB...');
         
-        // Migrer vers IndexedDB en arrière-plan
-        setTimeout(async () => {
-          try {
-            await saveImagesToIndexedDB(images);
-            console.log('✅ Migration vers IndexedDB réussie');
-            setSystemHealth('excellent');
-          } catch (error) {
-            console.warn('⚠️ Migration vers IndexedDB échouée:', error);
+        // ✅ Phase 7: Valider images avant migration
+        try {
+          const validation = await validateImagesBatch(images, {
+            checkChecksum: false, // Skip pour performance
+            testLoad: false // Skip pour performance
+          });
+          
+          if (validation.invalid.length > 0) {
+            log.warn(`⚠️ ${validation.invalid.length} images invalides détectées, filtrage...`);
+            images = validation.valid; // Utiliser seulement images valides
           }
-        }, 1000);
+        } catch (validationError) {
+          log.warn('⚠️ Erreur validation avant migration (non bloquant)', validationError);
+        }
+        
+        if (images.length > 0) {
+          setSystemHealth('good');
+          // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT lors du chargement
+          backgroundImagesRef.current = images;
+          setBackgroundImages(images);
+          
+          // ✅ Phase 7: Migrer vers IndexedDB avec validation après migration
+          setTimeout(async () => {
+            try {
+              await saveImagesToIndexedDB(images);
+              
+              // ✅ Phase 7: Valider après migration
+              const postMigrationImages = await loadImagesFromIndexedDB();
+              if (postMigrationImages.length === images.length) {
+                log.debug('✅ Migration vers IndexedDB réussie et validée');
+                setSystemHealth('excellent');
+              } else {
+                log.warn(`⚠️ Migration partielle: ${postMigrationImages.length}/${images.length} images migrées`);
+                setSystemHealth('good');
+              }
+            } catch (error) {
+              log.warn('⚠️ Migration vers IndexedDB échouée', error);
+            }
+          }, 1000);
+        }
         
         setIsLoading(false);
         return;
@@ -569,21 +721,49 @@ export const useHomepageImages = () => {
       // 3. Essayer sessionStorage emergency
       images = await loadImagesFromSessionStorage();
       if (images.length > 0) {
-        console.log('✅ Images récupérées depuis sessionStorage, migration vers IndexedDB...');
-        setSystemHealth('good');
-        setBackgroundImages(images);
+        log.debug('✅ Images récupérées depuis sessionStorage, migration vers IndexedDB...');
         
-        // Migrer vers IndexedDB en arrière-plan
-        setTimeout(async () => {
-          try {
-            await saveImagesToIndexedDB(images);
-            await saveImagesToLocalStorage(images);
-            console.log('✅ Migration vers IndexedDB et localStorage réussie');
-            setSystemHealth('excellent');
-          } catch (error) {
-            console.warn('⚠️ Migration échouée:', error);
+        // ✅ Phase 7: Valider images avant migration
+        try {
+          const validation = await validateImagesBatch(images, {
+            checkChecksum: false,
+            testLoad: false
+          });
+          
+          if (validation.invalid.length > 0) {
+            log.warn(`⚠️ ${validation.invalid.length} images invalides détectées, filtrage...`);
+            images = validation.valid;
           }
-        }, 1000);
+        } catch (validationError) {
+          log.warn('⚠️ Erreur validation avant migration (non bloquant)', validationError);
+        }
+        
+        if (images.length > 0) {
+          setSystemHealth('good');
+          // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT lors du chargement
+          backgroundImagesRef.current = images;
+          setBackgroundImages(images);
+          
+          // ✅ Phase 7: Migrer vers IndexedDB et localStorage avec validation
+          setTimeout(async () => {
+            try {
+              await saveImagesToIndexedDB(images);
+              await saveImagesToLocalStorage(images);
+              
+              // ✅ Phase 7: Valider après migration
+              const postMigrationImages = await loadImagesFromIndexedDB();
+              if (postMigrationImages.length === images.length) {
+                log.debug('✅ Migration vers IndexedDB et localStorage réussie et validée');
+                setSystemHealth('excellent');
+              } else {
+                log.warn(`⚠️ Migration partielle: ${postMigrationImages.length}/${images.length} images migrées`);
+                setSystemHealth('good');
+              }
+            } catch (error) {
+              log.warn('⚠️ Migration échouée', error);
+            }
+          }, 1000);
+        }
         
         setIsLoading(false);
         return;
@@ -592,20 +772,46 @@ export const useHomepageImages = () => {
       // 4. Essayer les anciennes clés (migration)
       images = await migrateFromOldSystem();
       if (images.length > 0) {
-        console.log('✅ Images récupérées depuis ancien système');
-        setBackgroundImages(images);
+        log.debug('✅ Images récupérées depuis ancien système');
+        
+        // ✅ Phase 7: Valider images avant utilisation
+        try {
+          const validation = await validateImagesBatch(images, {
+            checkChecksum: false,
+            testLoad: false
+          });
+          
+          if (validation.invalid.length > 0) {
+            log.warn(`⚠️ ${validation.invalid.length} images invalides détectées, filtrage...`);
+            images = validation.valid;
+          }
+        } catch (validationError) {
+          log.warn('⚠️ Erreur validation après migration ancien système (non bloquant)', validationError);
+        }
+        
+        if (images.length > 0) {
+          // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT lors du chargement
+          backgroundImagesRef.current = images;
+          setBackgroundImages(images);
+          setSystemHealth('good');
+        }
+        
         setIsLoading(false);
         return;
       }
       
       // 5. Aucune image trouvée
       console.log('📭 Aucune image trouvée dans tous les systèmes');
+      // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT
+      backgroundImagesRef.current = [];
       setBackgroundImages([]);
       setSystemHealth('unknown');
       setIsLoading(false);
       
     } catch (error) {
       console.error('❌ Erreur lors du chargement avec récupération:', error);
+      // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT
+      backgroundImagesRef.current = [];
       setBackgroundImages([]);
       setSystemHealth('poor');
       setIsLoading(false);
@@ -721,12 +927,17 @@ export const useHomepageImages = () => {
     const autoSaveInterval = setInterval(async () => {
       try {
         const currentImages = backgroundImagesRef.current;
-        if (currentImages.length > 0) {
-          await saveImagesRobust(currentImages);
-          console.log('🔄 Sauvegarde automatique robuste effectuée');
+        const timeSinceLastSave = Date.now() - lastSaveTimeRef.current;
+        // ✅ Phase 7: Éviter sauvegarde si une sauvegarde vient d'être effectuée (< 5 secondes)
+        if (currentImages.length > 0 && timeSinceLastSave > 5000) {
+          // ✅ Phase 6: Sauvegarde automatique avec force (bypass debounce)
+          await saveImagesRobust(currentImages, { force: true });
+          log.debug('🔄 Sauvegarde automatique robuste effectuée');
+        } else if (timeSinceLastSave <= 5000) {
+          log.debug('⏭️ Sauvegarde récente, skip sauvegarde automatique périodique');
         }
       } catch (error) {
-        console.error('❌ Erreur sauvegarde automatique:', error);
+        log.error('❌ Erreur sauvegarde automatique', error);
       }
     }, 15 * 60 * 1000); // 15 minutes
 
@@ -739,18 +950,26 @@ export const useHomepageImages = () => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         const currentImages = backgroundImagesRef.current;
-        if (currentImages.length > 0) {
+        const timeSinceLastSave = Date.now() - lastSaveTimeRef.current;
+        // ✅ Phase 7: Éviter sauvegarde si une sauvegarde vient d'être effectuée (< 2 secondes)
+        if (currentImages.length > 0 && timeSinceLastSave > 2000) {
           saveImagesSync(currentImages);
           console.log('🔄 Sauvegarde synchrone avant masquage effectuée');
+        } else if (timeSinceLastSave <= 2000) {
+          console.log('⏭️ Sauvegarde récente, skip sauvegarde automatique');
         }
       }
     };
 
     const handlePageHide = () => {
       const currentImages = backgroundImagesRef.current;
-      if (currentImages.length > 0) {
+      const timeSinceLastSave = Date.now() - lastSaveTimeRef.current;
+      // ✅ Phase 7: Éviter sauvegarde si une sauvegarde vient d'être effectuée (< 2 secondes)
+      if (currentImages.length > 0 && timeSinceLastSave > 2000) {
         saveImagesSync(currentImages);
         console.log('🔄 Sauvegarde synchrone avant fermeture effectuée');
+      } else if (timeSinceLastSave <= 2000) {
+        console.log('⏭️ Sauvegarde récente, skip sauvegarde automatique');
       }
     };
 
@@ -758,10 +977,52 @@ export const useHomepageImages = () => {
     window.addEventListener('pagehide', handlePageHide);
 
     return () => {
+      // ✅ Phase 6: Cleanup debounce et sauvegarde forcée avant démontage
+      cleanupDebounce();
+      
       clearInterval(autoSaveInterval);
       clearInterval(healthCheckInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pagehide', handlePageHide);
+      
+      // Sauvegarder avant démontage (force save)
+      const currentImages = backgroundImagesRef.current;
+      const timeSinceLastSave = Date.now() - lastSaveTimeRef.current;
+      const currentCount = currentImages.length;
+      
+      // ✅ Phase 7: Ne pas sauvegarder si ref vide (composant qui se démonte sans images chargées)
+      if (currentCount === 0) {
+        // C'est normal si la ref est vide lors du démontage (composant qui n'a pas chargé les images)
+        // Pas besoin de sauvegarder ou d'afficher de warning
+        return;
+      }
+      
+      // ✅ Phase 7: Éviter sauvegarde si une sauvegarde vient d'être effectuée (< 2 secondes)
+      if (timeSinceLastSave <= 2000) {
+        log.debug('⏭️ Sauvegarde récente, skip sauvegarde avant démontage');
+        return;
+      }
+      
+      // ✅ Phase 7: Vérifier que le nombre d'images correspond (protection contre écrasement)
+      let savedCount = 0;
+      try {
+        const metadata = JSON.parse(localStorage.getItem('homepage_images_metadata') || '{}');
+        savedCount = metadata.count || 0;
+      } catch (e) {
+        // Ignorer erreur parsing
+      }
+      
+      // Si le nombre correspond, sauvegarder
+      if (currentCount === savedCount) {
+        saveImagesSync(currentImages);
+        log.debug('🔄 Sauvegarde synchrone avant démontage effectuée');
+      } else {
+        // ⚠️ Nombre incohérent : ne pas sauvegarder pour éviter écrasement
+        // Mais seulement afficher warning si currentCount > 0 (sinon c'est normal)
+        if (currentCount > 0) {
+          log.warn(`⏭️ Nombre d'images incohérent (ref: ${currentCount}, sauvegardé: ${savedCount}), skip sauvegarde avant démontage`);
+        }
+      }
     };
   };
 
@@ -792,12 +1053,19 @@ export const useHomepageImages = () => {
     };
   }, []);
 
+  // ✅ Phase 7: Fonction pour mettre à jour la ref directement (pour éviter race condition)
+  const updateImagesRef = (images) => {
+    backgroundImagesRef.current = images;
+    lastSaveTimeRef.current = Date.now();
+  };
+
   return {
     backgroundImages,
     isLoading,
     systemHealth,
     saveImages: saveImagesRobust,
     loadImages: loadImagesWithRecovery,
+    updateImagesRef, // ✅ Phase 7: Exposer fonction pour mettre à jour la ref
     checkSystemHealth
   };
 };

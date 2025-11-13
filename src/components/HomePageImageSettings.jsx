@@ -2,13 +2,21 @@ import React, { useState, useRef } from 'react';
 import Button from './ui/Button';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import StorageDiagnostic from './StorageDiagnostic';
+import QuotaIndicator from './QuotaIndicator';
+import { canUploadImages, formatBytes } from '../utils/quotaManager';
+import { processImageForStorage } from '../utils/imageFormatOptimizer';
+import logger from '../utils/logger';
+
+const log = logger.component('HomePageImageSettings');
 
 const HomePageImageSettings = ({ onClose }) => {
-  const { backgroundImages, saveImages, isLoading, systemHealth, checkSystemHealth } = useHomepageImages();
+  const { backgroundImages, saveImages, loadImages, updateImagesRef, isLoading, systemHealth, checkSystemHealth } = useHomepageImages();
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [quotaCheck, setQuotaCheck] = useState(null); // Résultat vérification quota
+  const [quotaWarning, setQuotaWarning] = useState(null); // Warning/Critical
   const fileInputRef = useRef(null);
 
   // Fonction pour nettoyer le localStorage
@@ -36,7 +44,8 @@ const HomePageImageSettings = ({ onClose }) => {
   };
 
   // Système de stockage simplifié et ultra-fiable
-  const saveImagesIndependently = async (images) => {
+  // ✅ Phase 6: Sauvegarde avec option force pour uploads/suppressions
+  const saveImagesIndependently = async (images, force = false) => {
     setIsSaving(true);
     setSaveStatus('saving');
     
@@ -44,11 +53,12 @@ const HomePageImageSettings = ({ onClose }) => {
       // Nettoyer avant sauvegarde
       cleanupLocalStorage();
       
-      await saveImages(images);
+      // ✅ Phase 6: Utiliser force pour uploads/suppressions (sauvegarde immédiate)
+      await saveImages(images, { force });
       setSaveStatus('success');
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
+      log.error('Erreur lors de la sauvegarde', error);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus(null), 3000);
     } finally {
@@ -56,50 +66,125 @@ const HomePageImageSettings = ({ onClose }) => {
     }
   };
 
-  // Convertir fichier en base64 avec QUALITÉ MAXIMALE ABSOLUE
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+  // ✅ Phase 3: Traitement image optimisé (format optimal + thumbnail)
+  // QUALITÉ FULL 100% PRÉSERVÉE
+  const processImage = async (file) => {
+    try {
+      log.debug(`📸 Traitement image optimisé: ${file.name} (${Math.round(file.size / 1024 / 1024 * 100) / 100} MB)`);
       
-      // QUALITÉ MAXIMALE : AUCUNE COMPRESSION, AUCUN REDIMENSIONNEMENT
-      console.log(`📸 Conversion image haute qualité: ${file.name} (${Math.round(file.size / 1024 / 1024 * 100) / 100} MB)`);
+      // Traiter image : format optimal (WebP si supporté) + thumbnail
+      const processed = await processImageForStorage(file, {
+        createThumbnail: true,
+        preserveQuality: true // Qualité 100% pour full
+      });
       
-      // Lecture directe sans aucune modification
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const base64 = reader.result;
-        console.log(`✅ Image convertie: ${Math.round(base64.length / 1024 / 1024 * 100) / 100} MB Base64`);
-        resolve(base64);
+      log.debug('✅ Image traitée', {
+        format: processed.format,
+        fullSize: `${(processed.metadata.fullSize / 1024 / 1024).toFixed(2)} MB`,
+        thumbnailSize: processed.thumbnail 
+          ? `${(processed.metadata.thumbnailSize / 1024).toFixed(2)} KB`
+          : 'N/A',
+        quality: processed.metadata.quality
+      });
+      
+      // Retourner objet v3 : { full, thumbnail, format, metadata }
+      return {
+        full: processed.full,
+        thumbnail: processed.thumbnail,
+        format: processed.format,
+        metadata: processed.metadata
       };
-      reader.onerror = error => {
-        console.error('❌ Erreur conversion image:', error);
-        reject(error);
-      };
-    });
+    } catch (error) {
+      log.error('❌ Erreur traitement image', error);
+      throw error;
+    }
   };
 
-  // Gérer l'upload des images de fond avec sauvegarde indépendante
+  // Gérer l'upload des images de fond avec vérification quota
   const handleBackgroundImageUpload = async (event) => {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
 
+    // ✅ Phase 2 : Vérifier quota AVANT traitement
+    try {
+      log.debug('📊 Vérification quota avant upload...', { fileCount: files.length });
+      
+      const uploadCheck = await canUploadImages(files);
+      setQuotaCheck(uploadCheck);
+
+      if (!uploadCheck.canUpload) {
+        // Quota insuffisant - bloquer upload
+        alert(
+          `❌ Quota insuffisant pour uploader ces images.\n\n` +
+          `Taille requise: ${formatBytes(uploadCheck.required)}\n` +
+          `Quota disponible: ${formatBytes(uploadCheck.available)}\n\n` +
+          `Veuillez exporter certaines bannières ou libérer de l'espace.`
+        );
+        
+        // Réinitialiser l'input file
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+
+      // Avertissement si quota élevé
+      if (uploadCheck.warning || uploadCheck.critical) {
+        const level = uploadCheck.critical ? 'critique' : 'élevé';
+        const message = uploadCheck.critical
+          ? `🚨 Quota ${level} (${uploadCheck.quota.percentage.toFixed(1)}%) - Export recommandé avant upload`
+          : `⚠️ Quota ${level} (${uploadCheck.quota.percentage.toFixed(1)}%) - Considérer export`;
+        
+        log.warn(message);
+        
+        // Afficher warning mais permettre upload
+        setQuotaWarning({
+          level: uploadCheck.critical ? 'CRITICAL' : 'WARNING',
+          message: message,
+          suggestion: 'Pensez à exporter vos bannières pour libérer de l\'espace'
+        });
+      }
+
+    } catch (error) {
+      log.error('❌ Erreur vérification quota', error);
+      // En cas d'erreur, permettre upload (ne pas bloquer)
+      setQuotaCheck({ canUpload: true, error: error.message });
+    }
+
     setIsUploading(true);
     try {
+      // ✅ Phase 3: Traiter images avec format optimal + thumbnails
       const newImages = await Promise.all(
-        files.map(file => fileToBase64(file))
+        files.map(file => processImage(file))
       );
       
       // Ajouter les nouvelles images aux existantes
+      // Note: backgroundImages peut contenir strings (v2) ou objets (v3)
       const updatedImages = [...backgroundImages, ...newImages];
       
-      // Sauvegarde simplifiée
-      await saveImagesIndependently(updatedImages);
+             // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT pour éviter race condition
+             updateImagesRef(updatedImages);
+             
+             // ✅ Phase 6: Sauvegarde immédiate après upload (force: true)
+             await saveImagesIndependently(updatedImages, true);
+             
+             // ✅ Phase 7: Attendre un peu pour que la sauvegarde soit complète, puis recharger
+             await new Promise(resolve => setTimeout(resolve, 100));
+             await loadImages();
+             
+             // Réinitialiser quota check après upload réussi
+             setQuotaCheck(null);
+             setQuotaWarning(null);
       
     } catch (error) {
-      console.error('Erreur lors de l\'upload des images:', error);
+      log.error('Erreur lors de l\'upload des images:', error);
       alert('Erreur lors de l\'upload des images');
     } finally {
       setIsUploading(false);
+      // Réinitialiser l'input file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -110,11 +195,18 @@ const HomePageImageSettings = ({ onClose }) => {
       // Supprimer l'image du tableau local
       const updatedImages = backgroundImages.filter((_, i) => i !== index);
       
-      // Sauvegarde simplifiée
-      await saveImagesIndependently(updatedImages);
+      // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT pour éviter race condition
+      updateImagesRef(updatedImages);
+      
+      // ✅ Phase 7: Sauvegarde immédiate après suppression (force: true)
+      await saveImagesIndependently(updatedImages, true);
+      
+      // ✅ Phase 7: Attendre un peu pour que la sauvegarde soit complète, puis recharger
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await loadImages();
       
     } catch (error) {
-      console.error('Erreur lors de la suppression de l\'image:', error);
+      log.error('Erreur lors de la suppression de l\'image', error);
       alert('Erreur lors de la suppression de l\'image');
     }
   };
@@ -203,34 +295,114 @@ const HomePageImageSettings = ({ onClose }) => {
                 className="hidden"
               />
               
+              {/* Indicateur Quota */}
+              <div className="mb-4">
+                <QuotaIndicator
+                  onWarning={(warning) => {
+                    setQuotaWarning(warning);
+                    log.warn('⚠️ Quota warning', warning);
+                  }}
+                  onCritical={(critical) => {
+                    setQuotaWarning(critical);
+                    log.warn('🚨 Quota critical', critical);
+                  }}
+                  showDetails={true}
+                  autoRefresh={true}
+                />
+              </div>
+
+              {/* Avertissement quota si présent */}
+              {quotaWarning && (
+                <div className={`mb-4 rounded-lg p-3 ${
+                  quotaWarning.level === 'CRITICAL'
+                    ? 'bg-red-900/20 border border-red-600/30'
+                    : 'bg-yellow-900/20 border border-yellow-600/30'
+                }`}>
+                  <div className={`flex items-start text-sm ${
+                    quotaWarning.level === 'CRITICAL' ? 'text-red-400' : 'text-yellow-400'
+                  }`}>
+                    <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <strong>{quotaWarning.message}</strong>
+                      {quotaWarning.suggestion && (
+                        <div className="mt-1 text-xs opacity-90">
+                          💡 {quotaWarning.suggestion}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setQuotaWarning(null)}
+                      className="ml-auto text-slate-400 hover:text-slate-300"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Info taille upload si fichiers sélectionnés */}
+              {quotaCheck && quotaCheck.required > 0 && (
+                <div className="mb-4 bg-blue-900/20 border border-blue-600/30 rounded-lg p-3">
+                  <div className="text-blue-400 text-sm">
+                    <strong>Taille requise:</strong> {formatBytes(quotaCheck.required)}
+                    {quotaCheck.available > 0 && (
+                      <span className="text-blue-300 ml-2">
+                        ({((quotaCheck.required / quotaCheck.available) * 100).toFixed(1)}% du quota disponible)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
+                disabled={isUploading || (quotaCheck && !quotaCheck.canUpload)}
                 className="w-full"
               >
-                {isUploading ? 'Upload haute qualité...' : '📸 Ajouter des Images Haute Qualité (JPG/PNG)'}
+                {isUploading 
+                  ? 'Upload haute qualité...' 
+                  : quotaCheck && !quotaCheck.canUpload
+                    ? '❌ Quota insuffisant'
+                    : '📸 Ajouter des Images Haute Qualité (JPG/PNG)'
+                }
               </Button>
 
               {/* Galerie des images de fond */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {backgroundImages.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={image}
-                      alt={`Fond ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <button
-                      onClick={() => removeBackgroundImage(index)}
-                      className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      ×
-                    </button>
-                    <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                      Fond {index + 1}
+                {backgroundImages.map((image, index) => {
+                  // ✅ Phase 3: Utiliser thumbnail si disponible (format v3), sinon full (v2 ou v3 sans thumbnail)
+                  const imageSrc = typeof image === 'object' && image?.thumbnail
+                    ? image.thumbnail // Thumbnail pour galerie (léger)
+                    : typeof image === 'object' && image?.full
+                      ? image.full // Full si pas de thumbnail
+                      : image; // Format v2 (string)
+                  
+                  return (
+                    <div key={index} className="relative group">
+                      <img
+                        src={imageSrc}
+                        alt={`Fond ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        onClick={() => removeBackgroundImage(index)}
+                        className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                      <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                        Fond {index + 1}
+                        {typeof image === 'object' && image?.format && (
+                          <span className="ml-1 text-blue-300">({image.format.toUpperCase()})</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

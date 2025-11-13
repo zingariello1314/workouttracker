@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useHomepageImages } from '../hooks/useHomepageImages';
+import { preloadAdjacentImages, preloadImage } from '../utils/imageLazyLoader';
+import logger from '../utils/logger';
+
+const log = logger.component('HomePage');
 
 const HomePage = () => {
   const { setActiveTab } = useWorkout();
@@ -8,6 +12,8 @@ const HomePage = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [userLocation, setUserLocation] = useState('Localisation...');
+  const [currentImageSrc, setCurrentImageSrc] = useState(null); // Image full chargée
+  const imagePreloadedRef = useRef(new Set()); // Images déjà préchargées
 
   // ✅ FIX: Géolocalisation uniquement après interaction utilisateur (conformité navigateur)
   const requestUserLocation = () => {
@@ -72,6 +78,62 @@ const HomePage = () => {
     }, 300);
   };
 
+  // ✅ Phase 3.6: Charger image actuelle en full et précharger adjacentes
+  useEffect(() => {
+    if (!backgroundImages || backgroundImages.length === 0) {
+      setCurrentImageSrc(null);
+      return;
+    }
+
+    const currentImage = backgroundImages[currentImageIndex];
+    if (!currentImage) return;
+
+    // Charger image actuelle en full (qualité 100%)
+    const loadCurrentImage = async () => {
+      try {
+        // Si format v3 avec thumbnail, utiliser thumbnail temporairement
+        if (typeof currentImage === 'object' && currentImage.thumbnail) {
+          setCurrentImageSrc(currentImage.thumbnail); // Placeholder rapide
+        } else if (typeof currentImage === 'string') {
+          setCurrentImageSrc(currentImage); // Format v2 direct
+        }
+
+        // Charger full en arrière-plan
+        const fullData = typeof currentImage === 'object' && currentImage.full
+          ? currentImage.full
+          : currentImage;
+
+        // Précharger avec Image object (cache navigateur)
+        const img = new Image();
+        img.src = fullData;
+        
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            setCurrentImageSrc(fullData); // Remplacer par full une fois chargé
+            log.debug('✅ Image full chargée pour affichage');
+            resolve();
+          };
+          img.onerror = reject;
+        });
+      } catch (error) {
+        log.error('❌ Erreur chargement image actuelle', error);
+      }
+    };
+
+    loadCurrentImage();
+
+    // Précharger images adjacentes (pour rotation fluide)
+    if (backgroundImages.length > 1) {
+      preloadAdjacentImages(backgroundImages, currentImageIndex, 2)
+        .then(() => {
+          log.debug('✅ Images adjacentes préchargées');
+        })
+        .catch(error => {
+          log.warn('⚠️ Erreur préchargement images adjacentes', error);
+        });
+    }
+  }, [currentImageIndex, backgroundImages]);
+
   // Rotation automatique toutes les 2 minutes
   useEffect(() => {
     if (backgroundImages.length <= 1) return;
@@ -112,13 +174,16 @@ const HomePage = () => {
       )}
 
       {/* Image de fond avec effet de grain */}
-      {backgroundImages.length > 0 && (
+      {backgroundImages.length > 0 && currentImageSrc && (
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
           style={{
-            backgroundImage: `url(${backgroundImages[currentImageIndex]})`,
+            // ✅ Phase 3.6: Utiliser image lazy-loaded (full si disponible, sinon thumbnail)
+            backgroundImage: `url(${currentImageSrc})`,
             opacity: isTransitioning ? 0.7 : 1,
             filter: 'contrast(1.1) brightness(0.9)',
+            // Transition fluide pour changement d'image
+            transition: 'opacity 0.5s ease-in-out, filter 0.5s ease-in-out',
           }}
         >
           {/* Overlay avec effet de grain */}

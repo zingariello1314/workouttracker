@@ -1,0 +1,59 @@
+# Page snapshot
+
+```yaml
+- main [ref=e5]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - generic:
+        - img "Momentum Logo"
+      - navigation [ref=e8]:
+        - generic [ref=e9]:
+          - button "Aujourd'hui" [ref=e10] [cursor=pointer]
+          - button "Saisie" [ref=e11] [cursor=pointer]
+          - button "Programme" [ref=e12] [cursor=pointer]
+          - button "Exercices" [ref=e13] [cursor=pointer]
+          - button "Suivi Corporel" [ref=e14] [cursor=pointer]
+          - button "Endurance" [ref=e15] [cursor=pointer]
+          - button "Calendrier" [ref=e16] [cursor=pointer]
+          - button "Historique" [ref=e17] [cursor=pointer]
+          - button "Graphiques" [ref=e18] [cursor=pointer]
+          - button "Statistiques" [ref=e19] [cursor=pointer]
+          - button "Prédictions" [ref=e20] [cursor=pointer]
+          - button "Équilibrage IA" [ref=e21] [cursor=pointer]
+          - button "Garmin" [ref=e22] [cursor=pointer]
+          - button "Paramètres" [ref=e23] [cursor=pointer]
+    - main [ref=e24]:
+      - generic [ref=e25]:
+        - heading "Où Imagination Rencontre l'Intelligence" [level=1] [ref=e26]:
+          - text: Où
+          - text: Imagination
+          - text: Rencontre l'Intelligence
+        - button "COMMENCER L'ENTRAÎNEMENT" [ref=e28] [cursor=pointer]
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - heading "À PROPOS DE MOMENTUM" [level=3] [ref=e32]
+        - generic [ref=e34]:
+          - paragraph [ref=e35]: Momentum est votre compagnon intelligent pour transformer votre corps et votre esprit. Grâce à l'intelligence artificielle avancée, nous comprenons vos objectifs de fitness et adaptons votre parcours d'entraînement en temps réel.
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - heading "🎯 Fonctionnalités" [level=4] [ref=e38]
+              - list [ref=e39]:
+                - listitem [ref=e40]: • Suivi corporel intelligent
+                - listitem [ref=e41]: • Programmes personnalisés
+                - listitem [ref=e42]: • Prédictions IA
+                - listitem [ref=e43]: • Analyses avancées
+            - generic [ref=e44]:
+              - heading "📊 Données" [level=4] [ref=e45]
+              - list [ref=e46]:
+                - listitem [ref=e47]: • Photos de progression
+                - listitem [ref=e48]: • Métriques corporelles
+                - listitem [ref=e49]: • Historique complet
+                - listitem [ref=e50]: • Statistiques détaillées
+      - generic [ref=e52]:
+        - generic [ref=e53]: Fitness
+        - generic [ref=e54]: Performance
+        - generic [ref=e55]: Progrès
+        - generic [ref=e56]: Intelligence
+        - generic [ref=e57]: Commencez votre transformation
+        - generic [ref=e58]: Localisation...
+```
