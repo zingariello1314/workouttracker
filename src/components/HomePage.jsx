@@ -10,10 +10,19 @@ const HomePage = () => {
   const { setActiveTab } = useWorkout();
   const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [userLocation, setUserLocation] = useState('Localisation...');
-  const [currentImageSrc, setCurrentImageSrc] = useState(null); // Image full chargée
+  
+  // ✅ Phase 7: Double buffering pour transitions ultra-fluides
+  const [activeLayer, setActiveLayer] = useState(0); // 0 ou 1
+  const [layer0Src, setLayer0Src] = useState(null);
+  const [layer1Src, setLayer1Src] = useState(null);
+  const [layer0Opacity, setLayer0Opacity] = useState(1);
+  const [layer1Opacity, setLayer1Opacity] = useState(0);
+  const [layer0Loaded, setLayer0Loaded] = useState(false);
+  const [layer1Loaded, setLayer1Loaded] = useState(false);
+  
   const imagePreloadedRef = useRef(new Set()); // Images déjà préchargées
+  const loadingImageRef = useRef(null); // Référence image en cours de chargement
 
   // ✅ FIX: Géolocalisation uniquement après interaction utilisateur (conformité navigateur)
   const requestUserLocation = () => {
@@ -67,71 +76,163 @@ const HomePage = () => {
     };
   }, []);
 
-  // Fonction pour changer l'image de fond
-  const changeBackgroundImage = () => {
-    if (backgroundImages.length <= 1) return;
+  // ✅ Phase 7: Charger une image dans un layer spécifique
+  const loadImageIntoLayer = async (imageData, layerIndex, useThumbnailFirst = true) => {
+    if (!imageData) return null;
     
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % backgroundImages.length);
-      setIsTransitioning(false);
-    }, 300);
+    try {
+      // Déterminer les données full
+      const fullData = typeof imageData === 'object' && imageData.full
+        ? imageData.full
+        : imageData;
+      
+      // Déterminer le thumbnail (si disponible)
+      const thumbnail = typeof imageData === 'object' && imageData.thumbnail
+        ? imageData.thumbnail
+        : null;
+      
+      // Si thumbnail disponible et demandé, l'utiliser immédiatement
+      if (useThumbnailFirst && thumbnail) {
+        if (layerIndex === 0) {
+          setLayer0Src(thumbnail);
+          setLayer0Loaded(false);
+        } else {
+          setLayer1Src(thumbnail);
+          setLayer1Loaded(false);
+        }
+      }
+      
+      // Précharger full en arrière-plan
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = fullData;
+        
+        img.onload = () => {
+          // Mettre à jour le layer avec l'image full
+          if (layerIndex === 0) {
+            setLayer0Src(fullData);
+            setLayer0Loaded(true);
+          } else {
+            setLayer1Src(fullData);
+            setLayer1Loaded(true);
+          }
+          log.debug(`✅ Image full chargée dans layer ${layerIndex}`);
+          resolve(fullData);
+        };
+        
+        img.onerror = () => {
+          // En cas d'erreur, garder thumbnail si disponible, sinon garder l'ancienne image
+          log.warn(`⚠️ Erreur chargement image full, utilisation thumbnail si disponible`);
+          if (thumbnail) {
+            if (layerIndex === 0) {
+              setLayer0Src(thumbnail);
+              setLayer0Loaded(true); // Considérer comme chargé même si c'est thumbnail
+            } else {
+              setLayer1Src(thumbnail);
+              setLayer1Loaded(true);
+            }
+          }
+          resolve(thumbnail || fullData);
+        };
+      });
+    } catch (error) {
+      log.error('❌ Erreur chargement image', error);
+      return null;
+    }
   };
 
-  // ✅ Phase 3.6: Charger image actuelle en full et précharger adjacentes
+  // ✅ Phase 7: Fonction pour changer l'image avec double buffering
+  const changeBackgroundImage = async () => {
+    if (backgroundImages.length <= 1) return;
+    
+    const nextIndex = (currentImageIndex + 1) % backgroundImages.length;
+    const nextImage = backgroundImages[nextIndex];
+    
+    if (!nextImage) return;
+    
+    // Déterminer le layer inactif
+    const inactiveLayer = activeLayer === 0 ? 1 : 0;
+    
+    // Charger la nouvelle image dans le layer inactif (thumbnail d'abord, puis full)
+    await loadImageIntoLayer(nextImage, inactiveLayer, true);
+    
+    // Attendre un court instant pour que le thumbnail soit visible
+    // Puis faire le cross-fade immédiatement (l'image full se chargera en arrière-plan)
+    // Layer actif : opacity 1 → 0
+    // Layer inactif : opacity 0 → 1
+    if (activeLayer === 0) {
+      setLayer1Opacity(1); // Afficher layer 1 (avec thumbnail ou full)
+      setLayer0Opacity(0); // Masquer layer 0
+      setActiveLayer(1);
+    } else {
+      setLayer0Opacity(1); // Afficher layer 0 (avec thumbnail ou full)
+      setLayer1Opacity(0); // Masquer layer 1
+      setActiveLayer(0);
+    }
+    
+    // Mettre à jour l'index
+    setCurrentImageIndex(nextIndex);
+  };
+
+  // ✅ Phase 7: Charger image actuelle dans layer 0 (au montage et quand images changent)
   useEffect(() => {
     if (!backgroundImages || backgroundImages.length === 0) {
-      setCurrentImageSrc(null);
+      setLayer0Src(null);
+      setLayer1Src(null);
+      setLayer0Loaded(false);
+      setLayer1Loaded(false);
       return;
     }
 
     const currentImage = backgroundImages[currentImageIndex];
     if (!currentImage) return;
 
-    // Charger image actuelle en full (qualité 100%)
-    const loadCurrentImage = async () => {
-      try {
-        // Si format v3 avec thumbnail, utiliser thumbnail temporairement
-        if (typeof currentImage === 'object' && currentImage.thumbnail) {
-          setCurrentImageSrc(currentImage.thumbnail); // Placeholder rapide
-        } else if (typeof currentImage === 'string') {
-          setCurrentImageSrc(currentImage); // Format v2 direct
-        }
+    // Charger image actuelle dans layer 0 (layer actif) au montage initial
+    // Note: Les changements d'image sont gérés par changeBackgroundImage()
+    if (!layer0Src) {
+      loadImageIntoLayer(currentImage, 0, true);
+    }
+  }, [backgroundImages]); // Se déclenche quand images changent (montage initial)
 
-        // Charger full en arrière-plan
-        const fullData = typeof currentImage === 'object' && currentImage.full
-          ? currentImage.full
-          : currentImage;
+  // ✅ Phase 7: Préchargement proactif des images suivantes
+  useEffect(() => {
+    if (!backgroundImages || backgroundImages.length <= 1) return;
 
-        // Précharger avec Image object (cache navigateur)
-        const img = new Image();
-        img.src = fullData;
+    const currentImage = backgroundImages[currentImageIndex];
+    if (!currentImage) return;
+
+    // Précharger les 3 images suivantes dans le cache navigateur
+    const preloadNextImages = async () => {
+      for (let i = 1; i <= 3; i++) {
+        const nextIndex = (currentImageIndex + i) % backgroundImages.length;
+        const nextImage = backgroundImages[nextIndex];
         
-        await new Promise((resolve, reject) => {
-          img.onload = () => {
-            setCurrentImageSrc(fullData); // Remplacer par full une fois chargé
-            log.debug('✅ Image full chargée pour affichage');
-            resolve();
-          };
-          img.onerror = reject;
-        });
-      } catch (error) {
-        log.error('❌ Erreur chargement image actuelle', error);
+        if (nextImage && !imagePreloadedRef.current.has(nextIndex)) {
+          try {
+            const fullData = typeof nextImage === 'object' && nextImage.full
+              ? nextImage.full
+              : nextImage;
+            
+            // Précharger dans cache navigateur
+            const img = new Image();
+            img.src = fullData;
+            
+            await new Promise((resolve) => {
+              img.onload = () => {
+                imagePreloadedRef.current.add(nextIndex);
+                log.debug(`✅ Image ${nextIndex} préchargée dans cache navigateur`);
+                resolve();
+              };
+              img.onerror = () => resolve(); // Ignorer erreurs de préchargement
+            });
+          } catch (error) {
+            // Ignorer erreurs de préchargement
+          }
+        }
       }
     };
 
-    loadCurrentImage();
-
-    // Précharger images adjacentes (pour rotation fluide)
-    if (backgroundImages.length > 1) {
-      preloadAdjacentImages(backgroundImages, currentImageIndex, 2)
-        .then(() => {
-          log.debug('✅ Images adjacentes préchargées');
-        })
-        .catch(error => {
-          log.warn('⚠️ Erreur préchargement images adjacentes', error);
-        });
-    }
+    preloadNextImages();
   }, [currentImageIndex, backgroundImages]);
 
   // Rotation automatique toutes les 2 minutes
@@ -152,10 +253,10 @@ const HomePage = () => {
 
   // Fonction pour naviguer vers un autre onglet avec transition
   const navigateToTab = (tabId) => {
-    setIsTransitioning(true);
+    // Transition fluide sans opacité
     setTimeout(() => {
       setActiveTab(tabId);
-    }, 500);
+    }, 200);
   };
 
   return (
@@ -173,17 +274,41 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Image de fond avec effet de grain */}
-      {backgroundImages.length > 0 && currentImageSrc && (
+      {/* ✅ Phase 7: Double buffering - Layer 0 */}
+      {backgroundImages.length > 0 && layer0Src && (
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            // ✅ Phase 3.6: Utiliser image lazy-loaded (full si disponible, sinon thumbnail)
-            backgroundImage: `url(${currentImageSrc})`,
-            opacity: isTransitioning ? 0.7 : 1,
+            backgroundImage: `url(${layer0Src})`,
+            opacity: layer0Opacity,
             filter: 'contrast(1.1) brightness(0.9)',
-            // Transition fluide pour changement d'image
-            transition: 'opacity 0.5s ease-in-out, filter 0.5s ease-in-out',
+            transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: activeLayer === 0 ? 1 : 0,
+            willChange: 'opacity', // Optimisation GPU
+          }}
+        >
+          {/* Overlay avec effet de grain */}
+          <div 
+            className="absolute inset-0 opacity-30"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`,
+              mixBlendMode: 'overlay'
+            }}
+          />
+        </div>
+      )}
+
+      {/* ✅ Phase 7: Double buffering - Layer 1 */}
+      {backgroundImages.length > 0 && layer1Src && (
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url(${layer1Src})`,
+            opacity: layer1Opacity,
+            filter: 'contrast(1.1) brightness(0.9)',
+            transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: activeLayer === 1 ? 1 : 0,
+            willChange: 'opacity', // Optimisation GPU
           }}
         >
           {/* Overlay avec effet de grain */}
@@ -376,12 +501,6 @@ const HomePage = () => {
         </div>
       </footer>
 
-      {/* Indicateur de transition */}
-      {isTransitioning && (
-        <div className="absolute inset-0 bg-black/10 backdrop-blur-3xl z-50 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-        </div>
-      )}
     </div>
   );
 };
