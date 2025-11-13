@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useGarminData } from '../../hooks/useGarminData';
+import { useNutritionData } from '../../hooks/useNutritionData';
 import { compressGarminExport, decompressGarminExport, isCompressed } from './GarminTab/utils/jsonCompression';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
@@ -24,6 +25,7 @@ import { ENDURANCE_SCHEMA_VERSION } from '../../services/endurance/enduranceData
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
   const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
+  const { exportAll: exportNutritionData } = useNutritionData();
   const [exportStatus, setExportStatus] = useState(null);
   const [importStatus, setImportStatus] = useState(null);
   const [importData, setImportData] = useState('');
@@ -32,6 +34,7 @@ const SettingsTab = () => {
   const [showHomePageSettings, setShowHomePageSettings] = useState(false);
   const [garminExportStatus, setGarminExportStatus] = useState(null);
   const [garminImportStatus, setGarminImportStatus] = useState(null);
+  const [nutritionExportStatus, setNutritionExportStatus] = useState(null);
   const [allDataImportStatus, setAllDataImportStatus] = useState(null);
   const [showAllDataImportPreview, setShowAllDataImportPreview] = useState(false);
   const [allDataPreviewData, setAllDataPreviewData] = useState(null);
@@ -141,6 +144,15 @@ const SettingsTab = () => {
       const currentData = await loadFromDB();
       const dataToExport = currentData || data;
       
+      // ✅ INTÉGRATION NUTRITION : Récupérer les données nutrition
+      let nutritionData = null;
+      try {
+        nutritionData = await exportNutritionData();
+      } catch (nutritionError) {
+        console.warn('⚠️ Erreur récupération données nutrition pour export global:', nutritionError);
+        // Ne pas bloquer l'export si nutrition échoue
+      }
+      
       // Ajouter des métadonnées complètes
       const exportObject = {
         version: '1.0',
@@ -200,11 +212,26 @@ const SettingsTab = () => {
           weekVariant: dataToExport.weekVariant,
           programHistory: (dataToExport.programHistory || []).length,
           
+          // ✅ Données Nutrition (si disponibles)
+          nutritionSummary: nutritionData ? {
+            totalDailyMeals: nutritionData.metadata?.totalDailyMeals || 0,
+            totalMeals: nutritionData.metadata?.totalMeals || 0,
+            totalPrograms: nutritionData.metadata?.totalPrograms || 0,
+            totalFavoriteFoods: nutritionData.metadata?.totalFavoriteFoods || 0,
+            dateRange: nutritionData.metadata?.dateRange || null,
+            activeProgram: nutritionData.programs?.find(p => p.isActive)?.name || null
+          } : null,
+          
           // Statistiques générales
           totalDataPoints: Object.keys(dataToExport).length,
           exportSize: JSON.stringify(dataToExport).length
         }
       };
+      
+      // ✅ Ajouter les données nutrition dans l'export si disponibles
+      if (nutritionData) {
+        exportObject.data.nutritionData = nutritionData;
+      }
 
       // Créer le fichier JSON
       const jsonString = JSON.stringify(exportObject, null, 2);
@@ -226,6 +253,95 @@ const SettingsTab = () => {
     } catch (error) {
       setExportStatus('error');
       setTimeout(() => setExportStatus(null), 3000);
+    }
+  };
+
+  // Fonction pour exporter les données Nutrition
+  const handleExportNutritionData = async () => {
+    try {
+      setNutritionExportStatus('loading');
+      const nutritionData = await exportNutritionData();
+      
+      // Calculer statistiques pour métadonnées
+      const totalMeals = nutritionData.meals?.length || 0;
+      const totalDailyMeals = nutritionData.dailyMeals?.length || 0;
+      const activeProgram = nutritionData.programs?.find(p => p.isActive) || null;
+      
+      // Calculer statistiques détaillées
+      const mealsByType = (nutritionData.meals || []).reduce((acc, meal) => {
+        acc[meal.type] = (acc[meal.type] || 0) + 1;
+        return acc;
+      }, {});
+      
+      const totalCalories = (nutritionData.meals || []).reduce((sum, meal) => 
+        sum + (meal.totalCalories || 0), 0
+      );
+      
+      const dateRange = nutritionData.metadata?.dateRange || null;
+
+      const exportObject = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        exportType: 'Nutrition Data',
+        appName: 'Workout Tracker - Nutrition',
+        data: nutritionData,
+        metadata: {
+          // Compteurs
+          totalDailyMeals: totalDailyMeals,
+          totalMeals: totalMeals,
+          totalPrograms: nutritionData.programs?.length || 0,
+          totalFavoriteFoods: nutritionData.favoriteFoods?.length || 0,
+          
+          // Statistiques détaillées
+          mealsByType: mealsByType,
+          totalCalories: totalCalories,
+          activeProgram: activeProgram ? {
+            id: activeProgram.id,
+            name: activeProgram.name,
+            goal: activeProgram.goal,
+            targetCalories: activeProgram.targetCalories
+          } : null,
+          
+          // Plage de dates
+          dateRange: dateRange,
+          
+          // Champs inclus
+          fieldsIncluded: {
+            dailyMeals: ['date', 'programId', 'isComplete', 'mealIds', 'dailyTotals', 'lastModified'],
+            meals: ['id', 'date', 'type', 'timestamp', 'foods', 'totalCalories', 'totalProtein', 'totalCarbs', 'totalFat', 'notes'],
+            programs: ['id', 'name', 'isActive', 'goal', 'targetCalories', 'targetProtein', 'targetCarbs', 'targetFat', 'startDate'],
+            favoriteFoods: ['id', 'name', 'category', 'isFavorite', 'caloriesPer100', 'proteinPer100', 'carbsPer100', 'fatPer100', 'usageCount']
+          },
+          
+          // Notes
+          notes: {
+            structure: 'Données nutrition exportées depuis IndexedDB (stores séparés)',
+            compatibility: 'Export compatible avec import. Toutes les données sont préservées.',
+            version: 'Version 1.0 - Structure optimisée avec stores séparés'
+          }
+        }
+      };
+
+      // Créer le fichier JSON
+      const jsonString = JSON.stringify(exportObject, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      // Créer le lien de téléchargement
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nutrition-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setNutritionExportStatus('success');
+      setTimeout(() => setNutritionExportStatus(null), 3000);
+    } catch (error) {
+      console.error('❌ Erreur export Nutrition:', error);
+      setNutritionExportStatus('error');
+      setTimeout(() => setNutritionExportStatus(null), 3000);
     }
   };
 
@@ -1330,6 +1446,15 @@ const SettingsTab = () => {
               >
                 {garminExportStatus === 'loading' ? 'Export en cours...' : 'Export Garmin'}
               </Button>
+              
+              <Button
+                onClick={handleExportNutritionData}
+                disabled={nutritionExportStatus === 'loading'}
+                icon={Download}
+                className="w-full bg-orange-600 hover:bg-orange-700"
+              >
+                {nutritionExportStatus === 'loading' ? 'Export en cours...' : 'Export Nutrition'}
+              </Button>
             </div>
 
             {exportStatus === 'success' && (
@@ -1357,6 +1482,20 @@ const SettingsTab = () => {
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
                 Erreur lors de l'export Garmin. Veuillez réessayer.
+              </div>
+            )}
+
+            {nutritionExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Export Nutrition réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
+
+            {nutritionExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'export Nutrition. Veuillez réessayer.
               </div>
             )}
           </div>

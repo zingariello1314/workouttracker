@@ -18,6 +18,7 @@ import SettingsTab from './components/tabs/SettingsTab';
 import PredictionsTab from './components/PredictionsTab';
 import SmartBalancingTab from './components/SmartBalancingTab';
 import GarminTab from './components/tabs/GarminTab';
+import NutritionTab from './components/tabs/NutritionTab';
 import ExerciseVariations from './components/ExerciseVariations/ExerciseVariations';
 import AdvancedStats from './components/AdvancedStats';
 import SessionFeedback from './components/SessionFeedback';
@@ -79,6 +80,8 @@ const WorkoutTrackerContent = () => {
         return <CalendarTab />;
       case 'program':
         return <ProgramTab />;
+      case 'nutrition':
+        return <NutritionTab />;
       case 'charts':
         return <ChartsTab />;
       case 'stats':
@@ -106,7 +109,7 @@ const WorkoutTrackerContent = () => {
         {activeTab !== 'home' && <Header />}
         {activeTab !== 'home' && <Navigation />}
         
-        <main className="flex-1 overflow-y-auto">
+        <main className={`flex-1 ${activeTab === 'home' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           {activeTab === 'home' ? (
             <HomePage />
           ) : (

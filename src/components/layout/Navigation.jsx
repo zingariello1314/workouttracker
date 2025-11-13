@@ -12,6 +12,7 @@ const Navigation = () => {
     { id: 'endurance', label: 'Endurance', icon: '🏃' },
     { id: 'calendar', label: 'Calendrier', icon: '🗓️' },
     { id: 'program', label: 'Programme', icon: '🎯' },
+    { id: 'nutrition', label: 'Nutrition', icon: '🥗' },
     { id: 'charts', label: 'Graphiques', icon: '📊' },
     { id: 'stats', label: 'Statistiques', icon: '📈' },
     { id: 'exercises', label: 'Exercices', icon: '💪' },

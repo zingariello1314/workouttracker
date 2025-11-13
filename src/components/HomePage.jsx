@@ -21,6 +21,11 @@ const HomePage = () => {
   const [layer0Loaded, setLayer0Loaded] = useState(false);
   const [layer1Loaded, setLayer1Loaded] = useState(false);
   
+  // ✅ Chargement initial : État pour savoir si l'image initiale est chargée
+  const [isInitialImageLoaded, setIsInitialImageLoaded] = useState(false);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
+  const initialImageLoadedRef = useRef(false); // Ref pour suivre si l'image initiale a été marquée comme chargée
+  
   const imagePreloadedRef = useRef(new Set()); // Images déjà préchargées
   const loadingImageRef = useRef(null); // Référence image en cours de chargement
 
@@ -77,7 +82,8 @@ const HomePage = () => {
   }, []);
 
   // ✅ Phase 7: Charger une image dans un layer spécifique
-  const loadImageIntoLayer = async (imageData, layerIndex, useThumbnailFirst = true) => {
+  // ✅ Chargement initial : Support pour marquer l'image initiale comme chargée
+  const loadImageIntoLayer = async (imageData, layerIndex, useThumbnailFirst = true, isInitialLoad = false) => {
     if (!imageData) return null;
     
     try {
@@ -96,9 +102,33 @@ const HomePage = () => {
         if (layerIndex === 0) {
           setLayer0Src(thumbnail);
           setLayer0Loaded(false);
+          // ✅ Chargement initial : Si c'est le chargement initial, marquer comme chargé dès que thumbnail est visible
+          if (isInitialLoad && !initialImageLoadedRef.current) {
+            initialImageLoadedRef.current = true;
+            setIsInitialImageLoaded(true);
+            // Masquer l'écran de chargement avec un léger délai pour transition fluide
+            setTimeout(() => {
+              setShowLoadingScreen(false);
+            }, 300);
+          }
         } else {
           setLayer1Src(thumbnail);
           setLayer1Loaded(false);
+        }
+      } else if (!useThumbnailFirst || !thumbnail) {
+        // Si pas de thumbnail, attendre le chargement complet
+        // Mais pour le chargement initial, on peut marquer comme chargé dès que l'image commence à se charger
+        if (isInitialLoad && layerIndex === 0 && !initialImageLoadedRef.current) {
+          // Attendre un court instant pour que l'image commence à se charger
+          setTimeout(() => {
+            if (!initialImageLoadedRef.current) {
+              initialImageLoadedRef.current = true;
+              setIsInitialImageLoaded(true);
+              setTimeout(() => {
+                setShowLoadingScreen(false);
+              }, 300);
+            }
+          }, 100);
         }
       }
       
@@ -112,6 +142,14 @@ const HomePage = () => {
           if (layerIndex === 0) {
             setLayer0Src(fullData);
             setLayer0Loaded(true);
+            // ✅ Chargement initial : Si c'est le chargement initial et pas encore marqué, le marquer maintenant
+            if (isInitialLoad && !initialImageLoadedRef.current) {
+              initialImageLoadedRef.current = true;
+              setIsInitialImageLoaded(true);
+              setTimeout(() => {
+                setShowLoadingScreen(false);
+              }, 300);
+            }
           } else {
             setLayer1Src(fullData);
             setLayer1Loaded(true);
@@ -127,6 +165,14 @@ const HomePage = () => {
             if (layerIndex === 0) {
               setLayer0Src(thumbnail);
               setLayer0Loaded(true); // Considérer comme chargé même si c'est thumbnail
+              // ✅ Chargement initial : Marquer comme chargé même en cas d'erreur
+              if (isInitialLoad && !initialImageLoadedRef.current) {
+                initialImageLoadedRef.current = true;
+                setIsInitialImageLoaded(true);
+                setTimeout(() => {
+                  setShowLoadingScreen(false);
+                }, 300);
+              }
             } else {
               setLayer1Src(thumbnail);
               setLayer1Loaded(true);
@@ -137,6 +183,14 @@ const HomePage = () => {
       });
     } catch (error) {
       log.error('❌ Erreur chargement image', error);
+      // ✅ Chargement initial : En cas d'erreur, masquer quand même l'écran de chargement
+      if (isInitialLoad && layerIndex === 0 && !initialImageLoadedRef.current) {
+        initialImageLoadedRef.current = true;
+        setIsInitialImageLoaded(true);
+        setTimeout(() => {
+          setShowLoadingScreen(false);
+        }, 300);
+      }
       return null;
     }
   };
@@ -175,22 +229,49 @@ const HomePage = () => {
   };
 
   // ✅ Phase 7: Charger image actuelle dans layer 0 (au montage et quand images changent)
+  // ✅ Chargement initial : Détecter si c'est le premier chargement
+  const isFirstLoadRef = useRef(true);
+  
   useEffect(() => {
     if (!backgroundImages || backgroundImages.length === 0) {
       setLayer0Src(null);
       setLayer1Src(null);
       setLayer0Loaded(false);
       setLayer1Loaded(false);
+      // ✅ Chargement initial : Si pas d'images, masquer l'écran de chargement
+      if (isFirstLoadRef.current) {
+        initialImageLoadedRef.current = true;
+        setIsInitialImageLoaded(true);
+        setTimeout(() => {
+          setShowLoadingScreen(false);
+        }, 300);
+        isFirstLoadRef.current = false;
+      }
       return;
     }
 
     const currentImage = backgroundImages[currentImageIndex];
-    if (!currentImage) return;
+    if (!currentImage) {
+      // ✅ Chargement initial : Si pas d'image actuelle, masquer l'écran de chargement
+      if (isFirstLoadRef.current) {
+        initialImageLoadedRef.current = true;
+        setIsInitialImageLoaded(true);
+        setTimeout(() => {
+          setShowLoadingScreen(false);
+        }, 300);
+        isFirstLoadRef.current = false;
+      }
+      return;
+    }
 
     // Charger image actuelle dans layer 0 (layer actif) au montage initial
     // Note: Les changements d'image sont gérés par changeBackgroundImage()
     if (!layer0Src) {
-      loadImageIntoLayer(currentImage, 0, true);
+      const isInitialLoad = isFirstLoadRef.current;
+      loadImageIntoLayer(currentImage, 0, true, isInitialLoad);
+      if (isInitialLoad) {
+        isFirstLoadRef.current = false;
+      }
     }
   }, [backgroundImages]); // Se déclenche quand images changent (montage initial)
 
@@ -259,17 +340,58 @@ const HomePage = () => {
     }, 200);
   };
 
+  // ✅ Masquer la scrollbar sur la page d'accueil
+  useEffect(() => {
+    // Ajouter une classe au body pour masquer la scrollbar
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      // Restaurer le scroll au démontage
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  // ✅ Chargement initial : Déterminer si on doit afficher l'écran de chargement
+  const shouldShowLoading = isLoading || showLoadingScreen;
+
   return (
     <div 
-      className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-900/20 via-slate-800/10 to-slate-900/20"
+      className="relative h-screen overflow-hidden bg-gradient-to-br from-slate-900/20 via-slate-800/10 to-slate-900/20"
       onClick={handleInteraction}
     >
-      {/* Indicateur de chargement */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-3xl z-50 flex items-center justify-center">
-          <div className="text-white text-center">
-            <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-            <p>Chargement des images...</p>
+      {/* ✅ Chargement initial : Écran de chargement élégant et professionnel */}
+      {shouldShowLoading && (
+        <div 
+          className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-[100] flex items-center justify-center transition-opacity duration-500"
+          style={{
+            opacity: shouldShowLoading ? 1 : 0,
+            pointerEvents: shouldShowLoading ? 'auto' : 'none',
+          }}
+        >
+          <div className="text-center">
+            {/* Logo */}
+            <div className="mb-8 flex justify-center">
+              <img 
+                src="/logo.png" 
+                alt="Momentum Logo" 
+                className="w-32 h-32 rounded-3xl opacity-95 drop-shadow-2xl animate-pulse"
+              />
+            </div>
+            
+            {/* Spinner moderne */}
+            <div className="relative w-16 h-16 mx-auto mb-6">
+              <div className="absolute inset-0 border-4 border-white/10 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-white rounded-full animate-spin"></div>
+              <div className="absolute inset-2 border-4 border-transparent border-r-white/50 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            </div>
+            
+            {/* Texte de chargement */}
+            <p className="text-white text-lg font-medium mb-2" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+              Chargement de Momentum
+            </p>
+            <p className="text-white/70 text-sm" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
+              Préparation de votre expérience...
+            </p>
           </div>
         </div>
       )}
@@ -322,6 +444,9 @@ const HomePage = () => {
         </div>
       )}
 
+      {/* ✅ Chargement initial : Masquer le contenu principal pendant le chargement */}
+      {!shouldShowLoading && (
+        <>
       {/* Header */}
       <header className="relative z-10 flex justify-between items-center p-8">
         {/* Logo et informations */}
@@ -354,6 +479,12 @@ const HomePage = () => {
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               Programme
+            </button>
+            <button 
+              onClick={() => navigateToTab('nutrition')}
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+            >
+              Nutrition
             </button>
             <button 
               onClick={() => navigateToTab('exercises')}
@@ -500,6 +631,8 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
+      </>
+      )}
 
     </div>
   );
