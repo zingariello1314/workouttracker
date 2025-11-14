@@ -312,7 +312,8 @@ const SettingsTab = () => {
             meals: ['id', 'date', 'type', 'timestamp', 'foods', 'totalCalories', 'totalProtein', 'totalCarbs', 'totalFat', 'notes'],
             programs: ['id', 'name', 'isActive', 'goal', 'targetCalories', 'targetProtein', 'targetCarbs', 'targetFat', 'startDate'],
             favoriteFoods: ['id', 'name', 'category', 'isFavorite', 'caloriesPer100', 'proteinPer100', 'carbsPer100', 'fatPer100', 'usageCount'],
-            hydrationLogs: ['date', 'waterIntake', 'targetWater', 'entries', 'notes', 'lastModified']
+            hydrationLogs: ['date', 'waterIntake', 'targetWater', 'entries', 'notes', 'lastModified'],
+            progressPhotos: ['id', 'type', 'date', 'sequenceId', 'timestamp', 'thumbnail', 'format', 'metadata']
           },
           
           // Notes
@@ -326,7 +327,7 @@ const SettingsTab = () => {
 
       // Compression optionnelle (comme Garmin)
       const compressedExport = useCompression 
-        ? compressNutritionExport(exportObject, {
+        ? await compressNutritionExport(exportObject, {
             level: 6, // Bon compromis vitesse/taille
             force: false // Compression automatique si > 1KB
           })
@@ -355,7 +356,7 @@ const SettingsTab = () => {
 
       // Log compression stats si compressé
       if (compressedExport.compressed) {
-        console.log(`[Settings] Export Nutrition compressé: ${compressedExport.originalSize} → ${compressedExport.compressedSize} bytes (${compressedExport.savings.toFixed(1)}% économisés)`);
+        console.log(`[Settings] Export Nutrition compressé: ${compressedExport.originalSize} → ${compressedExport.compressedSize} bytes (${compressedExport.savings.toFixed(1)}% économisés) - Méthode: ${compressedExport.method || 'pako'}`);
       }
 
       setNutritionExportStatus('success');

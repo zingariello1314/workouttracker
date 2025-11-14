@@ -1,11 +1,11 @@
 # 📋 Ce qui reste à faire - Onglet Nutrition
 
 **Date** : 2025-01-15  
-**Statut global** : 🟡 ~85% complété
+**Statut global** : ✅ ~95% complété (MVP complet + features avancées)
 
 ---
 
-## ✅ CE QUI EST FAIT (Phases 0-6)
+## ✅ CE QUI EST FAIT (Phases 0-18)
 
 - ✅ **Phase 0** : Setup & Navigation (100%)
 - ✅ **Phase 1** : Structure IndexedDB (100%)
@@ -14,123 +14,77 @@
 - ✅ **Phase 4** : Intégrations API (100%)
 - ✅ **Phase 5** : IA & Analyses (100%)
 - ✅ **Phase 6** : Export/Import (100%)
+- ✅ **Phase 7** : Gamification (100%) - Badges, XP, Streaks
+- ✅ **Phase 8** : Scan Code-Barres (100%) - Quagga2, Modal, Fallback
+- ✅ **Phase 9** : Compression Données (100%) - pako, Export
+- ✅ **Phase 10** : Suivi Hydratation (100%) - CRUD, UI, Export
+- ✅ **Phase 11** : Service Worker Offline (100%) - Cache API
+- ✅ **Phase 12** : Chronobiologie (100%) - Timing Optimal
+- ✅ **Phase 13** : Score Santé Globale (100%) - Service, Hook, UI
+- ✅ **Phase 14** : Compression Avancée (100%) - CompressionStream API
+- ✅ **Phase 15** : Thème Dynamique (100%) - Selon Performance
+- ✅ **Phase 16** : Partage avec Coach (100%) - Liens sécurisés, QR codes
+- ✅ **Phase 17** : Coach Dashboard (100%) - Vue lecture seule
+- ✅ **Phase 18** : Photos de Progression (100%) - Avant/Après, Slider
+- ✅ **Phase 19** : Saisie Vocale (100%) - Web Speech API, Parsing, Recherche
+- ✅ **Phase 20** : Reconnaissance Photo Aliments (100%) - TensorFlow.js MobileNet, Détection, Enrichissement
 
 ---
 
-## 🔴 CE QUI RESTE À FAIRE
+## 🔴 CE QUI RESTE À FAIRE (Features Optionnelles)
 
-### **1. GAMIFICATION (Phase 2 - Priorité Moyenne)**
+### **1. Prédictions Offline (TensorFlow.js) - Priorité Basse**
 
-**Statut** : ❌ Non commencé
+**Statut** : ❌ Non implémenté (optionnel, complexe)
 
 **À implémenter** :
-- [ ] Système badges (structure IndexedDB)
-  - Badges consistance (7j, 30j, 100j streaks)
-  - Badges performance nutrition (protéines, conformité, etc.)
-  - Badges variété alimentaire
-- [ ] Système XP & Niveaux
-  - Points XP selon actions (repas saisi, jour complet, etc.)
-  - Formule niveaux (exponentielle)
-  - Notifications level up
-- [ ] Système Streaks avec Forgiveness
-  - Calcul streaks avec 2 jours tolérés
-  - Limite affichage à 30j (anti-anxiété)
-  - Badges progression vs perfectionnisme
-- [ ] Option désactiver gamification (Settings)
-
-**Fichiers à créer** :
-- `src/services/nutrition/nutritionGamification.js`
-- `src/hooks/useNutritionGamification.js`
-- `src/components/tabs/nutrition/components/NutritionGamification.jsx`
-- Extension IndexedDB : store `gamification` (si pas déjà fait)
-
-**Estimation** : 2-3 jours
-
----
-
-### **2. SCAN CODE-BARRES (Phase 1 - Priorité Moyenne)**
-
-**Statut** : ❌ Non commencé
-
-**À implémenter** :
-- [ ] Intégration Quagga2 (`@ericblade/quagga2`)
-- [ ] Composant scan avec caméra
-- [ ] Timeout 10 secondes
-- [ ] Fallback saisie manuelle
-- [ ] Intégration dans `FoodSearch.jsx` ou `MealEntryForm.jsx`
-
-**Fichiers à créer/modifier** :
-- `src/services/nutrition/barcodeScanner.js`
-- `src/components/tabs/nutrition/components/BarcodeScanner.jsx`
-- Modifier `FoodSearch.jsx` pour ajouter bouton scan
-
-**Estimation** : 1-2 jours
-
----
-
-### **3. COMPRESSION DONNÉES (Phase 1 - Priorité Basse)**
-
-**Statut** : ❌ Non commencé
-
-**À implémenter** :
-- [ ] Compression JSON avec `fflate` (70-90% réduction)
-- [ ] Compression photos (WebP avec qualité réduite)
-- [ ] Auto-compression lors sauvegarde IndexedDB
-- [ ] Décompression lors chargement
-
-**Fichiers à créer** :
-- `src/utils/compression.js` (ou intégrer dans `nutritionDataUtils.js`)
-
-**Estimation** : 1 jour
-
----
-
-### **4. PHASE 3 - FEATURES OPTIONNELLES (Priorité Basse)**
-
-**Statut** : ❌ Non commencé (optionnel)
-
-#### **4.1 Saisie Vocale (Web Speech API)**
 - [ ] Détection voix pour saisie aliments
 - [ ] Parsing intelligent (Regex ou TensorFlow.js NLP)
 - [ ] Intégration dans `MealEntryForm.jsx`
-- **Estimation** : 1-2 jours
+- [ ] Support navigateurs (Chrome, Edge, Safari)
+- [ ] Fallback saisie manuelle si non supporté
 
-#### **4.2 Scan Photo (TensorFlow.js MobileNet)**
+**Fichiers à créer/modifier** :
+- `src/services/nutrition/voiceInput.js`
+- `src/components/tabs/nutrition/components/VoiceInput.jsx`
+- Modifier `MealEntryForm.jsx` pour ajouter bouton micro
+
+
+**À implémenter** :
 - [ ] Chargement modèle MobileNet (quantifié, ~4-6MB)
-- [ ] Détection aliments depuis photo
-- [ ] Estimation calories/macros
+- [ ] Détection aliments depuis photo d'assiette
+- [ ] Estimation calories/macros automatique
 - [ ] Intégration dans `MealEntryForm.jsx`
-- **Estimation** : 2-3 jours
+- [ ] Lazy loading du modèle (chargement à la demande)
+- [ ] Cache du modèle pour éviter rechargement
 
-#### **4.3 Chronobiologie (Timing Optimal)**
-- [ ] Analyse timing repas vs performance
-- [ ] Recommandations timing optimal
-- [ ] Graphiques chronobiologie
-- **Estimation** : 1-2 jours
+**Fichiers à créer/modifier** :
+- `src/services/nutrition/foodRecognition.js`
+- `src/components/tabs/nutrition/components/FoodPhotoScanner.jsx`
+- Modifier `MealEntryForm.jsx` pour ajouter bouton photo
 
-#### **4.4 Score Santé Globale**
-- [ ] Calcul score composite (nutrition + workout + récupération)
-- [ ] Widget Home avec score
-- [ ] Graphiques évolution score
-- **Estimation** : 1-2 jours
+**Estimation** : 2-3 jours
 
-#### **4.5 Fonctionnalités Sociales**
-- [ ] Partage avec coach (liens sécurisés)
-- [ ] Comparaison photos avant/après
-- **Estimation** : 2-3 jours
+**Note** : Feature optionnelle, complexité moyenne. Modèle MobileNet ~4-6MB (après quantization). Alternative : COCO-SSD pour détection multiple aliments (+complexe).
 
-#### **4.6 Prédictions Offline (TensorFlow.js)**
-- [ ] Entraînement modèle ML local
-- [ ] Prédictions poids, calories optimales
-- **Estimation** : 3-5 jours (complexe)
+---
 
-#### **4.7 Compression Avancée (Brotli)**
-- [ ] Compression Brotli pour exports
-- **Estimation** : 0.5 jour
 
-#### **4.8 Thème Dynamique**
-- [ ] Thème adaptatif selon état utilisateur
-- **Estimation** : 1 jour
+**À implémenter** :
+- [ ] Entraînement modèle ML local (régression linéaire/polynomiale)
+- [ ] Prédictions poids futur (basé sur historique)
+- [ ] Prédictions calories optimales (basé sur objectif)
+- [ ] Prédictions temps objectif (basé sur progression)
+- [ ] Intégration dans `NutritionAnalyses.jsx`
+
+**Fichiers à créer/modifier** :
+- `src/services/nutrition/predictions.js`
+- `src/components/tabs/nutrition/components/NutritionPredictions.jsx`
+- Modifier `NutritionAnalyses.jsx` pour ajouter section prédictions
+
+**Estimation** : 3-5 jours (complexe)
+
+**Note** : Feature optionnelle, complexité élevée. Nécessite entraînement modèle local, validation, tests. Pas essentiel pour MVP.
 
 ---
 
@@ -142,48 +96,49 @@
 3. ✅ Intégrations API - **FAIT**
 4. ✅ Système expert - **FAIT**
 5. ✅ Analyses & Corrélations - **FAIT**
+6. ✅ Gamification - **FAIT**
+7. ✅ Scan code-barres - **FAIT**
+8. ✅ Compression données - **FAIT**
+9. ✅ Suivi hydratation - **FAIT**
+10. ✅ Partage avec coach - **FAIT**
+11. ✅ Photos de progression - **FAIT**
+
+**✅ MVP COMPLET : 100%**
 
 ### **🟡 PRIORITÉ MOYENNE (Améliorer Expérience)**
-1. ❌ **Gamification** (badges, XP, streaks) - **2-3 jours**
-2. ❌ **Scan code-barres** (Quagga2) - **1-2 jours**
-3. ❌ **Compression données** (fflate) - **1 jour**
-
-**Total Priorité Moyenne** : ~4-6 jours
+**✅ TOUT FAIT** - Aucune feature priorité moyenne restante
 
 ### **🟢 PRIORITÉ BASSE (Nice to Have)**
-1. ❌ Saisie vocale - **1-2 jours**
-2. ❌ Scan photo - **2-3 jours**
-3. ❌ Chronobiologie - **1-2 jours**
-4. ❌ Score santé globale - **1-2 jours**
-5. ❌ Fonctionnalités sociales - **2-3 jours**
-6. ❌ Prédictions offline - **3-5 jours**
-7. ❌ Compression Brotli - **0.5 jour**
-8. ❌ Thème dynamique - **1 jour**
+1. ❌ **Prédictions offline** (TensorFlow.js) - **3-5 jours** - Optionnel, complexe
 
-**Total Priorité Basse** : ~12-19 jours
+**Total Priorité Basse** : ~3-5 jours (features optionnelles uniquement)
 
 ---
 
 ## 🎯 RECOMMANDATION
 
-**Pour MVP Complet** :
+**État actuel** :
 - ✅ **Core fonctionnel** : 100% complété
-- 🟡 **Améliorer expérience** : Implémenter Gamification + Scan code-barres (~4-5 jours)
-- 🟢 **Polish** : Features optionnelles selon besoins utilisateur
+- ✅ **Features avancées** : 100% complété (Gamification, Scan, Compression, Hydratation, Chronobiologie, Score Santé, Thème Dynamique, Partage, Photos)
+- ✅ **MVP COMPLET** : Toutes les fonctionnalités essentielles sont implémentées
+
+**Features optionnelles restantes** :
+- 🟢 **Prédictions offline** : Feature avancée, complexité élevée (3-5 jours)
 
 **Prochaines étapes suggérées** :
-1. **Gamification** (2-3 jours) - Améliore engagement
-2. **Scan code-barres** (1-2 jours) - Améliore UX saisie
-3. **Compression** (1 jour) - Optimise performance stockage
-
-**Total pour MVP complet** : ~4-6 jours supplémentaires
+1. **Aucune action urgente** - MVP complet et fonctionnel
+2. **Features optionnelles** : Implémenter selon demande/utilisateurs
+3. **Améliorations continue** : Optimisations, bugs, retours utilisateurs
 
 ---
 
 ## 📝 NOTES
 
-- **Toutes les fonctionnalités critiques sont implémentées**
-- **L'onglet Nutrition est fonctionnel et utilisable**
-- **Les features restantes sont des améliorations/optimisations**
-- **Phase 3 features sont optionnelles et peuvent être reportées**
+- **✅ Toutes les fonctionnalités critiques sont implémentées**
+- **✅ L'onglet Nutrition est complet et utilisable**
+- **✅ Les features restantes sont des améliorations optionnelles**
+- **✅ Features optionnelles peuvent être implémentées selon besoins/utilisateurs**
 
+---
+
+**Dernière mise à jour** : 2025-01-15 (Phase 20 complétée - MVP 100% complet + Saisie Vocale + Reconnaissance Photo)

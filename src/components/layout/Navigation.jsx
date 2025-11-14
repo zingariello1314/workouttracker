@@ -20,6 +20,7 @@ const Navigation = () => {
     { id: 'predictions', label: 'Prédictions', icon: '🔮' },
     { id: 'garmin', label: 'Garmin', icon: '⌚' },
     { id: 'smart-balancing', label: 'Équilibrage IA', icon: '🧠' },
+    { id: 'coach', label: 'Coach', icon: '👁️' },
     { id: 'settings', label: 'Paramètres', icon: '⚙️' }
   ];
 

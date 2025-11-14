@@ -51,6 +51,7 @@ import {
   deleteHydrationLog
 } from './nutritionDataCRUD';
 import { getGamificationData } from '../services/nutrition/nutritionGamification';
+import { exportProgressPhotos } from '../services/nutrition/nutritionProgressPhotos';
 import {
   calculateDailyTotals,
   calculateCaloricBalance,
@@ -86,27 +87,81 @@ import {
  *   const daily = await getDailyMeal('2025-01-15');
  * }
  */
+// ✅ SOLUTION 3 : Singleton pattern avec garde-fou React StrictMode
+let globalDBReadyPromise = null;
+let globalDBReady = false;
+
+/**
+ * Initialise la DB globalement (une seule fois, même avec React StrictMode)
+ */
+const ensureGlobalDBReady = async () => {
+  // Si déjà initialisé, retourner promesse résolue
+  if (globalDBReadyPromise && globalDBReady) {
+    return globalDBReadyPromise;
+  }
+  
+  // Si initialisation en cours, retourner promesse existante
+  if (globalDBReadyPromise) {
+    return globalDBReadyPromise;
+  }
+  
+  // Créer nouvelle promesse d'initialisation globale
+  globalDBReadyPromise = (async () => {
+    try {
+      const db = await openNutritionDB();
+      if (db) {
+        globalDBReady = true;
+        // ✅ Log unique global (une seule fois)
+        console.log('[useNutritionData] IndexedDB initialisée globalement (singleton) - Version:', db.version);
+      } else {
+        globalDBReady = false;
+        console.warn('[useNutritionData] IndexedDB non disponible');
+      }
+      return db;
+    } catch (error) {
+      console.error('[useNutritionData] Erreur initialisation DB globale:', error);
+      globalDBReady = false;
+      globalDBReadyPromise = null; // Réinitialiser en cas d'erreur pour retry
+      throw error;
+    }
+  })();
+  
+  return globalDBReadyPromise;
+};
+
 export const useNutritionData = () => {
   const [dbReady, setDbReady] = useState(false);
   const debounceTimerRef = useRef(null);
+  const initializedRef = useRef(false); // ✅ Garde-fou React StrictMode
 
-  // Initialisation IndexedDB
+  // Initialisation IndexedDB (singleton global)
   useEffect(() => {
-    openNutritionDB()
+    // ✅ Éviter double appel React StrictMode
+    if (initializedRef.current) {
+      return;
+    }
+    initializedRef.current = true;
+    
+    ensureGlobalDBReady()
       .then((db) => {
         if (db) {
           setDbReady(true);
-          console.log('[useNutritionData] IndexedDB initialisée');
+          // ✅ Pas de log ici (déjà logué dans ensureGlobalDBReady pour éviter duplication)
         } else {
-          console.warn('[useNutritionData] IndexedDB non disponible');
           setDbReady(false);
         }
       })
       .catch((err) => {
         console.error('[useNutritionData] Erreur initialisation DB:', err);
         setDbReady(false);
+        initializedRef.current = false; // Réinitialiser en cas d'erreur pour retry
       });
-  }, []);
+    
+    // Cleanup : ne pas fermer DB (singleton partagé)
+    return () => {
+      // Pas de cleanup nécessaire (DB est un singleton)
+    };
+  }, []); // ✅ Dépendances vides = exécuté une seule fois par composant
 
   // ==================== DAILY MEALS ====================
 
@@ -388,6 +443,7 @@ export const useNutritionData = () => {
         favoriteFoods: [],
         gamification: { achievements: [], experience: { currentXP: 0, level: 1 }, streaks: {} },
         hydrationLogs: [],
+        progressPhotos: { version: '1.0', exportDate: new Date().toISOString(), totalPhotos: 0, photos: [] },
         exportDate: new Date().toISOString(),
         version: '1.0'
       };
@@ -395,7 +451,7 @@ export const useNutritionData = () => {
 
     try {
       // Charger toutes les données en parallèle
-      const [dailyMeals, allMeals, programs, favoriteFoods, gamification, hydrationLogs] = await Promise.all([
+      const [dailyMeals, allMeals, programs, favoriteFoods, gamification, hydrationLogs, progressPhotos] = await Promise.all([
         // Récupérer tous les dailyMeals (plage large)
         getDailyMealsByRange('2020-01-01', '2099-12-31'),
         // Récupérer tous les meals directement
@@ -411,6 +467,11 @@ export const useNutritionData = () => {
         getHydrationLogByRange('2020-01-01', '2099-12-31').catch(err => {
           console.warn('[useNutritionData] Erreur récupération hydratation:', err);
           return [];
+        }),
+        // Récupérer photos de progression
+        exportProgressPhotos().catch(err => {
+          console.warn('[useNutritionData] Erreur récupération photos progression:', err);
+          return { version: '1.0', exportDate: new Date().toISOString(), totalPhotos: 0, photos: [] };
         })
       ]);
 
@@ -421,19 +482,21 @@ export const useNutritionData = () => {
         favoriteFoods,
         gamification,
         hydrationLogs,
+        progressPhotos, // Photos de progression avant/après
         exportDate: new Date().toISOString(),
         version: '1.0',
         metadata: {
           totalDailyMeals: dailyMeals.length,
           totalMeals: allMeals.length,
-        totalPrograms: programs.length,
-        totalFavoriteFoods: favoriteFoods.length,
-        totalAchievements: gamification.achievements?.length || 0,
-        totalHydrationLogs: hydrationLogs?.length || 0,
-        dateRange: dailyMeals.length > 0 ? {
-          earliest: dailyMeals.map(dm => dm.date).sort()[0],
-          latest: dailyMeals.map(dm => dm.date).sort().reverse()[0]
-        } : null
+          totalPrograms: programs.length,
+          totalFavoriteFoods: favoriteFoods.length,
+          totalAchievements: gamification.achievements?.length || 0,
+          totalHydrationLogs: hydrationLogs?.length || 0,
+          totalProgressPhotos: progressPhotos?.totalPhotos || 0,
+          dateRange: dailyMeals.length > 0 ? {
+            earliest: dailyMeals.map(dm => dm.date).sort()[0],
+            latest: dailyMeals.map(dm => dm.date).sort().reverse()[0]
+          } : null
         }
       };
     } catch (error) {
@@ -445,6 +508,7 @@ export const useNutritionData = () => {
         favoriteFoods: [],
         gamification: { achievements: [], experience: { currentXP: 0, level: 1 }, streaks: {} },
         hydrationLogs: [],
+        progressPhotos: { version: '1.0', exportDate: new Date().toISOString(), totalPhotos: 0, photos: [] },
         exportDate: new Date().toISOString(),
         version: '1.0',
         error: error.message

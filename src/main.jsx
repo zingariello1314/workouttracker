@@ -37,6 +37,19 @@ if (typeof window !== 'undefined') {
       return false;
     }
     
+    // ✅ OPTIMISATION : Filtrer warnings TensorFlow.js WebGL (non-bloquants)
+    // Ces warnings sont normaux : TensorFlow.js essaie WebGL, échoue, puis utilise CPU
+    if (errorSource.includes('@tensorflow') || errorSource.includes('tensorflow')) {
+      if (errorMessage.includes('Could not get context for WebGL') ||
+          errorMessage.includes('WebGL is not supported') ||
+          errorMessage.includes('Initialization of backend webgl failed') ||
+          errorMessage.includes('Platform browser has already been set')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    }
+    
     // ✅ PHASE 1.7 : Filtrer erreurs WASM MediaPipe non-bloquantes
     // ErrnoError: No such file or directory (errno: 44) - MediaPipe essaie fichiers locaux inexistants
     // RuntimeError: Aborted - MediaPipe s'arrête mais peut continuer
@@ -75,9 +88,16 @@ if (typeof window !== 'undefined') {
   }, true); // Capture phase pour intercepter avant propagation
 
   // ✅ PHASE 1.7 : Intercepter rejections de promesses (pour RuntimeError: Aborted WASM)
+  // ✅ OPTIMISATION : Filtrer aussi rejections TensorFlow.js WebGL
   window.addEventListener('unhandledrejection', (event) => {
     const errorMessage = event.reason?.message || event.reason?.toString() || '';
     const errorName = event.reason?.name || '';
+    
+    // ✅ OPTIMISATION : Filtrer rejections TensorFlow.js WebGL (non-bloquantes)
+    if (errorName === 'Error' && errorMessage.includes('WebGL is not supported')) {
+      event.preventDefault();
+      return false;
+    }
     const errorStack = event.reason?.stack || '';
     
     // Filtrer erreur MediaPipe Module.arguments dans les promesses

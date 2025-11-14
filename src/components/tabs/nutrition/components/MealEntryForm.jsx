@@ -14,9 +14,14 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../../ui/Modal';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
-import { X, Plus, Trash2, Save, Search } from 'lucide-react';
+import { X, Plus, Trash2, Save, Search, Mic, Camera } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
 import FoodSearch from './FoodSearch';
+import VoiceInput from './VoiceInput';
+import FoodPhotoScanner from './FoodPhotoScanner';
+import logger from '../../../../utils/logger';
+
+const log = logger.module('MealEntryForm');
 
 const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }) => {
   const [mealType, setMealType] = useState('breakfast');
@@ -69,6 +74,30 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
   const handleFoodSelected = (foodData) => {
     setFoods([...foods, foodData]);
     setShowFoodSearch(false);
+  };
+
+  // Ajouter des aliments depuis la saisie vocale
+  const handleVoiceFoodsSelected = (voiceFoods) => {
+    if (!Array.isArray(voiceFoods) || voiceFoods.length === 0) {
+      return;
+    }
+
+    // Ajouter tous les aliments trouvés
+    setFoods([...foods, ...voiceFoods]);
+    
+    log.debug('[MealEntryForm] Aliments ajoutés depuis voix', { count: voiceFoods.length });
+  };
+
+  // Ajouter des aliments depuis la reconnaissance photo
+  const handlePhotoFoodsSelected = (photoFoods) => {
+    if (!Array.isArray(photoFoods) || photoFoods.length === 0) {
+      return;
+    }
+
+    // Ajouter tous les aliments détectés
+    setFoods([...foods, ...photoFoods]);
+    
+    log.debug('[MealEntryForm] Aliments ajoutés depuis photo', { count: photoFoods.length });
   };
 
   // Supprimer un aliment
@@ -223,6 +252,18 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
                 <Search size={16} className="mr-2" />
                 Rechercher
               </Button>
+              <VoiceInput
+                onFoodsSelected={handleVoiceFoodsSelected}
+                autoSearch={true}
+                lang="fr-FR"
+                variant="button"
+              />
+              <FoodPhotoScanner
+                onFoodsSelected={handlePhotoFoodsSelected}
+                autoEnrich={true}
+                minConfidence={0.3}
+                variant="button"
+              />
               <Button
                 type="button"
                 variant="outline"
@@ -237,17 +278,40 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
           </div>
 
           {foods.length === 0 ? (
-            <div className="bg-slate-800/50 rounded-lg p-6 text-center border border-slate-700">
-              <p className="text-slate-400 mb-4">Aucun aliment ajouté</p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAddFood}
-                className="border-slate-600 text-slate-300"
-              >
-                <Plus size={16} className="mr-2" />
-                Ajouter le premier aliment
-              </Button>
+            <div className="bg-slate-800/50 rounded-lg p-6 text-center border border-slate-700 space-y-4">
+              <p className="text-slate-400">Aucun aliment ajouté</p>
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={() => setShowFoodSearch(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Search size={16} className="mr-2" />
+                  Rechercher
+                </Button>
+                <VoiceInput
+                  onFoodsSelected={handleVoiceFoodsSelected}
+                  autoSearch={true}
+                  lang="fr-FR"
+                  variant="button"
+                />
+                <FoodPhotoScanner
+                  onFoodsSelected={handlePhotoFoodsSelected}
+                  autoEnrich={true}
+                  minConfidence={0.3}
+                  variant="button"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddFood}
+                  className="border-slate-600 text-slate-300"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Ajouter manuellement
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">

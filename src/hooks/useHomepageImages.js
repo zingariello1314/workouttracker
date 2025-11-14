@@ -411,70 +411,100 @@ export const useHomepageImages = () => {
           request.onsuccess = (event) => {
             const results = event.target.result;
             
+            // ✅ OPTIMISATION : Déplacer TOUT le traitement hors du handler pour éviter violation performance
+            // Le handler onsuccess doit être <50ms, donc on déplace le traitement vers setTimeout
             if (results && results.length > 0) {
-              // ✅ Phase 3: Charger images (format v3 avec thumbnail ou v2 string)
-              const sortedImages = results
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                .map(item => {
-                  // Format v3 : retourner objet { full, thumbnail }, Format v2 : retourner string
-                  if (item.version === '3.0' && item.thumbnail) {
-                    return {
-                      full: item.data,
-                      thumbnail: item.thumbnail,
-                      format: item.format,
-                      metadata: item.metadata
-                    };
-                  }
-                  // Format v2 ou v3 sans thumbnail : retourner string (compatibilité)
-                  return item.data;
-                })
-                .filter(img => {
-                  // Valider : string Base64 ou objet avec full Base64
-                  if (typeof img === 'string') {
-                    return validateBase64Image(img);
-                  }
-                  return img && img.full && validateBase64Image(img.full);
-                });
-              
-              // ✅ Phase 5: Validation intégrité optionnelle (non bloquant pour performance)
-              // Valider seulement si images suspectes (taille anormale, etc.)
-              // Note: Utiliser .then() car onsuccess n'est pas async
-              Promise.all(
-                sortedImages.map(async (img) => {
-                  try {
-                    // Validation rapide (sans checksum ni test load pour performance)
-                    const validation = await validateImageIntegrity(img, {
-                      checkChecksum: false, // Skip checksum pour performance
-                      testLoad: false // Skip test load pour performance (fait par navigateur)
-                    });
-                    
-                    if (!validation.valid) {
-                      log.warn('⚠️ Image invalide détectée', validation.error);
-                      // Retourner null pour filtrer plus tard
-                      return null;
+              // ✅ SOLUTION 2 : Optimisation requestIdleCallback avec chunking
+              // Diviser traitement en chunks pour éviter violations performance (>500ms)
+              const processImagesChunked = async () => {
+                // ✅ Phase 3: Charger images (format v3 avec thumbnail ou v2 string)
+                const sortedImages = results
+                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                  .map(item => {
+                    // Format v3 : retourner objet { full, thumbnail }, Format v2 : retourner string
+                    if (item.version === '3.0' && item.thumbnail) {
+                      return {
+                        full: item.data,
+                        thumbnail: item.thumbnail,
+                        format: item.format,
+                        metadata: item.metadata
+                      };
                     }
-                    
-                    return img;
-                  } catch (error) {
-                    log.warn('⚠️ Erreur validation image (non bloquant)', error);
-                    // En cas d'erreur, garder l'image (fallback gracieux)
-                    return img;
-                  }
-                })
-              ).then((validatedImages) => {
-                const finalImages = validatedImages.filter(img => img !== null);
+                    // Format v2 ou v3 sans thumbnail : retourner string (compatibilité)
+                    return item.data;
+                  })
+                  .filter(img => {
+                    // Valider : string Base64 ou objet avec full Base64
+                    if (typeof img === 'string') {
+                      return validateBase64Image(img);
+                    }
+                    return img && img.full && validateBase64Image(img.full);
+                  });
                 
-                if (finalImages.length < sortedImages.length) {
-                  log.warn(`⚠️ ${sortedImages.length - finalImages.length} images invalides filtrées`);
+                // ✅ Phase 5: Validation intégrité optionnelle avec chunking
+                // Diviser en chunks de 5 images max pour éviter violations performance
+                const CHUNK_SIZE = 5; // Traiter 5 images par chunk
+                const CHUNK_TIME = 50; // Max 50ms par chunk
+                const chunks = [];
+                
+                for (let i = 0; i < sortedImages.length; i += CHUNK_SIZE) {
+                  chunks.push(sortedImages.slice(i, i + CHUNK_SIZE));
                 }
                 
-                console.log(`✅ ${finalImages.length} images chargées depuis IndexedDB (avec index)`);
-                resolve(finalImages);
-              }).catch((error) => {
-                log.warn('⚠️ Erreur validation batch (non bloquant), utiliser images non validées', error);
-                // En cas d'erreur, utiliser images non validées (fallback gracieux)
-                resolve(sortedImages);
-              });
+                const processed = [];
+                
+                // Traiter chunks avec yielding entre chaque
+                for (const chunk of chunks) {
+                  const chunkStart = performance.now();
+                  
+                  // Traiter chunk (validation rapide sans checksum ni test load)
+                  const chunkResults = await Promise.all(
+                    chunk.map(async (img) => {
+                      try {
+                        const validation = await validateImageIntegrity(img, {
+                          checkChecksum: false, // Skip checksum pour performance
+                          testLoad: false // Skip test load pour performance (fait par navigateur)
+                        });
+                        return validation.valid ? img : null;
+                      } catch (error) {
+                        log.warn('⚠️ Erreur validation image (non bloquant)', error);
+                        return img; // Fallback gracieux
+                      }
+                    })
+                  );
+                  
+                  processed.push(...chunkResults.filter(img => img !== null));
+                  
+                  // ✅ OPTIMISATION : Yielding plus agressif pour éviter violations (>100ms)
+                  // Yielding même si chunk < 50ms pour garantir <100ms total
+                  const chunkTime = performance.now() - chunkStart;
+                  await new Promise(resolve => {
+                    if (window.requestIdleCallback) {
+                      requestIdleCallback(() => resolve(), { timeout: 10 });
+                    } else {
+                      // Utiliser setTimeout avec délai minimal (0ms = prochain tick)
+                      setTimeout(() => resolve(), 0);
+                    }
+                  });
+                }
+                
+                if (processed.length < sortedImages.length) {
+                  log.warn(`⚠️ ${sortedImages.length - processed.length} images invalides filtrées`);
+                }
+                
+                console.log(`✅ ${processed.length} images chargées depuis IndexedDB (avec index)`);
+                resolve(processed);
+              };
+              
+              // ✅ OPTIMISATION : Démarrer traitement chunké de manière non-bloquante
+              // Utiliser setTimeout avec délai pour laisser le navigateur initialiser
+              setTimeout(() => {
+                if (window.requestIdleCallback) {
+                  requestIdleCallback(processImagesChunked, { timeout: 1000 });
+                } else {
+                  processImagesChunked();
+                }
+              }, 0); // Déferrer même avec 0ms pour laisser navigateur initialiser
             } else {
               console.log('📭 Aucune image trouvée dans IndexedDB');
               resolve([]);

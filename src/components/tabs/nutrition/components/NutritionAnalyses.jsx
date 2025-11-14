@@ -49,6 +49,8 @@ import { calculateDailyTotals, calculateProgramCompliance, getNutritionStats } f
 import { typography } from '../../../../styles/typography';
 import NutritionRecommendations from './NutritionRecommendations';
 import NutritionCorrelations from './NutritionCorrelations';
+import NutritionChronobiology from './NutritionChronobiology';
+import NutritionHealthScore from './NutritionHealthScore';
 
 const NutritionAnalyses = ({ nutritionData }) => {
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
@@ -345,6 +347,12 @@ const NutritionAnalyses = ({ nutritionData }) => {
 
       {/* Corrélations nutritionnelles */}
       <NutritionCorrelations />
+
+      {/* Chronobiologie (Timing Optimal) */}
+      <NutritionChronobiology />
+
+      {/* Score Santé Globale */}
+      <NutritionHealthScore />
 
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

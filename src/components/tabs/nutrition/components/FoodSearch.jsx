@@ -11,12 +11,13 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, AlertCircle, CheckCircle, X, Camera } from 'lucide-react';
+import { Search, Loader2, AlertCircle, CheckCircle, X, Camera, Mic } from 'lucide-react';
 import { searchOpenFoodFacts, searchFoodWithFallback } from '../../../../services/nutrition/openFoodFactsService';
 import { searchUSDA } from '../../../../services/nutrition/usdaService';
 import { getFavoriteFoods } from '../../../../hooks/nutritionDataCRUD';
 import logger from '../../../../utils/logger';
 import BarcodeScanner from './BarcodeScanner';
+import VoiceInput from './VoiceInput';
 
 const log = logger.module('FoodSearch');
 
@@ -208,6 +209,60 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
     }
   }, [onFoodSelected, onClose]);
 
+  // Gérer aliments depuis saisie vocale
+  const handleVoiceFoodsSelected = useCallback((voiceFoods) => {
+    if (!Array.isArray(voiceFoods) || voiceFoods.length === 0) {
+      log.warn('[FoodSearch] Aliments voix vides ou invalides');
+      return;
+    }
+
+    log.debug('[FoodSearch] Aliments sélectionnés depuis voix', { count: voiceFoods.length });
+
+    // Si un seul aliment avec données nutrition complètes : ajouter directement
+    // Sinon : mettre à jour la recherche pour permettre sélection manuelle
+    if (voiceFoods.length === 1 && voiceFoods[0] && !voiceFoods[0].needsManualInput && voiceFoods[0].caloriesPer100 > 0) {
+      // Un seul aliment trouvé avec données complètes -> ajouter directement
+      const food = voiceFoods[0];
+      const foodData = {
+        id: food.id || `food_${Date.now()}_${Math.random()}`,
+        name: food.name,
+        quantity: food.quantity || 100,
+        unit: food.unit || 'g',
+        caloriesPer100: food.caloriesPer100 || 0,
+        proteinPer100: food.proteinPer100 || 0,
+        carbsPer100: food.carbsPer100 || 0,
+        fatPer100: food.fatPer100 || 0,
+        fiberPer100: food.fiberPer100 || 0,
+        sugarPer100: food.sugarPer100 || 0,
+        sodiumPer100: food.sodiumPer100 || 0,
+        source: food.source || 'voice',
+        sourceId: food.sourceId || null,
+        brand: food.brand || '',
+        nutriScore: food.nutriScore || null,
+      };
+
+      log.debug('[FoodSearch] Ajout direct aliment voix', foodData);
+      onFoodSelected(foodData);
+      
+      if (onClose) {
+        onClose();
+      }
+    } else {
+      // Plusieurs aliments ou données incomplètes -> mettre à jour recherche
+      // Prendre le nom du premier aliment pour la recherche
+      const searchQuery = voiceFoods[0]?.name || '';
+      if (searchQuery) {
+        log.debug('[FoodSearch] Mise à jour recherche avec:', searchQuery);
+        setQuery(searchQuery);
+        
+        // Si plusieurs aliments, afficher message informatif
+        if (voiceFoods.length > 1) {
+          setError(`Plusieurs aliments détectés. Recherche du premier : "${searchQuery}"`);
+        }
+      }
+    }
+  }, [onFoodSelected, onClose]);
+
   return (
     <div className="space-y-4">
       {/* Barre de recherche */}
@@ -245,6 +300,14 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
           <Camera size={18} />
           <span className="hidden sm:inline">Scanner</span>
         </button>
+
+        {/* Bouton Saisie Vocale */}
+        <VoiceInput
+          onFoodsSelected={handleVoiceFoodsSelected}
+          autoSearch={true}
+          lang="fr-FR"
+          variant="icon"
+        />
       </div>
 
       {/* État de chargement */}
@@ -290,7 +353,10 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
         <div className="text-center py-8 text-slate-500 text-sm">
           <p>Commencez à taper pour rechercher un aliment</p>
           <p className="mt-2">Recherche dans OpenFoodFacts et USDA</p>
-          <p className="mt-2 text-xs">ou utilisez le bouton "Scanner" pour scanner un code-barres</p>
+          <p className="mt-2 text-xs">
+            ou utilisez le bouton <Mic size={14} className="inline mx-1" /> pour la saisie vocale
+            ou le bouton <Camera size={14} className="inline mx-1" /> pour scanner un code-barres
+          </p>
         </div>
       )}
 
@@ -379,17 +445,6 @@ const FoodCard = ({ product, isSelected, onClick }) => {
           </div>
         </div>
 
-        {/* Image (si disponible) */}
-        {product.imageUrl && (
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="w-16 h-16 object-cover rounded border border-slate-700"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
-        )}
       </div>
     </button>
   );

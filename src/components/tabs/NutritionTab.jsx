@@ -14,22 +14,37 @@
 import React, { useState, useEffect } from 'react';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import { useGarminData } from '../../hooks/useGarminData';
+import { useNutritionTheme } from '../../hooks/useNutritionTheme';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { Calendar, Plus, Target, TrendingUp, BarChart3, Trophy } from 'lucide-react';
+import { Calendar, Plus, Target, TrendingUp, BarChart3, Trophy, Share2, Camera } from 'lucide-react';
 import { typography } from '../../styles/typography';
 import NutritionJournal from './nutrition/components/NutritionJournal';
 import NutritionPrograms from './nutrition/components/NutritionPrograms';
 import NutritionAnalyses from './nutrition/components/NutritionAnalyses';
 import NutritionGamification from './nutrition/components/NutritionGamification';
+import NutritionSharing from './nutrition/components/NutritionSharing';
+import NutritionProgressPhotos from './nutrition/components/NutritionProgressPhotos';
 import { registerNutritionServiceWorker } from '../../utils/nutritionServiceWorkerManager';
 
 const NutritionTab = () => {
-  const [activeSection, setActiveSection] = useState('journal'); // 'journal' | 'programs' | 'analyses' | 'gamification'
+  const [activeSection, setActiveSection] = useState('journal'); // 'journal' | 'programs' | 'analyses' | 'gamification' | 'sharing' | 'progress'
   const [selectedDate, setSelectedDate] = useState(new Date());
   const nutritionData = useNutritionData();
   const garminData = useGarminData();
+
+  // Thème dynamique (activé automatiquement)
+  const {
+    theme: dynamicTheme,
+    loading: themeLoading,
+    enabled: themeEnabled
+  } = useNutritionTheme({
+    enabled: true,
+    autoApply: true,
+    animate: true,
+    updateInterval: 5 * 60 * 1000 // 5 minutes
+  });
 
   // Format date pour affichage
   const formatDateDisplay = (date) => {
@@ -46,7 +61,9 @@ const NutritionTab = () => {
     { id: 'journal', label: 'Journal', icon: Calendar },
     { id: 'programs', label: 'Programmes', icon: Target },
     { id: 'analyses', label: 'Analyses', icon: BarChart3 },
-    { id: 'gamification', label: 'Gamification', icon: Trophy }
+    { id: 'gamification', label: 'Gamification', icon: Trophy },
+    { id: 'progress', label: 'Progression', icon: Camera },
+    { id: 'sharing', label: 'Partage', icon: Share2 }
   ];
 
   // Enregistrer Service Worker pour cache API offline (après 2s, non bloquant)
@@ -122,6 +139,14 @@ const NutritionTab = () => {
         
         {activeSection === 'gamification' && (
           <NutritionGamification />
+        )}
+        
+        {activeSection === 'progress' && (
+          <NutritionProgressPhotos />
+        )}
+        
+        {activeSection === 'sharing' && (
+          <NutritionSharing />
         )}
       </div>
     </div>

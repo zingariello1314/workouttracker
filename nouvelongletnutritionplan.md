@@ -5645,7 +5645,7 @@ function applyDynamicTheme(theme) {
 
 3. **Optimisations**
    - [ ] Prédictions offline (TensorFlow.js)
-   - [ ] Compression exports (Brotli)
+   - [x] Compression exports (CompressionStream API natif) ✅
    - [ ] Thème dynamique
 
 **Livrables Phase 3**
