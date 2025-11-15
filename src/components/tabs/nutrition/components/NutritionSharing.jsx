@@ -36,6 +36,10 @@ import {
 import { useNutritionSharing } from '../../../../hooks/useNutritionSharing';
 import { SHARE_SCOPES, PERMISSIONS } from '../../../../services/nutrition/nutritionSharing';
 import { Badge } from '../../../ui/Badge';
+import { useToast } from '../../../ui/Toast/ToastProvider';
+import logger from '../../../../utils/logger';
+
+const log = logger.component('NutritionSharing');
 
 /**
  * Composant d'affichage QR code avec génération à la volée
@@ -134,6 +138,7 @@ const formatPermissions = (permissions) => {
 };
 
 const NutritionSharing = () => {
+  const { showSuccess, showInfo, showError } = useToast();
   const {
     shareLinks,
     currentShareLink,
@@ -202,7 +207,7 @@ const NutritionSharing = () => {
           setShowQRCode(shareLink.token);
         }
       } catch (err) {
-        console.error('[NutritionSharing] Erreur création lien:', err);
+        log.error('Erreur création lien', err);
       } finally {
         setCreating(false);
       }
@@ -232,7 +237,7 @@ const NutritionSharing = () => {
             setShowQRCode(null);
           }
         } catch (err) {
-          console.error('[NutritionSharing] Erreur révocation lien:', err);
+          log.error('Erreur révocation lien', err);
         }
       }, { timeout: 100 });
     } else {
@@ -243,7 +248,7 @@ const NutritionSharing = () => {
             setShowQRCode(null);
           }
         } catch (err) {
-          console.error('[NutritionSharing] Erreur révocation lien:', err);
+          log.error('Erreur révocation lien', err);
         }
       }, 0);
     }
@@ -272,23 +277,25 @@ const NutritionSharing = () => {
     try {
       await downloadShareExport(token, scope);
     } catch (err) {
-      console.error('[NutritionSharing] Erreur téléchargement export:', err);
+      log.error('Erreur téléchargement export', err);
+      showError('Erreur export', 'Impossible de télécharger l\'export. Veuillez réessayer.');
     }
-  }, [downloadShareExport]);
+  }, [downloadShareExport, showError]);
 
   // Nettoyage liens expirés
   const handleCleanup = useCallback(async () => {
     try {
       const deletedCount = await cleanup();
       if (deletedCount > 0) {
-        alert(`${deletedCount} lien(s) expiré(s) supprimé(s)`);
+        showSuccess('Nettoyage terminé', `${deletedCount} lien(s) expiré(s) supprimé(s)`);
       } else {
-        alert('Aucun lien expiré à supprimer');
+        showInfo('Aucun lien expiré', 'Aucun lien expiré à supprimer');
       }
     } catch (err) {
-      console.error('[NutritionSharing] Erreur nettoyage:', err);
+      log.error('Erreur nettoyage', err);
+      showError('Erreur nettoyage', 'Impossible de nettoyer les liens expirés. Veuillez réessayer.');
     }
-  }, [cleanup]);
+  }, [cleanup, showSuccess, showInfo, showError]);
 
   if (!dbReady) {
     return (

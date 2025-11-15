@@ -28,6 +28,25 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
   const [error, setError] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  
+  // ✅ OPTIMISATION 26 : Cache favoris pour éviter rechargement à chaque recherche
+  const [favoriteFoodsCache, setFavoriteFoodsCache] = useState([]);
+  const [favoritesCacheLoaded, setFavoritesCacheLoaded] = useState(false);
+
+  // Charger favoris une seule fois au montage
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const favorites = await getFavoriteFoods({});
+        setFavoriteFoodsCache(favorites);
+        setFavoritesCacheLoaded(true);
+      } catch (err) {
+        log.warn('Erreur chargement favoris pour cache:', err);
+        setFavoritesCacheLoaded(true); // Marquer comme chargé même en cas d'erreur
+      }
+    };
+    loadFavorites();
+  }, []);
 
   // Recherche avec debounce
   useEffect(() => {
@@ -51,8 +70,8 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
     setResults([]);
 
     try {
-      // Rechercher dans favoris d'abord
-      const favorites = await getFavoriteFoods({});
+      // ✅ OPTIMISATION 26 : Utiliser cache favoris au lieu de recharger
+      const favorites = favoriteFoodsCache;
       const favoriteMatches = favorites.filter(f =>
         f.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -84,8 +103,8 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
       // Recherche OpenFoodFacts avec fallback USDA
       const products = await searchFoodWithFallback(searchQuery, {
         searchInFavorites: async (q) => {
-          const favs = await getFavoriteFoods({});
-          return favs.filter(f => f.name.toLowerCase().includes(q.toLowerCase()));
+          // ✅ OPTIMISATION 26 : Utiliser cache favoris au lieu de recharger
+          return favoriteFoodsCache.filter(f => f.name.toLowerCase().includes(q.toLowerCase()));
         },
         searchUSDA: async (q) => {
           try {
@@ -108,7 +127,7 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [favoriteFoodsCache]);
 
   // Sélectionner un aliment
   const handleSelectFood = useCallback((product) => {

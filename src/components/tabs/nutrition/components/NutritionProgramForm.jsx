@@ -17,6 +17,9 @@ import Input from '../../../ui/Input';
 import { Save, Target } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
 import { DateHelper } from '../../../../utils/dateHelper';
+import logger from '../../../../utils/logger';
+
+const log = logger.component('NutritionProgramForm');
 
 const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData }) => {
   const [formData, setFormData] = useState({
@@ -190,7 +193,8 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
 
       await onSave(programData);
     } catch (error) {
-      console.error('[NutritionProgramForm] Erreur sauvegarde:', error);
+      // ✅ OPTIMISATION 42 : Logger standardisé pour erreurs sauvegarde
+      log.error('Erreur sauvegarde', error);
       setErrors({ submit: 'Erreur lors de la sauvegarde' });
     } finally {
       setLoading(false);

@@ -17,6 +17,7 @@ import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
 import { Droplet, Plus, Minus, Edit2, Check, X, Clock } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
+import { useToast } from '../../../ui/Toast/ToastProvider';
 import logger from '../../../../utils/logger';
 
 const log = logger.module('HydrationTracker');
@@ -30,6 +31,7 @@ const log = logger.module('HydrationTracker');
  * @param {Function} props.onUpdate - Callback appelé après mise à jour
  */
 const HydrationTracker = ({ date, nutritionData, onUpdate }) => {
+  const { showError } = useToast();
   const [hydrationLog, setHydrationLog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingTarget, setEditingTarget] = useState(false);
@@ -117,7 +119,8 @@ const HydrationTracker = ({ date, nutritionData, onUpdate }) => {
 
     const newTarget = parseInt(customAmount) || hydrationLog.targetWater;
     if (newTarget <= 0 || newTarget > 10000) {
-      alert('Objectif invalide (entre 1ml et 10L)');
+      // ✅ OPTIMISATION 48 : Remplacer alert() par toast pour meilleure UX
+      showError('Objectif invalide', 'L\'objectif doit être entre 1ml et 10L');
       return;
     }
 
@@ -137,7 +140,7 @@ const HydrationTracker = ({ date, nutritionData, onUpdate }) => {
     } catch (error) {
       log.error('Erreur sauvegarde objectif:', error);
     }
-  }, [hydrationLog, customAmount, nutritionData, loadHydrationData, onUpdate]);
+  }, [hydrationLog, customAmount, nutritionData, loadHydrationData, onUpdate, showError]);
 
   /**
    * Ajouter quantité personnalisée
@@ -145,14 +148,15 @@ const HydrationTracker = ({ date, nutritionData, onUpdate }) => {
   const handleAddCustom = useCallback(async () => {
     const amount = parseInt(customAmount);
     if (!amount || amount <= 0 || amount > 5000) {
-      alert('Quantité invalide (entre 1ml et 5L)');
+      // ✅ OPTIMISATION 48 : Remplacer alert() par toast pour meilleure UX
+      showError('Quantité invalide', 'La quantité doit être entre 1ml et 5L');
       return;
     }
 
     await handleAddWater(amount);
     setCustomAmount('');
     setShowCustomInput(false);
-  }, [customAmount, handleAddWater]);
+  }, [customAmount, handleAddWater, showError]);
 
   if (loading) {
     return (

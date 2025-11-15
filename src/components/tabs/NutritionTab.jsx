@@ -46,16 +46,6 @@ const NutritionTab = () => {
     updateInterval: 5 * 60 * 1000 // 5 minutes
   });
 
-  // Format date pour affichage
-  const formatDateDisplay = (date) => {
-    return date.toLocaleDateString('fr-FR', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
   // Navigation entre sections
   const sections = [
     { id: 'journal', label: 'Journal', icon: Calendar },

@@ -747,20 +747,143 @@ Ces améliorations dépassent le score 100/100 et peuvent être implémentées s
   - **Date implémentation** : 2025-01-16
 
 **Priorité 2 - DX/UX** (~2h15) :
-- [ ] **OPTIMISATION 14** : Mémoïser formatDateDisplay dans NutritionTab (si besoin) (~5 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 15** : Vérifier utilisation garminData dans NutritionTab (~5 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 19** : Modal personnalisée suppression NutritionJournal (~30 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 20** : Extraire helpers en composants réutilisables DailyTotalsCard (optionnel) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 23** : Mémoïser formatTime dans MealList (si besoin) (~5 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 26** : Cache favoris dans FoodSearch (optionnel) (~15 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 32-33** : Logger standardisé dans NutritionAnalyses lignes 118, 127 (~10 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 36** : DateHelper.getMidnightTimestamp() pour tri NutritionPredictions (optionnel) (~5 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 37-38** : Logger standardisé + toast dans NutritionSharing (~15 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 39-40** : Logger standardisé + modal NutritionPrograms (~40 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 42** : Logger standardisé dans NutritionProgramForm (~10 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 45-46** : Logger standardisé + toast dans CoachDashboard (~15 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 47** : Remplacer alert() par toast dans MealEntryForm lignes 146, 152, 185 (~15 min) 🟡 **PRIORITÉ 2**
-- [ ] **OPTIMISATION 48** : Remplacer alert() par toast dans HydrationTracker lignes 120, 148 (~10 min) 🟡 **PRIORITÉ 2**
+- [x] **OPTIMISATION 14** : Mémoïser formatDateDisplay dans NutritionTab (si besoin) (~5 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Analyse : `formatDateDisplay` définie mais non utilisée dans le composant
+  - ✅ Action : Suppression code mort (fonction inutilisée) pour nettoyer le code
+  - ✅ Note : Si besoin futur, utiliser `useCallback` avec dépendances appropriées
+  - **Fichier modifié** : `src/components/tabs/NutritionTab.jsx` (lignes 49-57 supprimées)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 15** : Vérifier utilisation garminData dans NutritionTab (~5 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Analyse : `garminData` passé en prop à `NutritionAnalyses` mais composant appelait `useGarminData()` directement
+  - ✅ Action : `NutritionAnalyses` accepte maintenant `garminData` en prop et l'utilise au lieu d'appeler le hook (évite duplication initialisation)
+  - ✅ Performance : Évite double appel à `useGarminData()` et double initialisation IndexedDB
+  - ✅ Fallback : Si `garminData` non fourni, appelle `useGarminData()` pour rétrocompatibilité
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/NutritionAnalyses.jsx` (ligne 57, 62)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 19** : Modal personnalisée suppression NutritionJournal (~30 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Import `Modal` et `AlertTriangle` pour modal de confirmation personnalisée
+  - ✅ Ajout states `showDeleteConfirm` et `mealToDelete` pour gérer la modal
+  - ✅ Remplacement `window.confirm()` par `handleMealDeleteClick` qui ouvre la modal (ligne 93-96)
+  - ✅ Création `handleMealDeleteConfirm` pour confirmer suppression après validation modal (ligne 99-113)
+  - ✅ Création `handleMealDeleteCancel` pour annuler suppression (ligne 116-119)
+  - ✅ Ajout modal de confirmation avec design moderne, icône d'alerte, et boutons Annuler/Supprimer (lignes 252-291)
+  - ✅ Mise à jour `onDelete` dans `MealList` pour utiliser `handleMealDeleteClick` (ligne 223)
+  - ✅ UX améliorée : Modal personnalisée au lieu de `window.confirm` natif
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/NutritionJournal.jsx` (lignes 20-21, 37-38, 93-119, 223, 252-291)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 20** : Extraire helpers en composants réutilisables DailyTotalsCard (optionnel) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Création composant `ProgressBar` réutilisable dans `src/components/ui/ProgressBar.jsx`
+    - Composant UI générique avec support couleurs (blue, green, orange, red)
+    - Attributs ARIA pour accessibilité
+    - Transition CSS pour animation fluide
+  - ✅ Création composant `ComplianceDisplay` réutilisable dans `src/components/tabs/nutrition/components/ComplianceDisplay.jsx`
+    - Composant spécifique nutrition pour afficher conformité
+    - Support prop `showTarget` pour afficher/masquer cible et écart
+    - Calcul automatique écart, pourcentage, et couleurs selon conformité
+  - ✅ Remplacement helpers internes `renderCompliance` et `ProgressBar` par composants réutilisables
+  - ✅ Mise à jour `DailyTotalsCard` pour utiliser les nouveaux composants (lignes 18-19, 90-95, 124-129, 140-145, 156-161)
+  - ✅ Réutilisabilité : `ProgressBar` peut être utilisé dans toute l'application
+  - ✅ Maintenabilité : Logique centralisée, plus facile à modifier et tester
+  - ✅ DX améliorée : Code plus propre et modulaire
+  - **Fichiers créés** : 
+    - `src/components/ui/ProgressBar.jsx` (nouveau)
+    - `src/components/tabs/nutrition/components/ComplianceDisplay.jsx` (nouveau)
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/DailyTotalsCard.jsx` (lignes 18-19, 42-44, 90-95, 124-129, 140-145, 156-161)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 23** : Mémoïser formatTime dans MealList (si besoin) (~5 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Mémorisation `formatTime` avec `useCallback` pour éviter recréation à chaque rendu
+  - ✅ Cohérence avec autres optimisations (même pattern que `calculatePercentages` dans NutritionProgramForm)
+  - ✅ Performance : Fonction stable, évite recréation lors de re-renders
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/MealList.jsx` (lignes 13, 52-56)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 26** : Cache favoris dans FoodSearch (optionnel) (~15 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Ajout state `favoriteFoodsCache` et `favoritesCacheLoaded` pour stocker les favoris en mémoire
+  - ✅ Chargement unique des favoris au montage du composant avec `useEffect` (lignes 37-49)
+  - ✅ Remplacement `await getFavoriteFoods({})` par utilisation du cache `favoriteFoodsCache` dans `performSearch` (ligne 74)
+  - ✅ Remplacement `await getFavoriteFoods({})` dans callback `searchInFavorites` par utilisation du cache (ligne 107)
+  - ✅ Ajout `favoriteFoodsCache` dans dépendances `performSearch` (ligne 130)
+  - ✅ Performance : Évite 2 appels IndexedDB par recherche (1 au début + 1 dans callback)
+  - ✅ Gestion erreur avec `log.warn` si chargement cache échoue
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/FoodSearch.jsx` (lignes 32-49, 74, 107, 130)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 32-33** : Logger standardisé dans NutritionAnalyses lignes 118, 127 (~10 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Remplacement `console.warn('[NutritionAnalyses] Erreur chargement Garmin:', garminError)` par `log.warn('Erreur chargement Garmin', garminError)` (ligne 262)
+  - ✅ Remplacement `console.error('[NutritionAnalyses] Erreur chargement données:', error)` par `log.error('Erreur chargement données', error)` (ligne 271)
+  - ✅ Import logger standardisé et initialisation `log = logger.component('NutritionAnalyses')`
+  - ✅ Cohérence avec autres composants nutrition (pattern `logger.component()`)
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/NutritionAnalyses.jsx` (lignes 50, 57-58, 262, 271)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 36** : DateHelper.getMidnightTimestamp() pour tri NutritionPredictions (optionnel) (~5 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Déjà implémenté en bonus lors de OPTIMISATION 34-35
+  - ✅ Remplacement `new Date(a.date).getTime()` par `DateHelper.getMidnightTimestamp(a.date)` (lignes 143, 186, 190)
+  - ✅ Cohérence avec autres optimisations DateHelper
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/NutritionPredictions.jsx` (lignes 143, 186, 190)
+  - **Date implémentation** : 2025-01-16 (fait en bonus lors de OPT 34-35)
+- [x] **OPTIMISATION 37-38** : Logger standardisé + toast dans NutritionSharing (~15 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Import logger standardisé et initialisation `log = logger.component('NutritionSharing')`
+  - ✅ Import `useToast` et utilisation `showSuccess`, `showInfo`, `showError` pour meilleure UX
+  - ✅ Remplacement `console.error('[NutritionSharing] Erreur création lien:', err)` par `log.error('Erreur création lien', err)` (ligne 210)
+  - ✅ Remplacement `console.error('[NutritionSharing] Erreur révocation lien:', err)` par `log.error('Erreur révocation lien', err)` (lignes 240, 251)
+  - ✅ Remplacement `console.error('[NutritionSharing] Erreur téléchargement export:', err)` par `log.error('Erreur téléchargement export', err)` + `showError` toast (ligne 280-281)
+  - ✅ Remplacement `alert()` par `showSuccess` et `showInfo` dans `handleCleanup` (lignes 290, 292)
+  - ✅ Remplacement `console.error('[NutritionSharing] Erreur nettoyage:', err)` par `log.error('Erreur nettoyage', err)` + `showError` toast (ligne 295-296)
+  - ✅ Ajout `showError` dans dépendances `handleDownloadExport` (ligne 283)
+  - ✅ Ajout `showSuccess`, `showInfo`, `showError` dans dépendances `handleCleanup` (ligne 298)
+  - ✅ Cohérence avec autres composants nutrition (pattern `logger.component()` et `useToast()`)
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/NutritionSharing.jsx` (lignes 39-42, 141, 210, 240, 251, 280-283, 290-298)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 39-40** : Logger standardisé + modal NutritionPrograms (~40 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Import logger standardisé et initialisation `log = logger.component('NutritionPrograms')`
+  - ✅ Import `Modal` et `AlertTriangle` pour modal de confirmation personnalisée
+  - ✅ Import `useCallback` pour mémoriser les handlers
+  - ✅ Remplacement `console.error('[NutritionPrograms] Erreur chargement programmes:', error)` par `log.error('Erreur chargement programmes', error)` (ligne 56)
+  - ✅ Remplacement `console.error('[NutritionPrograms] Erreur sauvegarde programme:', error)` par `log.error('Erreur sauvegarde programme', error)` (ligne 72)
+  - ✅ Remplacement `console.error('[NutritionPrograms] Erreur activation programme:', error)` par `log.error('Erreur activation programme', error)` (ligne 84)
+  - ✅ Remplacement `console.error('[NutritionPrograms] Erreur désactivation programme:', error)` par `log.error('Erreur désactivation programme', error)` (ligne 96)
+  - ✅ Remplacement `window.confirm()` par `handleDeleteProgramClick` qui ouvre la modal (ligne 101-104)
+  - ✅ Création `handleDeleteProgramConfirm` pour confirmer suppression après validation modal (ligne 107-121)
+  - ✅ Création `handleDeleteProgramCancel` pour annuler suppression (ligne 124-127)
+  - ✅ Ajout states `showDeleteConfirm` et `programToDelete` pour gérer la modal (lignes 34-35)
+  - ✅ Ajout modal de confirmation avec design moderne, icône d'alerte, et boutons Annuler/Supprimer (lignes 442-482)
+  - ✅ Mise à jour `onClick` dans bouton suppression pour utiliser `handleDeleteProgramClick` (ligne 410)
+  - ✅ UX améliorée : Modal personnalisée au lieu de `window.confirm` natif
+  - ✅ Cohérence avec autres composants nutrition (pattern `logger.component()` et modal personnalisée)
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/NutritionPrograms.jsx` (lignes 14, 18-19, 23-25, 34-35, 56, 72, 84, 96, 101-127, 410, 442-482)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 42** : Logger standardisé dans NutritionProgramForm (~10 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Remplacement `console.error('[NutritionProgramForm] Erreur sauvegarde:', error)` par `log.error('Erreur sauvegarde', error)` (ligne 193)
+  - ✅ Import logger standardisé et initialisation `log = logger.component('NutritionProgramForm')`
+  - ✅ Cohérence avec autres composants nutrition (pattern `logger.component()`)
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/NutritionProgramForm.jsx` (lignes 18-19, 193)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 45-46** : Logger standardisé + toast dans CoachDashboard (~15 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Import logger standardisé et initialisation `log = logger.component('CoachDashboard')`
+  - ✅ Import `useToast` et utilisation `showError` pour meilleure UX
+  - ✅ Remplacement `console.error('[CoachDashboard] Erreur import JSON:', err)` par `log.error('Erreur import JSON', err)` + `showError` toast (lignes 177, 195)
+  - ✅ Remplacement `alert('Type de fichier invalide. Veuillez importer un fichier JSON.')` par `showError('Fichier invalide', 'Type de fichier invalide. Veuillez importer un fichier JSON.')` (lignes 181, 199)
+  - ✅ Ajout `showError` dans dépendances `handleDrop` et `handleFileSelect` (lignes 184, 201)
+  - ✅ Cohérence avec autres composants nutrition (pattern `logger.component()` et `useToast()`)
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/CoachDashboard.jsx` (lignes 38-41, 118, 177-184, 195-201)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 47** : Remplacer alert() par toast dans MealEntryForm lignes 146, 152, 185 (~15 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Remplacement `alert('Veuillez ajouter au moins un aliment')` par `showError('Repas vide', 'Veuillez ajouter au moins un aliment')` (ligne 146)
+  - ✅ Remplacement `alert('Veuillez renseigner le nom de tous les aliments')` par `showError('Aliments invalides', 'Veuillez renseigner le nom de tous les aliments')` (ligne 152)
+  - ✅ Remplacement `alert('Erreur lors de la sauvegarde du repas')` par `showError('Erreur sauvegarde', 'Erreur lors de la sauvegarde du repas')` (ligne 185)
+  - ✅ Remplacement `console.error('[MealEntryForm] Erreur sauvegarde:', error)` par `log.error('Erreur sauvegarde', error)` (ligne 184)
+  - ✅ Changement `logger.module('MealEntryForm')` → `logger.component('MealEntryForm')` pour cohérence (ligne 25)
+  - ✅ Import `useToast` et utilisation `showError` pour meilleure UX
+  - ✅ Ajout `showError` dans dépendances `handleSave` (ligne 194)
+  - ✅ Cohérence avec autres composants nutrition (pattern `logger.component()` et `useToast()`)
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/MealEntryForm.jsx` (lignes 22, 25, 28, 148, 155, 189, 194)
+  - **Date implémentation** : 2025-01-16
+- [x] **OPTIMISATION 48** : Remplacer alert() par toast dans HydrationTracker lignes 120, 148 (~10 min) 🟡 **PRIORITÉ 2** ✅ **TERMINÉ**
+  - ✅ Remplacement `alert('Objectif invalide (entre 1ml et 10L)')` par `showError('Objectif invalide', 'L\'objectif doit être entre 1ml et 10L')` (ligne 120)
+  - ✅ Remplacement `alert('Quantité invalide (entre 1ml et 5L)')` par `showError('Quantité invalide', 'La quantité doit être entre 1ml et 5L')` (ligne 148)
+  - ✅ Import `useToast` et utilisation `showError` pour meilleure UX
+  - ✅ Cohérence avec autres composants nutrition (pattern `useToast()`)
+  - ✅ Ajout `showError` dans dépendances `handleSaveTarget` et `handleAddCustom` (lignes 143, 159)
+  - **Fichier modifié** : `src/components/tabs/nutrition/components/HydrationTracker.jsx` (lignes 20, 34, 122, 151, 143, 159)
+  - **Date implémentation** : 2025-01-16
 
 **Temps total Phase 4** : ~4h30 (2h15 priorité 1 + 2h15 priorité 2)
 

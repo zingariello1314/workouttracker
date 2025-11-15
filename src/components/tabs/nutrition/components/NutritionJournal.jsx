@@ -17,7 +17,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
-import { Calendar, Plus, Clock } from 'lucide-react';
+import Modal from '../../../ui/Modal';
+import { Calendar, Plus, Clock, AlertTriangle } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
 import { DateHelper } from '../../../../utils/dateHelper';
 import DailyTotalsCard from './DailyTotalsCard';
@@ -32,6 +33,9 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
   const [showMealForm, setShowMealForm] = useState(false);
   const [editingMeal, setEditingMeal] = useState(null);
   const [loading, setLoading] = useState(true);
+  // ✅ OPTIMISATION 19 : Modal personnalisée pour confirmation suppression
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [mealToDelete, setMealToDelete] = useState(null);
 
   // ✅ OPTIMISATION 16 : Utiliser DateHelper pour cohérence timezone locale
   const dateStr = DateHelper.toYYYYMMDD(selectedDate) || DateHelper.getTodayLocal();
@@ -85,20 +89,34 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
   }, [nutritionData.saveMeal, loadDayData]);
 
   // ✅ OPTIMISATION 17-18 : Mémoriser handleMealDelete avec useCallback
-  const handleMealDelete = useCallback(async (mealId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce repas ?')) {
-      return;
-    }
+  // ✅ OPTIMISATION 19 : Ouvrir modal de confirmation au lieu de window.confirm
+  const handleMealDeleteClick = useCallback((mealId) => {
+    setMealToDelete(mealId);
+    setShowDeleteConfirm(true);
+  }, []);
+
+  // Confirmer suppression après validation modal
+  const handleMealDeleteConfirm = useCallback(async () => {
+    if (!mealToDelete) return;
 
     try {
-      const deleted = await nutritionData.deleteMeal(mealId);
+      const deleted = await nutritionData.deleteMeal(mealToDelete);
       if (deleted) {
         await loadDayData();
       }
     } catch (error) {
       console.error('[NutritionJournal] Erreur suppression repas:', error);
+    } finally {
+      setShowDeleteConfirm(false);
+      setMealToDelete(null);
     }
-  }, [nutritionData.deleteMeal, loadDayData]);
+  }, [nutritionData.deleteMeal, loadDayData, mealToDelete]);
+
+  // Annuler suppression
+  const handleMealDeleteCancel = useCallback(() => {
+    setShowDeleteConfirm(false);
+    setMealToDelete(null);
+  }, []);
 
   // Ouvrir formulaire pour nouveau repas
   const handleAddMeal = (type = null) => {
@@ -211,7 +229,7 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
       <MealList
         meals={meals}
         onEdit={handleEditMeal}
-        onDelete={handleMealDelete}
+        onDelete={handleMealDeleteClick}
         onAdd={handleAddMeal}
       />
 
@@ -229,6 +247,48 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
           nutritionData={nutritionData}
         />
       )}
+
+      {/* ✅ OPTIMISATION 19 : Modal de confirmation suppression */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={handleMealDeleteCancel}
+        title="Confirmer la suppression"
+        size="sm"
+        showCloseButton={true}
+      >
+        <div className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <AlertTriangle className="text-yellow-500" size={24} />
+            </div>
+            <div className="flex-1">
+              <p className="text-slate-200 mb-2">
+                Êtes-vous sûr de vouloir supprimer ce repas ?
+              </p>
+              <p className="text-sm text-slate-400">
+                Cette action est irréversible.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-700/50">
+            <Button
+              variant="ghost"
+              onClick={handleMealDeleteCancel}
+              className="px-4 py-2"
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleMealDeleteConfirm}
+              className="px-4 py-2"
+            >
+              Supprimer
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

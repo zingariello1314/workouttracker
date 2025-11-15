@@ -10,7 +10,7 @@
  * @module components/tabs/nutrition/components/MealList
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import { Clock, Edit2, Trash2, Plus, Utensils } from 'lucide-react';
@@ -49,12 +49,12 @@ const MealList = ({ meals, onEdit, onDelete, onAdd }) => {
     return grouped;
   }, [meals]);
 
-  // Formater heure
-  const formatTime = (timestamp) => {
+  // ✅ OPTIMISATION 23 : Mémoriser formatTime avec useCallback (évite recréation à chaque rendu)
+  const formatTime = useCallback((timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
     return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  };
+  }, []);
 
   // Rendre un repas
   const renderMeal = (meal) => {

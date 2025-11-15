@@ -11,14 +11,18 @@
  * @see ../../../../../nouvelongletnutritionplan.md
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
-import { Target, Plus, Edit2, Trash2, Play, Pause, CheckCircle, Calendar, TrendingUp, Archive } from 'lucide-react';
+import Modal from '../../../ui/Modal';
+import { Target, Plus, Edit2, Trash2, Play, Pause, CheckCircle, Calendar, TrendingUp, Archive, AlertTriangle } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
 import NutritionProgramForm from './NutritionProgramForm';
 import { Badge } from '../../../ui/Badge';
+import logger from '../../../../utils/logger';
+
+const log = logger.component('NutritionPrograms');
 
 const NutritionPrograms = ({ nutritionData }) => {
   const [programs, setPrograms] = useState([]);
@@ -26,6 +30,9 @@ const NutritionPrograms = ({ nutritionData }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
   const [loading, setLoading] = useState(true);
+  // ✅ OPTIMISATION 40 : Modal personnalisée pour confirmation suppression
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [programToDelete, setProgramToDelete] = useState(null);
 
   // Charger programmes
   useEffect(() => {
@@ -46,7 +53,7 @@ const NutritionPrograms = ({ nutritionData }) => {
       const active = await nutritionData.getActiveProgram();
       setActiveProgram(active);
     } catch (error) {
-      console.error('[NutritionPrograms] Erreur chargement programmes:', error);
+      log.error('Erreur chargement programmes', error);
     } finally {
       setLoading(false);
     }
@@ -62,7 +69,7 @@ const NutritionPrograms = ({ nutritionData }) => {
         setEditingProgram(null);
       }
     } catch (error) {
-      console.error('[NutritionPrograms] Erreur sauvegarde programme:', error);
+      log.error('Erreur sauvegarde programme', error);
     }
   };
 
@@ -74,7 +81,7 @@ const NutritionPrograms = ({ nutritionData }) => {
         await loadPrograms();
       }
     } catch (error) {
-      console.error('[NutritionPrograms] Erreur activation programme:', error);
+      log.error('Erreur activation programme', error);
     }
   };
 
@@ -86,25 +93,38 @@ const NutritionPrograms = ({ nutritionData }) => {
         await loadPrograms();
       }
     } catch (error) {
-      console.error('[NutritionPrograms] Erreur désactivation programme:', error);
+      log.error('Erreur désactivation programme', error);
     }
   };
 
-  // Gérer suppression
-  const handleDeleteProgram = async (programId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce programme ? Cette action est irréversible.')) {
-      return;
-    }
+  // ✅ OPTIMISATION 40 : Ouvrir modal de confirmation au lieu de window.confirm
+  const handleDeleteProgramClick = useCallback((programId) => {
+    setProgramToDelete(programId);
+    setShowDeleteConfirm(true);
+  }, []);
+
+  // Confirmer suppression après validation modal
+  const handleDeleteProgramConfirm = useCallback(async () => {
+    if (!programToDelete) return;
 
     try {
-      const deleted = await nutritionData.deleteProgram(programId);
+      const deleted = await nutritionData.deleteProgram(programToDelete);
       if (deleted) {
         await loadPrograms();
       }
     } catch (error) {
-      console.error('[NutritionPrograms] Erreur suppression programme:', error);
+      log.error('Erreur suppression programme', error);
+    } finally {
+      setShowDeleteConfirm(false);
+      setProgramToDelete(null);
     }
-  };
+  }, [nutritionData, programToDelete, loadPrograms]);
+
+  // Annuler suppression
+  const handleDeleteProgramCancel = useCallback(() => {
+    setShowDeleteConfirm(false);
+    setProgramToDelete(null);
+  }, []);
 
   // Ouvrir formulaire création
   const handleCreateProgram = () => {
@@ -387,7 +407,7 @@ const NutritionPrograms = ({ nutritionData }) => {
                           <Edit2 size={16} />
                         </Button>
                         <Button
-                          onClick={() => handleDeleteProgram(program.id)}
+                          onClick={() => handleDeleteProgramClick(program.id)}
                           variant="ghost"
                           size="sm"
                           className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
@@ -418,6 +438,48 @@ const NutritionPrograms = ({ nutritionData }) => {
           nutritionData={nutritionData}
         />
       )}
+
+      {/* ✅ OPTIMISATION 40 : Modal de confirmation suppression */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={handleDeleteProgramCancel}
+        title="Confirmer la suppression"
+        size="sm"
+        showCloseButton={true}
+      >
+        <div className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <AlertTriangle className="text-yellow-500" size={24} />
+            </div>
+            <div className="flex-1">
+              <p className="text-slate-200 mb-2">
+                Êtes-vous sûr de vouloir supprimer ce programme ?
+              </p>
+              <p className="text-sm text-slate-400">
+                Cette action est irréversible.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-700/50">
+            <Button
+              variant="ghost"
+              onClick={handleDeleteProgramCancel}
+              className="px-4 py-2"
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteProgramConfirm}
+              className="px-4 py-2"
+            >
+              Supprimer
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

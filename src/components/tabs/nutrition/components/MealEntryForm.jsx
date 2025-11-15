@@ -19,11 +19,13 @@ import { typography } from '../../../../styles/typography';
 import FoodSearch from './FoodSearch';
 import VoiceInput from './VoiceInput';
 import FoodPhotoScanner from './FoodPhotoScanner';
+import { useToast } from '../../../ui/Toast/ToastProvider';
 import logger from '../../../../utils/logger';
 
-const log = logger.module('MealEntryForm');
+const log = logger.component('MealEntryForm');
 
 const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }) => {
+  const { showError } = useToast();
   const [mealType, setMealType] = useState('breakfast');
   const [foods, setFoods] = useState([]);
   const [notes, setNotes] = useState('');
@@ -143,13 +145,15 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
   const handleSave = useCallback(async () => {
     // Validation
     if (foods.length === 0) {
-      alert('Veuillez ajouter au moins un aliment');
+      // ✅ OPTIMISATION 47 : Remplacer alert() par toast pour meilleure UX
+      showError('Repas vide', 'Veuillez ajouter au moins un aliment');
       return;
     }
 
     const invalidFoods = foods.filter(f => !f.name || f.name.trim() === '');
     if (invalidFoods.length > 0) {
-      alert('Veuillez renseigner le nom de tous les aliments');
+      // ✅ OPTIMISATION 47 : Remplacer alert() par toast pour meilleure UX
+      showError('Aliments invalides', 'Veuillez renseigner le nom de tous les aliments');
       return;
     }
 
@@ -181,12 +185,13 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
 
       await onSave(mealData);
     } catch (error) {
-      console.error('[MealEntryForm] Erreur sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde du repas');
+      // ✅ OPTIMISATION 47 : Logger standardisé + remplacer alert() par toast pour meilleure UX
+      log.error('Erreur sauvegarde', error);
+      showError('Erreur sauvegarde', 'Erreur lors de la sauvegarde du repas');
     } finally {
       setLoading(false);
     }
-  }, [foods, meal, dateStr, mealType, timestamp, notes, totals, nutritionData, onSave]);
+  }, [foods, meal, dateStr, mealType, timestamp, notes, totals, nutritionData, onSave, showError]);
 
   return (
     <Modal

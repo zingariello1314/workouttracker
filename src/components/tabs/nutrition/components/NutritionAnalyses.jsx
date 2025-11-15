@@ -48,18 +48,24 @@ import { useNutritionData } from '../../../../hooks/useNutritionData';
 import { useGarminData } from '../../../../hooks/useGarminData';
 import { calculateDailyTotals, calculateProgramCompliance, getNutritionStats } from '../../../../hooks/nutritionCalculations';
 import { typography } from '../../../../styles/typography';
+import logger from '../../../../utils/logger';
 import NutritionRecommendations from './NutritionRecommendations';
 import NutritionCorrelations from './NutritionCorrelations';
 import NutritionChronobiology from './NutritionChronobiology';
 import NutritionHealthScore from './NutritionHealthScore';
 import NutritionPredictions from './NutritionPredictions';
 
-const NutritionAnalyses = ({ nutritionData }) => {
+const log = logger.component('NutritionAnalyses');
+
+const NutritionAnalyses = ({ nutritionData, garminData }) => {
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
   const [loading, setLoading] = useState(true);
   const [analysisData, setAnalysisData] = useState(null);
   const [chartsReady, setChartsReady] = useState(false); // État pour différer le rendu des graphiques
-  const { dbReady: garminDbReady, loadDataByRange } = useGarminData();
+  // ✅ OPTIMISATION 15 : Préférer prop garminData si fournie (évite duplication initialisation)
+  // Note : Hook toujours appelé pour respecter Règles des Hooks, mais prop utilisée en priorité
+  const hookGarminData = useGarminData();
+  const { dbReady: garminDbReady, loadDataByRange } = garminData || hookGarminData;
 
   // Attendre que le DOM soit prêt avant de rendre les graphiques
   useEffect(() => {
@@ -256,7 +262,8 @@ const NutritionAnalyses = ({ nutritionData }) => {
             }));
           }
         } catch (garminError) {
-          console.warn('[NutritionAnalyses] Erreur chargement Garmin:', garminError);
+          // ✅ OPTIMISATION 32 : Logger standardisé pour warnings Garmin
+          log.warn('Erreur chargement Garmin', garminError);
         }
       }
 
@@ -265,7 +272,8 @@ const NutritionAnalyses = ({ nutritionData }) => {
 
       setAnalysisData(processedData);
     } catch (error) {
-      console.error('[NutritionAnalyses] Erreur chargement données:', error);
+      // ✅ OPTIMISATION 33 : Logger standardisé pour erreurs chargement données
+      log.error('Erreur chargement données', error);
     } finally {
       setLoading(false);
     }

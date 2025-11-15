@@ -15,6 +15,8 @@ import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { Target, TrendingUp, TrendingDown, Minus, Droplet } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
 import { Badge } from '../../../ui/Badge';
+import ProgressBar from '../../../ui/ProgressBar';
+import ComplianceDisplay from './ComplianceDisplay';
 
 const DailyTotalsCard = ({ dailyMeal, activeProgram, garminData, dateStr, nutritionData }) => {
   if (!dailyMeal || !dailyMeal.dailyTotals) {
@@ -37,54 +39,9 @@ const DailyTotalsCard = ({ dailyMeal, activeProgram, garminData, dateStr, nutrit
     dateStr
   );
 
-  // Helper pour afficher écart
-  const renderCompliance = (actual, target, unit = '') => {
-    const diff = actual - target;
-    const percent = target > 0 ? Math.round((actual / target) * 100) : 0;
-    const isOver = diff > 0;
-    const isUnder = diff < 0;
-    const isGood = Math.abs(diff) <= target * 0.1; // ±10% = bon
-
-    return (
-      <div className="flex items-center gap-2">
-        <span className="text-white font-semibold">
-          {actual.toLocaleString('fr-FR')} {unit}
-        </span>
-        {hasProgram && (
-          <>
-            <span className="text-slate-400">/</span>
-            <span className="text-slate-300">{target.toLocaleString('fr-FR')} {unit}</span>
-            <span className={`text-sm font-medium ${
-              isGood ? 'text-green-400' : isOver ? 'text-orange-400' : 'text-red-400'
-            }`}>
-              ({isOver ? '+' : ''}{diff.toLocaleString('fr-FR')} {unit})
-            </span>
-            <span className="text-slate-500 text-sm">({percent}%)</span>
-          </>
-        )}
-      </div>
-    );
-  };
-
-  // Helper pour barre de progression
-  const ProgressBar = ({ value, max, color = 'blue' }) => {
-    const percent = max > 0 ? Math.min((value / max) * 100, 100) : 0;
-    const colorClasses = {
-      blue: 'bg-blue-500',
-      green: 'bg-green-500',
-      orange: 'bg-orange-500',
-      red: 'bg-red-500'
-    };
-
-    return (
-      <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
-        <div
-          className={`h-full ${colorClasses[color]} transition-all duration-300`}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-    );
-  };
+  // ✅ OPTIMISATION 20 : Helpers extraits en composants réutilisables
+  // - ProgressBar : Composant UI générique (src/components/ui/ProgressBar.jsx)
+  // - ComplianceDisplay : Composant spécifique nutrition (src/components/tabs/nutrition/components/ComplianceDisplay.jsx)
 
   return (
     <Card className="bg-slate-800/50 border-slate-700">
@@ -130,7 +87,12 @@ const DailyTotalsCard = ({ dailyMeal, activeProgram, garminData, dateStr, nutrit
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-slate-300 font-medium">Calories</span>
-            {renderCompliance(totals.calories, totals.targetCalories, 'kcal')}
+            <ComplianceDisplay 
+              actual={totals.calories} 
+              target={totals.targetCalories} 
+              unit="kcal" 
+              showTarget={hasProgram}
+            />
           </div>
           {hasProgram && (
             <ProgressBar
@@ -159,7 +121,12 @@ const DailyTotalsCard = ({ dailyMeal, activeProgram, garminData, dateStr, nutrit
                 {totals.proteinPercent}%
               </span>
             </div>
-            {renderCompliance(totals.protein, totals.targetProtein, 'g')}
+            <ComplianceDisplay 
+              actual={totals.protein} 
+              target={totals.targetProtein} 
+              unit="g" 
+              showTarget={hasProgram}
+            />
           </div>
 
           {/* Glucides */}
@@ -170,7 +137,12 @@ const DailyTotalsCard = ({ dailyMeal, activeProgram, garminData, dateStr, nutrit
                 {totals.carbsPercent}%
               </span>
             </div>
-            {renderCompliance(totals.carbs, totals.targetCarbs, 'g')}
+            <ComplianceDisplay 
+              actual={totals.carbs} 
+              target={totals.targetCarbs} 
+              unit="g" 
+              showTarget={hasProgram}
+            />
           </div>
 
           {/* Lipides */}
@@ -181,7 +153,12 @@ const DailyTotalsCard = ({ dailyMeal, activeProgram, garminData, dateStr, nutrit
                 {totals.fatPercent}%
               </span>
             </div>
-            {renderCompliance(totals.fat, totals.targetFat, 'g')}
+            <ComplianceDisplay 
+              actual={totals.fat} 
+              target={totals.targetFat} 
+              unit="g" 
+              showTarget={hasProgram}
+            />
           </div>
         </div>
 

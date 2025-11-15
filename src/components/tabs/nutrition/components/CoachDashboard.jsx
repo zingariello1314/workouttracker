@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 import { useCoachDashboard } from '../../../../hooks/useCoachDashboard';
 import { SHARE_SCOPES } from '../../../../services/nutrition/nutritionSharing';
+import { useToast } from '../../../ui/Toast/ToastProvider';
+import logger from '../../../../utils/logger';
 import {
   LineChart,
   Line,
@@ -113,6 +115,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const CoachDashboard = () => {
+  const { showError } = useToast();
   const {
     shareData,
     loading,
@@ -171,13 +174,14 @@ const CoachDashboard = () => {
         try {
           await importJson(file);
         } catch (err) {
-          console.error('[CoachDashboard] Erreur import JSON:', err);
+          log.error('Erreur import JSON', err);
+          showError('Erreur import', 'Impossible d\'importer le fichier JSON. Veuillez vérifier le format.');
         }
       } else {
-        alert('Type de fichier invalide. Veuillez importer un fichier JSON.');
+        showError('Fichier invalide', 'Type de fichier invalide. Veuillez importer un fichier JSON.');
       }
     }
-  }, [importJson]);
+  }, [importJson, showError]);
 
   // Gérer sélection fichier
   const handleFileSelect = useCallback(async (e) => {
@@ -188,12 +192,13 @@ const CoachDashboard = () => {
       try {
         await importJson(file);
       } catch (err) {
-        console.error('[CoachDashboard] Erreur import JSON:', err);
+        log.error('Erreur import JSON', err);
+        showError('Erreur import', 'Impossible d\'importer le fichier JSON. Veuillez vérifier le format.');
       }
     } else {
-      alert('Type de fichier invalide. Veuillez importer un fichier JSON.');
+      showError('Fichier invalide', 'Type de fichier invalide. Veuillez importer un fichier JSON.');
     }
-  }, [importJson]);
+  }, [importJson, showError]);
 
   // Données pour graphiques (scope: charts)
   const chartData = useMemo(() => {
