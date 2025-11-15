@@ -10,7 +10,7 @@
  * @module components/tabs/nutrition/components/MealList
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import { Clock, Edit2, Trash2, Plus, Utensils } from 'lucide-react';
@@ -25,24 +25,29 @@ const MealList = ({ meals, onEdit, onDelete, onAdd }) => {
     snack: { label: 'Collation', icon: '🍎', order: 4 }
   };
 
-  // Grouper meals par type
-  const mealsByType = {};
-  meals.forEach(meal => {
-    const type = meal.type || 'snack';
-    if (!mealsByType[type]) {
-      mealsByType[type] = [];
-    }
-    mealsByType[type].push(meal);
-  });
-
-  // Trier par timestamp
-  Object.keys(mealsByType).forEach(type => {
-    mealsByType[type].sort((a, b) => {
-      const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-      const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-      return timeA - timeB;
+  // ✅ OPTIMISATION 21-22 : Utiliser useMemo pour mealsByType et tri (évite recalcul à chaque rendu)
+  const mealsByType = useMemo(() => {
+    // Grouper meals par type
+    const grouped = {};
+    meals.forEach(meal => {
+      const type = meal.type || 'snack';
+      if (!grouped[type]) {
+        grouped[type] = [];
+      }
+      grouped[type].push(meal);
     });
-  });
+
+    // Trier par timestamp pour chaque type
+    Object.keys(grouped).forEach(type => {
+      grouped[type].sort((a, b) => {
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeA - timeB;
+      });
+    });
+
+    return grouped;
+  }, [meals]);
 
   // Formater heure
   const formatTime = (timestamp) => {

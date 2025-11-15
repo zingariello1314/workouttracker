@@ -48,6 +48,7 @@ import {
 import { useNutritionProgressPhotos } from '../../../../hooks/useNutritionProgressPhotos';
 import { PROGRESS_PHOTO_TYPES } from '../../../../services/nutrition/nutritionProgressPhotos';
 import { useToast } from '../../../ui/Toast/ToastProvider';
+import { DateHelper } from '../../../../utils/dateHelper';
 import logger from '../../../../utils/logger';
 
 const log = logger.module('NutritionProgressPhotos');
@@ -285,7 +286,8 @@ const NutritionProgressPhotos = () => {
   // Formulaire ajout photo
   const [formData, setFormData] = useState({
     type: PROGRESS_PHOTO_TYPES.BEFORE,
-    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+    // ✅ OPTIMISATION 44 : Utiliser DateHelper pour cohérence timezone locale
+    date: DateHelper.getTodayLocal(),
     weight: '',
     measurements: {
       waist: '',
@@ -332,7 +334,8 @@ const NutritionProgressPhotos = () => {
       // Ajouter photo avec progression
       const photo = await addPhoto(file, {
         ...formData,
-        date: formData.date || new Date().toISOString().split('T')[0]
+        // ✅ OPTIMISATION 44 : Utiliser DateHelper pour cohérence timezone locale
+        date: formData.date || DateHelper.getTodayLocal()
       }, {
         onProgress: (progress, message) => {
           setUploadProgress(progress);
@@ -349,7 +352,8 @@ const NutritionProgressPhotos = () => {
         // Réinitialiser formulaire
         setFormData({
           type: PROGRESS_PHOTO_TYPES.AFTER, // Prochaine sera "après"
-          date: new Date().toISOString().split('T')[0],
+          // ✅ OPTIMISATION 44 : Utiliser DateHelper pour cohérence timezone locale
+          date: DateHelper.getTodayLocal(),
           weight: '',
           measurements: { waist: '', chest: '', hips: '' },
           notes: '',
@@ -545,7 +549,8 @@ const NutritionProgressPhotos = () => {
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 className="w-full"
-                max={new Date().toISOString().split('T')[0]} // Pas de date future
+                // ✅ OPTIMISATION 44 : Utiliser DateHelper pour cohérence timezone locale
+                max={DateHelper.getTodayLocal()} // Pas de date future
               />
             </div>
 

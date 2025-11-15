@@ -10,12 +10,13 @@
  * @module components/tabs/nutrition/components/NutritionProgramForm
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Modal from '../../../ui/Modal';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
 import { Save, Target } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
+import { DateHelper } from '../../../../utils/dateHelper';
 
 const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData }) => {
   const [formData, setFormData] = useState({
@@ -30,7 +31,8 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
     workoutDayCalories: 2700,
     restDayCalories: 2300,
     duration: 30, // jours
-    startDate: new Date().toISOString().split('T')[0],
+    // ✅ OPTIMISATION 41 : Utiliser DateHelper pour cohérence timezone locale
+    startDate: DateHelper.getTodayLocal(),
     endDate: null
   });
   const [loading, setLoading] = useState(false);
@@ -60,7 +62,8 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
         workoutDayCalories: program.workoutDayCalories || program.targetCalories + 200,
         restDayCalories: program.restDayCalories || program.targetCalories - 200,
         duration: program.duration || 30,
-        startDate: program.startDate || new Date().toISOString().split('T')[0],
+        // ✅ OPTIMISATION 41 : Utiliser DateHelper pour cohérence timezone locale
+        startDate: program.startDate || DateHelper.getTodayLocal(),
         endDate: program.endDate || null
       });
     } else {
@@ -77,7 +80,8 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
         workoutDayCalories: 2700,
         restDayCalories: 2300,
         duration: 30,
-        startDate: new Date().toISOString().split('T')[0],
+        // ✅ OPTIMISATION 41 : Utiliser DateHelper pour cohérence timezone locale
+        startDate: DateHelper.getTodayLocal(),
         endDate: null
       });
     }
@@ -135,8 +139,8 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
     return Object.keys(newErrors).length === 0;
   };
 
-  // Calculer pourcentages
-  const calculatePercentages = () => {
+  // ✅ OPTIMISATION 43 : Mémoriser calcul pourcentages avec useMemo (évite recalcul à chaque rendu)
+  const percentages = useMemo(() => {
     const proteinCal = formData.targetProtein * 4;
     const carbsCal = formData.targetCarbs * 4;
     const fatCal = formData.targetFat * 9;
@@ -151,7 +155,7 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
       carbs: Math.round((carbsCal / totalMacroCal) * 100),
       fat: Math.round((fatCal / totalMacroCal) * 100)
     };
-  };
+  }, [formData.targetProtein, formData.targetCarbs, formData.targetFat]);
 
   // Sauvegarder
   const handleSave = async () => {
@@ -162,8 +166,6 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
     setLoading(true);
 
     try {
-      const percentages = calculatePercentages();
-
       const programData = {
         id: program?.id || nutritionData.generateProgramId(),
         name: formData.name.trim(),
@@ -194,8 +196,6 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
       setLoading(false);
     }
   };
-
-  const percentages = calculatePercentages();
 
   return (
     <Modal

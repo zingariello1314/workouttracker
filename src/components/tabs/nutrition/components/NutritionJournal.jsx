@@ -13,12 +13,13 @@
  * @module components/tabs/nutrition/components/NutritionJournal
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
 import { Calendar, Plus, Clock } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
+import { DateHelper } from '../../../../utils/dateHelper';
 import DailyTotalsCard from './DailyTotalsCard';
 import MealList from './MealList';
 import MealEntryForm from './MealEntryForm';
@@ -32,14 +33,11 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
   const [editingMeal, setEditingMeal] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const dateStr = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD
+  // ✅ OPTIMISATION 16 : Utiliser DateHelper pour cohérence timezone locale
+  const dateStr = DateHelper.toYYYYMMDD(selectedDate) || DateHelper.getTodayLocal();
 
-  // Charger données du jour
-  useEffect(() => {
-    loadDayData();
-  }, [dateStr, nutritionData.dbReady]);
-
-  const loadDayData = async () => {
+  // ✅ OPTIMISATION 17-18 : Mémoriser callbacks avec useCallback pour éviter recréation
+  const loadDayData = useCallback(async () => {
     if (!nutritionData.dbReady) {
       setLoading(false);
       return;
@@ -64,10 +62,15 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateStr, nutritionData.dbReady, nutritionData.getDailyMeal, nutritionData.getMealsByDate, nutritionData.getActiveProgram]);
 
-  // Gérer ajout/modification repas
-  const handleMealSave = async (mealData) => {
+  // Charger données du jour
+  useEffect(() => {
+    loadDayData();
+  }, [loadDayData]);
+
+  // ✅ OPTIMISATION 17-18 : Mémoriser handleMealSave avec useCallback
+  const handleMealSave = useCallback(async (mealData) => {
     try {
       const saved = await nutritionData.saveMeal(mealData, true); // updateDailyTotals = true
       if (saved) {
@@ -79,10 +82,10 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
     } catch (error) {
       console.error('[NutritionJournal] Erreur sauvegarde repas:', error);
     }
-  };
+  }, [nutritionData.saveMeal, loadDayData]);
 
-  // Gérer suppression repas
-  const handleMealDelete = async (mealId) => {
+  // ✅ OPTIMISATION 17-18 : Mémoriser handleMealDelete avec useCallback
+  const handleMealDelete = useCallback(async (mealId) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce repas ?')) {
       return;
     }
@@ -95,7 +98,7 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
     } catch (error) {
       console.error('[NutritionJournal] Erreur suppression repas:', error);
     }
-  };
+  }, [nutritionData.deleteMeal, loadDayData]);
 
   // Ouvrir formulaire pour nouveau repas
   const handleAddMeal = (type = null) => {

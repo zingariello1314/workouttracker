@@ -11,9 +11,10 @@
  * @see ../../../../../nouvelongletnutritionplan.md
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
+import { DateHelper } from '../../../../utils/dateHelper';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -58,7 +59,7 @@ const NutritionAnalyses = ({ nutritionData }) => {
   const [loading, setLoading] = useState(true);
   const [analysisData, setAnalysisData] = useState(null);
   const [chartsReady, setChartsReady] = useState(false); // État pour différer le rendu des graphiques
-  const { dbReady: garminDbReady, getDailyMetrics } = useGarminData();
+  const { dbReady: garminDbReady, loadDataByRange } = useGarminData();
 
   // Attendre que le DOM soit prêt avant de rendre les graphiques
   useEffect(() => {
@@ -85,53 +86,9 @@ const NutritionAnalyses = ({ nutritionData }) => {
     { value: '1year', label: '1 an', days: 365 }
   ];
 
-  // Charger données d'analyse
-  useEffect(() => {
-    if (nutritionData.dbReady) {
-      loadAnalysisData();
-    }
-  }, [nutritionData.dbReady, selectedPeriod]);
-
-  const loadAnalysisData = async () => {
-    try {
-      setLoading(true);
-      
-      const period = periods.find(p => p.value === selectedPeriod) || periods[1];
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - period.days);
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = new Date().toISOString().split('T')[0];
-
-      // Charger dailyMeals pour la période
-      const dailyMeals = await nutritionData.getDailyMealsByRange(startDateStr, endDateStr);
-      
-      // Charger programme actif
-      const activeProgram = await nutritionData.getActiveProgram();
-      
-      // Charger données Garmin si disponible
-      let garminData = null;
-      if (garminDbReady) {
-        try {
-          const metrics = await getDailyMetrics(startDateStr, endDateStr);
-          garminData = metrics || null;
-        } catch (garminError) {
-          console.warn('[NutritionAnalyses] Erreur chargement Garmin:', garminError);
-        }
-      }
-
-      // Traiter données pour graphiques
-      const processedData = await processDataForAnalysis(dailyMeals, activeProgram, garminData, startDateStr, endDateStr);
-
-      setAnalysisData(processedData);
-    } catch (error) {
-      console.error('[NutritionAnalyses] Erreur chargement données:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Traiter données pour analyses
-  const processDataForAnalysis = async (dailyMeals, program, garminData, startDate, endDate) => {
+  // ✅ OPTIMISATION 29-30 : Mémoriser processDataForAnalysis avec useCallback (évite recréation)
+  // IMPORTANT : Définir AVANT loadAnalysisData car elle l'utilise
+  const processDataForAnalysis = useCallback(async (dailyMeals, program, garminData, startDate, endDate) => {
     // Créer map des données Garmin par date
     const garminMap = new Map();
     if (garminData && Array.isArray(garminData)) {
@@ -176,12 +133,13 @@ const NutritionAnalyses = ({ nutritionData }) => {
       };
 
       // Parcourir chaque jour de la période
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      const start = DateHelper.fromYYYYMMDD(startDate);
+      const end = DateHelper.fromYYYYMMDD(endDate);
       const currentDate = new Date(start);
 
       while (currentDate <= end) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+        // ✅ OPTIMISATION 27-28 : Utiliser DateHelper pour cohérence timezone locale
+        const dateStr = DateHelper.toYYYYMMDD(currentDate);
         const dailyMeal = dailyMeals.find(dm => dm.date === dateStr);
         
         // Charger meals pour ce jour depuis la map
@@ -266,7 +224,59 @@ const NutritionAnalyses = ({ nutritionData }) => {
       program,
       hasGarminData: garminMap.size > 0
     };
-  };
+  }, []); // Pas de dépendances car fonction pure (paramètres passés en arguments)
+
+  // ✅ OPTIMISATION 29-30 : Mémoriser loadAnalysisData avec useCallback (évite recréation et respecte Règles des Hooks)
+  const loadAnalysisData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      const period = periods.find(p => p.value === selectedPeriod) || periods[1];
+      // ✅ OPTIMISATION 27-28 : Utiliser DateHelper pour cohérence timezone locale
+      const startDateStr = DateHelper.getDaysAgoLocal(period.days);
+      const endDateStr = DateHelper.getTodayLocal();
+
+      // Charger dailyMeals pour la période
+      const dailyMeals = await nutritionData.getDailyMealsByRange(startDateStr, endDateStr);
+      
+      // Charger programme actif
+      const activeProgram = await nutritionData.getActiveProgram();
+      
+      // Charger données Garmin si disponible
+      let garminData = null;
+      if (garminDbReady && loadDataByRange) {
+        try {
+          const garminDataResult = await loadDataByRange(startDateStr, endDateStr);
+          // Extraire dailyMetrics de la réponse (format: { activities, dailyMetrics })
+          // dailyMetrics est un objet { [date]: metrics }, convertir en tableau avec date
+          if (garminDataResult?.dailyMetrics) {
+            garminData = Object.entries(garminDataResult.dailyMetrics).map(([date, metrics]) => ({
+              date,
+              ...metrics
+            }));
+          }
+        } catch (garminError) {
+          console.warn('[NutritionAnalyses] Erreur chargement Garmin:', garminError);
+        }
+      }
+
+      // Traiter données pour graphiques
+      const processedData = await processDataForAnalysis(dailyMeals, activeProgram, garminData, startDateStr, endDateStr);
+
+      setAnalysisData(processedData);
+    } catch (error) {
+      console.error('[NutritionAnalyses] Erreur chargement données:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [nutritionData.dbReady, selectedPeriod, garminDbReady, nutritionData.getDailyMealsByRange, nutritionData.getActiveProgram, loadDataByRange, processDataForAnalysis]);
+
+  // Charger données d'analyse
+  useEffect(() => {
+    if (nutritionData.dbReady) {
+      loadAnalysisData();
+    }
+  }, [nutritionData.dbReady, loadAnalysisData]);
 
   // Tooltip personnalisé
   const CustomTooltip = ({ active, payload, label }) => {
@@ -284,6 +294,12 @@ const NutritionAnalyses = ({ nutritionData }) => {
     }
     return null;
   };
+
+  // ✅ OPTIMISATION 31 : Mémoriser filtres de dailyData avec useMemo (évite recalcul à chaque rendu)
+  // IMPORTANT : Les hooks doivent être appelés AVANT les early returns pour respecter les Règles des Hooks
+  const dailyData = analysisData?.dailyData || [];
+  const filteredDailyData = useMemo(() => dailyData.filter(d => d.hasData), [dailyData]);
+  const filteredDailyDataWithGarmin = useMemo(() => dailyData.filter(d => d.hasData && d.caloriesBurned !== null), [dailyData]);
 
   if (loading) {
     return (
@@ -310,7 +326,7 @@ const NutritionAnalyses = ({ nutritionData }) => {
     );
   }
 
-  const { dailyData, stats, trend, program, hasGarminData } = analysisData;
+  const { stats, trend, program, hasGarminData } = analysisData;
 
   return (
     <div className="space-y-6">
@@ -443,7 +459,7 @@ const NutritionAnalyses = ({ nutritionData }) => {
           <div className="w-full" style={{ height: '320px' }}>
             {chartsReady ? (
               <ResponsiveContainer width="100%" height={320} minHeight={320}>
-                <ComposedChart data={dailyData.filter(d => d.hasData)}>
+                <ComposedChart data={filteredDailyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
                   dataKey="dateLabel" 
@@ -524,7 +540,7 @@ const NutritionAnalyses = ({ nutritionData }) => {
             <div className="w-full" style={{ height: '320px' }}>
               {chartsReady ? (
                 <ResponsiveContainer width="100%" height={320} minHeight={320}>
-                  <ComposedChart data={dailyData.filter(d => d.hasData && d.caloriesBurned !== null)}>
+                  <ComposedChart data={filteredDailyDataWithGarmin}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis 
                     dataKey="dateLabel" 
@@ -600,7 +616,7 @@ const NutritionAnalyses = ({ nutritionData }) => {
           <div className="w-full" style={{ height: '320px' }}>
             {chartsReady ? (
               <ResponsiveContainer width="100%" height={320} minHeight={320}>
-                <AreaChart data={dailyData.filter(d => d.hasData)}>
+                <AreaChart data={filteredDailyData}>
                 <defs>
                   <linearGradient id="colorProtein" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>

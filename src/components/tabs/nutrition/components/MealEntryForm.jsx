@@ -10,7 +10,7 @@
  * @module components/tabs/nutrition/components/MealEntryForm
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Modal from '../../../ui/Modal';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
@@ -56,9 +56,9 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
     }
   }, [meal, isOpen]);
 
-  // Ajouter un aliment vide
-  const handleAddFood = () => {
-    setFoods([...foods, {
+  // ✅ OPTIMISATION 25 : Mémoriser handleAddFood avec useCallback
+  const handleAddFood = useCallback(() => {
+    setFoods(prevFoods => [...prevFoods, {
       id: `food_${Date.now()}_${Math.random()}`,
       name: '',
       quantity: 100,
@@ -68,55 +68,55 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
       carbsPer100: 0,
       fatPer100: 0
     }]);
-  };
+  }, []);
 
-  // Ajouter un aliment depuis la recherche
-  const handleFoodSelected = (foodData) => {
-    setFoods([...foods, foodData]);
+  // ✅ OPTIMISATION 25 : Mémoriser handleFoodSelected avec useCallback
+  const handleFoodSelected = useCallback((foodData) => {
+    setFoods(prevFoods => [...prevFoods, foodData]);
     setShowFoodSearch(false);
-  };
+  }, []);
 
-  // Ajouter des aliments depuis la saisie vocale
-  const handleVoiceFoodsSelected = (voiceFoods) => {
+  // ✅ OPTIMISATION 25 : Mémoriser handleVoiceFoodsSelected avec useCallback
+  const handleVoiceFoodsSelected = useCallback((voiceFoods) => {
     if (!Array.isArray(voiceFoods) || voiceFoods.length === 0) {
       return;
     }
 
     // Ajouter tous les aliments trouvés
-    setFoods([...foods, ...voiceFoods]);
+    setFoods(prevFoods => [...prevFoods, ...voiceFoods]);
     
     log.debug('[MealEntryForm] Aliments ajoutés depuis voix', { count: voiceFoods.length });
-  };
+  }, []);
 
-  // Ajouter des aliments depuis la reconnaissance photo
-  const handlePhotoFoodsSelected = (photoFoods) => {
+  // ✅ OPTIMISATION 25 : Mémoriser handlePhotoFoodsSelected avec useCallback
+  const handlePhotoFoodsSelected = useCallback((photoFoods) => {
     if (!Array.isArray(photoFoods) || photoFoods.length === 0) {
       return;
     }
 
     // Ajouter tous les aliments détectés
-    setFoods([...foods, ...photoFoods]);
+    setFoods(prevFoods => [...prevFoods, ...photoFoods]);
     
     log.debug('[MealEntryForm] Aliments ajoutés depuis photo', { count: photoFoods.length });
-  };
+  }, []);
 
-  // Supprimer un aliment
-  const handleRemoveFood = (foodId) => {
-    setFoods(foods.filter(f => f.id !== foodId));
-  };
+  // ✅ OPTIMISATION 25 : Mémoriser handleRemoveFood avec useCallback
+  const handleRemoveFood = useCallback((foodId) => {
+    setFoods(prevFoods => prevFoods.filter(f => f.id !== foodId));
+  }, []);
 
-  // Mettre à jour un aliment
-  const handleUpdateFood = (foodId, field, value) => {
-    setFoods(foods.map(f => {
+  // ✅ OPTIMISATION 25 : Mémoriser handleUpdateFood avec useCallback
+  const handleUpdateFood = useCallback((foodId, field, value) => {
+    setFoods(prevFoods => prevFoods.map(f => {
       if (f.id === foodId) {
         return { ...f, [field]: value };
       }
       return f;
     }));
-  };
+  }, []);
 
-  // Calculer totaux d'un aliment
-  const calculateFoodTotals = (food) => {
+  // Calculer totaux d'un aliment (fonction pure, peut être appelée dans useMemo)
+  const calculateFoodTotals = useCallback((food) => {
     const ratio = food.quantity / 100;
     return {
       calories: (food.caloriesPer100 || 0) * ratio,
@@ -124,23 +124,23 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
       carbs: (food.carbsPer100 || 0) * ratio,
       fat: (food.fatPer100 || 0) * ratio
     };
-  };
+  }, []);
 
-  // Calculer totaux du repas
-  const calculateMealTotals = () => {
+  // ✅ OPTIMISATION 26 : Mémoriser calculateMealTotals avec useMemo (évite recalcul à chaque rendu)
+  const totals = useMemo(() => {
     return foods.reduce((acc, food) => {
-      const totals = calculateFoodTotals(food);
+      const foodTotals = calculateFoodTotals(food);
       return {
-        calories: acc.calories + totals.calories,
-        protein: acc.protein + totals.protein,
-        carbs: acc.carbs + totals.carbs,
-        fat: acc.fat + totals.fat
+        calories: acc.calories + foodTotals.calories,
+        protein: acc.protein + foodTotals.protein,
+        carbs: acc.carbs + foodTotals.carbs,
+        fat: acc.fat + foodTotals.fat
       };
     }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-  };
+  }, [foods, calculateFoodTotals]);
 
-  // Valider et sauvegarder
-  const handleSave = async () => {
+  // ✅ OPTIMISATION 25 : Mémoriser handleSave avec useCallback
+  const handleSave = useCallback(async () => {
     // Validation
     if (foods.length === 0) {
       alert('Veuillez ajouter au moins un aliment');
@@ -156,7 +156,7 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
     setLoading(true);
 
     try {
-      const totals = calculateMealTotals();
+      // ✅ OPTIMISATION 26 : Utiliser totals mémorisé (déjà calculé)
 
       const mealData = {
         id: meal?.id || nutritionData.generateMealId(),
@@ -186,9 +186,7 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
     } finally {
       setLoading(false);
     }
-  };
-
-  const totals = calculateMealTotals();
+  }, [foods, meal, dateStr, mealType, timestamp, notes, totals, nutritionData, onSave]);
 
   return (
     <Modal
@@ -441,27 +439,31 @@ const MealEntryForm = ({ isOpen, onClose, meal, dateStr, onSave, nutritionData }
                   </div>
 
                   {/* Totaux pour cette quantité */}
-                  {food.quantity > 0 && (
-                    <div className="pt-2 border-t border-slate-700">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-400">Totaux pour {food.quantity} {food.unit} :</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-white">
-                            {Math.round(calculateFoodTotals(food).calories)} kcal
-                          </span>
-                          <span className="text-blue-400">
-                            P: {Math.round(calculateFoodTotals(food).protein * 10) / 10}g
-                          </span>
-                          <span className="text-green-400">
-                            G: {Math.round(calculateFoodTotals(food).carbs * 10) / 10}g
-                          </span>
-                          <span className="text-orange-400">
-                            L: {Math.round(calculateFoodTotals(food).fat * 10) / 10}g
-                          </span>
+                  {food.quantity > 0 && (() => {
+                    // ✅ OPTIMISATION 26 : Calculer une seule fois les totaux de l'aliment (évite appels répétés)
+                    const foodTotals = calculateFoodTotals(food);
+                    return (
+                      <div className="pt-2 border-t border-slate-700">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-400">Totaux pour {food.quantity} {food.unit} :</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-white">
+                              {Math.round(foodTotals.calories)} kcal
+                            </span>
+                            <span className="text-blue-400">
+                              P: {Math.round(foodTotals.protein * 10) / 10}g
+                            </span>
+                            <span className="text-green-400">
+                              G: {Math.round(foodTotals.carbs * 10) / 10}g
+                            </span>
+                            <span className="text-orange-400">
+                              L: {Math.round(foodTotals.fat * 10) / 10}g
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               ))}
             </div>

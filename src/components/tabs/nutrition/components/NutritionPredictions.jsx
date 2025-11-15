@@ -52,6 +52,7 @@ import {
 } from 'recharts';
 import { useNutritionPredictions } from '../../../../hooks/useNutritionPredictions';
 import { useWorkout } from '../../../../context/WorkoutContext';
+import { DateHelper } from '../../../../utils/dateHelper';
 import logger from '../../../../utils/logger';
 
 const log = logger.component('NutritionPredictions');
@@ -130,12 +131,16 @@ const NutritionPredictions = () => {
 
     const weightEntries = workoutData.progressEntries
       .filter(entry => entry.type === 'metrics' && entry.weight != null && entry.weight > 0)
-      .map(entry => ({
-        date: entry.date || new Date(entry.timestamp).toISOString().split('T')[0],
-        timestamp: entry.timestamp || new Date(entry.date).getTime(),
-        weight: parseFloat(entry.weight)
-      }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(entry => {
+        // ✅ OPTIMISATION 34 : Utiliser DateHelper pour cohérence timezone locale
+        const date = entry.date || DateHelper.toYYYYMMDD(entry.timestamp) || DateHelper.getTodayLocal();
+        return {
+          date,
+          timestamp: entry.timestamp || DateHelper.getMidnightTimestamp(date) || Date.now(),
+          weight: parseFloat(entry.weight)
+        };
+      })
+      .sort((a, b) => (DateHelper.getMidnightTimestamp(a.date) || 0) - (DateHelper.getMidnightTimestamp(b.date) || 0))
       .slice(-30); // 30 derniers points pour graphique
 
     setHistoricalData(weightEntries);
@@ -155,7 +160,8 @@ const NutritionPredictions = () => {
     // Ajouter prédiction si disponible (avec point de connexion depuis dernier historique)
     if (predictions.weight && predictions.weight.value && historical.length > 0) {
       const pred = predictions.weight;
-      const predDate = pred.date || new Date(Date.now() + pred.daysAhead * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      // ✅ OPTIMISATION 35 : Utiliser DateHelper pour cohérence timezone locale
+      const predDate = pred.date || DateHelper.addDays(DateHelper.getTodayLocal(), pred.daysAhead || 7) || DateHelper.getTodayLocal();
       const lastHistorical = historical[historical.length - 1];
       
       // ✅ OPTIMISATION : Créer nouvelle array avec prédiction (éviter mutation)
@@ -177,11 +183,12 @@ const NutritionPredictions = () => {
           predictedWeight: pred.value,
           type: 'prediction'
         }
-      ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      ].sort((a, b) => (DateHelper.getMidnightTimestamp(a.date) || 0) - (DateHelper.getMidnightTimestamp(b.date) || 0));
     }
 
     // ✅ OPTIMISATION : Trier sans muter (déjà trié par historicalData, mais sécurité)
-    return [...historical].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // ✅ OPTIMISATION 36 : Utiliser DateHelper.getMidnightTimestamp() pour cohérence
+    return [...historical].sort((a, b) => (DateHelper.getMidnightTimestamp(a.date) || 0) - (DateHelper.getMidnightTimestamp(b.date) || 0));
   }, [historicalData, predictions]);
 
   // Handler entraînement

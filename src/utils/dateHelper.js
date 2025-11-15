@@ -123,6 +123,24 @@ export class DateHelper {
           const [, year, month, day] = match.map(Number);
           dateObj = new Date(year, month - 1, day, 0, 0, 0, 0);
         } else {
+          // ✅ OPTIMISATION 13 : Détection formats ambigus avant parsing
+          // Formats qui peuvent être interprétés différemment selon le navigateur/locale
+          const ambiguousFormats = [
+            /^\d{1,2}\/\d{1,2}\/\d{4}$/, // MM/DD/YYYY ou DD/MM/YYYY (ex: "01/15/2025" ou "15/01/2025")
+            /^\d{1,2}-\d{1,2}-\d{4}$/,   // DD-MM-YYYY ou MM-DD-YYYY (ex: "15-01-2025" ou "01-15-2025")
+            /^\d{4}\/\d{1,2}\/\d{1,2}$/  // YYYY/MM/DD (ex: "2025/01/15")
+          ];
+          
+          const isAmbiguous = ambiguousFormats.some(regex => regex.test(date.trim()));
+          if (isAmbiguous && log?.warn) {
+            log.warn(
+              `[DateHelper.toYYYYMMDD] Format date ambigu détecté: "${date}". ` +
+              `Utiliser "YYYY-MM-DD" pour éviter ambiguïté. ` +
+              `Le parsing peut varier selon le navigateur/locale.`
+            );
+          }
+          
+          // Continuer le parsing (ne pas casser l'existant)
           dateObj = new Date(date);
         }
       } else if (typeof date === 'number') {

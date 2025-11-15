@@ -28,11 +28,15 @@ if (typeof window !== 'undefined') {
       .join(' ');
     
     // Filtrer warning TensorFlow.js platform (plusieurs variantes)
+    // Ce warning peut venir de installHook.js (Vite/React DevTools) ou directement de TensorFlow.js
     if (message.includes('Platform browser has already been set') ||
         message.includes('Overwriting the platform with browser') ||
         message.includes('platform browser has already been set') ||
-        (message.includes('Platform') && message.includes('browser') && message.includes('already been set'))) {
+        message.includes('Platform browser has already been set. Overwriting') ||
+        (message.includes('Platform') && message.includes('browser') && message.includes('already been set')) ||
+        (message.includes('Overwriting') && message.includes('platform') && message.includes('browser'))) {
       // Ne pas afficher ce warning (normal si TensorFlow.js est chargé plusieurs fois)
+      // Peut venir de installHook.js (Vite) qui intercepte les appels TensorFlow.js
       return;
     }
     
