@@ -28,6 +28,7 @@
 
 import logger from '../../utils/logger';
 import { openNutritionDB, STORE_SHARE_LINKS } from '../../hooks/nutritionDataUtils';
+import { DateHelper } from '../../utils/dateHelper';
 
 const log = logger.module('nutritionSharing');
 
@@ -580,10 +581,9 @@ function calculateAggregatedStats(dailyMeals, meals, programs) {
     const stats = {};
     
     Object.entries(ranges).forEach(([period, days]) => {
-      const startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - days);
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = now.toISOString().split('T')[0];
+      // ✅ OPTIMISATION : Utiliser DateHelper pour garantir timezone locale
+      const endDateStr = DateHelper.toYYYYMMDD(now);
+      const startDateStr = DateHelper.getDaysAgoLocal(days);
       
       const periodDailyMeals = dailyMeals.filter(dm => {
         const date = dm.date || dm.timestamp;
@@ -673,10 +673,9 @@ function prepareChartData(dailyMeals, meals, programs) {
     
     // Préparer données pour graphiques (30 derniers jours)
     const now = new Date();
-    const startDate = new Date(now);
-    startDate.setDate(startDate.getDate() - 30);
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = now.toISOString().split('T')[0];
+    // ✅ OPTIMISATION : Utiliser DateHelper pour garantir timezone locale
+    const endDateStr = DateHelper.toYYYYMMDD(now);
+    const startDateStr = DateHelper.getDaysAgoLocal(30);
     
     const chartDailyMeals = dailyMeals.filter(dm => {
       const date = dm.date || dm.timestamp;
@@ -767,10 +766,9 @@ function prepareProgressData(dailyMeals, meals, programs, gamification) {
     const trends = {};
     
     Object.entries(ranges).forEach(([period, days]) => {
-      const startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - days);
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = now.toISOString().split('T')[0];
+      // ✅ OPTIMISATION : Utiliser DateHelper pour garantir timezone locale
+      const endDateStr = DateHelper.toYYYYMMDD(now);
+      const startDateStr = DateHelper.getDaysAgoLocal(days);
       
       const periodDailyMeals = dailyMeals.filter(dm => {
         const date = dm.date || dm.timestamp;

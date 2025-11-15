@@ -7,6 +7,39 @@ import './index.css'
 // L'erreur "Module.arguments" vient du WebAssembly et n'est pas capturée par console.error
 // On doit utiliser les event listeners globaux pour la filtrer
 if (typeof window !== 'undefined') {
+  // ✅ OPTIMISATION : Intercepter console.warn pour filtrer warnings TensorFlow.js
+  // Le warning "Platform browser has already been set" peut venir de installHook.js (Vite)
+  // Doit être fait très tôt, avant tout chargement TensorFlow.js
+  const originalWarn = console.warn;
+  console.warn = (...args) => {
+    // Convertir tous les arguments en string pour vérification
+    const message = args
+      .map(arg => {
+        if (typeof arg === 'string') return arg;
+        if (arg && typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg);
+          } catch {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      })
+      .join(' ');
+    
+    // Filtrer warning TensorFlow.js platform (plusieurs variantes)
+    if (message.includes('Platform browser has already been set') ||
+        message.includes('Overwriting the platform with browser') ||
+        message.includes('platform browser has already been set') ||
+        (message.includes('Platform') && message.includes('browser') && message.includes('already been set'))) {
+      // Ne pas afficher ce warning (normal si TensorFlow.js est chargé plusieurs fois)
+      return;
+    }
+    
+    // Afficher les autres warnings normalement
+    originalWarn.apply(console, args);
+  };
+
   // ✅ FIX MediaPipe WASM: Intercepter erreurs WebAssembly (y compris RuntimeError)
   // Les erreurs WASM (ErrnoError, RuntimeError: Aborted, memory access out of bounds)
   // sont souvent non-bloquantes mais polluent la console
@@ -39,11 +72,14 @@ if (typeof window !== 'undefined') {
     
     // ✅ OPTIMISATION : Filtrer warnings TensorFlow.js WebGL (non-bloquants)
     // Ces warnings sont normaux : TensorFlow.js essaie WebGL, échoue, puis utilise CPU
-    if (errorSource.includes('@tensorflow') || errorSource.includes('tensorflow')) {
+    if (errorSource.includes('@tensorflow') || 
+        errorSource.includes('tensorflow') ||
+        errorSource.includes('installHook.js')) { // Vite/React DevTools hook
       if (errorMessage.includes('Could not get context for WebGL') ||
           errorMessage.includes('WebGL is not supported') ||
           errorMessage.includes('Initialization of backend webgl failed') ||
-          errorMessage.includes('Platform browser has already been set')) {
+          errorMessage.includes('Platform browser has already been set') ||
+          errorMessage.includes('Overwriting the platform with browser')) {
         event.preventDefault();
         event.stopPropagation();
         return false;

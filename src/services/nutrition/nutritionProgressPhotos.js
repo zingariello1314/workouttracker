@@ -315,33 +315,58 @@ export async function getAllProgressPhotos(filters = {}) {
     const store = tx.objectStore(STORE_PROGRESS_PHOTOS);
     
     return new Promise((resolve, reject) => {
-      // Utiliser index selon filtre
+      // ✅ OPTIMISATION : Utiliser index composé [date+type] si les deux filtres sont présents
       let request;
+      let usedCompositeIndex = false; // Flag pour tracker si index composé utilisé
       
-      if (filters.date) {
+      if (filters.date && filters.type) {
+        // ✅ OPTIMISATION : Index composé [date+type] pour requête optimisée O(log n)
+        try {
+          const index = store.index('[date+type]');
+          const keyRange = IDBKeyRange.only([filters.date, filters.type]);
+          request = index.getAll(keyRange);
+          usedCompositeIndex = true; // ✅ Index composé utilisé
+          log.debug('[getAllProgressPhotos] Utilisation index composé [date+type]');
+        } catch (idxError) {
+          // Index composé non disponible (DB ancienne version), fallback sur filtres séparés
+          log.debug('[getAllProgressPhotos] Index composé non disponible, fallback filtrage séparé');
+          const dateIndex = store.index('date');
+          request = dateIndex.getAll(IDBKeyRange.only(filters.date));
+          usedCompositeIndex = false; // ✅ Index composé non disponible, filtrage type en mémoire nécessaire
+        }
+      } else if (filters.date) {
         // Filtrer par date (index)
         const index = store.index('date');
         request = index.getAll(IDBKeyRange.only(filters.date));
+        usedCompositeIndex = false;
       } else if (filters.type) {
         // Filtrer par type (index)
         const index = store.index('type');
         request = index.getAll(IDBKeyRange.only(filters.type));
+        usedCompositeIndex = false;
       } else if (filters.sequenceId) {
         // Filtrer par séquence (index)
         const index = store.index('sequenceId');
         request = index.getAll(IDBKeyRange.only(filters.sequenceId));
+        usedCompositeIndex = false;
       } else {
         // Récupérer toutes les photos
         request = store.getAll();
+        usedCompositeIndex = false;
       }
       
       request.onsuccess = () => {
         let photos = request.result || [];
         
-        // Appliquer filtres supplémentaires (si plusieurs filtres)
-        if (filters.type && filters.date) {
-          photos = photos.filter(p => p.type === filters.type && p.date === filters.date);
+        // ✅ OPTIMISATION : Filtrage mémoire seulement si index composé non disponible
+        // (Si index composé utilisé, filtrage déjà fait par IndexedDB)
+        if (filters.date && filters.type && !usedCompositeIndex) {
+          // Fallback : Index composé non disponible (DB v9), filtrer type en mémoire
+          photos = photos.filter(p => p.type === filters.type);
+          log.debug('[getAllProgressPhotos] Filtrage type en mémoire (fallback DB v9)');
         }
+        
+        // Appliquer filtres supplémentaires si nécessaire (sequenceId)
         if (filters.sequenceId) {
           photos = photos.filter(p => p.sequenceId === filters.sequenceId);
         }
@@ -351,7 +376,8 @@ export async function getAllProgressPhotos(filters = {}) {
         
         log.debug('[getAllProgressPhotos] Photos récupérées', {
           total: photos.length,
-          filters
+          filters,
+          indexUsed: usedCompositeIndex ? '[date+type]' : (filters.date ? 'date' : filters.type ? 'type' : filters.sequenceId ? 'sequenceId' : 'primary')
         });
         
         resolve(photos);

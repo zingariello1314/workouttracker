@@ -3325,3 +3325,191 @@ Implémentation de la reconnaissance d'aliments via photo en utilisant TensorFlo
 - ✅ Gestion erreurs robuste
 - ✅ Pattern cohérent avec code existant
 
+---
+
+## ✅ Phase 21 : Prédictions Offline (TensorFlow.js ML)
+
+**Date** : 2025-01-15  
+**Statut** : ✅ Complété  
+**Priorité** : 🟢 Optionnel (feature avancée ML)
+
+### 📋 Vue d'Ensemble
+
+Implémentation des prédictions offline avec TensorFlow.js pour prédire le poids futur basé sur l'historique nutrition et poids :
+- **Modèles ML** : Réseaux de neurones séquentiels (régression)
+- **Features** : Calories moyennes, protéines, fréquence workouts, jours écoulés, poids actuel
+- **Prédictions** : Poids futur (7, 14, 30 jours)
+- **Stockage** : IndexedDB (nutrition_mlModels)
+- **Performance** : Lazy loading, entraînement async, cache modèles
+- **UX** : Graphiques Recharts, feedback utilisateur, fallback gracieux
+
+### 🎯 Objectifs
+
+- [x] Store IndexedDB pour modèles ML (nutrition_mlModels)
+- [x] Service nutritionPredictions.js (création/entraînement/sauvegarde/chargement)
+- [x] Hook useNutritionPredictions.js (interface React)
+- [x] Composant NutritionPredictions.jsx (UI avec graphiques)
+- [x] Intégration dans NutritionAnalyses.jsx
+- [x] Export JSON modèles dans SettingsTab
+- [x] Gestion erreurs et fallback gracieux
+- [x] Performance optimisée (lazy loading, async)
+
+### 📝 Actions Réalisées
+
+#### **Phase 21.1 : Analyse Plan et Architecture**
+- [x] Analyse du plan `nouvelongletnutritionplan.md` Section 7.1
+- [x] Définition architecture : Service → Hook → Composant → Intégration
+- [x] Choix technologies : TensorFlow.js (réseaux de neurones séquentiels)
+- [x] Définition structure : Lazy loading, entraînement async, cache, export JSON
+
+#### **Phase 21.2 : Store IndexedDB nutrition_mlModels**
+- [x] Ajout store `nutrition_mlModels` dans `nutritionDataUtils.js`
+- [x] Indexes : `type`, `timestamp`, `version`, `isActive`
+- [x] Migration automatique vers version 8
+- [x] Structure : `id`, `type`, `modelWeights`, `modelConfig`, `stats`, `metadata`
+
+#### **Phase 21.3 : Service nutritionPredictions.js**
+- [x] Créer service `src/services/nutrition/nutritionPredictions.js` :
+  - Création modèles (réseaux séquentiels)
+  - Préparation données (features, normalisation Z-score)
+  - Entraînement modèles (async, non-bloquant)
+  - Sauvegarde automatique après entraînement (IndexedDB)
+  - Chargement modèles (cache en mémoire)
+  - Prédictions (poids, calories, temps objectif)
+  - Export JSON modèles
+  - Gestion erreurs robuste
+- [x] Tests linter : ✅ Aucune erreur
+
+#### **Phase 21.4 : Hook useNutritionPredictions.js**
+- [x] Créer hook `src/hooks/useNutritionPredictions.js` :
+  - Récupération données nutrition (dailyMeals) depuis `useNutritionData`
+  - Récupération poids (progressEntries) depuis `useWorkout`
+  - Fusion données pour créer historique utilisateur
+  - Méthodes exposées : `trainWeightModel`, `predictWeight`, `loadWeightModel`, etc.
+  - Gestion état : `isTraining`, `modelLoaded`, `predictions`, `error`, `trainingProgress`
+  - Intégration toast notifications
+  - Lazy loading modèles au montage
+- [x] Tests linter : ✅ Aucune erreur
+
+#### **Phase 21.5 : Composant NutritionPredictions.jsx**
+- [x] Créer composant `src/components/tabs/nutrition/components/NutritionPredictions.jsx` :
+  - UI complète avec graphiques Recharts (LineChart)
+  - Boutons entraînement/prédiction
+  - Sélection horizon prédiction (7, 14, 30 jours)
+  - Statistiques : poids actuel, prédit, différence, tendance
+  - Graphique historique + courbe prédite (ligne pointillée)
+  - Progression entraînement (barre de progression)
+  - Messages d'erreur et fallback gracieux
+  - Support TensorFlow.js vérifié
+- [x] Tests linter : ✅ Aucune erreur
+
+#### **Phase 21.6 : Intégration NutritionAnalyses.jsx**
+- [x] Importer `NutritionPredictions` dans `NutritionAnalyses.jsx`
+- [x] Ajouter section prédictions dans onglet Analyses
+- [x] Position : Après `NutritionHealthScore`
+- [x] Tests linter : ✅ Aucune erreur
+
+#### **Phase 21.7 : Export JSON Modèles**
+- [x] Ajouter export modèles ML dans `useNutritionData.exportAll()`
+- [x] Ajouter `mlModels` dans métadonnées export
+- [x] Ajouter champs `mlModels` dans `fieldsIncluded` (SettingsTab)
+- [x] Utiliser `exportModels()` depuis service `nutritionPredictions.js`
+- [x] Tests linter : ✅ Aucune erreur
+
+#### **Phase 21.8 : Documentation**
+- [x] Documenter Phase 21 dans `SUIVI_IMPLEMENTATION_NUTRITION.md`
+- [x] Mettre à jour `CE_QUI_RESTE_A_FAIRE.md` (Phase 21 complétée)
+
+### 🔧 Décisions Techniques
+
+#### **Modèles TensorFlow.js**
+- **Architecture** : Réseaux de neurones séquentiels (régression)
+- **Layers** : Dense(64) → Dense(32) → Dropout(0.2) → Dense(1)
+- **Optimizer** : Adam (learning rate 0.001)
+- **Loss** : Mean Squared Error
+- **Epochs** : 50 (avec validation split 0.2)
+- **Batch Size** : 32
+- **Minimum données** : 30 jours (pour entraînement fiable)
+
+#### **Features & Normalisation**
+- **Features** : [calories_avg, protein_avg, workout_freq, days_elapsed, current_weight]
+- **Normalisation** : Z-score (moyenne 0, écart-type 1)
+- **Fenêtre glissante** : 7 derniers jours pour calcul features
+- **Target** : Poids futur (selon type prédiction)
+
+#### **Performance**
+- **Lazy Loading** : Modèles chargés seulement si utilisateur entraîne/prédit
+- **Entraînement Async** : Non-bloquant UI (setTimeout, chunks)
+- **Cache Mémoire** : Évite rechargements multiples (Map)
+- **Sauvegarde Auto** : Modèles sauvegardés automatiquement après entraînement
+- **Export JSON** : Modèles exportés (sans weights volumineux)
+
+#### **Stockage IndexedDB**
+- **Store** : `nutrition_mlModels` (version 8)
+- **Structure** : `id`, `type`, `modelWeights`, `modelConfig`, `stats`, `metadata`, `timestamp`, `isActive`
+- **Indexes** : `type`, `timestamp`, `version`, `isActive`
+- **Migration** : Automatique (version 7 → 8)
+
+### 📊 Données Exportées (JSON)
+
+**Modèles ML** (`mlModels`) :
+- `id` : Identifiant unique
+- `type` : Type prédiction ('weight', 'calories', 'goal_time')
+- `version` : Version modèle (pour migrations)
+- `timestamp` : Date entraînement
+- `isActive` : Modèle actif (1 seul actif par type)
+- `modelConfig` : Configuration modèle (inputSize, layers)
+- `stats` : Statistiques normalisation (xMean, xStd, yMean, yStd)
+- `metadata` : Métadonnées (epochs, loss, MAE, trainingSamples)
+- **Note** : `modelWeights` exclu de l'export (trop volumineux, peut être recalculé)
+
+### ⚠️ Limitations & Points d'Attention
+
+- **Minimum données** : 30-50 jours nécessaires pour entraînement fiable
+- **Prédictions approximatives** : Pas médicales, estimations basées sur historique
+- **TensorFlow.js requis** : Fonctionnalité masquée si non supporté
+- **Backend CPU** : Si WebGL non disponible, utilise CPU (plus lent mais fonctionne)
+- **Poids requis** : Nécessite données poids (progressEntries) pour prédictions
+- **ModelWeights volumineux** : Exclus de l'export JSON (peuvent être recalculés)
+
+### 🔗 Fichiers Créés/Modifiés
+
+**Fichiers créés** :
+- `src/services/nutrition/nutritionPredictions.js`
+- `src/hooks/useNutritionPredictions.js`
+- `src/components/tabs/nutrition/components/NutritionPredictions.jsx`
+
+**Fichiers modifiés** :
+- `src/hooks/nutritionDataUtils.js` (store nutrition_mlModels, version 8)
+- `src/hooks/useNutritionData.js` (export modèles ML)
+- `src/components/tabs/nutrition/components/NutritionAnalyses.jsx` (intégration)
+- `src/components/tabs/SettingsTab.jsx` (champs export mlModels)
+
+### 📈 Résultats
+
+**Fonctionnalités** :
+- ✅ Prédictions poids avec TensorFlow.js ML
+- ✅ Graphiques interactifs (Recharts)
+- ✅ Entraînement async non-bloquant
+- ✅ Export JSON modèles
+- ✅ Fallback gracieux si TensorFlow.js non supporté
+
+**Performance** :
+- ✅ Lazy loading modèles
+- ✅ Cache mémoire pour éviter rechargements
+- ✅ Entraînement async (non-bloquant UI)
+- ✅ Graphiques optimisés (requestAnimationFrame)
+
+**Qualité** :
+- ✅ Aucune erreur linter
+- ✅ Documentation complète (JSDoc)
+- ✅ Gestion erreurs robuste
+- ✅ Pattern cohérent avec code existant
+- ✅ Export JSON cohérent avec autres données
+
+---
+
+**Dernière mise à jour** : 2025-01-15 (Phase 21 : Prédictions Offline complétée)
+
+---
+

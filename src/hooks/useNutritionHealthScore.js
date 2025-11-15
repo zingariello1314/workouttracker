@@ -15,6 +15,7 @@ import { useNutritionData } from './useNutritionData';
 import { useGarminData } from './useGarminData';
 import { useNutritionGamification } from './useNutritionGamification';
 import { calculateGlobalHealthScore } from '../services/nutrition/nutritionHealthScore';
+import { DateHelper } from '../utils/dateHelper';
 import logger from '../utils/logger';
 
 const log = logger.module('useNutritionHealthScore');
@@ -70,11 +71,10 @@ export const useNutritionHealthScore = (options = {}) => {
       log.debug('Chargement données pour score santé global');
 
       // 1. Charger données nutrition (7 derniers jours pour score nutrition)
-      const today = new Date();
-      const nutritionStartDate = new Date(today);
-      nutritionStartDate.setDate(nutritionStartDate.getDate() - 7);
-      const nutritionStartStr = nutritionStartDate.toISOString().split('T')[0];
-      const nutritionEndStr = today.toISOString().split('T')[0];
+      // ✅ OPTIMISATION : Utiliser DateHelper pour garantir timezone locale
+      const today = DateHelper.getTodayLocal();
+      const nutritionStartStr = DateHelper.getDaysAgoLocal(7);
+      const nutritionEndStr = today;
 
       const [dailyMeals, allMeals, programs] = await Promise.all([
         getDailyMealsByRange(nutritionStartStr, nutritionEndStr),
@@ -85,10 +85,9 @@ export const useNutritionHealthScore = (options = {}) => {
       const activeProgram = programs.find(p => p.isActive) || null;
 
       // 2. Charger données workouts (30 derniers jours pour score workout)
-      const workoutStartDate = new Date(today);
-      workoutStartDate.setDate(workoutStartDate.getDate() - 30);
-      const workoutStartStr = workoutStartDate.toISOString().split('T')[0];
-      const workoutEndStr = today.toISOString().split('T')[0];
+      // ✅ OPTIMISATION : Utiliser DateHelper pour garantir timezone locale
+      const workoutStartStr = DateHelper.getDaysAgoLocal(30);
+      const workoutEndStr = today;
 
       let garminData = { activities: {}, dailyMetrics: {} };
       if (garminDbReady) {
@@ -207,17 +206,12 @@ export const useNutritionHealthScore = (options = {}) => {
 };
 
 /**
- * Normalise une date (string ou Date) en format YYYY-MM-DD
+ * Normalise une date (string ou Date) en format YYYY-MM-DD (timezone locale garantie)
+ * 
+ * ✅ OPTIMISATION : Utilise DateHelper pour garantir cohérence timezone
  */
 function normalizeDate(date) {
-  if (!date) return null;
-  if (typeof date === 'string') {
-    return date.split('T')[0];
-  }
-  if (date instanceof Date) {
-    return date.toISOString().split('T')[0];
-  }
-  return null;
+  return DateHelper.toYYYYMMDD(date);
 }
 
 export default useNutritionHealthScore;

@@ -26,59 +26,15 @@
 
 import * as tf from '@tensorflow/tfjs';
 import * as mobilenet from '@tensorflow-models/mobilenet';
+import { LRUCache } from '../../utils/lruCache';
 import { searchFoodWithFallback } from './openFoodFactsService';
 import { getFavoriteFoods } from '../../hooks/nutritionDataCRUD';
 import logger from '../../utils/logger';
 
 const log = logger.module('nutritionFoodRecognition');
 
-// ✅ OPTIMISATION : Vérifier support WebGL et configurer backend
-let backendInitialized = false;
-
-/**
- * Initialise le backend TensorFlow.js (CPU si WebGL non disponible)
- */
-const initializeTensorFlowBackend = async () => {
-  if (backendInitialized) {
-    return;
-  }
-
-  try {
-    // Vérifier support WebGL
-    const hasWebGL = (() => {
-      try {
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        return !!gl;
-      } catch (e) {
-        return false;
-      }
-    })();
-
-    if (hasWebGL) {
-      // Essayer WebGL d'abord
-      try {
-        await tf.setBackend('webgl');
-        await tf.ready();
-        log.debug('[initializeTensorFlowBackend] Backend WebGL activé');
-        backendInitialized = true;
-        return;
-      } catch (webglError) {
-        log.debug('[initializeTensorFlowBackend] WebGL non disponible, fallback CPU:', webglError);
-      }
-    }
-
-    // Fallback CPU
-    await tf.setBackend('cpu');
-    await tf.ready();
-    log.debug('[initializeTensorFlowBackend] Backend CPU activé (WebGL non disponible)');
-    backendInitialized = true;
-  } catch (error) {
-    log.warn('[initializeTensorFlowBackend] Erreur initialisation backend:', error);
-    // Essayer quand même avec backend par défaut
-    backendInitialized = true;
-  }
-};
+// ✅ OPTIMISATION : Utiliser initialisation centralisée TensorFlow.js (singleton)
+import { initializeTensorFlowBackend } from '../../utils/tensorflowInit';
 
 // ==================== CONSTANTES ====================
 
@@ -99,8 +55,10 @@ const MAX_IMAGE_WIDTH = 800;
 
 /**
  * Cache des prédictions (éviter re-analyse même image)
+ * ✅ OPTIMISATION : LRU Cache avec limite 50 entrées (évite memory leak)
+ * Remplace éviction manuelle par LRU automatique (O(1) au lieu de O(n))
  */
-const predictionCache = new Map();
+const predictionCache = new LRUCache(50);
 
 /**
  * Mapping classes MobileNet (anglais) → noms français
@@ -244,6 +202,24 @@ export const loadFoodModel = async () => {
 
       const backend = tf.getBackend();
       log.info('[loadFoodModel] Modèle MobileNet chargé avec succès', { backend });
+      
+      // ✅ OPTIMISATION : Warm-up avec inférence dummy (compile shaders WebGL)
+      // Évite latence 1-2s sur premier appel utilisateur réel
+      // ✅ OPTIMISATION : Warm-up seulement si WebGL (shaders à compiler)
+      if (backend === 'webgl') {
+        try {
+          const dummyImage = tf.zeros([224, 224, 3]); // Image dummy 224x224x3 (taille MobileNet)
+          await modelInstance.classify(dummyImage, 1); // Classify avec 1 prédiction top (minimal)
+          dummyImage.dispose(); // ✅ Libérer mémoire immédiatement
+          log.debug('[loadFoodModel] Warm-up WebGL terminé (shaders compilés)');
+        } catch (warmupError) {
+          // Warm-up échoué, continuer quand même (premier appel utilisateur sera lent)
+          log.debug('[loadFoodModel] Warm-up WebGL échoué (non critique, premier appel sera lent):', warmupError);
+        }
+      } else {
+        log.debug('[loadFoodModel] Warm-up non nécessaire (backend CPU, pas de shaders)');
+      }
+      
       return modelInstance;
     } catch (error) {
       log.error('[loadFoodModel] Erreur chargement modèle:', error);
@@ -441,9 +417,11 @@ export const analyzeFoodImage = async (imageSource, options = {}) => {
     let imageHash = null;
     if (useCache) {
       imageHash = await hashImage(imageElement);
-      if (predictionCache.has(imageHash)) {
+      // ✅ OPTIMISATION : LRU Cache retourne null si non trouvé (pas besoin de has())
+      const cached = predictionCache.get(imageHash);
+      if (cached) {
         log.debug('[analyzeFoodImage] Résultat depuis cache');
-        return predictionCache.get(imageHash);
+        return cached;
       }
     }
 
@@ -465,14 +443,9 @@ export const analyzeFoodImage = async (imageSource, options = {}) => {
     log.debug('[analyzeFoodImage] Aliments détectés', { count: foodItems.length });
 
     // Mettre en cache si demandé (utiliser hash déjà calculé)
+    // ✅ OPTIMISATION : LRU Cache gère automatiquement l'éviction (O(1))
     if (useCache && foodItems.length > 0 && imageHash) {
       predictionCache.set(imageHash, foodItems);
-      
-      // Limiter taille cache (max 50 entrées)
-      if (predictionCache.size > 50) {
-        const firstKey = predictionCache.keys().next().value;
-        predictionCache.delete(firstKey);
-      }
     }
 
     return foodItems;
@@ -616,7 +589,7 @@ export const clearPredictionCache = () => {
  */
 export const getCacheStats = () => {
   return {
-    size: predictionCache.size,
+    size: predictionCache.size(),
     maxSize: 50
   };
 };

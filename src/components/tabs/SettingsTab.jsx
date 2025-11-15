@@ -313,7 +313,8 @@ const SettingsTab = () => {
             programs: ['id', 'name', 'isActive', 'goal', 'targetCalories', 'targetProtein', 'targetCarbs', 'targetFat', 'startDate'],
             favoriteFoods: ['id', 'name', 'category', 'isFavorite', 'caloriesPer100', 'proteinPer100', 'carbsPer100', 'fatPer100', 'usageCount'],
             hydrationLogs: ['date', 'waterIntake', 'targetWater', 'entries', 'notes', 'lastModified'],
-            progressPhotos: ['id', 'type', 'date', 'sequenceId', 'timestamp', 'thumbnail', 'format', 'metadata']
+            progressPhotos: ['id', 'type', 'date', 'sequenceId', 'timestamp', 'thumbnail', 'format', 'metadata'],
+            mlModels: ['id', 'type', 'version', 'timestamp', 'isActive', 'modelConfig', 'stats', 'metadata']
           },
           
           // Notes

@@ -21,6 +21,7 @@ import {
   XP_REWARDS,
   getXPForLevel
 } from '../services/nutrition/nutritionGamification';
+import { DateHelper } from '../utils/dateHelper';
 import logger from '../utils/logger';
 
 const log = logger.module('useNutritionGamification');
@@ -79,11 +80,10 @@ export const useNutritionGamification = (options = {}) => {
 
     try {
       // Charger données des 100 derniers jours (pour streaks)
-      const today = new Date();
-      const startDate = new Date(today);
-      startDate.setDate(startDate.getDate() - 100);
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = today.toISOString().split('T')[0];
+      // ✅ OPTIMISATION : Utiliser DateHelper pour garantir timezone locale
+      const today = DateHelper.getTodayLocal();
+      const startDateStr = DateHelper.getDaysAgoLocal(100);
+      const endDateStr = today;
 
       const [dailyMeals, meals, programs] = await Promise.all([
         getDailyMealsByRange(startDateStr, endDateStr),

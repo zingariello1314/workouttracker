@@ -12,6 +12,10 @@
  * @module hooks/nutritionCalculations
  */
 
+// ==================== IMPORTS ====================
+
+import { DateHelper } from '../utils/dateHelper';
+
 // ==================== CALCULS TOTAUX JOURNALIERS ====================
 
 /**
@@ -467,36 +471,28 @@ export const generateFavoriteFoodId = () => {
 };
 
 /**
- * Formate une date au format "YYYY-MM-DD"
+ * Formate une date au format "YYYY-MM-DD" (timezone locale garantie)
  * 
- * @param {Date|string} date - Date à formater
- * @returns {string} Date formatée
+ * ✅ OPTIMISATION : Utilise DateHelper pour garantir cohérence timezone
+ * Remplace l'implémentation précédente qui utilisait `new Date(date)` (risque timezone)
+ * 
+ * @param {Date|string|number} date - Date à formater
+ * @returns {string} Date formatée "YYYY-MM-DD" ou null si invalide
  */
 export const formatDate = (date) => {
-  const d = date instanceof Date ? date : new Date(date);
-  if (isNaN(d.getTime())) return null;
-  
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}`;
+  return DateHelper.toYYYYMMDD(date);
 };
 
 /**
- * Calcule le nombre de jours entre deux dates
+ * Calcule le nombre de jours entre deux dates (timezone locale garantie)
+ * 
+ * ✅ OPTIMISATION : Utilise DateHelper pour garantir cohérence timezone
  * 
  * @param {string} startDate - Date début "YYYY-MM-DD"
  * @param {string} endDate - Date fin "YYYY-MM-DD"
- * @returns {number} Nombre de jours
+ * @returns {number} Nombre de jours (peut être négatif) ou null si invalide
  */
 export const daysBetween = (startDate, endDate) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  
-  const diffTime = Math.abs(end - start);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  return diffDays;
+  return DateHelper.daysBetween(startDate, endDate);
 };
 

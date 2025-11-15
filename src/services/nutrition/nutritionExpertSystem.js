@@ -14,6 +14,7 @@
  */
 
 import logger from '../../utils/logger';
+import { DateHelper } from '../../utils/dateHelper';
 
 const log = logger.module('nutritionExpertSystem');
 
@@ -338,14 +339,11 @@ const generateSummary = (activeRules) => {
  */
 const prepareUserData = (nutritionData, garminData, activeProgram) => {
   // Calculer moyennes sur 7 jours
+  // ✅ OPTIMISATION : Utiliser DateHelper pour garantir cohérence timezone locale
   const last7Days = [];
-  const today = new Date();
   
   for (let i = 0; i < 7; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-    
+    const dateStr = DateHelper.getDaysAgoLocal(i);
     const dailyMeal = nutritionData.dailyMeals?.find(dm => dm.date === dateStr);
     if (dailyMeal) {
       last7Days.push(dailyMeal);
@@ -368,16 +366,15 @@ const prepareUserData = (nutritionData, garminData, activeProgram) => {
   const daysCount = Math.max(1, last7Days.length);
   
   // Filtrer meals des 7 derniers jours
+  // ✅ OPTIMISATION : Utiliser DateHelper pour garantir cohérence timezone locale
+  const todayStr = DateHelper.getTodayLocal();
+  const sevenDaysAgoStr = DateHelper.getDaysAgoLocal(7);
+  
   const mealsLast7Days = (nutritionData.meals || []).filter(meal => {
-    const mealDate = meal.date || (meal.timestamp ? meal.timestamp.split('T')[0] : null);
+    const mealDate = DateHelper.toYYYYMMDD(meal.date || meal.timestamp);
     if (!mealDate) return false;
     
-    const today = new Date();
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
-    
-    return mealDate >= sevenDaysAgoStr && mealDate <= today.toISOString().split('T')[0];
+    return mealDate >= sevenDaysAgoStr && mealDate <= todayStr;
   });
   
   // Compter aliments uniques (sur les 7 derniers jours)

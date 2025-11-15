@@ -14,6 +14,7 @@
  */
 
 import logger from '../../utils/logger';
+import { DateHelper } from '../../utils/dateHelper';
 
 const log = logger.module('nutritionCorrelations');
 
@@ -228,9 +229,10 @@ const generateRecommendation = (r, pValue, n) => {
  */
 export const alignDataByDate = (data1, data2) => {
   // Créer map par date pour accès rapide
+  // ✅ OPTIMISATION : Utiliser DateHelper pour garantir cohérence timezone locale
   const map1 = new Map();
   data1.forEach(item => {
-    const date = typeof item.date === 'string' ? item.date : item.date?.toISOString()?.split('T')[0];
+    const date = DateHelper.toYYYYMMDD(item.date);
     if (date && item.value != null && !isNaN(item.value)) {
       map1.set(date, item.value);
     }
@@ -238,7 +240,7 @@ export const alignDataByDate = (data1, data2) => {
   
   const map2 = new Map();
   data2.forEach(item => {
-    const date = typeof item.date === 'string' ? item.date : item.date?.toISOString()?.split('T')[0];
+    const date = DateHelper.toYYYYMMDD(item.date);
     if (date && item.value != null && !isNaN(item.value)) {
       map2.set(date, item.value);
     }
@@ -499,11 +501,9 @@ export const analyzeAllNutritionCorrelations = (nutritionData, garminData = null
     const correlations = {};
     
     // Préparer données historiques
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - maxDays);
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = today.toISOString().split('T')[0];
+    // ✅ OPTIMISATION : Utiliser DateHelper pour garantir cohérence timezone locale
+    const endDateStr = DateHelper.getTodayLocal();
+    const startDateStr = DateHelper.getDaysAgoLocal(maxDays);
     
     // Filtrer dailyMeals sur période
     const dailyMeals = (nutritionData.dailyMeals || []).filter(dm => {

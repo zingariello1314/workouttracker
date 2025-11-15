@@ -12,11 +12,23 @@ export const useHomepageImages = () => {
   const [systemHealth, setSystemHealth] = useState('unknown');
   const backgroundImagesRef = useRef([]);
   const lastSaveTimeRef = useRef(0); // ✅ Phase 7: Protection contre sauvegardes trop rapprochées
+  const shuffledImagesRef = useRef(null); // ✅ RANDOMISATION : Cache shuffle par session
 
   // Mettre à jour la ref quand backgroundImages change
   useEffect(() => {
     backgroundImagesRef.current = backgroundImages;
   }, [backgroundImages]);
+
+  // ✅ RANDOMISATION : Fonction shuffle optimisée (Fisher-Yates)
+  const shuffleArray = (array) => {
+    if (!array || array.length <= 1) return array;
+    const shuffled = [...array]; // Copie pour éviter mutation
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
 
   // Validation stricte des données Base64
   const validateBase64Image = (base64) => {
@@ -691,9 +703,16 @@ export const useHomepageImages = () => {
       if (images.length > 0) {
         console.log('✅ Images récupérées depuis IndexedDB');
         setSystemHealth('excellent');
+        
+        // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
+        if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
+          shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
+          log.debug(`🎲 Images mélangées (${shuffledImagesRef.current.length} images)`);
+        }
+        
         // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT lors du chargement
-        backgroundImagesRef.current = images;
-        setBackgroundImages(images);
+        backgroundImagesRef.current = shuffledImagesRef.current;
+        setBackgroundImages(shuffledImagesRef.current);
         setIsLoading(false);
         return;
       }
@@ -720,9 +739,16 @@ export const useHomepageImages = () => {
         
         if (images.length > 0) {
           setSystemHealth('good');
+          
+          // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
+          if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
+            shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
+            log.debug(`🎲 Images mélangées depuis localStorage (${shuffledImagesRef.current.length} images)`);
+          }
+          
           // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT lors du chargement
-          backgroundImagesRef.current = images;
-          setBackgroundImages(images);
+          backgroundImagesRef.current = shuffledImagesRef.current;
+          setBackgroundImages(shuffledImagesRef.current);
           
           // ✅ Phase 7: Migrer vers IndexedDB avec validation après migration
           setTimeout(async () => {
@@ -770,9 +796,16 @@ export const useHomepageImages = () => {
         
         if (images.length > 0) {
           setSystemHealth('good');
+          
+          // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
+          if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
+            shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
+            log.debug(`🎲 Images mélangées depuis sessionStorage (${shuffledImagesRef.current.length} images)`);
+          }
+          
           // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT lors du chargement
-          backgroundImagesRef.current = images;
-          setBackgroundImages(images);
+          backgroundImagesRef.current = shuffledImagesRef.current;
+          setBackgroundImages(shuffledImagesRef.current);
           
           // ✅ Phase 7: Migrer vers IndexedDB et localStorage avec validation
           setTimeout(async () => {
@@ -820,9 +853,15 @@ export const useHomepageImages = () => {
         }
         
         if (images.length > 0) {
+          // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
+          if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
+            shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
+            log.debug(`🎲 Images mélangées depuis ancien système (${shuffledImagesRef.current.length} images)`);
+          }
+          
           // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT lors du chargement
-          backgroundImagesRef.current = images;
-          setBackgroundImages(images);
+          backgroundImagesRef.current = shuffledImagesRef.current;
+          setBackgroundImages(shuffledImagesRef.current);
           setSystemHealth('good');
         }
         

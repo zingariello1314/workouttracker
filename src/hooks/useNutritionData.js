@@ -29,10 +29,11 @@ import {
   getMeal,
   saveMeal,
   getMealsByDate,
+  getMealsByDateAndType,
   getMealsByDailyMealId,
   getAllMeals,
   deleteMeal,
-  saveMealsBatch,
+  saveMeals,
   // Programs
   getAllPrograms,
   getActiveProgram,
@@ -52,6 +53,7 @@ import {
 } from './nutritionDataCRUD';
 import { getGamificationData } from '../services/nutrition/nutritionGamification';
 import { exportProgressPhotos } from '../services/nutrition/nutritionProgressPhotos';
+import { exportModels as exportMLModels } from '../services/nutrition/nutritionPredictions';
 import {
   calculateDailyTotals,
   calculateCaloricBalance,
@@ -329,6 +331,15 @@ export const useNutritionData = () => {
 
       return true;
     } catch (error) {
+      // ✅ OPTIMISATION : Gestion spécifique QuotaExceededError
+      // Note: L'erreur doit être propagée pour gestion UI (toast/modal)
+      // Le composant appelant doit gérer l'erreur et afficher un toast avec useToast()
+      if (error && error.name === 'QuotaExceededError') {
+        console.error('[useNutritionData] Quota dépassé (propager pour gestion UI):', error);
+        // Propager erreur pour gestion UI dans composant
+        throw error;
+      }
+      
       console.error('[useNutritionData] Erreur saveMealAndUpdateTotals:', error);
       return false;
     }
@@ -444,6 +455,7 @@ export const useNutritionData = () => {
         gamification: { achievements: [], experience: { currentXP: 0, level: 1 }, streaks: {} },
         hydrationLogs: [],
         progressPhotos: { version: '1.0', exportDate: new Date().toISOString(), totalPhotos: 0, photos: [] },
+        mlModels: { models: [], metadata: { total: 0, exportedAt: new Date().toISOString() } },
         exportDate: new Date().toISOString(),
         version: '1.0'
       };
@@ -451,7 +463,7 @@ export const useNutritionData = () => {
 
     try {
       // Charger toutes les données en parallèle
-      const [dailyMeals, allMeals, programs, favoriteFoods, gamification, hydrationLogs, progressPhotos] = await Promise.all([
+      const [dailyMeals, allMeals, programs, favoriteFoods, gamification, hydrationLogs, progressPhotos, mlModels] = await Promise.all([
         // Récupérer tous les dailyMeals (plage large)
         getDailyMealsByRange('2020-01-01', '2099-12-31'),
         // Récupérer tous les meals directement
@@ -472,6 +484,11 @@ export const useNutritionData = () => {
         exportProgressPhotos().catch(err => {
           console.warn('[useNutritionData] Erreur récupération photos progression:', err);
           return { version: '1.0', exportDate: new Date().toISOString(), totalPhotos: 0, photos: [] };
+        }),
+        // Récupérer modèles ML entraînés
+        exportMLModels().catch(err => {
+          console.warn('[useNutritionData] Erreur récupération modèles ML:', err);
+          return { models: [], metadata: { total: 0, exportedAt: new Date().toISOString() } };
         })
       ]);
 
@@ -483,6 +500,7 @@ export const useNutritionData = () => {
         gamification,
         hydrationLogs,
         progressPhotos, // Photos de progression avant/après
+        mlModels, // Modèles ML entraînés (TensorFlow.js)
         exportDate: new Date().toISOString(),
         version: '1.0',
         metadata: {
@@ -493,6 +511,7 @@ export const useNutritionData = () => {
           totalAchievements: gamification.achievements?.length || 0,
           totalHydrationLogs: hydrationLogs?.length || 0,
           totalProgressPhotos: progressPhotos?.totalPhotos || 0,
+          totalMLModels: mlModels?.models?.length || 0,
           dateRange: dailyMeals.length > 0 ? {
             earliest: dailyMeals.map(dm => dm.date).sort()[0],
             latest: dailyMeals.map(dm => dm.date).sort().reverse()[0]
@@ -509,6 +528,7 @@ export const useNutritionData = () => {
         gamification: { achievements: [], experience: { currentXP: 0, level: 1 }, streaks: {} },
         hydrationLogs: [],
         progressPhotos: { version: '1.0', exportDate: new Date().toISOString(), totalPhotos: 0, photos: [] },
+        mlModels: { models: [], metadata: { total: 0, exportedAt: new Date().toISOString() } },
         exportDate: new Date().toISOString(),
         version: '1.0',
         error: error.message
@@ -532,10 +552,11 @@ export const useNutritionData = () => {
     getMeal,
     saveMeal: saveMealAndUpdateTotals,
     getMealsByDate,
+    getMealsByDateAndType,
     getMealsByDailyMealId,
     getAllMeals,
     deleteMeal: deleteMealAndUpdateTotals,
-    saveMealsBatch,
+    saveMeals,
 
     // Programs
     getAllPrograms,

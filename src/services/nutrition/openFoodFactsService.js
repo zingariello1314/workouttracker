@@ -14,6 +14,8 @@
  */
 
 import { openNutritionDB, STORE_API_CACHE } from '../../hooks/nutritionDataUtils';
+import { LRUCache } from '../../utils/lruCache';
+import { TokenBucket } from '../../utils/tokenBucket';
 import logger from '../../utils/logger';
 
 const log = logger.module('openFoodFactsService');
@@ -23,39 +25,27 @@ const log = logger.module('openFoodFactsService');
 /**
  * Gestionnaire de rate limiting pour OpenFoodFacts
  * Limite : 10 requêtes par minute (usage raisonnable)
+ * 
+ * ✅ OPTIMISATION : Token Bucket au lieu de sliding window (distribution équitable)
  */
 class OpenFoodFactsManager {
   constructor() {
-    this.requestQueue = [];
-    this.maxRequests = 10; // Par minute (usage raisonnable)
-    this.interval = 60000; // 1 minute
-    this.requestTimestamps = [];
+    // ✅ OPTIMISATION : Token Bucket (10 tokens, refill 1/min = 1 token toutes les 6s)
+    this.tokenBucket = new TokenBucket(10, 60000);
+    
+    // Compatibilité : garder propriétés pour code qui pourrait les référencer
+    this.maxRequests = 10;
+    this.interval = 60000;
   }
 
   /**
    * Throttle : attendre si limite atteinte
+   * 
+   * ✅ OPTIMISATION : Utilise Token Bucket (refill progressif au lieu de sliding window)
    */
   async throttle() {
-    const now = Date.now();
-    
-    // Nettoyer timestamps anciens (> 1 minute)
-    this.requestTimestamps = this.requestTimestamps.filter(
-      ts => now - ts < this.interval
-    );
-    
-    // Attendre si limite atteinte
-    if (this.requestTimestamps.length >= this.maxRequests) {
-      const oldest = Math.min(...this.requestTimestamps);
-      const waitTime = this.interval - (now - oldest);
-      
-      if (waitTime > 0) {
-        log.debug(`Rate limit atteint, attente ${Math.round(waitTime / 1000)}s...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
-    
-    // Enregistrer timestamp de cette requête
-    this.requestTimestamps.push(Date.now());
+    // ✅ OPTIMISATION : Token Bucket gère automatiquement refill et attente
+    await this.tokenBucket.consume();
   }
 
   /**
@@ -96,8 +86,9 @@ const ofManager = new OpenFoodFactsManager();
 
 /**
  * Cache mémoire (L1) - Instantané
+ * ✅ OPTIMISATION : LRU Cache avec limite 100 entrées (évite memory leak)
  */
-const memoryCache = new Map();
+const memoryCache = new LRUCache(100);
 
 /**
  * Cache IndexedDB (L2) - Rapide (10-50ms)

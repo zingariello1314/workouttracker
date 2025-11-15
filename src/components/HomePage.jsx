@@ -196,10 +196,22 @@ const HomePage = () => {
   };
 
   // ✅ Phase 7: Fonction pour changer l'image avec double buffering
+  // ✅ RANDOMISATION : Rotation aléatoire avec évitement répétition
   const changeBackgroundImage = async () => {
     if (backgroundImages.length <= 1) return;
     
-    const nextIndex = (currentImageIndex + 1) % backgroundImages.length;
+    // ✅ RANDOMISATION : Choisir index aléatoire, éviter l'actuel
+    let nextIndex;
+    if (backgroundImages.length === 2) {
+      // Si seulement 2 images, alterner (évite boucle infinie)
+      nextIndex = (currentImageIndex + 1) % backgroundImages.length;
+    } else {
+      // Sinon, choisir aléatoirement mais éviter l'actuel
+      do {
+        nextIndex = Math.floor(Math.random() * backgroundImages.length);
+      } while (nextIndex === currentImageIndex && backgroundImages.length > 1);
+    }
+    
     const nextImage = backgroundImages[nextIndex];
     
     if (!nextImage) return;
@@ -230,7 +242,9 @@ const HomePage = () => {
 
   // ✅ Phase 7: Charger image actuelle dans layer 0 (au montage et quand images changent)
   // ✅ Chargement initial : Détecter si c'est le premier chargement
+  // ✅ RANDOMISATION : Index initial aléatoire
   const isFirstLoadRef = useRef(true);
+  const initialIndexSetRef = useRef(false); // ✅ RANDOMISATION : Éviter de réinitialiser index plusieurs fois
   
   useEffect(() => {
     if (!backgroundImages || backgroundImages.length === 0) {
@@ -248,6 +262,14 @@ const HomePage = () => {
         isFirstLoadRef.current = false;
       }
       return;
+    }
+
+    // ✅ RANDOMISATION : Définir index initial aléatoire une seule fois
+    if (!initialIndexSetRef.current && backgroundImages.length > 0) {
+      const randomIndex = Math.floor(Math.random() * backgroundImages.length);
+      setCurrentImageIndex(randomIndex);
+      initialIndexSetRef.current = true;
+      log.debug(`🎲 Index initial aléatoire: ${randomIndex}/${backgroundImages.length}`);
     }
 
     const currentImage = backgroundImages[currentImageIndex];
@@ -273,26 +295,37 @@ const HomePage = () => {
         isFirstLoadRef.current = false;
       }
     }
-  }, [backgroundImages]); // Se déclenche quand images changent (montage initial)
+  }, [backgroundImages, currentImageIndex]); // ✅ RANDOMISATION : Ajouter currentImageIndex aux dépendances
 
-  // ✅ Phase 7: Préchargement proactif des images suivantes
+  // ✅ Phase 7: Préchargement proactif des images (adapté pour rotation aléatoire)
+  // ✅ RANDOMISATION : Précharger images aléatoires au lieu de séquentielles
   useEffect(() => {
     if (!backgroundImages || backgroundImages.length <= 1) return;
 
     const currentImage = backgroundImages[currentImageIndex];
     if (!currentImage) return;
 
-    // Précharger les 3 images suivantes dans le cache navigateur
-    const preloadNextImages = async () => {
-      for (let i = 1; i <= 3; i++) {
-        const nextIndex = (currentImageIndex + i) % backgroundImages.length;
-        const nextImage = backgroundImages[nextIndex];
+    // ✅ RANDOMISATION : Précharger 3 images aléatoires (pas l'actuelle)
+    const preloadRandomImages = async () => {
+      const indicesToPreload = new Set();
+      const maxPreload = Math.min(3, backgroundImages.length - 1);
+      
+      // Générer indices aléatoires uniques (pas l'actuel)
+      while (indicesToPreload.size < maxPreload) {
+        const randomIndex = Math.floor(Math.random() * backgroundImages.length);
+        if (randomIndex !== currentImageIndex) {
+          indicesToPreload.add(randomIndex);
+        }
+      }
+      
+      for (const index of indicesToPreload) {
+        const imageToPreload = backgroundImages[index];
         
-        if (nextImage && !imagePreloadedRef.current.has(nextIndex)) {
+        if (imageToPreload && !imagePreloadedRef.current.has(index)) {
           try {
-            const fullData = typeof nextImage === 'object' && nextImage.full
-              ? nextImage.full
-              : nextImage;
+            const fullData = typeof imageToPreload === 'object' && imageToPreload.full
+              ? imageToPreload.full
+              : imageToPreload;
             
             // Précharger dans cache navigateur
             const img = new Image();
@@ -300,8 +333,8 @@ const HomePage = () => {
             
             await new Promise((resolve) => {
               img.onload = () => {
-                imagePreloadedRef.current.add(nextIndex);
-                log.debug(`✅ Image ${nextIndex} préchargée dans cache navigateur`);
+                imagePreloadedRef.current.add(index);
+                log.debug(`✅ Image ${index} préchargée dans cache navigateur (aléatoire)`);
                 resolve();
               };
               img.onerror = () => resolve(); // Ignorer erreurs de préchargement
@@ -313,7 +346,7 @@ const HomePage = () => {
       }
     };
 
-    preloadNextImages();
+    preloadRandomImages();
   }, [currentImageIndex, backgroundImages]);
 
   // Rotation automatique toutes les 2 minutes

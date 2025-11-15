@@ -13,6 +13,8 @@
  */
 
 import { openNutritionDB, STORE_API_CACHE } from '../../hooks/nutritionDataUtils';
+import { LRUCache } from '../../utils/lruCache';
+import { TokenBucket } from '../../utils/tokenBucket';
 import logger from '../../utils/logger';
 
 const log = logger.module('usdaService');
@@ -91,41 +93,30 @@ const getCurrentApiKey = () => {
 /**
  * Gestionnaire de rate limiting pour USDA
  * Limite : 30 requêtes par minute par clé
+ * 
+ * ✅ OPTIMISATION : Token Bucket multi-bucket au lieu de sliding window (distribution équitable)
  */
 class USDAManager {
   constructor() {
-    this.maxRequests = 30; // Par minute (limite gratuite)
-    this.interval = 60000; // 1 minute
-    this.requestTimestamps = new Map(); // Par clé API
+    // ✅ OPTIMISATION : Token Bucket multi-bucket (1 bucket par clé API)
+    // 30 tokens, refill 1/min = 1 token toutes les 2s
+    this.tokenBucket = new TokenBucket(30, 60000, { multiBucket: true });
+    
+    // Compatibilité : garder propriétés pour code qui pourrait les référencer
+    this.maxRequests = 30;
+    this.interval = 60000;
   }
 
   /**
    * Throttle pour une clé API spécifique
+   * 
+   * ✅ OPTIMISATION : Utilise Token Bucket multi-bucket (refill progressif par clé)
    */
   async throttle(apiKey) {
-    const now = Date.now();
     const key = apiKey || 'default';
     
-    // Récupérer timestamps pour cette clé
-    let timestamps = this.requestTimestamps.get(key) || [];
-    
-    // Nettoyer timestamps anciens
-    timestamps = timestamps.filter(ts => now - ts < this.interval);
-    
-    // Attendre si limite atteinte
-    if (timestamps.length >= this.maxRequests) {
-      const oldest = Math.min(...timestamps);
-      const waitTime = this.interval - (now - oldest);
-      
-      if (waitTime > 0) {
-        log.debug(`Rate limit USDA atteint pour clé, attente ${Math.round(waitTime / 1000)}s...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
-    
-    // Enregistrer timestamp
-    timestamps.push(Date.now());
-    this.requestTimestamps.set(key, timestamps);
+    // ✅ OPTIMISATION : Token Bucket gère automatiquement refill et attente par clé
+    await this.tokenBucket.consume(key);
   }
 
   /**
@@ -188,8 +179,9 @@ const usdaManager = new USDAManager();
 
 /**
  * Cache mémoire (L1)
+ * ✅ OPTIMISATION : LRU Cache avec limite 100 entrées (évite memory leak)
  */
-const memoryCache = new Map();
+const memoryCache = new LRUCache(100);
 
 /**
  * Récupère depuis cache
