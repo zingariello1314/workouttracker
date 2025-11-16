@@ -9,7 +9,7 @@
  * @module components/tabs/nutrition/components/NutritionGamification
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import { 
@@ -22,9 +22,32 @@ import {
   Zap,
   Info,
   XCircle,
-  CheckCircle
+  CheckCircle,
+  Lock
 } from 'lucide-react';
 import { useNutritionGamification } from '../../../../hooks/useNutritionGamification';
+import { ALL_BADGES } from '../../../../services/nutrition/nutritionBadgesDefinitions';
+
+// ✅ OPTIMISATION 3.1 : Extraire fonctions constantes en dehors du composant
+const getRarityColor = (rarity) => {
+  switch (rarity) {
+    case 'common': return 'border-slate-500 bg-slate-500/10';
+    case 'rare': return 'border-blue-500 bg-blue-500/10';
+    case 'epic': return 'border-purple-500 bg-purple-500/10';
+    case 'legendary': return 'border-yellow-500 bg-yellow-500/10';
+    default: return 'border-slate-500 bg-slate-500/10';
+  }
+};
+
+const getCategoryIcon = (category) => {
+  switch (category) {
+    case 'consistency': return <Flame size={20} className="text-orange-400" />;
+    case 'nutrition': return <Target size={20} className="text-green-400" />;
+    case 'progression': return <TrendingUp size={20} className="text-blue-400" />;
+    case 'performance': return <Zap size={20} className="text-yellow-400" />;
+    default: return <Award size={20} className="text-slate-400" />;
+  }
+};
 
 const NutritionGamification = () => {
   const {
@@ -41,27 +64,74 @@ const NutritionGamification = () => {
 
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'badges' | 'progress'
 
-  // Couleur selon rareté
-  const getRarityColor = (rarity) => {
-    switch (rarity) {
-      case 'common': return 'border-slate-500 bg-slate-500/10';
-      case 'rare': return 'border-blue-500 bg-blue-500/10';
-      case 'epic': return 'border-purple-500 bg-purple-500/10';
-      case 'legendary': return 'border-yellow-500 bg-yellow-500/10';
-      default: return 'border-slate-500 bg-slate-500/10';
-    }
-  };
+  // ✅ OPTIMISATION 1.5 : getLevelProgress est maintenant une valeur, pas une fonction
+  const levelProgress = getLevelProgress;
+  
+  // ✅ OPTIMISATION 3.2 : useMemo pour badges triés par date
+  const sortedAchievements = useMemo(() => {
+    return [...achievements].sort((a, b) => {
+      // Comparer strings ISO directement (plus rapide que new Date())
+      const dateA = a.unlockedDate || '';
+      const dateB = b.unlockedDate || '';
+      return dateB.localeCompare(dateA);
+    });
+  }, [achievements]);
+  
+  // ✅ OPTIMISATION 3.2 : useMemo pour badges récents (4 premiers)
+  const recentBadges = useMemo(() => {
+    return sortedAchievements.slice(0, 4);
+  }, [sortedAchievements]);
+  
+  // ✅ OPTIMISATION 3.3 : Pré-formater dates des badges
+  const achievementsWithFormattedDates = useMemo(() => {
+    return sortedAchievements.map(badge => ({
+      ...badge,
+      formattedDate: badge.unlockedDate 
+        ? new Date(badge.unlockedDate).toLocaleDateString('fr-FR')
+        : ''
+    }));
+  }, [sortedAchievements]);
 
-  // Icône selon catégorie
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'consistency': return <Flame size={20} className="text-orange-400" />;
-      case 'nutrition': return <Target size={20} className="text-green-400" />;
-      case 'progression': return <TrendingUp size={20} className="text-blue-400" />;
-      case 'performance': return <Zap size={20} className="text-yellow-400" />;
-      default: return <Award size={20} className="text-slate-400" />;
-    }
-  };
+  // ✅ Afficher tous les badges : débloqués en couleur, non débloqués grisés
+  const unlockedBadgeIds = useMemo(() => {
+    return new Set(achievements.map(b => b.id));
+  }, [achievements]);
+
+  // Combiner tous les badges avec leur statut débloqué/non débloqué
+  const allBadgesWithStatus = useMemo(() => {
+    return ALL_BADGES.map(badge => {
+      const isUnlocked = unlockedBadgeIds.has(badge.id);
+      const unlockedBadge = isUnlocked ? achievements.find(a => a.id === badge.id) : null;
+      
+      return {
+        ...badge,
+        isUnlocked,
+        unlockedDate: unlockedBadge?.unlockedDate || null,
+        formattedDate: unlockedBadge?.unlockedDate 
+          ? new Date(unlockedBadge.unlockedDate).toLocaleDateString('fr-FR')
+          : null
+      };
+    });
+  }, [achievements, unlockedBadgeIds]);
+
+  // Trier tous les badges : débloqués en premier, puis non débloqués
+  const sortedAllBadges = useMemo(() => {
+    return [...allBadgesWithStatus].sort((a, b) => {
+      // D'abord par statut (débloqués en premier)
+      if (a.isUnlocked !== b.isUnlocked) {
+        return b.isUnlocked ? 1 : -1; // true (débloqué) avant false (non débloqué)
+      }
+      // Ensuite par date de débloquage (plus récent en premier pour les débloqués)
+      if (a.isUnlocked && b.isUnlocked) {
+        const dateA = a.unlockedDate || '';
+        const dateB = b.unlockedDate || '';
+        return dateB.localeCompare(dateA);
+      }
+      // Pour les non débloqués, trier par rareté (legendary > epic > rare > common)
+      const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
+      return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+    });
+  }, [allBadgesWithStatus]);
 
   if (!enabled) {
     return (
@@ -102,7 +172,6 @@ const NutritionGamification = () => {
     );
   }
 
-  const levelProgress = getLevelProgress;
   const nutritionStreak = streaks?.nutrition || { current: 0, actual: 0, forgivenessUsed: 0 };
 
   return (
@@ -229,7 +298,7 @@ const NutritionGamification = () => {
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Badges ({achievements.length})
+            Badges ({achievements.length}/{ALL_BADGES.length})
           </button>
           <button
             onClick={() => setActiveTab('progress')}
@@ -247,25 +316,22 @@ const NutritionGamification = () => {
         {activeTab === 'overview' && (
           <div className="space-y-4">
             {/* Badges récents */}
-            {achievements.length > 0 && (
+            {recentBadges.length > 0 && (
               <div>
                 <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
                   <Award size={18} className="text-purple-400" /> Badges récents
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {achievements
-                    .sort((a, b) => new Date(b.unlockedDate) - new Date(a.unlockedDate))
-                    .slice(0, 4)
-                    .map(badge => (
-                      <div
-                        key={badge.id}
-                        className={`rounded-lg p-3 border ${getRarityColor(badge.rarity)} text-center`}
-                      >
-                        <div className="text-3xl mb-2">{badge.icon}</div>
-                        <div className="text-xs font-medium text-white mb-1">{badge.name}</div>
-                        <div className="text-xs text-slate-400">{badge.category}</div>
-                      </div>
-                    ))}
+                  {recentBadges.map(badge => (
+                    <div
+                      key={badge.id}
+                      className={`rounded-lg p-3 border ${getRarityColor(badge.rarity)} text-center`}
+                    >
+                      <div className="text-3xl mb-2">{badge.icon}</div>
+                      <div className="text-xs font-medium text-white mb-1">{badge.name}</div>
+                      <div className="text-xs text-slate-400">{badge.category}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -288,46 +354,80 @@ const NutritionGamification = () => {
 
         {activeTab === 'badges' && (
           <div className="space-y-4">
-            {achievements.length === 0 ? (
-              <div className="text-center py-8">
-                <Award size={48} className="text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-300 mb-2">Aucun badge débloqué</p>
-                <p className="text-slate-400 text-sm">
-                  Continuez à utiliser l'application pour débloquer vos premiers badges !
-                </p>
+            {/* Statistiques badges */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm text-slate-400">
+                {achievements.length} / {ALL_BADGES.length} badges débloqués
               </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {achievements
-                  .sort((a, b) => new Date(b.unlockedDate) - new Date(a.unlockedDate))
-                  .map(badge => (
-                    <div
-                      key={badge.id}
-                      className={`rounded-lg p-4 border ${getRarityColor(badge.rarity)} transition-all hover:scale-105`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="text-3xl">{badge.icon}</div>
-                        <div className={`text-xs px-2 py-0.5 rounded ${
-                          badge.rarity === 'common' ? 'bg-slate-500 text-white' :
-                          badge.rarity === 'rare' ? 'bg-blue-500 text-white' :
-                          badge.rarity === 'epic' ? 'bg-purple-500 text-white' :
-                          'bg-yellow-500 text-white'
-                        }`}>
-                          {badge.rarity}
-                        </div>
+              <div className="text-xs text-slate-500">
+                {Math.round((achievements.length / ALL_BADGES.length) * 100)}% complété
+              </div>
+            </div>
+
+            {/* Tous les badges : débloqués en couleur, non débloqués grisés */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {sortedAllBadges.map(badge => {
+                const isUnlocked = badge.isUnlocked;
+                const baseClasses = `rounded-lg p-4 border transition-all relative ${
+                  isUnlocked 
+                    ? `${getRarityColor(badge.rarity)} hover:scale-105` 
+                    : 'border-slate-700 bg-slate-900/30 opacity-50 cursor-not-allowed'
+                }`;
+                
+                return (
+                  <div
+                    key={badge.id}
+                    className={baseClasses}
+                    title={isUnlocked ? badge.name : `${badge.name} - Non débloqué`}
+                  >
+                    {/* Badge de verrouillage pour non débloqués */}
+                    {!isUnlocked && (
+                      <div className="absolute top-2 right-2">
+                        <Lock size={16} className="text-slate-600" />
                       </div>
-                      <div className="text-sm font-medium text-white mb-1">{badge.name}</div>
-                      <div className="text-xs text-slate-400 mb-2">{badge.description}</div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-slate-500">
-                          {badge.unlockedDate && new Date(badge.unlockedDate).toLocaleDateString('fr-FR')}
-                        </div>
-                        <div className="text-xs text-yellow-400">+{badge.points} XP</div>
+                    )}
+                    
+                    <div className="flex items-start justify-between mb-2">
+                      <div className={`text-3xl ${isUnlocked ? '' : 'grayscale'}`}>
+                        {badge.icon}
+                      </div>
+                      <div className={`text-xs px-2 py-0.5 rounded ${
+                        isUnlocked
+                          ? (badge.rarity === 'common' ? 'bg-slate-500 text-white' :
+                             badge.rarity === 'rare' ? 'bg-blue-500 text-white' :
+                             badge.rarity === 'epic' ? 'bg-purple-500 text-white' :
+                             'bg-yellow-500 text-white')
+                          : 'bg-slate-700 text-slate-400'
+                      }`}>
+                        {badge.rarity}
                       </div>
                     </div>
-                  ))}
-              </div>
-            )}
+                    <div className={`text-sm font-medium mb-1 ${
+                      isUnlocked ? 'text-white' : 'text-slate-500'
+                    }`}>
+                      {badge.name}
+                    </div>
+                    <div className={`text-xs mb-2 ${
+                      isUnlocked ? 'text-slate-400' : 'text-slate-600'
+                    }`}>
+                      {badge.description}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className={`text-xs ${
+                        isUnlocked ? 'text-slate-500' : 'text-slate-700'
+                      }`}>
+                        {badge.formattedDate || 'Non débloqué'}
+                      </div>
+                      <div className={`text-xs ${
+                        isUnlocked ? 'text-yellow-400' : 'text-slate-600'
+                      }`}>
+                        +{badge.points} XP
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -404,5 +504,6 @@ const NutritionGamification = () => {
   );
 };
 
-export default NutritionGamification;
+// ✅ OPTIMISATION 3.4 : React.memo pour éviter re-renders inutiles
+export default memo(NutritionGamification);
 

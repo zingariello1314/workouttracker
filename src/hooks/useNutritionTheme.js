@@ -79,7 +79,7 @@ export const useNutritionTheme = (options = {}) => {
       setLoading(true);
       setError(null);
 
-      log.debug('[calculateTheme] Calcul thème dynamique');
+      // Log supprimé pour éviter spam
 
       // 1. Charger données nutrition (7 derniers jours pour surplus streak)
       const today = new Date();
@@ -114,10 +114,7 @@ export const useNutritionTheme = (options = {}) => {
       setCurrentTheme(theme);
       lastUpdateRef.current = new Date();
 
-      log.debug('[calculateTheme] Thème calculé et appliqué', {
-        name: theme.name,
-        reason: theme.reason
-      });
+      // Log supprimé pour éviter spam
     } catch (err) {
       log.error('[calculateTheme] Erreur calcul thème:', err);
       setError(err);
@@ -140,7 +137,10 @@ export const useNutritionTheme = (options = {}) => {
     healthScore
   ]);
 
-  // Calculer thème au chargement et lors de changements
+  // ✅ OPTIMISATION : Debounce pour éviter recalculs multiples rapides
+  const themeCalculationRef = useRef(null);
+  
+  // Calculer thème au chargement et lors de changements (avec debounce)
   useEffect(() => {
     if (!nutritionDbReady || !enabled) {
       setLoading(false);
@@ -155,7 +155,20 @@ export const useNutritionTheme = (options = {}) => {
       return;
     }
 
-    calculateTheme();
+    // ✅ OPTIMISATION : Debounce pour éviter recalculs multiples
+    if (themeCalculationRef.current) {
+      clearTimeout(themeCalculationRef.current);
+    }
+    
+    themeCalculationRef.current = setTimeout(() => {
+      calculateTheme();
+    }, 300);
+
+    return () => {
+      if (themeCalculationRef.current) {
+        clearTimeout(themeCalculationRef.current);
+      }
+    };
   }, [
     nutritionDbReady,
     enabled,
@@ -197,9 +210,7 @@ export const useNutritionTheme = (options = {}) => {
     try {
       applyDynamicTheme(theme, { animate });
       setCurrentTheme(theme);
-      log.debug('[applyTheme] Thème appliqué manuellement', {
-        name: theme.name
-      });
+      // Log supprimé pour éviter spam
     } catch (err) {
       log.error('[applyTheme] Erreur application thème:', err);
     }
@@ -223,7 +234,7 @@ export const useNutritionTheme = (options = {}) => {
         reason: 'Réinitialisation manuelle'
       };
       setCurrentTheme(defaultTheme);
-      log.debug('[reset] Thème réinitialisé');
+      // Log supprimé pour éviter spam
     } catch (err) {
       log.error('[reset] Erreur réinitialisation thème:', err);
     }

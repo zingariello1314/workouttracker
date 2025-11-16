@@ -832,23 +832,61 @@ export const getActiveProgram = async () => {
 };
 
 /**
+ * ✅ OPTIMISATION 1.3 : Récupère tous les programmes ET le programme actif en une seule transaction
+ * 
+ * Gain : 50% réduction overhead (1 transaction au lieu de 2)
+ * 
+ * @returns {Promise<{programs: Array, activeProgram: Object|null}>}
+ */
+export const getAllProgramsWithActive = async () => {
+  try {
+    const db = await openNutritionDB();
+    if (!db) return { programs: [], activeProgram: null };
+
+    const tx = db.transaction([STORE_PROGRAMS], 'readonly');
+    const store = tx.objectStore(STORE_PROGRAMS);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      
+      request.onsuccess = () => {
+        const programs = request.result || [];
+        // ✅ Filtrer programme actif dans la même transaction
+        const activeProgram = programs.find(p => p.isActive === true) || null;
+        resolve({ programs, activeProgram });
+      };
+      
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    log.error('Erreur getAllProgramsWithActive:', error);
+    return { programs: [], activeProgram: null };
+  }
+};
+
+/**
  * Sauvegarde ou met à jour un programme
  * 
+ * ✅ OPTIMISATION 4.2 : Accepte dbInstance optionnel pour éviter double ouverture DB
+ * 
  * @param {Object} program - Données du programme (doit contenir 'id')
+ * @param {Object} options - Options optionnelles
+ * @param {IDBDatabase} options.dbInstance - Instance de la DB (évite réouverture)
  * @returns {Promise<boolean>} true si succès
  */
-export const saveProgram = async (program) => {
+export const saveProgram = async (program, options = {}) => {
   try {
     if (!program || !program.id) {
       throw new Error('program doit contenir un id');
     }
 
-    const db = await openNutritionDB();
+    const { dbInstance = null } = options;
+    const db = dbInstance || await openNutritionDB();
     if (!db) return false;
 
     // Si programme devient actif, désactiver les autres
     if (program.isActive) {
-      await deactivateAllPrograms(db);
+      await deactivateAllPrograms(db); // ✅ Utiliser DB existante
     }
 
     const tx = db.transaction([STORE_PROGRAMS], 'readwrite');
@@ -869,7 +907,9 @@ export const saveProgram = async (program) => {
 };
 
 /**
- * Désactive tous les programmes (utilisé avant d'activer un nouveau)
+ * ✅ OPTIMISATION 1.4 : Désactive tous les programmes (utilisé avant d'activer un nouveau)
+ * 
+ * Code simplifié : Tous les put() dans la même transaction (exécution batch automatique par IndexedDB)
  * 
  * @param {IDBDatabase} db - Instance de la DB (optionnel, sera ouverte si absent)
  * @returns {Promise<void>}
@@ -898,25 +938,18 @@ const deactivateAllPrograms = async (db = null) => {
           return;
         }
         
-        // Désactiver tous les programmes actifs
-        let updateCount = 0;
+        // ✅ OPTIMISATION 1.4 : Tous les put() dans la même transaction (exécution batch automatique par IndexedDB)
         activePrograms.forEach(program => {
           program.isActive = false;
-          const updateRequest = store.put(program);
-          updateRequest.onsuccess = () => {
-            updateCount++;
-            if (updateCount === activePrograms.length) {
-              resolve();
-            }
-          };
-          updateRequest.onerror = () => {
-            log.warn(`Erreur désactivation programme ${program.id}`);
-            updateCount++;
-            if (updateCount === activePrograms.length) {
-              resolve(); // Résoudre quand même pour ne pas bloquer
-            }
-          };
+          store.put(program); // ✅ Pas besoin de gérer les callbacks individuels
         });
+        
+        // ✅ Transaction complète résolue automatiquement
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => {
+          log.error('Erreur transaction deactivateAllPrograms:', tx.error);
+          reject(tx.error);
+        };
       };
       
       request.onerror = () => reject(request.error);

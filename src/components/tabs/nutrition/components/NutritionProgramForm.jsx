@@ -10,7 +10,7 @@
  * @module components/tabs/nutrition/components/NutritionProgramForm
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Modal from '../../../ui/Modal';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
@@ -91,19 +91,8 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
     setErrors({});
   }, [program, isOpen]);
 
-  // Calculer pourcentages automatiquement
-  useEffect(() => {
-    const proteinCal = formData.targetProtein * 4;
-    const carbsCal = formData.targetCarbs * 4;
-    const fatCal = formData.targetFat * 9;
-    const totalMacroCal = proteinCal + carbsCal + fatCal;
-
-    if (totalMacroCal > 0) {
-      // Ajuster les macros pour correspondre aux calories cibles
-      const ratio = formData.targetCalories / totalMacroCal;
-      // Note: On ne modifie pas automatiquement, juste pour info
-    }
-  }, [formData.targetCalories, formData.targetProtein, formData.targetCarbs, formData.targetFat]);
+  // ✅ OPTIMISATION 3.1 : Supprimer useEffect inutile (calculs déjà dans useMemo ligne 146)
+  // Le useEffect ligne 95-106 était redondant avec useMemo ligne 146, supprimé pour éviter calculs inutiles
 
   // Valider formulaire
   const validate = () => {
@@ -160,8 +149,8 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
     };
   }, [formData.targetProtein, formData.targetCarbs, formData.targetFat]);
 
-  // Sauvegarder
-  const handleSave = async () => {
+  // ✅ OPTIMISATION 3.3 : useCallback pour handleSave (stabilité React)
+  const handleSave = useCallback(async () => {
     if (!validate()) {
       return;
     }
@@ -199,7 +188,7 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData 
     } finally {
       setLoading(false);
     }
-  };
+  }, [formData, percentages, program, nutritionData, validate, onSave]);
 
   return (
     <Modal

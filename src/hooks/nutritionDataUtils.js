@@ -36,10 +36,11 @@ let dbInstance = null;
 let openingPromise = null; // Promise de l'ouverture en cours (pour éviter appels multiples)
 
 // ==================== LOGGING ====================
+// ✅ Réduction drastique des logs pour éviter spam console
 
 const log = {
-  debug: (...args) => console.log('[nutritionDataUtils]', ...args),
-  info: (...args) => console.info('[nutritionDataUtils]', ...args),
+  debug: () => {}, // Désactivé pour éviter spam
+  info: () => {}, // Désactivé pour éviter spam
   warn: (...args) => console.warn('[nutritionDataUtils]', ...args),
   error: (...args) => console.error('[nutritionDataUtils]', ...args)
 };
@@ -85,16 +86,12 @@ export const openNutritionDB = async () => {
         detectedVersion = tempDb.version;
         tempDb.close();
         
-        log.debug(`Version détectée: ${detectedVersion}, Version demandée: ${DB_VERSION_NUTRITION}`);
-        
         // Étape 2 : Utiliser version max entre existante et demandée
         // Si version existante > demandée, utiliser existante (pas de downgrade)
         // Sinon, utiliser version max (upgrade si nécessaire)
         const targetVersion = detectedVersion && detectedVersion > DB_VERSION_NUTRITION
           ? detectedVersion // DB déjà plus récente, utiliser sa version
           : Math.max(detectedVersion || 0, DB_VERSION_NUTRITION); // Utiliser max
-        
-        log.debug(`Ouverture avec version: ${targetVersion}`);
         
         // Étape 3 : Ouvrir avec version cible (upgrade si nécessaire)
         const openRequest = indexedDB.open(DB_NAME, targetVersion);
@@ -112,8 +109,7 @@ export const openNutritionDB = async () => {
         openRequest.onsuccess = (openEvent) => {
           dbInstance = openEvent.target.result;
           openingPromise = null;
-          log.info(`✅ IndexedDB ouverte avec succès: v${dbInstance.version}`);
-          log.debug(`Stores disponibles: ${Array.from(dbInstance.objectStoreNames).join(', ')}`);
+          // Logs supprimés pour éviter spam
           
           // Vérifier que tous les stores nutrition existent
           const nutritionStores = [

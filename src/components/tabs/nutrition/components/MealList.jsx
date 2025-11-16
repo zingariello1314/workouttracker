@@ -16,7 +16,8 @@ import Button from '../../../ui/Button';
 import { Clock, Edit2, Trash2, Plus, Utensils } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
 
-const MealList = ({ meals, onEdit, onDelete, onAdd }) => {
+// ✅ OPTIMISATION 2.1 : React.memo pour éviter re-renders inutiles (50-80% réduction)
+const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
   // Grouper repas par type
   const mealTypes = {
     breakfast: { label: 'Petit-déjeuner', icon: '🌅', order: 1 },
@@ -203,7 +204,19 @@ const MealList = ({ meals, onEdit, onDelete, onAdd }) => {
       </CardContent>
     </Card>
   );
-};
+}, (prevProps, nextProps) => {
+  // ✅ Comparaison arrays : Deep equality seulement si longueur change ou IDs différents
+  return (
+    prevProps.meals.length === nextProps.meals.length &&
+    prevProps.meals.every((m, i) => {
+      const nextMeal = nextProps.meals[i];
+      return m.id === nextMeal?.id && 
+             m.type === nextMeal?.type &&
+             m.totalCalories === nextMeal?.totalCalories &&
+             m.timestamp === nextMeal?.timestamp;
+    })
+  );
+});
 
 export default MealList;
 

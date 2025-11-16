@@ -9,7 +9,7 @@
  * @module hooks/useNutritionGamification
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNutritionData } from './useNutritionData';
 import {
   getGamificationData,
@@ -18,6 +18,7 @@ import {
   addExperience,
   calculateStreakWithForgiveness,
   updateStreak,
+  resetStreak,
   XP_REWARDS,
   getXPForLevel
 } from '../services/nutrition/nutritionGamification';
@@ -40,7 +41,7 @@ export const useNutritionGamification = (options = {}) => {
   const { 
     dbReady,
     getDailyMealsByRange,
-    getAllMeals,
+    getMealsByDateRange,
     getAllPrograms
   } = useNutritionData();
   
@@ -48,26 +49,48 @@ export const useNutritionGamification = (options = {}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newBadges, setNewBadges] = useState([]);
+  const isMountedRef = useRef(true);
+  
+  // ✅ OPTIMISATION 2 : Cache pour prepareUserData avec hash et TTL
+  const userDataCacheRef = useRef(null);
+  const cacheTTL = 5 * 60 * 1000; // 5 minutes
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Charger données gamification
   useEffect(() => {
     if (!dbReady || !enabled) {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
       return;
     }
 
     const loadGamification = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        if (isMountedRef.current) {
+          setLoading(true);
+          setError(null);
+        }
         
         const data = await getGamificationData();
-        setGamificationData(data);
+        if (isMountedRef.current) {
+          setGamificationData(data);
+        }
       } catch (err) {
         log.error('Erreur chargement gamification:', err);
-        setError(err);
+        if (isMountedRef.current) {
+          setError(err);
+        }
       } finally {
-        setLoading(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
     };
 
@@ -75,6 +98,8 @@ export const useNutritionGamification = (options = {}) => {
   }, [dbReady, enabled]);
 
   // Préparer données utilisateur pour vérification badges
+  // ✅ OPTIMISATION : Utiliser getMealsByDateRange au lieu de getAllMeals + cache Map pour éviter .filter()
+  // ✅ OPTIMISATION 2 : Cache avec hash et TTL pour éviter recalculs
   const prepareUserData = useCallback(async () => {
     if (!dbReady) return null;
 
@@ -84,27 +109,49 @@ export const useNutritionGamification = (options = {}) => {
       const today = DateHelper.getTodayLocal();
       const startDateStr = DateHelper.getDaysAgoLocal(100);
       const endDateStr = today;
+      
+      // ✅ OPTIMISATION 2 : Vérifier cache avant de charger
+      const cacheKey = `userData_${startDateStr}_${endDateStr}`;
+      const now = Date.now();
+      
+      if (userDataCacheRef.current && 
+          userDataCacheRef.current.key === cacheKey &&
+          (now - userDataCacheRef.current.timestamp) < cacheTTL) {
+        return userDataCacheRef.current.data;
+      }
 
       const [dailyMeals, meals, programs] = await Promise.all([
         getDailyMealsByRange(startDateStr, endDateStr),
-        getAllMeals(),
+        getMealsByDateRange(startDateStr, endDateStr), // ✅ OPT 1.1 : Charger seulement 100 jours au lieu de tous
         getAllPrograms()
       ]);
 
-      // Calculer streaks
+      // ✅ OPTIMISATION 1.2 : Créer Map mealsByDate pour accès O(1) au lieu de .filter() O(n)
+      const mealsByDate = new Map();
+      meals.forEach(meal => {
+        if (!mealsByDate.has(meal.date)) {
+          mealsByDate.set(meal.date, []);
+        }
+        mealsByDate.get(meal.date).push(meal);
+      });
+
+      // Calculer streaks avec Map pour accès O(1)
       const history = dailyMeals.map(dm => ({
         date: dm.date,
         hasMeals: (dm.mealIds?.length || 0) > 0,
-        meals: meals.filter(m => m.date === dm.date)
+        meals: mealsByDate.get(dm.date) || [] // ✅ Accès O(1) au lieu de .filter()
       }));
 
       const streak = calculateStreakWithForgiveness(history, 'nutrition');
 
-      // Compter aliments uniques sur 7 jours
+      // ✅ OPTIMISATION 1.3 : Filtrer meals 7 derniers jours AVANT boucle
       const last7Days = dailyMeals.slice(-7);
+      const last7DaysDateSet = new Set(last7Days.map(dm => dm.date));
       const uniqueFoods = new Set();
+      
+      // Parcourir seulement meals des 7 derniers jours
       meals.forEach(meal => {
-        if (meal.date >= last7Days[0]?.date) {
+        if (last7DaysDateSet.has(meal.date)) {
           meal.foods?.forEach(food => {
             if (food.name) uniqueFoods.add(food.name.toLowerCase());
           });
@@ -113,12 +160,12 @@ export const useNutritionGamification = (options = {}) => {
 
       const activeProgram = programs?.find(p => p.isActive) || null;
 
-      return {
+      const userData = {
         nutritionHistory: dailyMeals.map(dm => ({
           date: dm.date,
           dailyTotals: dm.dailyTotals,
           complianceScore: dm.complianceScore,
-          meals: meals.filter(m => m.date === dm.date)
+          meals: mealsByDate.get(dm.date) || [] // ✅ Accès O(1) au lieu de .filter()
         })),
         streaks: {
           nutrition: streak
@@ -126,11 +173,20 @@ export const useNutritionGamification = (options = {}) => {
         uniqueFoodsLast7Days: uniqueFoods.size,
         activeProgram
       };
+      
+      // ✅ OPTIMISATION 2 : Mettre en cache avec timestamp
+      userDataCacheRef.current = {
+        key: cacheKey,
+        data: userData,
+        timestamp: now
+      };
+      
+      return userData;
     } catch (err) {
       log.error('Erreur préparation données utilisateur:', err);
       return null;
     }
-  }, [dbReady, getDailyMealsByRange, getAllMeals, getAllPrograms]);
+  }, [dbReady, getDailyMealsByRange, getMealsByDateRange, getAllPrograms, cacheTTL]);
 
   // Vérifier et débloquer nouveaux badges
   const checkBadges = useCallback(async () => {
@@ -144,10 +200,17 @@ export const useNutritionGamification = (options = {}) => {
         return [];
       }
 
-      // Vérifier nouveaux badges
+      // ✅ CORRECTION : Revérifier les badges déjà débloqués et supprimer ceux qui ne remplissent plus les conditions
+      const { revalidateAchievements } = await import('../services/nutrition/nutritionGamification');
+      await revalidateAchievements(userData, gamificationData.achievements);
+
+      // Recharger données après revalidation
+      const updatedDataAfterRevalidation = await getGamificationData();
+
+      // Vérifier nouveaux badges (avec badges mis à jour après revalidation)
       const newBadgesToUnlock = checkAchievements(
         userData,
-        gamificationData.achievements
+        updatedDataAfterRevalidation.achievements
       );
 
       if (newBadgesToUnlock.length > 0) {
@@ -162,10 +225,17 @@ export const useNutritionGamification = (options = {}) => {
 
         // Recharger données
         const updatedData = await getGamificationData();
-        setGamificationData(updatedData);
-        setNewBadges(unlocked);
+        if (isMountedRef.current) {
+          setGamificationData(updatedData);
+          setNewBadges(unlocked);
+        }
 
         return unlocked;
+      } else {
+        // Même si aucun nouveau badge, mettre à jour les données (après revalidation)
+        if (isMountedRef.current && updatedDataAfterRevalidation.achievements.length !== gamificationData.achievements.length) {
+          setGamificationData(updatedDataAfterRevalidation);
+        }
       }
 
       return [];
@@ -176,48 +246,91 @@ export const useNutritionGamification = (options = {}) => {
   }, [dbReady, enabled, gamificationData, prepareUserData]);
 
   // Auto-vérification badges
+  // ✅ OPTIMISATION 1.7 : Debounce pour éviter appels multiples
+  const checkBadgesDebouncedRef = useRef(null);
+  const debouncedCheckBadges = useCallback(() => {
+    if (checkBadgesDebouncedRef.current) {
+      clearTimeout(checkBadgesDebouncedRef.current);
+    }
+    checkBadgesDebouncedRef.current = setTimeout(() => {
+      checkBadges();
+    }, 500); // Debounce 500ms
+  }, [checkBadges]);
+  
   useEffect(() => {
     if (!autoCheck || !dbReady || !enabled || !gamificationData) {
       return;
     }
 
-    // Vérifier badges après chargement initial
+    // Vérifier badges après chargement initial avec debounce
     const timer = setTimeout(() => {
-      checkBadges();
+      debouncedCheckBadges();
     }, 2000); // Attendre 2s pour que les données soient chargées
 
-    return () => clearTimeout(timer);
-  }, [autoCheck, dbReady, enabled, gamificationData, checkBadges]);
+    return () => {
+      clearTimeout(timer);
+      if (checkBadgesDebouncedRef.current) {
+        clearTimeout(checkBadgesDebouncedRef.current);
+      }
+    };
+  }, [autoCheck, dbReady, enabled, gamificationData, debouncedCheckBadges]);
 
-  // Calculer et mettre à jour streaks
+  // ✅ CORRECTION : Flag pour éviter resetStreak multiple + optimisation chargement
+  const streakResetRef = useRef(false);
+  const streaksInitializedRef = useRef(false);
+  
+  // Calculer et mettre à jour streaks (une seule fois au chargement initial)
   useEffect(() => {
-    if (!dbReady || !enabled) {
+    if (!dbReady || !enabled || streaksInitializedRef.current) {
       return;
     }
 
     const updateStreaks = async () => {
       try {
+        // ✅ OPTIMISATION : Ne pas invalider le cache inutilement - utiliser cache si disponible
+        // Seulement invalider si on doit vraiment recalculer (après resetStreak)
+        
+        // ✅ CORRECTION : Réinitialiser la streak sauvegardée UNE SEULE FOIS au premier chargement
+        if (!streakResetRef.current) {
+          await resetStreak('nutrition');
+          streakResetRef.current = true;
+          // Invalider cache seulement après reset pour forcer recalcul
+          userDataCacheRef.current = null;
+        }
+        
         const userData = await prepareUserData();
-        if (!userData) return;
+        if (!userData) {
+          streaksInitializedRef.current = true; // Marquer comme initialisé même si pas de données
+          return;
+        }
 
         const streak = userData.streaks.nutrition;
         
-        // Sauvegarder streak
+        // Sauvegarder la streak recalculée
         await updateStreak({
           id: 'streak_nutrition',
           category: 'nutrition',
           ...streak
         });
 
-        // Recharger données
+        // Recharger données et mettre à jour
         const updatedData = await getGamificationData();
-        setGamificationData(updatedData);
+        if (isMountedRef.current) {
+          setGamificationData(updatedData);
+          streaksInitializedRef.current = true; // Marquer comme initialisé
+        }
       } catch (err) {
         log.error('Erreur mise à jour streaks:', err);
+        streaksInitializedRef.current = true; // Marquer comme initialisé même en cas d'erreur
       }
     };
 
-    updateStreaks();
+    // Attendre que les données soient chargées (delay réduit pour charger plus vite)
+    const timer = setTimeout(() => {
+      updateStreaks();
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [dbReady, enabled, prepareUserData]);
 
   // Ajouter XP manuellement
@@ -235,7 +348,7 @@ export const useNutritionGamification = (options = {}) => {
 
       if (result.leveledUp) {
         // Notification level up (sera géré par UI)
-        log.info(`🎉 Level Up ! Niveau ${result.newLevel}`);
+        // Log supprimé pour éviter spam
       }
 
       // Recharger données
@@ -250,7 +363,8 @@ export const useNutritionGamification = (options = {}) => {
   }, [dbReady, enabled, gamificationData]);
 
   // Calculer progression vers prochain niveau
-  const getLevelProgress = useCallback(() => {
+  // ✅ OPTIMISATION 1.5 : Utiliser useMemo pour éviter recalculs + retourner valeur directement
+  const levelProgress = useMemo(() => {
     if (!gamificationData?.experience) {
       return {
         currentXP: 0,
@@ -279,7 +393,7 @@ export const useNutritionGamification = (options = {}) => {
       xpNeeded,
       progressPercent: Math.min(100, Math.max(0, progressPercent))
     };
-  }, [gamificationData]);
+  }, [gamificationData?.experience]);
 
   return {
     // Données
@@ -298,7 +412,7 @@ export const useNutritionGamification = (options = {}) => {
     addXP,
     
     // Helpers
-    getLevelProgress: getLevelProgress(),
+    getLevelProgress: levelProgress, // ✅ OPT 1.5 : Retourner valeur directement (fix bug)
     hasNewBadges: newBadges.length > 0,
     
     // Constantes

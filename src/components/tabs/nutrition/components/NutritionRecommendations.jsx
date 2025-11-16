@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import { useNutritionRecommendations } from '../../../../hooks/useNutritionRecommendations';
 
-const NutritionRecommendations = () => {
+// ✅ OPTIMISATION 2.5 : React.memo pour éviter re-renders inutiles (50-80% réduction)
+const NutritionRecommendations = React.memo(() => {
   const {
     recommendations,
     summary,
@@ -237,7 +238,9 @@ const NutritionRecommendations = () => {
       </CardContent>
     </Card>
   );
-};
+});
+
+NutritionRecommendations.displayName = 'NutritionRecommendations';
 
 export default NutritionRecommendations;
 

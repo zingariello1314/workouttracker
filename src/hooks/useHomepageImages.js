@@ -692,8 +692,18 @@ export const useHomepageImages = () => {
     }
   };
 
+  // ✅ CORRECTION : Protection contre chargements multiples (React.StrictMode)
+  const loadingRef = useRef(false);
+  
   // Chargement avec récupération automatique
   const loadImagesWithRecovery = async () => {
+    // ✅ Protection contre chargement multiple
+    if (loadingRef.current) {
+      return;
+    }
+    
+    loadingRef.current = true;
+    
     try {
       console.log('🔍 Chargement avec récupération automatique...');
       setIsLoading(true);
@@ -714,6 +724,7 @@ export const useHomepageImages = () => {
         backgroundImagesRef.current = shuffledImagesRef.current;
         setBackgroundImages(shuffledImagesRef.current);
         setIsLoading(false);
+        loadingRef.current = false; // ✅ Réinitialiser flag
         return;
       }
       
@@ -771,6 +782,7 @@ export const useHomepageImages = () => {
         }
         
         setIsLoading(false);
+        loadingRef.current = false; // ✅ Réinitialiser flag
         return;
       }
       
@@ -829,6 +841,7 @@ export const useHomepageImages = () => {
         }
         
         setIsLoading(false);
+        loadingRef.current = false; // ✅ Réinitialiser flag
         return;
       }
       
@@ -866,6 +879,7 @@ export const useHomepageImages = () => {
         }
         
         setIsLoading(false);
+        loadingRef.current = false; // ✅ Réinitialiser flag
         return;
       }
       
@@ -876,6 +890,7 @@ export const useHomepageImages = () => {
       setBackgroundImages([]);
       setSystemHealth('unknown');
       setIsLoading(false);
+      loadingRef.current = false; // ✅ Réinitialiser flag
       
     } catch (error) {
       console.error('❌ Erreur lors du chargement avec récupération:', error);
@@ -884,6 +899,7 @@ export const useHomepageImages = () => {
       setBackgroundImages([]);
       setSystemHealth('poor');
       setIsLoading(false);
+      loadingRef.current = false; // ✅ Réinitialiser flag dans catch
     }
   };
 

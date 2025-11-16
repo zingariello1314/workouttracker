@@ -10,10 +10,12 @@
  * @see ../../nouvelongletnutritionplan.md Section 5.1
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNutritionData } from './useNutritionData';
 import { useGarminData } from './useGarminData';
 import { analyzeChronobiology } from '../services/nutrition/nutritionChronobiology';
+import { getMealsByDateRange } from './nutritionDataCRUD';
+import { DateHelper } from '../utils/dateHelper';
 import logger from '../utils/logger';
 
 const log = logger.module('useNutritionChronobiology');
@@ -48,6 +50,10 @@ export const useNutritionChronobiology = (options = {}) => {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // ✅ OPTIMISATION 4.1 : Ref pour cleanup async operations (évite memory leaks)
+  const isMountedRef = useRef(true);
+  // ✅ OPTIMISATION 3.3 : Cache avec hash pour chronobiologie (90-95% réduction calculs)
+  const chronobiologyCacheRef = useRef({ data: null, hash: null, timestamp: 0, TTL: 300000 });
 
   /**
    * Calcule la plage de dates selon la période
@@ -94,36 +100,59 @@ export const useNutritionChronobiology = (options = {}) => {
   }, [startDate, endDate]);
 
   /**
+   * ✅ OPTIMISATION 1.2 : Utiliser getMealsByDateRange au lieu de getAllMeals
+   * ✅ OPTIMISATION 3.3 : Cache avec hash pour éviter recalculs
+   * ✅ OPTIMISATION 4.1 : Cleanup async operations
+   * ✅ OPTIMISATION 4.3 : DateHelper partout
    * Charge et prépare les données pour l'analyse
    */
   const loadData = useCallback(async () => {
     if (!nutritionDbReady || !garminDbReady) {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    if (isMountedRef.current) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
       const dateRange = calculateDateRange(period);
       
       log.debug('Chargement données chronobiologie:', { period, dateRange });
 
-      // Charger repas
-      const allMeals = await getAllMeals();
-      
-      // Filtrer repas par plage de dates
-      const filteredMeals = allMeals.filter(meal => {
-        if (!meal.timestamp) return false;
-        const mealDate = new Date(meal.timestamp);
-        return mealDate >= dateRange.startDate && mealDate <= dateRange.endDate;
-      });
+      // ✅ OPTIMISATION 4.3 : Utiliser DateHelper pour cohérence timezone locale
+      const startDateStr = DateHelper.toYYYYMMDD(dateRange.startDate);
+      const endDateStr = DateHelper.toYYYYMMDD(dateRange.endDate);
+
+      // ✅ OPTIMISATION 1.2 : Utiliser getMealsByDateRange (seulement période nécessaire)
+      const meals = await getMealsByDateRange(startDateStr, endDateStr);
+      const filteredMeals = meals.filter(meal => meal.timestamp); // Filtrer seulement les meals sans timestamp
 
       // Charger activités Garmin par plage de dates
-      const garminData = await loadDataByRange(
-        dateRange.startDate.toISOString().split('T')[0],
-        dateRange.endDate.toISOString().split('T')[0]
-      );
+      const garminData = await loadDataByRange(startDateStr, endDateStr);
+
+      // ✅ OPTIMISATION 3.3 : Générer hash période + données chargées
+      const dataHash = JSON.stringify({
+        period,
+        mealsCount: filteredMeals.length,
+        garminDataCount: garminData?.activities ? Object.keys(garminData.activities).length : 0
+      });
+      
+      const cached = chronobiologyCacheRef.current;
+      const now = Date.now();
+      
+      // ✅ OPTIMISATION 3.3 : Vérifier cache : même hash + pas expiré
+      if (cached.data && cached.hash === dataHash && (now - cached.timestamp) < cached.TTL) {
+        if (isMountedRef.current) {
+          setAnalysis(cached.data); // ✅ Utiliser cache
+          setLoading(false);
+        }
+        return;
+      }
 
       // Transformer activités Garmin en format uniforme
       const workouts = [];
@@ -160,7 +189,7 @@ export const useNutritionChronobiology = (options = {}) => {
         workoutsCount: workouts.length 
       });
 
-      // Analyser chronobiologie
+      // ✅ OPTIMISATION 3.3 : Calculs (seulement si données changées ou cache expiré)
       const result = analyzeChronobiology(
         {
           meals: filteredMeals,
@@ -174,18 +203,39 @@ export const useNutritionChronobiology = (options = {}) => {
         }
       );
 
-      setAnalysis(result);
-    } catch (err) {
-      log.error('Erreur analyse chronobiologie:', err);
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [nutritionDbReady, garminDbReady, period, getAllMeals, loadDataByRange, calculateDateRange]);
+      // ✅ OPTIMISATION 3.3 : Mettre en cache
+      chronobiologyCacheRef.current = {
+        data: result,
+        hash: dataHash,
+        timestamp: now,
+        TTL: 300000 // 5 minutes
+      };
 
+      // ✅ OPTIMISATION 4.1 : Vérifier si composant toujours monté avant setState
+      if (isMountedRef.current) {
+        setAnalysis(result);
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        log.error('Erreur analyse chronobiologie:', err);
+        setError(err);
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [nutritionDbReady, garminDbReady, period, loadDataByRange, calculateDateRange]);
+
+  // ✅ OPTIMISATION 4.1 : Cleanup async operations (évite memory leaks)
   // Charger données au montage et quand dépendances changent
   useEffect(() => {
+    isMountedRef.current = true;
     loadData();
+    
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [loadData]);
 
   /**

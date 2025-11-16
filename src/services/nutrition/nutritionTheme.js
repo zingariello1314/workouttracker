@@ -234,14 +234,7 @@ export function getDynamicTheme(userState) {
 
       try {
         if (theme.condition(userState)) {
-          log.debug(`[getDynamicTheme] Thème sélectionné: ${theme.name}`, {
-            reason: theme.description,
-            userState: {
-              overallStreak: userState.streaks?.overall?.current || 0,
-              healthScore: userState.healthScore?.global || 50,
-              surplusStreak: userState.nutrition?.surplusStreak || 0
-            }
-          });
+          // Log supprimé pour éviter spam
 
           return {
             ...theme,
@@ -255,7 +248,7 @@ export function getDynamicTheme(userState) {
     }
 
     // Fallback: thème par défaut
-    log.debug('[getDynamicTheme] Thème par défaut sélectionné');
+    // Log supprimé pour éviter spam
     return {
       ...THEME_DEFINITIONS.default,
       reason: 'Aucune condition spécifique remplie'
@@ -317,11 +310,7 @@ export function applyDynamicTheme(theme, options = {}) {
     root.style.setProperty('--color-secondary', theme.colors.secondary);
     root.style.setProperty('--color-accent', theme.colors.accent);
 
-    log.debug('[applyDynamicTheme] Thème appliqué', {
-      name: theme.name,
-      colors: theme.colors,
-      animate
-    });
+    // Log supprimé pour éviter spam
   } catch (error) {
     log.error('[applyDynamicTheme] Erreur application thème:', error);
   }
@@ -333,7 +322,7 @@ export function applyDynamicTheme(theme, options = {}) {
 export function resetTheme() {
   const defaultTheme = THEME_DEFINITIONS.default;
   applyDynamicTheme(defaultTheme, { animate: false });
-  log.debug('[resetTheme] Thème réinitialisé au thème par défaut');
+  // Log supprimé pour éviter spam
 }
 
 // ==================== CALCUL COMPLET ====================

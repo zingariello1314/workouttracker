@@ -18,6 +18,8 @@
 
 import logger from '../../utils/logger';
 import { openNutritionDB, STORE_GAMIFICATION } from '../../hooks/nutritionDataUtils';
+import { DateHelper } from '../../utils/dateHelper';
+import { ALL_BADGES } from './nutritionBadgesDefinitions';
 
 const log = logger.module('nutritionGamification');
 
@@ -50,252 +52,76 @@ export const BADGE_RARITY = {
 };
 
 // ==================== DÉFINITIONS BADGES ====================
-
-/**
- * Badges Consistance (Consistency)
- */
-export const CONSISTENCY_BADGES = [
-  {
-    id: 'badge_7day_streak',
-    name: 'Série 7 jours',
-    description: '7 jours consécutifs sans oublier de saisir nutrition',
-    category: 'consistency',
-    icon: '🔥',
-    rarity: 'common',
-    points: 50,
-    condition: (userData) => {
-      return userData.streaks?.nutrition?.current >= 7;
-    }
-  },
-  {
-    id: 'badge_30day_streak',
-    name: 'Série 30 jours',
-    description: '30 jours consécutifs sans oublier',
-    category: 'consistency',
-    icon: '🔥🔥',
-    rarity: 'rare',
-    points: 200,
-    condition: (userData) => {
-      return userData.streaks?.nutrition?.current >= 30;
-    }
-  },
-  {
-    id: 'badge_100day_streak',
-    name: 'Série 100 jours',
-    description: '100 jours consécutifs - Maître de la régularité !',
-    category: 'consistency',
-    icon: '🔥🔥🔥',
-    rarity: 'epic',
-    points: 500,
-    condition: (userData) => {
-      return userData.streaks?.nutrition?.current >= 100;
-    }
-  }
-];
-
-/**
- * Badges Performance Nutrition
- */
-export const NUTRITION_BADGES = [
-  {
-    id: 'badge_protein_master',
-    name: 'Maître Protéines',
-    description: 'Atteindre objectif protéines 30 jours consécutifs',
-    category: 'nutrition',
-    icon: '💪',
-    rarity: 'rare',
-    points: 150,
-    condition: (userData) => {
-      if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) {
-        return false;
-      }
-      const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
-        const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
-        return protein >= targetProtein * 0.95;
-      });
-    }
-  },
-  {
-    id: 'badge_program_100',
-    name: 'Programme 100%',
-    description: 'Respecter programme nutrition 1 semaine complète (≥80% conformité)',
-    category: 'nutrition',
-    icon: '🎯',
-    rarity: 'common',
-    points: 100,
-    condition: (userData) => {
-      if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) {
-        return false;
-      }
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
-        const compliance = day.complianceScore || day.dailyTotals?.complianceScore || 0;
-        return compliance >= 80;
-      });
-    }
-  },
-  {
-    id: 'badge_surplus_controlled',
-    name: 'Surplus Contrôlé',
-    description: 'Rester en surplus sans dépasser +500 kcal pendant 7 jours',
-    category: 'nutrition',
-    icon: '⚡',
-    rarity: 'rare',
-    points: 150,
-    condition: (userData) => {
-      if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) {
-        return false;
-      }
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
-        const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
-        const balance = calories - targetCalories;
-        return balance > 0 && balance <= 500;
-      });
-    }
-  },
-  {
-    id: 'badge_variety_master',
-    name: 'Maître de la Variété',
-    description: '15 aliments différents sur 7 jours',
-    category: 'nutrition',
-    icon: '🍎',
-    rarity: 'common',
-    points: 75,
-    condition: (userData) => {
-      if (!userData.uniqueFoodsLast7Days) return false;
-      return userData.uniqueFoodsLast7Days >= 15;
-    }
-  },
-  {
-    id: 'badge_hydration_king',
-    name: 'Roi de l\'Hydratation',
-    description: 'Atteindre objectif hydratation 7 jours consécutifs',
-    category: 'nutrition',
-    icon: '💧',
-    rarity: 'common',
-    points: 100,
-    condition: (userData) => {
-      if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) {
-        return false;
-      }
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
-        const water = day.dailyTotals?.waterIntake || 0;
-        const targetWater = day.dailyTotals?.targetWater || 2500;
-        return water >= targetWater * 0.9; // 90% de la cible
-      });
-    }
-  }
-];
-
-/**
- * Badges Progression
- */
-export const PROGRESSION_BADGES = [
-  {
-    id: 'badge_improvement_20pct',
-    name: 'Progression Mensuelle',
-    description: 'Amélioration 20% conformité ce mois vs mois précédent',
-    category: 'progression',
-    icon: '📈',
-    rarity: 'common',
-    points: 100,
-    condition: (userData) => {
-      if (!userData.nutritionHistory || userData.nutritionHistory.length < 60) {
-        return false;
-      }
-      const currentMonth = userData.nutritionHistory.slice(-30);
-      const previousMonth = userData.nutritionHistory.slice(-60, -30);
-      
-      const currentAvg = currentMonth.reduce((sum, day) => 
-        sum + (day.complianceScore || day.dailyTotals?.complianceScore || 0), 0
-      ) / currentMonth.length;
-      
-      const previousAvg = previousMonth.reduce((sum, day) => 
-        sum + (day.complianceScore || day.dailyTotals?.complianceScore || 0), 0
-      ) / previousMonth.length;
-      
-      if (previousAvg === 0) return false;
-      return ((currentAvg - previousAvg) / previousAvg) * 100 >= 20;
-    }
-  },
-  {
-    id: 'badge_balance_master',
-    name: 'Équilibre Nutritionnel',
-    description: 'Respecter macros équilibrés (pas juste calories)',
-    category: 'progression',
-    icon: '⚖️',
-    rarity: 'rare',
-    points: 150,
-    condition: (userData) => {
-      if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) {
-        return false;
-      }
-      const last7Days = userData.nutritionHistory.slice(-7);
-      const avgMacros = {
-        protein: last7Days.reduce((sum, day) => sum + (day.dailyTotals?.protein || 0), 0) / 7,
-        carbs: last7Days.reduce((sum, day) => sum + (day.dailyTotals?.carbs || 0), 0) / 7,
-        fat: last7Days.reduce((sum, day) => sum + (day.dailyTotals?.fat || 0), 0) / 7
-      };
-      
-      // Calculer écart-type des macros (normalisé)
-      const total = avgMacros.protein + avgMacros.carbs + avgMacros.fat;
-      if (total === 0) return false;
-      
-      const proteinPercent = (avgMacros.protein / total) * 100;
-      const carbsPercent = (avgMacros.carbs / total) * 100;
-      const fatPercent = (avgMacros.fat / total) * 100;
-      
-      // Équilibre idéal : 30% protéines, 40% glucides, 30% lipides
-      const ideal = { protein: 30, carbs: 40, fat: 30 };
-      const deviation = Math.abs(proteinPercent - ideal.protein) + 
-                       Math.abs(carbsPercent - ideal.carbs) + 
-                       Math.abs(fatPercent - ideal.fat);
-      
-      return deviation < 20; // Écart total < 20%
-    }
-  }
-];
-
-// Tous les badges
-export const ALL_BADGES = [
-  ...CONSISTENCY_BADGES,
-  ...NUTRITION_BADGES,
-  ...PROGRESSION_BADGES
-];
+// ✅ Tous les badges sont maintenant définis dans nutritionBadgesDefinitions.js
+// Import des 100 badges organisés par difficulté
+// Les anciens badges (CONSISTENCY_BADGES, NUTRITION_BADGES, PROGRESSION_BADGES) 
+// sont conservés pour compatibilité mais ne sont plus utilisés
+// Utiliser ALL_BADGES depuis nutritionBadgesDefinitions.js
 
 // ==================== CALCUL STREAKS AVEC FORGIVENESS ====================
 
 /**
+ * Vérifie qu'un jour a des données nutritionnelles réelles (au moins un repas avec des aliments)
+ * Nécessaire pour éviter que les streaks comptent des jours sans données réelles
+ */
+const hasRealNutritionData = (dayData) => {
+  if (!dayData || !dayData.meals || dayData.meals.length === 0) return false;
+  
+  // Vérifier qu'au moins un repas a des aliments (foods)
+  return dayData.meals.some(meal => {
+    const foods = meal.foods || [];
+    // Vérifier qu'il y a des aliments ET qu'ils ont des valeurs nutritionnelles
+    return foods.length > 0 && foods.some(food => {
+      // Vérifier qu'au moins un aliment a des calories ou des macros
+      return (food.calories || 0) > 0 || 
+             (food.protein || 0) > 0 || 
+             (food.carbs || 0) > 0 || 
+             (food.fat || 0) > 0;
+    });
+  });
+};
+
+/**
  * Calcule les streaks avec forgiveness (2 jours tolérés)
  * 
- * @param {Array<Object>} history - Historique dailyMeals [{date, hasMeals}, ...]
+ * @param {Array<Object>} history - Historique dailyMeals [{date, hasMeals, meals}, ...]
  * @param {string} type - Type de streak ('nutrition' | 'workout')
  * @returns {Object} {current, actual, forgivenessUsed, maxReached, status}
  */
 export const calculateStreakWithForgiveness = (history, type = 'nutrition') => {
   let streak = 0;
   let forgiveness = 2; // 2 jours manqués tolérés
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  
+  // ✅ OPTIMISATION 1.3 : Créer Map<date, dayData> pour accès O(1) au lieu de .find() O(n)
+  const historyByDate = new Map();
+  history.forEach(dayData => {
+    if (dayData.date) {
+      historyByDate.set(dayData.date, dayData);
+    }
+  });
+  
+  // ✅ OPTIMISATION 2.2 : Utiliser DateHelper pour garantir timezone locale
+  const today = DateHelper.getTodayLocal();
   
   // Parcourir depuis aujourd'hui vers le passé
   for (let i = 0; i < 365; i++) {
-    const checkDate = new Date(today);
-    checkDate.setDate(today.getDate() - i);
-    const dateStr = checkDate.toISOString().split('T')[0];
+    const checkDateStr = DateHelper.getDaysAgoLocal(i); // ✅ DateHelper garantit timezone locale
     
-    // Vérifier si jour a des données
-    const dayData = history.find(d => d.date === dateStr);
-    const hasData = dayData && (
-      type === 'nutrition' ? (dayData.meals?.length > 0 || dayData.hasMeals) : 
-      type === 'workout' ? (dayData.workouts?.length > 0 || dayData.hasWorkouts) :
-      ((dayData.meals?.length > 0 || dayData.hasMeals) || (dayData.workouts?.length > 0 || dayData.hasWorkouts))
-    );
+    // ✅ OPTIMISATION 1.3 : Accès O(1) au lieu de .find() O(n)
+    const dayData = historyByDate.get(checkDateStr);
+    
+    // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles pour nutrition
+    let hasData = false;
+    if (type === 'nutrition') {
+      hasData = dayData && hasRealNutritionData(dayData);
+    } else if (type === 'workout') {
+      hasData = dayData && (dayData.workouts?.length > 0 || dayData.hasWorkouts);
+    } else {
+      hasData = dayData && (
+        hasRealNutritionData(dayData) || 
+        (dayData.workouts?.length > 0 || dayData.hasWorkouts)
+      );
+    }
     
     if (hasData) {
       streak++;
@@ -469,6 +295,123 @@ export const getGamificationData = async () => {
 };
 
 /**
+ * Supprime ou réinitialise une streak
+ * 
+ * @param {string} category - Catégorie de streak ('nutrition' | 'workout')
+ * @returns {Promise<boolean>} true si succès
+ */
+export const resetStreak = async (category = 'nutrition') => {
+  try {
+    const db = await openNutritionDB();
+    if (!db) {
+      return false;
+    }
+
+    const tx = db.transaction([STORE_GAMIFICATION], 'readwrite');
+    const store = tx.objectStore(STORE_GAMIFICATION);
+    
+    return new Promise((resolve) => {
+      const request = store.delete(`streak_${category}`);
+      request.onsuccess = () => {
+        resolve(true);
+      };
+      request.onerror = () => {
+        // Si la streak n'existe pas, ce n'est pas grave
+        resolve(true);
+      };
+    });
+  } catch (error) {
+    log.error('Erreur resetStreak:', error);
+    return false;
+  }
+};
+
+/**
+ * Supprime un achievement (badge débloqué)
+ * 
+ * @param {string} achievementId - ID du badge à supprimer
+ * @returns {Promise<boolean>} true si succès
+ */
+export const deleteAchievement = async (achievementId) => {
+  try {
+    const db = await openNutritionDB();
+    if (!db) {
+      log.warn('DB non disponible pour deleteAchievement');
+      return false;
+    }
+
+    const tx = db.transaction([STORE_GAMIFICATION], 'readwrite');
+    const store = tx.objectStore(STORE_GAMIFICATION);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.delete(achievementId);
+      request.onsuccess = () => {
+        // Log réduit pour éviter spam
+        resolve(true);
+      };
+      request.onerror = () => {
+        log.error('Erreur deleteAchievement:', request.error);
+        reject(request.error);
+      };
+    });
+  } catch (error) {
+    log.error('Erreur deleteAchievement:', error);
+    return false;
+  }
+};
+
+/**
+ * Revérifie les badges débloqués et supprime ceux qui ne remplissent plus les conditions
+ * 
+ * @param {Object} userData - Données utilisateur actuelles
+ * @param {Array<Object>} unlockedBadges - Badges actuellement débloqués
+ * @returns {Promise<Array<string>>} Liste des IDs des badges supprimés
+ */
+export const revalidateAchievements = async (userData, unlockedBadges = []) => {
+  try {
+    if (!unlockedBadges || unlockedBadges.length === 0) {
+      return [];
+    }
+
+    const badgesToRemove = [];
+    const badgeDefinitionsMap = new Map(ALL_BADGES.map(b => [b.id, b]));
+
+    // Vérifier chaque badge débloqué
+    for (const unlockedBadge of unlockedBadges) {
+      const badgeDef = badgeDefinitionsMap.get(unlockedBadge.id);
+      
+      if (!badgeDef) {
+        // Badge n'existe plus dans les définitions, supprimer
+        badgesToRemove.push(unlockedBadge.id);
+        continue;
+      }
+
+      // Revérifier la condition
+      try {
+        const stillValid = badgeDef.condition(userData);
+        if (!stillValid) {
+          // Badge ne remplit plus les conditions, supprimer
+          badgesToRemove.push(unlockedBadge.id);
+        }
+      } catch (error) {
+        log.warn(`Erreur revalidation badge ${unlockedBadge.id}:`, error);
+        // En cas d'erreur, garder le badge (ne pas supprimer par sécurité)
+      }
+    }
+
+    // Supprimer les badges invalides (sans logs pour éviter spam)
+    if (badgesToRemove.length > 0) {
+      await Promise.all(badgesToRemove.map(id => deleteAchievement(id)));
+    }
+
+    return badgesToRemove;
+  } catch (error) {
+    log.error('Erreur revalidateAchievements:', error);
+    return [];
+  }
+};
+
+/**
  * Sauvegarde un achievement (badge débloqué)
  * 
  * @param {Object} achievement - Badge débloqué
@@ -482,8 +425,12 @@ export const saveAchievement = async (achievement) => {
       return false;
     }
 
+    // ✅ OPTIMISATION : Supprimer propriétés non-clonables (fonctions) avant sauvegarde IndexedDB
+    // IndexedDB ne peut pas cloner des fonctions, il faut donc retirer `condition`
+    const { condition, ...achievementWithoutFunctions } = achievement;
+
     const dataToSave = {
-      ...achievement,
+      ...achievementWithoutFunctions,
       type: 'achievement',
       id: achievement.id || `achievement_${Date.now()}`,
       unlockedDate: achievement.unlockedDate || new Date().toISOString(),
@@ -496,7 +443,7 @@ export const saveAchievement = async (achievement) => {
     return new Promise((resolve, reject) => {
       const request = store.put(dataToSave);
       request.onsuccess = () => {
-        log.debug(`Achievement sauvegardé: ${dataToSave.id}`);
+        // Log supprimé pour éviter spam
         resolve(true);
       };
       request.onerror = () => {
@@ -540,7 +487,7 @@ export const updateExperience = async (xp, level) => {
     return new Promise((resolve, reject) => {
       const request = store.put(dataToSave);
       request.onsuccess = () => {
-        log.debug(`Experience mise à jour: Level ${level}, XP ${xp}`);
+        // Log supprimé pour éviter spam
         resolve(true);
       };
       request.onerror = () => {
@@ -582,7 +529,7 @@ export const updateStreak = async (streakData) => {
     return new Promise((resolve, reject) => {
       const request = store.put(dataToSave);
       request.onsuccess = () => {
-        log.debug(`Streak mise à jour: ${streakData.category} = ${streakData.current}`);
+        // Log réduit pour éviter spam (seulement si changement significatif)
         resolve(true);
       };
       request.onerror = () => {
@@ -657,7 +604,7 @@ const logLevelUp = async (level) => {
     return new Promise((resolve) => {
       const request = store.add(logEntry);
       request.onsuccess = () => {
-        log.info(`🎉 Level Up ! Niveau ${level}`);
+        // Log réduit pour éviter spam - seulement si important
         resolve(true);
       };
       request.onerror = () => {
@@ -705,7 +652,7 @@ export const unlockAchievement = async (badge, userData) => {
       currentGamification.experience
     );
     
-    log.info(`🏆 Badge débloqué: ${badge.name} (+${points} XP)`);
+    // Log réduit pour éviter spam - seulement en mode verbose si nécessaire
     
     return achievement;
   } catch (error) {

@@ -31,12 +31,14 @@ import {
   getMealsByDate,
   getMealsByDateAndType,
   getMealsByDailyMealId,
+  getMealsByDateRange,
   getAllMeals,
   deleteMeal,
   saveMeals,
   // Programs
   getAllPrograms,
   getActiveProgram,
+  getAllProgramsWithActive,
   saveProgram,
   deleteProgram,
   // FavoriteFoods
@@ -113,15 +115,13 @@ const ensureGlobalDBReady = async () => {
       const db = await openNutritionDB();
       if (db) {
         globalDBReady = true;
-        // ✅ Log unique global (une seule fois)
-        console.log('[useNutritionData] IndexedDB initialisée globalement (singleton) - Version:', db.version);
+        // Log supprimé pour éviter spam
       } else {
         globalDBReady = false;
-        console.warn('[useNutritionData] IndexedDB non disponible');
       }
       return db;
     } catch (error) {
-      console.error('[useNutritionData] Erreur initialisation DB globale:', error);
+      // Log supprimé pour éviter spam - seulement erreurs critiques
       globalDBReady = false;
       globalDBReadyPromise = null; // Réinitialiser en cas d'erreur pour retry
       throw error;
@@ -389,7 +389,9 @@ export const useNutritionData = () => {
   // ==================== PROGRAMS ====================
 
   /**
-   * Active un programme (désactive automatiquement les autres)
+   * ✅ OPTIMISATION 4.2 : Active un programme (désactive automatiquement les autres)
+   * 
+   * Optimisé pour éviter double chargement : passe DB instance à saveProgram
    * 
    * @param {string} programId - ID du programme à activer
    * @returns {Promise<boolean>} true si succès
@@ -398,6 +400,10 @@ export const useNutritionData = () => {
     if (!dbReady) return false;
 
     try {
+      // ✅ OPTIMISATION 4.2 : Ouvrir DB une seule fois
+      const db = await openNutritionDB();
+      if (!db) return false;
+      
       // Récupérer le programme
       const programs = await getAllPrograms();
       const program = programs.find(p => p.id === programId);
@@ -411,12 +417,13 @@ export const useNutritionData = () => {
       program.isActive = true;
       program.startDate = program.startDate || formatDate(new Date());
       
-      return await saveProgram(program);
+      // ✅ OPTIMISATION 4.2 : Passer DB instance pour éviter réouverture
+      return await saveProgram(program, { dbInstance: db });
     } catch (error) {
       console.error('[useNutritionData] Erreur activateProgram:', error);
       return false;
     }
-  }, [dbReady]);
+  }, [dbReady, getAllPrograms, saveProgram, formatDate]);
 
   /**
    * Désactive le programme actif
@@ -554,6 +561,7 @@ export const useNutritionData = () => {
     getMealsByDate,
     getMealsByDateAndType,
     getMealsByDailyMealId,
+    getMealsByDateRange,
     getAllMeals,
     deleteMeal: deleteMealAndUpdateTotals,
     saveMeals,
@@ -561,6 +569,7 @@ export const useNutritionData = () => {
     // Programs
     getAllPrograms,
     getActiveProgram,
+    getAllProgramsWithActive,
     saveProgram,
     deleteProgram,
     activateProgram,
