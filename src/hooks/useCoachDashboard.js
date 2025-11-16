@@ -69,16 +69,20 @@ export const useCoachDashboard = (options = {}) => {
         throw new Error(`Erreur parsing JSON: ${parseError.message}`);
       }
 
-      // Valider format (si autoValidate)
+      // ✅ PHASE 4 : Valider format (si autoValidate) avec ImportValidator
       if (autoValidate) {
-        const validation = validateShareJson(jsonData);
+        const validation = await validateShareJson(file); // Support File directement
         if (!validation.valid) {
           throw new Error(validation.error);
         }
+        
+        // ✅ PHASE 4 : Si export chiffré, demander mot de passe (futur : UI modal)
+        // Pour l'instant, on suppose export non chiffré
+        jsonData = validation.data;
       }
 
-      // Charger données
-      const formattedData = loadShareDataFromJson(jsonData);
+      // ✅ PHASE 4 : Charger données avec validation profonde
+      const formattedData = await loadShareDataFromJson(file, { password: null }); // Support File
       
       setShareData(formattedData);
       setScope(formattedData.scope);
@@ -103,25 +107,32 @@ export const useCoachDashboard = (options = {}) => {
   /**
    * Valide un objet JSON (sans import fichier)
    * 
-   * @param {Object} jsonData - Données JSON à valider
-   * @returns {Object} { valid: boolean, error: string|null, data: Object|null }
+   * ✅ PHASE 4 : Support exports chiffrés et validation profonde
+   * 
+   * @param {Object|File|string} jsonDataOrFile - Données JSON, File ou string à valider
+   * @param {Object} options - Options de validation
+   * @param {string} options.password - Mot de passe pour déchiffrement (requis si export chiffré)
+   * @returns {Promise<Object>} { valid: boolean, error: string|null, data: Object|null }
    */
-  const validateJson = useCallback((jsonData) => {
+  const validateJson = useCallback(async (jsonDataOrFile, options = {}) => {
     try {
       setError(null);
+      setLoading(true);
 
-      // Valider format
-      const validation = validateShareJson(jsonData);
+      const { password = null } = options;
+
+      // ✅ PHASE 4 : Valider format avec ImportValidator
+      const validation = await validateShareJson(jsonDataOrFile);
       if (!validation.valid) {
         setError(validation.error);
         return { valid: false, error: validation.error, data: null };
       }
 
-      // Parser JSON
-      const parsed = parseShareJson(jsonData);
+      // ✅ PHASE 4 : Parser JSON avec support chiffré
+      const parsed = await parseShareJson(jsonDataOrFile);
       
-      // Charger données
-      const formattedData = loadShareDataFromJson(jsonData);
+      // ✅ PHASE 4 : Charger données avec support chiffré
+      const formattedData = await loadShareDataFromJson(jsonDataOrFile, { password });
       
       setShareData(formattedData);
       setScope(formattedData.scope);
@@ -138,6 +149,8 @@ export const useCoachDashboard = (options = {}) => {
       log.error('[validateJson] Erreur validation JSON:', error);
       setError(error.message || 'Erreur validation JSON');
       return { valid: false, error: error.message || 'Erreur validation JSON', data: null };
+    } finally {
+      setLoading(false);
     }
   }, []);
 

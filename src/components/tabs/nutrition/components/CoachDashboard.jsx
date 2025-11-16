@@ -37,25 +37,14 @@ import { useCoachDashboard } from '../../../../hooks/useCoachDashboard';
 import { SHARE_SCOPES } from '../../../../services/nutrition/nutritionSharing';
 import { useToast } from '../../../ui/Toast/ToastProvider';
 import logger from '../../../../utils/logger';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  AreaChart,
-  Area,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine
-} from 'recharts';
 import { Badge } from '../../../ui/Badge';
+import LazyChart from './LazyChart';
+import {
+  MemoizedCaloriesLineChart,
+  MemoizedMacrosAreaChart,
+  MemoizedMacrosPieChart,
+  MemoizedComplianceLineChart
+} from './ChartComponents';
 
 /**
  * Formate la date d'expiration
@@ -95,24 +84,7 @@ const formatScope = (scope) => {
   }
 };
 
-/**
- * Tooltip personnalisé pour graphiques
- */
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-lg">
-        <p className="text-sm font-semibold text-slate-200 mb-2">{label}</p>
-        {payload.map((entry, index) => (
-          <p key={index} className="text-sm" style={{ color: entry.color }}>
-            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
+// ✅ PHASE 5 : CustomTooltip déplacé dans ChartComponents.jsx (mémorisé)
 
 const CoachDashboard = () => {
   const { showError } = useToast();
@@ -130,29 +102,12 @@ const CoachDashboard = () => {
   const [dragActive, setDragActive] = useState(false);
   const [activeTab, setActiveTab] = useState('stats'); // 'stats' | 'charts' | 'progress'
   const fileInputRef = useRef(null);
-  const [chartsReady, setChartsReady] = useState(false);
+  const dropZoneRef = useRef(null);
+  const [uploadFocused, setUploadFocused] = useState(false);
+  
+  // ✅ PHASE 5 : Supprimé chartsReady - remplacé par lazy loading avec IntersectionObserver
 
-  // Attendre que le DOM soit prêt avant de rendre les graphiques
-  React.useEffect(() => {
-    if (!shareData) {
-      setChartsReady(false);
-      return;
-    }
-
-    // Double requestAnimationFrame pour garantir que le layout CSS est calculé
-    let raf1, raf2;
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        setChartsReady(true);
-      });
-    });
-    return () => {
-      if (raf1) cancelAnimationFrame(raf1);
-      if (raf2) cancelAnimationFrame(raf2);
-    };
-  }, [shareData]);
-
-  // Gérer drag & drop
+  // ✅ PHASE 6 : Gérer drag & drop avec feedback accessibilité
   const handleDrag = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -162,6 +117,53 @@ const CoachDashboard = () => {
       setDragActive(false);
     }
   }, []);
+
+  // ✅ PHASE 6 : Navigation clavier zone upload (Enter/Space)
+  const handleUploadKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      fileInputRef.current?.click();
+    }
+  }, []);
+
+  // ✅ PHASE 6 : Navigation clavier onglets (flèches gauche/droite)
+  const handleTabKeyDown = useCallback((e, tabId) => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      const currentIndex = availableTabs.findIndex(t => t.id === activeTab);
+      let nextIndex;
+      
+      if (e.key === 'ArrowLeft') {
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : availableTabs.length - 1;
+      } else {
+        nextIndex = currentIndex < availableTabs.length - 1 ? currentIndex + 1 : 0;
+      }
+      
+      setActiveTab(availableTabs[nextIndex].id);
+      
+      // ✅ PHASE 6 : Focus le nouvel onglet pour navigation clavier fluide
+      const nextTabButton = e.target.parentElement?.children[nextIndex];
+      if (nextTabButton instanceof HTMLElement) {
+        nextTabButton.focus();
+      }
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setActiveTab(availableTabs[0].id);
+      const firstTabButton = e.target.parentElement?.children[0];
+      if (firstTabButton instanceof HTMLElement) {
+        firstTabButton.focus();
+      }
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      const lastIndex = availableTabs.length - 1;
+      setActiveTab(availableTabs[lastIndex].id);
+      const lastTabButton = e.target.parentElement?.children[lastIndex];
+      if (lastTabButton instanceof HTMLElement) {
+        lastTabButton.focus();
+      }
+    }
+  }, [activeTab, availableTabs]);
 
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
@@ -298,59 +300,119 @@ const CoachDashboard = () => {
                 </div>
               </div>
 
-              {/* Zone d'import drag & drop */}
+              {/* ✅ PHASE 6 : Zone d'import drag & drop accessible */}
               <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                ref={dropZoneRef}
+                role="button"
+                tabIndex={0}
+                aria-label="Zone d'import de fichier JSON. Appuyez sur Entrée ou Espace pour sélectionner un fichier, ou glissez-déposez un fichier ici."
+                aria-describedby="upload-instructions"
+                aria-disabled={loading || false}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all outline-none ${
                   dragActive
                     ? 'border-blue-500 bg-blue-500/10'
                     : 'border-slate-600 bg-slate-800/30 hover:border-slate-500'
+                } ${
+                  uploadFocused
+                    ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-800 border-blue-500'
+                    : ''
+                } ${
+                  loading
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'cursor-pointer focus:outline-none'
                 }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
+                onClick={() => !loading && fileInputRef.current?.click()}
+                onKeyDown={handleUploadKeyDown}
+                onFocus={() => setUploadFocused(true)}
+                onBlur={() => setUploadFocused(false)}
               >
-                <Upload size={48} className="mx-auto mb-4 text-slate-400" />
+                <Upload 
+                  size={48} 
+                  className={`mx-auto mb-4 ${
+                    dragActive ? 'text-blue-400' : 'text-slate-400'
+                  }`}
+                  aria-hidden="true"
+                />
                 <p className="text-lg font-semibold text-slate-200 mb-2">
                   Glissez-déposez un fichier JSON ici
                 </p>
-                <p className="text-sm text-slate-400 mb-4">
-                  ou
+                <p className="text-sm text-slate-400 mb-4" id="upload-instructions">
+                  ou appuyez sur Entrée pour sélectionner un fichier
                 </p>
+                <label 
+                  htmlFor="file-upload-input" 
+                  className="sr-only"
+                >
+                  Sélectionner un fichier JSON à importer
+                </label>
                 <input
+                  id="file-upload-input"
                   ref={fileInputRef}
                   type="file"
-                  accept=".json,application/json"
+                  accept=".json,application/json,.encrypted.json"
                   onChange={handleFileSelect}
-                  className="hidden"
+                  disabled={loading}
+                  className="sr-only"
+                  aria-describedby="upload-instructions upload-file-format"
                 />
                 <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    !loading && fileInputRef.current?.click();
+                  }}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                  aria-label="Sélectionner un fichier JSON à importer"
                 >
-                  <FileText size={18} className="mr-2" />
+                  <FileText size={18} className="mr-2" aria-hidden="true" />
                   Sélectionner un fichier JSON
                 </Button>
-                <p className="text-xs text-slate-500 mt-4">
+                <p 
+                  id="upload-file-format" 
+                  className="text-xs text-slate-500 mt-4"
+                >
                   Format attendu : fichier JSON exporté depuis l'onglet Nutrition (type: nutrition_share)
                 </p>
               </div>
 
-              {/* Erreur */}
+              {/* ✅ PHASE 6 : Erreur accessible avec ARIA live region */}
               {error && (
-                <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <XCircle size={20} className="text-red-400 mt-0.5 flex-shrink-0" />
+                <div 
+                  role="alert"
+                  aria-live="assertive"
+                  aria-atomic="true"
+                  className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg"
+                >
+                  <XCircle 
+                    size={20} 
+                    className="text-red-400 mt-0.5 flex-shrink-0" 
+                    aria-hidden="true"
+                  />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-red-400 mb-1">Erreur d'import</p>
+                    <p className="text-sm font-semibold text-red-400 mb-1">
+                      Erreur d'import
+                    </p>
                     <p className="text-sm text-slate-300">{error}</p>
                   </div>
                 </div>
               )}
 
-              {/* Loading */}
+              {/* ✅ PHASE 6 : Loading accessible avec ARIA busy */}
               {loading && (
-                <div className="flex items-center justify-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <div 
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                  className="flex items-center justify-center p-8"
+                >
+                  <div 
+                    className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"
+                    aria-hidden="true"
+                  ></div>
                   <span className="ml-3 text-slate-400">Import en cours...</span>
                 </div>
               )}
@@ -375,9 +437,10 @@ const CoachDashboard = () => {
             <Button
               onClick={clearData}
               variant="outline"
-              className="text-slate-300 border-slate-600 hover:bg-slate-700"
+              className="text-slate-300 border-slate-600 hover:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+              aria-label="Réinitialiser et importer un nouveau fichier"
             >
-              <RefreshCw size={16} className="mr-2" />
+              <RefreshCw size={16} className="mr-2" aria-hidden="true" />
               Nouveau import
             </Button>
           </div>
@@ -407,22 +470,33 @@ const CoachDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Navigation onglets */}
+      {/* ✅ PHASE 6 : Navigation onglets accessible avec ARIA */}
       {availableTabs.length > 1 && (
-        <div className="flex gap-2 border-b border-slate-700">
+        <div 
+          role="tablist"
+          aria-label="Navigation par onglets des données partagées"
+          className="flex gap-2 border-b border-slate-700"
+        >
           {availableTabs.map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                role="tab"
+                tabIndex={isActive ? 0 : -1}
+                aria-selected={isActive}
+                aria-controls={`tabpanel-${tab.id}`}
+                id={`tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                  activeTab === tab.id
+                onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 ${
+                  isActive
                     ? 'border-blue-500 text-blue-400'
                     : 'border-transparent text-slate-400 hover:text-slate-300'
                 }`}
               >
-                <Icon size={18} />
+                <Icon size={18} aria-hidden="true" />
                 {tab.label}
               </button>
             );
@@ -430,11 +504,16 @@ const CoachDashboard = () => {
         </div>
       )}
 
-      {/* Contenu selon onglet actif */}
+      {/* ✅ PHASE 6 : Contenu selon onglet actif avec ARIA tabpanel */}
       <div className="space-y-6">
         {/* Stats */}
         {activeTab === 'stats' && stats && (
-          <div className="space-y-6">
+          <div 
+            id="tabpanel-stats"
+            role="tabpanel"
+            aria-labelledby="tab-stats"
+            className="space-y-6"
+          >
             {/* Statistiques globales */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="bg-slate-800/50 border-slate-700">
@@ -537,8 +616,13 @@ const CoachDashboard = () => {
 
         {/* Charts */}
         {activeTab === 'charts' && shareData.charts && (
-          <div className="space-y-6">
-            {/* Timeline calories */}
+          <div 
+            id="tabpanel-charts"
+            role="tabpanel"
+            aria-labelledby="tab-charts"
+            className="space-y-6"
+          >
+            {/* ✅ PHASE 5 : Timeline calories avec lazy loading et mémorisation */}
             {chartData.length > 0 && (
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
@@ -548,45 +632,14 @@ const CoachDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="w-full" style={{ height: '320px' }}>
-                    {chartsReady ? (
-                      <ResponsiveContainer width="100%" height={320} minHeight={320}>
-                        <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                          <XAxis 
-                            dataKey="day" 
-                            stroke="#9CA3AF"
-                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                          />
-                          <YAxis 
-                            stroke="#9CA3AF"
-                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                            label={{ value: 'Calories', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
-                          />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Legend />
-                          <Line 
-                            type="monotone" 
-                            dataKey="calories" 
-                            stroke="#F59E0B" 
-                            strokeWidth={2}
-                            name="Calories"
-                            dot={{ fill: '#F59E0B', r: 4 }}
-                            activeDot={{ r: 6 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      </div>
-                    )}
-                  </div>
+                  <LazyChart height={320} placeholderText="Chargement graphique calories...">
+                    <MemoizedCaloriesLineChart data={chartData} height={320} />
+                  </LazyChart>
                 </CardContent>
               </Card>
             )}
 
-            {/* Timeline macros */}
+            {/* ✅ PHASE 5 : Timeline macros avec lazy loading et mémorisation */}
             {chartData.length > 0 && (
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
@@ -596,74 +649,14 @@ const CoachDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="w-full" style={{ height: '320px' }}>
-                    {chartsReady ? (
-                      <ResponsiveContainer width="100%" height={320} minHeight={320}>
-                        <AreaChart data={chartData}>
-                          <defs>
-                            <linearGradient id="colorProtein" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                            </linearGradient>
-                            <linearGradient id="colorCarbs" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                            </linearGradient>
-                            <linearGradient id="colorFat" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                          <XAxis 
-                            dataKey="day" 
-                            stroke="#9CA3AF"
-                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                          />
-                          <YAxis 
-                            stroke="#9CA3AF"
-                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                            label={{ value: 'Grammes', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
-                          />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Legend />
-                          <Area 
-                            type="monotone" 
-                            dataKey="protein" 
-                            stackId="1"
-                            stroke="#3B82F6" 
-                            fill="url(#colorProtein)" 
-                            name="Protéines (g)"
-                          />
-                          <Area 
-                            type="monotone" 
-                            dataKey="carbs" 
-                            stackId="1"
-                            stroke="#10B981" 
-                            fill="url(#colorCarbs)" 
-                            name="Glucides (g)"
-                          />
-                          <Area 
-                            type="monotone" 
-                            dataKey="fat" 
-                            stackId="1"
-                            stroke="#F59E0B" 
-                            fill="url(#colorFat)" 
-                            name="Lipides (g)"
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      </div>
-                    )}
-                  </div>
+                  <LazyChart height={320} placeholderText="Chargement graphique macros...">
+                    <MemoizedMacrosAreaChart data={chartData} height={320} />
+                  </LazyChart>
                 </CardContent>
               </Card>
             )}
 
-            {/* Distribution macros */}
+            {/* ✅ PHASE 5 : Distribution macros avec lazy loading et mémorisation */}
             {macroDistribution.length > 0 && (
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
@@ -673,39 +666,14 @@ const CoachDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="w-full" style={{ height: '320px' }}>
-                    {chartsReady ? (
-                      <ResponsiveContainer width="100%" height={320} minHeight={320}>
-                        <PieChart>
-                          <Pie
-                            data={macroDistribution}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {macroDistribution.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      </div>
-                    )}
-                  </div>
+                  <LazyChart height={320} placeholderText="Chargement graphique distribution...">
+                    <MemoizedMacrosPieChart data={macroDistribution} height={320} />
+                  </LazyChart>
                 </CardContent>
               </Card>
             )}
 
-            {/* Timeline conformité */}
+            {/* ✅ PHASE 5 : Timeline conformité avec lazy loading et mémorisation */}
             {chartData.length > 0 && (
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
@@ -715,42 +683,9 @@ const CoachDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="w-full" style={{ height: '320px' }}>
-                    {chartsReady ? (
-                      <ResponsiveContainer width="100%" height={320} minHeight={320}>
-                        <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                          <XAxis 
-                            dataKey="day" 
-                            stroke="#9CA3AF"
-                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                          />
-                          <YAxis 
-                            stroke="#9CA3AF"
-                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                            label={{ value: 'Conformité (%)', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
-                            domain={[0, 100]}
-                          />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Legend />
-                          <ReferenceLine y={80} stroke="#10B981" strokeDasharray="3 3" label="Objectif 80%" />
-                          <Line 
-                            type="monotone" 
-                            dataKey="compliance" 
-                            stroke="#3B82F6" 
-                            strokeWidth={2}
-                            name="Conformité (%)"
-                            dot={{ fill: '#3B82F6', r: 4 }}
-                            activeDot={{ r: 6 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      </div>
-                    )}
-                  </div>
+                  <LazyChart height={320} placeholderText="Chargement graphique conformité...">
+                    <MemoizedComplianceLineChart data={chartData} height={320} />
+                  </LazyChart>
                 </CardContent>
               </Card>
             )}
@@ -759,7 +694,12 @@ const CoachDashboard = () => {
 
         {/* Progress */}
         {activeTab === 'progress' && progress && (
-          <div className="space-y-6">
+          <div 
+            id="tabpanel-progress"
+            role="tabpanel"
+            aria-labelledby="tab-progress"
+            className="space-y-6"
+          >
             {/* Statistiques progression */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="bg-slate-800/50 border-slate-700">

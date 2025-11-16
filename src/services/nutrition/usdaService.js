@@ -16,6 +16,12 @@ import { openNutritionDB, STORE_API_CACHE } from '../../hooks/nutritionDataUtils
 import { LRUCache } from '../../utils/lruCache';
 import { TokenBucket } from '../../utils/tokenBucket';
 import logger from '../../utils/logger';
+import {
+  validateUSDASearchResponse,
+  validateUSDAFoodResponse,
+  validateUSDAFood
+} from './nutritionSchemas';
+import { z } from 'zod';
 
 const log = logger.module('usdaService');
 
@@ -400,39 +406,63 @@ export const searchUSDA = async (query, options = {}) => {
     // Requête API
     const url = `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&pageSize=${pageSize}`;
     
-    const data = await usdaManager.request(url);
+    const rawData = await usdaManager.request(url);
     
-    if (!data || !data.foods || !Array.isArray(data.foods)) {
-      log.warn('Réponse USDA invalide');
+    // ✅ PHASE 10.3 : Validation réponse brute API avec Zod
+    let validatedData;
+    try {
+      validatedData = validateUSDASearchResponse(rawData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.error('[searchUSDA] Erreur validation réponse API:', error.errors);
+        return [];
+      }
+      throw error;
+    }
+    
+    if (!validatedData.foods || !Array.isArray(validatedData.foods)) {
+      log.warn('Réponse USDA invalide (pas d\'aliments)');
       return [];
     }
 
-    // Formater aliments
-    const foods = data.foods
+    // Formater et valider aliments
+    const foods = validatedData.foods
       .map(food => {
         if (!food || !food.fdcId) return null;
 
-        return {
-          id: `usda_${food.fdcId}`,
-          name: food.description || 'Aliment inconnu',
-          brand: food.brandOwner || '',
+        try {
+          const formatted = {
+            id: `usda_${food.fdcId}`,
+            name: food.description || 'Aliment inconnu',
+            brand: food.brandOwner || '',
+            
+            // Nutrition (par 100g)
+            nutritionPer100: extractNutrition(food.foodNutrients),
+            
+            // Catégorie
+            category: food.foodCategory?.description || '',
+            
+            // Source
+            source: 'usda',
+            sourceId: food.fdcId.toString(),
+            
+            // Métadonnées supplémentaires
+            dataType: food.dataType || null,
+            publicationDate: food.publicationDate || null,
+          };
           
-          // Nutrition (par 100g)
-          nutritionPer100: extractNutrition(food.foodNutrients),
-          
-          // Catégorie
-          category: food.foodCategory?.description || '',
-          
-          // Source
-          source: 'usda',
-          sourceId: food.fdcId.toString(),
-          
-          // Métadonnées supplémentaires
-          dataType: food.dataType || null,
-          publicationDate: food.publicationDate || null,
-        };
+          // ✅ PHASE 10.3 : Validation aliment formaté avec Zod
+          return validateUSDAFood(formatted);
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            log.warn('[searchUSDA] Aliment invalide après formatage:', error.errors[0]?.message);
+            return null;
+          }
+          log.warn('[searchUSDA] Erreur formatage aliment:', error);
+          return null;
+        }
       })
-      .filter(food => food && food.nutritionPer100.calories !== null);
+      .filter(food => food !== null && food.nutritionPer100?.calories !== null && food.nutritionPer100?.calories !== undefined); // Filtrer aliments invalides ou sans calories
 
     // Mettre en cache (TTL 1h pour recherches)
     if (useCache && foods.length > 0) {
@@ -474,39 +504,63 @@ export const getFoodByFdcId = async (fdcId, options = {}) => {
     // Requête API
     const url = `https://api.nal.usda.gov/fdc/v1/food/${fdcId}`;
     
-    const data = await usdaManager.request(url);
+    const rawData = await usdaManager.request(url);
     
-    if (!data || !data.fdcId) {
+    // ✅ PHASE 10.3 : Validation réponse brute API avec Zod
+    let validatedData;
+    try {
+      validatedData = validateUSDAFoodResponse(rawData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.error('[getFoodByFdcId] Erreur validation réponse API:', error.errors);
+        return null;
+      }
+      throw error;
+    }
+    
+    if (!validatedData.fdcId) {
       return null;
     }
 
-    // Formater aliment
-    const food = {
-      id: `usda_${data.fdcId}`,
-      name: data.description || 'Aliment inconnu',
-      brand: data.brandOwner || '',
+    // Formater et valider aliment
+    try {
+      const formatted = {
+        id: `usda_${validatedData.fdcId}`,
+        name: validatedData.description || 'Aliment inconnu',
+        brand: validatedData.brandOwner || '',
+        
+        // Nutrition (par 100g)
+        nutritionPer100: extractNutrition(validatedData.foodNutrients),
+        
+        // Catégorie
+        category: validatedData.foodCategory?.description || '',
+        
+        // Source
+        source: 'usda',
+        sourceId: validatedData.fdcId.toString(),
+        
+        // Métadonnées
+        dataType: validatedData.dataType || null,
+        publicationDate: validatedData.publicationDate || null,
+      };
       
-      // Nutrition (par 100g)
-      nutritionPer100: extractNutrition(data.foodNutrients),
+      // ✅ PHASE 10.3 : Validation aliment formaté avec Zod
+      const validatedFood = validateUSDAFood(formatted);
       
-      // Catégorie
-      category: data.foodCategory?.description || '',
+      // Mettre en cache (TTL 24h)
+      if (useCache) {
+        await cacheFood(`fdc_${fdcId}`, validatedFood, 86400);
+      }
       
-      // Source
-      source: 'usda',
-      sourceId: data.fdcId.toString(),
-      
-      // Métadonnées
-      dataType: data.dataType || null,
-      publicationDate: data.publicationDate || null,
-    };
-
-    // Mettre en cache (TTL 24h)
-    if (useCache) {
-      await cacheFood(`fdc_${fdcId}`, food, 86400);
+      return validatedFood;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.warn(`[getFoodByFdcId] Aliment invalide après formatage (FDC ${fdcId}):`, error.errors[0]?.message);
+        return null;
+      }
+      log.warn(`[getFoodByFdcId] Erreur formatage aliment (FDC ${fdcId}):`, error);
+      return null;
     }
-
-    return food;
   } catch (error) {
     log.error('Erreur getFoodByFdcId:', error);
     return null;

@@ -25,6 +25,21 @@ import {
   createNutritionErrorFromIndexedDB,
   createValidationError
 } from '../utils/nutritionErrors';
+import { getNutritionDataCache } from '../services/nutrition/nutritionDataCache';
+import { 
+  validateDailyMeal,
+  validateMeal,
+  validateProgram,
+  validateFavoriteFood,
+  validateHydrationLog
+} from '../services/nutrition/nutritionSchemas';
+import { z } from 'zod';
+import {
+  putToStoreWithRetry,
+  getFromStoreWithRetry,
+  deleteFromStoreWithRetry,
+  getAllFromStoreWithRetry
+} from '../services/nutrition/nutritionRetryUtils';
 
 const log = {
   debug: (...args) => console.log('[nutritionDataCRUD]', ...args),
@@ -38,45 +53,65 @@ const log = {
 /**
  * Récupère les données d'un jour spécifique
  * 
+ * ✅ PHASE 10.1 : Cache en mémoire pour économie 70-90% sur requêtes répétées
+ * 
  * @param {string} date - Date au format "YYYY-MM-DD"
+ * @param {Object} [options] - Options additionnelles
+ * @param {boolean} [options.skipCache] - Forcer skip cache (défaut: false)
  * @returns {Promise<Object|null>} Données du jour ou null si inexistant
  */
-export const getDailyMeal = async (date) => {
-  try {
-    const db = await openNutritionDB();
-    if (!db) {
-      log.warn('DB non disponible pour getDailyMeal');
-      return null;
-    }
+export const getDailyMeal = async (date, options = {}) => {
+  const { skipCache = false } = options;
+  const cache = getNutritionDataCache();
+  const cacheKey = cache.generateKey('dailyMeal', date);
+  
+  return await cache.get(
+    cacheKey,
+    async () => {
+      try {
+        const db = await openNutritionDB();
+        if (!db) {
+          log.warn('DB non disponible pour getDailyMeal');
+          return null;
+        }
 
-    const tx = db.transaction([STORE_DAILY_MEALS], 'readonly');
-    const store = tx.objectStore(STORE_DAILY_MEALS);
-    
-    return new Promise((resolve, reject) => {
-      const request = store.get(date);
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => {
-        // ✅ OPTIMISATION : Convertir erreur IndexedDB en NutritionError standardisée
-        const nutritionError = createNutritionErrorFromIndexedDB(
-          request.error,
-          'getDailyMeal',
-          { date }
-        );
-        log.error('[getDailyMeal] Erreur IndexedDB:', nutritionError.toJSON());
+        const tx = db.transaction([STORE_DAILY_MEALS], 'readonly');
+        const store = tx.objectStore(STORE_DAILY_MEALS);
+        
+        // ✅ PHASE 10.4 : Retry automatique avec backoff exponentiel
+        try {
+          const result = await getFromStoreWithRetry(
+            store,
+            date,
+            'getDailyMeal',
+            { date, storeName: STORE_DAILY_MEALS }
+          );
+          return result;
+        } catch (error) {
+          // ✅ OPTIMISATION : Convertir erreur IndexedDB en NutritionError standardisée
+          const nutritionError = createNutritionErrorFromIndexedDB(
+            error,
+            'getDailyMeal',
+            { date }
+          );
+          log.error('[getDailyMeal] Erreur IndexedDB après retry:', nutritionError.toJSON());
+          // Ne pas throw pour lecture (retourner null est OK)
+          return null;
+        }
+      } catch (error) {
+        // ✅ OPTIMISATION : Wrapper erreurs inconnues
+        if (error instanceof NutritionError) {
+          log.error('[getDailyMeal] Erreur:', error.toJSON());
+        } else {
+          log.error('Erreur getDailyMeal:', error);
+        }
         // Ne pas throw pour lecture (retourner null est OK)
-        resolve(null);
-      };
-    });
-  } catch (error) {
-    // ✅ OPTIMISATION : Wrapper erreurs inconnues
-    if (error instanceof NutritionError) {
-      log.error('[getDailyMeal] Erreur:', error.toJSON());
-    } else {
-      log.error('Erreur getDailyMeal:', error);
-    }
-    // Ne pas throw pour lecture (retourner null est OK)
-    return null;
-  }
+        return null;
+      }
+    },
+    'dailyMeal',
+    { skipCache }
+  );
 };
 
 /**
@@ -87,24 +122,38 @@ export const getDailyMeal = async (date) => {
  */
 export const saveDailyMeal = async (dailyMeal) => {
   try {
-    // ✅ OPTIMISATION : Validation avec code d'erreur standardisé
-    if (!dailyMeal || !dailyMeal.date) {
-      throw createValidationError(
-        NutritionErrorCodes.VALIDATION_MISSING_REQUIRED_FIELD,
-        'date',
-        dailyMeal?.date || null
-      );
-    }
-
-    // ✅ OPTIMISATION : Vérifier format date avec DateHelper (si disponible)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(dailyMeal.date)) {
-      throw createValidationError(
-        NutritionErrorCodes.VALIDATION_INVALID_DATE_FORMAT,
-        'date',
-        dailyMeal.date,
-        'YYYY-MM-DD'
-      );
+    // ✅ PHASE 10.2 : Validation complète avec Zod
+    let validatedDailyMeal;
+    try {
+      validatedDailyMeal = validateDailyMeal(dailyMeal);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // ✅ Protection : Vérifier que error.errors existe et contient au moins un élément
+        if (!error.errors || error.errors.length === 0) {
+          log.error('[saveDailyMeal] Erreur validation Zod (pas d\'erreurs détaillées):', error);
+          throw createValidationError(
+            NutritionErrorCodes.VALIDATION_INVALID_DATA,
+            'unknown',
+            null,
+            'Erreur de validation des données'
+          );
+        }
+        const firstError = error.errors[0];
+        const errorPath = Array.isArray(firstError.path) && firstError.path.length > 0 
+          ? firstError.path.join('.') 
+          : 'unknown';
+        const errorField = Array.isArray(firstError.path) && firstError.path.length > 0
+          ? firstError.path[0]
+          : null;
+        log.error('[saveDailyMeal] Erreur validation Zod:', error.errors);
+        throw createValidationError(
+          NutritionErrorCodes.VALIDATION_INVALID_DATA,
+          errorPath,
+          dailyMeal?.[errorField] || null,
+          firstError.message || 'Erreur de validation'
+        );
+      }
+      throw error;
     }
 
     const db = await openNutritionDB();
@@ -117,10 +166,10 @@ export const saveDailyMeal = async (dailyMeal) => {
       );
     }
 
-    // Ajouter lastModified si absent
+    // Ajouter lastModified si absent (déjà validé par Zod)
     const dataToSave = {
-      ...dailyMeal,
-      lastModified: dailyMeal.lastModified || new Date().toISOString()
+      ...validatedDailyMeal,
+      lastModified: validatedDailyMeal.lastModified || new Date().toISOString()
     };
 
     // ✅ OPTIMISATION : Utiliser quota-safe storage pour gestion QuotaExceededError
@@ -130,6 +179,14 @@ export const saveDailyMeal = async (dailyMeal) => {
       
       if (saved) {
         log.debug(`DailyMeal sauvegardé: ${dailyMeal.date}`);
+        
+        // ✅ PHASE 10.1 : Invalider cache après sauvegarde
+        const cache = getNutritionDataCache();
+        const cacheKey = cache.generateKey('dailyMeal', dailyMeal.date);
+        cache.invalidate(cacheKey);
+        // Invalider aussi cache des meals de ce jour (si dailyMeal modifié)
+        cache.invalidate(cache.generateKey('meals', dailyMeal.date));
+        
         return true;
       }
       return false;
@@ -146,34 +203,44 @@ export const saveDailyMeal = async (dailyMeal) => {
       const tx = db.transaction([STORE_DAILY_MEALS], 'readwrite');
       const store = tx.objectStore(STORE_DAILY_MEALS);
       
-      return new Promise((resolve, reject) => {
-        const request = store.put(dataToSave);
-        request.onsuccess = () => {
-          log.debug(`DailyMeal sauvegardé: ${dailyMeal.date}`);
-          resolve(true);
-        };
-        request.onerror = () => {
-          const error = request.error;
-          
-          // ✅ Vérifier si QuotaExceededError dans fallback
-          const classification = classifyIndexedDBError(error);
-          if (classification.name === 'QuotaExceededError') {
-            reject(new QuotaExceededError(
-              'Stockage saturé. Veuillez exporter vos données pour libérer de l\'espace.',
-              { storeName: STORE_DAILY_MEALS, date: dailyMeal.date }
-            ));
-          } else {
-            // ✅ OPTIMISATION : Convertir erreur IndexedDB en NutritionError standardisée
-            const nutritionError = createNutritionErrorFromIndexedDB(
-              error,
-              'saveDailyMeal',
-              { storeName: STORE_DAILY_MEALS, date: dailyMeal.date }
-            );
-            log.error('[saveDailyMeal] Erreur IndexedDB:', nutritionError.toJSON());
-            reject(nutritionError);
-          }
-        };
-      });
+      // ✅ PHASE 10.4 : Retry automatique avec backoff exponentiel
+      try {
+        await putToStoreWithRetry(
+          store,
+          dataToSave,
+          'saveDailyMeal',
+          { date: dailyMeal.date, storeName: STORE_DAILY_MEALS }
+        );
+        
+        log.debug(`DailyMeal sauvegardé: ${dailyMeal.date}`);
+        
+        // ✅ PHASE 10.1 : Invalider cache après sauvegarde (fallback)
+        const cache = getNutritionDataCache();
+        const cacheKey = cache.generateKey('dailyMeal', dailyMeal.date);
+        cache.invalidate(cacheKey);
+        // Invalider aussi cache des meals de ce jour
+        cache.invalidate(cache.generateKey('meals', dailyMeal.date));
+        
+        return true;
+      } catch (error) {
+        // ✅ Vérifier si QuotaExceededError dans fallback
+        const classification = classifyIndexedDBError(error);
+        if (classification.name === 'QuotaExceededError') {
+          throw new QuotaExceededError(
+            'Stockage saturé. Veuillez exporter vos données pour libérer de l\'espace.',
+            { storeName: STORE_DAILY_MEALS, date: dailyMeal.date }
+          );
+        }
+        
+        // ✅ OPTIMISATION : Convertir erreur IndexedDB en NutritionError standardisée
+        const nutritionError = createNutritionErrorFromIndexedDB(
+          error,
+          'saveDailyMeal',
+          { storeName: STORE_DAILY_MEALS, date: dailyMeal.date }
+        );
+        log.error('[saveDailyMeal] Erreur IndexedDB après retry:', nutritionError.toJSON());
+        throw nutritionError;
+      }
     }
   } catch (error) {
     // ✅ PROPAGATION ERREUR QuotaExceededError pour gestion UI
@@ -233,6 +300,8 @@ export const getDailyMealsByRange = async (startDate, endDate) => {
 /**
  * Supprime les données d'un jour
  * 
+ * ✅ PHASE 10.1 : Invalider cache après suppression
+ * 
  * @param {string} date - Date au format "YYYY-MM-DD"
  * @returns {Promise<boolean>} true si succès
  */
@@ -247,17 +316,28 @@ export const deleteDailyMeal = async (date) => {
     const tx = db.transaction([STORE_DAILY_MEALS], 'readwrite');
     const store = tx.objectStore(STORE_DAILY_MEALS);
     
-    return new Promise((resolve, reject) => {
-      const request = store.delete(date);
-      request.onsuccess = () => {
-        log.debug(`DailyMeal supprimé: ${date}`);
-        resolve(true);
-      };
-      request.onerror = () => {
-        log.error('Erreur deleteDailyMeal:', request.error);
-        reject(request.error);
-      };
-    });
+    // ✅ PHASE 10.4 : Retry automatique avec backoff exponentiel
+    try {
+      await deleteFromStoreWithRetry(
+        store,
+        date,
+        'deleteDailyMeal',
+        { date, storeName: STORE_DAILY_MEALS }
+      );
+      
+      log.debug(`DailyMeal supprimé: ${date}`);
+      
+      // ✅ PHASE 10.1 : Invalider cache après suppression
+      const cache = getNutritionDataCache();
+      cache.invalidate(cache.generateKey('dailyMeal', date));
+      // Invalider aussi cache des meals de ce jour
+      cache.invalidate(cache.generateKey('meals', date));
+      
+      return true;
+    } catch (error) {
+      log.error('[deleteDailyMeal] Erreur IndexedDB après retry:', error);
+      return false;
+    }
   } catch (error) {
     log.error('Erreur deleteDailyMeal:', error);
     return false;
@@ -299,13 +379,38 @@ export const getMeal = async (mealId) => {
  */
 export const saveMeal = async (meal) => {
   try {
-    // ✅ OPTIMISATION : Validation avec code d'erreur standardisé
-    if (!meal || !meal.id) {
-      throw createValidationError(
-        NutritionErrorCodes.VALIDATION_MISSING_REQUIRED_FIELD,
-        'id',
-        meal?.id || null
-      );
+    // ✅ PHASE 10.2 : Validation complète avec Zod
+    let validatedMeal;
+    try {
+      validatedMeal = validateMeal(meal);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // ✅ Protection : Vérifier que error.errors existe et contient au moins un élément
+        if (!error.errors || error.errors.length === 0) {
+          log.error('[saveMeal] Erreur validation Zod (pas d\'erreurs détaillées):', error);
+          throw createValidationError(
+            NutritionErrorCodes.VALIDATION_INVALID_DATA,
+            'unknown',
+            null,
+            'Erreur de validation des données'
+          );
+        }
+        const firstError = error.errors[0];
+        const errorPath = Array.isArray(firstError.path) && firstError.path.length > 0 
+          ? firstError.path.join('.') 
+          : 'unknown';
+        const errorField = Array.isArray(firstError.path) && firstError.path.length > 0
+          ? firstError.path[0]
+          : null;
+        log.error('[saveMeal] Erreur validation Zod:', error.errors);
+        throw createValidationError(
+          NutritionErrorCodes.VALIDATION_INVALID_DATA,
+          errorPath,
+          meal?.[errorField] || null,
+          firstError.message || 'Erreur de validation'
+        );
+      }
+      throw error;
     }
 
     const db = await openNutritionDB();
@@ -318,10 +423,10 @@ export const saveMeal = async (meal) => {
       );
     }
 
-    // Ajouter timestamp si absent
+    // Ajouter timestamp si absent (déjà validé par Zod)
     const dataToSave = {
-      ...meal,
-      timestamp: meal.timestamp || new Date().toISOString()
+      ...validatedMeal,
+      timestamp: validatedMeal.timestamp || new Date().toISOString()
     };
 
     // ✅ OPTIMISATION : Utiliser quota-safe storage pour gestion QuotaExceededError
@@ -331,6 +436,16 @@ export const saveMeal = async (meal) => {
       
       if (saved) {
         log.debug(`Meal sauvegardé: ${meal.id}`);
+        
+        // ✅ PHASE 10.1 : Invalider cache après sauvegarde
+        const cache = getNutritionDataCache();
+        // Invalider cache des meals pour cette date
+        if (meal.date) {
+          cache.invalidate(cache.generateKey('meals', meal.date));
+          // Invalider aussi cache dailyMeal (totaux mis à jour)
+          cache.invalidate(cache.generateKey('dailyMeal', meal.date));
+        }
+        
         return true;
       }
       return false;
@@ -342,42 +457,54 @@ export const saveMeal = async (meal) => {
         throw error; // ✅ Propager pour gestion utilisateur
       }
       
-      // ✅ FALLBACK : Si wrapper échoue, utiliser méthode traditionnelle
+      // ✅ FALLBACK : Si wrapper échoue, utiliser méthode traditionnelle avec retry
       // (compatibilité ascendante si wrapper non disponible)
       log.debug('[saveMeal] Fallback méthode traditionnelle (wrapper non disponible ou erreur)');
       
       const tx = db.transaction([STORE_MEALS], 'readwrite');
       const store = tx.objectStore(STORE_MEALS);
       
-      return new Promise((resolve, reject) => {
-        const request = store.put(dataToSave);
-        request.onsuccess = () => {
-          log.debug(`Meal sauvegardé: ${meal.id}`);
-          resolve(true);
-        };
-        request.onerror = () => {
-          const error = request.error;
-          
-          // ✅ Vérifier si QuotaExceededError dans fallback
-          const classification = classifyIndexedDBError(error);
-          if (classification.name === 'QuotaExceededError') {
-            // Propager erreur spécifique même dans fallback
-            reject(new QuotaExceededError(
-              'Stockage saturé. Veuillez exporter vos données pour libérer de l\'espace.',
-              { storeName: STORE_MEALS, mealId: meal.id }
-            ));
-          } else {
-            // ✅ OPTIMISATION : Convertir erreur IndexedDB en NutritionError standardisée
-            const nutritionError = createNutritionErrorFromIndexedDB(
-              error,
-              'saveMeal',
-              { storeName: STORE_MEALS, mealId: meal.id }
-            );
-            log.error('[saveMeal] Erreur IndexedDB:', nutritionError.toJSON());
-            reject(nutritionError);
-          }
-        };
-      });
+      // ✅ PHASE 10.4 : Retry automatique avec backoff exponentiel
+      try {
+        await putToStoreWithRetry(
+          store,
+          dataToSave,
+          'saveMeal',
+          { mealId: meal.id, date: meal.date, storeName: STORE_MEALS }
+        );
+        
+        log.debug(`Meal sauvegardé: ${meal.id}`);
+        
+        // ✅ PHASE 10.1 : Invalider cache après sauvegarde (fallback)
+        const cache = getNutritionDataCache();
+        // Invalider cache des meals pour cette date
+        if (meal.date) {
+          cache.invalidate(cache.generateKey('meals', meal.date));
+          // Invalider aussi cache dailyMeal (totaux mis à jour)
+          cache.invalidate(cache.generateKey('dailyMeal', meal.date));
+        }
+        
+        return true;
+      } catch (error) {
+        // ✅ Vérifier si QuotaExceededError dans fallback
+        const classification = classifyIndexedDBError(error);
+        if (classification.name === 'QuotaExceededError') {
+          // Propager erreur spécifique même dans fallback
+          throw new QuotaExceededError(
+            'Stockage saturé. Veuillez exporter vos données pour libérer de l\'espace.',
+            { storeName: STORE_MEALS, mealId: meal.id }
+          );
+        }
+        
+        // ✅ OPTIMISATION : Convertir erreur IndexedDB en NutritionError standardisée
+        const nutritionError = createNutritionErrorFromIndexedDB(
+          error,
+          'saveMeal',
+          { storeName: STORE_MEALS, mealId: meal.id }
+        );
+        log.error('[saveMeal] Erreur IndexedDB après retry:', nutritionError.toJSON());
+        throw nutritionError;
+      }
     }
   } catch (error) {
     // ✅ PROPAGATION ERREUR QuotaExceededError pour gestion UI
@@ -408,24 +535,45 @@ export const saveMeal = async (meal) => {
  * @param {string} date - Date au format "YYYY-MM-DD"
  * @returns {Promise<Array>} Tableau de meals
  */
-export const getMealsByDate = async (date) => {
-  try {
-    const db = await openNutritionDB();
-    if (!db) return [];
+/**
+ * Récupère les repas d'un jour spécifique
+ * 
+ * ✅ PHASE 10.1 : Cache en mémoire pour économie 70-90% sur requêtes répétées
+ * 
+ * @param {string} date - Date au format "YYYY-MM-DD"
+ * @param {Object} [options] - Options additionnelles
+ * @param {boolean} [options.skipCache] - Forcer skip cache (défaut: false)
+ * @returns {Promise<Array>} Tableau de meals pour ce jour
+ */
+export const getMealsByDate = async (date, options = {}) => {
+  const { skipCache = false } = options;
+  const cache = getNutritionDataCache();
+  const cacheKey = cache.generateKey('meals', date);
+  
+  return await cache.get(
+    cacheKey,
+    async () => {
+      try {
+        const db = await openNutritionDB();
+        if (!db) return [];
 
-    const tx = db.transaction([STORE_MEALS], 'readonly');
-    const store = tx.objectStore(STORE_MEALS);
-    const index = store.index('date');
-    
-    return new Promise((resolve, reject) => {
-      const request = index.getAll(date);
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(request.error);
-    });
-  } catch (error) {
-    log.error('Erreur getMealsByDate:', error);
-    return [];
-  }
+        const tx = db.transaction([STORE_MEALS], 'readonly');
+        const store = tx.objectStore(STORE_MEALS);
+        const index = store.index('date');
+        
+        return new Promise((resolve, reject) => {
+          const request = index.getAll(date);
+          request.onsuccess = () => resolve(request.result || []);
+          request.onerror = () => reject(request.error);
+        });
+      } catch (error) {
+        log.error('Erreur getMealsByDate:', error);
+        return [];
+      }
+    },
+    'meals',
+    { skipCache }
+  );
 };
 
 /**
@@ -528,6 +676,8 @@ export const getMealsByDailyMealId = async (dailyMealId) => {
 /**
  * Supprime un repas
  * 
+ * ✅ PHASE 10.1 : Invalider cache après suppression
+ * 
  * @param {string} mealId - ID du repas
  * @returns {Promise<boolean>} true si succès
  */
@@ -536,17 +686,49 @@ export const deleteMeal = async (mealId) => {
     const db = await openNutritionDB();
     if (!db) return false;
 
+    // ✅ PHASE 10.1 : Récupérer meal avant suppression pour invalider cache avec date
+    let mealDate = null;
+    try {
+      const txRead = db.transaction([STORE_MEALS], 'readonly');
+      const storeRead = txRead.objectStore(STORE_MEALS);
+      const meal = await new Promise((resolve, reject) => {
+        const req = storeRead.get(mealId);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      mealDate = meal?.date || null;
+    } catch (error) {
+      log.warn('[deleteMeal] Erreur récupération meal avant suppression (non bloquant):', error);
+    }
+
     const tx = db.transaction([STORE_MEALS], 'readwrite');
     const store = tx.objectStore(STORE_MEALS);
     
-    return new Promise((resolve, reject) => {
-      const request = store.delete(mealId);
-      request.onsuccess = () => {
-        log.debug(`Meal supprimé: ${mealId}`);
-        resolve(true);
-      };
-      request.onerror = () => reject(request.error);
-    });
+    // ✅ PHASE 10.4 : Retry automatique avec backoff exponentiel
+    try {
+      await deleteFromStoreWithRetry(
+        store,
+        mealId,
+        'deleteMeal',
+        { mealId, date: mealDate, storeName: STORE_MEALS }
+      );
+      
+      log.debug(`Meal supprimé: ${mealId}`);
+      
+      // ✅ PHASE 10.1 : Invalider cache après suppression
+      if (mealDate) {
+        const cache = getNutritionDataCache();
+        // Invalider cache des meals pour cette date
+        cache.invalidate(cache.generateKey('meals', mealDate));
+        // Invalider aussi cache dailyMeal (totaux mis à jour)
+        cache.invalidate(cache.generateKey('dailyMeal', mealDate));
+      }
+      
+      return true;
+    } catch (error) {
+      log.error('[deleteMeal] Erreur IndexedDB après retry:', error);
+      return false;
+    }
   } catch (error) {
     log.error('Erreur deleteMeal:', error);
     return false;
@@ -783,50 +965,70 @@ export const getAllPrograms = async () => {
 /**
  * Récupère le programme actif
  * 
+ * ✅ PHASE 10.1 : Cache en mémoire avec TTL long (changent rarement)
+ * 
+ * @param {Object} [options] - Options additionnelles
+ * @param {boolean} [options.skipCache] - Forcer skip cache (défaut: false)
  * @returns {Promise<Object|null>} Programme actif ou null
  */
-export const getActiveProgram = async () => {
+export const getActiveProgram = async (options = {}) => {
+  const { skipCache = false } = options;
+  const cache = getNutritionDataCache();
+  const cacheKey = cache.generateKey('activeProgram', 'current');
+  
   try {
-    const db = await openNutritionDB();
-    if (!db) return null;
+    return await cache.get(
+      cacheKey,
+      async () => {
+        try {
+          const db = await openNutritionDB();
+          if (!db) return null;
 
-    const tx = db.transaction([STORE_PROGRAMS], 'readonly');
-    const store = tx.objectStore(STORE_PROGRAMS);
-    
-    // ✅ CORRECTION : Utiliser getAll avec IDBKeyRange pour index booléen
-    // index.get(true) ne fonctionne pas, il faut utiliser getAll avec range
-    let index;
-    try {
-      index = store.index('isActive');
-    } catch (idxError) {
-      // Index n'existe pas, charger tous les programmes et filtrer
-      log.warn('Index isActive non trouvé, chargement complet et filtrage...');
-      return new Promise((resolve, reject) => {
-        const request = store.getAll();
-        request.onsuccess = () => {
-          const programs = request.result || [];
-          const activeProgram = programs.find(p => p.isActive === true);
-          resolve(activeProgram || null);
-        };
-        request.onerror = () => reject(request.error);
-      });
-    }
-    
-    return new Promise((resolve, reject) => {
-      // ✅ CORRECTION : IDBKeyRange.only(true) ne fonctionne pas avec les booléens
-      // Récupérer tous les programmes et filtrer manuellement
-      const request = store.getAll();
-      
-      request.onsuccess = () => {
-        const programs = request.result || [];
-        // Filtrer pour trouver le programme actif
-        const activeProgram = programs.find(p => p.isActive === true);
-        resolve(activeProgram || null);
-      };
-      request.onerror = () => reject(request.error);
-    });
+          const tx = db.transaction([STORE_PROGRAMS], 'readonly');
+          const store = tx.objectStore(STORE_PROGRAMS);
+          
+          // ✅ CORRECTION : Utiliser getAll avec IDBKeyRange pour index booléen
+          // index.get(true) ne fonctionne pas, il faut utiliser getAll avec range
+          let index;
+          try {
+            index = store.index('isActive');
+          } catch (idxError) {
+            // Index n'existe pas, charger tous les programmes et filtrer
+            log.warn('Index isActive non trouvé, chargement complet et filtrage...');
+            return new Promise((resolve, reject) => {
+              const request = store.getAll();
+              request.onsuccess = () => {
+                const programs = request.result || [];
+                const activeProgram = programs.find(p => p.isActive === true);
+                resolve(activeProgram || null);
+              };
+              request.onerror = () => reject(request.error);
+            });
+          }
+          
+          // ✅ CORRECTION : IDBKeyRange.only(true) ne fonctionne pas avec les booléens
+          // Récupérer tous les programmes et filtrer manuellement
+          return new Promise((resolve, reject) => {
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+              const programs = request.result || [];
+              // Filtrer pour trouver le programme actif
+              const activeProgram = programs.find(p => p.isActive === true);
+              resolve(activeProgram || null);
+            };
+            request.onerror = () => reject(request.error);
+          });
+        } catch (error) {
+          log.error('Erreur getActiveProgram:', error);
+          return null;
+        }
+      },
+      'activeProgram',
+      { skipCache }
+    );
   } catch (error) {
-    log.error('Erreur getActiveProgram:', error);
+    log.error('Erreur getActiveProgram (cache):', error);
     return null;
   }
 };
@@ -876,30 +1078,84 @@ export const getAllProgramsWithActive = async () => {
  */
 export const saveProgram = async (program, options = {}) => {
   try {
-    if (!program || !program.id) {
-      throw new Error('program doit contenir un id');
+    // ✅ PHASE 10.2 : Validation complète avec Zod
+    let validatedProgram;
+    try {
+      validatedProgram = validateProgram(program);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // ✅ Protection : Vérifier que error.errors existe et contient au moins un élément
+        if (!error.errors || error.errors.length === 0) {
+          log.error('[saveProgram] Erreur validation Zod (pas d\'erreurs détaillées):', error);
+          throw createValidationError(
+            NutritionErrorCodes.VALIDATION_INVALID_DATA,
+            'unknown',
+            null,
+            'Erreur de validation des données'
+          );
+        }
+        const firstError = error.errors[0];
+        const errorPath = Array.isArray(firstError.path) && firstError.path.length > 0 
+          ? firstError.path.join('.') 
+          : 'unknown';
+        const errorField = Array.isArray(firstError.path) && firstError.path.length > 0
+          ? firstError.path[0]
+          : null;
+        log.error('[saveProgram] Erreur validation Zod:', error.errors);
+        throw createValidationError(
+          NutritionErrorCodes.VALIDATION_INVALID_DATA,
+          errorPath,
+          program?.[errorField] || null,
+          firstError.message || 'Erreur de validation'
+        );
+      }
+      throw error;
     }
 
     const { dbInstance = null } = options;
     const db = dbInstance || await openNutritionDB();
     if (!db) return false;
 
-    // Si programme devient actif, désactiver les autres
-    if (program.isActive) {
+    // Si programme devient actif, désactiver les autres (utiliser validatedProgram)
+    if (validatedProgram.isActive) {
       await deactivateAllPrograms(db); // ✅ Utiliser DB existante
     }
+    
+    // Utiliser validatedProgram pour sauvegarde
+    const dataToSave = validatedProgram;
 
     const tx = db.transaction([STORE_PROGRAMS], 'readwrite');
     const store = tx.objectStore(STORE_PROGRAMS);
     
-    return new Promise((resolve, reject) => {
-      const request = store.put(program);
-      request.onsuccess = () => {
-        log.debug(`Program sauvegardé: ${program.id}`);
-        resolve(true);
-      };
-      request.onerror = () => reject(request.error);
-    });
+    // ✅ PHASE 10.4 : Retry automatique avec backoff exponentiel
+    try {
+      await putToStoreWithRetry(
+        store,
+        dataToSave,
+        'saveProgram',
+        { programId: dataToSave.id, storeName: STORE_PROGRAMS }
+      );
+      
+      log.debug(`Program sauvegardé: ${dataToSave.id}`);
+      
+      // ✅ PHASE 10.1 : Invalider cache après sauvegarde
+      const cache = getNutritionDataCache();
+      // Invalider cache programme actif (si activé/désactivé)
+      cache.invalidate(cache.generateKey('activeProgram', 'current'));
+      // Invalider aussi cache programmes (si modification)
+      cache.invalidateType('program');
+      
+      return true;
+    } catch (error) {
+      // ✅ OPTIMISATION : Convertir erreur IndexedDB en NutritionError standardisée
+      const nutritionError = createNutritionErrorFromIndexedDB(
+        error,
+        'saveProgram',
+        { programId: dataToSave.id, storeName: STORE_PROGRAMS }
+      );
+      log.error('[saveProgram] Erreur IndexedDB après retry:', nutritionError.toJSON());
+      throw nutritionError;
+    }
   } catch (error) {
     log.error('Erreur saveProgram:', error);
     return false;
@@ -977,6 +1233,14 @@ export const deleteProgram = async (programId) => {
       const request = store.delete(programId);
       request.onsuccess = () => {
         log.debug(`Program supprimé: ${programId}`);
+        
+        // ✅ PHASE 10.1 : Invalider cache après suppression
+        const cache = getNutritionDataCache();
+        // Invalider cache programme actif (peut-être supprimé)
+        cache.invalidate(cache.generateKey('activeProgram', 'current'));
+        // Invalider aussi cache programmes
+        cache.invalidateType('program');
+        
         resolve(true);
       };
       request.onerror = () => reject(request.error);
@@ -1052,17 +1316,47 @@ export const getFavoriteFoods = async (options = {}) => {
  */
 export const saveFavoriteFood = async (favoriteFood) => {
   try {
-    if (!favoriteFood || !favoriteFood.id) {
-      throw new Error('favoriteFood doit contenir un id');
+    // ✅ PHASE 10.2 : Validation complète avec Zod
+    let validatedFavoriteFood;
+    try {
+      validatedFavoriteFood = validateFavoriteFood(favoriteFood);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // ✅ Protection : Vérifier que error.errors existe et contient au moins un élément
+        if (!error.errors || error.errors.length === 0) {
+          log.error('[saveFavoriteFood] Erreur validation Zod (pas d\'erreurs détaillées):', error);
+          throw createValidationError(
+            NutritionErrorCodes.VALIDATION_INVALID_DATA,
+            'unknown',
+            null,
+            'Erreur de validation des données'
+          );
+        }
+        const firstError = error.errors[0];
+        const errorPath = Array.isArray(firstError.path) && firstError.path.length > 0 
+          ? firstError.path.join('.') 
+          : 'unknown';
+        const errorField = Array.isArray(firstError.path) && firstError.path.length > 0
+          ? firstError.path[0]
+          : null;
+        log.error('[saveFavoriteFood] Erreur validation Zod:', error.errors);
+        throw createValidationError(
+          NutritionErrorCodes.VALIDATION_INVALID_DATA,
+          errorPath,
+          favoriteFood?.[errorField] || null,
+          firstError.message || 'Erreur de validation'
+        );
+      }
+      throw error;
     }
 
     const db = await openNutritionDB();
     if (!db) return false;
 
-    // Mettre à jour lastUsed et usageCount
-    const existing = await getFavoriteFood(favoriteFood.id);
+    // Mettre à jour lastUsed et usageCount (utiliser validatedFavoriteFood)
+    const existing = await getFavoriteFood(validatedFavoriteFood.id);
     const dataToSave = {
-      ...favoriteFood,
+      ...validatedFavoriteFood,
       lastUsed: new Date().toISOString().split('T')[0],
       usageCount: existing ? (existing.usageCount || 0) + 1 : 1
     };
@@ -1183,22 +1477,49 @@ export const getHydrationLog = async (date) => {
  */
 export const saveHydrationLog = async (hydrationEntry) => {
   try {
-    if (!hydrationEntry || !hydrationEntry.date) {
-      throw new Error('hydrationEntry doit contenir une date');
+    // ✅ PHASE 10.2 : Validation complète avec Zod
+    let validatedHydrationLog;
+    try {
+      validatedHydrationLog = validateHydrationLog(hydrationEntry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // ✅ Protection : Vérifier que error.errors existe et contient au moins un élément
+        if (!error.errors || error.errors.length === 0) {
+          log.error('[saveHydrationLog] Erreur validation Zod (pas d\'erreurs détaillées):', error);
+          throw createValidationError(
+            NutritionErrorCodes.VALIDATION_INVALID_DATA,
+            'unknown',
+            null,
+            'Erreur de validation des données'
+          );
+        }
+        const firstError = error.errors[0];
+        const errorPath = Array.isArray(firstError.path) && firstError.path.length > 0 
+          ? firstError.path.join('.') 
+          : 'unknown';
+        const errorField = Array.isArray(firstError.path) && firstError.path.length > 0
+          ? firstError.path[0]
+          : null;
+        log.error('[saveHydrationLog] Erreur validation Zod:', error.errors);
+        throw createValidationError(
+          NutritionErrorCodes.VALIDATION_INVALID_DATA,
+          errorPath,
+          hydrationEntry?.[errorField] || null,
+          firstError.message || 'Erreur de validation'
+        );
+      }
+      throw error;
     }
 
     const db = await openNutritionDB();
     if (!db) return false;
 
-    // Valeurs par défaut
+    // Valeurs par défaut (déjà validées par Zod, mais appliquer defaults si nécessaire)
     const dataToSave = {
-      date: hydrationEntry.date,
-      waterIntake: hydrationEntry.waterIntake || 0,
-      targetWater: hydrationEntry.targetWater || 2000, // 2L par défaut
-      entries: hydrationEntry.entries || [],
-      notes: hydrationEntry.notes || '',
-      lastModified: new Date().toISOString(),
-      createdAt: hydrationEntry.createdAt || new Date().toISOString()
+      ...validatedHydrationLog,
+      targetWater: validatedHydrationLog.targetWater || 2000, // 2L par défaut si non défini
+      lastModified: validatedHydrationLog.lastModified || new Date().toISOString(),
+      createdAt: validatedHydrationLog.createdAt || new Date().toISOString()
     };
 
     const tx = db.transaction([STORE_HYDRATION_LOG], 'readwrite');

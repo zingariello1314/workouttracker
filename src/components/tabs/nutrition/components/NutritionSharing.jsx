@@ -34,7 +34,13 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useNutritionSharing } from '../../../../hooks/useNutritionSharing';
-import { SHARE_SCOPES, PERMISSIONS } from '../../../../services/nutrition/nutritionSharing';
+import { 
+  SHARE_SCOPES, 
+  PERMISSIONS,
+  generateQRCode,
+  cleanupOrphanedQRCache,
+  CleanupService
+} from '../../../../services/nutrition/nutritionSharing';
 import { Badge } from '../../../ui/Badge';
 import { useToast } from '../../../ui/Toast/ToastProvider';
 import logger from '../../../../utils/logger';
@@ -42,33 +48,73 @@ import logger from '../../../../utils/logger';
 const log = logger.component('NutritionSharing');
 
 /**
- * Composant d'affichage QR code avec génération à la volée
+ * ✅ PHASE 2 : Composant d'affichage QR code avec génération locale
  * 
- * ✅ SOLUTION : Utiliser API QR code en ligne (qr-server.com) pour génération rapide
- * Alternative : Installer bibliothèque qrcode.js si nécessaire
+ * ✅ PHASE 2 : Migration vers génération locale
+ * - Génération locale avec bibliothèque qrcode (100% offline)
+ * - Cache localStorage pour éviter régénération
+ * - Chargement asynchrone avec état loading
+ * - Gestion erreurs avec fallback
+ * - Option téléchargement QR code
  */
 const QRCodeDisplay = ({ url, token, size = 200 }) => {
-  // ✅ Générer URL QR code via API publique (rapide, sans dépendance)
-  // Format : https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=URL
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url || token)}`;
-  
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <img 
-        src={qrCodeUrl}
-        alt="QR Code"
-        width={size}
-        height={size}
-        className="border border-slate-700 rounded bg-white p-2"
-        onError={(e) => {
-          // Fallback en cas d'erreur chargement
-          e.target.style.display = 'none';
-          e.target.nextSibling.style.display = 'block';
-        }}
-      />
-      {/* Fallback si image ne charge pas */}
+  const [qrDataUrl, setQrDataUrl] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const generateQR = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // ✅ PHASE 2 : Générer QR code localement (avec cache automatique)
+        const dataUrl = await generateQRCode(url || token, {
+          size,
+          margin: 2,
+          errorCorrectionLevel: 'M'
+        });
+
+        if (mounted) {
+          if (dataUrl) {
+            setQrDataUrl(dataUrl);
+          } else {
+            setError('Impossible de générer le QR code');
+          }
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err.message || 'Erreur génération QR code');
+          log.error('[QRCodeDisplay] Erreur génération QR code', err);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    generateQR();
+    return () => { mounted = false; };
+  }, [url, token, size]);
+
+  if (loading) {
+    return (
       <div 
-        className="hidden flex flex-col items-center gap-2 p-4 bg-slate-800 rounded border border-slate-700"
+        className="flex items-center justify-center border border-slate-700 rounded bg-slate-800"
+        style={{ width: size, height: size }}
+      >
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+      </div>
+    );
+  }
+
+  if (error || !qrDataUrl) {
+    return (
+      <div 
+        className="flex flex-col items-center justify-center gap-2 p-4 border border-slate-700 rounded bg-slate-800"
         style={{ width: size, height: size }}
       >
         <QrCode size={48} className="text-blue-400" />
@@ -76,9 +122,40 @@ const QRCodeDisplay = ({ url, token, size = 200 }) => {
           {token || url}
         </p>
         <p className="text-slate-500 text-xs text-center mt-2">
-          Utilisez ce token pour accéder aux données
+          {error || 'Utilisez ce token pour accéder aux données'}
         </p>
       </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <img 
+        src={qrDataUrl}
+        alt="QR Code de partage"
+        width={size}
+        height={size}
+        className="border border-slate-700 rounded bg-white p-2"
+      />
+      {/* ✅ PHASE 2 : Option téléchargement QR code */}
+      <button
+        onClick={() => {
+          try {
+            const a = document.createElement('a');
+            a.href = qrDataUrl;
+            a.download = `qrcode_${token || 'share'}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          } catch (err) {
+            log.error('[QRCodeDisplay] Erreur téléchargement QR code', err);
+          }
+        }}
+        className="text-xs text-blue-400 hover:text-blue-300 underline flex items-center gap-1"
+      >
+        <Download size={14} />
+        Télécharger QR code
+      </button>
     </div>
   );
 };
@@ -159,9 +236,16 @@ const NutritionSharing = () => {
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showQRCode, setShowQRCode] = useState(null);
+  const [cleanupStats, setCleanupStats] = useState(null);
   const [copiedToken, setCopiedToken] = useState(null);
   const [copiedUrl, setCopiedUrl] = useState(null);
   const [creating, setCreating] = useState(false);
+  
+  // ✅ PHASE 3 : État pour export chiffré
+  const [showPasswordModal, setShowPasswordModal] = useState(null); // Token du lien à exporter
+  const [exportPassword, setExportPassword] = useState('');
+  const [exportEncrypt, setExportEncrypt] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // Formulaire création
   const [formData, setFormData] = useState({
@@ -172,10 +256,41 @@ const NutritionSharing = () => {
 
   // Charger liens au démarrage
   useEffect(() => {
-    if (dbReady) {
-      loadShareLinks();
-    }
+    if (!dbReady) return;
+
+    loadShareLinks();
   }, [dbReady, loadShareLinks]);
+
+  // ✅ PHASE 7 : Cleanup automatique amélioré avec CleanupService
+  useEffect(() => {
+    if (!dbReady) return;
+
+    // ✅ PHASE 7 : Vérifier si cleanup nécessaire
+    if (CleanupService.isCleanupNeeded()) {
+      // Récupérer tokens actifs pour nettoyage intelligent QR
+      const activeTokens = shareLinks
+        .filter(link => {
+          const expiresAt = typeof link.expiresAt === 'number' 
+            ? link.expiresAt 
+            : (link.expiresAt ? new Date(link.expiresAt).getTime() : null);
+          const now = Date.now();
+          return expiresAt === null || expiresAt > now;
+        })
+        .map(link => link.token);
+      
+      // ✅ PHASE 7 : Exécuter cleanup complet en arrière-plan
+      CleanupService.runCleanup({ 
+        force: false,
+        activeTokens 
+      }).then(stats => {
+        // ✅ PHASE 7 : Mettre à jour stats affichées après cleanup
+        setCleanupStats(stats);
+      }).catch(error => {
+        log.warn('[NutritionSharing] Erreur cleanup automatique:', error);
+        // Ne pas bloquer UI en cas d'erreur
+      });
+    }
+  }, [dbReady, shareLinks]); // ✅ Déclenché si shareLinks change ou dbReady
 
   // Gérer création lien
   const handleCreateLink = useCallback(async (e) => {
@@ -208,6 +323,22 @@ const NutritionSharing = () => {
         }
       } catch (err) {
         log.error('Erreur création lien', err);
+        
+        // ✅ PHASE 1.2 : Gérer erreurs rate limiting / limite liens actifs
+        if (err.code === 'rate_limit') {
+          const waitMin = err.waitTime ? Math.ceil(err.waitTime / 60000) : 1;
+          showError(
+            'Limite de création atteinte',
+            `Vous avez créé trop de liens récemment. Attendez ${waitMin} minute${waitMin > 1 ? 's' : ''} avant de créer un nouveau lien.`
+          );
+        } else if (err.code === 'max_active_links') {
+          showError(
+            'Limite de liens actifs atteinte',
+            `Vous avez atteint la limite de ${err.maxActive || 10} liens actifs. Révoquez des liens expirés ou inutilisés avant d'en créer un nouveau.`
+          );
+        } else {
+          showError('Erreur création lien', err.message || 'Impossible de créer le lien. Veuillez réessayer.');
+        }
       } finally {
         setCreating(false);
       }
@@ -272,30 +403,116 @@ const NutritionSharing = () => {
     }
   }, [copyShareUrlToClipboard]);
 
-  // Télécharger export
-  const handleDownloadExport = useCallback(async (token, scope) => {
+  // ✅ PHASE 3 : Télécharger export (avec support chiffrement)
+  const handleDownloadExport = useCallback(async (token, scope, encrypt = false) => {
     try {
-      await downloadShareExport(token, scope);
+      if (encrypt) {
+        // ✅ PHASE 3 : Demander mot de passe si chiffrement demandé
+        setShowPasswordModal(token);
+        setExportEncrypt(true);
+        return; // Ne télécharger que si mot de passe fourni
+      }
+
+      // Export non chiffré (comportement par défaut)
+      await downloadShareExport(token, scope, { encrypt: false });
+      showSuccess('Export téléchargé', 'L\'export a été téléchargé avec succès.');
     } catch (err) {
       log.error('Erreur téléchargement export', err);
-      showError('Erreur export', 'Impossible de télécharger l\'export. Veuillez réessayer.');
+      showError('Erreur export', err.message || 'Impossible de télécharger l\'export. Veuillez réessayer.');
     }
-  }, [downloadShareExport, showError]);
+  }, [downloadShareExport, showError, showSuccess]);
 
-  // Nettoyage liens expirés
+  // ✅ PHASE 3 : Confirmer export chiffré avec mot de passe
+  const handleConfirmEncryptedExport = useCallback(async () => {
+    if (!showPasswordModal || !exportPassword || exportPassword.length < 8) {
+      showError('Mot de passe invalide', 'Le mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
+
+    try {
+      setExporting(true);
+      
+      // Trouver le lien pour obtenir le scope
+      const link = shareLinks.find(l => l.token === showPasswordModal);
+      const scope = link?.scope || SHARE_SCOPES.all;
+
+      // ✅ PHASE 3 : Télécharger export chiffré avec mot de passe
+      await downloadShareExport(showPasswordModal, scope, {
+        encrypt: true,
+        password: exportPassword
+      });
+
+      // Réinitialiser état
+      setShowPasswordModal(null);
+      setExportPassword('');
+      setExportEncrypt(false);
+      
+      showSuccess('Export chiffré téléchargé', 'L\'export chiffré a été téléchargé avec succès. N\'oubliez pas votre mot de passe pour le déchiffrer.');
+    } catch (err) {
+      log.error('Erreur export chiffré', err);
+      showError('Erreur export chiffré', err.message || 'Impossible de créer l\'export chiffré. Veuillez réessayer.');
+    } finally {
+      setExporting(false);
+    }
+  }, [showPasswordModal, exportPassword, shareLinks, downloadShareExport, showSuccess, showError]);
+
+  // ✅ PHASE 3 : Annuler export chiffré
+  const handleCancelEncryptedExport = useCallback(() => {
+    setShowPasswordModal(null);
+    setExportPassword('');
+    setExportEncrypt(false);
+  }, []);
+
+  // ✅ PHASE 7 : Récupérer stats cleanup au chargement
+  useEffect(() => {
+    const stats = CleanupService.getLastCleanupStats();
+    setCleanupStats(stats);
+  }, []); // Une seule fois au montage
+
+  // ✅ PHASE 7 : Nettoyage liens avec CleanupService amélioré
   const handleCleanup = useCallback(async () => {
     try {
-      const deletedCount = await cleanup();
-      if (deletedCount > 0) {
-        showSuccess('Nettoyage terminé', `${deletedCount} lien(s) expiré(s) supprimé(s)`);
+      // Récupérer tokens actifs pour nettoyage intelligent QR
+      const activeTokens = shareLinks
+        .filter(link => {
+          const expiresAt = typeof link.expiresAt === 'number' 
+            ? link.expiresAt 
+            : (link.expiresAt ? new Date(link.expiresAt).getTime() : null);
+          const now = Date.now();
+          return expiresAt === null || expiresAt > now;
+        })
+        .map(link => link.token);
+
+      // ✅ PHASE 7 : Exécuter cleanup complet avec CleanupService
+      const stats = await CleanupService.runCleanup({ 
+        force: true, // Forcer même si récent
+        activeTokens 
+      });
+
+      // Mettre à jour stats affichées
+      setCleanupStats(stats);
+
+      if (stats.total > 0) {
+        const details = [];
+        if (stats.expiredLinks > 0) details.push(`${stats.expiredLinks} expiré(s)`);
+        if (stats.revokedLinks > 0) details.push(`${stats.revokedLinks} révoqué(s)`);
+        if (stats.orphanedQR > 0) details.push(`${stats.orphanedQR} QR orphelin(s)`);
+        
+        showSuccess(
+          'Nettoyage terminé', 
+          `${stats.total} élément(s) supprimé(s)${details.length > 0 ? ` (${details.join(', ')})` : ''}`
+        );
       } else {
-        showInfo('Aucun lien expiré', 'Aucun lien expiré à supprimer');
+        showInfo('Aucun élément à nettoyer', 'Tous les éléments sont à jour');
       }
+
+      // ✅ PHASE 7 : Recharger liens après cleanup
+      await loadShareLinks();
     } catch (err) {
       log.error('Erreur nettoyage', err);
-      showError('Erreur nettoyage', 'Impossible de nettoyer les liens expirés. Veuillez réessayer.');
+      showError('Erreur nettoyage', 'Impossible de nettoyer les éléments. Veuillez réessayer.');
     }
-  }, [cleanup, showSuccess, showInfo, showError]);
+  }, [shareLinks, loadShareLinks, showSuccess, showInfo, showError]);
 
   if (!dbReady) {
     return (
@@ -329,15 +546,30 @@ const NutritionSharing = () => {
               <Share2 size={24} className="text-blue-400" />
               <CardTitle>Partage avec Coach</CardTitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {/* ✅ PHASE 7 : Indicateur dernier cleanup */}
+              {cleanupStats && cleanupStats.lastCleanup && (
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <Clock size={14} aria-hidden="true" />
+                  <span>
+                    Dernier nettoyage : {CleanupService.formatLastCleanup(cleanupStats.lastCleanup)}
+                  </span>
+                  {cleanupStats.total > 0 && (
+                    <span className="text-slate-500">
+                      ({cleanupStats.total} élément{cleanupStats.total > 1 ? 's' : ''} supprimé{cleanupStats.total > 1 ? 's' : ''})
+                    </span>
+                  )}
+                </div>
+              )}
               <Button
                 onClick={handleCleanup}
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
+                aria-label="Nettoyer les liens expirés et révoqués anciens"
               >
-                <Trash2 size={16} />
-                Nettoyer liens expirés
+                <Trash2 size={16} aria-hidden="true" />
+                Nettoyage automatique
               </Button>
               <Button
                 onClick={() => setShowCreateForm(true)}
@@ -345,7 +577,7 @@ const NutritionSharing = () => {
                 size="sm"
                 className="flex items-center gap-2"
               >
-                <Plus size={16} />
+                <Plus size={16} aria-hidden="true" />
                 Créer un lien
               </Button>
             </div>
@@ -645,20 +877,112 @@ const NutritionSharing = () => {
                     )}
                   </Button>
                 )}
-                <Button
-                  onClick={() => handleDownloadExport(link.token, link.scope)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Download size={16} />
-                  Export JSON
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => handleDownloadExport(link.token, link.scope, false)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Download size={16} />
+                    Export JSON
+                  </Button>
+                  {/* ✅ PHASE 3 : Bouton export chiffré */}
+                  <Button
+                    onClick={() => handleDownloadExport(link.token, link.scope, true)}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 text-green-400 hover:text-green-300 border-green-700"
+                    title="Export chiffré avec mot de passe"
+                  >
+                    <Shield size={16} />
+                    Export Chiffré
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         );
       })}
+
+      {/* ✅ PHASE 3 : Modal saisie mot de passe pour export chiffré */}
+      {showPasswordModal && (
+        <Card className="bg-slate-800/95 border-slate-600 fixed inset-0 z-50 flex items-center justify-center">
+          <CardContent className="max-w-md w-full mx-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Shield size={24} className="text-green-400" />
+                  Export Chiffré
+                </CardTitle>
+                <Button
+                  onClick={handleCancelEncryptedExport}
+                  variant="ghost"
+                  size="sm"
+                  disabled={exporting}
+                >
+                  <XCircle size={20} />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Mot de passe (minimum 8 caractères)
+                  </label>
+                  <Input
+                    type="password"
+                    value={exportPassword}
+                    onChange={(e) => setExportPassword(e.target.value)}
+                    placeholder="Entrez un mot de passe sécurisé"
+                    disabled={exporting}
+                    className="w-full"
+                    minLength={8}
+                  />
+                  <p className="text-xs text-slate-400 mt-1">
+                    Ce mot de passe sera nécessaire pour déchiffrer l'export. Ne le perdez pas !
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 p-3 bg-slate-700/50 rounded border border-slate-600">
+                  <Shield size={16} className="text-green-400" />
+                  <p className="text-xs text-slate-300">
+                    <strong>Chiffrement :</strong> AES-256-CBC avec PBKDF2 (10000 itérations)
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleConfirmEncryptedExport}
+                    variant="primary"
+                    disabled={!exportPassword || exportPassword.length < 8 || exporting}
+                    className="flex-1"
+                  >
+                    {exporting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Chiffrement en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Shield size={16} className="mr-2" />
+                        Télécharger Export Chiffré
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleCancelEncryptedExport}
+                    variant="outline"
+                    disabled={exporting}
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

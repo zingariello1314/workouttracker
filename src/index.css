@@ -172,3 +172,26 @@ html, body {
 .animate-shimmer {
   animation: shimmer 2s infinite;
 }
+
+/* ✅ PHASE 5 : Animation fadeIn pour lazy loading graphiques */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ✅ PHASE 6 : Classe sr-only pour labels screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

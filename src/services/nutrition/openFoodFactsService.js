@@ -17,6 +17,12 @@ import { openNutritionDB, STORE_API_CACHE } from '../../hooks/nutritionDataUtils
 import { LRUCache } from '../../utils/lruCache';
 import { TokenBucket } from '../../utils/tokenBucket';
 import logger from '../../utils/logger';
+import {
+  validateOpenFoodFactsSearchResponse,
+  validateOpenFoodFactsBarcodeResponse,
+  validateOpenFoodFactsProduct
+} from './nutritionSchemas';
+import { z } from 'zod';
 
 const log = logger.module('openFoodFactsService');
 
@@ -323,17 +329,44 @@ export const searchOpenFoodFacts = async (query, options = {}) => {
     // Requête API
     const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=${pageSize}`;
     
-    const data = await ofManager.request(url);
+    const rawData = await ofManager.request(url);
     
-    if (!data || !data.products || !Array.isArray(data.products)) {
-      log.warn('Réponse OpenFoodFacts invalide');
+    // ✅ PHASE 10.3 : Validation réponse brute API avec Zod
+    let validatedData;
+    try {
+      validatedData = validateOpenFoodFactsSearchResponse(rawData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.error('[searchOpenFoodFacts] Erreur validation réponse API:', error.errors);
+        return [];
+      }
+      throw error;
+    }
+    
+    if (!validatedData.products || !Array.isArray(validatedData.products)) {
+      log.warn('Réponse OpenFoodFacts invalide (pas de produits)');
       return [];
     }
 
-    // Formater et filtrer produits
-    const products = data.products
-      .map(formatProductData)
-      .filter(p => p && p.nutritionPer100.calories !== null); // Filtrer produits sans calories
+    // Formater et valider produits
+    const products = validatedData.products
+      .map(product => {
+        try {
+          const formatted = formatProductData(product);
+          if (!formatted) return null;
+          
+          // ✅ PHASE 10.3 : Validation produit formaté avec Zod
+          return validateOpenFoodFactsProduct(formatted);
+        } catch (error) {
+          if (error instanceof z.ZodError) {
+            log.warn('[searchOpenFoodFacts] Produit invalide après formatage:', error.errors[0]?.message);
+            return null;
+          }
+          log.warn('[searchOpenFoodFacts] Erreur formatage produit:', error);
+          return null;
+        }
+      })
+      .filter(p => p !== null && p.nutritionPer100?.calories !== null && p.nutritionPer100?.calories !== undefined); // Filtrer produits invalides ou sans calories
 
     // Mettre en cache (TTL plus court pour recherches: 1h)
     if (useCache && products.length > 0) {
@@ -379,33 +412,52 @@ export const getProductByBarcode = async (barcode, options = {}) => {
     // Requête API
     const url = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`;
     
-    const data = await ofManager.request(url);
+    const rawData = await ofManager.request(url);
     
-    if (!data || data.status === 0) {
+    // ✅ PHASE 10.3 : Validation réponse brute API avec Zod
+    let validatedData;
+    try {
+      validatedData = validateOpenFoodFactsBarcodeResponse(rawData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.error('[getProductByBarcode] Erreur validation réponse API:', error.errors);
+        return null;
+      }
+      throw error;
+    }
+    
+    if (validatedData.status === 0 || !validatedData.product) {
       log.debug(`Produit non trouvé: ${barcode}`);
       return null;
     }
 
-    const product = data.product;
-    if (!product) {
+    // Formater et valider produit
+    try {
+      const formatted = formatProductData(validatedData.product);
+      
+      if (!formatted) {
+        log.warn(`Produit non formatable: ${barcode}`);
+        return null;
+      }
+      
+      // ✅ PHASE 10.3 : Validation produit formaté avec Zod
+      const validatedProduct = validateOpenFoodFactsProduct(formatted);
+      
+      // Mettre en cache (TTL 24h pour codes-barres)
+      if (useCache) {
+        await cacheProduct(barcode, validatedProduct, 'openfoodfacts', 86400);
+      }
+
+      log.debug(`Produit trouvé: ${barcode} - ${validatedProduct.name}`);
+      return validatedProduct;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.warn(`[getProductByBarcode] Produit invalide après formatage (${barcode}):`, error.errors[0]?.message);
+        return null;
+      }
+      log.warn(`[getProductByBarcode] Erreur formatage produit (${barcode}):`, error);
       return null;
     }
-
-    // Formater produit
-    const formatted = formatProductData(product);
-    
-    if (!formatted) {
-      log.warn(`Produit non formatable: ${barcode}`);
-      return null;
-    }
-
-    // Mettre en cache (TTL 24h pour codes-barres)
-    if (useCache) {
-      await cacheProduct(barcode, formatted, 'openfoodfacts', 86400);
-    }
-
-    log.debug(`Produit trouvé: ${barcode} - ${formatted.name}`);
-    return formatted;
   } catch (error) {
     log.error('Erreur recherche code-barres:', error);
     return null;
