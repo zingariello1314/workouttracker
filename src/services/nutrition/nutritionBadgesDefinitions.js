@@ -7,6 +7,8 @@
  * @module services/nutrition/nutritionBadgesDefinitions
  */
 
+import { DateHelper } from '../../utils/dateHelper';
+
 // ==================== HELPER FUNCTIONS ====================
 
 /**
@@ -56,6 +58,47 @@ const hasMainMealsWithData = (day) => {
   });
 };
 
+/**
+ * Calcule le total de fibres depuis les meals (car n'existe pas dans dailyTotals)
+ * ✅ CORRECTION CRITIQUE : fiber n'existe pas dans dailyTotals, doit être calculé depuis meals.foods
+ * 
+ * @param {Object} day - Objet jour avec meals
+ * @returns {number} Total de fibres en grammes
+ */
+const calculateFiberFromMeals = (day) => {
+  if (!day || !day.meals || day.meals.length === 0) return 0;
+  
+  return day.meals.reduce((sum, meal) => {
+    const foods = meal.foods || [];
+    return sum + foods.reduce((s, food) => s + (food.fiber || 0), 0);
+  }, 0);
+};
+
+/**
+ * Obtient une valeur cible avec fallback correct selon calculateDailyTotals
+ * ✅ CORRECTION : Utiliser valeurs par défaut correctes (2500, 150, 300, 80, 3000)
+ * 
+ * @param {Object} day - Objet jour avec dailyTotals
+ * @param {Object} userData - Données utilisateur avec activeProgram
+ * @param {string} field - Champ cible ('targetCalories', 'targetProtein', 'targetCarbs', 'targetFat', 'targetWater')
+ * @returns {number} Valeur cible avec fallback correct
+ */
+const getTargetValue = (day, userData, field) => {
+  // 1. Vérifier dailyTotals du jour
+  if (day?.dailyTotals?.[field]) return day.dailyTotals[field];
+  // 2. Vérifier programme actif
+  if (userData?.activeProgram?.[field]) return userData.activeProgram[field];
+  // 3. Valeurs par défaut selon calculateDailyTotals (lignes 66-70)
+  const defaults = {
+    targetCalories: 2500,
+    targetProtein: 150,
+    targetCarbs: 300,
+    targetFat: 80,
+    targetWater: 3000
+  };
+  return defaults[field] || 0;
+};
+
 // ==================== BADGES FACILES (20) ====================
 
 export const EASY_BADGES = [
@@ -87,7 +130,10 @@ export const EASY_BADGES = [
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
       const water = today?.dailyTotals?.waterIntake || 0;
-      const targetWater = today?.dailyTotals?.targetWater || 2500;
+      // ✅ CORRECTION : Utiliser valeurs par défaut correctes (3000ml selon calculateDailyTotals, pas 2500)
+      const targetWater = today?.dailyTotals?.targetWater || 
+                          userData.activeProgram?.targetWater || 
+                          3000; // Valeur par défaut réelle dans calculateDailyTotals
       return water >= targetWater * 0.9;
     }
   },
@@ -102,8 +148,11 @@ export const EASY_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles
+      if (!hasRealNutritionData(today)) return false;
       const protein = today?.dailyTotals?.protein || 0;
-      const targetProtein = today?.dailyTotals?.targetProtein || 150;
+      const targetProtein = getTargetValue(today, userData, 'targetProtein');
+      if (targetProtein === 0) return false;
       return protein >= targetProtein * 0.95;
     }
   },
@@ -139,8 +188,10 @@ export const EASY_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles
+      if (!hasRealNutritionData(today)) return false;
       const meals = today?.meals || [];
-      return meals.some(m => m.type === 'breakfast');
+      return meals.some(m => m.type === 'breakfast' && (m.foods || []).length > 0);
     }
   },
   {
@@ -152,9 +203,23 @@ export const EASY_BADGES = [
     rarity: 'common',
     points: 30,
     condition: (userData) => {
-      // Note: Nécessite tracking des aliments uniques testés
-      // Pour l'instant, vérifier variété sur 7 jours
-      return (userData.uniqueFoodsLast7Days || 0) >= 1;
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory au lieu de uniqueFoodsLast7Days
+      if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
+      const today = DateHelper.getTodayLocal();
+      const uniqueFoods = new Set();
+      // Vérifier sur les 7 derniers jours
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue;
+        (day.meals || []).forEach(meal => {
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name) uniqueFoods.add(food.name.toLowerCase());
+          });
+        });
+      }
+      return uniqueFoods.size >= 1;
     }
   },
   {
@@ -168,6 +233,8 @@ export const EASY_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      // Note: Pour l'eau, on vérifie juste la quantité, pas besoin de hasRealNutritionData
+      // car l'eau peut être bue sans repas
       const water = today?.dailyTotals?.waterIntake || 0;
       return water >= 1000;
     }
@@ -183,13 +250,17 @@ export const EASY_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles
+      if (!hasRealNutritionData(today)) return false;
       const meals = today?.meals || [];
       return meals.some(meal => {
-        const total = (meal.foods || []).reduce((sum, f) => sum + (f.protein || 0) + (f.carbs || 0) + (f.fat || 0), 0);
+        const foods = meal.foods || [];
+        if (foods.length === 0) return false; // Vérifier qu'il y a des aliments
+        const total = foods.reduce((sum, f) => sum + (f.protein || 0) + (f.carbs || 0) + (f.fat || 0), 0);
         if (total === 0) return false;
-        const proteinPct = ((meal.foods || []).reduce((sum, f) => sum + (f.protein || 0), 0) / total) * 100;
-        const carbsPct = ((meal.foods || []).reduce((sum, f) => sum + (f.carbs || 0), 0) / total) * 100;
-        const fatPct = ((meal.foods || []).reduce((sum, f) => sum + (f.fat || 0), 0) / total) * 100;
+        const proteinPct = (foods.reduce((sum, f) => sum + (f.protein || 0), 0) / total) * 100;
+        const carbsPct = (foods.reduce((sum, f) => sum + (f.carbs || 0), 0) / total) * 100;
+        const fatPct = (foods.reduce((sum, f) => sum + (f.fat || 0), 0) / total) * 100;
         const deviation = Math.abs(proteinPct - 30) + Math.abs(carbsPct - 40) + Math.abs(fatPct - 30);
         return deviation < 30;
       });
@@ -226,9 +297,25 @@ export const EASY_BADGES = [
     rarity: 'common',
     points: 30,
     condition: (userData) => {
-      // Note: Nécessite tracking des sources de protéines uniques
-      // Pour l'instant, vérifier variété
-      return (userData.uniqueFoodsLast7Days || 0) >= 1;
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory au lieu de uniqueFoodsLast7Days
+      if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
+      const today = DateHelper.getTodayLocal();
+      const uniqueProteinFoods = new Set();
+      // Vérifier sur les 7 derniers jours pour les aliments avec protéines
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue;
+        (day.meals || []).forEach(meal => {
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name && (food.protein || 0) > 5) {
+              uniqueProteinFoods.add(food.name.toLowerCase());
+            }
+          });
+        });
+      }
+      return uniqueProteinFoods.size >= 1;
     }
   },
   {
@@ -242,8 +329,13 @@ export const EASY_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      if (!hasRealNutritionData(today)) return false;
       const fat = today?.dailyTotals?.fat || 0;
-      const targetFat = today?.dailyTotals?.targetFat || 65;
+      // ✅ CORRECTION : Utiliser valeurs par défaut correctes (80g selon calculateDailyTotals, pas 65g)
+      const targetFat = today?.dailyTotals?.targetFat || 
+                        userData.activeProgram?.targetFat || 
+                        80; // Valeur par défaut réelle dans calculateDailyTotals
+      if (targetFat === 0) return false; // Éviter division par zéro
       const ratio = fat / targetFat;
       return ratio >= 0.8 && ratio <= 1.2;
     }
@@ -259,7 +351,9 @@ export const EASY_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
-      const fiber = today?.dailyTotals?.fiber || 0;
+      // ✅ CORRECTION CRITIQUE : fiber n'existe pas dans dailyTotals, calculer depuis meals.foods
+      if (!hasRealNutritionData(today)) return false;
+      const fiber = calculateFiberFromMeals(today);
       return fiber >= 20;
     }
   },
@@ -274,10 +368,12 @@ export const EASY_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles
+      if (!hasRealNutritionData(today)) return false;
       const breakfast = (today?.meals || []).find(m => m.type === 'breakfast');
-      if (!breakfast) return false;
+      if (!breakfast || !breakfast.foods || breakfast.foods.length === 0) return false; // Vérifier qu'il y a des aliments
       // Vérifier que le petit-déj a des protéines et pas trop de sucre
-      const foods = breakfast.foods || [];
+      const foods = breakfast.foods;
       const protein = foods.reduce((sum, f) => sum + (f.protein || 0), 0);
       const sugar = foods.reduce((sum, f) => sum + (f.sugar || 0), 0);
       return protein >= 15 && sugar <= 20;
@@ -294,9 +390,11 @@ export const EASY_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles
+      if (!hasRealNutritionData(today)) return false;
       const dinner = (today?.meals || []).find(m => m.type === 'dinner');
-      if (!dinner) return false;
-      const foods = dinner.foods || [];
+      if (!dinner || !dinner.foods || dinner.foods.length === 0) return false; // Vérifier qu'il y a des aliments
+      const foods = dinner.foods;
       const calories = foods.reduce((sum, f) => sum + (f.calories || 0), 0);
       return calories <= 600; // Dîner léger = max 600 kcal
     }
@@ -381,8 +479,11 @@ export const EASY_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      if (!hasRealNutritionData(today)) return false;
       const calories = today?.dailyTotals?.calories || 0;
-      const targetCalories = today?.dailyTotals?.targetCalories || 2000;
+      // ✅ CORRECTION : Utiliser valeurs par défaut correctes (2500 selon calculateDailyTotals, pas 2000)
+      const targetCalories = getTargetValue(today, userData, 'targetCalories');
+      if (targetCalories === 0) return false; // Éviter division par zéro
       const ratio = calories / targetCalories;
       return ratio >= 0.9 && ratio <= 1.1; // ±10%
     }
@@ -396,9 +497,34 @@ export const EASY_BADGES = [
     rarity: 'common',
     points: 30,
     condition: (userData) => {
-      // Note: Nécessite tracking des types de protéines
-      // Pour l'instant, vérifier variété
-      return (userData.uniqueFoodsLast7Days || 0) >= 1;
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory au lieu de uniqueFoodsLast7Days
+      // Note: Pour protéines végétales, on vérifie les aliments avec protéines mais sans viande/poisson
+      // Pour simplifier, on vérifie juste qu'il y a des aliments avec protéines végétales (légumineuses, etc.)
+      if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
+      const today = DateHelper.getTodayLocal();
+      const uniquePlantProteins = new Set();
+      // Vérifier sur les 7 derniers jours
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue;
+        (day.meals || []).forEach(meal => {
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            // Protéines végétales : légumineuses, tofu, etc. (simplification : protéines > 5g mais pas de viande)
+            if (food && food.name && (food.protein || 0) > 5) {
+              const nameLower = food.name.toLowerCase();
+              // Exclure viandes/poissons (simplification basique)
+              if (!nameLower.includes('viande') && !nameLower.includes('poisson') && 
+                  !nameLower.includes('poulet') && !nameLower.includes('boeuf') &&
+                  !nameLower.includes('porc') && !nameLower.includes('saumon')) {
+                uniquePlantProteins.add(nameLower);
+              }
+            }
+          });
+        });
+      }
+      return uniquePlantProteins.size >= 1;
     }
   }
 ];
@@ -428,11 +554,16 @@ export const SIMPLE_BADGES = [
     points: 60,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
-      const last3Days = userData.nutritionHistory.slice(-3);
-      return last3Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day) return false; // Jour manquant
         const water = day.dailyTotals?.waterIntake || 0;
-        return water >= 2000;
-      });
+        if (water < 2000) return false;
+      }
+      return true;
     }
   },
   {
@@ -445,11 +576,16 @@ export const SIMPLE_BADGES = [
     points: 60,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
-      const last3Days = userData.nutritionHistory.slice(-3);
-      return last3Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
-        return meals.some(m => m.type === 'breakfast');
-      });
+        if (!meals.some(m => m.type === 'breakfast' && (m.foods || []).length > 0)) return false;
+      }
+      return true;
     }
   },
   {
@@ -462,13 +598,18 @@ export const SIMPLE_BADGES = [
     points: 60,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
-      const last3Days = userData.nutritionHistory.slice(-3);
-      return last3Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const dinner = (day.meals || []).find(m => m.type === 'dinner');
-        if (!dinner) return false;
-        const calories = (dinner.foods || []).reduce((sum, f) => sum + (f.calories || 0), 0);
-        return calories <= 600;
-      });
+        if (!dinner || !dinner.foods || dinner.foods.length === 0) return false; // Vérifier qu'il y a des aliments
+        const calories = dinner.foods.reduce((sum, f) => sum + (f.calories || 0), 0);
+        if (calories > 600) return false;
+      }
+      return true;
     }
   },
   {
@@ -480,9 +621,24 @@ export const SIMPLE_BADGES = [
     rarity: 'common',
     points: 75,
     condition: (userData) => {
-      // Note: Nécessite tracking des nouveaux aliments par jour
-      // Pour l'instant, vérifier variété sur 7 jours
-      return (userData.uniqueFoodsLast7Days || 0) >= 3;
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory au lieu de uniqueFoodsLast7Days
+      // Vérifier qu'il y a au moins 3 aliments différents sur 3 jours consécutifs
+      if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
+      const today = DateHelper.getTodayLocal();
+      const uniqueFoods = new Set();
+      // Vérifier sur les 3 derniers jours consécutifs
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Doit être consécutif
+        (day.meals || []).forEach(meal => {
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name) uniqueFoods.add(food.name.toLowerCase());
+          });
+        });
+      }
+      return uniqueFoods.size >= 3;
     }
   },
   {
@@ -494,7 +650,23 @@ export const SIMPLE_BADGES = [
     rarity: 'common',
     points: 75,
     condition: (userData) => {
-      return (userData.uniqueFoodsLast7Days || 0) >= 10;
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory au lieu de uniqueFoodsLast7Days
+      if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
+      const today = DateHelper.getTodayLocal();
+      const uniqueFoods = new Set();
+      // Vérifier sur les 7 derniers jours
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue;
+        (day.meals || []).forEach(meal => {
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name) uniqueFoods.add(food.name.toLowerCase());
+          });
+        });
+      }
+      return uniqueFoods.size >= 10;
     }
   },
   {
@@ -507,17 +679,19 @@ export const SIMPLE_BADGES = [
     points: 100,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
-        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles
-        if (!hasRealNutritionData(day)) return false;
-        
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
         const hasBreakfast = meals.some(m => m.type === 'breakfast' && (m.foods || []).length > 0);
         const hasLunch = meals.some(m => m.type === 'lunch' && (m.foods || []).length > 0);
         const hasDinner = meals.some(m => m.type === 'dinner' && (m.foods || []).length > 0);
-        return hasBreakfast && hasLunch && hasDinner;
-      });
+        if (!(hasBreakfast && hasLunch && hasDinner)) return false;
+      }
+      return true;
     }
   },
   {
@@ -530,12 +704,18 @@ export const SIMPLE_BADGES = [
     points: 75,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
-      const last3Days = userData.nutritionHistory.slice(-3);
-      return last3Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
-        return protein >= targetProtein * 0.95;
-      });
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
+        if (targetProtein === 0) return false;
+        if (protein < targetProtein * 0.95) return false;
+      }
+      return true;
     }
   },
   {
@@ -548,12 +728,18 @@ export const SIMPLE_BADGES = [
     points: 100,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const water = day.dailyTotals?.waterIntake || 0;
-        const targetWater = day.dailyTotals?.targetWater || 2500;
-        return water >= targetWater * 0.9;
-      });
+        const targetWater = getTargetValue(day, userData, 'targetWater');
+        if (targetWater === 0) return false;
+        if (water < targetWater * 0.9) return false;
+      }
+      return true;
     }
   },
   {
@@ -593,19 +779,21 @@ export const SIMPLE_BADGES = [
       // Note: Nécessite tracking du type de repas (fast-food)
       // Pour l'instant, vérifier si pas de repas avec calories très élevées et peu de nutriments
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
-        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles AVANT de valider l'absence
-        if (!hasRealNutritionData(day)) return false;
-        
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
-        return !meals.some(meal => {
+        if (meals.some(meal => {
           const foods = meal.foods || [];
           const calories = foods.reduce((sum, f) => sum + (f.calories || 0), 0);
           const protein = foods.reduce((sum, f) => sum + (f.protein || 0), 0);
           return calories > 800 && protein < 20; // Fast-food typique
-        });
-      });
+        })) return false;
+      }
+      return true;
     }
   },
   {
@@ -620,8 +808,11 @@ export const SIMPLE_BADGES = [
       if (!userData.nutritionHistory) return false;
       let recipeCount = 0;
       userData.nutritionHistory.forEach(day => {
+        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles avant de compter
+        if (!hasRealNutritionData(day)) return;
         (day.meals || []).forEach(meal => {
-          if ((meal.foods || []).length >= 3) recipeCount++;
+          const foods = meal.foods || [];
+          if (foods.length >= 3) recipeCount++; // Recette = au moins 3 ingrédients
         });
       });
       return recipeCount >= 3;
@@ -637,17 +828,19 @@ export const SIMPLE_BADGES = [
     points: 100,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
-        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles AVANT de valider l'absence
-        if (!hasRealNutritionData(day)) return false;
-        
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
         const totalSugar = meals.reduce((sum, meal) => {
           return sum + (meal.foods || []).reduce((s, f) => s + (f.addedSugar || f.sugar || 0), 0);
         }, 0);
-        return totalSugar <= 30; // Max 30g/jour
-      });
+        if (totalSugar > 30) return false; // Max 30g/jour
+      }
+      return true;
     }
   },
   {
@@ -660,13 +853,19 @@ export const SIMPLE_BADGES = [
     points: 75,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
-      const last3Days = userData.nutritionHistory.slice(-3);
-      return last3Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = Math.abs(calories - targetCalories);
-        return balance <= 200; // ±200 kcal
-      });
+        if (balance > 200) return false; // ±200 kcal
+      }
+      return true;
     }
   },
   {
@@ -681,12 +880,16 @@ export const SIMPLE_BADGES = [
       // Note: Nécessite tracking de l'heure des repas
       // Pour l'instant, vérifier présence de dîner
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
-      const last3Days = userData.nutritionHistory.slice(-3);
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
       let count = 0;
-      last3Days.forEach(day => {
-        const dinner = (day.meals || []).find(m => m.type === 'dinner');
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Doit être consécutif
+        const dinner = (day.meals || []).find(m => m.type === 'dinner' && (m.foods || []).length > 0);
         if (dinner) count++;
-      });
+      }
       return count >= 3;
     }
   },
@@ -699,8 +902,24 @@ export const SIMPLE_BADGES = [
     rarity: 'common',
     points: 100,
     condition: (userData) => {
-      // Note: Nécessite tracking des types d'aliments
-      return (userData.uniqueFoodsLast7Days || 0) >= 5;
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory au lieu de uniqueFoodsLast7Days
+      // Note: Pour les légumes, on simplifie en comptant tous les aliments (dans un vrai système, on filtrerait par catégorie)
+      if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
+      const today = DateHelper.getTodayLocal();
+      const uniqueFoods = new Set();
+      // Vérifier sur les 7 derniers jours
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue;
+        (day.meals || []).forEach(meal => {
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name) uniqueFoods.add(food.name.toLowerCase());
+          });
+        });
+      }
+      return uniqueFoods.size >= 5;
     }
   },
   {
@@ -714,12 +933,16 @@ export const SIMPLE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles
+      if (!hasRealNutritionData(today)) return false;
       const water = today?.dailyTotals?.waterIntake || 0;
-      const targetWater = today?.dailyTotals?.targetWater || 2500;
+      // ✅ CORRECTION : Utiliser valeurs par défaut correctes
+      const targetWater = getTargetValue(today, userData, 'targetWater');
       const protein = today?.dailyTotals?.protein || 0;
-      const targetProtein = today?.dailyTotals?.targetProtein || 150;
+      const targetProtein = getTargetValue(today, userData, 'targetProtein');
       const calories = today?.dailyTotals?.calories || 0;
-      const targetCalories = today?.dailyTotals?.targetCalories || 2000;
+      const targetCalories = getTargetValue(today, userData, 'targetCalories');
+      if (targetWater === 0 || targetProtein === 0 || targetCalories === 0) return false;
       return water >= targetWater * 0.9 &&
              protein >= targetProtein * 0.95 &&
              Math.abs(calories - targetCalories) <= 200;
@@ -734,9 +957,19 @@ export const SIMPLE_BADGES = [
     rarity: 'common',
     points: 75,
     condition: (userData) => {
-      // Note: Nécessite tracking des types d'aliments (fruits)
-      // Pour l'instant, vérifier variété
-      return (userData.uniqueFoodsLast7Days || 0) >= 7;
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory au lieu de uniqueFoodsLast7Days
+      // Note: Pour les fruits, on vérifie sur 1 jour (aujourd'hui) - 7 fruits différents
+      if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
+      const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      if (!hasRealNutritionData(today)) return false;
+      const uniqueFoods = new Set();
+      (today.meals || []).forEach(meal => {
+        const foods = meal.foods || [];
+        foods.forEach(food => {
+          if (food && food.name) uniqueFoods.add(food.name.toLowerCase());
+        });
+      });
+      return uniqueFoods.size >= 7;
     }
   },
   {
@@ -767,12 +1000,15 @@ export const SIMPLE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
       const today = userData.nutritionHistory[userData.nutritionHistory.length - 1];
+      // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles
+      if (!hasRealNutritionData(today)) return false;
       const protein = today?.dailyTotals?.protein || 0;
-      const targetProtein = today?.dailyTotals?.targetProtein || 150;
+      const targetProtein = getTargetValue(today, userData, 'targetProtein');
       const carbs = today?.dailyTotals?.carbs || 0;
-      const targetCarbs = today?.dailyTotals?.targetCarbs || 200;
+      const targetCarbs = getTargetValue(today, userData, 'targetCarbs');
       const fat = today?.dailyTotals?.fat || 0;
-      const targetFat = today?.dailyTotals?.targetFat || 65;
+      const targetFat = getTargetValue(today, userData, 'targetFat');
+      if (targetProtein === 0 || targetCarbs === 0 || targetFat === 0) return false;
       return protein >= targetProtein * 0.95 &&
              carbs >= targetCarbs * 0.95 &&
              fat >= targetFat * 0.95;
@@ -805,13 +1041,18 @@ export const MEDIUM_BADGES = [
     points: 150,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const dinner = (day.meals || []).find(m => m.type === 'dinner');
-        if (!dinner) return false;
-        const calories = (dinner.foods || []).reduce((sum, f) => sum + (f.calories || 0), 0);
-        return calories <= 600;
-      });
+        if (!dinner || !dinner.foods || dinner.foods.length === 0) return false; // Vérifier qu'il y a des aliments
+        const calories = dinner.foods.reduce((sum, f) => sum + (f.calories || 0), 0);
+        if (calories > 600) return false;
+      }
+      return true;
     }
   },
   {
@@ -824,11 +1065,16 @@ export const MEDIUM_BADGES = [
     points: 150,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
-        return meals.some(m => m.type === 'breakfast');
-      });
+        if (!meals.some(m => m.type === 'breakfast' && (m.foods || []).length > 0)) return false;
+      }
+      return true;
     }
   },
   {
@@ -843,12 +1089,16 @@ export const MEDIUM_BADGES = [
       if (!userData.nutritionHistory) return false;
       let balancedCount = 0;
       userData.nutritionHistory.forEach(day => {
+        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles avant de compter
+        if (!hasRealNutritionData(day)) return;
         (day.meals || []).forEach(meal => {
-          const total = (meal.foods || []).reduce((sum, f) => sum + (f.protein || 0) + (f.carbs || 0) + (f.fat || 0), 0);
+          const foods = meal.foods || [];
+          if (foods.length === 0) return; // Vérifier qu'il y a des aliments
+          const total = foods.reduce((sum, f) => sum + (f.protein || 0) + (f.carbs || 0) + (f.fat || 0), 0);
           if (total === 0) return;
-          const proteinPct = ((meal.foods || []).reduce((sum, f) => sum + (f.protein || 0), 0) / total) * 100;
-          const carbsPct = ((meal.foods || []).reduce((sum, f) => sum + (f.carbs || 0), 0) / total) * 100;
-          const fatPct = ((meal.foods || []).reduce((sum, f) => sum + (f.fat || 0), 0) / total) * 100;
+          const proteinPct = (foods.reduce((sum, f) => sum + (f.protein || 0), 0) / total) * 100;
+          const carbsPct = (foods.reduce((sum, f) => sum + (f.carbs || 0), 0) / total) * 100;
+          const fatPct = (foods.reduce((sum, f) => sum + (f.fat || 0), 0) / total) * 100;
           const deviation = Math.abs(proteinPct - 30) + Math.abs(carbsPct - 40) + Math.abs(fatPct - 30);
           if (deviation < 30) balancedCount++;
         });
@@ -867,11 +1117,18 @@ export const MEDIUM_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
       const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day) return false;
         const water = day.dailyTotals?.waterIntake || 0;
-        const targetWater = day.dailyTotals?.targetWater || 2500;
-        return water >= targetWater * 0.95;
-      });
+        const targetWater = getTargetValue(day, userData, 'targetWater');
+        if (targetWater === 0) return false;
+        if (water < targetWater * 0.95) return false;
+      }
+      return true;
     }
   },
   {
@@ -884,15 +1141,20 @@ export const MEDIUM_BADGES = [
     points: 200,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 14) return false;
-      const last14Days = userData.nutritionHistory.slice(-14);
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
       const uniqueFoods = new Set();
-      last14Days.forEach(day => {
+      for (let i = 0; i < 14; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue;
         (day.meals || []).forEach(meal => {
-          (meal.foods || []).forEach(food => {
-            if (food.name) uniqueFoods.add(food.name.toLowerCase());
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name) uniqueFoods.add(food.name.toLowerCase());
           });
         });
-      });
+      }
       return uniqueFoods.size >= 20;
     }
   },
@@ -906,16 +1168,20 @@ export const MEDIUM_BADGES = [
     points: 150,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
-        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles AVANT de valider l'absence
-        if (!hasMainMealsWithData(day)) return false;
-        
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasMainMealsWithData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasMainMealsWithData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
         // Vérifier qu'il n'y a pas de snack ET qu'il y a au moins un repas principal avec données
-        return !meals.some(m => m.type === 'snack') && 
-               meals.some(m => ['breakfast', 'lunch', 'dinner'].includes(m.type) && (m.foods || []).length > 0);
-      });
+        if (meals.some(m => m.type === 'snack') || 
+            !meals.some(m => ['breakfast', 'lunch', 'dinner'].includes(m.type) && (m.foods || []).length > 0)) {
+          return false;
+        }
+      }
+      return true;
     }
   },
   {
@@ -929,12 +1195,19 @@ export const MEDIUM_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
       const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = calories - targetCalories;
-        return balance < 0 && balance >= -500; // Déficit entre 0 et -500 kcal
-      });
+        if (!(balance < 0 && balance >= -500)) return false; // Déficit entre 0 et -500 kcal
+      }
+      return true;
     }
   },
   {
@@ -948,12 +1221,19 @@ export const MEDIUM_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
       const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = calories - targetCalories;
-        return balance > 0 && balance <= 500;
-      });
+        if (!(balance > 0 && balance <= 500)) return false;
+      }
+      return true;
     }
   },
   {
@@ -967,17 +1247,28 @@ export const MEDIUM_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
       const last3Days = userData.nutritionHistory.slice(-3);
-      return last3Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
         const carbs = day.dailyTotals?.carbs || 0;
-        const targetCarbs = day.dailyTotals?.targetCarbs || 200;
+        const targetCarbs = getTargetValue(day, userData, 'targetCarbs');
         const fat = day.dailyTotals?.fat || 0;
-        const targetFat = day.dailyTotals?.targetFat || 65;
-        return Math.abs(protein - targetProtein) / targetProtein <= 0.1 &&
-               Math.abs(carbs - targetCarbs) / targetCarbs <= 0.1 &&
-               Math.abs(fat - targetFat) / targetFat <= 0.1;
-      });
+        const targetFat = getTargetValue(day, userData, 'targetFat');
+        
+        if (targetProtein === 0 || targetCarbs === 0 || targetFat === 0) return false;
+        if (!(Math.abs(protein - targetProtein) / targetProtein <= 0.1 &&
+              Math.abs(carbs - targetCarbs) / targetCarbs <= 0.1 &&
+              Math.abs(fat - targetFat) / targetFat <= 0.1)) {
+          return false;
+        }
+      }
+      return true;
     }
   },
   {
@@ -990,17 +1281,19 @@ export const MEDIUM_BADGES = [
     points: 200,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 5) return false;
-      const last5Days = userData.nutritionHistory.slice(-5);
-      return last5Days.every(day => {
-        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles AVANT de valider l'absence
-        if (!hasRealNutritionData(day)) return false;
-        
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 5; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
         const totalSugar = meals.reduce((sum, meal) => {
           return sum + (meal.foods || []).reduce((s, f) => s + (f.addedSugar || f.sugar || 0), 0);
         }, 0);
-        return totalSugar <= 5;
-      });
+        if (totalSugar > 5) return false;
+      }
+      return true;
     }
   },
   {
@@ -1028,8 +1321,25 @@ export const MEDIUM_BADGES = [
     rarity: 'rare',
     points: 200,
     condition: (userData) => {
-      // Note: Nécessite tracking des types de protéines
-      return (userData.uniqueFoodsLast7Days || 0) >= 10;
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory au lieu de uniqueFoodsLast7Days
+      if (!userData.nutritionHistory || userData.nutritionHistory.length === 0) return false;
+      const today = DateHelper.getTodayLocal();
+      const uniqueProteinFoods = new Set();
+      // Vérifier sur les 7 derniers jours pour les aliments avec protéines
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue;
+        (day.meals || []).forEach(meal => {
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name && (food.protein || 0) > 5) {
+              uniqueProteinFoods.add(food.name.toLowerCase());
+            }
+          });
+        });
+      }
+      return uniqueProteinFoods.size >= 10;
     }
   },
   {
@@ -1044,12 +1354,18 @@ export const MEDIUM_BADGES = [
       // Note: Nécessite intégration avec données d'entraînement
       // Pour l'instant, vérifier protéines élevées après entraînement
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper, hasRealNutritionData et getTargetValue
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
-        return protein >= targetProtein * 0.95;
-      });
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
+        if (targetProtein === 0) return false;
+        if (protein < targetProtein * 0.95) return false;
+      }
+      return true;
     }
   },
   {
@@ -1062,14 +1378,18 @@ export const MEDIUM_BADGES = [
     points: 300,
     condition: (userData) => {
       // Note: Nécessite vérification du jour de la semaine
-      // Pour l'instant, vérifier compliance élevée
+      // Pour l'instant, vérifier compliance élevée sur les 21 derniers jours
+      // ✅ CORRECTION : Utiliser DateHelper pour itérer (mais pas consécutivité stricte car weekends)
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 21) return false;
-      const last21Days = userData.nutritionHistory.slice(-21);
+      const today = DateHelper.getTodayLocal();
       let weekendCount = 0;
-      last21Days.forEach(day => {
+      for (let i = 0; i < 21; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue; // Skip jour manquant ou pas de données
         const compliance = day.complianceScore || day.dailyTotals?.complianceScore || 0;
         if (compliance >= 80) weekendCount++;
-      });
+      }
       return weekendCount >= 6; // 2 jours par weekend x 3
     }
   },
@@ -1083,11 +1403,17 @@ export const MEDIUM_BADGES = [
     points: 150,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
-      const last3Days = userData.nutritionHistory.slice(-3);
-      return last3Days.every(day => {
-        const fiber = day.dailyTotals?.fiber || 0;
-        return fiber >= 25;
-      });
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et calculer fiber depuis meals.foods
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        // ✅ CORRECTION CRITIQUE : fiber n'existe pas dans dailyTotals, calculer depuis meals.foods
+        const fiber = calculateFiberFromMeals(day);
+        if (fiber < 25) return false;
+      }
+      return true;
     }
   },
   {
@@ -1102,11 +1428,16 @@ export const MEDIUM_BADGES = [
       // Note: Nécessite tracking des problèmes digestifs
       // Pour l'instant, vérifier équilibre nutritionnel
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const compliance = day.complianceScore || day.dailyTotals?.complianceScore || 0;
-        return compliance >= 75;
-      });
+        if (compliance < 75) return false;
+      }
+      return true;
     }
   },
   {
@@ -1121,12 +1452,16 @@ export const MEDIUM_BADGES = [
       // Note: Nécessite tracking de l'heure des repas et du coucher
       // Pour l'instant, vérifier présence de dîner
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
-      const last3Days = userData.nutritionHistory.slice(-3);
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
       let count = 0;
-      last3Days.forEach(day => {
-        const dinner = (day.meals || []).find(m => m.type === 'dinner');
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Doit être consécutif
+        const dinner = (day.meals || []).find(m => m.type === 'dinner' && (m.foods || []).length > 0);
         if (dinner) count++;
-      });
+      }
       return count >= 3;
     }
   },
@@ -1142,8 +1477,11 @@ export const MEDIUM_BADGES = [
       if (!userData.nutritionHistory) return false;
       let recipeCount = 0;
       userData.nutritionHistory.forEach(day => {
+        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles avant de compter
+        if (!hasRealNutritionData(day)) return;
         (day.meals || []).forEach(meal => {
-          if ((meal.foods || []).length >= 3) recipeCount++;
+          const foods = meal.foods || [];
+          if (foods.length >= 3) recipeCount++; // Recette = au moins 3 ingrédients
         });
       });
       return recipeCount >= 4;
@@ -1160,17 +1498,28 @@ export const MEDIUM_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 3) return false;
       const last3Days = userData.nutritionHistory.slice(-3);
-      return last3Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 3; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        
         const water = day.dailyTotals?.waterIntake || 0;
-        const targetWater = day.dailyTotals?.targetWater || 2500;
+        const targetWater = getTargetValue(day, userData, 'targetWater');
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
-        return water >= targetWater * 0.9 &&
-               protein >= targetProtein * 0.95 &&
-               Math.abs(calories - targetCalories) <= 200;
-      });
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        
+        if (targetWater === 0 || targetProtein === 0 || targetCalories === 0) return false;
+        if (!(water >= targetWater * 0.9 &&
+              protein >= targetProtein * 0.95 &&
+              Math.abs(calories - targetCalories) <= 200)) {
+          return false;
+        }
+      }
+      return true;
     }
   }
 ];
@@ -1201,12 +1550,19 @@ export const HARD_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
       const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = calories - targetCalories;
-        return balance < 0 && balance >= -500;
-      });
+        if (!(balance < 0 && balance >= -500)) return false;
+      }
+      return true;
     }
   },
   {
@@ -1220,12 +1576,19 @@ export const HARD_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
       const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = calories - targetCalories;
-        return balance > 0 && balance <= 500;
-      });
+        if (!(balance > 0 && balance <= 500)) return false;
+      }
+      return true;
     }
   },
   {
@@ -1255,17 +1618,28 @@ export const HARD_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
       const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
         const carbs = day.dailyTotals?.carbs || 0;
-        const targetCarbs = day.dailyTotals?.targetCarbs || 200;
+        const targetCarbs = getTargetValue(day, userData, 'targetCarbs');
         const fat = day.dailyTotals?.fat || 0;
-        const targetFat = day.dailyTotals?.targetFat || 65;
-        return Math.abs(protein - targetProtein) / targetProtein <= 0.05 &&
-               Math.abs(carbs - targetCarbs) / targetCarbs <= 0.05 &&
-               Math.abs(fat - targetFat) / targetFat <= 0.05;
-      });
+        const targetFat = getTargetValue(day, userData, 'targetFat');
+        
+        if (targetProtein === 0 || targetCarbs === 0 || targetFat === 0) return false;
+        if (!(Math.abs(protein - targetProtein) / targetProtein <= 0.05 &&
+              Math.abs(carbs - targetCarbs) / targetCarbs <= 0.05 &&
+              Math.abs(fat - targetFat) / targetFat <= 0.05)) {
+          return false;
+        }
+      }
+      return true;
     }
   },
   {
@@ -1324,19 +1698,25 @@ export const HARD_BADGES = [
     points: 500,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
       let balancedCount = 0;
-      last30Days.forEach(day => {
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue; // Skip jour manquant ou pas de données
         (day.meals || []).forEach(meal => {
-          const total = (meal.foods || []).reduce((sum, f) => sum + (f.protein || 0) + (f.carbs || 0) + (f.fat || 0), 0);
+          const foods = meal.foods || [];
+          if (foods.length === 0) return; // Vérifier qu'il y a des aliments
+          const total = foods.reduce((sum, f) => sum + (f.protein || 0) + (f.carbs || 0) + (f.fat || 0), 0);
           if (total === 0) return;
-          const proteinPct = ((meal.foods || []).reduce((sum, f) => sum + (f.protein || 0), 0) / total) * 100;
-          const carbsPct = ((meal.foods || []).reduce((sum, f) => sum + (f.carbs || 0), 0) / total) * 100;
-          const fatPct = ((meal.foods || []).reduce((sum, f) => sum + (f.fat || 0), 0) / total) * 100;
+          const proteinPct = (foods.reduce((sum, f) => sum + (f.protein || 0), 0) / total) * 100;
+          const carbsPct = (foods.reduce((sum, f) => sum + (f.carbs || 0), 0) / total) * 100;
+          const fatPct = (foods.reduce((sum, f) => sum + (f.fat || 0), 0) / total) * 100;
           const deviation = Math.abs(proteinPct - 30) + Math.abs(carbsPct - 40) + Math.abs(fatPct - 30);
           if (deviation < 30) balancedCount++;
         });
-      });
+      }
       return balancedCount >= 30;
     }
   },
@@ -1350,12 +1730,18 @@ export const HARD_BADGES = [
     points: 500,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 14) return false;
-      const last14Days = userData.nutritionHistory.slice(-14);
-      return last14Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 14; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
-        return protein >= targetProtein * 0.95;
-      });
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
+        if (targetProtein === 0) return false;
+        if (protein < targetProtein * 0.95) return false;
+      }
+      return true;
     }
   },
   {
@@ -1388,12 +1774,19 @@ export const HARD_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 14) return false;
       const last14Days = userData.nutritionHistory.slice(-14);
-      return last14Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 14; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = Math.abs(calories - targetCalories);
-        return balance <= 200;
-      });
+        if (balance > 200) return false;
+      }
+      return true;
     }
   },
   {
@@ -1423,13 +1816,18 @@ export const HARD_BADGES = [
     points: 500,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const dinner = (day.meals || []).find(m => m.type === 'dinner');
-        if (!dinner) return false;
-        const calories = (dinner.foods || []).reduce((sum, f) => sum + (f.calories || 0), 0);
-        return calories <= 600;
-      });
+        if (!dinner || !dinner.foods || dinner.foods.length === 0) return false; // Vérifier qu'il y a des aliments
+        const calories = dinner.foods.reduce((sum, f) => sum + (f.calories || 0), 0);
+        if (calories > 600) return false;
+      }
+      return true;
     }
   },
   {
@@ -1442,15 +1840,20 @@ export const HARD_BADGES = [
     points: 500,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
       const uniqueFoods = new Set();
-      last30Days.forEach(day => {
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue; // Skip jour manquant ou pas de données
         (day.meals || []).forEach(meal => {
-          (meal.foods || []).forEach(food => {
-            if (food.name) uniqueFoods.add(food.name.toLowerCase());
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name) uniqueFoods.add(food.name.toLowerCase());
           });
         });
-      });
+      }
       return uniqueFoods.size >= 10;
     }
   },
@@ -1464,11 +1867,16 @@ export const HARD_BADGES = [
     points: 500,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const water = day.dailyTotals?.waterIntake || 0;
-        return water >= 2000;
-      });
+        if (water < 2000) return false;
+      }
+      return true;
     }
   },
   {
@@ -1497,13 +1905,17 @@ export const HARD_BADGES = [
     rarity: 'epic',
     points: 500,
     condition: (userData) => {
-      // Note: Nécessite tracking des types de protéines
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory avec hasRealNutritionData
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
       const uniqueFoods = new Set();
       userData.nutritionHistory.forEach(day => {
+        if (!hasRealNutritionData(day)) return; // Skip jours sans données réelles
         (day.meals || []).forEach(meal => {
-          (meal.foods || []).forEach(food => {
-            if (food.name && (food.protein || 0) > 5) uniqueFoods.add(food.name.toLowerCase());
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name && (food.protein || 0) > 5) {
+              uniqueFoods.add(food.name.toLowerCase());
+            }
           });
         });
       });
@@ -1566,20 +1978,31 @@ export const HARD_BADGES = [
     points: 500,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 7) return false;
-      const last7Days = userData.nutritionHistory.slice(-7);
-      return last7Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 7; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        
         const water = day.dailyTotals?.waterIntake || 0;
-        const targetWater = day.dailyTotals?.targetWater || 2500;
+        const targetWater = getTargetValue(day, userData, 'targetWater');
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
-        const fiber = day.dailyTotals?.fiber || 0;
-        return water >= targetWater * 0.9 &&
-               protein >= targetProtein * 0.95 &&
-               Math.abs(calories - targetCalories) <= 200 &&
-               fiber >= 25;
-      });
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        // ✅ CORRECTION CRITIQUE : fiber n'existe pas dans dailyTotals, calculer depuis meals.foods
+        const fiber = calculateFiberFromMeals(day);
+        
+        if (targetWater === 0 || targetProtein === 0 || targetCalories === 0) return false;
+        if (!(water >= targetWater * 0.9 &&
+              protein >= targetProtein * 0.95 &&
+              Math.abs(calories - targetCalories) <= 200 &&
+              fiber >= 25)) {
+          return false;
+        }
+      }
+      return true;
     }
   }
 ];
@@ -1626,17 +2049,28 @@ export const HARDCORE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 21) return false;
       const last21Days = userData.nutritionHistory.slice(-21);
-      return last21Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 21; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
         const carbs = day.dailyTotals?.carbs || 0;
-        const targetCarbs = day.dailyTotals?.targetCarbs || 200;
+        const targetCarbs = getTargetValue(day, userData, 'targetCarbs');
         const fat = day.dailyTotals?.fat || 0;
-        const targetFat = day.dailyTotals?.targetFat || 65;
-        return Math.abs(protein - targetProtein) / targetProtein <= 0.05 &&
-               Math.abs(carbs - targetCarbs) / targetCarbs <= 0.05 &&
-               Math.abs(fat - targetFat) / targetFat <= 0.05;
-      });
+        const targetFat = getTargetValue(day, userData, 'targetFat');
+        
+        if (targetProtein === 0 || targetCarbs === 0 || targetFat === 0) return false;
+        if (!(Math.abs(protein - targetProtein) / targetProtein <= 0.05 &&
+              Math.abs(carbs - targetCarbs) / targetCarbs <= 0.05 &&
+              Math.abs(fat - targetFat) / targetFat <= 0.05)) {
+          return false;
+        }
+      }
+      return true;
     }
   },
   {
@@ -1650,12 +2084,19 @@ export const HARDCORE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 60) return false;
       const last60Days = userData.nutritionHistory.slice(-60);
-      return last60Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 60; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = calories - targetCalories;
-        return balance < 0 && balance >= -500;
-      });
+        if (!(balance < 0 && balance >= -500)) return false;
+      }
+      return true;
     }
   },
   {
@@ -1669,12 +2110,19 @@ export const HARDCORE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 60) return false;
       const last60Days = userData.nutritionHistory.slice(-60);
-      return last60Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 60; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = calories - targetCalories;
-        return balance > 0 && balance <= 500;
-      });
+        if (!(balance > 0 && balance <= 500)) return false;
+      }
+      return true;
     }
   },
   {
@@ -1687,17 +2135,19 @@ export const HARDCORE_BADGES = [
     points: 1000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
-        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles AVANT de valider l'absence
-        if (!hasRealNutritionData(day)) return false;
-        
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
         const totalSugar = meals.reduce((sum, meal) => {
           return sum + (meal.foods || []).reduce((s, f) => s + (f.addedSugar || f.sugar || 0), 0);
         }, 0);
-        return totalSugar <= 5;
-      });
+        if (totalSugar > 5) return false;
+      }
+      return true;
     }
   },
   {
@@ -1736,11 +2186,18 @@ export const HARDCORE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 60) return false;
       const last60Days = userData.nutritionHistory.slice(-60);
-      return last60Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 60; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day) return false;
         const water = day.dailyTotals?.waterIntake || 0;
-        const targetWater = day.dailyTotals?.targetWater || 2500;
-        return water >= targetWater * 0.95;
-      });
+        const targetWater = getTargetValue(day, userData, 'targetWater');
+        if (targetWater === 0) return false;
+        if (water < targetWater * 0.95) return false;
+      }
+      return true;
     }
   },
   {
@@ -1779,15 +2236,20 @@ export const HARDCORE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
       const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
-        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles AVANT de valider l'absence
-        if (!hasRealNutritionData(day)) return false;
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = calories - targetCalories;
-        return balance <= 500; // Pas de dépassement > 500 kcal
-      });
+        if (balance > 500) return false; // Pas de dépassement > 500 kcal
+      }
+      return true;
     }
   },
   {
@@ -1800,18 +2262,27 @@ export const HARDCORE_BADGES = [
     points: 1000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
-      const avgCompliance = last30Days.reduce((sum, day) => {
-        return sum + (day.complianceScore || day.dailyTotals?.complianceScore || 0);
-      }, 0) / last30Days.length;
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      let totalCompliance = 0;
+      let daysWithData = 0;
       const uniqueFoods = new Set();
-      last30Days.forEach(day => {
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue;
+        const compliance = day.complianceScore || day.dailyTotals?.complianceScore || 0;
+        totalCompliance += compliance;
+        daysWithData++;
         (day.meals || []).forEach(meal => {
-          (meal.foods || []).forEach(food => {
-            if (food.name) uniqueFoods.add(food.name.toLowerCase());
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name) uniqueFoods.add(food.name.toLowerCase());
           });
         });
-      });
+      }
+      if (daysWithData === 0) return false;
+      const avgCompliance = totalCompliance / daysWithData;
       return avgCompliance >= 80 && uniqueFoods.size >= 50;
     }
   },
@@ -1844,11 +2315,17 @@ export const HARDCORE_BADGES = [
     points: 1000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      if (!userData.activeProgram) return false;
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const compliance = day.complianceScore || day.dailyTotals?.complianceScore || 0;
-        return compliance >= 80;
-      }) && userData.activeProgram !== null;
+        if (compliance < 80) return false;
+      }
+      return true;
     }
   },
   {
@@ -1862,12 +2339,16 @@ export const HARDCORE_BADGES = [
     condition: (userData) => {
       // Note: Nécessite tracking de l'heure des repas
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
       let count = 0;
-      last30Days.forEach(day => {
-        const dinner = (day.meals || []).find(m => m.type === 'dinner');
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) continue; // Skip jour manquant ou pas de données
+        const dinner = (day.meals || []).find(m => m.type === 'dinner' && (m.foods || []).length > 0);
         if (dinner) count++;
-      });
+      }
       return count >= 30;
     }
   },
@@ -1881,11 +2362,17 @@ export const HARDCORE_BADGES = [
     points: 1000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
-        const fiber = day.dailyTotals?.fiber || 0;
-        return fiber >= 25 && fiber <= 35;
-      });
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et calculer fiber depuis meals.foods
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        // ✅ CORRECTION CRITIQUE : fiber n'existe pas dans dailyTotals, calculer depuis meals.foods
+        const fiber = calculateFiberFromMeals(day);
+        if (fiber < 25 || fiber > 35) return false;
+      }
+      return true;
     }
   },
   {
@@ -1958,14 +2445,23 @@ export const HARDCORE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
       const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
-        const balance = calories - targetCalories;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
-        return balance > 0 && balance <= 500 && protein >= targetProtein * 0.95;
-      });
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
+        
+        if (targetCalories === 0 || targetProtein === 0) return false;
+        const balance = calories - targetCalories;
+        if (!(balance > 0 && balance <= 500 && protein >= targetProtein * 0.95)) return false;
+      }
+      return true;
     }
   },
   {
@@ -1978,12 +2474,18 @@ export const HARDCORE_BADGES = [
     points: 1000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
-      const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
-        return protein >= targetProtein * 0.95;
-      });
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
+        if (targetProtein === 0) return false;
+        if (protein < targetProtein * 0.95) return false;
+      }
+      return true;
     }
   }
 ];
@@ -2027,17 +2529,28 @@ export const IMPOSSIBLE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 30) return false;
       const last30Days = userData.nutritionHistory.slice(-30);
-      return last30Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 30; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
         const carbs = day.dailyTotals?.carbs || 0;
-        const targetCarbs = day.dailyTotals?.targetCarbs || 200;
+        const targetCarbs = getTargetValue(day, userData, 'targetCarbs');
         const fat = day.dailyTotals?.fat || 0;
-        const targetFat = day.dailyTotals?.targetFat || 65;
-        return Math.abs(protein - targetProtein) / targetProtein <= 0.03 &&
-               Math.abs(carbs - targetCarbs) / targetCarbs <= 0.03 &&
-               Math.abs(fat - targetFat) / targetFat <= 0.03;
-      });
+        const targetFat = getTargetValue(day, userData, 'targetFat');
+        
+        if (targetProtein === 0 || targetCarbs === 0 || targetFat === 0) return false;
+        if (!(Math.abs(protein - targetProtein) / targetProtein <= 0.03 &&
+              Math.abs(carbs - targetCarbs) / targetCarbs <= 0.03 &&
+              Math.abs(fat - targetFat) / targetFat <= 0.03)) {
+          return false;
+        }
+      }
+      return true;
     }
   },
   {
@@ -2073,17 +2586,19 @@ export const IMPOSSIBLE_BADGES = [
     points: 2000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 90) return false;
-      const last90Days = userData.nutritionHistory.slice(-90);
-      return last90Days.every(day => {
-        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles
-        if (!hasRealNutritionData(day)) return false;
-        
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 90; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
         const hasBreakfast = meals.some(m => m.type === 'breakfast' && (m.foods || []).length > 0);
         const hasLunch = meals.some(m => m.type === 'lunch' && (m.foods || []).length > 0);
         const hasDinner = meals.some(m => m.type === 'dinner' && (m.foods || []).length > 0);
-        return hasBreakfast && hasLunch && hasDinner;
-      });
+        if (!(hasBreakfast && hasLunch && hasDinner)) return false;
+      }
+      return true;
     }
   },
   {
@@ -2097,12 +2612,19 @@ export const IMPOSSIBLE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 90) return false;
       const last90Days = userData.nutritionHistory.slice(-90);
-      return last90Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 90; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = calories - targetCalories;
-        return balance < 0 && balance >= -500;
-      });
+        if (!(balance < 0 && balance >= -500)) return false;
+      }
+      return true;
     }
   },
   {
@@ -2116,12 +2638,19 @@ export const IMPOSSIBLE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 90) return false;
       const last90Days = userData.nutritionHistory.slice(-90);
-      return last90Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 90; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const balance = calories - targetCalories;
-        return balance > 0 && balance <= 500;
-      });
+        if (!(balance > 0 && balance <= 500)) return false;
+      }
+      return true;
     }
   },
   {
@@ -2136,12 +2665,16 @@ export const IMPOSSIBLE_BADGES = [
       if (!userData.nutritionHistory) return false;
       let balancedCount = 0;
       userData.nutritionHistory.forEach(day => {
+        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles avant de compter
+        if (!hasRealNutritionData(day)) return;
         (day.meals || []).forEach(meal => {
-          const total = (meal.foods || []).reduce((sum, f) => sum + (f.protein || 0) + (f.carbs || 0) + (f.fat || 0), 0);
+          const foods = meal.foods || [];
+          if (foods.length === 0) return; // Vérifier qu'il y a des aliments
+          const total = foods.reduce((sum, f) => sum + (f.protein || 0) + (f.carbs || 0) + (f.fat || 0), 0);
           if (total === 0) return;
-          const proteinPct = ((meal.foods || []).reduce((sum, f) => sum + (f.protein || 0), 0) / total) * 100;
-          const carbsPct = ((meal.foods || []).reduce((sum, f) => sum + (f.carbs || 0), 0) / total) * 100;
-          const fatPct = ((meal.foods || []).reduce((sum, f) => sum + (f.fat || 0), 0) / total) * 100;
+          const proteinPct = (foods.reduce((sum, f) => sum + (f.protein || 0), 0) / total) * 100;
+          const carbsPct = (foods.reduce((sum, f) => sum + (f.carbs || 0), 0) / total) * 100;
+          const fatPct = (foods.reduce((sum, f) => sum + (f.fat || 0), 0) / total) * 100;
           const deviation = Math.abs(proteinPct - 30) + Math.abs(carbsPct - 40) + Math.abs(fatPct - 30);
           if (deviation < 30) balancedCount++;
         });
@@ -2160,11 +2693,18 @@ export const IMPOSSIBLE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 365) return false;
       const last365Days = userData.nutritionHistory.slice(-365);
-      return last365Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 365; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day) return false;
         const water = day.dailyTotals?.waterIntake || 0;
-        const targetWater = day.dailyTotals?.targetWater || 2500;
-        return water >= targetWater * 0.95;
-      });
+        const targetWater = getTargetValue(day, userData, 'targetWater');
+        if (targetWater === 0) return false;
+        if (water < targetWater * 0.95) return false;
+      }
+      return true;
     }
   },
   {
@@ -2177,19 +2717,21 @@ export const IMPOSSIBLE_BADGES = [
     points: 2000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 365) return false;
-      const last365Days = userData.nutritionHistory.slice(-365);
-      return last365Days.every(day => {
-        // ✅ CORRECTION : Vérifier qu'il y a des données nutritionnelles réelles AVANT de valider l'absence
-        if (!hasRealNutritionData(day)) return false;
-        
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 365; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const meals = day.meals || [];
-        return !meals.some(meal => {
+        if (meals.some(meal => {
           const foods = meal.foods || [];
           const calories = foods.reduce((sum, f) => sum + (f.calories || 0), 0);
           const protein = foods.reduce((sum, f) => sum + (f.protein || 0), 0);
           return calories > 800 && protein < 20;
-        });
-      });
+        })) return false;
+      }
+      return true;
     }
   },
   {
@@ -2202,10 +2744,13 @@ export const IMPOSSIBLE_BADGES = [
     points: 2000,
     condition: (userData) => {
       if (!userData.nutritionHistory) return false;
+      // ✅ CORRECTION : Ajouter hasRealNutritionData pour ne compter que les vraies recettes
       let recipeCount = 0;
       userData.nutritionHistory.forEach(day => {
+        if (!hasRealNutritionData(day)) return; // Skip jours sans données réelles
         (day.meals || []).forEach(meal => {
-          if ((meal.foods || []).length >= 3) recipeCount++;
+          const foods = meal.foods || [];
+          if (foods.length >= 3) recipeCount++; // Recette = au moins 3 ingrédients
         });
       });
       return recipeCount >= 50;
@@ -2221,11 +2766,16 @@ export const IMPOSSIBLE_BADGES = [
     points: 2000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 365) return false;
-      const last365Days = userData.nutritionHistory.slice(-365);
-      return last365Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et hasRealNutritionData
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 365; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false; // Jour manquant ou pas de données
         const compliance = day.complianceScore || day.dailyTotals?.complianceScore || 0;
-        return compliance >= 80;
-      });
+        if (compliance < 80) return false;
+      }
+      return true;
     }
   },
   {
@@ -2238,11 +2788,16 @@ export const IMPOSSIBLE_BADGES = [
     points: 2000,
     condition: (userData) => {
       if (!userData.nutritionHistory) return false;
+      // ✅ CORRECTION : Calculer directement depuis nutritionHistory avec hasRealNutritionData
       const uniqueFoods = new Set();
       userData.nutritionHistory.forEach(day => {
+        if (!hasRealNutritionData(day)) return; // Skip jours sans données réelles
         (day.meals || []).forEach(meal => {
-          (meal.foods || []).forEach(food => {
-            if (food.name && (food.protein || 0) > 5) uniqueFoods.add(food.name.toLowerCase());
+          const foods = meal.foods || [];
+          foods.forEach(food => {
+            if (food && food.name && (food.protein || 0) > 5) {
+              uniqueFoods.add(food.name.toLowerCase());
+            }
           });
         });
       });
@@ -2260,12 +2815,19 @@ export const IMPOSSIBLE_BADGES = [
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 365) return false;
       const last365Days = userData.nutritionHistory.slice(-365);
-      return last365Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et valeurs par défaut correctes
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 365; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        if (targetCalories === 0) return false;
         const ratio = calories / targetCalories;
-        return ratio >= 0.9 && ratio <= 1.1;
-      });
+        if (ratio < 0.9 || ratio > 1.1) return false;
+      }
+      return true;
     }
   },
   {
@@ -2356,11 +2918,17 @@ export const IMPOSSIBLE_BADGES = [
     points: 2000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 365) return false;
-      const last365Days = userData.nutritionHistory.slice(-365);
-      return last365Days.every(day => {
-        const fiber = day.dailyTotals?.fiber || 0;
-        return fiber >= 25 && fiber <= 35;
-      });
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper et calculer fiber depuis meals.foods
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 365; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        // ✅ CORRECTION CRITIQUE : fiber n'existe pas dans dailyTotals, calculer depuis meals.foods
+        const fiber = calculateFiberFromMeals(day);
+        if (fiber < 25 || fiber > 35) return false;
+      }
+      return true;
     }
   },
   {
@@ -2373,20 +2941,31 @@ export const IMPOSSIBLE_BADGES = [
     points: 2000,
     condition: (userData) => {
       if (!userData.nutritionHistory || userData.nutritionHistory.length < 365) return false;
-      const last365Days = userData.nutritionHistory.slice(-365);
-      return last365Days.every(day => {
+      // ✅ CORRECTION : Vérifier consécutivité avec DateHelper
+      const today = DateHelper.getTodayLocal();
+      for (let i = 0; i < 365; i++) {
+        const expectedDate = DateHelper.getDaysAgoLocal(i);
+        const day = userData.nutritionHistory.find(d => d.date === expectedDate);
+        if (!day || !hasRealNutritionData(day)) return false;
+        
         const water = day.dailyTotals?.waterIntake || 0;
-        const targetWater = day.dailyTotals?.targetWater || 2500;
+        const targetWater = getTargetValue(day, userData, 'targetWater');
         const protein = day.dailyTotals?.protein || 0;
-        const targetProtein = day.dailyTotals?.targetProtein || 150;
+        const targetProtein = getTargetValue(day, userData, 'targetProtein');
         const calories = day.dailyTotals?.calories || 0;
-        const targetCalories = day.dailyTotals?.targetCalories || 2000;
-        const fiber = day.dailyTotals?.fiber || 0;
-        return water >= targetWater * 0.95 &&
-               protein >= targetProtein * 0.95 &&
-               Math.abs(calories - targetCalories) <= 200 &&
-               fiber >= 25;
-      });
+        const targetCalories = getTargetValue(day, userData, 'targetCalories');
+        // ✅ CORRECTION CRITIQUE : fiber n'existe pas dans dailyTotals, calculer depuis meals.foods
+        const fiber = calculateFiberFromMeals(day);
+        
+        if (targetWater === 0 || targetProtein === 0 || targetCalories === 0) return false;
+        if (!(water >= targetWater * 0.95 &&
+              protein >= targetProtein * 0.95 &&
+              Math.abs(calories - targetCalories) <= 200 &&
+              fiber >= 25)) {
+          return false;
+        }
+      }
+      return true;
     }
   }
 ];
