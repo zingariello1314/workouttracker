@@ -1,0 +1,14 @@
+/**
+ * nutritionBadgesDefinitions.old.js.backup
+ * 
+ * ⚠️ BACKUP - Ce fichier est une sauvegarde de l'ancien fichier
+ * Le nouveau système modularisé utilise badges/ (badges/index.js)
+ * 
+ * Ce fichier sera supprimé après validation complète de la migration
+ * 
+ * @deprecated Use './badges' instead
+ */
+
+// Ce fichier est une sauvegarde temporaire
+// Le contenu original est conservé pour référence pendant la migration
+

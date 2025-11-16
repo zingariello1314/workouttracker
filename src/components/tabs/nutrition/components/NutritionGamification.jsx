@@ -23,10 +23,12 @@ import {
   Info,
   XCircle,
   CheckCircle,
-  Lock
+  Lock,
+  ArrowLeft
 } from 'lucide-react';
 import { useNutritionGamification } from '../../../../hooks/useNutritionGamification';
-import { ALL_BADGES } from '../../../../services/nutrition/nutritionBadgesDefinitions';
+import { ALL_BADGES } from '../../../../services/nutrition/badges';
+import BadgeDetailView from './BadgeDetailView';
 
 // ✅ OPTIMISATION 3.1 : Extraire fonctions constantes en dehors du composant
 const getRarityColor = (rarity) => {
@@ -59,10 +61,12 @@ const NutritionGamification = () => {
     enabled,
     newBadges,
     getLevelProgress,
-    checkBadges
+    checkBadges,
+    userData // Ajout de userData pour calculer progression badges
   } = useNutritionGamification({ enabled: true, autoCheck: true });
 
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'badges' | 'progress'
+  const [selectedBadge, setSelectedBadge] = useState(null); // Badge sélectionné pour vue détail (null = liste, badge object = vue détail)
 
   // ✅ OPTIMISATION 1.5 : getLevelProgress est maintenant une valeur, pas une fonction
   const levelProgress = getLevelProgress;
@@ -181,31 +185,46 @@ const NutritionGamification = () => {
           <Trophy size={20} className="text-yellow-400" /> Gamification
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Notifications nouveaux badges */}
-        {newBadges.length > 0 && (
-          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Trophy size={20} className="text-green-400" />
-              <h3 className="text-green-400 font-semibold">Nouveaux badges débloqués !</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {newBadges.map(badge => (
-                <div
-                  key={badge.id}
-                  className={`rounded-lg p-3 border ${getRarityColor(badge.rarity)}`}
-                >
-                  <div className="text-2xl mb-1">{badge.icon}</div>
-                  <div className="text-sm font-medium text-white">{badge.name}</div>
-                  <div className="text-xs text-slate-400">+{badge.points} XP</div>
+      <CardContent className="relative">
+        {/* Vue détail badge (remplit le Card) */}
+        {selectedBadge ? (
+          <BadgeDetailView
+            badge={selectedBadge}
+            isUnlocked={selectedBadge.isUnlocked}
+            unlockedDate={selectedBadge.unlockedDate}
+            userData={userData}
+            onBack={() => setSelectedBadge(null)}
+          />
+        ) : (
+          <>
+            {/* Notifications nouveaux badges */}
+            {newBadges.length > 0 && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy size={20} className="text-green-400" />
+                  <h3 className="text-green-400 font-semibold">Nouveaux badges débloqués !</h3>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+                <div className="grid grid-cols-2 gap-2">
+                  {newBadges.map(badge => (
+                    <div
+                      key={badge.id}
+                      className={`rounded-lg p-3 border ${getRarityColor(badge.rarity)} cursor-pointer hover:scale-105 transition-transform`}
+                      onClick={() => {
+                        const fullBadge = allBadgesWithStatus.find(b => b.id === badge.id);
+                        if (fullBadge) setSelectedBadge(fullBadge);
+                      }}
+                    >
+                      <div className="text-2xl mb-1">{badge.icon}</div>
+                      <div className="text-sm font-medium text-white">{badge.name}</div>
+                      <div className="text-xs text-slate-400">+{badge.points} XP</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {/* Vue d'ensemble */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Vue d'ensemble */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* XP & Niveau */}
           <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
             <div className="flex items-center justify-between mb-3">
@@ -276,228 +295,235 @@ const NutritionGamification = () => {
                 : 'Aucun badge débloqué'}
             </div>
           </div>
-        </div>
+            </div>
 
-        {/* Onglets */}
-        <div className="flex gap-2 border-b border-slate-700">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'overview'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Vue d'ensemble
-          </button>
-          <button
-            onClick={() => setActiveTab('badges')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'badges'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Badges ({achievements.length}/{ALL_BADGES.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('progress')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'progress'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Progression
-          </button>
-        </div>
+            {/* Onglets */}
+            <div className="flex gap-2 border-b border-slate-700">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'overview'
+                    ? 'text-blue-400 border-b-2 border-blue-400'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Vue d'ensemble
+              </button>
+              <button
+                onClick={() => setActiveTab('badges')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'badges'
+                    ? 'text-blue-400 border-b-2 border-blue-400'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Badges ({achievements.length}/{ALL_BADGES.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('progress')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'progress'
+                    ? 'text-blue-400 border-b-2 border-blue-400'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Progression
+              </button>
+            </div>
 
-        {/* Contenu onglets */}
-        {activeTab === 'overview' && (
-          <div className="space-y-4">
-            {/* Badges récents */}
-            {recentBadges.length > 0 && (
-              <div>
-                <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                  <Award size={18} className="text-purple-400" /> Badges récents
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {recentBadges.map(badge => (
-                    <div
-                      key={badge.id}
-                      className={`rounded-lg p-3 border ${getRarityColor(badge.rarity)} text-center`}
-                    >
-                      <div className="text-3xl mb-2">{badge.icon}</div>
-                      <div className="text-xs font-medium text-white mb-1">{badge.name}</div>
-                      <div className="text-xs text-slate-400">{badge.category}</div>
+            {/* Contenu onglets */}
+            {activeTab === 'overview' && (
+              <div className="space-y-4">
+                {/* Badges récents */}
+                {recentBadges.length > 0 && (
+                  <div>
+                    <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                      <Award size={18} className="text-purple-400" /> Badges récents
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {recentBadges.map(badge => (
+                        <div
+                          key={badge.id}
+                          className={`rounded-lg p-3 border ${getRarityColor(badge.rarity)} text-center cursor-pointer hover:scale-105 transition-transform`}
+                          onClick={() => {
+                            const fullBadge = allBadgesWithStatus.find(b => b.id === badge.id);
+                            if (fullBadge) setSelectedBadge(fullBadge);
+                          }}
+                        >
+                          <div className="text-3xl mb-2">{badge.icon}</div>
+                          <div className="text-xs font-medium text-white mb-1">{badge.name}</div>
+                          <div className="text-xs text-slate-400">{badge.category}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                {/* Statistiques */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-900/50 rounded-lg p-3">
+                    <div className="text-xs text-slate-400 mb-1">XP Total</div>
+                    <div className="text-lg font-bold text-white">{levelProgress.currentXP}</div>
+                  </div>
+                  <div className="bg-slate-900/50 rounded-lg p-3">
+                    <div className="text-xs text-slate-400 mb-1">Streak Réelle</div>
+                    <div className="text-lg font-bold text-white">
+                      {nutritionStreak.actual} jour{nutritionStreak.actual > 1 ? 's' : ''}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Statistiques */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-900/50 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">XP Total</div>
-                <div className="text-lg font-bold text-white">{levelProgress.currentXP}</div>
-              </div>
-              <div className="bg-slate-900/50 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Streak Réelle</div>
-                <div className="text-lg font-bold text-white">
-                  {nutritionStreak.actual} jour{nutritionStreak.actual > 1 ? 's' : ''}
+            {activeTab === 'badges' && (
+              <div className="space-y-4">
+                {/* Statistiques badges */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-sm text-slate-400">
+                    {achievements.length} / {ALL_BADGES.length} badges débloqués
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {Math.round((achievements.length / ALL_BADGES.length) * 100)}% complété
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {activeTab === 'badges' && (
-          <div className="space-y-4">
-            {/* Statistiques badges */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-slate-400">
-                {achievements.length} / {ALL_BADGES.length} badges débloqués
-              </div>
-              <div className="text-xs text-slate-500">
-                {Math.round((achievements.length / ALL_BADGES.length) * 100)}% complété
-              </div>
-            </div>
-
-            {/* Tous les badges : débloqués en couleur, non débloqués grisés */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {sortedAllBadges.map(badge => {
-                const isUnlocked = badge.isUnlocked;
-                const baseClasses = `rounded-lg p-4 border transition-all relative ${
-                  isUnlocked 
-                    ? `${getRarityColor(badge.rarity)} hover:scale-105` 
-                    : 'border-slate-700 bg-slate-900/30 opacity-50 cursor-not-allowed'
-                }`;
-                
-                return (
-                  <div
-                    key={badge.id}
-                    className={baseClasses}
-                    title={isUnlocked ? badge.name : `${badge.name} - Non débloqué`}
-                  >
-                    {/* Badge de verrouillage pour non débloqués */}
-                    {!isUnlocked && (
-                      <div className="absolute top-2 right-2">
-                        <Lock size={16} className="text-slate-600" />
-                      </div>
-                    )}
+                {/* Tous les badges : débloqués en couleur, non débloqués grisés */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {sortedAllBadges.map(badge => {
+                    const isUnlocked = badge.isUnlocked;
+                    const baseClasses = `rounded-lg p-4 border transition-all relative ${
+                      isUnlocked 
+                        ? `${getRarityColor(badge.rarity)} hover:scale-105 cursor-pointer` 
+                        : 'border-slate-700 bg-slate-900/30 opacity-50 cursor-pointer hover:opacity-70'
+                    }`;
                     
-                    <div className="flex items-start justify-between mb-2">
-                      <div className={`text-3xl ${isUnlocked ? '' : 'grayscale'}`}>
-                        {badge.icon}
+                    return (
+                      <div
+                        key={badge.id}
+                        className={baseClasses}
+                        title={isUnlocked ? badge.name : `${badge.name} - Non débloqué`}
+                        onClick={() => setSelectedBadge(badge)}
+                      >
+                        {/* Badge de verrouillage pour non débloqués */}
+                        {!isUnlocked && (
+                          <div className="absolute top-2 right-2">
+                            <Lock size={16} className="text-slate-600" />
+                          </div>
+                        )}
+                        
+                        <div className="flex items-start justify-between mb-2">
+                          <div className={`text-3xl ${isUnlocked ? '' : 'grayscale'}`}>
+                            {badge.icon}
+                          </div>
+                          <div className={`text-xs px-2 py-0.5 rounded ${
+                            isUnlocked
+                              ? (badge.rarity === 'common' ? 'bg-slate-500 text-white' :
+                                 badge.rarity === 'rare' ? 'bg-blue-500 text-white' :
+                                 badge.rarity === 'epic' ? 'bg-purple-500 text-white' :
+                                 'bg-yellow-500 text-white')
+                              : 'bg-slate-700 text-slate-400'
+                          }`}>
+                            {badge.rarity}
+                          </div>
+                        </div>
+                        <div className={`text-sm font-medium mb-1 ${
+                          isUnlocked ? 'text-white' : 'text-slate-500'
+                        }`}>
+                          {badge.name}
+                        </div>
+                        <div className={`text-xs mb-2 ${
+                          isUnlocked ? 'text-slate-400' : 'text-slate-600'
+                        }`}>
+                          {badge.description}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className={`text-xs ${
+                            isUnlocked ? 'text-slate-500' : 'text-slate-700'
+                          }`}>
+                            {badge.formattedDate || 'Non débloqué'}
+                          </div>
+                          <div className={`text-xs ${
+                            isUnlocked ? 'text-yellow-400' : 'text-slate-600'
+                          }`}>
+                            +{badge.points} XP
+                          </div>
+                        </div>
                       </div>
-                      <div className={`text-xs px-2 py-0.5 rounded ${
-                        isUnlocked
-                          ? (badge.rarity === 'common' ? 'bg-slate-500 text-white' :
-                             badge.rarity === 'rare' ? 'bg-blue-500 text-white' :
-                             badge.rarity === 'epic' ? 'bg-purple-500 text-white' :
-                             'bg-yellow-500 text-white')
-                          : 'bg-slate-700 text-slate-400'
-                      }`}>
-                        {badge.rarity}
-                      </div>
-                    </div>
-                    <div className={`text-sm font-medium mb-1 ${
-                      isUnlocked ? 'text-white' : 'text-slate-500'
-                    }`}>
-                      {badge.name}
-                    </div>
-                    <div className={`text-xs mb-2 ${
-                      isUnlocked ? 'text-slate-400' : 'text-slate-600'
-                    }`}>
-                      {badge.description}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className={`text-xs ${
-                        isUnlocked ? 'text-slate-500' : 'text-slate-700'
-                      }`}>
-                        {badge.formattedDate || 'Non débloqué'}
-                      </div>
-                      <div className={`text-xs ${
-                        isUnlocked ? 'text-yellow-400' : 'text-slate-600'
-                      }`}>
-                        +{badge.points} XP
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'progress' && (
-          <div className="space-y-4">
-            {/* Progression niveau */}
-            <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                <Star size={18} className="text-yellow-400" /> Progression Niveau
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Niveau {levelProgress.level}</span>
-                  <span className="text-slate-300">
-                    {levelProgress.currentXP} / {levelProgress.xpForNextLevel} XP
-                  </span>
-                </div>
-                <div className="w-full bg-slate-700 rounded-full h-3">
-                  <div
-                    className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-3 rounded-full transition-all"
-                    style={{ width: `${levelProgress.progressPercent}%` }}
-                  />
-                </div>
-                <div className="text-sm text-slate-400">
-                  {levelProgress.xpNeeded} XP nécessaires pour le niveau {levelProgress.level + 1}
+                    );
+                  })}
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Streak détaillé */}
-            <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-              <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                <Flame size={18} className="text-orange-400" /> Série Nutrition
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Affichée</span>
-                  <span className="text-2xl font-bold text-orange-400">
-                    {nutritionStreak.current} jour{nutritionStreak.current > 1 ? 's' : ''}
-                  </span>
-                </div>
-                {nutritionStreak.actual > nutritionStreak.current && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-300">Réelle</span>
-                    <span className="text-lg font-medium text-slate-400">
-                      {nutritionStreak.actual} jour{nutritionStreak.actual > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                )}
-                {nutritionStreak.forgivenessUsed > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-300">Jours pardonnes</span>
-                    <span className="text-sm text-blue-400">
-                      {nutritionStreak.forgivenessUsed} / 2
-                    </span>
-                  </div>
-                )}
-                {nutritionStreak.status === 'maintenance' && (
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded p-2 mt-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle size={16} className="text-blue-400" />
-                      <span className="text-sm text-blue-400">
-                        Mode entretien activé (série ≥ 30 jours)
+            {activeTab === 'progress' && (
+              <div className="space-y-4">
+                {/* Progression niveau */}
+                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+                  <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                    <Star size={18} className="text-yellow-400" /> Progression Niveau
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-300">Niveau {levelProgress.level}</span>
+                      <span className="text-slate-300">
+                        {levelProgress.currentXP} / {levelProgress.xpForNextLevel} XP
                       </span>
                     </div>
+                    <div className="w-full bg-slate-700 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-3 rounded-full transition-all"
+                        style={{ width: `${levelProgress.progressPercent}%` }}
+                      />
+                    </div>
+                    <div className="text-sm text-slate-400">
+                      {levelProgress.xpNeeded} XP nécessaires pour le niveau {levelProgress.level + 1}
+                    </div>
                   </div>
-                )}
+                </div>
+
+                {/* Streak détaillé */}
+                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+                  <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+                    <Flame size={18} className="text-orange-400" /> Série Nutrition
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-300">Affichée</span>
+                      <span className="text-2xl font-bold text-orange-400">
+                        {nutritionStreak.current} jour{nutritionStreak.current > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    {nutritionStreak.actual > nutritionStreak.current && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-300">Réelle</span>
+                        <span className="text-lg font-medium text-slate-400">
+                          {nutritionStreak.actual} jour{nutritionStreak.actual > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
+                    {nutritionStreak.forgivenessUsed > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-300">Jours pardonnes</span>
+                        <span className="text-sm text-blue-400">
+                          {nutritionStreak.forgivenessUsed} / 2
+                        </span>
+                      </div>
+                    )}
+                    {nutritionStreak.status === 'maintenance' && (
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded p-2 mt-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle size={16} className="text-blue-400" />
+                          <span className="text-sm text-blue-400">
+                            Mode entretien activé (série ≥ 30 jours)
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

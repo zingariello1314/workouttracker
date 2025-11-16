@@ -19,7 +19,7 @@
 import logger from '../../utils/logger';
 import { openNutritionDB, STORE_GAMIFICATION } from '../../hooks/nutritionDataUtils';
 import { DateHelper } from '../../utils/dateHelper';
-import { ALL_BADGES } from './nutritionBadgesDefinitions';
+import { ALL_BADGES } from './badges';
 
 const log = logger.module('nutritionGamification');
 
@@ -52,11 +52,11 @@ export const BADGE_RARITY = {
 };
 
 // ==================== DÉFINITIONS BADGES ====================
-// ✅ Tous les badges sont maintenant définis dans nutritionBadgesDefinitions.js
-// Import des 100 badges organisés par difficulté
+// ✅ Tous les badges sont maintenant définis dans badges/ (modularisé par difficulté)
+// Import des 100 badges organisés par difficulté depuis badges/index.js
 // Les anciens badges (CONSISTENCY_BADGES, NUTRITION_BADGES, PROGRESSION_BADGES) 
 // sont conservés pour compatibilité mais ne sont plus utilisés
-// Utiliser ALL_BADGES depuis nutritionBadgesDefinitions.js
+// Utiliser ALL_BADGES depuis badges/
 
 // ==================== CALCUL STREAKS AVEC FORGIVENESS ====================
 

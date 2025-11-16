@@ -395,12 +395,27 @@ export const useNutritionGamification = (options = {}) => {
     };
   }, [gamificationData?.experience]);
 
+  // ✅ NOUVEAU : Stocker userData pour affichage progression badges
+  const [currentUserData, setCurrentUserData] = useState(null);
+
+  // Mettre à jour userData quand il est disponible
+  useEffect(() => {
+    if (dbReady && enabled) {
+      prepareUserData().then(data => {
+        if (data && isMountedRef.current) {
+          setCurrentUserData(data);
+        }
+      });
+    }
+  }, [dbReady, enabled, prepareUserData]);
+
   return {
     // Données
     achievements: gamificationData?.achievements || [],
     experience: gamificationData?.experience || { currentXP: 0, level: 1 },
     streaks: gamificationData?.streaks || { nutrition: { current: 0, actual: 0 } },
     newBadges,
+    userData: currentUserData, // ✅ NOUVEAU : Exposer userData pour calcul progression badges
     
     // État
     loading,
