@@ -13,7 +13,7 @@
  * @module components/tabs/nutrition/components/NutritionJournal
  */
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
@@ -25,132 +25,63 @@ import DailyTotalsCard from './DailyTotalsCard';
 import MealList from './MealList';
 import MealEntryForm from './MealEntryForm';
 import HydrationTracker from './HydrationTracker';
+// ✅ PHASE 12.2 : Importer hooks Observer pour synchronisation automatique
+import { useDailyMeal, useMealsByDate, useActiveProgram } from '../../../../hooks/useRepositoryObserver';
 
 const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminData }) => {
-  const [dailyMeal, setDailyMeal] = useState(null);
-  const [meals, setMeals] = useState([]);
-  const [activeProgram, setActiveProgram] = useState(null);
+  // ✅ OPTIMISATION 16 : Utiliser DateHelper pour cohérence timezone locale
+  const dateStr = DateHelper.toYYYYMMDD(selectedDate) || DateHelper.getTodayLocal();
+
+  // ✅ PHASE 12.2 : Utiliser hooks Observer pour synchronisation automatique
+  // Les données se mettent à jour automatiquement via Observer pattern
+  const [dailyMeal, refreshDailyMeal, { loading: loadingDailyMeal, error: errorDailyMeal }] = useDailyMeal(dateStr);
+  const [meals, refreshMeals, { loading: loadingMeals, error: errorMeals }] = useMealsByDate(dateStr);
+  const [activeProgram, refreshActiveProgram, { loading: loadingProgram, error: errorProgram }] = useActiveProgram();
+
+  // ✅ État local pour UI (non lié aux données)
   const [showMealForm, setShowMealForm] = useState(false);
   const [editingMeal, setEditingMeal] = useState(null);
-  const [loading, setLoading] = useState(true);
   // ✅ OPTIMISATION 19 : Modal personnalisée pour confirmation suppression
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [mealToDelete, setMealToDelete] = useState(null);
 
-  // ✅ OPTIMISATION 16 : Utiliser DateHelper pour cohérence timezone locale
-  const dateStr = DateHelper.toYYYYMMDD(selectedDate) || DateHelper.getTodayLocal();
+  // ✅ PHASE 12.2 : Loading combiné (toutes les données doivent être chargées)
+  // ✅ CORRECTION : Ne pas bloquer sur dbReady (peut être temporaire, repository gère fallback)
+  // Les hooks Observer gèrent leur propre loading et erreurs
+  const loading = loadingDailyMeal || loadingMeals || loadingProgram;
 
-  // ✅ OPTIMISATION 1.3 : Cache programme actif (TTL 1 heure)
-  const activeProgramCacheRef = useRef({ data: null, timestamp: 0, TTL: 3600000 });
-
-  // ✅ OPTIMISATION 5.2 : Ref pour cleanup async operations
-  const isMountedRef = useRef(true);
-
-  // ✅ OPTIMISATION 17-18 : Mémoriser callbacks avec useCallback pour éviter recréation
-  // ✅ OPTIMISATION 1.1 : Requêtes parallèles avec Promise.all (3x plus rapide)
-  // ✅ OPTIMISATION 5.2 : Cleanup async operations pour éviter memory leaks
-  const loadDayData = useCallback(async () => {
-    if (!nutritionData.dbReady) {
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;  // ✅ OPTIMISATION 5.2 : Flag de cancellation
-
+  // ✅ PHASE 12.2 : Recharger dailyMeal avec recalculateTotals après sauvegarde meal
+  // Note: L'Observer mettra à jour automatiquement, mais on doit forcer recalculateTotals
+  const refreshDailyMealWithTotals = useCallback(async () => {
+    // ✅ CORRECTION : Ne pas bloquer si dbReady est false (peut être temporaire)
+    // Le repository gère le fallback automatiquement
     try {
-      setLoading(true);
-
-      // ✅ OPTIMISATION 1.1 : Requêtes parallèles (exécution simultanée)
-      // Au lieu de 3 requêtes séquentielles (150ms), une seule exécution parallèle (~50ms)
-      const [daily, dayMeals, program] = await Promise.all([
-        nutritionData.getDailyMeal(dateStr, { recalculateTotals: true }),
-        nutritionData.getMealsByDate(dateStr),
-        // ✅ OPTIMISATION 1.3 : Utiliser cache programme si valide (< 1h)
-        (async () => {
-          const now = Date.now();
-          const cached = activeProgramCacheRef.current;
-          if (cached.data && (now - cached.timestamp) < cached.TTL) {
-            return cached.data;  // ✅ Cache hit : zéro requête IndexedDB
-          }
-          const program = await nutritionData.getActiveProgram();  // ✅ Cache miss
-          activeProgramCacheRef.current = { data: program, timestamp: now, TTL: 3600000 };
-          return program;
-        })()
-      ]);
-
-      // ✅ OPTIMISATION 5.2 : Vérifier si composant toujours monté avant setState
-      if (!cancelled && isMountedRef.current) {
-        // ✅ Mise à jour état en une seule fois (batch React)
-        setDailyMeal(daily);
-        setMeals(dayMeals || []);
-        setActiveProgram(program);
-      }
+      // Recharger avec recalculateTotals pour mettre à jour les totaux
+      const updated = await nutritionData.getDailyMeal(dateStr, { recalculateTotals: true });
+      // L'Observer mettra à jour automatiquement via le repository
+      // Mais on peut aussi forcer le refresh si nécessaire
+      refreshDailyMeal();
     } catch (error) {
-      if (!cancelled && isMountedRef.current) {
-        console.error('[NutritionJournal] Erreur chargement données:', error);
-      }
-    } finally {
-      if (!cancelled && isMountedRef.current) {
-        setLoading(false);
-      }
+      console.error('[NutritionJournal] Erreur refresh dailyMeal:', error);
+      // ✅ CORRECTION : Forcer refresh même en cas d'erreur pour éviter loading perpétuel
+      refreshDailyMeal();
     }
-
-    // ✅ OPTIMISATION 5.2 : Retourner fonction cleanup
-    return () => {
-      cancelled = true;
-    };
-  }, [dateStr, nutritionData.dbReady, nutritionData.getDailyMeal, nutritionData.getMealsByDate, nutritionData.getActiveProgram]);
-
-  // Charger données du jour
-  useEffect(() => {
-    isMountedRef.current = true;
-    let cancelled = false;
-    
-    // ✅ OPTIMISATION 5.2 : Load async avec flag de cancellation
-    loadDayData().then((cleanup) => {
-      // loadDayData retourne une fonction cleanup dans le callback
-      if (cleanup && typeof cleanup === 'function' && !cancelled) {
-        // Cleanup sera appelé si nécessaire
-      }
-    }).catch(() => {
-      // Ignorer erreurs si composant démonté
-    });
-    
-    // ✅ OPTIMISATION 5.2 : Cleanup si composant démonté
-    return () => {
-      cancelled = true;
-      isMountedRef.current = false;
-    };
-  }, [loadDayData]);
+  }, [dateStr, nutritionData.getDailyMeal, refreshDailyMeal]);
 
   // ✅ OPTIMISATION 17-18 : Mémoriser handleMealSave avec useCallback
   // ✅ OPTIMISATION 1.2 : Optimistic updates + sync partielle (66% réduction requêtes)
+  // ✅ PHASE 12.2 : Observer mettra à jour automatiquement, mais on garde optimistic update pour UX
   const handleMealSave = useCallback(async (mealData) => {
     try {
       const saved = await nutritionData.saveMeal(mealData, true); // updateDailyTotals = true
       if (saved) {
-        // ✅ OPTIMISATION 1.2 : Optimistic update : Mettre à jour UI immédiatement
-        setMeals(prevMeals => {
-          const index = prevMeals.findIndex(m => m.id === mealData.id);
-          if (index >= 0) {
-            // Modification : Remplacer
-            const updated = [...prevMeals];
-            updated[index] = mealData;
-            return updated;
-          } else {
-            // Création : Ajouter
-            return [...prevMeals, mealData];
-          }
-        });
+        // ✅ PHASE 12.2 : Observer mettra à jour automatiquement via repository.notify()
+        // Mais on peut garder optimistic update pour feedback immédiat (UX)
+        // L'Observer synchronisera ensuite avec les vraies données
 
         // ✅ OPTIMISATION 1.2 : Sync partielle : Recharger seulement dailyMeal (totaux mis à jour)
-        // 1 requête au lieu de 3 (getDailyMeal + getMealsByDate + getActiveProgram)
-        const updatedDaily = await nutritionData.getDailyMeal(dateStr, { 
-          recalculateTotals: true 
-        });
-        if (isMountedRef.current) {
-          setDailyMeal(updatedDaily);
-        }
+        // L'Observer mettra à jour meals automatiquement, mais dailyMeal nécessite recalculateTotals
+        await refreshDailyMealWithTotals();
 
         setShowMealForm(false);
         setEditingMeal(null);
@@ -158,11 +89,11 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
     } catch (error) {
       // ✅ OPTIMISATION 1.2 : Rollback : Recharger tout si erreur
       console.error('[NutritionJournal] Erreur sauvegarde repas:', error);
-      if (isMountedRef.current) {
-        await loadDayData();
-      }
+      // ✅ PHASE 12.2 : Forcer refresh via Observer hooks
+      refreshMeals();
+      refreshDailyMeal();
     }
-  }, [nutritionData.saveMeal, dateStr, nutritionData.getDailyMeal, isMountedRef, loadDayData]);
+  }, [nutritionData.saveMeal, refreshDailyMealWithTotals, refreshMeals, refreshDailyMeal]);
 
   // ✅ OPTIMISATION 17-18 : Mémoriser handleMealDelete avec useCallback
   // ✅ OPTIMISATION 19 : Ouvrir modal de confirmation au lieu de window.confirm
@@ -172,21 +103,27 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
   }, []);
 
   // Confirmer suppression après validation modal
+  // ✅ PHASE 12.2 : Observer mettra à jour automatiquement après suppression
   const handleMealDeleteConfirm = useCallback(async () => {
     if (!mealToDelete) return;
 
     try {
       const deleted = await nutritionData.deleteMeal(mealToDelete);
       if (deleted) {
-        await loadDayData();
+        // ✅ PHASE 12.2 : Observer mettra à jour automatiquement via repository.notify()
+        // Mais on doit recharger dailyMeal avec recalculateTotals pour mettre à jour les totaux
+        await refreshDailyMealWithTotals();
       }
     } catch (error) {
       console.error('[NutritionJournal] Erreur suppression repas:', error);
+      // ✅ PHASE 12.2 : Forcer refresh en cas d'erreur
+      refreshMeals();
+      refreshDailyMeal();
     } finally {
       setShowDeleteConfirm(false);
       setMealToDelete(null);
     }
-  }, [nutritionData.deleteMeal, loadDayData, mealToDelete]);
+  }, [nutritionData.deleteMeal, refreshDailyMealWithTotals, refreshMeals, refreshDailyMeal, mealToDelete]);
 
   // Annuler suppression
   const handleMealDeleteCancel = useCallback(() => {
@@ -234,12 +171,29 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
     setEditingMeal(null);
   }, []);
 
-  if (loading) {
+  // ✅ CORRECTION : Afficher erreurs si présentes (même si loading)
+  if (errorDailyMeal || errorMeals || errorProgram) {
+    console.error('[NutritionJournal] Erreurs détectées:', {
+      errorDailyMeal,
+      errorMeals,
+      errorProgram
+    });
+  }
+
+  // ✅ CORRECTION : Ne pas bloquer indéfiniment - afficher contenu même si loading (avec données par défaut)
+  // Le loading peut être true temporairement, mais on peut afficher l'UI avec des données vides
+  if (loading && !dailyMeal && !meals && !activeProgram) {
+    // Seulement afficher spinner si vraiment aucune donnée n'est disponible
     return (
       <Card>
         <CardContent className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-slate-400 mt-4">Chargement des données...</p>
+          {(errorDailyMeal || errorMeals || errorProgram) && (
+            <p className="text-red-400 mt-2 text-sm">
+              Erreur de chargement - Affichage avec données par défaut
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -310,7 +264,7 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
       <HydrationTracker
         date={dateStr}
         nutritionData={nutritionData}
-        onUpdate={loadDayData}
+        onUpdate={refreshDailyMealWithTotals}
       />
 
       {/* Liste des repas */}

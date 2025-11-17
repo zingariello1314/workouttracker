@@ -2151,9 +2151,31 @@
   - [x] Implémenter LocalStorageRepository (fallback) ✅ **COMPLÉTÉ**
   - [x] Implémenter MemoryRepository (tests) ✅ **COMPLÉTÉ**
   - [x] Créer Repository Factory ✅ **COMPLÉTÉ**
-  - [ ] Adapter nutritionDataCRUD.js (migration progressive)
-  - [ ] Intégrer Pattern Observer
-  - [ ] Batch operations optimisées
+  - [x] Adapter nutritionDataCRUD.js (migration progressive) ✅ **COMPLÉTÉ**
+    - [x] Migrer `getDailyMeal`, `saveDailyMeal`, `deleteDailyMeal`, `getDailyMealsByRange` vers Repository (4/4 fonctions)
+    - [x] Migrer fonctions Meals : `getMeal`, `saveMeal`, `getMealsByDate`, `deleteMeal`, `getMealsByDailyMealId`, `getMealsByDateRange`, `getAllMeals`, `saveMeals`, `getMealsByDateAndType` (9/9 fonctions)
+    - [x] Migrer fonctions Programs : `getAllPrograms`, `getActiveProgram`, `getAllProgramsWithActive`, `saveProgram`, `deactivateAllPrograms`, `deleteProgram` (6/6 fonctions)
+    - [x] Migrer fonctions FavoriteFoods : `getFavoriteFoods`, `getFavoriteFood`, `saveFavoriteFood`, `deleteFavoriteFood` (4/4 fonctions)
+    - [x] Migrer fonctions HydrationLog : `getHydrationLog`, `saveHydrationLog`, `getHydrationLogByRange`, `deleteHydrationLog` (4/5 fonctions)
+    - [x] `addWaterIntake` utilise déjà les fonctions migrées (pas de migration nécessaire)
+    - [x] ✅ **MIGRATION COMPLÈTE** : 26 fonctions CRUD migrées vers Repository pattern
+  - [x] Intégrer Pattern Observer ✅ **COMPLÉTÉ**
+    - [x] Créer hook `useRepositoryObserver` pour intégration React
+    - [x] Créer hooks spécialisés : `useDailyMeal`, `useMealsByDate`, `useMeal`, `useActiveProgram`, `useHydrationLog`
+    - [x] Migrer composant `NutritionJournal` pour utiliser les hooks Observer (exemple de référence)
+    - [x] ✅ **CORRECTION CRITIQUE** : Mapping store names (corrige erreur `DB_STORE_NOT_FOUND`)
+      - [x] Créer `storeNameMap.js` pour mapping noms simplifiés → noms réels IndexedDB
+      - [x] Corriger `useRepositoryObserver` pour utiliser le mapping
+      - [x] Corriger `useActiveProgram` pour filtrer correctement
+    - [x] ✅ **BÉNÉFICES** : Synchronisation automatique, moins de re-renders, code simplifié (~50 lignes supprimées)
+  - [x] Batch operations optimisées ✅ **COMPLÉTÉ**
+    - [x] Validation des données avant batch (Zod)
+    - [x] Support opérations `get` en batch (lecture optimisée)
+    - [x] Gestion explicite QuotaExceededError avec cleanup automatique
+    - [x] Limite de taille (MAX_BATCH_SIZE = 1000)
+    - [x] Statistiques de performance (duration, opsPerSecond)
+    - [x] Option `quiet` pour réduire logs
+    - [x] Optimisation mode transaction (readonly si seulement get)
   - [ ] Tests & Validation
   - [ ] Documentation & Migration Guide
 - [ ] **Phase 12.3** : Configuration centralisée (après Phase 12.2)
@@ -2209,8 +2231,8 @@
 ---
 
 **Document créé le** : 2025-01-16  
-**Dernière mise à jour** : 2025-01-16 (Phase 12.2 - Repository pattern - EN PLANIFICATION)  
-**Prochaine révision** : Après implémentation Phase 12.2 complète (Repository pattern)
+**Dernière mise à jour** : 2025-01-16 (Phase 12.2 - Repository pattern - Étape 9 en cours : Tests MemoryRepository complétés, 24/24 passent)  
+**Prochaine révision** : Après implémentation Phase 12.2 complète (Tests & Documentation)
 
 ---
 

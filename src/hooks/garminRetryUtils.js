@@ -127,7 +127,8 @@ export const retryWithBackoff = async (fn, options = {}) => {
     maxDelay = 2000,
     backoffMultiplier = 2,
     shouldRetryFn = shouldRetry,
-    context = {}
+    context = {},
+    quiet = false // ✅ PHASE 12.2 : Option quiet pour réduire logs Observer
   } = options;
   
   if (typeof fn !== 'function') {
@@ -141,13 +142,18 @@ export const retryWithBackoff = async (fn, options = {}) => {
     try {
       retryStats.totalAttempts++;
       
-      log.debug(`[retryWithBackoff] Attempt ${attempt}/${maxRetries + 1}`, context);
+      // ✅ PHASE 12.2 : Ne logger que les retries réels (attempt > 1) pour éviter spam
+      // La première tentative (attempt === 1) réussit généralement, pas besoin de logger
+      if (attempt > 1) {
+        log.debug(`[retryWithBackoff] Attempt ${attempt}/${maxRetries + 1}`, context);
+      }
       
       const result = await fn();
       
       // Succès : si c'était un retry, incrémenter statistiques
       if (attempt > 1) {
         retryStats.successfulRetries++;
+        // ✅ PHASE 12.2 : Logger seulement si retry réel (évite spam)
         log.info(`[retryWithBackoff] Success after ${attempt - 1} retry(ies)`, context);
       }
       
@@ -184,11 +190,14 @@ export const retryWithBackoff = async (fn, options = {}) => {
         backoffMultiplier
       });
       
-      log.warn(`[retryWithBackoff] Transient error, retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`, {
-        ...context,
-        error: error.message || error.toString(),
-        delay
-      });
+      // ✅ PHASE 12.2 : Ne logger que si pas quiet (Observer ne spam plus)
+      if (!quiet) {
+        log.warn(`[retryWithBackoff] Transient error, retrying in ${delay}ms (attempt ${attempt}/${maxRetries})`, {
+          ...context,
+          error: error.message || error.toString(),
+          delay
+        });
+      }
       
       // Attendre avant retry
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -245,4 +254,3 @@ export const retrySimple = async (fn, maxRetries = 3) => {
     backoffMultiplier: 1
   });
 };
-

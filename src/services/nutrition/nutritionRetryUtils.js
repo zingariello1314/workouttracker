@@ -195,36 +195,47 @@ const getRetryConfig = (operationName) => {
  */
 export const executeWithRetry = async (fn, operationName, context = {}, customOptions = {}) => {
   const config = getRetryConfig(operationName);
+  // ✅ PHASE 12.2 : Extraire quiet du customOptions
+  const { quiet = false, ...restCustomOptions } = customOptions;
+  const { ...restContext } = context;
+  
   const retryOptions = {
-    maxRetries: customOptions.maxRetries ?? config.maxRetries,
-    initialDelay: customOptions.initialDelay ?? config.initialDelay,
-    maxDelay: customOptions.maxDelay ?? config.maxDelay,
-    backoffMultiplier: customOptions.backoffMultiplier ?? config.backoffMultiplier,
+    maxRetries: restCustomOptions.maxRetries ?? config.maxRetries,
+    initialDelay: restCustomOptions.initialDelay ?? config.initialDelay,
+    maxDelay: restCustomOptions.maxDelay ?? config.maxDelay,
+    backoffMultiplier: restCustomOptions.backoffMultiplier ?? config.backoffMultiplier,
     context: {
-      ...context,
+      ...restContext,
       operation: operationName,
       module: 'nutrition'
     },
+    quiet, // ✅ PHASE 12.2 : Passer quiet à retryWithBackoff
     shouldRetryFn: (error, attempt, maxRetries) => {
       // ✅ Utiliser classification Garmin (cohérence)
       const classification = classifyIndexedDBError(error);
       
       // Ne jamais retry erreurs permanentes
       if (classification.isPermanent) {
-        log.debug(`[executeWithRetry] Permanent error (${classification.name}), no retry`, {
-          operation: operationName,
-          attempt
-        });
+        // ✅ PHASE 12.2 : Ne logger que si pas quiet (Observer ne spam plus)
+        if (!quiet) {
+          log.debug(`[executeWithRetry] Permanent error (${classification.name}), no retry`, {
+            operation: operationName,
+            attempt
+          });
+        }
         return false;
       }
       
       // Retry erreurs transitoires
       if (classification.isTransient) {
-        log.debug(`[executeWithRetry] Transient error (${classification.name}), retry allowed`, {
-          operation: operationName,
-          attempt,
-          maxRetries
-        });
+        // ✅ PHASE 12.2 : Ne logger que si pas quiet (Observer ne spam plus)
+        if (!quiet) {
+          log.debug(`[executeWithRetry] Transient error (${classification.name}), retry allowed`, {
+            operation: operationName,
+            attempt,
+            maxRetries
+          });
+        }
         return true;
       }
       
@@ -275,6 +286,9 @@ export const executeWithRetry = async (fn, operationName, context = {}, customOp
  * @returns {Promise<any>} Données récupérées ou null
  */
 export const getFromStoreWithRetry = async (store, key, operationName, context = {}) => {
+  // ✅ PHASE 12.2 : Extraire quiet du context
+  const { quiet = false, ...restContext } = context;
+  
   return executeWithRetry(
     () => new Promise((resolve, reject) => {
       const req = store.get(key);
@@ -283,7 +297,10 @@ export const getFromStoreWithRetry = async (store, key, operationName, context =
         const error = req.error;
         // Pour get, NotFoundError est acceptable (données peuvent ne pas exister)
         if (error && error.name !== 'NotFoundError') {
-          logIndexedDBError(error, { ...context, operation: 'get', key }, 'warn');
+          // ✅ PHASE 12.2 : Logger seulement si pas quiet
+          if (!quiet) {
+            logIndexedDBError(error, { ...restContext, operation: 'get', key }, 'warn');
+          }
           reject(error); // Reject pour permettre retry
         } else {
           resolve(null); // NotFoundError = données non trouvées (pas d'erreur)
@@ -291,7 +308,8 @@ export const getFromStoreWithRetry = async (store, key, operationName, context =
       };
     }),
     operationName,
-    { ...context, key, storeName: store.name }
+    { ...restContext, key, storeName: store.name },
+    { quiet } // ✅ Passer quiet dans customOptions
   );
 };
 
@@ -360,6 +378,9 @@ export const deleteFromStoreWithRetry = async (store, key, operationName, contex
  * @returns {Promise<Array>} Données récupérées
  */
 export const getAllFromStoreWithRetry = async (storeOrIndex, keyRange, operationName, context = {}) => {
+  // ✅ PHASE 12.2 : Extraire quiet du context pour réduire logs Observer
+  const { quiet = false, ...restContext } = context;
+  
   return executeWithRetry(
     () => new Promise((resolve, reject) => {
       const req = keyRange 
@@ -368,12 +389,14 @@ export const getAllFromStoreWithRetry = async (storeOrIndex, keyRange, operation
       req.onsuccess = () => resolve(req.result || []);
       req.onerror = () => {
         const error = req.error;
-        logIndexedDBError(error, { ...context, operation: 'getAll' }, 'error');
+        // ✅ PHASE 12.2 : Logger seulement si pas quiet
+        if (!quiet) {
+          logIndexedDBError(error, { ...restContext, operation: 'getAll' }, 'error');
+        }
         reject(error); // Reject pour permettre retry
       };
     }),
     operationName,
-    { ...context, storeName: storeOrIndex.name || storeOrIndex.objectStore?.name }
+    { ...restContext, storeName: storeOrIndex.name || storeOrIndex.objectStore?.name, quiet }
   );
 };
-

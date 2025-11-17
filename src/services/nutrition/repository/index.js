@@ -20,4 +20,4 @@ export {
   getRepositoryStats,
   RepositoryType
 } from './repositoryFactory';
-
+export { getStoreName, hasStoreName, getAvailableStoreNames, STORE_NAME_MAP } from './storeNameMap';

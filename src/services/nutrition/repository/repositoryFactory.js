@@ -66,8 +66,16 @@ async function isIndexedDBAvailable() {
       return false;
     }
     
-    // Tester ouverture DB
-    const db = await openNutritionDB();
+    // ✅ CORRECTION : Timeout pour éviter blocage indéfini
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout: openNutritionDB took too long')), 2000);
+    });
+    
+    // Tester ouverture DB avec timeout
+    const db = await Promise.race([
+      openNutritionDB(),
+      timeoutPromise
+    ]);
     return db !== null;
   } catch (error) {
     log.debug('[isIndexedDBAvailable] IndexedDB non disponible:', error);
@@ -129,7 +137,16 @@ async function detectBestStorage() {
 async function createRepository(type) {
   switch (type) {
     case RepositoryType.INDEXEDDB: {
-      const db = await openNutritionDB();
+      // ✅ CORRECTION : Timeout pour éviter blocage indéfini
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout: openNutritionDB took too long')), 2000);
+      });
+      
+      const db = await Promise.race([
+        openNutritionDB(),
+        timeoutPromise
+      ]);
+      
       if (!db) {
         throw new Error('IndexedDB non disponible malgré détection');
       }
@@ -198,13 +215,28 @@ export const getNutritionRepository = async (options = {}) => {
   if (!repositoryInstance || recreate || currentRepositoryType !== repositoryType) {
     log.info('[getNutritionRepository] Création repository:', repositoryType);
     
-    repositoryInstance = await createRepository(repositoryType);
-    currentRepositoryType = repositoryType;
-    
-    // Vérifier disponibilité
-    const isAvailable = await repositoryInstance.isAvailable();
-    if (!isAvailable) {
-      log.warn('[getNutritionRepository] Repository non disponible, fallback mémoire');
+    try {
+      // ✅ CORRECTION : Timeout pour éviter blocage indéfini lors de la création
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout: createRepository took too long')), 3000);
+      });
+      
+      repositoryInstance = await Promise.race([
+        createRepository(repositoryType),
+        timeoutPromise
+      ]);
+      currentRepositoryType = repositoryType;
+      
+      // Vérifier disponibilité
+      const isAvailable = await repositoryInstance.isAvailable();
+      if (!isAvailable) {
+        log.warn('[getNutritionRepository] Repository non disponible, fallback mémoire');
+        repositoryInstance = new MemoryRepository();
+        currentRepositoryType = RepositoryType.MEMORY;
+      }
+    } catch (error) {
+      log.error('[getNutritionRepository] Erreur création repository, fallback mémoire:', error);
+      // ✅ CORRECTION : Fallback vers MemoryRepository si erreur
       repositoryInstance = new MemoryRepository();
       currentRepositoryType = RepositoryType.MEMORY;
     }
@@ -284,5 +316,4 @@ export const getRepositoryStats = async () => {
     stats: repo.getStats()
   };
 };
-
 

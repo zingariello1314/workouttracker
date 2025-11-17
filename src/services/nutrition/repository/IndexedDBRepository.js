@@ -30,6 +30,13 @@ import {
   NutritionErrorCodes,
   createNutritionErrorFromIndexedDB
 } from '../../../utils/nutritionErrors';
+import {
+  validateDailyMeal,
+  validateMeal,
+  validateProgram,
+  validateFavoriteFood,
+  validateHydrationLog
+} from '../nutritionSchemas';
 import logger from '../../../utils/logger';
 
 const log = logger.module('indexedDBRepository');
@@ -92,7 +99,7 @@ export class IndexedDBRepository extends NutritionRepository {
    * @returns {Promise<any|null>} Données ou null si inexistant
    */
   async get(store, key, options = {}) {
-    const { skipCache = false, operationName = `get:${store}` } = options;
+    const { skipCache = false, operationName = `get:${store}`, quiet = false } = options;
     
     // ✅ PHASE 12.2 : Utiliser cache avec pattern fetcher (sauf si skipCache)
     if (!skipCache) {
@@ -103,14 +110,14 @@ export class IndexedDBRepository extends NutritionRepository {
         cacheKey,
         async () => {
           // Fetcher: récupérer depuis IndexedDB
-          return await this.getFromIndexedDB(store, key, operationName);
+          return await this.getFromIndexedDB(store, key, operationName, quiet);
         },
         cacheType,
         { skipCache }
       );
     } else {
       // Skip cache: récupérer directement depuis IndexedDB
-      return await this.getFromIndexedDB(store, key, operationName);
+      return await this.getFromIndexedDB(store, key, operationName, quiet);
     }
   }
 
@@ -123,11 +130,13 @@ export class IndexedDBRepository extends NutritionRepository {
    * @returns {Promise<any|null>} Données ou null
    * @private
    */
-  async getFromIndexedDB(store, key, operationName) {
+  async getFromIndexedDB(store, key, operationName, quiet = false) {
     try {
       // Vérifier disponibilité DB
       if (!this.db || !await this.isAvailable()) {
-        log.warn(`[${this.name}] DB non disponible pour get`, { store, key });
+        if (!quiet) {
+          log.warn(`[${this.name}] DB non disponible pour get`, { store, key });
+        }
         return null;
       }
 
@@ -140,7 +149,7 @@ export class IndexedDBRepository extends NutritionRepository {
         objectStore,
         key,
         operationName,
-        { store, key }
+        { store, key, quiet } // ✅ Passer quiet pour réduire logs Observer
       );
 
       return result;
@@ -151,7 +160,10 @@ export class IndexedDBRepository extends NutritionRepository {
         operationName,
         { store, key }
       );
-      log.error(`[${this.name}] Erreur get après retry:`, nutritionError.toJSON());
+      // ✅ PHASE 12.2 : Logger seulement si pas quiet
+      if (!quiet) {
+        log.error(`[${this.name}] Erreur get après retry:`, nutritionError.toJSON());
+      }
       
       // Pour lecture, retourner null plutôt que throw (robustesse)
       return null;
@@ -166,23 +178,25 @@ export class IndexedDBRepository extends NutritionRepository {
    * @returns {Promise<Array>} Tableau de données
    */
   async getAll(store, options = {}) {
-    const { filters = null, operationName = `getAll:${store}` } = options;
+    const { filters = null, operationName = `getAll:${store}`, quiet = false } = options;
 
     try {
       if (!this.db || !await this.isAvailable()) {
-        log.warn(`[${this.name}] DB non disponible pour getAll`, { store });
+        if (!quiet) {
+          log.warn(`[${this.name}] DB non disponible pour getAll`, { store });
+        }
         return [];
       }
 
       const tx = this.db.transaction([store], 'readonly');
       const objectStore = tx.objectStore(store);
 
-      // ✅ PHASE 12.2 : Retry automatique
+      // ✅ PHASE 12.2 : Retry automatique avec option quiet pour Observer
       const results = await getAllFromStoreWithRetry(
         objectStore,
         null, // Pas de keyRange (tous)
         operationName,
-        { store }
+        { store, quiet } // Passer quiet pour réduire logs
       );
 
       // ✅ PHASE 12.2 : Appliquer filters si fournis
@@ -197,7 +211,10 @@ export class IndexedDBRepository extends NutritionRepository {
         operationName,
         { store }
       );
-      log.error(`[${this.name}] Erreur getAll après retry:`, nutritionError.toJSON());
+      // ✅ PHASE 12.2 : Logger seulement si pas quiet (Observer ne spam plus)
+      if (!quiet) {
+        log.error(`[${this.name}] Erreur getAll après retry:`, nutritionError.toJSON());
+      }
       return [];
     }
   }
@@ -425,11 +442,29 @@ export class IndexedDBRepository extends NutritionRepository {
    * @returns {Promise<Object>} Résultats des opérations { success: boolean, results: Array }
    */
   async batch(operations, options = {}) {
-    const { operationName = 'batch' } = options;
+    const { 
+      operationName = 'batch',
+      validate = true,
+      quiet = false
+    } = options;
 
+    // ✅ PHASE 12.2 Étape 8 : Vérifier batch vide
     if (!Array.isArray(operations) || operations.length === 0) {
       return { success: true, results: [] };
     }
+
+    // ✅ PHASE 12.2 Étape 8 : Limite de taille pour éviter freeze UI
+    const MAX_BATCH_SIZE = 1000;
+    if (operations.length > MAX_BATCH_SIZE) {
+      throw new NutritionError(
+        NutritionErrorCodes.VALIDATION_INVALID_DATA,
+        `Batch trop volumineux (max ${MAX_BATCH_SIZE} opérations, reçu ${operations.length})`,
+        { operation: operationName, operationsCount: operations.length, maxSize: MAX_BATCH_SIZE }
+      );
+    }
+
+    // ✅ PHASE 12.2 Étape 8 : Statistiques de performance
+    const startTime = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 
     try {
       if (!this.db || !await this.isAvailable()) {
@@ -440,12 +475,40 @@ export class IndexedDBRepository extends NutritionRepository {
         );
       }
 
+      // ✅ PHASE 12.2 Étape 8 : Valider toutes les données avant de créer la transaction
+      if (validate) {
+        for (const op of operations) {
+          if (op.type === 'save' || op.type === 'put') {
+            const validator = this.getValidatorForStore(op.store);
+            if (validator) {
+              try {
+                validator(op.data); // Throw si invalide
+              } catch (validationError) {
+                throw new NutritionError(
+                  NutritionErrorCodes.VALIDATION_INVALID_DATA,
+                  `Validation échouée pour opération batch: ${validationError.message}`,
+                  { 
+                    operation: operationName,
+                    store: op.store,
+                    validationError: validationError.errors || validationError.message
+                  }
+                );
+              }
+            }
+          }
+        }
+      }
+
       // ✅ PHASE 12.2 : Déterminer stores nécessaires (optimisation transaction)
       const storesNeeded = new Set(operations.map(op => op.store));
       const storesArray = Array.from(storesNeeded);
 
+      // ✅ PHASE 12.2 Étape 8 : Déterminer mode transaction (readwrite ou readonly)
+      const hasWriteOps = operations.some(op => op.type === 'save' || op.type === 'put' || op.type === 'delete');
+      const txMode = hasWriteOps ? 'readwrite' : 'readonly';
+
       // ✅ PHASE 12.2 : Créer transaction unique pour toutes les opérations
-      const tx = this.db.transaction(storesArray, 'readwrite');
+      const tx = this.db.transaction(storesArray, txMode);
       const results = [];
       const notifications = []; // Pour notifier après transaction complète
 
@@ -463,7 +526,7 @@ export class IndexedDBRepository extends NutritionRepository {
                 objectStore,
                 data,
                 `${operationName}:save:${store}`,
-                { store, key: opKey }
+                { store, key: opKey, quiet }
               );
               results.push({ success: true, type, store, key: opKey });
               
@@ -481,7 +544,7 @@ export class IndexedDBRepository extends NutritionRepository {
                 objectStore,
                 key,
                 `${operationName}:delete:${store}`,
-                { store, key }
+                { store, key, quiet }
               );
               results.push({ success: true, type, store, key });
               
@@ -494,11 +557,37 @@ export class IndexedDBRepository extends NutritionRepository {
               break;
             }
             
+            // ✅ PHASE 12.2 Étape 8 : Support opérations get en batch (lecture optimisée)
+            case 'get': {
+              const result = await getFromStoreWithRetry(
+                objectStore,
+                key,
+                `${operationName}:get:${store}`,
+                { store, key, quiet: true } // Quiet pour batch get
+              );
+              results.push({ success: true, type, store, key, data: result });
+              break;
+            }
+            
             default:
               log.warn(`[${this.name}] Type d'opération batch non supporté:`, type);
               results.push({ success: false, type, store, error: 'Type non supporté' });
           }
         } catch (error) {
+          // ✅ PHASE 12.2 Étape 8 : Gestion explicite QuotaExceededError
+          if (error instanceof QuotaExceededError) {
+            log.error(`[${this.name}] QuotaExceededError dans batch:`, { type, store, error });
+            // Tenter cleanup automatique via quotaSafeStorage
+            try {
+              const quotaStorage = await this.getQuotaSafeStorage();
+              await quotaStorage.handleQuotaExceeded();
+            } catch (quotaError) {
+              log.error(`[${this.name}] Erreur gestion quota:`, quotaError);
+            }
+            // Re-throw pour rollback transaction
+            throw error;
+          }
+          
           log.error(`[${this.name}] Erreur opération batch:`, { type, store, error });
           results.push({ success: false, type, store, error: error.message });
           // Continuer avec autres opérations (transaction sera rollback si nécessaire)
@@ -516,15 +605,43 @@ export class IndexedDBRepository extends NutritionRepository {
         this.notify(store, key, data);
       });
 
+      // ✅ PHASE 12.2 Étape 8 : Calculer statistiques de performance
+      const duration = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()) - startTime;
+      const successCount = results.filter(r => r.success).length;
       const success = results.every(r => r.success);
-      log.debug(`[${this.name}] Batch terminé`, { 
-        operationsCount: operations.length, 
-        successCount: results.filter(r => r.success).length,
-        success 
-      });
+      
+      const stats = {
+        operationsCount: operations.length,
+        successCount,
+        failureCount: operations.length - successCount,
+        duration,
+        opsPerSecond: duration > 0 ? (operations.length / duration * 1000).toFixed(2) : 'N/A'
+      };
 
-      return { success, results };
+      if (!quiet) {
+        log.debug(`[${this.name}] Batch terminé`, { 
+          ...stats,
+          success 
+        });
+      }
+
+      return { success, results, stats };
     } catch (error) {
+      // ✅ PHASE 12.2 Étape 8 : Gestion explicite QuotaExceededError au niveau batch
+      if (error instanceof QuotaExceededError) {
+        const nutritionError = new NutritionError(
+          NutritionErrorCodes.DB_QUOTA_EXCEEDED,
+          'Quota de stockage dépassé lors du batch',
+          { 
+            operation: operationName,
+            operationsCount: operations.length,
+            originalError: error.message
+          }
+        );
+        log.error(`[${this.name}] QuotaExceededError batch:`, nutritionError.toJSON());
+        throw nutritionError;
+      }
+
       const nutritionError = createNutritionErrorFromIndexedDB(
         error,
         operationName,
@@ -570,6 +687,29 @@ export class IndexedDBRepository extends NutritionRepository {
   }
 
   /**
+   * Retourne le validateur Zod approprié pour un store donné
+   * 
+   * ✅ PHASE 12.2 Étape 8 : Helper pour validation batch
+   * 
+   * @param {string} store - Nom du store
+   * @returns {Function|null} Fonction de validation ou null si pas de validateur
+   * @private
+   */
+  getValidatorForStore(store) {
+    // Mapping stores → validateurs Zod
+    const validatorMappings = {
+      'nutrition_dailyMeals': validateDailyMeal,
+      'nutrition_meals': validateMeal,
+      'nutrition_programs': validateProgram,
+      'nutrition_favoriteFoods': validateFavoriteFood,
+      'nutrition_hydrationLog': validateHydrationLog
+      // Autres stores n'ont pas de validateur dédié (optionnel)
+    };
+
+    return validatorMappings[store] || null;
+  }
+
+  /**
    * Retourne le type de cache pour un store donné
    * (utilisé par nutritionDataCache pour déterminer TTL)
    * 
@@ -607,4 +747,3 @@ export class IndexedDBRepository extends NutritionRepository {
     log.debug(`[${this.name}] Repository fermé`);
   }
 }
-
