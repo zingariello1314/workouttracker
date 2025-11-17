@@ -71,6 +71,17 @@ export const NutritionErrorCodes = {
   /** Quantité invalide (négative, NaN, etc.) */
   VALIDATION_INVALID_QUANTITY: 'VALIDATION_INVALID_QUANTITY',
   
+  // ========== CALCULATION ERRORS ==========
+  
+  /** Erreur lors d'un calcul nutritionnel */
+  CALCULATION_ERROR: 'CALCULATION_ERROR',
+  
+  /** Résultat calcul invalide (NaN, Infinity, etc.) */
+  CALCULATION_INVALID_RESULT: 'CALCULATION_INVALID_RESULT',
+  
+  /** Division par zéro dans calcul */
+  CALCULATION_DIVISION_BY_ZERO: 'CALCULATION_DIVISION_BY_ZERO',
+  
   // ========== API ERRORS ==========
   
   /** Rate limit API dépassé */

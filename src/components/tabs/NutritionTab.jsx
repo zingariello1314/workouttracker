@@ -11,7 +11,7 @@
  * @see ../../../nouvelongletnutritionplan.md
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useNutritionTheme } from '../../hooks/useNutritionTheme';
@@ -20,14 +20,19 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { Calendar, Plus, Target, TrendingUp, BarChart3, Trophy, Share2, Camera, Zap } from 'lucide-react';
 import { typography } from '../../styles/typography';
-import NutritionJournal from './nutrition/components/NutritionJournal';
-import NutritionPrograms from './nutrition/components/NutritionPrograms';
-import NutritionAnalyses from './nutrition/components/NutritionAnalyses';
-import NutritionGamification from './nutrition/components/NutritionGamification';
-import NutritionSharing from './nutrition/components/NutritionSharing';
-import NutritionProgressPhotos from './nutrition/components/NutritionProgressPhotos';
-import NutritionDailyChallenges from './nutrition/components/NutritionDailyChallenges';
 import { registerNutritionServiceWorker } from '../../utils/nutritionServiceWorkerManager';
+
+// ✅ OPTIMISATION Phase 11.1 : Lazy loading sections (réduction bundle initial 30-40%)
+const NutritionJournal = lazy(() => import('./nutrition/components/NutritionJournal'));
+const NutritionPrograms = lazy(() => import('./nutrition/components/NutritionPrograms'));
+const NutritionAnalyses = lazy(() => import('./nutrition/components/NutritionAnalyses'));
+const NutritionGamification = lazy(() => import('./nutrition/components/NutritionGamification'));
+const NutritionSharing = lazy(() => import('./nutrition/components/NutritionSharing'));
+const NutritionProgressPhotos = lazy(() => import('./nutrition/components/NutritionProgressPhotos'));
+const NutritionDailyChallenges = lazy(() => import('./nutrition/components/NutritionDailyChallenges'));
+
+// Import skeleton loader
+import SectionSkeleton from './nutrition/components/SectionSkeleton';
 
 const NutritionTab = () => {
   const [activeSection, setActiveSection] = useState('journal'); // 'journal' | 'programs' | 'analyses' | 'gamification' | 'challenges' | 'sharing' | 'progress'
@@ -108,41 +113,58 @@ const NutritionTab = () => {
       {/* Contenu section active */}
       <div className="mt-6">
         {activeSection === 'journal' && (
-          <NutritionJournal
-            selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
-            nutritionData={nutritionData}
-            garminData={garminData}
-          />
+          <Suspense fallback={<SectionSkeleton label="du journal nutritionnel" />}>
+            <NutritionJournal
+              key="journal" // ✅ OPTIMISATION Phase 11.1 : Préserver état entre changements
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+              nutritionData={nutritionData}
+              garminData={garminData}
+            />
+          </Suspense>
         )}
         
         {activeSection === 'programs' && (
-          <NutritionPrograms
-            nutritionData={nutritionData}
-          />
+          <Suspense fallback={<SectionSkeleton label="des programmes" />}>
+            <NutritionPrograms
+              key="programs"
+              nutritionData={nutritionData}
+            />
+          </Suspense>
         )}
         
         {activeSection === 'analyses' && (
-          <NutritionAnalyses
-            nutritionData={nutritionData}
-            garminData={garminData}
-          />
+          <Suspense fallback={<SectionSkeleton label="des analyses" />}>
+            <NutritionAnalyses
+              key="analyses"
+              nutritionData={nutritionData}
+              garminData={garminData}
+            />
+          </Suspense>
         )}
         
         {activeSection === 'gamification' && (
-          <NutritionGamification />
+          <Suspense fallback={<SectionSkeleton label="de la gamification" />}>
+            <NutritionGamification key="gamification" />
+          </Suspense>
         )}
         
         {activeSection === 'challenges' && (
-          <NutritionDailyChallenges />
+          <Suspense fallback={<SectionSkeleton label="des défis" />}>
+            <NutritionDailyChallenges key="challenges" />
+          </Suspense>
         )}
         
         {activeSection === 'progress' && (
-          <NutritionProgressPhotos />
+          <Suspense fallback={<SectionSkeleton label="de la progression" />}>
+            <NutritionProgressPhotos key="progress" />
+          </Suspense>
         )}
         
         {activeSection === 'sharing' && (
-          <NutritionSharing />
+          <Suspense fallback={<SectionSkeleton label="du partage" />}>
+            <NutritionSharing key="sharing" />
+          </Suspense>
         )}
       </div>
     </div>

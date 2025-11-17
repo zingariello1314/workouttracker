@@ -10,11 +10,12 @@
  * @module components/tabs/nutrition/components/FoodSearch
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Loader2, AlertCircle, CheckCircle, X, Camera, Mic } from 'lucide-react';
 import { searchOpenFoodFacts, searchFoodWithFallback } from '../../../../services/nutrition/openFoodFactsService';
 import { searchUSDA } from '../../../../services/nutrition/usdaService';
 import { getFavoriteFoods } from '../../../../hooks/nutritionDataCRUD';
+import { useDebouncedCallback } from '../../../../hooks/useDebouncedCallback';
 import logger from '../../../../utils/logger';
 import BarcodeScanner from './BarcodeScanner';
 import VoiceInput from './VoiceInput';
@@ -33,6 +34,9 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
   const [favoriteFoodsCache, setFavoriteFoodsCache] = useState([]);
   const [favoritesCacheLoaded, setFavoritesCacheLoaded] = useState(false);
 
+  // ✅ OPTIMISATION Phase 11.3 : Ref pour vérifier validité requête (éviter résultats désordonnés)
+  const currentSearchQueryRef = useRef('');
+
   // Charger favoris une seule fois au montage
   useEffect(() => {
     const loadFavorites = async () => {
@@ -48,23 +52,12 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
     loadFavorites();
   }, []);
 
-  // Recherche avec debounce
-  useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      setError(null);
-      return;
-    }
-
-    const timeoutId = setTimeout(async () => {
-      await performSearch(query.trim());
-    }, 500); // Debounce 500ms
-
-    return () => clearTimeout(timeoutId);
-  }, [query]);
-
   // Effectuer la recherche
   const performSearch = useCallback(async (searchQuery) => {
+    // ✅ OPTIMISATION Phase 11.3 : Vérifier validité requête avant de continuer
+    currentSearchQueryRef.current = searchQuery;
+    const queryForThisSearch = searchQuery;
+
     setLoading(true);
     setError(null);
     setResults([]);
@@ -75,6 +68,12 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
       const favoriteMatches = favorites.filter(f =>
         f.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
+
+      // ✅ OPTIMISATION Phase 11.3 : Vérifier si requête toujours valide après recherche favoris
+      if (currentSearchQueryRef.current !== queryForThisSearch) {
+        setLoading(false);
+        return; // Requête annulée
+      }
 
       if (favoriteMatches.length > 0) {
         const formattedFavorites = favoriteMatches.map(f => ({
@@ -95,7 +94,10 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
           isFavorite: true,
         }));
 
-        setResults(formattedFavorites);
+        // ✅ OPTIMISATION Phase 11.3 : Vérifier validité avant de mettre à jour résultats
+        if (currentSearchQueryRef.current === queryForThisSearch) {
+          setResults(formattedFavorites);
+        }
         setLoading(false);
         return;
       }
@@ -116,18 +118,61 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
         }
       });
 
+      // ✅ OPTIMISATION Phase 11.3 : Vérifier validité requête avant de mettre à jour résultats
+      if (currentSearchQueryRef.current !== queryForThisSearch) {
+        setLoading(false);
+        return; // Requête annulée, ignorer résultats
+      }
+
       if (products && products.length > 0) {
         setResults(products);
       } else {
         setError('Aucun aliment trouvé. Essayez un autre terme de recherche.');
       }
     } catch (err) {
+      // ✅ OPTIMISATION Phase 11.3 : Ignorer erreurs si requête annulée
+      if (currentSearchQueryRef.current !== queryForThisSearch) {
+        setLoading(false);
+        return;
+      }
       log.error('Erreur recherche aliments:', err);
       setError('Erreur lors de la recherche. Veuillez réessayer.');
     } finally {
-      setLoading(false);
+      // ✅ OPTIMISATION Phase 11.3 : Ne mettre loading à false que si requête toujours valide
+      if (currentSearchQueryRef.current === queryForThisSearch) {
+        setLoading(false);
+      }
     }
   }, [favoriteFoodsCache]);
+
+  // ✅ OPTIMISATION Phase 11.3 : Utiliser hook debounce optimisé avec gestion annulation
+  const { debouncedCallback: debouncedSearch, isPending: isSearchPending, cancel: cancelSearch } = useDebouncedCallback(
+    (searchQuery) => {
+      if (searchQuery.trim().length >= 2) {
+        performSearch(searchQuery.trim());
+      } else {
+        setResults([]);
+        setError(null);
+        setLoading(false);
+      }
+    },
+    500, // Debounce 500ms
+    [performSearch] // ✅ OPTIMISATION Phase 11.3 : Inclure performSearch dans dépendances
+  );
+
+  // Recherche avec debounce amélioré
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setResults([]);
+      setError(null);
+      setLoading(false);
+      cancelSearch(); // Annuler recherche en cours
+      currentSearchQueryRef.current = ''; // ✅ OPTIMISATION Phase 11.3 : Réinitialiser ref
+      return;
+    }
+
+    debouncedSearch(query);
+  }, [query, debouncedSearch, cancelSearch]);
 
   // Sélectionner un aliment
   const handleSelectFood = useCallback((product) => {
@@ -302,6 +347,8 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
                 setQuery('');
                 setResults([]);
                 setError(null);
+                cancelSearch(); // ✅ OPTIMISATION Phase 11.3 : Annuler recherche en cours
+                currentSearchQueryRef.current = ''; // Réinitialiser ref
               }}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
             >
@@ -330,7 +377,8 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
       </div>
 
       {/* État de chargement */}
-      {loading && (
+      {/* ✅ OPTIMISATION Phase 11.3 : Utiliser isSearchPending pour feedback visuel plus précis */}
+      {(loading || isSearchPending) && (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="animate-spin text-blue-400" size={24} />
           <span className="ml-3 text-slate-400">Recherche en cours...</span>
@@ -338,7 +386,7 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
       )}
 
       {/* Erreur */}
-      {error && !loading && (
+      {error && !loading && !isSearchPending && (
         <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
           <AlertCircle size={18} />
           <span className="text-sm">{error}</span>
@@ -346,7 +394,8 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
       )}
 
       {/* Résultats */}
-      {!loading && !error && results.length > 0 && (
+      {/* ✅ OPTIMISATION Phase 11.3 : Masquer résultats pendant chargement */}
+      {!loading && !isSearchPending && !error && results.length > 0 && (
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {results.map((product, index) => (
             <FoodCard
@@ -360,7 +409,7 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
       )}
 
       {/* Aucun résultat */}
-      {!loading && !error && query.length >= 2 && results.length === 0 && (
+      {!loading && !isSearchPending && !error && query.length >= 2 && results.length === 0 && (
         <div className="text-center py-8 text-slate-400">
           <p>Aucun résultat pour "{query}"</p>
           <p className="text-sm mt-2">Essayez un autre terme de recherche</p>
@@ -368,7 +417,7 @@ const FoodSearch = ({ onFoodSelected, onClose }) => {
       )}
 
       {/* Instructions */}
-      {!loading && !error && query.length < 2 && (
+      {!loading && !isSearchPending && !error && query.length < 2 && (
         <div className="text-center py-8 text-slate-500 text-sm">
           <p>Commencez à taper pour rechercher un aliment</p>
           <p className="mt-2">Recherche dans OpenFoodFacts et USDA</p>

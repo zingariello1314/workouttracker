@@ -29,6 +29,7 @@ import {
 import { useNutritionGamification } from '../../../../hooks/useNutritionGamification';
 import { ALL_BADGES } from '../../../../services/nutrition/badges';
 import BadgeDetailView from './BadgeDetailView';
+import VirtualizedBadgeGrid from './VirtualizedBadgeGrid';
 
 // ✅ OPTIMISATION 3.1 : Extraire fonctions constantes en dehors du composant
 const getRarityColor = (rarity) => {
@@ -388,70 +389,83 @@ const NutritionGamification = () => {
                 </div>
 
                 {/* Tous les badges : débloqués en couleur, non débloqués grisés */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {sortedAllBadges.map(badge => {
-                    const isUnlocked = badge.isUnlocked;
-                    const baseClasses = `rounded-lg p-4 border transition-all relative ${
-                      isUnlocked 
-                        ? `${getRarityColor(badge.rarity)} hover:scale-105 cursor-pointer` 
-                        : 'border-slate-700 bg-slate-900/30 opacity-50 cursor-pointer hover:opacity-70'
-                    }`;
-                    
-                    return (
-                      <div
-                        key={badge.id}
-                        className={baseClasses}
-                        title={isUnlocked ? badge.name : `${badge.name} - Non débloqué`}
-                        onClick={() => setSelectedBadge(badge)}
-                      >
-                        {/* Badge de verrouillage pour non débloqués */}
-                        {!isUnlocked && (
-                          <div className="absolute top-2 right-2">
-                            <Lock size={16} className="text-slate-600" />
+                {/* ✅ OPTIMISATION Phase 11.2 : Virtual scrolling si > 20 badges (réduction 80-90% éléments DOM) */}
+                {sortedAllBadges.length > 20 ? (
+                  <div className="w-full">
+                    <VirtualizedBadgeGrid
+                      badges={sortedAllBadges}
+                      onBadgeClick={setSelectedBadge}
+                      getRarityColor={getRarityColor}
+                      height={600}
+                      itemHeight={200}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {sortedAllBadges.map(badge => {
+                      const isUnlocked = badge.isUnlocked;
+                      const baseClasses = `rounded-lg p-4 border transition-all relative ${
+                        isUnlocked 
+                          ? `${getRarityColor(badge.rarity)} hover:scale-105 cursor-pointer` 
+                          : 'border-slate-700 bg-slate-900/30 opacity-50 cursor-pointer hover:opacity-70'
+                      }`;
+                      
+                      return (
+                        <div
+                          key={badge.id}
+                          className={baseClasses}
+                          title={isUnlocked ? badge.name : `${badge.name} - Non débloqué`}
+                          onClick={() => setSelectedBadge(badge)}
+                        >
+                          {/* Badge de verrouillage pour non débloqués */}
+                          {!isUnlocked && (
+                            <div className="absolute top-2 right-2">
+                              <Lock size={16} className="text-slate-600" />
+                            </div>
+                          )}
+                          
+                          <div className="flex items-start justify-between mb-2">
+                            <div className={`text-3xl ${isUnlocked ? '' : 'grayscale'}`}>
+                              {badge.icon}
+                            </div>
+                            <div className={`text-xs px-2 py-0.5 rounded ${
+                              isUnlocked
+                                ? (badge.rarity === 'common' ? 'bg-slate-500 text-white' :
+                                   badge.rarity === 'rare' ? 'bg-blue-500 text-white' :
+                                   badge.rarity === 'epic' ? 'bg-purple-500 text-white' :
+                                   'bg-yellow-500 text-white')
+                                : 'bg-slate-700 text-slate-400'
+                            }`}>
+                              {badge.rarity}
+                            </div>
                           </div>
-                        )}
-                        
-                        <div className="flex items-start justify-between mb-2">
-                          <div className={`text-3xl ${isUnlocked ? '' : 'grayscale'}`}>
-                            {badge.icon}
-                          </div>
-                          <div className={`text-xs px-2 py-0.5 rounded ${
-                            isUnlocked
-                              ? (badge.rarity === 'common' ? 'bg-slate-500 text-white' :
-                                 badge.rarity === 'rare' ? 'bg-blue-500 text-white' :
-                                 badge.rarity === 'epic' ? 'bg-purple-500 text-white' :
-                                 'bg-yellow-500 text-white')
-                              : 'bg-slate-700 text-slate-400'
+                          <div className={`text-sm font-medium mb-1 ${
+                            isUnlocked ? 'text-white' : 'text-slate-500'
                           }`}>
-                            {badge.rarity}
+                            {badge.name}
                           </div>
-                        </div>
-                        <div className={`text-sm font-medium mb-1 ${
-                          isUnlocked ? 'text-white' : 'text-slate-500'
-                        }`}>
-                          {badge.name}
-                        </div>
-                        <div className={`text-xs mb-2 ${
-                          isUnlocked ? 'text-slate-400' : 'text-slate-600'
-                        }`}>
-                          {badge.description}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className={`text-xs ${
-                            isUnlocked ? 'text-slate-500' : 'text-slate-700'
+                          <div className={`text-xs mb-2 ${
+                            isUnlocked ? 'text-slate-400' : 'text-slate-600'
                           }`}>
-                            {badge.formattedDate || 'Non débloqué'}
+                            {badge.description}
                           </div>
-                          <div className={`text-xs ${
-                            isUnlocked ? 'text-yellow-400' : 'text-slate-600'
-                          }`}>
-                            +{badge.points} XP
+                          <div className="flex items-center justify-between">
+                            <div className={`text-xs ${
+                              isUnlocked ? 'text-slate-500' : 'text-slate-700'
+                            }`}>
+                              {badge.formattedDate || 'Non débloqué'}
+                            </div>
+                            <div className={`text-xs ${
+                              isUnlocked ? 'text-yellow-400' : 'text-slate-600'
+                            }`}>
+                              +{badge.points} XP
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 

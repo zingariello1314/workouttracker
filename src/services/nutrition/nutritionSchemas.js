@@ -674,6 +674,82 @@ export function validateUSDAFoodResponse(response) {
   return usdaFoodResponseSchema.parse(response);
 }
 
+// ==================== SCHÉMAS POUR CALCULS ====================
+
+/**
+ * ✅ PHASE 10.5 : Schéma pour validation meal dans calculs
+ * 
+ * Version simplifiée et optimisée pour calculs (pas besoin de tous les champs)
+ * Accepte meals partiels (seulement champs nécessaires pour calculs)
+ */
+export const mealForCalculationSchema = z.object({
+  totalCalories: z.number().nonnegative().finite().default(0),
+  totalProtein: z.number().nonnegative().finite().default(0),
+  totalCarbs: z.number().nonnegative().finite().default(0),
+  totalFat: z.number().nonnegative().finite().default(0),
+  waterIntake: z.number().nonnegative().finite().optional()
+}).passthrough(); // Accepter autres champs (id, date, etc.) sans validation
+
+/**
+ * ✅ PHASE 10.5 : Schéma pour validation programme dans calculs
+ * 
+ * Version simplifiée pour calculs (seulement targets nécessaires)
+ */
+export const programForCalculationSchema = z.object({
+  targetCalories: z.number().positive().finite().min(500).max(10000).optional(),
+  targetProtein: z.number().positive().finite().min(10).max(500).optional(),
+  targetCarbs: z.number().positive().finite().min(10).max(1000).optional(),
+  targetFat: z.number().positive().finite().min(10).max(500).optional(),
+  targetWater: z.number().positive().finite().min(500).max(20000).optional()
+}).passthrough(); // Accepter autres champs (id, name, etc.) sans validation
+
+/**
+ * ✅ PHASE 10.5 : Schéma pour validation plage de dates
+ */
+export const dateRangeSchema = z.object({
+  startDate: z.string().regex(DATE_REGEX, 'Format startDate invalide. Doit être YYYY-MM-DD'),
+  endDate: z.string().regex(DATE_REGEX, 'Format endDate invalide. Doit être YYYY-MM-DD')
+}).refine((data) => {
+  const start = new Date(data.startDate);
+  const end = new Date(data.endDate);
+  return start <= end;
+}, {
+  message: 'startDate doit être <= endDate'
+});
+
+/**
+ * ✅ PHASE 10.5 : Valide un meal pour utilisation dans calculs
+ * 
+ * @param {Object} meal - Meal à valider
+ * @returns {Object} Meal validé
+ * @throws {z.ZodError} Si validation échoue
+ */
+export function validateMealForCalculation(meal) {
+  return mealForCalculationSchema.parse(meal);
+}
+
+/**
+ * ✅ PHASE 10.5 : Valide un programme pour utilisation dans calculs
+ * 
+ * @param {Object} program - Programme à valider
+ * @returns {Object} Programme validé
+ * @throws {z.ZodError} Si validation échoue
+ */
+export function validateProgramForCalculation(program) {
+  return programForCalculationSchema.parse(program);
+}
+
+/**
+ * ✅ PHASE 10.5 : Valide une plage de dates
+ * 
+ * @param {Object} range - Plage de dates à valider
+ * @returns {Object} Plage validée
+ * @throws {z.ZodError} Si validation échoue
+ */
+export function validateDateRange(range) {
+  return dateRangeSchema.parse(range);
+}
+
 // ==================== EXPORTS ====================
 
 // Note: Les schémas suivants sont déjà exportés avec 'export const' ci-dessus :

@@ -46,7 +46,7 @@ import {
 } from 'recharts';
 import { useNutritionData } from '../../../../hooks/useNutritionData';
 import { useGarminData } from '../../../../hooks/useGarminData';
-import { calculateDailyTotals, calculateProgramCompliance, getNutritionStats } from '../../../../hooks/nutritionCalculations';
+import { calculateDailyTotals, getNutritionStats } from '../../../../hooks/nutritionCalculations';
 import { typography } from '../../../../styles/typography';
 import logger from '../../../../utils/logger';
 import { getMealsByDateRange } from '../../../../hooks/nutritionDataCRUD';
@@ -189,7 +189,6 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
 
         // Calculer totaux
         const totals = calculateDailyTotals(meals, program);
-        const compliance = calculateProgramCompliance(totals, program);
 
         // Récupérer données Garmin
         const garminMetric = garminMap.get(dateStr);
@@ -209,7 +208,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
           targetProtein: totals.targetProtein,
           targetCarbs: totals.targetCarbs,
           targetFat: totals.targetFat,
-          complianceScore: compliance.score,
+          complianceScore: totals.complianceScore, // ✅ Utiliser complianceScore depuis totals (déjà calculé)
           complianceCalories: totals.complianceCalories,
           complianceProtein: totals.complianceProtein,
           caloriesBurned,
@@ -225,7 +224,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
           stats.totalCarbs += totals.carbs;
           stats.totalFat += totals.fat;
           stats.totalWater += totals.waterIntake;
-          stats.complianceScores.push(compliance.score);
+          stats.complianceScores.push(totals.complianceScore); // ✅ Utiliser complianceScore depuis totals
         }
 
         stats.totalDays++;
