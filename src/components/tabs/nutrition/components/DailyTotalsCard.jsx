@@ -17,6 +17,8 @@ import { typography } from '../../../../styles/typography';
 import { Badge } from '../../../ui/Badge';
 import ProgressBar from '../../../ui/ProgressBar';
 import ComplianceDisplay from './ComplianceDisplay';
+// ✅ OPTIMISATION : Helpers pour comparaisons React.memo optimisées
+import { createNutritionMemoComparator, compareDailyTotals } from '../../../../utils/reactMemoHelpers';
 
 // ✅ OPTIMISATION 2.1 : React.memo pour éviter re-renders inutiles (50-80% réduction)
 const DailyTotalsCard = React.memo(({ dailyMeal, activeProgram, garminData, dateStr, nutritionData }) => {
@@ -239,21 +241,28 @@ const DailyTotalsCard = React.memo(({ dailyMeal, activeProgram, garminData, date
       </CardContent>
     </Card>
   );
-}, (prevProps, nextProps) => {
-  // ✅ Comparaison custom : Re-render seulement si données importantes changent
-  return (
-    prevProps.dateStr === nextProps.dateStr &&
-    prevProps.dailyMeal?.date === nextProps.dailyMeal?.date &&
-    prevProps.dailyMeal?.dailyTotals?.calories === nextProps.dailyMeal?.dailyTotals?.calories &&
-    prevProps.dailyMeal?.dailyTotals?.protein === nextProps.dailyMeal?.dailyTotals?.protein &&
-    prevProps.dailyMeal?.dailyTotals?.carbs === nextProps.dailyMeal?.dailyTotals?.carbs &&
-    prevProps.dailyMeal?.dailyTotals?.fat === nextProps.dailyMeal?.dailyTotals?.fat &&
-    prevProps.dailyMeal?.dailyTotals?.complianceScore === nextProps.dailyMeal?.dailyTotals?.complianceScore &&
-    prevProps.dailyMeal?.dailyTotals?.waterIntake === nextProps.dailyMeal?.dailyTotals?.waterIntake &&
-    prevProps.activeProgram?.id === nextProps.activeProgram?.id &&
-    prevProps.garminData?.calories === nextProps.garminData?.calories
-  );
-});
+}, createNutritionMemoComparator({
+  primitiveProps: ['dateStr'],
+  objectProps: ['dailyMeal', 'activeProgram', 'garminData', 'nutritionData'],
+  deepPaths: {
+    dailyMeal: [
+      'date',
+      'dailyTotals.calories',
+      'dailyTotals.protein',
+      'dailyTotals.carbs',
+      'dailyTotals.fat',
+      'dailyTotals.complianceScore',
+      'dailyTotals.waterIntake',
+      'dailyTotals.targetCalories',
+      'dailyTotals.targetProtein',
+      'dailyTotals.targetCarbs',
+      'dailyTotals.targetFat'
+    ],
+    activeProgram: ['id'],
+    garminData: ['calories']
+  },
+  ignoreProps: ['nutritionData'] // Ignorer nutritionData (objet complexe qui change souvent)
+}));
 
 export default DailyTotalsCard;
 

@@ -120,6 +120,7 @@ const NutritionTab = () => {
               onDateChange={setSelectedDate}
               nutritionData={nutritionData}
               garminData={garminData}
+              isVisible={activeSection === 'journal'} // ✅ OPTIMISATION : Chargement conditionnel basé sur visibilité
             />
           </Suspense>
         )}

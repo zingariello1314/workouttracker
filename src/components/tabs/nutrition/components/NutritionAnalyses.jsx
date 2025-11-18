@@ -50,6 +50,8 @@ import { calculateDailyTotals, getNutritionStats } from '../../../../hooks/nutri
 import { typography } from '../../../../styles/typography';
 import logger from '../../../../utils/logger';
 import { getMealsByDateRange } from '../../../../hooks/nutritionDataCRUD';
+// ✅ OPTIMISATION : Web Workers pour calculs lourds (non bloquants)
+import { useProcessDataForAnalysis } from '../../../../hooks/useNutritionWorker';
 import NutritionRecommendations from './NutritionRecommendations';
 import NutritionCorrelations from './NutritionCorrelations';
 import NutritionChronobiology from './NutritionChronobiology';
@@ -65,14 +67,36 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
   const [loading, setLoading] = useState(true);
   const [analysisData, setAnalysisData] = useState(null);
   const [chartsReady, setChartsReady] = useState(false); // État pour différer le rendu des graphiques
-  // ✅ OPTIMISATION 15 : Préférer prop garminData si fournie (évite duplication initialisation)
-  // Note : Hook toujours appelé pour respecter Règles des Hooks, mais prop utilisée en priorité
-  const hookGarminData = useGarminData();
-  const { dbReady: garminDbReady, loadDataByRange } = garminData || hookGarminData;
   // ✅ OPTIMISATION 4.1 : Ref pour cleanup async operations (évite memory leaks)
   const isMountedRef = useRef(true);
   // ✅ OPTIMISATION 2.1 : Cache avec hash pour processDataForAnalysis (80-95% réduction calculs)
   const analysisCacheRef = useRef({ data: null, hash: null, timestamp: 0, TTL: 60000 });
+  // ✅ CORRECTION : Ref pour éviter appels multiples simultanés
+  const isLoadingRef = useRef(false);
+  // ✅ CORRECTION : Ref pour processDataForAnalysis (évite boucle infinie si fonction change)
+  const processDataForAnalysisRef = useRef(null);
+  
+  // ✅ OPTIMISATION 15 : Préférer prop garminData si fournie (évite duplication initialisation)
+  // Note : Hook toujours appelé pour respecter Règles des Hooks, mais prop utilisée en priorité
+  const hookGarminData = useGarminData();
+  const { dbReady: garminDbReady, loadDataByRange: loadDataByRangeFromHook } = garminData || hookGarminData;
+  
+  // ✅ CORRECTION : Ref pour loadDataByRange (évite boucle infinie si fonction change)
+  // Utiliser useRef avec fonction d'initialisation pour éviter recréation à chaque render
+  const loadDataByRangeRef = useRef(null);
+  
+  // ✅ CORRECTION : Mettre à jour ref immédiatement et à chaque changement
+  // Utiliser useMemo pour synchroniser la ref avec la valeur actuelle
+  // Note : On ne peut pas utiliser useMemo pour une ref, donc on utilise useEffect
+  // mais on s'assure que la ref est mise à jour immédiatement au premier render
+  if (loadDataByRangeRef.current !== loadDataByRangeFromHook) {
+    loadDataByRangeRef.current = loadDataByRangeFromHook;
+  }
+  
+  // ✅ CORRECTION : useEffect de backup pour garantir synchronisation (au cas où)
+  useEffect(() => {
+    loadDataByRangeRef.current = loadDataByRangeFromHook;
+  }, [loadDataByRangeFromHook]);
 
   // Attendre que le DOM soit prêt avant de rendre les graphiques
   useEffect(() => {
@@ -113,7 +137,8 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
   // ✅ OPTIMISATION 2.1 : Cache avec hash pour éviter recalculs (80-95% réduction calculs)
   // ✅ CORRECTION 3 : Générer hash APRÈS chargement meals pour cache correct
   // IMPORTANT : Définir AVANT loadAnalysisData car elle l'utilise
-  const processDataForAnalysis = useCallback(async (dailyMeals, program, garminData, startDate, endDate) => {
+  // ✅ OPTIMISATION : Version originale (fallback si worker non disponible)
+  const processDataForAnalysisOriginal = useCallback(async (dailyMeals, program, garminData, startDate, endDate) => {
     // Créer map des données Garmin par date
     const garminMap = new Map();
     if (garminData && Array.isArray(garminData)) {
@@ -286,12 +311,164 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
 
     return result;
   }, []); // Pas de dépendances car fonction pure (paramètres passés en arguments)
+  
+  // ✅ OPTIMISATION : Web Workers pour calculs lourds (non bloquants)
+  // Fallback vers fonction originale si worker non disponible
+  const { processData: processDataWithWorker, isAvailable: isWorkerAvailable } = useProcessDataForAnalysis(
+    // Fallback : utiliser version originale
+    async (data) => {
+      return processDataForAnalysisOriginal(
+        data.dailyMeals,
+        data.program,
+        data.garminData,
+        data.startDate,
+        data.endDate
+      );
+    }
+  );
+  
+  // ✅ OPTIMISATION : Wrapper qui utilise worker si disponible, sinon fallback
+  // ✅ CORRECTION : Mémoriser dans ref pour éviter boucle infinie
+  const processDataForAnalysis = useCallback(async (dailyMeals, program, garminData, startDate, endDate) => {
+    // Créer map des données Garmin par date
+    const garminMap = new Map();
+    if (garminData && Array.isArray(garminData)) {
+      garminData.forEach(metric => {
+        if (metric.date) {
+          garminMap.set(metric.date, metric);
+        }
+      });
+    }
+    
+    // Charger meals pour période
+    const allMeals = await getMealsByDateRange(startDate, endDate);
+    
+    // Générer hash pour cache
+    const dataHash = JSON.stringify({
+      dailyMealsCount: dailyMeals?.length || 0,
+      mealsCount: allMeals?.length || 0,
+      programId: program?.id || null,
+      garminDataCount: garminData?.length || 0,
+      startDate,
+      endDate
+    });
+    
+    const cached = analysisCacheRef.current;
+    const now = Date.now();
+    
+    // Vérifier cache
+    if (cached.data && cached.hash === dataHash && (now - cached.timestamp) < cached.TTL) {
+      return cached.data;
+    }
+    
+    // Si worker disponible, utiliser worker
+    if (isWorkerAvailable && processDataWithWorker) {
+      try {
+        // Préparer données pour worker (convertir Map en objet simple)
+        const garminMapObj = {};
+        garminMap.forEach((value, key) => {
+          garminMapObj[key] = value;
+        });
+        
+        // Créer map des meals par date (objet simple pour worker)
+        const mealsByDateObj = {};
+        if (allMeals && Array.isArray(allMeals)) {
+          allMeals.forEach(meal => {
+            if (meal.date) {
+              if (!mealsByDateObj[meal.date]) {
+                mealsByDateObj[meal.date] = [];
+              }
+              mealsByDateObj[meal.date].push(meal);
+            }
+          });
+        }
+        
+        // Appeler worker
+        const workerResult = await processDataWithWorker({
+          dailyMeals,
+          allMeals,
+          program,
+          garminMap: garminMapObj,
+          startDate,
+          endDate
+        });
+        
+        // Post-traiter résultats (ajouter dateLabel, etc.)
+        const dailyData = workerResult.dailyData.map(d => ({
+          ...d,
+          dateLabel: new Date(d.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+        }));
+        
+        // Calculer tendances (post-traitement)
+        const midPoint = Math.floor(dailyData.length / 2);
+        let firstHalfSum = 0;
+        let secondHalfSum = 0;
+        let firstHalfCount = 0;
+        let secondHalfCount = 0;
+        
+        dailyData.forEach((d, index) => {
+          const calories = d.calories || 0;
+          if (index < midPoint) {
+            firstHalfSum += calories;
+            firstHalfCount++;
+          } else {
+            secondHalfSum += calories;
+            secondHalfCount++;
+          }
+        });
+        
+        const firstHalfAvg = firstHalfCount > 0 ? firstHalfSum / firstHalfCount : 0;
+        const secondHalfAvg = secondHalfCount > 0 ? secondHalfSum / secondHalfCount : 0;
+        
+        const trend = secondHalfAvg > 0 && firstHalfAvg > 0
+          ? ((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100
+          : 0;
+        
+        const result = {
+          dailyData,
+          stats: workerResult.stats,
+          trend,
+          program,
+          hasGarminData: garminMap.size > 0
+        };
+        
+        // Mettre en cache
+        analysisCacheRef.current = {
+          data: result,
+          hash: dataHash,
+          timestamp: now,
+          TTL: 60000
+        };
+        
+        return result;
+      } catch (error) {
+        log.warn('[NutritionAnalyses] Erreur worker, fallback vers main thread:', error);
+        // Fallback vers version originale
+        return processDataForAnalysisOriginal(dailyMeals, program, garminData, startDate, endDate);
+      }
+    }
+    
+    // Fallback : utiliser version originale
+    return processDataForAnalysisOriginal(dailyMeals, program, garminData, startDate, endDate);
+  }, [isWorkerAvailable, processDataWithWorker, processDataForAnalysisOriginal]);
+  
+  // ✅ CORRECTION : Mettre à jour ref pour processDataForAnalysis
+  useEffect(() => {
+    processDataForAnalysisRef.current = processDataForAnalysis;
+  }, [processDataForAnalysis]);
 
   // ✅ OPTIMISATION 29-30 : Mémoriser loadAnalysisData avec useCallback (évite recréation et respecte Règles des Hooks)
   // ✅ OPTIMISATION 1.1 : Requêtes parallèles avec Promise.all (2-3x plus rapide)
   // ✅ OPTIMISATION 4.1 : Cleanup async operations (évite memory leaks)
   // ✅ OPTIMISATION 5.1 : Utiliser debouncedPeriod au lieu de selectedPeriod
+  // ✅ CORRECTION : Protection contre appels multiples simultanés (évite boucle infinie)
   const loadAnalysisData = useCallback(async () => {
+    // ✅ CORRECTION : Éviter appels multiples simultanés
+    if (isLoadingRef.current) {
+      log.debug('[NutritionAnalyses] Chargement déjà en cours, ignoré');
+      return;
+    }
+    
     if (!nutritionData.dbReady) {
       if (isMountedRef.current) {
         setLoading(false);
@@ -299,6 +476,8 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
       return;
     }
 
+    isLoadingRef.current = true;
+    
     try {
       if (isMountedRef.current) {
         setLoading(true);
@@ -311,11 +490,12 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
       const endDateStr = DateHelper.getTodayLocal();
 
       // ✅ OPTIMISATION 1.1 : Requêtes parallèles (exécution simultanée ~50ms au lieu de 150ms)
+      // ✅ CORRECTION : Utiliser ref pour loadDataByRange (évite boucle infinie)
       const [dailyMeals, activeProgram, garminDataResult] = await Promise.all([
         nutritionData.getDailyMealsByRange(startDateStr, endDateStr),
         nutritionData.getActiveProgram(),
-        garminDbReady && loadDataByRange
-          ? loadDataByRange(startDateStr, endDateStr).catch(err => {
+        garminDbReady && loadDataByRangeRef.current
+          ? loadDataByRangeRef.current(startDateStr, endDateStr).catch(err => {
               log.warn('Erreur chargement Garmin', err);
               return null;
             })
@@ -332,7 +512,8 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
       }
 
       // Traiter données pour graphiques
-      const processedData = await processDataForAnalysis(dailyMeals, activeProgram, garminData, startDateStr, endDateStr);
+      // ✅ CORRECTION : Utiliser ref pour éviter dépendance dans useCallback
+      const processedData = await (processDataForAnalysisRef.current || processDataForAnalysis)(dailyMeals, activeProgram, garminData, startDateStr, endDateStr);
 
       // ✅ OPTIMISATION 4.1 : Vérifier si composant toujours monté avant setState
       if (isMountedRef.current) {
@@ -344,24 +525,32 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
         log.error('Erreur chargement données', error);
       }
     } finally {
+      isLoadingRef.current = false;
       if (isMountedRef.current) {
         setLoading(false);
       }
     }
-  }, [nutritionData.dbReady, debouncedPeriod, periods, garminDbReady, nutritionData.getDailyMealsByRange, nutritionData.getActiveProgram, loadDataByRange, processDataForAnalysis]);
+  }, [nutritionData.dbReady, debouncedPeriod, periods, garminDbReady, nutritionData.getDailyMealsByRange, nutritionData.getActiveProgram]);
 
   // ✅ OPTIMISATION 4.1 : Cleanup async operations (évite memory leaks)
+  // ✅ CORRECTION : Utiliser ref pour loadAnalysisData et ajouter vérification pour éviter boucle
+  const loadAnalysisDataRef = useRef(loadAnalysisData);
+  useEffect(() => {
+    loadAnalysisDataRef.current = loadAnalysisData;
+  }, [loadAnalysisData]);
+  
   useEffect(() => {
     isMountedRef.current = true;
     
-    if (nutritionData.dbReady) {
-      loadAnalysisData();
+    // ✅ CORRECTION : Vérifier que pas déjà en chargement pour éviter boucle
+    if (nutritionData.dbReady && !isLoadingRef.current) {
+      loadAnalysisDataRef.current();
     }
     
     return () => {
       isMountedRef.current = false;
     };
-  }, [nutritionData.dbReady, loadAnalysisData]);
+  }, [nutritionData.dbReady, debouncedPeriod]);
 
   // ✅ CORRECTION 4 : CustomTooltip avec React.memo directement (anti-pattern corrigé)
   const CustomTooltip = React.memo(({ active, payload, label }) => {
@@ -450,19 +639,25 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
       </div>
 
       {/* Recommandations personnalisées */}
-      <NutritionRecommendations />
+      {/* ✅ CORRECTION : Désactiver composants enfants qui chargent Garmin si section Analyses non visible */}
+      {/* Ces composants chargent leurs propres données Garmin, ce qui peut causer des conflits */}
+      {analysisData && (
+        <>
+          <NutritionRecommendations />
 
-      {/* Corrélations nutritionnelles */}
-      <NutritionCorrelations />
+          {/* Corrélations nutritionnelles */}
+          <NutritionCorrelations />
 
-      {/* Chronobiologie (Timing Optimal) */}
-      <NutritionChronobiology />
+          {/* Chronobiologie (Timing Optimal) */}
+          <NutritionChronobiology />
 
-      {/* Score Santé Globale */}
-      <NutritionHealthScore />
+          {/* Score Santé Globale */}
+          <NutritionHealthScore />
 
-      {/* Prédictions Offline (ML) */}
-      <NutritionPredictions />
+          {/* Prédictions Offline (ML) */}
+          <NutritionPredictions />
+        </>
+      )}
 
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

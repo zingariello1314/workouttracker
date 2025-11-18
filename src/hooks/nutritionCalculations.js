@@ -34,6 +34,10 @@ import {
   getValidWaterTarget,
   validateCalculationResult
 } from '../services/nutrition/nutritionCalculationHelpers';
+// ✅ OPTIMISATION : Cache calculs avec hash inputs (évite recalculs identiques)
+import { getCalculationHash, getNutritionCalculationCache } from '../services/nutrition/nutritionCalculationCache';
+// ✅ OPTIMISATION : Configuration centralisée (valeurs par défaut, limites)
+import { NutritionConfig } from '../config/nutrition.config';
 
 const log = logger.module('nutritionCalculations');
 
@@ -75,17 +79,28 @@ export const calculateDailyTotals = (meals = [], program = null) => {
       }
     }
     
+    // ✅ OPTIMISATION : Cache calculs avec hash inputs (évite recalculs identiques)
+    // Générer hash des inputs validés pour vérifier cache
+    const inputsHash = getCalculationHash(meals, validatedProgram);
+    const cache = getNutritionCalculationCache();
+    
+    // Vérifier cache AVANT calculs coûteux
+    const cached = cache.get(inputsHash);
+    if (cached !== null) {
+      return cached; // ✅ Retourner résultat en cache (évite recalculs)
+    }
+    
     // ✅ OPTIMISATION WARNING 1 : Early return si pas de repas (évite calculs inutiles + warnings)
     if (meals.length === 0) {
-      // Récupérer targets (même si pas de repas, on a besoin des targets pour compliance)
-      const targetCalories = getValidCaloriesTarget(validatedProgram?.targetCalories, 2500);
-      const targetProtein = getValidProteinTarget(validatedProgram?.targetProtein, 150);
-      const targetCarbs = getValidCarbsTarget(validatedProgram?.targetCarbs, 300);
-      const targetFat = getValidFatTarget(validatedProgram?.targetFat, 80);
-      const targetWater = getValidWaterTarget(validatedProgram?.targetWater, 3000);
+      // ✅ OPTIMISATION : Utiliser valeurs par défaut depuis configuration centralisée
+      const targetCalories = getValidCaloriesTarget(validatedProgram?.targetCalories, NutritionConfig.defaults.targetCalories);
+      const targetProtein = getValidProteinTarget(validatedProgram?.targetProtein, NutritionConfig.defaults.targetProtein);
+      const targetCarbs = getValidCarbsTarget(validatedProgram?.targetCarbs, NutritionConfig.defaults.targetCarbs);
+      const targetFat = getValidFatTarget(validatedProgram?.targetFat, NutritionConfig.defaults.targetFat);
+      const targetWater = getValidWaterTarget(validatedProgram?.targetWater, NutritionConfig.defaults.targetWater);
       
       // Retourner structure complète avec valeurs par défaut
-      return {
+      const emptyResult = {
         calories: 0,
         protein: 0,
         carbs: 0,
@@ -106,6 +121,11 @@ export const calculateDailyTotals = (meals = [], program = null) => {
         complianceWater: -targetWater,
         complianceScore: 0 // Pas de repas = score 0
       };
+      
+      // ✅ OPTIMISATION : Mettre en cache même pour cas vide
+      cache.set(inputsHash, emptyResult);
+      
+      return emptyResult;
     }
     
     // Initialiser totaux
@@ -156,10 +176,10 @@ export const calculateDailyTotals = (meals = [], program = null) => {
       }
     });
 
-    // ✅ PHASE 10.5 : Calculer pourcentages avec division sécurisée
-    const proteinCalories = validateAndNormalizeNumber(totalProtein * 4, { fieldName: 'proteinCalories' }); // 4 kcal/g
-    const carbsCalories = validateAndNormalizeNumber(totalCarbs * 4, { fieldName: 'carbsCalories' }); // 4 kcal/g
-    const fatCalories = validateAndNormalizeNumber(totalFat * 9, { fieldName: 'fatCalories' }); // 9 kcal/g
+    // ✅ OPTIMISATION : Utiliser valeurs caloriques depuis configuration centralisée
+    const proteinCalories = validateAndNormalizeNumber(totalProtein * NutritionConfig.macros.proteinCaloriesPerGram, { fieldName: 'proteinCalories' });
+    const carbsCalories = validateAndNormalizeNumber(totalCarbs * NutritionConfig.macros.carbsCaloriesPerGram, { fieldName: 'carbsCalories' });
+    const fatCalories = validateAndNormalizeNumber(totalFat * NutritionConfig.macros.fatCaloriesPerGram, { fieldName: 'fatCalories' });
     const totalMacroCalories = proteinCalories + carbsCalories + fatCalories;
 
     // ✅ OPTIMISATION WARNING 1 : Vérifier totalMacroCalories AVANT divisions (évite warnings inutiles)
@@ -188,12 +208,12 @@ export const calculateDailyTotals = (meals = [], program = null) => {
       );
     }
 
-    // ✅ PHASE 10.5 : Récupérer targets avec validation et plages min/max
-    const targetCalories = getValidCaloriesTarget(validatedProgram?.targetCalories, 2500);
-    const targetProtein = getValidProteinTarget(validatedProgram?.targetProtein, 150);
-    const targetCarbs = getValidCarbsTarget(validatedProgram?.targetCarbs, 300);
-    const targetFat = getValidFatTarget(validatedProgram?.targetFat, 80);
-    const targetWater = getValidWaterTarget(validatedProgram?.targetWater, 3000); // ml
+    // ✅ OPTIMISATION : Utiliser valeurs par défaut depuis configuration centralisée
+    const targetCalories = getValidCaloriesTarget(validatedProgram?.targetCalories, NutritionConfig.defaults.targetCalories);
+    const targetProtein = getValidProteinTarget(validatedProgram?.targetProtein, NutritionConfig.defaults.targetProtein);
+    const targetCarbs = getValidCarbsTarget(validatedProgram?.targetCarbs, NutritionConfig.defaults.targetCarbs);
+    const targetFat = getValidFatTarget(validatedProgram?.targetFat, NutritionConfig.defaults.targetFat);
+    const targetWater = getValidWaterTarget(validatedProgram?.targetWater, NutritionConfig.defaults.targetWater);
 
     // ✅ PHASE 10.5 : Calculer écarts (conformité) avec validation
     const complianceCalories = validateAndNormalizeNumber(totalCalories - targetCalories, {
@@ -299,6 +319,9 @@ export const calculateDailyTotals = (meals = [], program = null) => {
       })
     };
     
+    // ✅ OPTIMISATION : Mettre en cache le résultat AVANT retour
+    cache.set(inputsHash, result);
+    
     return result;
   } catch (error) {
     // ✅ PHASE 10.5 : Gestion erreurs standardisée
@@ -333,11 +356,12 @@ const calculateComplianceScore = (macros) => {
     return 0;
   }
   
+  // ✅ OPTIMISATION : Utiliser poids depuis configuration centralisée
   const weights = {
-    calories: 0.4,  // 40% du score
-    protein: 0.3,   // 30% du score
-    carbs: 0.15,    // 15% du score
-    fat: 0.15       // 15% du score
+    calories: NutritionConfig.compliance.caloriesWeight,
+    protein: NutritionConfig.compliance.proteinWeight,
+    carbs: NutritionConfig.compliance.carbsWeight,
+    fat: NutritionConfig.compliance.fatWeight
   };
 
   let totalScore = 0;
@@ -371,18 +395,22 @@ const calculateComplianceScore = (macros) => {
         return; // Skip ce macro
       }
       
+      // ✅ OPTIMISATION : Utiliser seuils depuis configuration centralisée
       // Score basé sur proximité de la cible
-      // 100% = score 100, 90-110% = score 100, <80% ou >120% = pénalité
+      // 100% = score 100, entre threshold et penaltyThreshold = score 100, <threshold ou >penaltyThreshold = pénalité
+      const threshold = NutritionConfig.compliance.complianceThreshold; // 0.8 = 80%
+      const penaltyThreshold = NutritionConfig.compliance.compliancePenaltyThreshold; // 1.2 = 120%
+      
       let score = 100;
-      if (ratio < 0.8) {
+      if (ratio < threshold) {
         // ✅ PHASE 10.5 : Division sécurisée pour pénalité
-        score = safeDivision(100 * ratio, 0.8, {
+        score = safeDivision(100 * ratio, threshold, {
           operation: `calculateComplianceScore.${key}.penaltyLow`,
           defaultValue: 0
         });
-      } else if (ratio > 1.2) {
+      } else if (ratio > penaltyThreshold) {
         // ✅ PHASE 10.5 : Division sécurisée pour pénalité
-        score = safeDivision(100 * 1.2, ratio, {
+        score = safeDivision(100 * penaltyThreshold, ratio, {
           operation: `calculateComplianceScore.${key}.penaltyHigh`,
           defaultValue: 0
         });

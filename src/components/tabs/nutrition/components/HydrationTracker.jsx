@@ -19,6 +19,8 @@ import { Droplet, Plus, Minus, Edit2, Check, X, Clock } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
 import { useToast } from '../../../ui/Toast/ToastProvider';
 import logger from '../../../../utils/logger';
+// ✅ OPTIMISATION : Helpers pour comparaisons React.memo optimisées
+import { createSimpleMemoComparator } from '../../../../utils/reactMemoHelpers';
 
 const log = logger.module('HydrationTracker');
 
@@ -366,8 +368,11 @@ const HydrationTracker = React.memo(({ date, nutritionData, onUpdate }) => {
     </Card>
   );
 }, (prevProps, nextProps) => {
-  // ✅ Comparaison simple : Re-render seulement si date change
-  return prevProps.date === nextProps.date;
+  // ✅ Comparaison optimisée : Comparer date et ignorer callbacks/objets complexes
+  return (
+    prevProps.date === nextProps.date
+    // ✅ Note: nutritionData et onUpdate sont ignorés (callbacks/objets complexes changent souvent)
+  );
 });
 
 export default HydrationTracker;

@@ -10,6 +10,8 @@
  */
 
 import React, { useState, useEffect, useMemo, memo } from 'react';
+// ✅ OPTIMISATION : Lazy evaluation pour calculs optionnels
+import { useLazyCalculation } from '../../../../hooks/useLazyCalculation';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import { 
@@ -82,61 +84,80 @@ const NutritionGamification = () => {
     });
   }, [achievements]);
   
-  // ✅ OPTIMISATION 3.2 : useMemo pour badges récents (4 premiers)
-  const recentBadges = useMemo(() => {
-    return sortedAchievements.slice(0, 4);
-  }, [sortedAchievements]);
+  // ✅ OPTIMISATION : Lazy evaluation - Ne calculer que si onglet actif
+  // Badges récents (4 premiers) - Calculé seulement si onglet overview actif
+  const recentBadges = useLazyCalculation(
+    () => sortedAchievements.slice(0, 4),
+    activeTab === 'overview',
+    [],
+    [sortedAchievements, activeTab]
+  );
   
-  // ✅ OPTIMISATION 3.3 : Pré-formater dates des badges
-  const achievementsWithFormattedDates = useMemo(() => {
-    return sortedAchievements.map(badge => ({
-      ...badge,
-      formattedDate: badge.unlockedDate 
-        ? new Date(badge.unlockedDate).toLocaleDateString('fr-FR')
-        : ''
-    }));
-  }, [sortedAchievements]);
-
-  // ✅ Afficher tous les badges : débloqués en couleur, non débloqués grisés
-  const unlockedBadgeIds = useMemo(() => {
-    return new Set(achievements.map(b => b.id));
-  }, [achievements]);
-
-  // Combiner tous les badges avec leur statut débloqué/non débloqué
-  const allBadgesWithStatus = useMemo(() => {
-    return ALL_BADGES.map(badge => {
-      const isUnlocked = unlockedBadgeIds.has(badge.id);
-      const unlockedBadge = isUnlocked ? achievements.find(a => a.id === badge.id) : null;
-      
-      return {
+  // ✅ OPTIMISATION : Lazy evaluation - Calculs badges seulement si onglet badges actif
+  // Pré-formater dates des badges - Calculé seulement si onglet badges actif
+  const achievementsWithFormattedDates = useLazyCalculation(
+    () => {
+      return sortedAchievements.map(badge => ({
         ...badge,
-        isUnlocked,
-        unlockedDate: unlockedBadge?.unlockedDate || null,
-        formattedDate: unlockedBadge?.unlockedDate 
-          ? new Date(unlockedBadge.unlockedDate).toLocaleDateString('fr-FR')
-          : null
-      };
-    });
-  }, [achievements, unlockedBadgeIds]);
+        formattedDate: badge.unlockedDate 
+          ? new Date(badge.unlockedDate).toLocaleDateString('fr-FR')
+          : ''
+      }));
+    },
+    activeTab === 'badges',
+    [],
+    [sortedAchievements, activeTab]
+  );
 
-  // Trier tous les badges : débloqués en premier, puis non débloqués
-  const sortedAllBadges = useMemo(() => {
-    return [...allBadgesWithStatus].sort((a, b) => {
-      // D'abord par statut (débloqués en premier)
-      if (a.isUnlocked !== b.isUnlocked) {
-        return b.isUnlocked ? 1 : -1; // true (débloqué) avant false (non débloqué)
-      }
-      // Ensuite par date de débloquage (plus récent en premier pour les débloqués)
-      if (a.isUnlocked && b.isUnlocked) {
-        const dateA = a.unlockedDate || '';
-        const dateB = b.unlockedDate || '';
-        return dateB.localeCompare(dateA);
-      }
-      // Pour les non débloqués, trier par rareté (legendary > epic > rare > common)
-      const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
-      return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
-    });
-  }, [allBadgesWithStatus]);
+  // ✅ OPTIMISATION : Lazy evaluation - Calculer unlockedBadgeIds et allBadgesWithStatus ensemble
+  // (unlockedBadgeIds est utilisé seulement dans allBadgesWithStatus, donc on les calcule ensemble)
+  const allBadgesWithStatus = useLazyCalculation(
+    () => {
+      // Calculer unlockedBadgeIds en interne
+      const unlockedBadgeIds = new Set(achievements.map(b => b.id));
+      
+      return ALL_BADGES.map(badge => {
+        const isUnlocked = unlockedBadgeIds.has(badge.id);
+        const unlockedBadge = isUnlocked ? achievements.find(a => a.id === badge.id) : null;
+        
+        return {
+          ...badge,
+          isUnlocked,
+          unlockedDate: unlockedBadge?.unlockedDate || null,
+          formattedDate: unlockedBadge?.unlockedDate 
+            ? new Date(unlockedBadge.unlockedDate).toLocaleDateString('fr-FR')
+            : null
+        };
+      });
+    },
+    activeTab === 'badges',
+    [],
+    [achievements, activeTab]
+  );
+
+  // Trier tous les badges : débloqués en premier, puis non débloqués - Calculé seulement si onglet badges actif
+  const sortedAllBadges = useLazyCalculation(
+    () => {
+      return [...allBadgesWithStatus].sort((a, b) => {
+        // D'abord par statut (débloqués en premier)
+        if (a.isUnlocked !== b.isUnlocked) {
+          return b.isUnlocked ? 1 : -1; // true (débloqué) avant false (non débloqué)
+        }
+        // Ensuite par date de débloquage (plus récent en premier pour les débloqués)
+        if (a.isUnlocked && b.isUnlocked) {
+          const dateA = a.unlockedDate || '';
+          const dateB = b.unlockedDate || '';
+          return dateB.localeCompare(dateA);
+        }
+        // Pour les non débloqués, trier par rareté (legendary > epic > rare > common)
+        const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
+        return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+      });
+    },
+    activeTab === 'badges',
+    [],
+    [allBadgesWithStatus, activeTab]
+  );
 
   if (!enabled) {
     return (

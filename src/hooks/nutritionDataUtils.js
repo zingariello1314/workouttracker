@@ -175,9 +175,28 @@ export const openNutritionDB = async () => {
           resolve(dbInstance);
         };
         
-        openRequest.onerror = (openErrEvent) => {
+        openRequest.onerror = async (openErrEvent) => {
           openingPromise = null;
-          log.error('Erreur ouverture IndexedDB:', openErrEvent.target.error);
+          const error = openErrEvent.target.error;
+          log.error('Erreur ouverture IndexedDB:', error);
+          
+          // ✅ OPTIMISATION : Tenter récupération si corruption détectée
+          try {
+            const { isCorruptionError, handleCorruption } = await import('../services/nutrition/nutritionCorruptionHandler');
+            if (isCorruptionError(error)) {
+              log.warn('Corruption détectée lors ouverture, tentative récupération...');
+              const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
+              if (recoveredDb) {
+                dbInstance = recoveredDb;
+                log.info('✅ IndexedDB récupérée après corruption');
+                resolve(recoveredDb);
+                return;
+              }
+            }
+          } catch (recoveryError) {
+            log.warn('Erreur lors tentative récupération:', recoveryError);
+          }
+          
           resolve(null);
         };
       };

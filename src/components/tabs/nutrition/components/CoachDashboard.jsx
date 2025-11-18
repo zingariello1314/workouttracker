@@ -12,6 +12,8 @@
  */
 
 import React, { useState, useCallback, useRef, useMemo } from 'react';
+// ✅ OPTIMISATION : Lazy evaluation pour calculs optionnels
+import { useLazyCalculation } from '../../../../hooks/useLazyCalculation';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
@@ -202,53 +204,74 @@ const CoachDashboard = () => {
     }
   }, [importJson, showError]);
 
-  // Données pour graphiques (scope: charts)
-  const chartData = useMemo(() => {
-    if (!shareData || !shareData.charts || !shareData.charts.timeline) {
-      return [];
-    }
+  // ✅ OPTIMISATION : Lazy evaluation - Ne calculer que si onglet actif
+  // Données pour graphiques (scope: charts) - Calculé seulement si onglet charts actif
+  const chartData = useLazyCalculation(
+    () => {
+      if (!shareData || !shareData.charts || !shareData.charts.timeline) {
+        return [];
+      }
 
-    return shareData.charts.timeline.map((item, index) => ({
-      day: `J${item.day}`,
-      calories: item.calories || 0,
-      protein: item.protein || 0,
-      carbs: item.carbs || 0,
-      fat: item.fat || 0,
-      compliance: item.compliance || 0
-    }));
-  }, [shareData]);
+      return shareData.charts.timeline.map((item, index) => ({
+        day: `J${item.day}`,
+        calories: item.calories || 0,
+        protein: item.protein || 0,
+        carbs: item.carbs || 0,
+        fat: item.fat || 0,
+        compliance: item.compliance || 0
+      }));
+    },
+    activeTab === 'charts',
+    [],
+    [shareData, activeTab]
+  );
 
-  // Données pour distribution macros (scope: charts)
-  const macroDistribution = useMemo(() => {
-    if (!shareData || !shareData.charts || !shareData.charts.macroDistribution) {
-      return [];
-    }
+  // Données pour distribution macros (scope: charts) - Calculé seulement si onglet charts actif
+  const macroDistribution = useLazyCalculation(
+    () => {
+      if (!shareData || !shareData.charts || !shareData.charts.macroDistribution) {
+        return [];
+      }
 
-    const dist = shareData.charts.macroDistribution;
-    return [
-      { name: 'Protéines', value: dist.protein || 0, color: '#3B82F6' },
-      { name: 'Glucides', value: dist.carbs || 0, color: '#10B981' },
-      { name: 'Lipides', value: dist.fat || 0, color: '#F59E0B' }
-    ];
-  }, [shareData]);
+      const dist = shareData.charts.macroDistribution;
+      return [
+        { name: 'Protéines', value: dist.protein || 0, color: '#3B82F6' },
+        { name: 'Glucides', value: dist.carbs || 0, color: '#10B981' },
+        { name: 'Lipides', value: dist.fat || 0, color: '#F59E0B' }
+      ];
+    },
+    activeTab === 'charts',
+    [],
+    [shareData, activeTab]
+  );
 
-  // Statistiques (scope: stats)
-  const stats = useMemo(() => {
-    if (!shareData || !shareData.stats) {
-      return null;
-    }
+  // Statistiques (scope: stats) - Calculé seulement si onglet stats actif
+  const stats = useLazyCalculation(
+    () => {
+      if (!shareData || !shareData.stats) {
+        return null;
+      }
 
-    return shareData.stats;
-  }, [shareData]);
+      return shareData.stats;
+    },
+    activeTab === 'stats',
+    null,
+    [shareData, activeTab]
+  );
 
-  // Progression (scope: progress)
-  const progress = useMemo(() => {
-    if (!shareData || !shareData.progress) {
-      return null;
-    }
+  // Progression (scope: progress) - Calculé seulement si onglet progress actif
+  const progress = useLazyCalculation(
+    () => {
+      if (!shareData || !shareData.progress) {
+        return null;
+      }
 
-    return shareData.progress;
-  }, [shareData]);
+      return shareData.progress;
+    },
+    activeTab === 'progress',
+    null,
+    [shareData, activeTab]
+  );
 
   // Déterminer onglets disponibles selon scope
   const availableTabs = useMemo(() => {

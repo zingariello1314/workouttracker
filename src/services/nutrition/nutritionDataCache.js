@@ -23,29 +23,31 @@ const log = logger.module('nutritionDataCache');
 
 // ==================== CONSTANTES ====================
 
+// ✅ OPTIMISATION : Utiliser configuration centralisée
+import { NutritionConfig } from '../../config/nutrition.config';
+
 /**
  * TTL (Time To Live) par défaut pour chaque type de donnée (en ms)
- * - Données journalières : 60s (changent souvent)
- * - Programmes : 300s (changent rarement)
- * - Favoris : 300s (changent rarement)
- * - Hydratation : 60s (changent souvent)
+ * 
+ * ✅ OPTIMISATION : Utiliser valeurs depuis configuration centralisée
  */
 const DEFAULT_TTL = {
-  dailyMeal: 60000,        // 1 minute
-  meals: 60000,            // 1 minute
-  program: 300000,         // 5 minutes
-  activeProgram: 300000,   // 5 minutes
-  favoriteFoods: 300000,   // 5 minutes
-  hydrationLog: 60000,     // 1 minute
-  gamification: 60000,     // 1 minute
+  dailyMeal: NutritionConfig.cache.dailyMealTTL,
+  meals: NutritionConfig.cache.mealsTTL,
+  program: NutritionConfig.cache.programTTL,
+  activeProgram: NutritionConfig.cache.activeProgramTTL,
+  favoriteFoods: NutritionConfig.cache.favoriteFoodsTTL,
+  hydrationLog: NutritionConfig.cache.hydrationLogTTL,
+  gamification: NutritionConfig.cache.gamificationTTL,
 };
 
 /**
  * Limite maximale d'entrées par type de cache
- * - Cache global : 100 entrées (équilibre mémoire/performance)
+ * 
+ * ✅ OPTIMISATION : Utiliser valeur depuis configuration centralisée
  */
 const CACHE_LIMITS = {
-  global: 100,
+  global: NutritionConfig.cache.maxSize,
 };
 
 // ==================== CLASSE CACHE ENTRÉE ====================

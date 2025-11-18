@@ -15,6 +15,8 @@ import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import { Clock, Edit2, Trash2, Plus, Utensils } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
+// ✅ OPTIMISATION : Helpers pour comparaisons React.memo optimisées
+import { createNutritionMemoComparator, compareMeals } from '../../../../utils/reactMemoHelpers';
 
 // ✅ OPTIMISATION 2.1 : React.memo pour éviter re-renders inutiles (50-80% réduction)
 const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
@@ -205,17 +207,15 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
     </Card>
   );
 }, (prevProps, nextProps) => {
-  // ✅ Comparaison arrays : Deep equality seulement si longueur change ou IDs différents
-  return (
-    prevProps.meals.length === nextProps.meals.length &&
-    prevProps.meals.every((m, i) => {
-      const nextMeal = nextProps.meals[i];
-      return m.id === nextMeal?.id && 
-             m.type === nextMeal?.type &&
-             m.totalCalories === nextMeal?.totalCalories &&
-             m.timestamp === nextMeal?.timestamp;
-    })
+  // ✅ Comparaison optimisée : Ignorer callbacks, comparer seulement meals
+  if (prevProps.meals.length !== nextProps.meals.length) return false;
+  
+  // ✅ Utiliser compareMeals pour chaque item
+  return prevProps.meals.every((meal, index) => 
+    compareMeals(meal, nextProps.meals[index])
   );
+  
+  // ✅ Note: onEdit, onDelete, onAdd sont ignorés (callbacks changent souvent)
 });
 
 export default MealList;

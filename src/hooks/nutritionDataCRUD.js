@@ -42,6 +42,8 @@ import {
 } from '../services/nutrition/nutritionRetryUtils';
 // ✅ PHASE 12.2 : Import Repository pour migration progressive
 import { getNutritionRepository } from '../services/nutrition/repository';
+// ✅ OPTIMISATION : Validation cohérence stores (évite orphelins, garantit intégrité)
+import { validateAfterOperation } from '../services/nutrition/nutritionStoreConsistency';
 
 const log = {
   debug: (...args) => console.log('[nutritionDataCRUD]', ...args),
@@ -860,6 +862,13 @@ export const deleteMeal = async (mealId) => {
         { operationName: 'deleteMeal' }
       );
       
+      // ✅ OPTIMISATION : Valider cohérence après suppression (nettoyer références orphelines)
+      try {
+        await validateAfterOperation('deleteMeal', mealId, { autoFix: true, verbose: false });
+      } catch (validationError) {
+        log.warn('[deleteMeal] Erreur validation cohérence (non bloquant):', validationError);
+      }
+      
       log.debug(`Meal supprimé: ${mealId}`);
       return true;
     } catch (error) {
@@ -890,6 +899,13 @@ export const deleteMeal = async (mealId) => {
           cache.invalidate(cache.generateKey('meals', mealDate));
           // Invalider aussi cache dailyMeal (totaux mis à jour)
           cache.invalidate(cache.generateKey('dailyMeal', mealDate));
+        }
+        
+        // ✅ OPTIMISATION : Valider cohérence après suppression (nettoyer références orphelines)
+        try {
+          await validateAfterOperation('deleteMeal', mealId, { autoFix: true, verbose: false });
+        } catch (validationError) {
+          log.warn('[deleteMeal] Erreur validation cohérence (non bloquant):', validationError);
         }
         
         return true;
@@ -1414,6 +1430,15 @@ export const saveProgram = async (program, options = {}) => {
         { validate: false, operationName: 'saveProgram' } // Déjà validé avec Zod
       );
       
+      // ✅ OPTIMISATION : Valider cohérence après activation (s'assurer qu'un seul est actif)
+      if (validatedProgram.isActive) {
+        try {
+          await validateAfterOperation('activateProgram', dataToSave.id, { autoFix: true, verbose: false });
+        } catch (validationError) {
+          log.warn('[saveProgram] Erreur validation cohérence (non bloquant):', validationError);
+        }
+      }
+      
       log.debug(`Program sauvegardé: ${dataToSave.id}`);
       return true;
     } catch (error) {
@@ -1577,6 +1602,13 @@ export const deleteProgram = async (programId) => {
       programId,
       { operationName: 'deleteProgram' }
     );
+    
+    // ✅ OPTIMISATION : Valider cohérence après suppression (nettoyer références orphelines)
+    try {
+      await validateAfterOperation('deleteProgram', programId, { autoFix: true, verbose: false });
+    } catch (validationError) {
+      log.warn('[deleteProgram] Erreur validation cohérence (non bloquant):', validationError);
+    }
     
     log.debug(`Program supprimé: ${programId}`);
     return true;
@@ -1755,7 +1787,16 @@ export const saveFavoriteFood = async (favoriteFood) => {
       const repository = await getNutritionRepository();
       
       // ✅ Mettre à jour lastUsed et usageCount (utiliser validatedFavoriteFood)
-      const existing = await getFavoriteFood(validatedFavoriteFood.id);
+      // ✅ Protection : getFavoriteFood peut échouer si Repository échoue, utiliser try-catch
+      let existing = null;
+      try {
+        existing = await getFavoriteFood(validatedFavoriteFood.id);
+      } catch (getError) {
+        // ✅ Si getFavoriteFood échoue, continuer avec existing = null
+        log.warn('[saveFavoriteFood] Erreur getFavoriteFood, continuer avec existing = null:', getError);
+        existing = null;
+      }
+      
       const dataToSave = {
         ...validatedFavoriteFood,
         lastUsed: new Date().toISOString().split('T')[0],
@@ -1778,7 +1819,15 @@ export const saveFavoriteFood = async (favoriteFood) => {
       if (!db) return false;
 
       // Mettre à jour lastUsed et usageCount (utiliser validatedFavoriteFood)
-      const existing = await getFavoriteFood(validatedFavoriteFood.id);
+      // ✅ Protection : getFavoriteFood peut échouer, utiliser try-catch
+      let existing = null;
+      try {
+        existing = await getFavoriteFood(validatedFavoriteFood.id);
+      } catch (getError) {
+        // ✅ Si getFavoriteFood échoue, continuer avec existing = null
+        log.warn('[saveFavoriteFood] Erreur getFavoriteFood dans fallback, continuer avec existing = null:', getError);
+        existing = null;
+      }
       const dataToSave = {
         ...validatedFavoriteFood,
         lastUsed: new Date().toISOString().split('T')[0],
@@ -1788,14 +1837,20 @@ export const saveFavoriteFood = async (favoriteFood) => {
       const tx = db.transaction([STORE_FAVORITE_FOODS], 'readwrite');
       const store = tx.objectStore(STORE_FAVORITE_FOODS);
       
-      return new Promise((resolve, reject) => {
-        const request = store.put(dataToSave);
-        request.onsuccess = () => {
-          log.debug(`FavoriteFood sauvegardé: ${favoriteFood.id}`);
-          resolve(true);
-        };
-        request.onerror = () => reject(request.error);
-      });
+      try {
+        return await new Promise((resolve, reject) => {
+          const request = store.put(dataToSave);
+          request.onsuccess = () => {
+            log.debug(`FavoriteFood sauvegardé: ${favoriteFood.id}`);
+            resolve(true);
+          };
+          request.onerror = () => reject(request.error);
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (putError) {
+        log.error('[saveFavoriteFood] Erreur put dans fallback:', putError);
+        return false;
+      }
     }
   } catch (error) {
     log.error('Erreur saveFavoriteFood:', error);
@@ -2193,3 +2248,4 @@ export const deleteHydrationLog = async (date) => {
     }
   }
 };
+
