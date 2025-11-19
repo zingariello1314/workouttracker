@@ -83,6 +83,64 @@ const NutritionConfigSchema = z.object({
     complianceThreshold: z.number().min(0).max(1), // 0.8 = 80%
     compliancePenaltyThreshold: z.number().min(0).max(2), // 1.2 = 120% (peut aller jusqu'à 200%)
   }),
+  retry: z.object({
+    writeMaxRetries: z.number().min(1).max(10),
+    readMaxRetries: z.number().min(1).max(10),
+    deleteMaxRetries: z.number().min(1).max(10),
+    initialDelay: z.number().min(10).max(1000),
+    maxDelay: z.number().min(100).max(10000),
+    backoffMultiplier: z.number().min(1.5).max(5),
+  }),
+  api: z.object({
+    pageSize: z.number().min(1).max(100),
+    openFoodFactsTimeout: z.number().min(1000).max(60000),
+    usdaTimeout: z.number().min(1000).max(60000),
+    usdaRateLimitPerKey: z.number().min(1).max(100),
+    usdaRateLimitWindow: z.number().min(1000).max(60000),
+  }),
+  gamification: z.object({
+    xpRewards: z.object({
+      mealLogged: z.number().min(0).max(1000),
+      dayComplete: z.number().min(0).max(1000),
+      programCompliant: z.number().min(0).max(1000),
+      badgeUnlocked: z.number().min(0).max(1000),
+      streakMilestone: z.number().min(0).max(1000),
+    }),
+    streak: z.object({
+      forgivenessDays: z.number().min(0).max(7),
+      maxDisplayDays: z.number().min(7).max(365),
+    }),
+  }),
+  expertSystem: z.object({
+    thresholds: z.object({
+      proteinDeficitSevere: z.number().min(0).max(1), // 0.7 = 70%
+      proteinDeficitModerate: z.number().min(0).max(1), // 0.85 = 85%
+      carbsDeficitSevere: z.number().min(0).max(1),
+      carbsExcessSevere: z.number().min(1).max(2),
+      fatDeficitSevere: z.number().min(0).max(1),
+      fatExcessSevere: z.number().min(1).max(2),
+      caloriesDeficitSevere: z.number().min(0).max(1),
+      caloriesExcessSevere: z.number().min(1).max(2),
+    }),
+  }),
+  batch: z.object({
+    maxSize: z.number().min(10).max(10000),
+  }),
+  corruption: z.object({
+    maxRecoveryAttempts: z.number().min(1).max(10),
+    recoveryDelay: z.number().min(100).max(5000),
+  }),
+  repository: z.object({
+    factoryTimeout: z.number().min(1000).max(10000),
+    dbOpenTimeout: z.number().min(1000).max(10000),
+  }),
+  worker: z.object({
+    timeout: z.number().min(5000).max(120000),
+    fallbackDelay: z.number().min(50).max(1000),
+  }),
+  scanner: z.object({
+    timeout: z.number().min(5000).max(60000),
+  }),
 });
 
 // ==================== CONFIGURATION PAR DÉFAUT ====================
@@ -165,6 +223,82 @@ export const NutritionConfig = {
     fatWeight: 0.15,       // 15% du score
     complianceThreshold: 0.8,      // 80% = score 100
     compliancePenaltyThreshold: 1.2, // 120% = pénalité
+  },
+  
+  // Configuration retry (pour opérations IndexedDB)
+  retry: {
+    writeMaxRetries: 3,        // Opérations WRITE (critiques)
+    readMaxRetries: 2,          // Opérations READ (moins critiques)
+    deleteMaxRetries: 2,        // Opérations DELETE (modérées)
+    initialDelay: 100,         // ms (délai initial)
+    maxDelay: 1000,            // ms (délai maximum)
+    backoffMultiplier: 2,       // Multiplicateur backoff exponentiel
+  },
+  
+  // Configuration API externes
+  api: {
+    pageSize: 20,               // Nombre de résultats par défaut (OpenFoodFacts, USDA)
+    openFoodFactsTimeout: 10000, // ms (timeout OpenFoodFacts)
+    usdaTimeout: 10000,          // ms (timeout USDA)
+    usdaRateLimitPerKey: 30,     // Requêtes par minute par clé
+    usdaRateLimitWindow: 60000,  // ms (fenêtre rate limit)
+  },
+  
+  // Configuration gamification
+  gamification: {
+    xpRewards: {
+      mealLogged: 5,            // XP pour repas saisi
+      dayComplete: 20,          // XP pour jour complet
+      programCompliant: 15,      // XP pour respect programme (≥80%)
+      badgeUnlocked: 50,         // XP pour badge débloqué (base)
+      streakMilestone: 100,     // XP pour milestone streak
+    },
+    streak: {
+      forgivenessDays: 2,        // Jours manqués tolérés (anti-burnout)
+      maxDisplayDays: 30,       // Limite affichage (anti-anxiété)
+    },
+  },
+  
+  // Configuration système expert (recommandations)
+  expertSystem: {
+    thresholds: {
+      proteinDeficitSevere: 0.7,      // < 70% de la cible = déficit sévère
+      proteinDeficitModerate: 0.85,  // < 85% de la cible = déficit modéré
+      carbsDeficitSevere: 0.7,
+      carbsExcessSevere: 1.3,        // > 130% de la cible = excès sévère
+      fatDeficitSevere: 0.7,
+      fatExcessSevere: 1.3,
+      caloriesDeficitSevere: 0.7,
+      caloriesExcessSevere: 1.3,
+    },
+  },
+  
+  // Configuration batch operations
+  batch: {
+    maxSize: 1000,              // Limite opérations par batch (éviter freeze UI)
+  },
+  
+  // Configuration gestion corruption IndexedDB
+  corruption: {
+    maxRecoveryAttempts: 3,      // Nombre max tentatives récupération
+    recoveryDelay: 500,         // ms (délai entre tentatives)
+  },
+  
+  // Configuration Repository Factory
+  repository: {
+    factoryTimeout: 3000,        // ms (timeout création repository)
+    dbOpenTimeout: 2000,         // ms (timeout ouverture DB)
+  },
+  
+  // Configuration Web Workers
+  worker: {
+    timeout: 30000,              // ms (timeout calculs workers)
+    fallbackDelay: 100,          // ms (délai avant fallback)
+  },
+  
+  // Configuration scanner code-barres
+  scanner: {
+    timeout: 10000,              // ms (timeout scan)
   },
 };
 
@@ -298,7 +432,23 @@ export function getConfigForExport() {
       prefetchInitialDelay: NutritionConfig.performance.prefetchInitialDelay,
     },
     compliance: NutritionConfig.compliance,
-    // Note: features non exportés (sécurité)
+    retry: {
+      writeMaxRetries: NutritionConfig.retry.writeMaxRetries,
+      readMaxRetries: NutritionConfig.retry.readMaxRetries,
+      initialDelay: NutritionConfig.retry.initialDelay,
+      maxDelay: NutritionConfig.retry.maxDelay,
+    },
+    api: {
+      pageSize: NutritionConfig.api.pageSize,
+    },
+    gamification: {
+      xpRewards: NutritionConfig.gamification.xpRewards,
+      streak: NutritionConfig.gamification.streak,
+    },
+    batch: {
+      maxSize: NutritionConfig.batch.maxSize,
+    },
+    // Note: features, corruption, repository, worker, scanner non exportés (sécurité/technique)
   };
 }
 

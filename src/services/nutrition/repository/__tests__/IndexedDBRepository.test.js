@@ -629,5 +629,138 @@ describe('IndexedDBRepository', () => {
       expect(result).toBe(true);
     });
   });
+
+  describe('batch(operations, options)', () => {
+    it('devrait exécuter plusieurs opérations dans une transaction atomique', async () => {
+      const operations = [
+        { type: 'save', store: STORE_DAILY_MEALS, data: { date: '2025-01-16', totalCalories: 2000 } },
+        { type: 'save', store: STORE_DAILY_MEALS, data: { date: '2025-01-17', totalCalories: 2200 } },
+        { type: 'save', store: STORE_MEALS, data: { id: 'meal-1', date: '2025-01-16', type: 'breakfast', foods: [{ id: 'food-1', name: 'Oatmeal', quantity: 100, unit: 'g' }] } }
+      ];
+
+      const result = await repository.batch(operations, { quiet: true });
+
+      expect(result.success).toBe(true);
+      expect(result.results).toHaveLength(3);
+
+      // ✅ Vérifier que toutes les opérations ont été exécutées
+      const dailyMeal1 = await repository.get(STORE_DAILY_MEALS, '2025-01-16', { quiet: true });
+      const dailyMeal2 = await repository.get(STORE_DAILY_MEALS, '2025-01-17', { quiet: true });
+      const meal = await repository.get(STORE_MEALS, 'meal-1', { quiet: true });
+
+      expect(dailyMeal1).not.toBeNull();
+      expect(dailyMeal2).not.toBeNull();
+      expect(meal).not.toBeNull();
+    });
+
+    it('devrait retourner success: true avec results vide si batch vide', async () => {
+      const result = await repository.batch([], { quiet: true });
+
+      expect(result.success).toBe(true);
+      expect(result.results).toEqual([]);
+    });
+
+    it('devrait valider toutes les données avant d\'exécuter le batch', async () => {
+      const operations = [
+        { type: 'save', store: STORE_DAILY_MEALS, data: { date: 'invalid-date', totalCalories: 'not-a-number' } }
+      ];
+
+      await expect(
+        repository.batch(operations, { validate: true, quiet: true })
+      ).rejects.toThrow();
+    });
+
+    it('devrait supporter opérations mixtes (save, delete, get)', async () => {
+      // ✅ Sauvegarder d'abord
+      await repository.save(STORE_DAILY_MEALS, { date: '2025-01-16', totalCalories: 2000 }, { quiet: true });
+      await repository.save(STORE_DAILY_MEALS, { date: '2025-01-17', totalCalories: 2200 }, { quiet: true });
+
+      const operations = [
+        { type: 'get', store: STORE_DAILY_MEALS, key: '2025-01-16' },
+        { type: 'delete', store: STORE_DAILY_MEALS, key: '2025-01-17' },
+        { type: 'save', store: STORE_DAILY_MEALS, data: { date: '2025-01-18', totalCalories: 1800 } }
+      ];
+
+      const result = await repository.batch(operations, { quiet: true });
+
+      expect(result.success).toBe(true);
+      expect(result.results).toHaveLength(3);
+
+      // ✅ Vérifier résultats
+      expect(result.results[0]).not.toBeNull(); // get retourne data
+      expect(result.results[1]).toBe(true); // delete retourne true
+      expect(result.results[2]).toBe(true); // save retourne true
+
+      // ✅ Vérifier état final
+      const dailyMeal16 = await repository.get(STORE_DAILY_MEALS, '2025-01-16', { quiet: true });
+      const dailyMeal17 = await repository.get(STORE_DAILY_MEALS, '2025-01-17', { quiet: true });
+      const dailyMeal18 = await repository.get(STORE_DAILY_MEALS, '2025-01-18', { quiet: true });
+
+      expect(dailyMeal16).not.toBeNull();
+      expect(dailyMeal17).toBeNull(); // Supprimé
+      expect(dailyMeal18).not.toBeNull();
+    });
+
+    it('devrait rejeter batch trop volumineux (> 1000 opérations)', async () => {
+      const operations = Array.from({ length: 1001 }, (_, i) => ({
+        type: 'save',
+        store: STORE_DAILY_MEALS,
+        data: { date: `2025-01-${String(i + 1).padStart(2, '0')}`, totalCalories: 2000 }
+      }));
+
+      await expect(
+        repository.batch(operations, { quiet: true })
+      ).rejects.toThrow();
+    });
+
+    it('devrait notifier observer pour chaque opération save/delete', async () => {
+      const notifications = [];
+      const storeName = getStoreName('dailyMeals');
+
+      observer.subscribe(`${storeName}:*`, (data) => {
+        notifications.push(data);
+      });
+
+      const operations = [
+        { type: 'save', store: STORE_DAILY_MEALS, data: { date: '2025-01-16', totalCalories: 2000 } },
+        { type: 'save', store: STORE_DAILY_MEALS, data: { date: '2025-01-17', totalCalories: 2200 } }
+      ];
+
+      await repository.batch(operations, { quiet: true });
+
+      // ✅ Attendre notifications
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(notifications.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('getStats()', () => {
+    it('devrait retourner statistiques du repository', () => {
+      const stats = repository.getStats();
+
+      expect(stats).toBeDefined();
+      expect(typeof stats).toBe('object');
+      expect(stats.name).toBe('IndexedDBRepository');
+    });
+  });
+
+  describe('close()', () => {
+    it('devrait fermer la connexion IndexedDB', async () => {
+      // ✅ Note : fake-indexeddb peut ne pas vraiment fermer, mais on teste que la méthode existe
+      await repository.close();
+
+      // ✅ Vérifier que la méthode ne throw pas
+      expect(true).toBe(true);
+    });
+
+    it('ne devrait pas lever d\'erreur si appelé plusieurs fois', async () => {
+      await repository.close();
+      await repository.close(); // ✅ Deuxième appel ne doit pas throw
+
+      expect(true).toBe(true);
+    });
+  });
 });
+
 

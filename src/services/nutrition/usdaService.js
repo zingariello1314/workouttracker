@@ -16,6 +16,7 @@ import { openNutritionDB, STORE_API_CACHE } from '../../hooks/nutritionDataUtils
 import { LRUCache } from '../../utils/lruCache';
 import { TokenBucket } from '../../utils/tokenBucket';
 import logger from '../../utils/logger';
+import { NutritionConfig } from '../../config/nutrition.config';
 import {
   validateUSDASearchResponse,
   validateUSDAFoodResponse,
@@ -390,7 +391,8 @@ export const searchUSDA = async (query, options = {}) => {
     return [];
   }
 
-  const { pageSize = 20, useCache = true } = options;
+  // ✅ PHASE 12.3 : Utiliser configuration centralisée
+  const { pageSize = NutritionConfig.api.pageSize, useCache = true } = options;
   const normalizedQuery = query.trim().toLowerCase();
 
   try {

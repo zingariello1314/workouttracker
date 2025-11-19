@@ -208,18 +208,18 @@ const CoachDashboard = () => {
   // Données pour graphiques (scope: charts) - Calculé seulement si onglet charts actif
   const chartData = useLazyCalculation(
     () => {
-      if (!shareData || !shareData.charts || !shareData.charts.timeline) {
-        return [];
-      }
+    if (!shareData || !shareData.charts || !shareData.charts.timeline) {
+      return [];
+    }
 
-      return shareData.charts.timeline.map((item, index) => ({
-        day: `J${item.day}`,
-        calories: item.calories || 0,
-        protein: item.protein || 0,
-        carbs: item.carbs || 0,
-        fat: item.fat || 0,
-        compliance: item.compliance || 0
-      }));
+    return shareData.charts.timeline.map((item, index) => ({
+      day: `J${item.day}`,
+      calories: item.calories || 0,
+      protein: item.protein || 0,
+      carbs: item.carbs || 0,
+      fat: item.fat || 0,
+      compliance: item.compliance || 0
+    }));
     },
     activeTab === 'charts',
     [],
@@ -229,16 +229,16 @@ const CoachDashboard = () => {
   // Données pour distribution macros (scope: charts) - Calculé seulement si onglet charts actif
   const macroDistribution = useLazyCalculation(
     () => {
-      if (!shareData || !shareData.charts || !shareData.charts.macroDistribution) {
-        return [];
-      }
+    if (!shareData || !shareData.charts || !shareData.charts.macroDistribution) {
+      return [];
+    }
 
-      const dist = shareData.charts.macroDistribution;
-      return [
-        { name: 'Protéines', value: dist.protein || 0, color: '#3B82F6' },
-        { name: 'Glucides', value: dist.carbs || 0, color: '#10B981' },
-        { name: 'Lipides', value: dist.fat || 0, color: '#F59E0B' }
-      ];
+    const dist = shareData.charts.macroDistribution;
+    return [
+      { name: 'Protéines', value: dist.protein || 0, color: '#3B82F6' },
+      { name: 'Glucides', value: dist.carbs || 0, color: '#10B981' },
+      { name: 'Lipides', value: dist.fat || 0, color: '#F59E0B' }
+    ];
     },
     activeTab === 'charts',
     [],
@@ -248,11 +248,11 @@ const CoachDashboard = () => {
   // Statistiques (scope: stats) - Calculé seulement si onglet stats actif
   const stats = useLazyCalculation(
     () => {
-      if (!shareData || !shareData.stats) {
-        return null;
-      }
+    if (!shareData || !shareData.stats) {
+      return null;
+    }
 
-      return shareData.stats;
+    return shareData.stats;
     },
     activeTab === 'stats',
     null,
@@ -262,11 +262,11 @@ const CoachDashboard = () => {
   // Progression (scope: progress) - Calculé seulement si onglet progress actif
   const progress = useLazyCalculation(
     () => {
-      if (!shareData || !shareData.progress) {
-        return null;
-      }
+    if (!shareData || !shareData.progress) {
+      return null;
+    }
 
-      return shareData.progress;
+    return shareData.progress;
     },
     activeTab === 'progress',
     null,

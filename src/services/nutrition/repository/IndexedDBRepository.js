@@ -25,6 +25,7 @@ import {
   getAllFromStoreWithRetry
 } from '../nutritionRetryUtils';
 import { getQuotaSafeStorage, QuotaExceededError } from '../../../utils/quotaSafeStorage';
+import { NutritionConfig } from '../../../config/nutrition.config';
 import {
   NutritionError,
   NutritionErrorCodes,
@@ -37,6 +38,13 @@ import {
   validateFavoriteFood,
   validateHydrationLog
 } from '../nutritionSchemas';
+// ✅ OPTIMISATION : Gestion corruption IndexedDB avec récupération automatique
+import {
+  isCorruptionError,
+  handleCorruption,
+  verifyDatabaseIntegrity,
+  clearCorruptionFlags
+} from '../nutritionCorruptionHandler';
 import logger from '../../../utils/logger';
 
 const log = logger.module('indexedDBRepository');
@@ -60,6 +68,7 @@ export class IndexedDBRepository extends NutritionRepository {
     
     this.db = db;
     this.quotaSafeStorage = null; // Lazy initialization
+    this.corruptionHandled = false; // Flag pour éviter gestion multiple
   }
 
   /**
@@ -154,6 +163,22 @@ export class IndexedDBRepository extends NutritionRepository {
 
       return result;
     } catch (error) {
+      // ✅ OPTIMISATION : Détecter et gérer corruption IndexedDB
+      if (isCorruptionError(error) && !this.corruptionHandled) {
+        this.corruptionHandled = true;
+        log.warn(`[${this.name}] Corruption détectée dans get, tentative récupération...`);
+        
+        const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
+        if (recoveredDb) {
+          this.db = recoveredDb;
+          this.corruptionHandled = false;
+          clearCorruptionFlags();
+          log.info(`[${this.name}] Récupération réussie, nouvelle tentative get...`);
+          // Retenter l'opération avec DB récupérée
+          return this.get(store, key, { ...options, quiet: true });
+        }
+      }
+      
       // ✅ PHASE 12.2 : Convertir erreur IndexedDB en NutritionError standardisée
       const nutritionError = createNutritionErrorFromIndexedDB(
         error,
@@ -206,6 +231,22 @@ export class IndexedDBRepository extends NutritionRepository {
 
       return Array.isArray(results) ? results : [];
     } catch (error) {
+      // ✅ OPTIMISATION : Détecter et gérer corruption IndexedDB
+      if (isCorruptionError(error) && !this.corruptionHandled) {
+        this.corruptionHandled = true;
+        log.warn(`[${this.name}] Corruption détectée dans getAll, tentative récupération...`);
+        
+        const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
+        if (recoveredDb) {
+          this.db = recoveredDb;
+          this.corruptionHandled = false;
+          clearCorruptionFlags();
+          log.info(`[${this.name}] Récupération réussie, nouvelle tentative getAll...`);
+          // Retenter l'opération avec DB récupérée
+          return this.getAll(store, { ...options, quiet: true });
+        }
+      }
+      
       const nutritionError = createNutritionErrorFromIndexedDB(
         error,
         operationName,
@@ -372,6 +413,22 @@ export class IndexedDBRepository extends NutritionRepository {
       log.debug(`[${this.name}] Données supprimées`, { store, key });
       return true;
     } catch (error) {
+      // ✅ OPTIMISATION : Détecter et gérer corruption IndexedDB
+      if (isCorruptionError(error) && !this.corruptionHandled) {
+        this.corruptionHandled = true;
+        log.warn(`[${this.name}] Corruption détectée dans delete, tentative récupération...`);
+        
+        const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
+        if (recoveredDb) {
+          this.db = recoveredDb;
+          this.corruptionHandled = false;
+          clearCorruptionFlags();
+          log.info(`[${this.name}] Récupération réussie, nouvelle tentative delete...`);
+          // Retenter l'opération avec DB récupérée
+          return this.delete(store, key, { ...options });
+        }
+      }
+      
       const nutritionError = createNutritionErrorFromIndexedDB(
         error,
         operationName,
@@ -454,7 +511,8 @@ export class IndexedDBRepository extends NutritionRepository {
     }
 
     // ✅ PHASE 12.2 Étape 8 : Limite de taille pour éviter freeze UI
-    const MAX_BATCH_SIZE = 1000;
+    // ✅ PHASE 12.3 : Utiliser configuration centralisée
+    const MAX_BATCH_SIZE = NutritionConfig.batch.maxSize;
     if (operations.length > MAX_BATCH_SIZE) {
       throw new NutritionError(
         NutritionErrorCodes.VALIDATION_INVALID_DATA,
@@ -627,6 +685,22 @@ export class IndexedDBRepository extends NutritionRepository {
 
       return { success, results, stats };
     } catch (error) {
+      // ✅ OPTIMISATION : Détecter et gérer corruption IndexedDB
+      if (isCorruptionError(error) && !this.corruptionHandled) {
+        this.corruptionHandled = true;
+        log.warn(`[${this.name}] Corruption détectée dans batch, tentative récupération...`);
+        
+        const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
+        if (recoveredDb) {
+          this.db = recoveredDb;
+          this.corruptionHandled = false;
+          clearCorruptionFlags();
+          log.info(`[${this.name}] Récupération réussie, nouvelle tentative batch...`);
+          // Retenter l'opération avec DB récupérée
+          return this.batch(operations, { ...options, quiet: true });
+        }
+      }
+      
       // ✅ PHASE 12.2 Étape 8 : Gestion explicite QuotaExceededError au niveau batch
       if (error instanceof QuotaExceededError) {
         const nutritionError = new NutritionError(

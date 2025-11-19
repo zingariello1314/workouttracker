@@ -1,0 +1,42 @@
+graph TB
+    REQ[Request]
+    
+    subgraph "Cache L1: Memory"
+        L1[LRU Cache<br/>TTL: 60s<br/>~0ms]
+    end
+
+    subgraph "Cache L2: IndexedDB"
+        L2[Persistent Cache<br/>TTL: 24h<br/>~10ms]
+    end
+
+    subgraph "Cache L3: API"
+        L3[OpenFoodFacts/USDA<br/>TTL: 5min<br/>~200ms]
+    end
+
+    subgraph "Sources"
+        IDB[(IndexedDB<br/>Stores)]
+        API[External APIs]
+    end
+
+    REQ --> L1
+    L1 -->|Cache Miss| L2
+    L2 -->|Cache Miss| L3
+    L3 -->|Cache Miss| IDB
+    L3 -->|Cache Miss| API
+
+    L1 -->|Cache Hit| RESULT[Return Data]
+    L2 -->|Cache Hit| RESULT
+    L3 -->|Cache Hit| RESULT
+    IDB -->|Data| RESULT
+    API -->|Data| RESULT
+
+    RESULT -->|Store| L1
+    RESULT -->|Store| L2
+    RESULT -->|Store| L3
+
+    style L1 fill:#e8f5e9
+    style L2 fill:#fff4e1
+    style L3 fill:#e1f5ff
+    style IDB fill:#f3e5f5
+    style API fill:#f3e5f5
+

@@ -1,0 +1,76 @@
+graph TB
+    subgraph "UI Layer"
+        NT[NutritionTab]
+        NJ[NutritionJournal]
+        NP[NutritionPrograms]
+        NA[NutritionAnalyses]
+        NG[NutritionGamification]
+    end
+
+    subgraph "Hooks Layer"
+        UND[useNutritionData]
+        URO[useRepositoryObserver]
+        UNG[useNutritionGamification]
+        UNR[useNutritionRecommendations]
+    end
+
+    subgraph "Services Layer"
+        REPO[Repository Pattern]
+        GAM[Gamification Service]
+        EXP[Expert System]
+        SHARE[Sharing Service]
+        PRED[Predictions ML]
+    end
+
+    subgraph "Storage Layer"
+        IDB[(IndexedDB<br/>11 Stores)]
+        CACHE[Cache Multi-Layer]
+    end
+
+    subgraph "External APIs"
+        OFF[OpenFoodFacts API]
+        USDA[USDA API]
+    end
+
+    NT --> NJ
+    NT --> NP
+    NT --> NA
+    NT --> NG
+
+    NJ --> UND
+    NP --> UND
+    NA --> UND
+    NG --> UNG
+
+    UND --> URO
+    UND --> REPO
+    UNG --> GAM
+    UNR --> EXP
+
+    REPO --> IDB
+    REPO --> CACHE
+    GAM --> IDB
+    EXP --> IDB
+    SHARE --> IDB
+    PRED --> IDB
+
+    UND --> OFF
+    UND --> USDA
+
+    style NT fill:#e1f5ff
+    style NJ fill:#e1f5ff
+    style NP fill:#e1f5ff
+    style NA fill:#e1f5ff
+    style NG fill:#e1f5ff
+    style UND fill:#fff4e1
+    style URO fill:#fff4e1
+    style UNG fill:#fff4e1
+    style UNR fill:#fff4e1
+    style REPO fill:#e8f5e9
+    style GAM fill:#e8f5e9
+    style EXP fill:#e8f5e9
+    style SHARE fill:#e8f5e9
+    style PRED fill:#e8f5e9
+    style IDB fill:#f3e5f5
+    style CACHE fill:#f3e5f5
+

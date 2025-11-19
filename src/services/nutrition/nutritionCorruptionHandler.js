@@ -18,6 +18,7 @@
 import { openNutritionDB, DB_NAME, DB_VERSION_NUTRITION } from '../../hooks/nutritionDataUtils';
 import { getNutritionRepository } from './repository';
 import logger from '../../utils/logger';
+import { NutritionConfig } from '../../config/nutrition.config';
 
 const log = logger.module('nutritionCorruptionHandler');
 
@@ -35,13 +36,15 @@ const CORRUPTION_ERROR_NAMES = [
 
 /**
  * Nombre maximum de tentatives de récupération
+ * ✅ PHASE 12.3 : Utiliser configuration centralisée
  */
-const MAX_RECOVERY_ATTEMPTS = 3;
+const MAX_RECOVERY_ATTEMPTS = NutritionConfig.corruption.maxRecoveryAttempts;
 
 /**
  * Délai entre tentatives de récupération (ms)
+ * ✅ PHASE 12.3 : Utiliser configuration centralisée
  */
-const RECOVERY_DELAY = 500;
+const RECOVERY_DELAY = NutritionConfig.corruption.recoveryDelay;
 
 /**
  * Clé localStorage pour flag corruption détectée

@@ -154,11 +154,11 @@ export async function executeInWorker(type, data, fallbackFn) {
     // Stocker callbacks
     pendingRequests.set(id, { resolve, reject });
     
-    // Timeout de sécurité (30 secondes)
+    // ✅ PHASE 12.3 : Utiliser configuration centralisée
     const timeout = setTimeout(() => {
       pendingRequests.delete(id);
       reject(new Error(`Timeout calcul worker (${type})`));
-    }, 30000);
+    }, NutritionConfig.worker.timeout);
     
     // Override resolve/reject pour nettoyer timeout
     const originalResolve = resolve;

@@ -18,12 +18,14 @@
 import Quagga from '@ericblade/quagga2';
 import { getProductByBarcode } from './openFoodFactsService';
 import logger from '../../utils/logger';
+import { NutritionConfig } from '../../config/nutrition.config';
 
 const log = logger.module('barcodeScanner');
 
 // ==================== CONSTANTES ====================
 
-const SCAN_TIMEOUT_MS = 10000; // 10 secondes max
+// ✅ PHASE 12.3 : Utiliser configuration centralisée
+const SCAN_TIMEOUT_MS = NutritionConfig.scanner.timeout;
 const SCAN_CONFIG = {
   inputStream: {
     type: 'LiveStream',

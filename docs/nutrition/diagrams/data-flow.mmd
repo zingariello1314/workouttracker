@@ -1,0 +1,36 @@
+sequenceDiagram
+    participant User
+    participant UI as NutritionJournal
+    participant Hook as useNutritionData
+    participant Repo as Repository
+    participant Cache as Cache Layer
+    participant IDB as IndexedDB
+    participant Observer as RepositoryObserver
+
+    User->>UI: Saisie repas
+    UI->>Hook: saveMeal(mealData)
+    Hook->>Repo: save('nutrition_meals', mealData)
+    Repo->>Cache: Invalidate cache
+    Repo->>IDB: Transaction put
+    IDB-->>Repo: Success
+    Repo->>Observer: notify('meals:*', mealData)
+    Observer->>UI: Update via useRepositoryObserver
+    UI-->>User: Affichage mis à jour
+
+    Note over Cache,IDB: Cache L1 (Memory) → L2 (IndexedDB) → L3 (API)
+
+    User->>UI: Consultation dailyMeal
+    UI->>Hook: getDailyMeal(date)
+    Hook->>Repo: get('nutrition_dailyMeals', date)
+    Repo->>Cache: Check L1 cache
+    alt Cache Hit L1
+        Cache-->>Repo: Return cached
+    else Cache Miss
+        Repo->>IDB: Transaction get
+        IDB-->>Repo: dailyMeal
+        Repo->>Cache: Store in L1
+        Repo-->>Hook: dailyMeal
+    end
+    Hook-->>UI: dailyMeal
+    UI-->>User: Affichage totaux
+

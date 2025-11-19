@@ -97,12 +97,12 @@ const NutritionGamification = () => {
   // Pré-formater dates des badges - Calculé seulement si onglet badges actif
   const achievementsWithFormattedDates = useLazyCalculation(
     () => {
-      return sortedAchievements.map(badge => ({
-        ...badge,
-        formattedDate: badge.unlockedDate 
-          ? new Date(badge.unlockedDate).toLocaleDateString('fr-FR')
-          : ''
-      }));
+    return sortedAchievements.map(badge => ({
+      ...badge,
+      formattedDate: badge.unlockedDate 
+        ? new Date(badge.unlockedDate).toLocaleDateString('fr-FR')
+        : ''
+    }));
     },
     activeTab === 'badges',
     [],
@@ -116,19 +116,19 @@ const NutritionGamification = () => {
       // Calculer unlockedBadgeIds en interne
       const unlockedBadgeIds = new Set(achievements.map(b => b.id));
       
-      return ALL_BADGES.map(badge => {
-        const isUnlocked = unlockedBadgeIds.has(badge.id);
-        const unlockedBadge = isUnlocked ? achievements.find(a => a.id === badge.id) : null;
-        
-        return {
-          ...badge,
-          isUnlocked,
-          unlockedDate: unlockedBadge?.unlockedDate || null,
-          formattedDate: unlockedBadge?.unlockedDate 
-            ? new Date(unlockedBadge.unlockedDate).toLocaleDateString('fr-FR')
-            : null
-        };
-      });
+    return ALL_BADGES.map(badge => {
+      const isUnlocked = unlockedBadgeIds.has(badge.id);
+      const unlockedBadge = isUnlocked ? achievements.find(a => a.id === badge.id) : null;
+      
+      return {
+        ...badge,
+        isUnlocked,
+        unlockedDate: unlockedBadge?.unlockedDate || null,
+        formattedDate: unlockedBadge?.unlockedDate 
+          ? new Date(unlockedBadge.unlockedDate).toLocaleDateString('fr-FR')
+          : null
+      };
+    });
     },
     activeTab === 'badges',
     [],
@@ -138,21 +138,21 @@ const NutritionGamification = () => {
   // Trier tous les badges : débloqués en premier, puis non débloqués - Calculé seulement si onglet badges actif
   const sortedAllBadges = useLazyCalculation(
     () => {
-      return [...allBadgesWithStatus].sort((a, b) => {
-        // D'abord par statut (débloqués en premier)
-        if (a.isUnlocked !== b.isUnlocked) {
-          return b.isUnlocked ? 1 : -1; // true (débloqué) avant false (non débloqué)
-        }
-        // Ensuite par date de débloquage (plus récent en premier pour les débloqués)
-        if (a.isUnlocked && b.isUnlocked) {
-          const dateA = a.unlockedDate || '';
-          const dateB = b.unlockedDate || '';
-          return dateB.localeCompare(dateA);
-        }
-        // Pour les non débloqués, trier par rareté (legendary > epic > rare > common)
-        const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
-        return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
-      });
+    return [...allBadgesWithStatus].sort((a, b) => {
+      // D'abord par statut (débloqués en premier)
+      if (a.isUnlocked !== b.isUnlocked) {
+        return b.isUnlocked ? 1 : -1; // true (débloqué) avant false (non débloqué)
+      }
+      // Ensuite par date de débloquage (plus récent en premier pour les débloqués)
+      if (a.isUnlocked && b.isUnlocked) {
+        const dateA = a.unlockedDate || '';
+        const dateB = b.unlockedDate || '';
+        return dateB.localeCompare(dateA);
+      }
+      // Pour les non débloqués, trier par rareté (legendary > epic > rare > common)
+      const rarityOrder = { legendary: 4, epic: 3, rare: 2, common: 1 };
+      return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+    });
     },
     activeTab === 'badges',
     [],

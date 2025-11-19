@@ -15,6 +15,7 @@
 
 import logger from '../../utils/logger';
 import { DateHelper } from '../../utils/dateHelper';
+import { NutritionConfig } from '../../config/nutrition.config';
 
 const log = logger.module('nutritionExpertSystem');
 
@@ -36,7 +37,8 @@ const EXPERT_RULES = [
     id: 'protein_deficit_severe',
     condition: (data) => {
       if (!data.avgProtein || !data.targetProtein) return false;
-      return data.avgProtein < data.targetProtein * 0.7; // < 70% de la cible
+      // ✅ PHASE 12.3 : Utiliser configuration centralisée
+      return data.avgProtein < data.targetProtein * NutritionConfig.expertSystem.thresholds.proteinDeficitSevere;
     },
     advice: (data) => {
       const deficit = Math.round(data.targetProtein - data.avgProtein);
@@ -50,7 +52,9 @@ const EXPERT_RULES = [
     id: 'protein_deficit_moderate',
     condition: (data) => {
       if (!data.avgProtein || !data.targetProtein) return false;
-      return data.avgProtein >= data.targetProtein * 0.7 && data.avgProtein < data.targetProtein * 0.8;
+      // ✅ PHASE 12.3 : Utiliser configuration centralisée
+      return data.avgProtein >= data.targetProtein * NutritionConfig.expertSystem.thresholds.proteinDeficitSevere && 
+             data.avgProtein < data.targetProtein * NutritionConfig.expertSystem.thresholds.proteinDeficitModerate;
     },
     advice: (data) => {
       const deficit = Math.round(data.targetProtein - data.avgProtein);
@@ -107,7 +111,8 @@ const EXPERT_RULES = [
     id: 'calories_deficit_severe',
     condition: (data) => {
       if (!data.avgCalories || !data.targetCalories) return false;
-      return data.avgCalories < data.targetCalories * 0.7; // < 70% de la cible
+      // ✅ PHASE 12.3 : Utiliser configuration centralisée
+      return data.avgCalories < data.targetCalories * NutritionConfig.expertSystem.thresholds.caloriesDeficitSevere;
     },
     advice: (data) => {
       const deficit = Math.round(data.targetCalories - data.avgCalories);
@@ -140,7 +145,8 @@ const EXPERT_RULES = [
     id: 'hydration_low',
     condition: (data) => {
       if (!data.avgWaterIntake || !data.targetWater) return false;
-      return data.avgWaterIntake < data.targetWater * 0.7;
+      // ✅ PHASE 12.3 : Utiliser configuration centralisée (utilise caloriesDeficitSevere comme seuil générique)
+      return data.avgWaterIntake < data.targetWater * NutritionConfig.expertSystem.thresholds.caloriesDeficitSevere;
     },
     advice: (data) => {
       const deficit = Math.round(data.targetWater - data.avgWaterIntake);
@@ -171,7 +177,8 @@ const EXPERT_RULES = [
     condition: (data) => {
       if (!data.proteinPerMeal || !data.targetProtein) return false;
       const avgPerMeal = data.targetProtein / (data.mealsPerDay || 3);
-      return data.proteinPerMeal < avgPerMeal * 0.7; // < 70% de la moyenne par repas
+      // ✅ PHASE 12.3 : Utiliser configuration centralisée
+      return data.proteinPerMeal < avgPerMeal * NutritionConfig.expertSystem.thresholds.proteinDeficitSevere;
     },
     advice: (data) => {
       const avgPerMeal = data.targetProtein / (data.mealsPerDay || 3);
@@ -199,7 +206,8 @@ const EXPERT_RULES = [
     id: 'fat_low',
     condition: (data) => {
       if (!data.avgFat || !data.targetFat) return false;
-      return data.avgFat < data.targetFat * 0.7;
+      // ✅ PHASE 12.3 : Utiliser configuration centralisée
+      return data.avgFat < data.targetFat * NutritionConfig.expertSystem.thresholds.fatDeficitSevere;
     },
     advice: (data) => {
       const deficit = Math.round(data.targetFat - data.avgFat);
@@ -213,7 +221,8 @@ const EXPERT_RULES = [
     id: 'carbs_low_active',
     condition: (data) => {
       if (!data.avgCarbs || !data.targetCarbs || !data.isActive) return false;
-      return data.avgCarbs < data.targetCarbs * 0.7 && data.isActive;
+      // ✅ PHASE 12.3 : Utiliser configuration centralisée
+      return data.avgCarbs < data.targetCarbs * NutritionConfig.expertSystem.thresholds.carbsDeficitSevere && data.isActive;
     },
     advice: (data) => {
       const deficit = Math.round(data.targetCarbs - data.avgCarbs);

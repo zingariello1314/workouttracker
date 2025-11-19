@@ -477,7 +477,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
     }
 
     isLoadingRef.current = true;
-    
+
     try {
       if (isMountedRef.current) {
         setLoading(true);
@@ -643,19 +643,19 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
       {/* Ces composants chargent leurs propres données Garmin, ce qui peut causer des conflits */}
       {analysisData && (
         <>
-          <NutritionRecommendations />
+      <NutritionRecommendations />
 
-          {/* Corrélations nutritionnelles */}
-          <NutritionCorrelations />
+      {/* Corrélations nutritionnelles */}
+      <NutritionCorrelations />
 
-          {/* Chronobiologie (Timing Optimal) */}
-          <NutritionChronobiology />
+      {/* Chronobiologie (Timing Optimal) */}
+      <NutritionChronobiology />
 
-          {/* Score Santé Globale */}
-          <NutritionHealthScore />
+      {/* Score Santé Globale */}
+      <NutritionHealthScore />
 
-          {/* Prédictions Offline (ML) */}
-          <NutritionPredictions />
+      {/* Prédictions Offline (ML) */}
+      <NutritionPredictions />
         </>
       )}
 

@@ -21,6 +21,7 @@
 import { retryWithBackoff, calculateBackoffDelay } from '../../hooks/garminRetryUtils';
 import { classifyIndexedDBError, shouldRetry, logIndexedDBError } from '../../hooks/garminErrorHandler';
 import logger from '../../utils/logger';
+import { NutritionConfig } from '../../config/nutrition.config';
 
 const log = logger.module('nutritionRetryUtils');
 
@@ -81,79 +82,80 @@ export const resetNutritionRetryStats = () => {
  * - READ (get*) : Moins de retries (2) car moins critiques
  * - DELETE : Retries modérés (2)
  */
+// ✅ PHASE 12.3 : Utiliser configuration centralisée
 const RETRY_CONFIG_BY_OPERATION = {
   // Opérations WRITE (critiques)
   saveDailyMeal: {
-    maxRetries: 3,
-    initialDelay: 100,
-    maxDelay: 1000,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.writeMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   saveMeal: {
-    maxRetries: 3,
-    initialDelay: 100,
-    maxDelay: 1000,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.writeMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   saveProgram: {
-    maxRetries: 3,
-    initialDelay: 100,
-    maxDelay: 1000,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.writeMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   saveFavoriteFood: {
-    maxRetries: 2,
-    initialDelay: 100,
-    maxDelay: 800,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.writeMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   saveHydrationLog: {
-    maxRetries: 2,
-    initialDelay: 100,
-    maxDelay: 800,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.writeMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   
   // Opérations READ (moins critiques)
   getDailyMeal: {
-    maxRetries: 2,
-    initialDelay: 50,
-    maxDelay: 500,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.readMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   getMealsByDate: {
-    maxRetries: 2,
-    initialDelay: 50,
-    maxDelay: 500,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.readMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   getActiveProgram: {
-    maxRetries: 2,
-    initialDelay: 50,
-    maxDelay: 500,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.readMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   
   // Opérations DELETE (modérées)
   deleteDailyMeal: {
-    maxRetries: 2,
-    initialDelay: 100,
-    maxDelay: 800,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.deleteMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   deleteMeal: {
-    maxRetries: 2,
-    initialDelay: 100,
-    maxDelay: 800,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.deleteMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   },
   
   // Configuration par défaut
   default: {
-    maxRetries: 2,
-    initialDelay: 100,
-    maxDelay: 1000,
-    backoffMultiplier: 2
+    maxRetries: NutritionConfig.retry.readMaxRetries,
+    initialDelay: NutritionConfig.retry.initialDelay,
+    maxDelay: NutritionConfig.retry.maxDelay,
+    backoffMultiplier: NutritionConfig.retry.backoffMultiplier
   }
 };
 

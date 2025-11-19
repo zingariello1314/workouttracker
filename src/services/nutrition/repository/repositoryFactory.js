@@ -22,6 +22,7 @@ import { LocalStorageRepository } from './LocalStorageRepository';
 import { MemoryRepository } from './MemoryRepository';
 import { openNutritionDB } from '../../../hooks/nutritionDataUtils';
 import logger from '../../../utils/logger';
+import { NutritionConfig } from '../../../config/nutrition.config';
 
 const log = logger.module('repositoryFactory');
 
@@ -67,8 +68,9 @@ async function isIndexedDBAvailable() {
     }
     
     // ✅ CORRECTION : Timeout pour éviter blocage indéfini
+    // ✅ PHASE 12.3 : Utiliser configuration centralisée
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Timeout: openNutritionDB took too long')), 2000);
+      setTimeout(() => reject(new Error('Timeout: openNutritionDB took too long')), NutritionConfig.repository.dbOpenTimeout);
     });
     
     // Tester ouverture DB avec timeout
@@ -138,8 +140,9 @@ async function createRepository(type) {
   switch (type) {
     case RepositoryType.INDEXEDDB: {
       // ✅ CORRECTION : Timeout pour éviter blocage indéfini
+      // ✅ PHASE 12.3 : Utiliser configuration centralisée
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout: openNutritionDB took too long')), 2000);
+        setTimeout(() => reject(new Error('Timeout: openNutritionDB took too long')), NutritionConfig.repository.dbOpenTimeout);
       });
       
       const db = await Promise.race([
@@ -217,8 +220,9 @@ export const getNutritionRepository = async (options = {}) => {
     
     try {
       // ✅ CORRECTION : Timeout pour éviter blocage indéfini lors de la création
+      // ✅ PHASE 12.3 : Utiliser configuration centralisée
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout: createRepository took too long')), 3000);
+        setTimeout(() => reject(new Error('Timeout: createRepository took too long')), NutritionConfig.repository.factoryTimeout);
       });
       
       repositoryInstance = await Promise.race([

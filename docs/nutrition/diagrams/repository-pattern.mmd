@@ -1,0 +1,47 @@
+graph TB
+    subgraph "Factory Pattern"
+        FACTORY[RepositoryFactory<br/>Singleton + Auto-detection]
+    end
+
+    subgraph "Repository Interface"
+        REPO[NutritionRepository<br/>Abstract Class]
+    end
+
+    subgraph "Implementations"
+        IDB_REPO[IndexedDBRepository<br/>Production]
+        LS_REPO[LocalStorageRepository<br/>Fallback]
+        MEM_REPO[MemoryRepository<br/>Tests]
+    end
+
+    subgraph "Observer Pattern"
+        OBSERVER[RepositoryObserver<br/>Synchronization]
+    end
+
+    subgraph "Storage"
+        IDB[(IndexedDB)]
+        LS[(LocalStorage)]
+        MEM[(Memory)]
+    end
+
+    FACTORY -->|Creates| REPO
+    REPO -->|Implements| IDB_REPO
+    REPO -->|Implements| LS_REPO
+    REPO -->|Implements| MEM_REPO
+
+    IDB_REPO --> IDB
+    LS_REPO --> LS
+    MEM_REPO --> MEM
+
+    IDB_REPO -->|Notifies| OBSERVER
+    LS_REPO -->|Notifies| OBSERVER
+    MEM_REPO -->|Notifies| OBSERVER
+
+    OBSERVER -->|Updates| UI[React Components]
+
+    style FACTORY fill:#e1f5ff
+    style REPO fill:#fff4e1
+    style IDB_REPO fill:#e8f5e9
+    style LS_REPO fill:#e8f5e9
+    style MEM_REPO fill:#e8f5e9
+    style OBSERVER fill:#f3e5f5
+

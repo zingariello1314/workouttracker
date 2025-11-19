@@ -20,18 +20,20 @@ import logger from '../../utils/logger';
 import { openNutritionDB, STORE_GAMIFICATION } from '../../hooks/nutritionDataUtils';
 import { DateHelper } from '../../utils/dateHelper';
 import { ALL_BADGES } from './badges';
+import { NutritionConfig } from '../../config/nutrition.config';
 
 const log = logger.module('nutritionGamification');
 
 // ==================== CONSTANTES ====================
 
 // Points XP selon actions
+// ✅ PHASE 12.3 : Utiliser configuration centralisée
 export const XP_REWARDS = {
-  meal_logged: 5,        // Repas saisi
-  day_complete: 20,      // Jour complet (tous repas)
-  program_compliant: 15, // Respect programme (≥80%)
-  badge_unlocked: 50,    // Badge débloqué (base, variable selon rareté)
-  streak_milestone: 100  // Palier série (7j, 30j, 100j)
+  meal_logged: NutritionConfig.gamification.xpRewards.mealLogged,
+  day_complete: NutritionConfig.gamification.xpRewards.dayComplete,
+  program_compliant: NutritionConfig.gamification.xpRewards.programCompliant,
+  badge_unlocked: NutritionConfig.gamification.xpRewards.badgeUnlocked,
+  streak_milestone: NutritionConfig.gamification.xpRewards.streakMilestone
 };
 
 // Formule XP par niveau (exponentielle)
