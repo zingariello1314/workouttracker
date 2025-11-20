@@ -66,6 +66,12 @@ const NutritionConfigSchema = z.object({
     prefetchIdleTimeout: z.number().min(1000).max(30000), // ms
     prefetchDaysRange: z.number().min(0).max(7),
     prefetchMinIdleTime: z.number().min(0).max(100), // ms
+    virtualScrollThreshold: z.number().min(10).max(100), // Nombre d'items avant d'activer virtual scrolling
+    virtualScrollItemHeight: z.number().min(50).max(500), // Hauteur estimée d'un item (px)
+    virtualScrollOverscan: z.number().min(1).max(10), // Nombre d'items à rendre en dehors du viewport
+    compressionLevel: z.number().min(1).max(9), // Niveau gzip (1-9)
+    compressionMinSize: z.number().min(512).max(1048576), // Taille min avant compression (bytes)
+    compressionPreferStream: z.boolean(), // Préférer CompressionStream API si dispo
   }),
   features: z.object({
     enableCompression: z.boolean(),
@@ -203,6 +209,12 @@ export const NutritionConfig = {
     prefetchIdleTimeout: 5000,       // ms (timeout requestIdleCallback)
     prefetchDaysRange: 1,            // Nombre de jours à précharger (J±1)
     prefetchMinIdleTime: 10,         // ms (temps libre minimum requis)
+    virtualScrollThreshold: 20,      // Nombre d'items avant d'activer virtual scrolling
+    virtualScrollItemHeight: 180,    // Hauteur estimée d'un item meal (px)
+    virtualScrollOverscan: 3,        // Nombre d'items à rendre en dehors du viewport
+    compressionLevel: 6,             // Niveau gzip (1-9)
+    compressionMinSize: 2048,        // Taille minimum avant compression (2 KB)
+    compressionPreferStream: true,   // Préférer CompressionStream si dispo
   },
   
   // Feature flags (pour activer/désactiver features)

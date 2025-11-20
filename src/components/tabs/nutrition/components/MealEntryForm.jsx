@@ -22,9 +22,21 @@ import FoodPhotoScanner from './FoodPhotoScanner';
 import { useToast } from '../../../ui/Toast/ToastProvider';
 import logger from '../../../../utils/logger';
 // ✅ OPTIMISATION : Helpers pour comparaisons React.memo optimisées
-import { createSimpleMemoComparator } from '../../../../utils/reactMemoHelpers';
 
 const log = logger.component('MealEntryForm');
+
+const areMealsEqual = (prevMeal, nextMeal) => {
+  if (prevMeal === nextMeal) return true;
+  if (!prevMeal || !nextMeal) return false;
+
+  return (
+    prevMeal.id === nextMeal.id &&
+    prevMeal.type === nextMeal.type &&
+    prevMeal.timestamp === nextMeal.timestamp &&
+    prevMeal.lastModified === nextMeal.lastModified &&
+    (prevMeal.foods?.length || 0) === (nextMeal.foods?.length || 0)
+  );
+};
 
 /**
  * ✅ OPTIMISATION : React.memo pour éviter re-renders inutiles (50-80% réduction)
@@ -566,6 +578,15 @@ const MealEntryForm = memo(({ isOpen, onClose, meal, dateStr, onSave, nutritionD
     prevProps.meal?.id === nextProps.meal?.id
     // ✅ Note: onClose, onSave, nutritionData sont ignorés (callbacks/objets complexes changent souvent)
   );
+}, (prevProps, nextProps) => {
+  if (prevProps.isOpen !== nextProps.isOpen) return false;
+  if (prevProps.dateStr !== nextProps.dateStr) return false;
+  if (prevProps.onClose !== nextProps.onClose) return false;
+  if (prevProps.onSave !== nextProps.onSave) return false;
+  if (!areMealsEqual(prevProps.meal, nextProps.meal)) return false;
+
+  // Ignorer nutritionData (hook object) pour éviter re-render, il fournit des callbacks stables
+  return true;
 });
 
 export default MealEntryForm;

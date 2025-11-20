@@ -967,56 +967,24 @@ export const getMacroDistribution = (dailyMeals = [], startDate, endDate) => {
 
 // ==================== HELPERS ====================
 
-/**
- * Génère un ID unique pour un meal
- * 
- * @returns {string} ID au format "meal_<timestamp>"
- */
-export const generateMealId = () => {
-  return `meal_${Date.now()}`;
-};
+// ==================== HELPERS (DÉLÉGUÉS AUX HELPERS CENTRALISÉS) ====================
 
 /**
- * Génère un ID unique pour un program
+ * ✅ PHASE 14.1 : Délégation aux helpers centralisés pour éviter duplication
+ * Ces fonctions sont maintenant dans nutritionHelpers.js mais sont réexportées
+ * ici pour rétrocompatibilité avec le code existant.
  * 
- * @returns {string} ID au format "prog_<timestamp>"
+ * @deprecated Utiliser directement depuis services/nutrition/helpers/nutritionHelpers
  */
-export const generateProgramId = () => {
-  return `prog_${Date.now()}`;
-};
 
-/**
- * Génère un ID unique pour un favoriteFood
- * 
- * @returns {string} ID au format "food_fav_<timestamp>"
- */
-export const generateFavoriteFoodId = () => {
-  return `food_fav_${Date.now()}`;
-};
+import {
+  generateMealId,
+  generateProgramId,
+  generateFavoriteFoodId,
+  formatDate,
+  daysBetween
+} from '../services/nutrition/helpers/nutritionHelpers';
 
-/**
- * Formate une date au format "YYYY-MM-DD" (timezone locale garantie)
- * 
- * ✅ OPTIMISATION : Utilise DateHelper pour garantir cohérence timezone
- * Remplace l'implémentation précédente qui utilisait `new Date(date)` (risque timezone)
- * 
- * @param {Date|string|number} date - Date à formater
- * @returns {string} Date formatée "YYYY-MM-DD" ou null si invalide
- */
-export const formatDate = (date) => {
-  return DateHelper.toYYYYMMDD(date);
-};
-
-/**
- * Calcule le nombre de jours entre deux dates (timezone locale garantie)
- * 
- * ✅ OPTIMISATION : Utilise DateHelper pour garantir cohérence timezone
- * 
- * @param {string} startDate - Date début "YYYY-MM-DD"
- * @param {string} endDate - Date fin "YYYY-MM-DD"
- * @returns {number} Nombre de jours (peut être négatif) ou null si invalide
- */
-export const daysBetween = (startDate, endDate) => {
-  return DateHelper.daysBetween(startDate, endDate);
-};
+// Réexporter pour rétrocompatibilité
+export { generateMealId, generateProgramId, generateFavoriteFoodId, formatDate, daysBetween };
 

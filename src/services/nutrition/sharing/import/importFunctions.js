@@ -12,10 +12,45 @@
 
 import { VersionMigrator } from '../migration';
 import { decryptNutritionExport } from '../export';
+import { decompressNutritionExport } from '../../../../utils/nutritionCompression';
 import { validateShareJson } from './importValidator';
 import logger from '../../../../utils/logger';
 
 const log = logger.module('importFunctions');
+
+async function normalizeShareInput(jsonDataOrFile) {
+  // Support File input
+  const isBrowserFile = typeof File !== 'undefined' && jsonDataOrFile instanceof File;
+  if (isBrowserFile) {
+    const text = await jsonDataOrFile.text();
+    return normalizeShareInput(text);
+  }
+
+  let candidate = jsonDataOrFile;
+
+  if (typeof jsonDataOrFile === 'string') {
+    try {
+      candidate = JSON.parse(jsonDataOrFile);
+    } catch {
+      candidate = jsonDataOrFile;
+    }
+  }
+
+  if (candidate && typeof candidate === 'object') {
+    // Vérifier si export compressé
+    if ((candidate.format === 'nutrition-compressed' || candidate.compressed === true) && candidate.data) {
+      try {
+        const decompressed = await decompressNutritionExport(candidate);
+        return decompressed;
+      } catch (decompressionError) {
+        log.error('[normalizeShareInput] Décompression export échouée', decompressionError);
+        throw decompressionError;
+      }
+    }
+  }
+
+  return candidate;
+}
 
 /**
  * Parse et valide JSON partagé
@@ -28,8 +63,10 @@ const log = logger.module('importFunctions');
  */
 export async function parseShareJson(jsonDataOrFile) {
   try {
+    const normalizedInput = await normalizeShareInput(jsonDataOrFile);
+
     // ✅ PHASE 4 : Valider avec ImportValidator
-    const validation = await validateShareJson(jsonDataOrFile);
+    const validation = await validateShareJson(normalizedInput);
     if (!validation.valid) {
       throw new Error(validation.error);
     }

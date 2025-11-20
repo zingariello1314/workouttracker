@@ -7,16 +7,21 @@
  * - Totaux par repas
  * - Actions (modifier, supprimer)
  * 
+ * ✅ PHASE 14.2 : Virtual scrolling pour listes > 20 meals (performance ×10-50)
+ * 
  * @module components/tabs/nutrition/components/MealList
  */
 
 import React, { useMemo, useCallback } from 'react';
+import { FixedSizeList } from 'react-window';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import { Clock, Edit2, Trash2, Plus, Utensils } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
 // ✅ OPTIMISATION : Helpers pour comparaisons React.memo optimisées
 import { createNutritionMemoComparator, compareMeals } from '../../../../utils/reactMemoHelpers';
+// ✅ PHASE 14.2 : Configuration centralisée pour virtual scrolling
+import { NutritionConfig } from '../../../../config/nutrition.config';
 
 // ✅ OPTIMISATION 2.1 : React.memo pour éviter re-renders inutiles (50-80% réduction)
 const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
@@ -59,8 +64,14 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
     return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   }, []);
 
+  // ✅ PHASE 14.2 : Configuration virtual scrolling
+  const virtualScrollThreshold = NutritionConfig.performance.virtualScrollThreshold;
+  const virtualScrollItemHeight = NutritionConfig.performance.virtualScrollItemHeight;
+  const virtualScrollOverscan = NutritionConfig.performance.virtualScrollOverscan;
+  const maxVirtualScrollHeight = 400; // Hauteur max du conteneur virtual scroll (px)
+
   // Rendre un repas
-  const renderMeal = (meal) => {
+  const renderMeal = useCallback((meal) => {
     return (
       <div
         key={meal.id}
@@ -140,7 +151,28 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
         )}
       </div>
     );
-  };
+  }, [formatTime, onEdit, onDelete]);
+
+  // ✅ PHASE 14.2 : Composant MealItem pour virtual scrolling (mémorisé)
+  // Défini après renderMeal pour y avoir accès
+  const MealItem = useCallback(({ index, style, data }) => {
+    const meal = data.meals[index];
+    if (!meal) return null;
+    
+    return (
+      <div style={style}>
+        <div className="px-1 pb-3">
+          {data.renderMeal(meal)}
+        </div>
+      </div>
+    );
+  }, []);
+
+  // ✅ PHASE 14.2 : Mémoriser données pour virtual scrolling
+  const getMealItemData = useCallback((typeMeals) => ({
+    meals: typeMeals,
+    renderMeal
+  }), [renderMeal]);
 
   if (meals.length === 0) {
     return (
@@ -185,9 +217,37 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
                   </h3>
                   <span className="text-slate-500 text-sm">({typeMeals.length})</span>
                 </div>
-                <div className="space-y-3">
-                  {typeMeals.map(meal => renderMeal(meal))}
-                </div>
+                {/* ✅ PHASE 14.2 : Virtual scrolling si > threshold, sinon rendu normal */}
+                {typeMeals.length > virtualScrollThreshold ? (
+                  <div 
+                    className="border border-slate-700/50 rounded-lg overflow-hidden"
+                    style={{ 
+                      height: Math.min(
+                        typeMeals.length * virtualScrollItemHeight, 
+                        maxVirtualScrollHeight
+                      ),
+                      maxHeight: maxVirtualScrollHeight
+                    }}
+                  >
+                    <FixedSizeList
+                      height={Math.min(
+                        typeMeals.length * virtualScrollItemHeight, 
+                        maxVirtualScrollHeight
+                      )}
+                      itemCount={typeMeals.length}
+                      itemSize={virtualScrollItemHeight}
+                      width="100%"
+                      overscanCount={virtualScrollOverscan}
+                      itemData={getMealItemData(typeMeals)}
+                    >
+                      {MealItem}
+                    </FixedSizeList>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {typeMeals.map(meal => renderMeal(meal))}
+                  </div>
+                )}
               </div>
             );
           })}

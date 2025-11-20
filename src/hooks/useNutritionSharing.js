@@ -34,6 +34,8 @@ import {
   SHARE_SCOPES,
   PERMISSIONS
 } from '../services/nutrition/nutritionSharing';
+import { NutritionConfig } from '../config/nutrition.config';
+import { compressNutritionExport } from '../utils/nutritionCompression';
 import logger from '../utils/logger';
 
 const log = logger.module('useNutritionSharing');
@@ -225,7 +227,9 @@ export const useNutritionSharing = (options = {}) => {
     try {
       const {
         encrypt = false,
-        password = null
+        password = null,
+        compress = NutritionConfig.features.enableCompression,
+        compressionOptions = {}
       } = options;
 
       // ✅ PHASE 3 : Vérifier mot de passe si chiffrement demandé
@@ -236,17 +240,43 @@ export const useNutritionSharing = (options = {}) => {
       // ✅ PHASE 3 : Exporter avec options de chiffrement
       const exportData = await exportForShare(token, scope, { encrypt, password });
 
-      // Créer fichier JSON
-      const json = JSON.stringify(exportData, null, 2);
-      const blob = new Blob([json], { 
-        type: encrypt ? 'application/json+encrypted' : 'application/json' 
-      });
+      let payloadForDownload = exportData;
+      let mimeType = encrypt ? 'application/json+encrypted' : 'application/json';
+      let extension = encrypt ? '.encrypted.json' : '.json';
+
+      if (!encrypt && compress && NutritionConfig.features.enableCompression) {
+        try {
+          const compressionConfig = {
+            level: compressionOptions.level ?? NutritionConfig.performance.compressionLevel,
+            minSize: compressionOptions.minSize ?? NutritionConfig.performance.compressionMinSize,
+            preferStream: compressionOptions.preferStream ?? NutritionConfig.performance.compressionPreferStream,
+            force: compressionOptions.force ?? false
+          };
+          const compressedExport = await compressNutritionExport(exportData, compressionConfig);
+
+          payloadForDownload = compressedExport;
+          mimeType = 'application/json+gzip';
+          extension = '.json.gz';
+
+          log.debug('[downloadShareExport] Export compressé', {
+            originalSize: compressedExport.originalSize,
+            compressedSize: compressedExport.compressedSize,
+            savings: compressedExport.savings?.toFixed?.(1) || compressedExport.savings,
+            method: compressedExport.method || 'pako'
+          });
+        } catch (compressionError) {
+          log.warn('[downloadShareExport] Compression échouée, fallback JSON', compressionError);
+        }
+      }
+
+      // Créer fichier JSON (compressé ou non)
+      const json = JSON.stringify(payloadForDownload, null, 2);
+      const blob = new Blob([json], { type: mimeType });
       const url = URL.createObjectURL(blob);
 
       // Télécharger fichier avec extension appropriée
       const link = document.createElement('a');
       link.href = url;
-      const extension = encrypt ? '.encrypted.json' : '.json';
       link.download = `nutrition-share-${token.substring(0, 8)}-${new Date().toISOString().split('T')[0]}${extension}`;
       document.body.appendChild(link);
       link.click();
