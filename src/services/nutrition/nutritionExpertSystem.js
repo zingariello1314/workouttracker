@@ -15,6 +15,11 @@
 
 import logger from '../../utils/logger';
 import { DateHelper } from '../../utils/dateHelper';
+// ✅ PHASE 15.7 : Validation limites complète avec helpers
+import {
+  validateAndNormalizeNumber,
+  safeDivision
+} from './nutritionCalculationHelpers';
 import { NutritionConfig } from '../../config/nutrition.config';
 
 const log = logger.module('nutritionExpertSystem');
@@ -414,31 +419,180 @@ const prepareUserData = (nutritionData, garminData, activeProgram) => {
     }
   }
   
+  // ✅ PHASE 15.7 : Valider et normaliser totaux avant divisions
+  const validTotals = {
+    calories: validateAndNormalizeNumber(totals.calories, {
+      fieldName: 'totals.calories',
+      defaultValue: 0,
+      min: 0,
+      max: 500000
+    }),
+    protein: validateAndNormalizeNumber(totals.protein, {
+      fieldName: 'totals.protein',
+      defaultValue: 0,
+      min: 0,
+      max: 20000
+    }),
+    carbs: validateAndNormalizeNumber(totals.carbs, {
+      fieldName: 'totals.carbs',
+      defaultValue: 0,
+      min: 0,
+      max: 50000
+    }),
+    fat: validateAndNormalizeNumber(totals.fat, {
+      fieldName: 'totals.fat',
+      defaultValue: 0,
+      min: 0,
+      max: 20000
+    }),
+    fiber: validateAndNormalizeNumber(totals.fiber, {
+      fieldName: 'totals.fiber',
+      defaultValue: 0,
+      min: 0,
+      max: 10000
+    }),
+    sugar: validateAndNormalizeNumber(totals.sugar, {
+      fieldName: 'totals.sugar',
+      defaultValue: 0,
+      min: 0,
+      max: 10000
+    }),
+    sodium: validateAndNormalizeNumber(totals.sodium, {
+      fieldName: 'totals.sodium',
+      defaultValue: 0,
+      min: 0,
+      max: 100000
+    }),
+    water: validateAndNormalizeNumber(totals.water, {
+      fieldName: 'totals.water',
+      defaultValue: 0,
+      min: 0,
+      max: 500000
+    })
+  };
+  
+  // ✅ PHASE 15.7 : Division sécurisée pour moyennes
+  const avgCalories = safeDivision(validTotals.calories, daysCount, {
+    operation: 'prepareUserData.avgCalories',
+    defaultValue: 0
+  });
+  const avgProtein = safeDivision(validTotals.protein, daysCount, {
+    operation: 'prepareUserData.avgProtein',
+    defaultValue: 0
+  });
+  const avgCarbs = safeDivision(validTotals.carbs, daysCount, {
+    operation: 'prepareUserData.avgCarbs',
+    defaultValue: 0
+  });
+  const avgFat = safeDivision(validTotals.fat, daysCount, {
+    operation: 'prepareUserData.avgFat',
+    defaultValue: 0
+  });
+  const avgFiber = safeDivision(validTotals.fiber, daysCount, {
+    operation: 'prepareUserData.avgFiber',
+    defaultValue: 0
+  });
+  const avgSugar = safeDivision(validTotals.sugar, daysCount, {
+    operation: 'prepareUserData.avgSugar',
+    defaultValue: 0
+  });
+  const avgSodium = safeDivision(validTotals.sodium, daysCount, {
+    operation: 'prepareUserData.avgSodium',
+    defaultValue: 0
+  });
+  const avgWaterIntake = safeDivision(validTotals.water, daysCount, {
+    operation: 'prepareUserData.avgWaterIntake',
+    defaultValue: 0
+  });
+  
+  // ✅ PHASE 15.7 : Calculer complianceScore avec division sécurisée
+  let complianceScore = null;
+  if (activeProgram && daysCount > 0) {
+    const totalCompliance = nutritionData.dailyMeals?.reduce((sum, dm) => {
+      return sum + validateAndNormalizeNumber(dm.complianceScore, {
+        fieldName: 'dailyMeal.complianceScore',
+        defaultValue: 0,
+        min: 0,
+        max: 100
+      });
+    }, 0) || 0;
+    complianceScore = safeDivision(totalCompliance, daysCount, {
+      operation: 'prepareUserData.complianceScore',
+      defaultValue: 0
+    });
+  }
+  
+  // ✅ PHASE 15.7 : Calculer mealsPerDay et proteinPerMeal avec divisions sécurisées
+  const mealsPerDay = daysCount > 0 
+    ? safeDivision(mealsLast7Days.length, daysCount, {
+        operation: 'prepareUserData.mealsPerDay',
+        defaultValue: 3
+      })
+    : 3;
+  
+  const proteinPerMeal = daysCount > 0 && mealsLast7Days.length > 0
+    ? safeDivision(
+        safeDivision(validTotals.protein, daysCount, {
+          operation: 'prepareUserData.proteinPerMeal.avgProtein',
+          defaultValue: 0
+        }),
+        safeDivision(mealsLast7Days.length, daysCount, {
+          operation: 'prepareUserData.proteinPerMeal.mealsPerDay',
+          defaultValue: 1
+        }),
+        {
+          operation: 'prepareUserData.proteinPerMeal',
+          defaultValue: 0
+        }
+      )
+    : safeDivision(validTotals.protein, daysCount * 3, {
+        operation: 'prepareUserData.proteinPerMeal.fallback',
+        defaultValue: 0
+      });
+  
   return {
-    // Moyennes 7 jours
-    avgCalories: totals.calories / daysCount,
-    avgProtein: totals.protein / daysCount,
-    avgCarbs: totals.carbs / daysCount,
-    avgFat: totals.fat / daysCount,
-    avgFiber: totals.fiber / daysCount,
-    avgSugar: totals.sugar / daysCount,
-    avgSodium: totals.sodium / daysCount,
-    avgWaterIntake: totals.water / daysCount,
+    // Moyennes 7 jours (validées)
+    avgCalories,
+    avgProtein,
+    avgCarbs,
+    avgFat,
+    avgFiber,
+    avgSugar,
+    avgSodium,
+    avgWaterIntake,
     
-    // Cibles programme
-    targetCalories: activeProgram?.targetCalories || 2000,
-    targetProtein: activeProgram?.targetProtein || 150,
-    targetCarbs: activeProgram?.targetCarbs || 200,
-    targetFat: activeProgram?.targetFat || 65,
+    // Cibles programme (validées)
+    targetCalories: validateAndNormalizeNumber(activeProgram?.targetCalories, {
+      fieldName: 'activeProgram.targetCalories',
+      defaultValue: 2000,
+      min: 0,
+      max: 50000
+    }),
+    targetProtein: validateAndNormalizeNumber(activeProgram?.targetProtein, {
+      fieldName: 'activeProgram.targetProtein',
+      defaultValue: 150,
+      min: 0,
+      max: 2000
+    }),
+    targetCarbs: validateAndNormalizeNumber(activeProgram?.targetCarbs, {
+      fieldName: 'activeProgram.targetCarbs',
+      defaultValue: 200,
+      min: 0,
+      max: 5000
+    }),
+    targetFat: validateAndNormalizeNumber(activeProgram?.targetFat, {
+      fieldName: 'activeProgram.targetFat',
+      defaultValue: 65,
+      min: 0,
+      max: 2000
+    }),
     targetWater: 2500, // 2.5L par défaut
     
     // Objectif
     goal: activeProgram?.goal || 'maintain',
     
-    // Conformité
-    complianceScore: activeProgram ? 
-      (nutritionData.dailyMeals?.reduce((sum, dm) => sum + (dm.complianceScore || 0), 0) / daysCount) : 
-      null,
+    // Conformité (validée)
+    complianceScore,
     
     // Timing
     lastMealTime: lastMeal?.timestamp || lastMeal?.date || null,
@@ -447,10 +601,8 @@ const prepareUserData = (nutritionData, garminData, activeProgram) => {
     
     // Variété
     uniqueFoodsLast7Days: uniqueFoods.size,
-    mealsPerDay: daysCount > 0 ? mealsLast7Days.length / daysCount : 3,
-    proteinPerMeal: daysCount > 0 && mealsLast7Days.length > 0 
-      ? totals.protein / daysCount / (mealsLast7Days.length / daysCount) 
-      : totals.protein / daysCount / 3,
+    mealsPerDay,
+    proteinPerMeal,
     
     // Activité
     isActive: garminData?.activities && Object.keys(garminData.activities).length > 0

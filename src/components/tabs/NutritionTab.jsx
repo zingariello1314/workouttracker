@@ -11,7 +11,7 @@
  * @see ../../../nouvelongletnutritionplan.md
  */
 
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useNutritionTheme } from '../../hooks/useNutritionTheme';
@@ -21,6 +21,7 @@ import Input from '../ui/Input';
 import { Calendar, Plus, Target, TrendingUp, BarChart3, Trophy, Share2, Camera, Zap } from 'lucide-react';
 import { typography } from '../../styles/typography';
 import { registerNutritionServiceWorker } from '../../utils/nutritionServiceWorkerManager';
+import { getNutritionConfig } from '../../config/nutrition.config';
 
 // ✅ OPTIMISATION Phase 11.1 : Lazy loading sections (réduction bundle initial 30-40%)
 const NutritionJournal = lazy(() => import('./nutrition/components/NutritionJournal'));
@@ -40,6 +41,40 @@ const NutritionTab = () => {
   const nutritionData = useNutritionData();
   const garminData = useGarminData();
 
+  // ✅ OPTIMISATION Phase 15.1 : Configuration pour préservation état sections
+  const config = useMemo(() => getNutritionConfig(), []);
+  const preserveSectionState = config.performance.preserveSectionState ?? true;
+  const maxMountedSections = config.performance.maxMountedSections ?? 7;
+
+  // ✅ OPTIMISATION Phase 15.1 : Set pour tracker sections montées (préserve état)
+  // Utilise un Set pour O(1) lookup et insertion
+  const [mountedSections, setMountedSections] = useState(() => {
+    // Initialiser avec section active au démarrage
+    return new Set(['journal']);
+  });
+
+  // ✅ OPTIMISATION Phase 15.1 : Ajouter section aux montées quand visitée
+  useEffect(() => {
+    if (!preserveSectionState) return; // Si désactivé, ne rien faire
+
+    setMountedSections(prev => {
+      const next = new Set(prev);
+      
+      // Ajouter section active si pas déjà montée
+      if (!next.has(activeSection)) {
+        // ✅ OPTIMISATION Phase 15.1 : LRU-like eviction si trop de sections montées
+        if (next.size >= maxMountedSections) {
+          // Retirer la première section (FIFO) - on pourrait améliorer avec vrai LRU
+          const firstSection = next.values().next().value;
+          next.delete(firstSection);
+        }
+        next.add(activeSection);
+      }
+      
+      return next;
+    });
+  }, [activeSection, preserveSectionState, maxMountedSections]);
+
   // Thème dynamique (activé automatiquement)
   const {
     theme: dynamicTheme,
@@ -53,7 +88,7 @@ const NutritionTab = () => {
   });
 
   // Navigation entre sections
-  const sections = [
+  const sections = useMemo(() => [
     { id: 'journal', label: 'Journal', icon: Calendar },
     { id: 'programs', label: 'Programmes', icon: Target },
     { id: 'analyses', label: 'Analyses', icon: BarChart3 },
@@ -61,7 +96,38 @@ const NutritionTab = () => {
     { id: 'challenges', label: 'Défis', icon: Zap },
     { id: 'progress', label: 'Progression', icon: Camera },
     { id: 'sharing', label: 'Partage', icon: Share2 }
-  ];
+  ], []);
+
+  // ✅ OPTIMISATION Phase 15.1 : Helper pour rendre section avec préservation état
+  const renderSection = useCallback((sectionId, Component, props = {}, skeletonLabel) => {
+    const isActive = activeSection === sectionId;
+    const isMounted = preserveSectionState && mountedSections.has(sectionId);
+    const shouldRender = isActive || isMounted;
+
+    if (!shouldRender) return null;
+
+    const sectionContent = (
+      <Suspense fallback={<SectionSkeleton label={skeletonLabel} />}>
+        <Component key={sectionId} {...props} isVisible={isActive} />
+      </Suspense>
+    );
+
+    // Si préservation état activée et section montée, wrapper dans div cachée
+    if (preserveSectionState && isMounted) {
+      return (
+        <div
+          key={`${sectionId}-wrapper`}
+          style={{ display: isActive ? 'block' : 'none' }}
+          aria-hidden={!isActive}
+        >
+          {sectionContent}
+        </div>
+      );
+    }
+
+    // Sinon, rendre directement (comportement classique)
+    return sectionContent;
+  }, [activeSection, preserveSectionState, mountedSections]);
 
   // Enregistrer Service Worker pour cache API offline (après 2s, non bloquant)
   useEffect(() => {
@@ -110,62 +176,63 @@ const NutritionTab = () => {
         })}
       </div>
 
-      {/* Contenu section active */}
+      {/* Contenu sections */}
       <div className="mt-6">
-        {activeSection === 'journal' && (
-          <Suspense fallback={<SectionSkeleton label="du journal nutritionnel" />}>
-            <NutritionJournal
-              key="journal" // ✅ OPTIMISATION Phase 11.1 : Préserver état entre changements
-              selectedDate={selectedDate}
-              onDateChange={setSelectedDate}
-              nutritionData={nutritionData}
-              garminData={garminData}
-              isVisible={activeSection === 'journal'} // ✅ OPTIMISATION : Chargement conditionnel basé sur visibilité
-            />
-          </Suspense>
+        {/* ✅ OPTIMISATION Phase 15.1 : Rendus conditionnels optimisés */}
+        {/* Garder sections montées mais cachées pour préserver état */}
+        
+        {renderSection(
+          'journal',
+          NutritionJournal,
+          {
+            selectedDate,
+            onDateChange: setSelectedDate,
+            nutritionData,
+            garminData
+          },
+          'du journal nutritionnel'
         )}
         
-        {activeSection === 'programs' && (
-          <Suspense fallback={<SectionSkeleton label="des programmes" />}>
-            <NutritionPrograms
-              key="programs"
-              nutritionData={nutritionData}
-            />
-          </Suspense>
+        {renderSection(
+          'programs',
+          NutritionPrograms,
+          { nutritionData },
+          'des programmes'
         )}
         
-        {activeSection === 'analyses' && (
-          <Suspense fallback={<SectionSkeleton label="des analyses" />}>
-            <NutritionAnalyses
-              key="analyses"
-              nutritionData={nutritionData}
-              garminData={garminData}
-            />
-          </Suspense>
+        {renderSection(
+          'analyses',
+          NutritionAnalyses,
+          { nutritionData, garminData },
+          'des analyses'
         )}
         
-        {activeSection === 'gamification' && (
-          <Suspense fallback={<SectionSkeleton label="de la gamification" />}>
-            <NutritionGamification key="gamification" />
-          </Suspense>
+        {renderSection(
+          'gamification',
+          NutritionGamification,
+          {},
+          'de la gamification'
         )}
         
-        {activeSection === 'challenges' && (
-          <Suspense fallback={<SectionSkeleton label="des défis" />}>
-            <NutritionDailyChallenges key="challenges" />
-          </Suspense>
+        {renderSection(
+          'challenges',
+          NutritionDailyChallenges,
+          {},
+          'des défis'
         )}
         
-        {activeSection === 'progress' && (
-          <Suspense fallback={<SectionSkeleton label="de la progression" />}>
-            <NutritionProgressPhotos key="progress" />
-          </Suspense>
+        {renderSection(
+          'progress',
+          NutritionProgressPhotos,
+          {},
+          'de la progression'
         )}
         
-        {activeSection === 'sharing' && (
-          <Suspense fallback={<SectionSkeleton label="du partage" />}>
-            <NutritionSharing key="sharing" />
-          </Suspense>
+        {renderSection(
+          'sharing',
+          NutritionSharing,
+          {},
+          'du partage'
         )}
       </div>
     </div>

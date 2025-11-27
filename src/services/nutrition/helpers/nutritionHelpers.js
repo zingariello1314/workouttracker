@@ -16,6 +16,8 @@
 
 import { DateHelper } from '../../../utils/dateHelper';
 import logger from '../../../utils/logger';
+// ✅ PHASE 15.7 : Import helpers validation pour divisions sécurisées
+import { safeDivision } from '../nutritionCalculationHelpers';
 
 const log = logger.module('nutritionHelpers');
 
@@ -242,7 +244,12 @@ export const calculateAverage = (values) => {
     return 0;
   }
   const sum = values.reduce((acc, val) => acc + normalizeNumber(val, 0), 0);
-  return sum / values.length;
+  // ✅ PHASE 15.7 : Division sécurisée (values.length ne peut pas être 0 grâce au check ci-dessus)
+  // Mais on utilise safeDivision pour cohérence et protection future
+  return safeDivision(sum, values.length, {
+    operation: 'calculateAverage',
+    defaultValue: 0
+  });
 };
 
 /**
@@ -278,11 +285,15 @@ export const calculatePercentage = (value, target) => {
   const normalizedValue = normalizeNumber(value, 0);
   const normalizedTarget = normalizeNumber(target, 0);
   
-  if (normalizedTarget === 0) {
-    return 0;
-  }
-  
-  return (normalizedValue / normalizedTarget) * 100;
+  // ✅ PHASE 15.7 : Division sécurisée pour pourcentage
+  return safeDivision(
+    normalizedValue * 100,
+    normalizedTarget,
+    {
+      operation: 'calculatePercentage',
+      defaultValue: 0
+    }
+  );
 };
 
 // ==================== UTILITAIRES ARRAYS ====================
@@ -368,4 +379,7 @@ export default {
   filterValidValues,
   groupBy
 };
+
+
+
 

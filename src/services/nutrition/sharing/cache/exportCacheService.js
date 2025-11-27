@@ -43,9 +43,11 @@ export class ExportCacheService {
     try {
       // ✅ PHASE 8 : Utiliser Web Crypto API si disponible (plus rapide et sécurisé)
       if (typeof crypto !== 'undefined' && crypto.subtle && crypto.subtle.digest) {
+        // ✅ OPTIMISATION Phase 15.5 : Async pour Web Worker
+        const preparedData = await prepareNutritionDataForShare(nutritionData, scope);
         // Créer représentation stable des données (ordre stable avec sort_keys)
         const dataStr = JSON.stringify({
-          nutritionData: prepareNutritionDataForShare(nutritionData, scope),
+          nutritionData: preparedData,
           scope,
           encrypt
         }, Object.keys(nutritionData || {}).sort());
@@ -59,8 +61,10 @@ export class ExportCacheService {
         return hashHex;
       } else {
         // ✅ PHASE 8 : Fallback hash simple pour navigateurs très anciens
+        // ✅ OPTIMISATION Phase 15.5 : Async pour Web Worker
+        const preparedData = await prepareNutritionDataForShare(nutritionData, scope);
         const dataStr = JSON.stringify({
-          nutritionData: prepareNutritionDataForShare(nutritionData, scope),
+          nutritionData: preparedData,
           scope,
           encrypt
         }, Object.keys(nutritionData || {}).sort());

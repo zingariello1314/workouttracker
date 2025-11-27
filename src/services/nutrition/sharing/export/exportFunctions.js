@@ -84,8 +84,8 @@ export async function exportNutritionDataForShare(nutritionData, token, scope = 
       }
     }
     
-    // Préparer données selon scope
-    const sharedData = prepareNutritionDataForShare(nutritionData, scope);
+    // Préparer données selon scope - ✅ OPTIMISATION Phase 15.5 : Async pour Web Worker
+    const sharedData = await prepareNutritionDataForShare(nutritionData, scope);
     
     // Créer export avec token et métadonnées
     const exportData = {

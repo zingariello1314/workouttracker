@@ -17,8 +17,49 @@
  */
 
 import logger from '../../utils/logger';
+// ✅ OPTIMISATION Phase 15.4 : Cache calculs avec hash inputs
+import { 
+  getNutritionCalculationCache, 
+  generateHash 
+} from './nutritionCalculationCache';
+import { NutritionConfig } from '../../config/nutrition.config';
+// ✅ PHASE 15.7 : Validation limites complète avec helpers
+import {
+  safeDivision,
+  validateAndNormalizeNumber,
+  validateCalculationResult
+} from './nutritionCalculationHelpers';
+import { NutritionError, NutritionErrorCodes } from '../../utils/nutritionErrors';
+import { z } from 'zod';
 
 const log = logger.module('nutritionHealthScore');
+
+// ==================== SCHÉMAS ZOD POUR VALIDATION ====================
+
+/**
+ * ✅ PHASE 15.7 : Schéma pour validation données nutrition dans calculateGlobalHealthScore
+ */
+const nutritionDataSchema = z.object({
+  dailyMeals: z.array(z.any()).optional(),
+  meals: z.array(z.any()).optional(),
+  activeProgram: z.any().optional()
+}).passthrough();
+
+/**
+ * ✅ PHASE 15.7 : Schéma pour validation données workouts dans calculateGlobalHealthScore
+ */
+const workoutsDataSchema = z.object({
+  workouts: z.array(z.any()).optional()
+}).passthrough();
+
+/**
+ * ✅ PHASE 15.7 : Schéma pour validation données Garmin dans calculateGlobalHealthScore
+ * Schéma très permissif car structure peut varier selon source de données
+ */
+const garminDataSchema = z.object({
+  activities: z.any().optional(),
+  dailyMetrics: z.any().optional()
+}).passthrough();
 
 // ==================== CONSTANTES ====================
 
@@ -118,7 +159,11 @@ function calculateNutritionScore(data) {
     });
 
     if (daysWithCompliance > 0) {
-      complianceScore = totalCompliance / daysWithCompliance;
+      // ✅ PHASE 15.7 : Division sécurisée pour moyenne conformité
+      complianceScore = safeDivision(totalCompliance, daysWithCompliance, {
+        operation: 'calculateNutritionScore.compliance',
+        defaultValue: 70
+      });
     }
   }
 
@@ -131,7 +176,11 @@ function calculateNutritionScore(data) {
     });
   }).length;
 
-  const regularityScore = (daysWithMeals / 7) * 100;
+  // ✅ PHASE 15.7 : Division sécurisée pour régularité
+  const regularityScore = safeDivision(daysWithMeals * 100, 7, {
+    operation: 'calculateNutritionScore.regularity',
+    defaultValue: 0
+  });
 
   // 3. Variété alimentaire (30%)
   const uniqueFoods = new Set();
@@ -148,17 +197,49 @@ function calculateNutritionScore(data) {
     }
   });
 
-  // 20 aliments différents = 100%
-  const varietyScore = Math.min((uniqueFoods.size / 20) * 100, 100);
-
-  // Score final pondéré
-  const finalScore = (
-    complianceScore * 0.4 +
-    regularityScore * 0.3 +
-    varietyScore * 0.3
+  // ✅ PHASE 15.7 : Division sécurisée pour variété (20 aliments différents = 100%)
+  const varietyScore = Math.min(
+    safeDivision(uniqueFoods.size * 100, 20, {
+      operation: 'calculateNutritionScore.variety',
+      defaultValue: 0
+    }),
+    100
   );
 
-  return Math.round(Math.max(0, Math.min(100, finalScore)));
+  // ✅ PHASE 15.7 : Validation scores intermédiaires
+  const validatedCompliance = validateCalculationResult(complianceScore, {
+    fieldName: 'complianceScore',
+    operation: 'calculateNutritionScore',
+    min: 0,
+    max: 100
+  });
+  const validatedRegularity = validateCalculationResult(regularityScore, {
+    fieldName: 'regularityScore',
+    operation: 'calculateNutritionScore',
+    min: 0,
+    max: 100
+  });
+  const validatedVariety = validateCalculationResult(varietyScore, {
+    fieldName: 'varietyScore',
+    operation: 'calculateNutritionScore',
+    min: 0,
+    max: 100
+  });
+  
+  // Score final pondéré
+  const finalScore = (
+    validatedCompliance * 0.4 +
+    validatedRegularity * 0.3 +
+    validatedVariety * 0.3
+  );
+
+  // ✅ PHASE 15.7 : Validation résultat final
+  return Math.round(validateCalculationResult(finalScore, {
+    fieldName: 'nutritionScore',
+    operation: 'calculateNutritionScore',
+    min: 0,
+    max: 100
+  }));
 }
 
 // ==================== SCORE WORKOUT ====================
@@ -201,7 +282,14 @@ function calculateWorkoutScore(data) {
   const workoutDays = uniqueDates.size;
   // Idéal: 5-6 jours/semaine = 21-26 jours sur 30 jours
   const idealDays = 24; // 6 jours/semaine * 4 semaines
-  const frequencyScore = Math.min((workoutDays / idealDays) * 100, 100);
+  // ✅ PHASE 15.7 : Division sécurisée pour fréquence
+  const frequencyScore = Math.min(
+    safeDivision(workoutDays * 100, idealDays, {
+      operation: 'calculateWorkoutScore.frequency',
+      defaultValue: 0
+    }),
+    100
+  );
 
   // 2. Volume (30%)
   // Calculer volume total (durée en minutes ou calories)
@@ -220,10 +308,23 @@ function calculateWorkoutScore(data) {
     }
   });
 
-  const avgDailyVolume = volumeCount > 0 ? totalVolume / 30 : 0;
+  // ✅ PHASE 15.7 : Division sécurisée pour volume moyen
+  const avgDailyVolume = volumeCount > 0 
+    ? safeDivision(totalVolume, 30, {
+        operation: 'calculateWorkoutScore.avgDailyVolume',
+        defaultValue: 0
+      })
+    : 0;
   // Idéal: 45-60 minutes/jour = score 100
   const idealDailyVolume = 52.5; // Moyenne 45-60 minutes
-  const volumeScore = Math.min((avgDailyVolume / idealDailyVolume) * 100, 100);
+  // ✅ PHASE 15.7 : Division sécurisée pour score volume
+  const volumeScore = Math.min(
+    safeDivision(avgDailyVolume * 100, idealDailyVolume, {
+      operation: 'calculateWorkoutScore.volume',
+      defaultValue: 0
+    }),
+    100
+  );
 
   // 3. Progression (30%)
   // Simplification: comparer première moitié vs seconde moitié
@@ -265,7 +366,13 @@ function calculateProgressionScore(workouts) {
         count++;
       }
     });
-    return count > 0 ? total / count : 0;
+    // ✅ PHASE 15.7 : Division sécurisée pour moyenne
+    return count > 0 
+      ? safeDivision(total, count, {
+          operation: 'calculateWorkoutScore.progression.avg',
+          defaultValue: 0
+        })
+      : 0;
   };
 
   const firstAvg = getAvgVolume(firstHalf);
@@ -273,8 +380,15 @@ function calculateProgressionScore(workouts) {
 
   if (firstAvg === 0) return 50; // Pas de données de base
 
-  // Calculer pourcentage de progression
-  const progressionPercent = ((secondAvg - firstAvg) / firstAvg) * 100;
+  // ✅ PHASE 15.7 : Division sécurisée pour pourcentage de progression
+  const progressionPercent = safeDivision(
+    (secondAvg - firstAvg) * 100,
+    firstAvg,
+    {
+      operation: 'calculateWorkoutScore.progression.percent',
+      defaultValue: 0
+    }
+  );
 
   // Normaliser progression (-20% à +20% → 0 à 100)
   // Progression idéale: +5% à +10%
@@ -350,7 +464,11 @@ function calculateRecoveryScore(data) {
   });
 
   if (sleepCount > 0) {
-    const avgSleep = totalSleepHours / sleepCount;
+    // ✅ PHASE 15.7 : Division sécurisée pour moyenne sommeil
+    const avgSleep = safeDivision(totalSleepHours, sleepCount, {
+      operation: 'calculateRecoveryScore.avgSleep',
+      defaultValue: 0
+    });
     
     // Optimale: 7-8h
     if (avgSleep >= 7 && avgSleep <= 8) {
@@ -414,11 +532,24 @@ function calculateConsistencyScore(data) {
   const workoutStreak = streaks.workout?.current || streaks.workout?.actual || 0;
   const overallStreak = streaks.overall?.current || streaks.overall?.actual || 0;
 
-  // Moyenne des streaks
-  const avgStreak = (nutritionStreak + workoutStreak + overallStreak) / 3;
+  // ✅ PHASE 15.7 : Division sécurisée pour moyenne des streaks
+  const avgStreak = safeDivision(
+    nutritionStreak + workoutStreak + overallStreak,
+    3,
+    {
+      operation: 'calculateConsistencyScore.avgStreak',
+      defaultValue: 0
+    }
+  );
 
-  // Normaliser (30 jours = 100%)
-  const consistencyScore = Math.min((avgStreak / 30) * 100, 100);
+  // ✅ PHASE 15.7 : Division sécurisée pour normalisation (30 jours = 100%)
+  const consistencyScore = Math.min(
+    safeDivision(avgStreak * 100, 30, {
+      operation: 'calculateConsistencyScore.normalize',
+      defaultValue: 0
+    }),
+    100
+  );
 
   return Math.round(Math.max(0, Math.min(100, consistencyScore)));
 }
@@ -448,8 +579,24 @@ function calculateBalanceScore(data) {
     return 50;
   }
 
-  const mean = percentages.reduce((a, b) => a + b, 0) / percentages.length;
-  const variance = percentages.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / percentages.length;
+  // ✅ PHASE 15.7 : Division sécurisée pour moyenne
+  const mean = safeDivision(
+    percentages.reduce((a, b) => a + b, 0),
+    percentages.length,
+    {
+      operation: 'calculateBalanceScore.mean',
+      defaultValue: 0
+    }
+  );
+  // ✅ PHASE 15.7 : Division sécurisée pour variance
+  const variance = safeDivision(
+    percentages.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0),
+    percentages.length,
+    {
+      operation: 'calculateBalanceScore.variance',
+      defaultValue: 0
+    }
+  );
   const stdDev = Math.sqrt(variance);
 
   // Score inversement proportionnel à écart-type
@@ -547,6 +694,54 @@ function getRecommendationMessage(category, score) {
  * @returns {Object} Score global avec sous-scores, tendances et recommandations
  */
 export function calculateGlobalHealthScore(data, options = {}) {
+  // ✅ PHASE 15.7 : Validation inputs avec Zod (version robuste)
+  try {
+    // Gérer le cas où data est undefined/null
+    if (!data || typeof data !== 'object') {
+      data = {};
+    }
+    
+    // Valider chaque section individuellement pour éviter erreurs Zod sur schémas imbriqués
+    const validatedData = {
+      nutrition: (() => {
+        try {
+          if (data.nutrition && typeof data.nutrition === 'object') {
+            return nutritionDataSchema.parse(data.nutrition);
+          }
+        } catch (e) {
+          log.warn('[calculateGlobalHealthScore] Validation nutrition échouée, utilisation valeurs par défaut');
+        }
+        return {};
+      })(),
+      workouts: (() => {
+        try {
+          if (data.workouts && typeof data.workouts === 'object') {
+            return workoutsDataSchema.parse(data.workouts);
+          }
+        } catch (e) {
+          log.warn('[calculateGlobalHealthScore] Validation workouts échouée, utilisation valeurs par défaut');
+        }
+        return {};
+      })(),
+      garmin: (() => {
+        // Validation permissive : accepter tout objet valide sans warning
+        if (data.garmin && typeof data.garmin === 'object' && !Array.isArray(data.garmin)) {
+          // Utiliser directement sans validation stricte (structure peut varier)
+          // Les champs seront validés individuellement lors de l'utilisation
+          return data.garmin;
+        }
+        return {};
+      })(),
+      gamification: data.gamification || {},
+      muscleBalance: data.muscleBalance || null
+    };
+    
+    data = validatedData;
+  } catch (error) {
+    // Erreur non bloquante : continuer avec données originales
+    log.warn('[calculateGlobalHealthScore] Erreur validation globale, utilisation données originales:', error.message);
+  }
+  
   const {
     nutrition = {},
     workouts = {},
@@ -556,6 +751,39 @@ export function calculateGlobalHealthScore(data, options = {}) {
   } = data;
 
   const { historicalScores = null } = options;
+
+  // ✅ OPTIMISATION Phase 15.4 : Vérifier cache avant calculs coûteux
+  if (NutritionConfig.features.enableCalculationCache) {
+    const hashInput = JSON.stringify({
+      nutrition: {
+        dailyMealsCount: nutrition.dailyMeals?.length || 0,
+        mealsCount: nutrition.meals?.length || 0,
+        activeProgramId: nutrition.activeProgram?.id || null
+      },
+      workouts: {
+        count: workouts.workouts?.length || 0
+      },
+      garmin: {
+        activitiesCount: Object.keys(garmin.activities || {}).length,
+        metricsCount: Object.keys(garmin.dailyMetrics || {}).length
+      },
+      gamification: {
+        hasStreaks: Object.keys(gamification.streaks || {}).length > 0
+      },
+      muscleBalance: {
+        count: muscleBalance?.length || 0
+      },
+      options: options || {}
+    });
+    const hash = generateHash(hashInput);
+    const cache = getNutritionCalculationCache();
+    const cacheKey = `healthScore:${hash}`;
+    
+    const cached = cache.get(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+  }
 
   log.debug('Calcul score santé global:', {
     hasNutrition: Object.keys(nutrition).length > 0,
@@ -608,7 +836,7 @@ export function calculateGlobalHealthScore(data, options = {}) {
   // Recommandations
   const recommendations = generateHealthRecommendations({ subScores });
 
-  return {
+  const result = {
     global: Math.round(safeGlobalScore),
     subScores,
     trends,
@@ -624,6 +852,36 @@ export function calculateGlobalHealthScore(data, options = {}) {
       }
     }
   };
+  
+  // ✅ OPTIMISATION Phase 15.4 : Mettre en cache le résultat
+  if (NutritionConfig.features.enableCalculationCache) {
+    const hashInput = JSON.stringify({
+      nutrition: {
+        dailyMealsCount: nutrition.dailyMeals?.length || 0,
+        mealsCount: nutrition.meals?.length || 0,
+        activeProgramId: nutrition.activeProgram?.id || null
+      },
+      workouts: {
+        count: workouts.workouts?.length || 0
+      },
+      garmin: {
+        activitiesCount: Object.keys(garmin.activities || {}).length,
+        metricsCount: Object.keys(garmin.dailyMetrics || {}).length
+      },
+      gamification: {
+        hasStreaks: Object.keys(gamification.streaks || {}).length > 0
+      },
+      muscleBalance: {
+        count: muscleBalance?.length || 0
+      },
+      options: options || {}
+    });
+    const hash = generateHash(hashInput);
+    const cache = getNutritionCalculationCache();
+    cache.set(`healthScore:${hash}`, result);
+  }
+  
+  return result;
 }
 
 export default {

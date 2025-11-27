@@ -138,7 +138,10 @@ export const dailyMealSchema = z.object({
   
   // Métadonnées
   lastModified: isoTimestampSchema.optional(),
-  createdAt: isoTimestampSchema.optional()
+  createdAt: isoTimestampSchema.optional(),
+  
+  // ✅ OPTIMISATION Phase 15.3 : Version pour optimistic locking (détection modifications concurrentes)
+  version: z.number().int().nonnegative('La version doit être un entier positif ou nul').optional().default(0)
 }).strict(); // Interdit champs non définis (mais on a ajouté tous les champs existants)
 
 // ==================== SCHEMAS MEAL ====================
@@ -252,7 +255,10 @@ export const mealSchema = z.object({
   // Métadonnées
   timestamp: isoTimestampSchema.optional(),
   lastModified: isoTimestampSchema.optional(),
-  createdAt: isoTimestampSchema.optional()
+  createdAt: isoTimestampSchema.optional(),
+  
+  // ✅ OPTIMISATION Phase 15.3 : Version pour optimistic locking (détection modifications concurrentes)
+  version: z.number().int().nonnegative('La version doit être un entier positif ou nul').optional().default(0)
 }).strict();
 
 // ==================== SCHEMAS PROGRAM ====================
@@ -306,7 +312,10 @@ export const programSchema = z.object({
   
   // Métadonnées
   lastModified: isoTimestampSchema.optional(),
-  createdAt: isoTimestampSchema.optional()
+  createdAt: isoTimestampSchema.optional(),
+  
+  // ✅ OPTIMISATION Phase 15.3 : Version pour optimistic locking (détection modifications concurrentes)
+  version: z.number().int().nonnegative('La version doit être un entier positif ou nul').optional().default(0)
 }).strict();
 
 // ==================== SCHEMAS FAVORITE FOOD ====================

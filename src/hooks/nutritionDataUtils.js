@@ -16,7 +16,7 @@
 // ==================== CONSTANTES ====================
 
 const DB_NAME = 'WorkoutTrackerDB';
-const DB_VERSION_NUTRITION = 10; // Version 10: Index composé [date+type] pour nutrition_progressPhotos (cohérence pattern)
+const DB_VERSION_NUTRITION = 11; // Version 11: ✅ OPTIMISATION Phase 15.6 : Ajout store nutrition_offlineQueue pour queue offline
 
 // Stores nutrition
 const STORE_DAILY_MEALS = 'nutrition_dailyMeals';
@@ -30,6 +30,7 @@ const STORE_GAMIFICATION = 'nutrition_gamification';
 const STORE_SHARE_LINKS = 'nutrition_shareLinks';
 const STORE_PROGRESS_PHOTOS = 'nutrition_progressPhotos'; // Photos avant/après pour progression
 const STORE_ML_MODELS = 'nutrition_mlModels'; // Modèles ML entraînés (TensorFlow.js) pour prédictions
+const STORE_OFFLINE_QUEUE = 'nutrition_offlineQueue'; // ✅ OPTIMISATION Phase 15.6 : Queue offline pour modifications en attente
 
 // Instance singleton de la DB
 let dbInstance = null;
@@ -123,7 +124,8 @@ export const openNutritionDB = async () => {
             STORE_GAMIFICATION,
             STORE_SHARE_LINKS,
             STORE_PROGRESS_PHOTOS,
-            STORE_ML_MODELS
+            STORE_ML_MODELS,
+            STORE_OFFLINE_QUEUE // ✅ OPTIMISATION Phase 15.6 : Queue offline
           ];
           
           const missingStores = nutritionStores.filter(storeName => 
@@ -135,9 +137,10 @@ export const openNutritionDB = async () => {
             log.debug(`Stores nutrition manquants après ouverture (sera créé au prochain upgrade): ${missingStores.join(', ')}`);
             
             // ✅ OPTIMISATION : Forcer migration si store manquant (nouveaux stores)
-            if (missingStores.includes(STORE_SHARE_LINKS) || missingStores.includes(STORE_PROGRESS_PHOTOS) || missingStores.includes(STORE_ML_MODELS)) {
+            if (missingStores.includes(STORE_SHARE_LINKS) || missingStores.includes(STORE_PROGRESS_PHOTOS) || missingStores.includes(STORE_ML_MODELS) || missingStores.includes(STORE_OFFLINE_QUEUE)) {
               const storeName = missingStores.includes(STORE_ML_MODELS) ? STORE_ML_MODELS : 
-                                missingStores.includes(STORE_PROGRESS_PHOTOS) ? STORE_PROGRESS_PHOTOS : STORE_SHARE_LINKS;
+                                missingStores.includes(STORE_PROGRESS_PHOTOS) ? STORE_PROGRESS_PHOTOS : 
+                                missingStores.includes(STORE_OFFLINE_QUEUE) ? STORE_OFFLINE_QUEUE : STORE_SHARE_LINKS;
               log.info(`Migration forcée pour créer store ${storeName}...`);
               const currentVersion = dbInstance.version;
               dbInstance.close();
@@ -620,6 +623,39 @@ const handleUpgrade = (event) => {
       });
     }
 
+    // ==================== STORE 12: offlineQueue ====================
+    // ✅ OPTIMISATION Phase 15.6 : Queue offline pour modifications en attente
+    let offlineQueueStore;
+    if (!db.objectStoreNames.contains(STORE_OFFLINE_QUEUE)) {
+      offlineQueueStore = db.createObjectStore(STORE_OFFLINE_QUEUE, {
+        keyPath: 'id',
+        autoIncrement: true
+      });
+      
+      // Indexes pour requêtes fréquentes
+      offlineQueueStore.createIndex('timestamp', 'timestamp', { unique: false }); // Tri par date création
+      offlineQueueStore.createIndex('store', 'store', { unique: false }); // Filtrage par store
+      offlineQueueStore.createIndex('status', 'status', { unique: false }); // Status (pending, processing, completed, failed)
+      offlineQueueStore.createIndex('retryCount', 'retryCount', { unique: false }); // Nombre de tentatives
+      
+      log.debug(`Store ${STORE_OFFLINE_QUEUE} créé avec indexes`);
+    } else {
+      offlineQueueStore = event.target.transaction.objectStore(STORE_OFFLINE_QUEUE);
+      
+      // Vérifier et ajouter indexes manquants
+      const indexNames = Array.from(offlineQueueStore.indexNames);
+      ['timestamp', 'store', 'status', 'retryCount'].forEach(indexName => {
+        if (!indexNames.includes(indexName)) {
+          try {
+            offlineQueueStore.createIndex(indexName, indexName, { unique: false });
+          } catch (err) {
+            // Index peut déjà exister, ignorer l'erreur
+            log.debug(`Index ${indexName} déjà existant ou erreur création:`, err);
+          }
+        }
+      });
+    }
+
     log.info('Migration IndexedDB terminée avec succès');
 
   } catch (upgradeError) {
@@ -672,6 +708,7 @@ export {
   STORE_GAMIFICATION,
   STORE_SHARE_LINKS,
   STORE_PROGRESS_PHOTOS,
-  STORE_ML_MODELS
+  STORE_ML_MODELS,
+  STORE_OFFLINE_QUEUE // ✅ OPTIMISATION Phase 15.6 : Queue offline
 };
 

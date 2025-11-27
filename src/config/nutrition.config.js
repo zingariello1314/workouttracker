@@ -72,6 +72,8 @@ const NutritionConfigSchema = z.object({
     compressionLevel: z.number().min(1).max(9), // Niveau gzip (1-9)
     compressionMinSize: z.number().min(512).max(1048576), // Taille min avant compression (bytes)
     compressionPreferStream: z.boolean(), // Préférer CompressionStream API si dispo
+    preserveSectionState: z.boolean(), // ✅ OPTIMISATION Phase 15.1 : Garder sections montées mais cachées
+    maxMountedSections: z.number().min(1).max(20), // Nombre max sections montées simultanément
   }),
   features: z.object({
     enableCompression: z.boolean(),
@@ -80,14 +82,17 @@ const NutritionConfigSchema = z.object({
     enablePrefetching: z.boolean(),
     enableCalculationCache: z.boolean(),
     enableStoreConsistencyValidation: z.boolean(),
+    enableOptimisticLocking: z.boolean(), // ✅ OPTIMISATION Phase 15.3 : Optimistic locking
   }),
   compliance: z.object({
     proteinWeight: z.number().min(0).max(1),
     carbsWeight: z.number().min(0).max(1),
     fatWeight: z.number().min(0).max(1),
     caloriesWeight: z.number().min(0).max(1),
-    complianceThreshold: z.number().min(0).max(1), // 0.8 = 80%
-    compliancePenaltyThreshold: z.number().min(0).max(2), // 1.2 = 120% (peut aller jusqu'à 200%)
+    complianceThreshold: z.number().min(0).max(1), // 0.8 = 80% (déprécié, utiliser strategy)
+    compliancePenaltyThreshold: z.number().min(0).max(2), // 1.2 = 120% (déprécié, utiliser strategy)
+    // ✅ PHASE 15.8 : Pattern Strategy pour calculs de conformité
+    strategy: z.enum(['standard', 'strict', 'flexible']).optional(), // Stratégie de calcul (standard par défaut)
   }),
   retry: z.object({
     writeMaxRetries: z.number().min(1).max(10),
@@ -143,6 +148,16 @@ const NutritionConfigSchema = z.object({
   worker: z.object({
     timeout: z.number().min(5000).max(120000),
     fallbackDelay: z.number().min(50).max(1000),
+  }),
+  // ✅ OPTIMISATION Phase 15.6 : Configuration queue offline
+  offline: z.object({
+    maxRetries: z.number().min(1).max(10),
+    retryDelay: z.number().min(100).max(10000),
+    maxRetryDelay: z.number().min(1000).max(120000),
+    cleanupAfterHours: z.number().min(1).max(168), // Max 1 semaine
+    maxQueueSize: z.number().min(10).max(10000),
+    syncInterval: z.number().min(1000).max(60000),
+    syncOnReconnect: z.boolean(),
   }),
   scanner: z.object({
     timeout: z.number().min(5000).max(60000),
@@ -215,6 +230,8 @@ export const NutritionConfig = {
     compressionLevel: 6,             // Niveau gzip (1-9)
     compressionMinSize: 2048,        // Taille minimum avant compression (2 KB)
     compressionPreferStream: true,   // Préférer CompressionStream si dispo
+    preserveSectionState: true,      // ✅ OPTIMISATION Phase 15.1 : Garder sections montées mais cachées (préserve état)
+    maxMountedSections: 7,           // Nombre max de sections montées simultanément (évite surcharge mémoire)
   },
   
   // Feature flags (pour activer/désactiver features)
@@ -225,6 +242,7 @@ export const NutritionConfig = {
     enablePrefetching: true,                    // Prefetching données prévisibles
     enableCalculationCache: true,              // Cache calculs avec hash
     enableStoreConsistencyValidation: true,    // Validation cohérence stores
+    enableOptimisticLocking: true,             // ✅ OPTIMISATION Phase 15.3 : Optimistic locking (détection modifications concurrentes)
   },
   
   // Configuration conformité (pour calcul score)
@@ -233,8 +251,10 @@ export const NutritionConfig = {
     proteinWeight: 0.3,    // 30% du score
     carbsWeight: 0.15,     // 15% du score
     fatWeight: 0.15,       // 15% du score
-    complianceThreshold: 0.8,      // 80% = score 100
-    compliancePenaltyThreshold: 1.2, // 120% = pénalité
+    complianceThreshold: 0.8,      // 80% = score 100 (déprécié, utiliser strategy)
+    compliancePenaltyThreshold: 1.2, // 120% = pénalité (déprécié, utiliser strategy)
+    // ✅ PHASE 15.8 : Pattern Strategy pour calculs de conformité
+    strategy: 'standard', // 'standard' | 'strict' | 'flexible'
   },
   
   // Configuration retry (pour opérations IndexedDB)
@@ -306,6 +326,17 @@ export const NutritionConfig = {
   worker: {
     timeout: 30000,              // ms (timeout calculs workers)
     fallbackDelay: 100,          // ms (délai avant fallback)
+  },
+  
+  // ✅ OPTIMISATION Phase 15.6 : Configuration queue offline
+  offline: {
+    maxRetries: 3,               // Nombre max de tentatives de synchronisation
+    retryDelay: 1000,            // Délai initial entre tentatives (ms)
+    maxRetryDelay: 30000,        // Délai max entre tentatives (ms)
+    cleanupAfterHours: 24,       // Nettoyer opérations complétées après X heures
+    maxQueueSize: 1000,          // Taille max de la queue (évite surcharge)
+    syncInterval: 5000,          // Intervalle de vérification auto-sync (ms)
+    syncOnReconnect: true,       // Synchroniser automatiquement à la reconnexion
   },
   
   // Configuration scanner code-barres
@@ -463,6 +494,19 @@ export function getConfigForExport() {
     // Note: features, corruption, repository, worker, scanner non exportés (sécurité/technique)
   };
 }
+
+// ==================== GETTER ====================
+
+/**
+ * Récupère la configuration nutrition
+ * 
+ * ✅ OPTIMISATION Phase 15.1-15.2 : Getter pour accès cohérent à la configuration
+ * 
+ * @returns {Object} Configuration nutrition complète
+ */
+export const getNutritionConfig = () => {
+  return NutritionConfig;
+};
 
 // ==================== INITIALISATION ====================
 

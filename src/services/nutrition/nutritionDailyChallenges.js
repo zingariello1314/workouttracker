@@ -15,6 +15,12 @@
 
 import { DateHelper } from '../../utils/dateHelper';
 import logger from '../../utils/logger';
+// ✅ PHASE 15.7 : Validation limites complète avec helpers
+import {
+  validateAndNormalizeNumber,
+  safeDivision
+} from './nutritionCalculationHelpers';
+import { NutritionError, NutritionErrorCodes } from '../../utils/nutritionErrors';
 
 const log = {
   debug: (...args) => logger.debug('[nutritionDailyChallenges]', ...args),
@@ -28,24 +34,66 @@ const log = {
 /**
  * Vérifie si un repas correspond au plan (comparaison basique)
  * Pour l'instant, vérifie si le type et les macros sont proches
+ * 
+ * ✅ PHASE 15.7 : Validation complète avec protection division par zéro
  */
 const matchesPlannedMeal = (loggedMeal, plannedMeal, tolerance = 0.10) => {
-  if (!loggedMeal || !plannedMeal) return false;
-  
-  // Vérifier type
-  if (loggedMeal.type !== plannedMeal.type) return false;
-  
-  // Vérifier macros avec tolérance (±10% par défaut)
-  const caloriesDiff = Math.abs((loggedMeal.totalCalories || 0) - (plannedMeal.targetCalories || 0));
-  const caloriesTolerance = (plannedMeal.targetCalories || 0) * tolerance;
-  
-  if (caloriesDiff > caloriesTolerance) return false;
-  
-  // Vérifier protéines (±10%)
-  const proteinDiff = Math.abs((loggedMeal.totalProtein || 0) - (plannedMeal.targetProtein || 0));
-  const proteinTolerance = (plannedMeal.targetProtein || 0) * tolerance;
-  
-  return proteinDiff <= proteinTolerance;
+  try {
+    if (!loggedMeal || !plannedMeal) return false;
+    
+    // Vérifier type
+    if (loggedMeal.type !== plannedMeal.type) return false;
+    
+    // ✅ PHASE 15.7 : Valider et normaliser valeurs
+    const loggedCalories = validateAndNormalizeNumber(loggedMeal.totalCalories, {
+      fieldName: 'loggedMeal.totalCalories',
+      defaultValue: 0,
+      min: 0,
+      max: 50000
+    });
+    const plannedCalories = validateAndNormalizeNumber(plannedMeal.targetCalories, {
+      fieldName: 'plannedMeal.targetCalories',
+      defaultValue: 0,
+      min: 0,
+      max: 50000
+    });
+    
+    // ✅ PHASE 15.7 : Valider tolérance
+    const validTolerance = validateAndNormalizeNumber(tolerance, {
+      fieldName: 'tolerance',
+      defaultValue: 0.10,
+      min: 0,
+      max: 1
+    });
+    
+    // Vérifier macros avec tolérance (±10% par défaut)
+    const caloriesDiff = Math.abs(loggedCalories - plannedCalories);
+    const caloriesTolerance = plannedCalories * validTolerance;
+    
+    if (caloriesDiff > caloriesTolerance) return false;
+    
+    // ✅ PHASE 15.7 : Vérifier protéines avec validation
+    const loggedProtein = validateAndNormalizeNumber(loggedMeal.totalProtein, {
+      fieldName: 'loggedMeal.totalProtein',
+      defaultValue: 0,
+      min: 0,
+      max: 2000
+    });
+    const plannedProtein = validateAndNormalizeNumber(plannedMeal.targetProtein, {
+      fieldName: 'plannedMeal.targetProtein',
+      defaultValue: 0,
+      min: 0,
+      max: 2000
+    });
+    
+    const proteinDiff = Math.abs(loggedProtein - plannedProtein);
+    const proteinTolerance = plannedProtein * validTolerance;
+    
+    return proteinDiff <= proteinTolerance;
+  } catch (error) {
+    log.warn('[matchesPlannedMeal] Erreur validation, retour false:', error);
+    return false; // En cas d'erreur, considérer comme non correspondant (sécurisé)
+  }
 };
 
 /**
@@ -96,15 +144,78 @@ const hasProteinAndCarbs = (meal) => {
 /**
  * Vérifie si les macros sont dans la tolérance
  */
+/**
+ * ✅ PHASE 15.7 : Validation complète avec protection division par zéro
+ */
 const macrosWithinTolerance = (actual, target, tolerancePercent = 10) => {
-  if (!target || !actual) return false;
-  const tolerance = tolerancePercent / 100;
-  
-  const proteinOk = Math.abs((actual.protein || 0) - (target.protein || 0)) <= (target.protein || 0) * tolerance;
-  const carbsOk = Math.abs((actual.carbs || 0) - (target.carbs || 0)) <= (target.carbs || 0) * tolerance;
-  const fatOk = Math.abs((actual.fat || 0) - (target.fat || 0)) <= (target.fat || 0) * tolerance;
-  
-  return proteinOk && carbsOk && fatOk;
+  try {
+    if (!target || !actual) return false;
+    
+    // ✅ PHASE 15.7 : Valider et normaliser valeurs
+    const actualProtein = validateAndNormalizeNumber(actual.protein, {
+      fieldName: 'actual.protein',
+      defaultValue: 0,
+      min: 0,
+      max: 2000
+    });
+    const targetProtein = validateAndNormalizeNumber(target.protein, {
+      fieldName: 'target.protein',
+      defaultValue: 0,
+      min: 0,
+      max: 2000,
+      allowZero: false // Target ne peut pas être zéro
+    });
+    
+    const actualCarbs = validateAndNormalizeNumber(actual.carbs, {
+      fieldName: 'actual.carbs',
+      defaultValue: 0,
+      min: 0,
+      max: 5000
+    });
+    const targetCarbs = validateAndNormalizeNumber(target.carbs, {
+      fieldName: 'target.carbs',
+      defaultValue: 0,
+      min: 0,
+      max: 5000,
+      allowZero: false
+    });
+    
+    const actualFat = validateAndNormalizeNumber(actual.fat, {
+      fieldName: 'actual.fat',
+      defaultValue: 0,
+      min: 0,
+      max: 2000
+    });
+    const targetFat = validateAndNormalizeNumber(target.fat, {
+      fieldName: 'target.fat',
+      defaultValue: 0,
+      min: 0,
+      max: 2000,
+      allowZero: false
+    });
+    
+    // ✅ PHASE 15.7 : Valider tolérance
+    const validTolerancePercent = validateAndNormalizeNumber(tolerancePercent, {
+      fieldName: 'tolerancePercent',
+      defaultValue: 10,
+      min: 0,
+      max: 100
+    });
+    const tolerance = validTolerancePercent / 100;
+    
+    // ✅ PHASE 15.7 : Calculer différences avec validation (protection si target = 0)
+    const proteinOk = targetProtein > 0 && 
+      Math.abs(actualProtein - targetProtein) <= targetProtein * tolerance;
+    const carbsOk = targetCarbs > 0 && 
+      Math.abs(actualCarbs - targetCarbs) <= targetCarbs * tolerance;
+    const fatOk = targetFat > 0 && 
+      Math.abs(actualFat - targetFat) <= targetFat * tolerance;
+    
+    return proteinOk && carbsOk && fatOk;
+  } catch (error) {
+    log.warn('[macrosWithinTolerance] Erreur validation, retour false:', error);
+    return false; // En cas d'erreur, considérer hors tolérance (sécurisé)
+  }
 };
 
 // ==================== DÉFIS ====================
@@ -487,30 +598,78 @@ export const checkZeroAddedSugar = (meals) => {
  * Défi : Macros dans la plage (±10%)
  */
 export const checkMacrosInRange = (dailyMeal, tolerancePercent = 10) => {
-  if (!dailyMeal || !dailyMeal.dailyTotals) {
-    return { completed: false, reason: 'Pas de données' };
+  try {
+    // ✅ PHASE 15.7 : Validation inputs
+    if (!dailyMeal || !dailyMeal.dailyTotals) {
+      return { completed: false, reason: 'Pas de données' };
+    }
+    
+    // ✅ PHASE 15.7 : Valider et normaliser valeurs
+    const actual = {
+      protein: validateAndNormalizeNumber(dailyMeal.dailyTotals.protein, {
+        fieldName: 'dailyTotals.protein',
+        defaultValue: 0,
+        min: 0,
+        max: 2000
+      }),
+      carbs: validateAndNormalizeNumber(dailyMeal.dailyTotals.carbs, {
+        fieldName: 'dailyTotals.carbs',
+        defaultValue: 0,
+        min: 0,
+        max: 5000
+      }),
+      fat: validateAndNormalizeNumber(dailyMeal.dailyTotals.fat, {
+        fieldName: 'dailyTotals.fat',
+        defaultValue: 0,
+        min: 0,
+        max: 2000
+      })
+    };
+    
+    const target = {
+      protein: validateAndNormalizeNumber(dailyMeal.dailyTotals.targetProtein, {
+        fieldName: 'dailyTotals.targetProtein',
+        defaultValue: 150,
+        min: 0,
+        max: 2000,
+        allowZero: false // Target ne peut pas être zéro
+      }),
+      carbs: validateAndNormalizeNumber(dailyMeal.dailyTotals.targetCarbs, {
+        fieldName: 'dailyTotals.targetCarbs',
+        defaultValue: 200,
+        min: 0,
+        max: 5000,
+        allowZero: false
+      }),
+      fat: validateAndNormalizeNumber(dailyMeal.dailyTotals.targetFat, {
+        fieldName: 'dailyTotals.targetFat',
+        defaultValue: 65,
+        min: 0,
+        max: 2000,
+        allowZero: false
+      })
+    };
+    
+    // ✅ PHASE 15.7 : Valider tolérance
+    const validTolerancePercent = validateAndNormalizeNumber(tolerancePercent, {
+      fieldName: 'tolerancePercent',
+      defaultValue: 10,
+      min: 0,
+      max: 100
+    });
+    
+    if (macrosWithinTolerance(actual, target, validTolerancePercent)) {
+      return { completed: true };
+    }
+    
+    return { 
+      completed: false, 
+      reason: `Macros hors tolérance (±${validTolerancePercent}%)` 
+    };
+  } catch (error) {
+    log.warn('[checkMacrosInRange] Erreur validation, retour non complété:', error);
+    return { completed: false, reason: 'Erreur de validation' };
   }
-  
-  const actual = {
-    protein: dailyMeal.dailyTotals.protein || 0,
-    carbs: dailyMeal.dailyTotals.carbs || 0,
-    fat: dailyMeal.dailyTotals.fat || 0
-  };
-  
-  const target = {
-    protein: dailyMeal.dailyTotals.targetProtein || 150,
-    carbs: dailyMeal.dailyTotals.targetCarbs || 200,
-    fat: dailyMeal.dailyTotals.targetFat || 65
-  };
-  
-  if (macrosWithinTolerance(actual, target, tolerancePercent)) {
-    return { completed: true };
-  }
-  
-  return { 
-    completed: false, 
-    reason: `Macros hors tolérance (±${tolerancePercent}%)` 
-  };
 };
 
 /**
@@ -606,13 +765,27 @@ export const calculateDailyChallenges = (dateStr, dailyMeal, meals = [], activeP
   const completedCount = Object.values(challenges).filter(c => c.completed).length;
   const totalCount = Object.keys(challenges).length;
   
+  // ✅ PHASE 15.7 : Division sécurisée pour pourcentage
+  const percentage = Math.round(safeDivision(completedCount * 100, totalCount, {
+    operation: 'calculateDailyChallenges.percentage',
+    defaultValue: 0
+  }));
+  
+  // ✅ PHASE 15.7 : Valider résultats finaux
+  const validatedPercentage = validateAndNormalizeNumber(percentage, {
+    fieldName: 'percentage',
+    defaultValue: 0,
+    min: 0,
+    max: 100
+  });
+  
   return {
     date: dateStr,
     challenges,
     stats: {
       completed: completedCount,
       total: totalCount,
-      percentage: Math.round((completedCount / totalCount) * 100)
+      percentage: validatedPercentage
     },
     timestamp: new Date().toISOString()
   };

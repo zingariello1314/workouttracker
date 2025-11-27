@@ -308,9 +308,9 @@ const SettingsTab = () => {
           
           // Champs inclus
           fieldsIncluded: {
-            dailyMeals: ['date', 'programId', 'isComplete', 'mealIds', 'dailyTotals', 'lastModified'],
-            meals: ['id', 'date', 'type', 'timestamp', 'foods', 'totalCalories', 'totalProtein', 'totalCarbs', 'totalFat', 'notes'],
-            programs: ['id', 'name', 'isActive', 'goal', 'targetCalories', 'targetProtein', 'targetCarbs', 'targetFat', 'startDate'],
+            dailyMeals: ['date', 'programId', 'isComplete', 'mealIds', 'dailyTotals', 'lastModified', 'version'], // ✅ Phase 15.3 : Ajout champ version pour optimistic locking
+            meals: ['id', 'date', 'type', 'timestamp', 'foods', 'totalCalories', 'totalProtein', 'totalCarbs', 'totalFat', 'notes', 'version'], // ✅ Phase 15.3 : Ajout champ version
+            programs: ['id', 'name', 'isActive', 'goal', 'targetCalories', 'targetProtein', 'targetCarbs', 'targetFat', 'startDate', 'version'], // ✅ Phase 15.3 : Ajout champ version
             favoriteFoods: ['id', 'name', 'category', 'isFavorite', 'caloriesPer100', 'proteinPer100', 'carbsPer100', 'fatPer100', 'usageCount'],
             hydrationLogs: ['date', 'waterIntake', 'targetWater', 'entries', 'notes', 'lastModified'],
             progressPhotos: ['id', 'type', 'date', 'sequenceId', 'timestamp', 'thumbnail', 'format', 'metadata'],

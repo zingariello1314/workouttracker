@@ -13,6 +13,19 @@
 import { SHARE_SCOPES } from '../constants';
 import DateHelper from '../../../../utils/dateHelper';
 import logger from '../../../../utils/logger';
+// ✅ OPTIMISATION Phase 15.4 : Cache calculs avec hash inputs
+import { 
+  getNutritionCalculationCache, 
+  getDailyMealsCalculationHash 
+} from '../../nutritionCalculationCache';
+// ✅ OPTIMISATION Phase 15.5 : Web Workers pour calculs lourds
+import { executeInWorker } from '../../nutritionWorkerService';
+import { NutritionConfig } from '../../../../config/nutrition.config';
+// ✅ PHASE 15.7 : Validation limites complète avec helpers
+import {
+  validateAndNormalizeNumber,
+  safeDivision
+} from '../../nutritionCalculationHelpers';
 
 const log = logger.module('dataPreparation');
 
@@ -23,7 +36,7 @@ const log = logger.module('dataPreparation');
  * @param {string} scope - Scope partage (SHARE_SCOPES.all|stats|charts|progress)
  * @returns {Object} Données partagées anonymisées
  */
-export function prepareNutritionDataForShare(nutritionData, scope = SHARE_SCOPES.all) {
+export async function prepareNutritionDataForShare(nutritionData, scope = SHARE_SCOPES.all) {
   const {
     dailyMeals = [],
     meals = [],
@@ -79,12 +92,70 @@ export function prepareNutritionDataForShare(nutritionData, scope = SHARE_SCOPES
 /**
  * Calcule les statistiques agrégées (anonymisées)
  * 
+ * ✅ OPTIMISATION Phase 15.4 : Cache avec hash inputs pour éviter recalculs identiques
+ * ✅ OPTIMISATION Phase 15.5 : Web Workers pour calculs lourds (non bloquants)
+ * 
  * @param {Array} dailyMeals - Liste des dailyMeals
  * @param {Array} meals - Liste de tous les repas
  * @param {Array} programs - Liste des programmes
- * @returns {Object} Statistiques agrégées
+ * @returns {Promise<Object>} Statistiques agrégées
  */
-function calculateAggregatedStats(dailyMeals, meals, programs) {
+async function calculateAggregatedStats(dailyMeals, meals, programs) {
+  try {
+    // ✅ OPTIMISATION Phase 15.4 : Vérifier cache avant calculs coûteux
+    if (NutritionConfig.features.enableCalculationCache) {
+      const hash = getDailyMealsCalculationHash(dailyMeals, meals, programs, {});
+      const cache = getNutritionCalculationCache();
+      const cacheKey = `aggregatedStats:${hash}`;
+      
+      const cached = cache.get(cacheKey);
+      if (cached !== null) {
+        return cached;
+      }
+    }
+    
+    // ✅ OPTIMISATION Phase 15.5 : Utiliser Web Worker pour calculs lourds (non bloquants)
+    // Fallback automatique vers main thread si worker non disponible
+    if (NutritionConfig.features.enableWebWorkers) {
+      try {
+        const workerResult = await executeInWorker(
+          'calculateAggregatedStats',
+          { dailyMeals, meals, programs },
+          // Fallback : calculer dans main thread
+          () => calculateAggregatedStatsMainThread(dailyMeals, meals, programs)
+        );
+        
+        // Mettre en cache le résultat
+        if (NutritionConfig.features.enableCalculationCache) {
+          const hash = getDailyMealsCalculationHash(dailyMeals, meals, programs, {});
+          const cache = getNutritionCalculationCache();
+          cache.set(`aggregatedStats:${hash}`, workerResult);
+        }
+        
+        return workerResult;
+      } catch (workerError) {
+        log.warn('[calculateAggregatedStats] Erreur worker, fallback main thread:', workerError);
+        // Continuer avec fallback
+      }
+    }
+    
+    // Fallback : calculer dans main thread
+    return calculateAggregatedStatsMainThread(dailyMeals, meals, programs);
+  } catch (error) {
+    log.error('[calculateAggregatedStats] Erreur calcul stats:', error);
+    return {
+      periods: {},
+      totalDays: 0,
+      totalMeals: 0,
+      activeProgram: null
+    };
+  }
+}
+
+/**
+ * ✅ OPTIMISATION Phase 15.5 : Version main thread (fallback)
+ */
+function calculateAggregatedStatsMainThread(dailyMeals, meals, programs) {
   try {
     const activeProgram = programs.find(p => p.isActive) || null;
     
@@ -121,29 +192,79 @@ function calculateAggregatedStats(dailyMeals, meals, programs) {
         return;
       }
       
+      // ✅ PHASE 15.7 : Calculer totaux avec validation
       const totals = periodDailyMeals.reduce((acc, dm) => {
         const dailyTotals = dm.dailyTotals || {};
         return {
-          calories: acc.calories + (dailyTotals.calories || 0),
-          protein: acc.protein + (dailyTotals.protein || 0),
-          carbs: acc.carbs + (dailyTotals.carbs || 0),
-          fat: acc.fat + (dailyTotals.fat || 0),
-          compliance: acc.compliance + (dailyTotals.complianceScore || 0),
-          meals: acc.meals + (dm.mealIds?.length || 0)
+          calories: acc.calories + validateAndNormalizeNumber(dailyTotals.calories, {
+            fieldName: 'dailyTotals.calories',
+            defaultValue: 0,
+            min: 0,
+            max: 50000
+          }),
+          protein: acc.protein + validateAndNormalizeNumber(dailyTotals.protein, {
+            fieldName: 'dailyTotals.protein',
+            defaultValue: 0,
+            min: 0,
+            max: 2000
+          }),
+          carbs: acc.carbs + validateAndNormalizeNumber(dailyTotals.carbs, {
+            fieldName: 'dailyTotals.carbs',
+            defaultValue: 0,
+            min: 0,
+            max: 5000
+          }),
+          fat: acc.fat + validateAndNormalizeNumber(dailyTotals.fat, {
+            fieldName: 'dailyTotals.fat',
+            defaultValue: 0,
+            min: 0,
+            max: 2000
+          }),
+          compliance: acc.compliance + validateAndNormalizeNumber(dailyTotals.complianceScore, {
+            fieldName: 'dailyTotals.complianceScore',
+            defaultValue: 0,
+            min: 0,
+            max: 100
+          }),
+          meals: acc.meals + validateAndNormalizeNumber(dm.mealIds?.length, {
+            fieldName: 'mealIds.length',
+            defaultValue: 0,
+            min: 0,
+            max: 100
+          })
         };
       }, { calories: 0, protein: 0, carbs: 0, fat: 0, compliance: 0, meals: 0 });
       
       const daysCount = periodDailyMeals.length;
       
+      // ✅ PHASE 15.7 : Division sécurisée pour moyennes
       stats[period] = {
         days: daysCount,
-        avgCalories: Math.round(totals.calories / daysCount),
-        avgProtein: Math.round((totals.protein / daysCount) * 10) / 10,
-        avgCarbs: Math.round((totals.carbs / daysCount) * 10) / 10,
-        avgFat: Math.round((totals.fat / daysCount) * 10) / 10,
-        avgCompliance: Math.round((totals.compliance / daysCount) * 10) / 10,
+        avgCalories: Math.round(safeDivision(totals.calories, daysCount, {
+          operation: `calculateAggregatedStats.${period}.avgCalories`,
+          defaultValue: 0
+        })),
+        avgProtein: Math.round((safeDivision(totals.protein, daysCount, {
+          operation: `calculateAggregatedStats.${period}.avgProtein`,
+          defaultValue: 0
+        })) * 10) / 10,
+        avgCarbs: Math.round((safeDivision(totals.carbs, daysCount, {
+          operation: `calculateAggregatedStats.${period}.avgCarbs`,
+          defaultValue: 0
+        })) * 10) / 10,
+        avgFat: Math.round((safeDivision(totals.fat, daysCount, {
+          operation: `calculateAggregatedStats.${period}.avgFat`,
+          defaultValue: 0
+        })) * 10) / 10,
+        avgCompliance: Math.round((safeDivision(totals.compliance, daysCount, {
+          operation: `calculateAggregatedStats.${period}.avgCompliance`,
+          defaultValue: 0
+        })) * 10) / 10,
         totalMeals: totals.meals,
-        avgMealsPerDay: Math.round((totals.meals / daysCount) * 10) / 10
+        avgMealsPerDay: Math.round((safeDivision(totals.meals, daysCount, {
+          operation: `calculateAggregatedStats.${period}.avgMealsPerDay`,
+          defaultValue: 0
+        })) * 10) / 10
       };
     });
     
@@ -153,7 +274,7 @@ function calculateAggregatedStats(dailyMeals, meals, programs) {
     const activeProgramName = activeProgram?.name || null;
     const activeProgramGoal = activeProgram?.goal || null;
     
-    return {
+    const result = {
       periods: stats,
       totalDays,
       totalMeals,
@@ -166,8 +287,21 @@ function calculateAggregatedStats(dailyMeals, meals, programs) {
       // Ne pas exposer données personnelles identifiables
       // Pas de dates exactes, pas de poids, pas de noms d'aliments
     };
+    
+    // ✅ OPTIMISATION Phase 15.4 : Mettre en cache le résultat (si pas déjà fait par worker)
+    if (NutritionConfig.features.enableCalculationCache) {
+      const hash = getDailyMealsCalculationHash(dailyMeals, meals, programs, {});
+      const cache = getNutritionCalculationCache();
+      const cacheKey = `aggregatedStats:${hash}`;
+      // Vérifier si pas déjà en cache (peut être mis par worker)
+      if (!cache.get(cacheKey)) {
+        cache.set(cacheKey, result);
+      }
+    }
+    
+    return result;
   } catch (error) {
-    log.error('[calculateAggregatedStats] Erreur calcul stats:', error);
+    log.error('[calculateAggregatedStatsMainThread] Erreur calcul stats:', error);
     return {
       periods: {},
       totalDays: 0,

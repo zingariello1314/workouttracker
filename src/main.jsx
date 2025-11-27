@@ -52,6 +52,16 @@ if (typeof window !== 'undefined') {
     const errorSource = event.filename || '';
     const errorName = event.error?.name || '';
     
+    // ✅ OPTIMISATION Phase 15.4 : Filtrer erreurs extensions Chrome (non-bloquantes)
+    // L'erreur "A listener indicated an asynchronous response by returning true, but the message channel closed"
+    // vient des extensions Chrome qui utilisent chrome.runtime.sendMessage() et ne répondent pas correctement
+    if (errorMessage.includes('A listener indicated an asynchronous response by returning true') &&
+        errorMessage.includes('but the message channel closed before a response was received')) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false; // Ignorer cette erreur (elle vient d'une extension tierce)
+    }
+    
     // ✅ Filtrer erreur MediaPipe Module.arguments (warning Emscripten non-bloquant)
     if (errorMessage.includes('Module.arguments has been replaced with plain arguments_') ||
         (errorMessage.includes('Aborted') && errorMessage.includes('arguments_'))) {
@@ -129,9 +139,21 @@ if (typeof window !== 'undefined') {
 
   // ✅ PHASE 1.7 : Intercepter rejections de promesses (pour RuntimeError: Aborted WASM)
   // ✅ OPTIMISATION : Filtrer aussi rejections TensorFlow.js WebGL
+  // ✅ OPTIMISATION Phase 15.4 : Filtrer erreurs extensions Chrome (non-bloquantes)
+  // L'erreur "A listener indicated an asynchronous response by returning true, but the message channel closed"
+  // vient des extensions Chrome qui utilisent chrome.runtime.sendMessage() et ne répondent pas correctement
   window.addEventListener('unhandledrejection', (event) => {
-    const errorMessage = event.reason?.message || event.reason?.toString() || '';
+    const errorMessage = event.reason?.message || event.reason?.toString() || String(event.reason || '');
     const errorName = event.reason?.name || '';
+    
+    // ✅ OPTIMISATION Phase 15.4 : Filtrer erreur extensions Chrome (message channel closed)
+    // Cette erreur est causée par des extensions tierces, pas par notre code
+    if (errorMessage.includes('A listener indicated an asynchronous response by returning true') &&
+        errorMessage.includes('but the message channel closed before a response was received')) {
+      event.preventDefault();
+      // Ne pas logger cette erreur (elle vient d'une extension tierce)
+      return;
+    }
     
     // ✅ OPTIMISATION : Filtrer rejections TensorFlow.js WebGL (non-bloquantes)
     if (errorName === 'Error' && errorMessage.includes('WebGL is not supported')) {

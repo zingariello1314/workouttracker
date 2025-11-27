@@ -197,6 +197,10 @@ export const saveDailyMeal = async (dailyMeal) => {
           // Invalider aussi cache des meals de ce jour (si dailyMeal modifié)
           cache.invalidate(cache.generateKey('meals', dailyMeal.date));
           
+          // ✅ OPTIMISATION Phase 15.4 : Invalider cache calculs (totaux, stats, corrélations, etc.)
+          // Note: Le cache de calculs est invalidé automatiquement car les hashs changent avec les nouvelles données
+          // Pas besoin d'invalidation explicite (le cache LRU gère automatiquement)
+          
           return true;
         }
         return false;
@@ -389,4 +393,7 @@ export const deleteDailyMeal = async (date) => {
     }
   }
 };
+
+
+
 

@@ -101,7 +101,8 @@ export const useNutritionCorrelations = (options = {}) => {
   }, [nutritionDbReady, maxDays, getDailyMealsByRange, getAllPrograms]);
 
   // ✅ OPTIMISATION 3.1 : Cache avec hash pour éviter recalculs corrélations (90-95% réduction calculs)
-  const calculateCorrelations = useCallback(() => {
+  // ✅ OPTIMISATION Phase 15.5 : Async pour Web Worker
+  const calculateCorrelations = useCallback(async () => {
     if (!nutritionDbReady || !nutritionDataCache) {
       return null;
     }
@@ -130,7 +131,8 @@ export const useNutritionCorrelations = (options = {}) => {
         return cached.data; // ✅ Retourner cache (évite recalculs)
       }
 
-      const result = analyzeAllNutritionCorrelations(
+      // ✅ OPTIMISATION Phase 15.5 : Async pour Web Worker
+      const result = await analyzeAllNutritionCorrelations(
         nutritionDataCache,
         garminData,
         { minDays, maxDays }
@@ -166,13 +168,15 @@ export const useNutritionCorrelations = (options = {}) => {
       setError(null);
     }
 
-    try {
-      const result = calculateCorrelations();
-      
-      // ✅ OPTIMISATION 4.1 : Vérifier si composant toujours monté avant setState
-      if (isMountedRef.current) {
-        if (result) {
-          setCorrelations(result);
+    // ✅ OPTIMISATION Phase 15.5 : Async pour Web Worker
+    (async () => {
+      try {
+        const result = await calculateCorrelations();
+        
+        // ✅ OPTIMISATION 4.1 : Vérifier si composant toujours monté avant setState
+        if (isMountedRef.current) {
+          if (result) {
+            setCorrelations(result);
           setLastUpdate(new Date());
         } else {
           setCorrelations({
@@ -191,6 +195,7 @@ export const useNutritionCorrelations = (options = {}) => {
         setLoading(false);
       }
     }
+    })(); // ✅ OPTIMISATION Phase 15.5 : IIFE async pour await
   }, [nutritionDbReady, nutritionDataCache, calculateCorrelations]);
 
   // ✅ OPTIMISATION 4.2 : Ref pour cleanup setInterval (évite memory leaks)
@@ -200,11 +205,12 @@ export const useNutritionCorrelations = (options = {}) => {
       return;
     }
 
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       if (!isMountedRef.current) return; // ✅ Vérifier montage
       
       log.debug('Auto-refresh corrélations...');
-      const result = calculateCorrelations();
+      // ✅ OPTIMISATION Phase 15.5 : Async pour Web Worker
+      const result = await calculateCorrelations();
       if (result && isMountedRef.current) {
         setCorrelations(result);
         setLastUpdate(new Date());
@@ -250,17 +256,19 @@ export const useNutritionCorrelations = (options = {}) => {
       if (isMountedRef.current) {
         setNutritionDataCache(updatedCache);
 
-        // Recalculer corrélations
-        const result = analyzeAllNutritionCorrelations(
-          updatedCache,
-          garminData,
-          { minDays, maxDays }
-        );
-
-        if (result) {
-          setCorrelations(result);
-          setLastUpdate(new Date());
-        }
+        // Recalculer corrélations - ✅ OPTIMISATION Phase 15.5 : Async pour Web Worker
+        (async () => {
+          const result = await analyzeAllNutritionCorrelations(
+            updatedCache,
+            garminData,
+            { minDays, maxDays }
+          );
+          
+          if (isMountedRef.current && result) {
+            setCorrelations(result);
+            setLastUpdate(new Date());
+          }
+        })();
       }
     } catch (err) {
       if (isMountedRef.current) {

@@ -35,13 +35,13 @@ const DEFAULT_CONFIG = {
 /**
  * Génère un hash rapide depuis une chaîne
  * 
- * ✅ OPTIMISATION : Hash simple mais efficace (plus rapide que MD5/SHA)
+ * ✅ OPTIMISATION Phase 15.4 : Hash simple mais efficace (plus rapide que MD5/SHA)
  * Basé sur l'algorithme djb2 (Daniel J. Bernstein)
  * 
  * @param {string} str - Chaîne à hasher
  * @returns {string} Hash en base 36 (alphanumérique)
  */
-function generateHash(str) {
+export function generateHash(str) {
   if (!str || typeof str !== 'string') {
     return '0';
   }
@@ -58,7 +58,7 @@ function generateHash(str) {
 /**
  * Génère un hash des inputs pour un calcul nutrition
  * 
- * ✅ OPTIMISATION : Hash seulement les champs essentiels (évite hash trop lourd)
+ * ✅ OPTIMISATION Phase 15.4 : Hash seulement les champs essentiels (évite hash trop lourd)
  * 
  * @param {Array<Object>} meals - Tableau de meals
  * @param {Object|null} program - Programme actif (optionnel)
@@ -102,6 +102,88 @@ function generateInputsHash(meals = [], program = null) {
 }
 
 /**
+ * ✅ OPTIMISATION Phase 15.4 : Génère un hash pour calculs avec dailyMeals
+ * 
+ * @param {Array<Object>} dailyMeals - Liste des dailyMeals
+ * @param {Array<Object>} meals - Liste de tous les repas (optionnel)
+ * @param {Array<Object>} programs - Liste des programmes (optionnel)
+ * @param {Object} options - Options additionnelles (minDays, maxDays, etc.)
+ * @returns {string} Hash des inputs
+ */
+function generateDailyMealsHash(dailyMeals = [], meals = [], programs = [], options = {}) {
+  try {
+    // ✅ OPTIMISATION : Extraire seulement les champs essentiels pour le hash
+    const dailyMealsHash = (dailyMeals || []).map(dm => ({
+      date: dm.date || null,
+      calories: dm.dailyTotals?.calories || 0,
+      protein: dm.dailyTotals?.protein || 0,
+      carbs: dm.dailyTotals?.carbs || 0,
+      fat: dm.dailyTotals?.fat || 0,
+      compliance: dm.dailyTotals?.complianceScore || 0,
+      mealCount: dm.mealIds?.length || 0
+    }));
+    
+    const activeProgram = (programs || []).find(p => p.isActive);
+    const programHash = activeProgram ? {
+      id: activeProgram.id || null,
+      goal: activeProgram.goal || null
+    } : null;
+    
+    const hashInput = {
+      dailyMeals: dailyMealsHash.sort((a, b) => (a.date || '').localeCompare(b.date || '')),
+      mealsCount: (meals || []).length,
+      program: programHash,
+      options: options || {}
+    };
+    
+    const hashStr = JSON.stringify(hashInput);
+    return generateHash(hashStr);
+  } catch (error) {
+    log.warn('[generateDailyMealsHash] Erreur génération hash, fallback:', error);
+    return generateHash(`${dailyMeals?.length || 0}_${meals?.length || 0}_${options?.minDays || 0}_${options?.maxDays || 0}`);
+  }
+}
+
+/**
+ * ✅ OPTIMISATION Phase 15.4 : Génère un hash pour calculs avec nutritionData + garminData
+ * 
+ * @param {Object} nutritionData - Données nutrition (dailyMeals, meals, etc.)
+ * @param {Object} garminData - Données Garmin (optionnel)
+ * @param {Object} options - Options additionnelles
+ * @returns {string} Hash des inputs
+ */
+function generateNutritionDataHash(nutritionData = {}, garminData = null, options = {}) {
+  try {
+    const dailyMeals = nutritionData.dailyMeals || [];
+    const meals = nutritionData.meals || [];
+    const programs = nutritionData.programs || [];
+    
+    // ✅ OPTIMISATION : Hash seulement les métadonnées essentielles
+    const garminHash = garminData ? {
+      activitiesCount: Object.keys(garminData.activities || {}).length,
+      metricsCount: Object.keys(garminData.dailyMetrics || {}).length,
+      hasWeight: Object.values(garminData.dailyMetrics || {}).some(m => m.weight != null),
+      hasPerformance: Object.values(garminData.dailyMetrics || {}).some(m => m.performance != null)
+    } : null;
+    
+    const hashInput = {
+      dailyMealsCount: dailyMeals.length,
+      mealsCount: meals.length,
+      programsCount: programs.length,
+      activeProgramId: programs.find(p => p.isActive)?.id || null,
+      garmin: garminHash,
+      options: options || {}
+    };
+    
+    const hashStr = JSON.stringify(hashInput);
+    return generateHash(hashStr);
+  } catch (error) {
+    log.warn('[generateNutritionDataHash] Erreur génération hash, fallback:', error);
+    return generateHash(`${nutritionData?.dailyMeals?.length || 0}_${nutritionData?.meals?.length || 0}_${garminData ? 'garmin' : 'no_garmin'}`);
+  }
+}
+
+/**
  * Cache LRU pour calculs nutrition
  * 
  * ✅ OPTIMISATION : Utilise Map avec ordre d'insertion (LRU natif)
@@ -125,11 +207,18 @@ class NutritionCalculationCache {
   /**
    * Récupère un résultat depuis le cache
    * 
-   * @param {string} hash - Hash des inputs
+   * ✅ OPTIMISATION Phase 15.4 : Support préfixe pour différencier types de calculs
+   * 
+   * @param {string} hash - Hash des inputs (peut inclure préfixe "type:hash")
    * @returns {*|null} Résultat en cache ou null
    */
   get(hash) {
     if (!hash || typeof hash !== 'string') {
+      return null;
+    }
+    
+    // ✅ OPTIMISATION Phase 15.4 : Vérifier si cache activé
+    if (!NutritionConfig.features.enableCalculationCache) {
       return null;
     }
     
@@ -141,7 +230,7 @@ class NutritionCalculationCache {
       
       this.stats.hits++;
       if (this.verbose) {
-        log.debug(`[NutritionCalculationCache] Cache hit: ${hash}`);
+        log.debug(`[NutritionCalculationCache] Cache hit: ${hash.substring(0, 20)}...`);
       }
       
       return entry.result;
@@ -149,7 +238,7 @@ class NutritionCalculationCache {
     
     this.stats.misses++;
     if (this.verbose) {
-      log.debug(`[NutritionCalculationCache] Cache miss: ${hash}`);
+      log.debug(`[NutritionCalculationCache] Cache miss: ${hash.substring(0, 20)}...`);
     }
     
     return null;
@@ -158,11 +247,18 @@ class NutritionCalculationCache {
   /**
    * Met un résultat dans le cache
    * 
-   * @param {string} hash - Hash des inputs
+   * ✅ OPTIMISATION Phase 15.4 : Vérification cache activé
+   * 
+   * @param {string} hash - Hash des inputs (peut inclure préfixe "type:hash")
    * @param {*} result - Résultat à mettre en cache
    */
   set(hash, result) {
     if (!hash || typeof hash !== 'string') {
+      return;
+    }
+    
+    // ✅ OPTIMISATION Phase 15.4 : Vérifier si cache activé
+    if (!NutritionConfig.features.enableCalculationCache) {
       return;
     }
     
@@ -174,7 +270,7 @@ class NutritionCalculationCache {
       this.stats.evictions++;
       
       if (this.verbose) {
-        log.debug(`[NutritionCalculationCache] Eviction: ${firstKey} (cache plein)`);
+        log.debug(`[NutritionCalculationCache] Eviction: ${firstKey.substring(0, 20)}... (cache plein)`);
       }
     }
     
@@ -185,7 +281,7 @@ class NutritionCalculationCache {
     });
     
     if (this.verbose) {
-      log.debug(`[NutritionCalculationCache] Cached: ${hash} (size: ${this.cache.size}/${this.maxSize})`);
+      log.debug(`[NutritionCalculationCache] Cached: ${hash.substring(0, 20)}... (size: ${this.cache.size}/${this.maxSize})`);
     }
   }
 
@@ -263,9 +359,34 @@ export function getCalculationHash(meals = [], program = null) {
 }
 
 /**
+ * ✅ OPTIMISATION Phase 15.4 : Génère un hash pour calculs avec dailyMeals
+ * 
+ * @param {Array<Object>} dailyMeals - Liste des dailyMeals
+ * @param {Array<Object>} meals - Liste de tous les repas (optionnel)
+ * @param {Array<Object>} programs - Liste des programmes (optionnel)
+ * @param {Object} options - Options additionnelles (minDays, maxDays, etc.)
+ * @returns {string} Hash des inputs
+ */
+export function getDailyMealsCalculationHash(dailyMeals = [], meals = [], programs = [], options = {}) {
+  return generateDailyMealsHash(dailyMeals, meals, programs, options);
+}
+
+/**
+ * ✅ OPTIMISATION Phase 15.4 : Génère un hash pour calculs avec nutritionData + garminData
+ * 
+ * @param {Object} nutritionData - Données nutrition (dailyMeals, meals, etc.)
+ * @param {Object} garminData - Données Garmin (optionnel)
+ * @param {Object} options - Options additionnelles
+ * @returns {string} Hash des inputs
+ */
+export function getNutritionDataCalculationHash(nutritionData = {}, garminData = null, options = {}) {
+  return generateNutritionDataHash(nutritionData, garminData, options);
+}
+
+/**
  * Wrapper pour exécuter un calcul avec cache
  * 
- * ✅ OPTIMISATION : Fonction utilitaire pour faciliter l'utilisation
+ * ✅ OPTIMISATION Phase 15.4 : Fonction utilitaire générique pour faciliter l'utilisation
  * 
  * @param {Function} calculationFn - Fonction de calcul à exécuter
  * @param {Array<Object>} meals - Tableau de meals
@@ -284,6 +405,42 @@ export function executeWithCache(calculationFn, meals = [], program = null) {
   
   // Calculer
   const result = calculationFn(meals, program);
+  
+  // Mettre en cache
+  cache.set(hash, result);
+  
+  return result;
+}
+
+/**
+ * ✅ OPTIMISATION Phase 15.4 : Wrapper générique pour exécuter un calcul avec cache (préfixe personnalisé)
+ * 
+ * @param {string} calculationType - Type de calcul (ex: 'dailyTotals', 'aggregatedStats', 'correlations', 'healthScore')
+ * @param {Function} calculationFn - Fonction de calcul à exécuter
+ * @param {*} inputs - Inputs du calcul (peuvent être de n'importe quel type)
+ * @param {Function} hashGenerator - Fonction pour générer le hash des inputs
+ * @returns {*} Résultat du calcul (depuis cache ou nouveau calcul)
+ */
+export function executeWithCacheGeneric(calculationType, calculationFn, inputs, hashGenerator) {
+  if (!NutritionConfig.features.enableCalculationCache) {
+    // Cache désactivé, exécuter directement
+    return calculationFn(inputs);
+  }
+  
+  const cache = getNutritionCalculationCache();
+  
+  // Générer hash avec préfixe pour différencier types de calculs
+  const baseHash = hashGenerator ? hashGenerator(inputs) : JSON.stringify(inputs);
+  const hash = `${calculationType}:${generateHash(baseHash)}`;
+  
+  // Vérifier cache
+  const cached = cache.get(hash);
+  if (cached !== null) {
+    return cached;
+  }
+  
+  // Calculer
+  const result = calculationFn(inputs);
   
   // Mettre en cache
   cache.set(hash, result);

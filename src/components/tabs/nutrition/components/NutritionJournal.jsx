@@ -27,16 +27,44 @@ import MealEntryForm from './MealEntryForm';
 import HydrationTracker from './HydrationTracker';
 // ✅ PHASE 12.2 : Importer hooks Observer pour synchronisation automatique
 import { useDailyMeal, useMealsByDate, useActiveProgram } from '../../../../hooks/useRepositoryObserver';
+// ✅ OPTIMISATION Phase 15.2 : Prefetching intelligent jour suivant/précédent
+import { usePrefetchNutritionDays } from '../../../../hooks/usePrefetchNutritionDays';
+import { getNutritionConfig } from '../../../../config/nutrition.config';
 
-const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminData }) => {
+const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminData, isVisible = true }) => {
   // ✅ OPTIMISATION 16 : Utiliser DateHelper pour cohérence timezone locale
   const dateStr = DateHelper.toYYYYMMDD(selectedDate) || DateHelper.getTodayLocal();
+
+  // ✅ OPTIMISATION Phase 15.2 : Configuration pour prefetching
+  const config = useMemo(() => getNutritionConfig(), []);
+  const enablePrefetching = config.features.enablePrefetching ?? true;
 
   // ✅ PHASE 12.2 : Utiliser hooks Observer pour synchronisation automatique
   // Les données se mettent à jour automatiquement via Observer pattern
   const [dailyMeal, refreshDailyMeal, { loading: loadingDailyMeal, error: errorDailyMeal }] = useDailyMeal(dateStr);
   const [meals, refreshMeals, { loading: loadingMeals, error: errorMeals }] = useMealsByDate(dateStr);
   const [activeProgram, refreshActiveProgram, { loading: loadingProgram, error: errorProgram }] = useActiveProgram();
+
+  // ✅ OPTIMISATION Phase 15.2 : Prefetching intelligent jour suivant/précédent
+  // Précharge automatiquement J±1 avec requestIdleCallback (non bloquant)
+  // Ne précharge que si section visible et prefetching activé
+  const prefetchConfig = useMemo(() => {
+    if (!enablePrefetching || !isVisible) {
+      return { daysRange: 0 }; // Désactiver prefetching (daysRange: 0 = aucune date à précharger)
+    }
+    return {
+      initialDelay: config.performance.prefetchInitialDelay,
+      idleTimeout: config.performance.prefetchIdleTimeout,
+      daysRange: config.performance.prefetchDaysRange,
+      minIdleTime: config.performance.prefetchMinIdleTime,
+      verbose: false // Réduire logs en production
+    };
+  }, [enablePrefetching, isVisible, config]);
+
+  const { isPrefetching, prefetchedDates } = usePrefetchNutritionDays({
+    selectedDate: dateStr,
+    config: prefetchConfig
+  });
 
   // ✅ État local pour UI (non lié aux données)
   const [showMealForm, setShowMealForm] = useState(false);

@@ -45,6 +45,14 @@ import {
   verifyDatabaseIntegrity,
   clearCorruptionFlags
 } from '../nutritionCorruptionHandler';
+// ✅ OPTIMISATION Phase 15.3 : Optimistic locking pour détection modifications concurrentes
+import {
+  checkAndIncrementVersion,
+  isOptimisticLockingEnabled
+} from '../nutritionOptimisticLocking';
+// ✅ OPTIMISATION Phase 15.6 : Queue offline pour modifications en attente
+import { getNutritionOfflineQueue, QUEUE_OPERATION_TYPES } from '../nutritionOfflineQueue';
+import { getNutritionOnlineManager } from '../nutritionOnlineManager';
 import logger from '../../../utils/logger';
 
 const log = logger.module('indexedDBRepository');
@@ -274,7 +282,9 @@ export class IndexedDBRepository extends NutritionRepository {
     const { 
       validate = true, 
       operationName = `save:${store}`,
-      skipObserver = false
+      skipObserver = false,
+      enableOptimisticLocking = null, // null = auto-détection depuis config
+      skipVersionCheck = false // Forcer skip vérification version (pour migrations, etc.)
     } = options;
 
     try {
@@ -300,10 +310,80 @@ export class IndexedDBRepository extends NutritionRepository {
         );
       }
 
+      // ✅ OPTIMISATION Phase 15.6 : Vérifier si offline et utiliser queue si nécessaire
+      let useOfflineQueue = false;
+      if (NutritionConfig.features.enableOfflineQueue) {
+        try {
+          const onlineManager = await getNutritionOnlineManager();
+          const isOnline = onlineManager.getIsOnline();
+          
+          if (!isOnline) {
+            // Offline : mettre en queue
+            useOfflineQueue = true;
+            log.debug(`[${this.name}] Mode offline détecté, mise en queue de l'opération`, { store, key });
+            
+            const offlineQueue = await getNutritionOfflineQueue();
+            const operationId = await offlineQueue.enqueue(
+              store,
+              QUEUE_OPERATION_TYPES.SAVE,
+              data,
+              { ...options, operationName }
+            );
+            
+            // Retourner true (opération acceptée, sera synchronisée plus tard)
+            log.info(`[${this.name}] Opération mise en queue offline: ${operationId}`, { store, key });
+            return true;
+          }
+        } catch (queueError) {
+          // Erreur queue : logger et continuer avec sauvegarde normale (fallback)
+          log.warn(`[${this.name}] Erreur queue offline, continuation sauvegarde normale:`, queueError);
+        }
+      }
+
+      // ✅ OPTIMISATION Phase 15.3 : Optimistic locking (vérification version avant sauvegarde)
+      let dataToSave = data;
+      const shouldCheckVersion = enableOptimisticLocking !== false && 
+                                 !skipVersionCheck && 
+                                 isOptimisticLockingEnabled(store);
+      
+      if (shouldCheckVersion) {
+        try {
+          // ✅ OPTIMISATION Phase 15.3 : Récupérer données actuelles pour vérifier version
+          // Utiliser this.get() qui utilise déjà le cache automatiquement (évite double requête)
+          const currentData = await this.get(store, key, { 
+            operationName: `${operationName}:getCurrent`,
+            quiet: true, // Réduire logs pour vérification version
+            skipCache: false // Utiliser cache si disponible (performance)
+          });
+
+          // ✅ Vérifier et incrémenter version
+          const resourceType = store.replace('nutrition_', '').replace('s$', ''); // 'dailyMeals' → 'dailyMeal'
+          dataToSave = checkAndIncrementVersion(
+            currentData,
+            data,
+            resourceType,
+            key
+          );
+        } catch (error) {
+          // ✅ Propager erreur CONCURRENT_MODIFICATION
+          if (error instanceof NutritionError && error.code === NutritionErrorCodes.CONCURRENT_MODIFICATION) {
+            throw error;
+          }
+          // ✅ Si autre erreur (ex: DB non disponible), logger et continuer sans optimistic locking
+          log.warn(`[${this.name}] Erreur optimistic locking, continuation sans vérification version`, {
+            store,
+            key,
+            error: error.message
+          });
+          // Continuer avec données originales (compatibilité)
+          dataToSave = data;
+        }
+      }
+
       // ✅ PHASE 12.2 : Utiliser quota-safe storage pour gestion QuotaExceededError
       try {
         const quotaSafeStorage = await this.getQuotaSafeStorage();
-        const saved = await quotaSafeStorage.put(store, data);
+        const saved = await quotaSafeStorage.put(store, dataToSave);
         
         if (saved) {
           // ✅ PHASE 12.2 : Invalider cache après sauvegarde
@@ -312,7 +392,7 @@ export class IndexedDBRepository extends NutritionRepository {
           
           // ✅ PHASE 12.2 : Notifier Observer pour synchronisation automatique
           if (!skipObserver) {
-            this.notify(store, key, data);
+            this.notify(store, key, dataToSave);
           }
           
           log.debug(`[${this.name}] Données sauvegardées`, { store, key });
@@ -325,6 +405,39 @@ export class IndexedDBRepository extends NutritionRepository {
           throw error;
         }
         
+        // ✅ OPTIMISATION Phase 15.6 : Si erreur réseau et queue activée, mettre en queue
+        if (NutritionConfig.features.enableOfflineQueue) {
+          const isNetworkError = error.name === 'NetworkError' || 
+                                 error.message?.includes('network') ||
+                                 error.message?.includes('fetch') ||
+                                 error.message?.includes('timeout');
+          
+          if (isNetworkError) {
+            try {
+              const onlineManager = await getNutritionOnlineManager();
+              const isOnline = onlineManager.getIsOnline();
+              
+              if (!isOnline) {
+                log.info(`[${this.name}] Erreur réseau en mode offline, mise en queue`, { store, key });
+                
+                const offlineQueue = await getNutritionOfflineQueue();
+                const operationId = await offlineQueue.enqueue(
+                  store,
+                  QUEUE_OPERATION_TYPES.SAVE,
+                  dataToSave,
+                  { ...options, operationName }
+                );
+                
+                log.info(`[${this.name}] Opération mise en queue après erreur réseau: ${operationId}`, { store, key });
+                return true; // Opération acceptée, sera synchronisée plus tard
+              }
+            } catch (queueError) {
+              log.warn(`[${this.name}] Erreur queue offline après erreur réseau:`, queueError);
+              // Continuer avec fallback normal
+            }
+          }
+        }
+        
         // ✅ PHASE 12.2 : Fallback méthode traditionnelle si wrapper non disponible
         log.debug(`[${this.name}] Fallback méthode traditionnelle`, { store, key });
         
@@ -334,7 +447,7 @@ export class IndexedDBRepository extends NutritionRepository {
         // ✅ PHASE 12.2 : Retry automatique avec backoff exponentiel
         await putToStoreWithRetry(
           objectStore,
-          data,
+          dataToSave,
           operationName,
           { store, key }
         );
@@ -345,7 +458,7 @@ export class IndexedDBRepository extends NutritionRepository {
         
         // ✅ PHASE 12.2 : Notifier Observer (fallback)
         if (!skipObserver) {
-          this.notify(store, key, data);
+          this.notify(store, key, dataToSave);
         }
         
         log.debug(`[${this.name}] Données sauvegardées (fallback)`, { store, key });

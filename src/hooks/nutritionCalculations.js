@@ -34,6 +34,8 @@ import {
   getValidWaterTarget,
   validateCalculationResult
 } from '../services/nutrition/nutritionCalculationHelpers';
+// ✅ PHASE 15.8 : Pattern Strategy pour calculs de conformité
+import { getActiveComplianceStrategy } from '../services/nutrition/nutritionComplianceStrategies';
 // ✅ OPTIMISATION : Cache calculs avec hash inputs (évite recalculs identiques)
 import { getCalculationHash, getNutritionCalculationCache } from '../services/nutrition/nutritionCalculationCache';
 // ✅ OPTIMISATION : Configuration centralisée (valeurs par défaut, limites)
@@ -395,26 +397,9 @@ const calculateComplianceScore = (macros) => {
         return; // Skip ce macro
       }
       
-      // ✅ OPTIMISATION : Utiliser seuils depuis configuration centralisée
-      // Score basé sur proximité de la cible
-      // 100% = score 100, entre threshold et penaltyThreshold = score 100, <threshold ou >penaltyThreshold = pénalité
-      const threshold = NutritionConfig.compliance.complianceThreshold; // 0.8 = 80%
-      const penaltyThreshold = NutritionConfig.compliance.compliancePenaltyThreshold; // 1.2 = 120%
-      
-      let score = 100;
-      if (ratio < threshold) {
-        // ✅ PHASE 10.5 : Division sécurisée pour pénalité
-        score = safeDivision(100 * ratio, threshold, {
-          operation: `calculateComplianceScore.${key}.penaltyLow`,
-          defaultValue: 0
-        });
-      } else if (ratio > penaltyThreshold) {
-        // ✅ PHASE 10.5 : Division sécurisée pour pénalité
-        score = safeDivision(100 * penaltyThreshold, ratio, {
-          operation: `calculateComplianceScore.${key}.penaltyHigh`,
-          defaultValue: 0
-        });
-      }
+      // ✅ PHASE 15.8 : Utiliser Pattern Strategy pour calcul de conformité
+      const strategy = getActiveComplianceStrategy();
+      const score = strategy.calculateScore(ratio);
       
       // ✅ PHASE 10.5 : Validation score final
       if (isFinite(score) && score >= 0 && score <= 100) {
@@ -829,140 +814,492 @@ export const calculateProgramCompliance = (programId, dailyMeals, program, start
 /**
  * Calcule les statistiques nutritionnelles sur une plage de dates
  * 
+ * ✅ PHASE 15.7 : Validation complète avec Zod, protection division par zéro, validation résultats
+ * 
  * @param {Array<Object>} dailyMeals - Tableau de dailyMeals
  * @param {string} startDate - Date début "YYYY-MM-DD"
  * @param {string} endDate - Date fin "YYYY-MM-DD"
  * @returns {Object} Statistiques complètes
+ * @throws {NutritionError} Si validation échoue
  */
 export const getNutritionStats = (dailyMeals = [], startDate, endDate) => {
-  // Filtrer dans la plage
-  const filtered = dailyMeals.filter(dm => 
-    dm.date >= startDate && dm.date <= endDate && dm.dailyTotals
-  );
+  try {
+    // ✅ PHASE 15.7 : Validation inputs
+    if (!Array.isArray(dailyMeals)) {
+      throw new NutritionError(
+        NutritionErrorCodes.VALIDATION_INVALID_DATA,
+        'dailyMeals doit être un tableau',
+        { dailyMeals, type: typeof dailyMeals }
+      );
+    }
+    
+    // ✅ PHASE 15.7 : Valider plage de dates
+    try {
+      validateDateRange({ startDate, endDate });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new NutritionError(
+          NutritionErrorCodes.VALIDATION_INVALID_DATE_FORMAT,
+          'Plage de dates invalide',
+          { startDate, endDate, errors: error.errors }
+        );
+      }
+      throw error;
+    }
+    
+    // ✅ PHASE 15.7 : Normaliser dates pour comparaison fiable
+    const normalizedStartDate = DateHelper.toYYYYMMDD(startDate);
+    const normalizedEndDate = DateHelper.toYYYYMMDD(endDate);
+    
+    if (!normalizedStartDate || !normalizedEndDate) {
+      throw new NutritionError(
+        NutritionErrorCodes.VALIDATION_INVALID_DATE_FORMAT,
+        'Impossible de normaliser les dates',
+        { startDate, endDate }
+      );
+    }
+    
+    // Filtrer dans la plage avec dates normalisées
+    const filtered = dailyMeals.filter(dm => {
+      if (!dm || !dm.date) return false;
+      const normalizedDate = DateHelper.toYYYYMMDD(dm.date);
+      if (!normalizedDate) return false;
+      return normalizedDate >= normalizedStartDate && normalizedDate <= normalizedEndDate && dm.dailyTotals;
+    });
 
-  if (filtered.length === 0) {
-    return {
-      days: 0,
-      avgCalories: 0,
-      avgProtein: 0,
-      avgCarbs: 0,
-      avgFat: 0,
-      totalCalories: 0,
-      variability: { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    if (filtered.length === 0) {
+      return {
+        days: 0,
+        avgCalories: 0,
+        avgProtein: 0,
+        avgCarbs: 0,
+        avgFat: 0,
+        totalCalories: 0,
+        variability: { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      };
+    }
+
+    // ✅ PHASE 15.7 : Calculer totaux avec validation
+    const totals = filtered.reduce((acc, dm) => {
+      const dt = dm.dailyTotals || {};
+      acc.calories += validateAndNormalizeNumber(dt.calories, {
+        fieldName: 'dailyTotals.calories',
+        defaultValue: 0,
+        min: 0,
+        max: 50000
+      });
+      acc.protein += validateAndNormalizeNumber(dt.protein, {
+        fieldName: 'dailyTotals.protein',
+        defaultValue: 0,
+        min: 0,
+        max: 2000
+      });
+      acc.carbs += validateAndNormalizeNumber(dt.carbs, {
+        fieldName: 'dailyTotals.carbs',
+        defaultValue: 0,
+        min: 0,
+        max: 5000
+      });
+      acc.fat += validateAndNormalizeNumber(dt.fat, {
+        fieldName: 'dailyTotals.fat',
+        defaultValue: 0,
+        min: 0,
+        max: 2000
+      });
+      return acc;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    const days = filtered.length;
+    
+    // ✅ PHASE 15.7 : Division sécurisée pour moyennes
+    const avgCalories = Math.round(safeDivision(totals.calories, days, {
+      operation: 'getNutritionStats.avgCalories',
+      defaultValue: 0
+    }));
+    const avgProtein = Math.round((safeDivision(totals.protein, days, {
+      operation: 'getNutritionStats.avgProtein',
+      defaultValue: 0
+    })) * 10) / 10;
+    const avgCarbs = Math.round((safeDivision(totals.carbs, days, {
+      operation: 'getNutritionStats.avgCarbs',
+      defaultValue: 0
+    })) * 10) / 10;
+    const avgFat = Math.round((safeDivision(totals.fat, days, {
+      operation: 'getNutritionStats.avgFat',
+      defaultValue: 0
+    })) * 10) / 10;
+
+    // Calculer variabilité (écart-type)
+    const variability = calculateVariability(filtered);
+
+    // ✅ PHASE 15.7 : Valider résultats finaux
+    const result = {
+      days: validateCalculationResult(days, {
+        fieldName: 'days',
+        operation: 'getNutritionStats',
+        min: 0,
+        max: 10000
+      }),
+      avgCalories: validateCalculationResult(avgCalories, {
+        fieldName: 'avgCalories',
+        operation: 'getNutritionStats',
+        min: 0,
+        max: 50000
+      }),
+      avgProtein: validateCalculationResult(avgProtein, {
+        fieldName: 'avgProtein',
+        operation: 'getNutritionStats',
+        min: 0,
+        max: 2000
+      }),
+      avgCarbs: validateCalculationResult(avgCarbs, {
+        fieldName: 'avgCarbs',
+        operation: 'getNutritionStats',
+        min: 0,
+        max: 5000
+      }),
+      avgFat: validateCalculationResult(avgFat, {
+        fieldName: 'avgFat',
+        operation: 'getNutritionStats',
+        min: 0,
+        max: 2000
+      }),
+      totalCalories: validateCalculationResult(totals.calories, {
+        fieldName: 'totalCalories',
+        operation: 'getNutritionStats',
+        min: 0,
+        max: 5000000
+      }),
+      variability
     };
+    
+    return result;
+  } catch (error) {
+    // ✅ PHASE 15.7 : Gestion erreurs standardisée
+    if (error instanceof NutritionError) {
+      log.error('[getNutritionStats] Erreur calcul:', error.toJSON());
+      throw error;
+    }
+    
+    // Wrapper erreurs inconnues
+    log.error('[getNutritionStats] Erreur inconnue:', error);
+    throw new NutritionError(
+      NutritionErrorCodes.CALCULATION_ERROR,
+      'Erreur lors du calcul des statistiques nutritionnelles',
+      { originalError: error.message, startDate, endDate },
+      error
+    );
   }
-
-  // Calculer moyennes
-  const totals = filtered.reduce((acc, dm) => {
-    const dt = dm.dailyTotals;
-    acc.calories += dt.calories || 0;
-    acc.protein += dt.protein || 0;
-    acc.carbs += dt.carbs || 0;
-    acc.fat += dt.fat || 0;
-    return acc;
-  }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-
-  const days = filtered.length;
-  const avgCalories = Math.round(totals.calories / days);
-  const avgProtein = Math.round((totals.protein / days) * 10) / 10;
-  const avgCarbs = Math.round((totals.carbs / days) * 10) / 10;
-  const avgFat = Math.round((totals.fat / days) * 10) / 10;
-
-  // Calculer variabilité (écart-type)
-  const variability = calculateVariability(filtered);
-
-  return {
-    days,
-    avgCalories,
-    avgProtein,
-    avgCarbs,
-    avgFat,
-    totalCalories: totals.calories,
-    variability
-  };
 };
 
 /**
  * Calcule la variabilité (écart-type) des macros
  * 
+ * ✅ PHASE 15.7 : Validation complète avec protection division par zéro, validation résultats
+ * 
  * @param {Array<Object>} dailyMeals - Tableau de dailyMeals
  * @returns {Object} Variabilité pour chaque macro
  */
 const calculateVariability = (dailyMeals) => {
-  if (dailyMeals.length === 0) {
+  try {
+    if (!Array.isArray(dailyMeals) || dailyMeals.length === 0) {
+      return { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    }
+
+    // ✅ PHASE 15.7 : Calculer moyennes avec validation
+    const means = dailyMeals.reduce((acc, dm) => {
+      const dt = dm.dailyTotals || {};
+      acc.calories += validateAndNormalizeNumber(dt.calories, {
+        fieldName: 'dailyTotals.calories',
+        defaultValue: 0,
+        min: 0,
+        max: 50000
+      });
+      acc.protein += validateAndNormalizeNumber(dt.protein, {
+        fieldName: 'dailyTotals.protein',
+        defaultValue: 0,
+        min: 0,
+        max: 2000
+      });
+      acc.carbs += validateAndNormalizeNumber(dt.carbs, {
+        fieldName: 'dailyTotals.carbs',
+        defaultValue: 0,
+        min: 0,
+        max: 5000
+      });
+      acc.fat += validateAndNormalizeNumber(dt.fat, {
+        fieldName: 'dailyTotals.fat',
+        defaultValue: 0,
+        min: 0,
+        max: 2000
+      });
+      return acc;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    const n = dailyMeals.length;
+    
+    // ✅ PHASE 15.7 : Division sécurisée pour moyennes
+    const meanCalories = safeDivision(means.calories, n, {
+      operation: 'calculateVariability.meanCalories',
+      defaultValue: 0
+    });
+    const meanProtein = safeDivision(means.protein, n, {
+      operation: 'calculateVariability.meanProtein',
+      defaultValue: 0
+    });
+    const meanCarbs = safeDivision(means.carbs, n, {
+      operation: 'calculateVariability.meanCarbs',
+      defaultValue: 0
+    });
+    const meanFat = safeDivision(means.fat, n, {
+      operation: 'calculateVariability.meanFat',
+      defaultValue: 0
+    });
+
+    // ✅ PHASE 15.7 : Calculer variance avec validation
+    const variances = dailyMeals.reduce((acc, dm) => {
+      const dt = dm.dailyTotals || {};
+      const calories = validateAndNormalizeNumber(dt.calories, {
+        fieldName: 'dailyTotals.calories',
+        defaultValue: 0,
+        min: 0,
+        max: 50000
+      });
+      const protein = validateAndNormalizeNumber(dt.protein, {
+        fieldName: 'dailyTotals.protein',
+        defaultValue: 0,
+        min: 0,
+        max: 2000
+      });
+      const carbs = validateAndNormalizeNumber(dt.carbs, {
+        fieldName: 'dailyTotals.carbs',
+        defaultValue: 0,
+        min: 0,
+        max: 5000
+      });
+      const fat = validateAndNormalizeNumber(dt.fat, {
+        fieldName: 'dailyTotals.fat',
+        defaultValue: 0,
+        min: 0,
+        max: 2000
+      });
+      
+      acc.calories += Math.pow(calories - meanCalories, 2);
+      acc.protein += Math.pow(protein - meanProtein, 2);
+      acc.carbs += Math.pow(carbs - meanCarbs, 2);
+      acc.fat += Math.pow(fat - meanFat, 2);
+      return acc;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    // ✅ PHASE 15.7 : Division sécurisée pour variance moyenne, puis sqrt sécurisé
+    const varianceCalories = safeDivision(variances.calories, n, {
+      operation: 'calculateVariability.varianceCalories',
+      defaultValue: 0
+    });
+    const varianceProtein = safeDivision(variances.protein, n, {
+      operation: 'calculateVariability.varianceProtein',
+      defaultValue: 0
+    });
+    const varianceCarbs = safeDivision(variances.carbs, n, {
+      operation: 'calculateVariability.varianceCarbs',
+      defaultValue: 0
+    });
+    const varianceFat = safeDivision(variances.fat, n, {
+      operation: 'calculateVariability.varianceFat',
+      defaultValue: 0
+    });
+
+    // ✅ PHASE 15.7 : Écart-type = sqrt sécurisé avec validation résultats
+    const result = {
+      calories: validateCalculationResult(Math.round(safeSqrt(varianceCalories, {
+        operation: 'calculateVariability.stdDevCalories',
+        defaultValue: 0
+      })), {
+        fieldName: 'variability.calories',
+        operation: 'calculateVariability',
+        min: 0,
+        max: 50000
+      }),
+      protein: validateCalculationResult(Math.round((safeSqrt(varianceProtein, {
+        operation: 'calculateVariability.stdDevProtein',
+        defaultValue: 0
+      })) * 10) / 10, {
+        fieldName: 'variability.protein',
+        operation: 'calculateVariability',
+        min: 0,
+        max: 2000
+      }),
+      carbs: validateCalculationResult(Math.round((safeSqrt(varianceCarbs, {
+        operation: 'calculateVariability.stdDevCarbs',
+        defaultValue: 0
+      })) * 10) / 10, {
+        fieldName: 'variability.carbs',
+        operation: 'calculateVariability',
+        min: 0,
+        max: 5000
+      }),
+      fat: validateCalculationResult(Math.round((safeSqrt(varianceFat, {
+        operation: 'calculateVariability.stdDevFat',
+        defaultValue: 0
+      })) * 10) / 10, {
+        fieldName: 'variability.fat',
+        operation: 'calculateVariability',
+        min: 0,
+        max: 2000
+      })
+    };
+    
+    return result;
+  } catch (error) {
+    log.error('[calculateVariability] Erreur calcul variabilité:', error);
+    // Retourner valeurs par défaut en cas d'erreur (non bloquant)
     return { calories: 0, protein: 0, carbs: 0, fat: 0 };
   }
-
-  // Calculer moyennes
-  const means = dailyMeals.reduce((acc, dm) => {
-    const dt = dm.dailyTotals;
-    acc.calories += dt.calories || 0;
-    acc.protein += dt.protein || 0;
-    acc.carbs += dt.carbs || 0;
-    acc.fat += dt.fat || 0;
-    return acc;
-  }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-
-  const n = dailyMeals.length;
-  means.calories /= n;
-  means.protein /= n;
-  means.carbs /= n;
-  means.fat /= n;
-
-  // Calculer variance
-  const variances = dailyMeals.reduce((acc, dm) => {
-    const dt = dm.dailyTotals;
-    acc.calories += Math.pow((dt.calories || 0) - means.calories, 2);
-    acc.protein += Math.pow((dt.protein || 0) - means.protein, 2);
-    acc.carbs += Math.pow((dt.carbs || 0) - means.carbs, 2);
-    acc.fat += Math.pow((dt.fat || 0) - means.fat, 2);
-    return acc;
-  }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-
-  // Écart-type = sqrt(variance / n)
-  return {
-    calories: Math.round(Math.sqrt(variances.calories / n)),
-    protein: Math.round((Math.sqrt(variances.protein / n)) * 10) / 10,
-    carbs: Math.round((Math.sqrt(variances.carbs / n)) * 10) / 10,
-    fat: Math.round((Math.sqrt(variances.fat / n)) * 10) / 10
-  };
 };
 
 /**
  * Calcule la distribution des macros sur une période
  * 
+ * ✅ PHASE 15.7 : Validation complète avec Zod, protection division par zéro, validation résultats
+ * 
  * @param {Array<Object>} dailyMeals - Tableau de dailyMeals
  * @param {string} startDate - Date début "YYYY-MM-DD"
  * @param {string} endDate - Date fin "YYYY-MM-DD"
  * @returns {Object} Distribution moyenne des macros
+ * @throws {NutritionError} Si validation échoue
  */
 export const getMacroDistribution = (dailyMeals = [], startDate, endDate) => {
-  const filtered = dailyMeals.filter(dm => 
-    dm.date >= startDate && dm.date <= endDate && dm.dailyTotals
-  );
+  try {
+    // ✅ PHASE 15.7 : Validation inputs
+    if (!Array.isArray(dailyMeals)) {
+      throw new NutritionError(
+        NutritionErrorCodes.VALIDATION_INVALID_DATA,
+        'dailyMeals doit être un tableau',
+        { dailyMeals, type: typeof dailyMeals }
+      );
+    }
+    
+    // ✅ PHASE 15.7 : Valider plage de dates
+    try {
+      validateDateRange({ startDate, endDate });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new NutritionError(
+          NutritionErrorCodes.VALIDATION_INVALID_DATE_FORMAT,
+          'Plage de dates invalide',
+          { startDate, endDate, errors: error.errors }
+        );
+      }
+      throw error;
+    }
+    
+    // ✅ PHASE 15.7 : Normaliser dates pour comparaison fiable
+    const normalizedStartDate = DateHelper.toYYYYMMDD(startDate);
+    const normalizedEndDate = DateHelper.toYYYYMMDD(endDate);
+    
+    if (!normalizedStartDate || !normalizedEndDate) {
+      throw new NutritionError(
+        NutritionErrorCodes.VALIDATION_INVALID_DATE_FORMAT,
+        'Impossible de normaliser les dates',
+        { startDate, endDate }
+      );
+    }
+    
+    // Filtrer dans la plage avec dates normalisées
+    const filtered = dailyMeals.filter(dm => {
+      if (!dm || !dm.date) return false;
+      const normalizedDate = DateHelper.toYYYYMMDD(dm.date);
+      if (!normalizedDate) return false;
+      return normalizedDate >= normalizedStartDate && normalizedDate <= normalizedEndDate && dm.dailyTotals;
+    });
 
-  if (filtered.length === 0) {
-    return {
-      protein: 0,
-      carbs: 0,
-      fat: 0
+    if (filtered.length === 0) {
+      return {
+        protein: 0,
+        carbs: 0,
+        fat: 0
+      };
+    }
+
+    // ✅ PHASE 15.7 : Calculer totaux avec validation
+    const totals = filtered.reduce((acc, dm) => {
+      const dt = dm.dailyTotals || {};
+      acc.protein += validateAndNormalizeNumber(dt.proteinPercent, {
+        fieldName: 'dailyTotals.proteinPercent',
+        defaultValue: 0,
+        min: 0,
+        max: 100
+      });
+      acc.carbs += validateAndNormalizeNumber(dt.carbsPercent, {
+        fieldName: 'dailyTotals.carbsPercent',
+        defaultValue: 0,
+        min: 0,
+        max: 100
+      });
+      acc.fat += validateAndNormalizeNumber(dt.fatPercent, {
+        fieldName: 'dailyTotals.fatPercent',
+        defaultValue: 0,
+        min: 0,
+        max: 100
+      });
+      return acc;
+    }, { protein: 0, carbs: 0, fat: 0 });
+
+    const n = filtered.length;
+    
+    // ✅ PHASE 15.7 : Division sécurisée pour moyennes
+    const avgProtein = safeDivision(totals.protein, n, {
+      operation: 'getMacroDistribution.avgProtein',
+      defaultValue: 0
+    });
+    const avgCarbs = safeDivision(totals.carbs, n, {
+      operation: 'getMacroDistribution.avgCarbs',
+      defaultValue: 0
+    });
+    const avgFat = safeDivision(totals.fat, n, {
+      operation: 'getMacroDistribution.avgFat',
+      defaultValue: 0
+    });
+    
+    // ✅ PHASE 15.7 : Valider résultats finaux
+    const result = {
+      protein: validateCalculationResult(Math.round(avgProtein), {
+        fieldName: 'protein',
+        operation: 'getMacroDistribution',
+        min: 0,
+        max: 100
+      }),
+      carbs: validateCalculationResult(Math.round(avgCarbs), {
+        fieldName: 'carbs',
+        operation: 'getMacroDistribution',
+        min: 0,
+        max: 100
+      }),
+      fat: validateCalculationResult(Math.round(avgFat), {
+        fieldName: 'fat',
+        operation: 'getMacroDistribution',
+        min: 0,
+        max: 100
+      })
     };
+    
+    return result;
+  } catch (error) {
+    // ✅ PHASE 15.7 : Gestion erreurs standardisée
+    if (error instanceof NutritionError) {
+      log.error('[getMacroDistribution] Erreur calcul:', error.toJSON());
+      throw error;
+    }
+    
+    // Wrapper erreurs inconnues
+    log.error('[getMacroDistribution] Erreur inconnue:', error);
+    throw new NutritionError(
+      NutritionErrorCodes.CALCULATION_ERROR,
+      'Erreur lors du calcul de la distribution des macros',
+      { originalError: error.message, startDate, endDate },
+      error
+    );
   }
-
-  const totals = filtered.reduce((acc, dm) => {
-    const dt = dm.dailyTotals;
-    acc.protein += dt.proteinPercent || 0;
-    acc.carbs += dt.carbsPercent || 0;
-    acc.fat += dt.fatPercent || 0;
-    return acc;
-  }, { protein: 0, carbs: 0, fat: 0 });
-
-  const n = filtered.length;
-  return {
-    protein: Math.round(totals.protein / n),
-    carbs: Math.round(totals.carbs / n),
-    fat: Math.round(totals.fat / n)
-  };
 };
 
 // ==================== HELPERS ====================

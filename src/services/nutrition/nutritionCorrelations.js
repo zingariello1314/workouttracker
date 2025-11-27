@@ -15,8 +15,76 @@
 
 import logger from '../../utils/logger';
 import { DateHelper } from '../../utils/dateHelper';
+// ✅ OPTIMISATION Phase 15.4 : Cache calculs avec hash inputs
+import { 
+  getNutritionCalculationCache, 
+  getNutritionDataCalculationHash 
+} from './nutritionCalculationCache';
+// ✅ OPTIMISATION Phase 15.5 : Web Workers pour calculs lourds
+import { executeInWorker } from './nutritionWorkerService';
+import { NutritionConfig } from '../../config/nutrition.config';
+// ✅ PHASE 15.7 : Validation limites complète avec helpers
+import {
+  safeDivision,
+  safeSqrt,
+  validateAndNormalizeNumber,
+  validateCalculationResult
+} from './nutritionCalculationHelpers';
+import { NutritionError, NutritionErrorCodes } from '../../utils/nutritionErrors';
+import { z } from 'zod';
 
 const log = logger.module('nutritionCorrelations');
+
+// ==================== SCHÉMAS ZOD POUR VALIDATION ====================
+
+/**
+ * ✅ PHASE 15.7 : Schéma pour validation historique nutrition
+ */
+const nutritionHistorySchema = z.array(z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide'),
+  calories: z.number().nonnegative().finite().optional(),
+  avgCalories: z.number().nonnegative().finite().optional(),
+  protein: z.number().nonnegative().finite().optional(),
+  carbs: z.number().nonnegative().finite().optional(),
+  fat: z.number().nonnegative().finite().optional(),
+  water: z.number().nonnegative().finite().optional(),
+  complianceScore: z.number().min(0).max(100).finite().optional()
+})).min(1, 'Historique nutrition doit contenir au moins 1 élément');
+
+/**
+ * ✅ PHASE 15.7 : Schéma pour validation historique poids
+ */
+const weightHistorySchema = z.array(z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide'),
+  weight: z.number().positive().finite().min(30).max(300) // Poids raisonnable (kg)
+})).min(1, 'Historique poids doit contenir au moins 1 élément');
+
+/**
+ * ✅ PHASE 15.7 : Schéma pour validation historique performance
+ */
+const performanceHistorySchema = z.array(z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide'),
+  performance: z.number().nonnegative().finite(),
+  // Autres champs optionnels
+}).passthrough()).min(1, 'Historique performance doit contenir au moins 1 élément');
+
+/**
+ * ✅ PHASE 15.7 : Schéma pour validation historique hydratation
+ */
+const hydrationHistorySchema = z.array(z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide'),
+  water: z.number().nonnegative().finite().min(0).max(20000) // Hydratation raisonnable (ml)
+})).min(1, 'Historique hydratation doit contenir au moins 1 élément');
+
+/**
+ * ✅ PHASE 15.7 : Schéma pour validation historique endurance
+ */
+const enduranceHistorySchema = z.array(z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide'),
+  duration: z.number().nonnegative().finite().optional(),
+  distance: z.number().nonnegative().finite().optional(),
+  // Autres champs optionnels
+}).passthrough()).min(1, 'Historique endurance doit contenir au moins 1 élément');
 
 // ==================== CALCUL CORRÉLATION + SIGNIFICATIVITÉ ====================
 
@@ -28,6 +96,25 @@ const log = logger.module('nutritionCorrelations');
  * @returns {Object} Résultat avec r, pValue, significativité, recommandations
  */
 export const calculateCorrelation = (arrayX, arrayY) => {
+  // ✅ PHASE 15.7 : Validation inputs avec Zod
+  try {
+    const arrayXSchema = z.array(z.number().finite()).min(1);
+    const arrayYSchema = z.array(z.number().finite()).min(1);
+    
+    arrayXSchema.parse(arrayX);
+    arrayYSchema.parse(arrayY);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      log.warn('[calculateCorrelation] Validation inputs échouée:', error.errors);
+      return {
+        error: 'Inputs invalides',
+        recommendation: 'Vérifiez que les tableaux contiennent des nombres valides',
+        actionable: false
+      };
+    }
+    throw error;
+  }
+  
   const n = arrayX.length;
   
   // 1. Vérifier taille échantillon minimum
@@ -101,25 +188,85 @@ export const calculateCorrelation = (arrayX, arrayY) => {
     };
   }
   
-  const r = numerator / denominator;
+  // ✅ PHASE 15.7 : Division sécurisée pour coefficient de corrélation
+  const r = safeDivision(numerator, denominator, {
+    operation: 'calculateCorrelation.r',
+    defaultValue: 0
+  });
+  
+  // ✅ PHASE 15.7 : Validation résultat r (doit être entre -1 et 1)
+  const validatedR = validateCalculationResult(r, {
+    fieldName: 'correlationCoefficient',
+    operation: 'calculateCorrelation',
+    min: -1,
+    max: 1
+  });
   
   // 5. Test significativité (t-test)
-  const t = (r * Math.sqrt(validN - 2)) / Math.sqrt(1 - r * r);
+  // ✅ PHASE 15.7 : Protection division par zéro dans t-test (Math.sqrt(1 - r * r) peut être 0 si r = ±1)
+  const sqrtDenominator = safeSqrt(1 - validatedR * validatedR, {
+    operation: 'calculateCorrelation.t-test.denominator',
+    defaultValue: 0.0001 // Éviter division par zéro (valeur très petite)
+  });
+  
+  // ✅ PHASE 15.7 : Division sécurisée pour t-test
+  const sqrtNumerator = safeSqrt(validN - 2, {
+    operation: 'calculateCorrelation.t-test.numerator',
+    defaultValue: 0
+  });
+  
+  const t = safeDivision(
+    validatedR * sqrtNumerator,
+    sqrtDenominator,
+    {
+      operation: 'calculateCorrelation.t-test',
+      defaultValue: 0
+    }
+  );
+  
   const df = validN - 2; // Degrés liberté
   
   // 6. Calculer p-value (approximation t-distribution)
-  const pValue = calculatePValue(Math.abs(t), df);
+  // ✅ PHASE 15.7 : Validation t avant calcul p-value
+  const validatedT = validateAndNormalizeNumber(Math.abs(t), {
+    fieldName: 't-statistic',
+    defaultValue: 0,
+    min: 0
+  });
+  const validatedDf = validateAndNormalizeNumber(df, {
+    fieldName: 'degreesOfFreedom',
+    defaultValue: 1,
+    min: 1
+  });
+  
+  const pValue = calculatePValue(validatedT, validatedDf);
+  
+  // ✅ PHASE 15.7 : Validation p-value
+  const validatedPValue = validateCalculationResult(pValue, {
+    fieldName: 'pValue',
+    operation: 'calculateCorrelation',
+    min: 0,
+    max: 1
+  });
   
   // 7. Interprétation contextualisée selon n
-  const strength = interpretStrength(r, validN, pValue);
+  const strength = interpretStrength(validatedR, validN, validatedPValue);
+  
+  // ✅ PHASE 15.7 : Validation résultats finaux
+  const finalR = validateCalculationResult(parseFloat(validatedR.toFixed(3)), {
+    fieldName: 'correlationCoefficient',
+    operation: 'calculateCorrelation',
+    min: -1,
+    max: 1
+  });
   
   return {
-    r: parseFloat(r.toFixed(3)),
-    pValue: parseFloat(pValue.toFixed(4)),
-    significant: pValue < 0.05,
+    r: finalR,
+    pValue: parseFloat(validatedPValue.toFixed(4)),
+    significant: validatedPValue < 0.05,
     sampleSize: validN,
     strength: strength,
-    direction: r > 0 ? 'positive' : 'negative',
+    direction: finalR > 0 ? 'positive' : 'negative',
     
     // Avertissement si échantillon faible
     warning: validN < 30 ? 
@@ -274,6 +421,22 @@ export const alignDataByDate = (data1, data2) => {
  */
 export const analyzeCaloriesWeightCorrelation = (nutritionHistory, weightHistory) => {
   try {
+    // ✅ PHASE 15.7 : Validation inputs avec Zod
+    try {
+      nutritionHistorySchema.parse(nutritionHistory);
+      weightHistorySchema.parse(weightHistory);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.warn('[analyzeCaloriesWeightCorrelation] Validation inputs échouée:', error.errors);
+        return {
+          error: 'Données invalides',
+          message: 'Les historiques doivent contenir des données valides avec dates au format YYYY-MM-DD',
+          actionable: false
+        };
+      }
+      throw error;
+    }
+    
     const aligned = alignDataByDate(
       nutritionHistory.map(d => ({ date: d.date, value: d.calories || d.avgCalories })),
       weightHistory.map(d => ({ date: d.date, value: d.weight }))
@@ -318,6 +481,22 @@ export const analyzeCaloriesWeightCorrelation = (nutritionHistory, weightHistory
  */
 export const analyzeProteinPerformanceCorrelation = (nutritionHistory, performanceHistory) => {
   try {
+    // ✅ PHASE 15.7 : Validation inputs avec Zod
+    try {
+      nutritionHistorySchema.parse(nutritionHistory);
+      performanceHistorySchema.parse(performanceHistory);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.warn('[analyzeProteinPerformanceCorrelation] Validation inputs échouée:', error.errors);
+        return {
+          error: 'Données invalides',
+          message: 'Les historiques doivent contenir des données valides avec dates au format YYYY-MM-DD',
+          actionable: false
+        };
+      }
+      throw error;
+    }
+    
     const aligned = alignDataByDate(
       nutritionHistory.map(d => ({ date: d.date, value: d.protein || d.avgProtein })),
       performanceHistory.map(d => ({ date: d.date, value: d.performance || d.avgPerformance }))
@@ -362,6 +541,22 @@ export const analyzeProteinPerformanceCorrelation = (nutritionHistory, performan
  */
 export const analyzeHydrationEnduranceCorrelation = (hydrationHistory, enduranceHistory) => {
   try {
+    // ✅ PHASE 15.7 : Validation inputs avec Zod
+    try {
+      hydrationHistorySchema.parse(hydrationHistory);
+      enduranceHistorySchema.parse(enduranceHistory);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.warn('[analyzeHydrationEnduranceCorrelation] Validation inputs échouée:', error.errors);
+        return {
+          error: 'Données invalides',
+          message: 'Les historiques doivent contenir des données valides avec dates au format YYYY-MM-DD',
+          actionable: false
+        };
+      }
+      throw error;
+    }
+    
     const aligned = alignDataByDate(
       hydrationHistory.map(d => ({ date: d.date, value: d.water || d.waterIntake })),
       enduranceHistory.map(d => ({ date: d.date, value: d.endurance || d.avgEndurance }))
@@ -406,6 +601,23 @@ export const analyzeHydrationEnduranceCorrelation = (hydrationHistory, endurance
  */
 export const analyzeComplianceResultsCorrelation = (complianceHistory, resultsHistory) => {
   try {
+    // ✅ PHASE 15.7 : Validation inputs avec Zod
+    // complianceHistory et resultsHistory sont des nutritionHistory (même structure)
+    try {
+      nutritionHistorySchema.parse(complianceHistory);
+      nutritionHistorySchema.parse(resultsHistory);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        log.warn('[analyzeComplianceResultsCorrelation] Validation inputs échouée:', error.errors);
+        return {
+          error: 'Données invalides',
+          message: 'Les historiques doivent contenir des données valides avec dates au format YYYY-MM-DD',
+          actionable: false
+        };
+      }
+      throw error;
+    }
+    
     const aligned = alignDataByDate(
       complianceHistory.map(d => ({ date: d.date, value: d.complianceScore || d.compliance })),
       resultsHistory.map(d => ({ date: d.date, value: d.result || d.progress }))
@@ -489,15 +701,73 @@ const generateInsights = (var1, var2, r, strength, direction, n) => {
 /**
  * Analyse toutes les corrélations nutrition disponibles
  * 
+ * ✅ OPTIMISATION Phase 15.5 : Web Workers pour calculs lourds (non bloquants)
+ * 
  * @param {Object} nutritionData - Données nutrition (dailyMeals, meals, etc.)
  * @param {Object} garminData - Données Garmin (activités, métriques)
  * @param {Object} options - Options d'analyse
- * @returns {Object} Toutes les corrélations calculées
+ * @returns {Promise<Object>} Toutes les corrélations calculées
  */
-export const analyzeAllNutritionCorrelations = (nutritionData, garminData = null, options = {}) => {
+export const analyzeAllNutritionCorrelations = async (nutritionData, garminData = null, options = {}) => {
   const { minDays = 10, maxDays = 90 } = options;
   
   try {
+    // ✅ OPTIMISATION Phase 15.4 : Vérifier cache avant calculs coûteux
+    if (NutritionConfig.features.enableCalculationCache) {
+      const hash = getNutritionDataCalculationHash(nutritionData, garminData, { minDays, maxDays });
+      const cache = getNutritionCalculationCache();
+      const cacheKey = `correlations:${hash}`;
+      
+      const cached = cache.get(cacheKey);
+      if (cached !== null) {
+        return cached;
+      }
+    }
+    
+    // ✅ OPTIMISATION Phase 15.5 : Utiliser Web Worker pour calculs lourds (non bloquants)
+    // Fallback automatique vers main thread si worker non disponible
+    if (NutritionConfig.features.enableWebWorkers) {
+      try {
+        const workerResult = await executeInWorker(
+          'analyzeAllNutritionCorrelations',
+          { nutritionData, garminData, options: { minDays, maxDays } },
+          // Fallback : calculer dans main thread
+          () => analyzeAllNutritionCorrelationsMainThread(nutritionData, garminData, options)
+        );
+        
+        // Mettre en cache le résultat
+        if (NutritionConfig.features.enableCalculationCache) {
+          const hash = getNutritionDataCalculationHash(nutritionData, garminData, { minDays, maxDays });
+          const cache = getNutritionCalculationCache();
+          cache.set(`correlations:${hash}`, workerResult);
+        }
+        
+        return workerResult;
+      } catch (workerError) {
+        log.warn('[analyzeAllNutritionCorrelations] Erreur worker, fallback main thread:', workerError);
+        // Continuer avec fallback
+      }
+    }
+    
+    // Fallback : calculer dans main thread
+    return analyzeAllNutritionCorrelationsMainThread(nutritionData, garminData, options);
+  } catch (error) {
+    log.error('Erreur analyse corrélations nutrition:', error);
+    return {
+      error: 'Erreur calcul',
+      message: error.message,
+      correlations: {}
+    };
+  }
+};
+
+/**
+ * ✅ OPTIMISATION Phase 15.5 : Version main thread (fallback)
+ */
+function analyzeAllNutritionCorrelationsMainThread(nutritionData, garminData = null, options = {}) {
+  try {
+    const { minDays = 10, maxDays = 90 } = options;
+    
     const correlations = {};
     
     // Préparer données historiques
@@ -583,20 +853,29 @@ export const analyzeAllNutritionCorrelations = (nutritionData, garminData = null
       }
     }
     
-    return {
+    const result = {
       success: true,
       correlations,
       totalDays: dailyMeals.length,
       correlationsCount: Object.keys(correlations).length,
       actionableCount: Object.values(correlations).filter(c => c.actionable).length
     };
+    
+    // ✅ OPTIMISATION Phase 15.4 : Mettre en cache le résultat
+    if (NutritionConfig.features.enableCalculationCache) {
+      const hash = getNutritionDataCalculationHash(nutritionData, garminData, { minDays, maxDays });
+      const cache = getNutritionCalculationCache();
+      cache.set(`correlations:${hash}`, result);
+    }
+    
+    return result;
   } catch (error) {
-    log.error('Erreur analyse corrélations nutrition:', error);
+    log.error('[analyzeAllNutritionCorrelationsMainThread] Erreur analyse corrélations nutrition:', error);
     return {
       error: 'Erreur calcul',
       message: error.message,
       correlations: {}
     };
   }
-};
+}
 

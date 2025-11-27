@@ -190,10 +190,22 @@ export const useNutritionData = () => {
     initializedRef.current = true;
     
     ensureGlobalDBReady()
-      .then((db) => {
+      .then(async (db) => {
         if (db) {
           setDbReady(true);
           // ✅ Pas de log ici (déjà logué dans ensureGlobalDBReady pour éviter duplication)
+          
+          // ✅ OPTIMISATION Phase 15.6 : Initialiser gestionnaire online/offline
+          if (typeof window !== 'undefined') {
+            try {
+              const { getNutritionOnlineManager } = await import('../services/nutrition/nutritionOnlineManager');
+              await getNutritionOnlineManager();
+              // Gestionnaire initialisé automatiquement (singleton)
+            } catch (error) {
+              // Erreur non bloquante (queue offline optionnelle)
+              console.warn('[useNutritionData] Erreur initialisation gestionnaire online/offline:', error);
+            }
+          }
         } else {
           setDbReady(false);
         }

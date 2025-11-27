@@ -71,6 +71,11 @@ export const NutritionErrorCodes = {
   /** Quantité invalide (négative, NaN, etc.) */
   VALIDATION_INVALID_QUANTITY: 'VALIDATION_INVALID_QUANTITY',
   
+  // ========== CONCURRENCY ERRORS ==========
+  
+  /** Modification concurrente détectée (optimistic locking) */
+  CONCURRENT_MODIFICATION: 'CONCURRENT_MODIFICATION',
+  
   // ========== CALCULATION ERRORS ==========
   
   /** Erreur lors d'un calcul nutritionnel */
@@ -228,7 +233,10 @@ export class NutritionError extends Error {
         'Modèle de prédiction non disponible. Veuillez réessayer.',
       
       [NutritionErrorCodes.ML_INSUFFICIENT_DATA]: 
-        'Données insuffisantes pour effectuer une prédiction.'
+        'Données insuffisantes pour effectuer une prédiction.',
+      
+      [NutritionErrorCodes.CONCURRENT_MODIFICATION]: 
+        'Les données ont été modifiées. Rechargez la page pour voir les dernières modifications.'
     };
 
     return userMessages[this.code] || this.message;
@@ -245,6 +253,7 @@ export class NutritionError extends Error {
       NutritionErrorCodes.API_UNAVAILABLE,
       NutritionErrorCodes.DB_TRANSACTION_FAILED,
       NutritionErrorCodes.ML_MODEL_LOAD_ERROR
+      // Note: CONCURRENT_MODIFICATION n'est pas récupérable (nécessite rechargement)
     ];
 
     return recoverableCodes.includes(this.code);
@@ -332,16 +341,41 @@ export function createValidationError(code, field, received, expected = null) {
     [NutritionErrorCodes.VALIDATION_INVALID_ID]: 
       `ID invalide pour '${field}'. Reçu: '${received}'`,
     
-    [NutritionErrorCodes.VALIDATION_INVALID_QUANTITY]: 
-      `Quantité invalide pour '${field}'. Reçu: '${received}'`
-  };
+      [NutritionErrorCodes.VALIDATION_INVALID_QUANTITY]: 
+        `Quantité invalide pour '${field}'. Reçu: '${received}'`
+    };
 
-  return new NutritionError(
-    code,
-    messages[code] || `Erreur de validation pour '${field}'`,
-    { field, received, ...(expected !== null && { expected }) }
-  );
-}
+    return new NutritionError(
+      code,
+      messages[code] || `Erreur de validation pour '${field}'`,
+      { field, received, ...(expected !== null && { expected }) }
+    );
+  }
+
+  /**
+   * Crée une NutritionError de modification concurrente
+   * 
+   * ✅ OPTIMISATION Phase 15.3 : Erreur optimistic locking
+   * 
+   * @param {string} resourceType - Type de ressource ('dailyMeal', 'meal', 'program')
+   * @param {string} resourceId - ID de la ressource
+   * @param {number} currentVersion - Version actuelle en DB
+   * @param {number} providedVersion - Version fournie par le client
+   * @returns {NutritionError} Erreur de modification concurrente
+   */
+  export function createConcurrentModificationError(resourceType, resourceId, currentVersion, providedVersion) {
+    return new NutritionError(
+      NutritionErrorCodes.CONCURRENT_MODIFICATION,
+      `Données modifiées par un autre processus. Rechargez la page pour voir les dernières modifications.`,
+      {
+        resourceType,
+        resourceId,
+        currentVersion,
+        providedVersion,
+        suggestion: 'Rechargez la page et réessayez votre modification.'
+      }
+    );
+  }
 
 // ==================== EXPORTS ====================
 
