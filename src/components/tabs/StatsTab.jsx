@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TrendingUp, Calendar, Target, Award, Activity } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useGarminData } from '../../hooks/useGarminData';
+import { useWorkoutStats } from '../../hooks/useWorkoutStats';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
+import {
+  JUSTIFICATION_REASONS,
+  JUSTIFICATION_LABELS,
+  JUSTIFICATION_COLORS,
+  JUSTIFICATION_ICONS
+} from '../../utils/dayJustificationUtils';
 
 const StatsTab = () => {
   const {
@@ -32,6 +39,9 @@ const StatsTab = () => {
 
   // Utiliser les vraies données de l'historique des entraînements
   const workoutHistory = getWorkoutHistory();
+  
+  // ✅ NOUVEAU : Utiliser useWorkoutStats pour cohérence (intègre les justifications)
+  const { getCurrentStreak, getLongestStreak, getJustificationStats } = useWorkoutStats();
   
   // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
   // isMockSession remplacé par isMockEnduranceSession (importée)
@@ -203,60 +213,9 @@ const StatsTab = () => {
     };
   };
 
-  // Calculer la série actuelle
-  const calculateCurrentStreak = () => {
-    if (workoutHistory.length === 0) return 0;
-    
-    let streak = 0;
-    const today = new Date();
-    const sortedHistory = [...workoutHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    for (let i = 0; i < 365; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(today.getDate() - i);
-      const dateStr = checkDate.toISOString().split('T')[0];
-      
-      const hasWorkout = sortedHistory.some(session => session.date === dateStr);
-      
-      if (hasWorkout) {
-        streak++;
-      } else if (i > 0) {
-        break;
-      }
-    }
-    
-    return streak;
-  };
-
-  // Calculer la plus longue série
-  const calculateLongestStreak = () => {
-    if (workoutHistory.length === 0) return 0;
-    
-    const sortedHistory = [...workoutHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
-    let maxStreak = 0;
-    let currentStreak = 0;
-    let lastDate = null;
-    
-    sortedHistory.forEach(session => {
-      const sessionDate = new Date(session.date);
-      
-      if (lastDate) {
-        const dayDiff = (sessionDate - lastDate) / (1000 * 60 * 60 * 24);
-        if (dayDiff === 1) {
-          currentStreak++;
-        } else {
-          maxStreak = Math.max(maxStreak, currentStreak);
-          currentStreak = 1;
-        }
-      } else {
-        currentStreak = 1;
-      }
-      
-      lastDate = sessionDate;
-    });
-    
-    return Math.max(maxStreak, currentStreak);
-  };
+  // ✅ NOUVEAU : Utiliser les fonctions de useWorkoutStats (intègrent les justifications)
+  // Les fonctions calculateCurrentStreak et calculateLongestStreak sont remplacées
+  // par getCurrentStreak et getLongestStreak de useWorkoutStats pour cohérence
 
   // PHASE 5.2 : Calculer les statistiques Garmin
   const calculateGarminStats = (period) => {
@@ -372,8 +331,11 @@ const StatsTab = () => {
   };
 
   const stats = calculateStats(statsPeriod);
-  const currentStreak = calculateCurrentStreak();
-  const longestStreak = calculateLongestStreak();
+  // ✅ NOUVEAU : Utiliser les fonctions de useWorkoutStats (intègrent les justifications)
+  const currentStreak = useMemo(() => getCurrentStreak(), [getCurrentStreak]);
+  const longestStreak = useMemo(() => getLongestStreak(), [getLongestStreak]);
+  // ✅ NOUVEAU : Statistiques de justifications
+  const justificationStats = useMemo(() => getJustificationStats(statsPeriod), [getJustificationStats, statsPeriod]);
   const garminStats = calculateGarminStats(statsPeriod);
 
   const periods = [
@@ -559,6 +521,48 @@ const StatsTab = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ✅ NOUVEAU : Statistiques de justifications */}
+      {justificationStats.total > 0 && (
+        <Card className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 border-slate-600">
+          <Card.Header>
+            <Card.Title className="flex items-center gap-2 text-white">
+              <Calendar className="text-slate-400" size={24} />
+              Jours Justifiés
+            </Card.Title>
+          </Card.Header>
+          <Card.Content>
+            <div className="mb-4">
+              <div className="text-3xl font-bold text-white mb-1">{justificationStats.total}</div>
+              <div className="text-sm text-slate-400">jours justifiés ({statsPeriod === 'week' ? 'cette semaine' : statsPeriod === 'month' ? 'ce mois' : statsPeriod === 'year' ? 'cette année' : 'au total'})</div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {Object.entries(JUSTIFICATION_REASONS).map(([key, reason]) => {
+                const count = justificationStats.byReason[reason] || 0;
+                if (count === 0) return null;
+                
+                const label = JUSTIFICATION_LABELS[reason];
+                const icon = JUSTIFICATION_ICONS[reason];
+                const colorClasses = JUSTIFICATION_COLORS[reason];
+                
+                return (
+                  <div
+                    key={reason}
+                    className={`flex items-center gap-2 p-3 rounded-lg border-2 ${colorClasses}`}
+                  >
+                    <span className="text-xl" aria-hidden="true">{icon}</span>
+                    <div className="flex flex-col">
+                      <span className="text-white text-lg font-bold">{count}</span>
+                      <span className="text-white/80 text-xs">{label}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card.Content>
+        </Card>
       )}
 
       {/* Statistiques détaillées */}

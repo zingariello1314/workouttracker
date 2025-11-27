@@ -13,6 +13,8 @@ import { calculateAutoReps, detectExerciseUnit } from '../../utils/exerciseCalcu
 import { useTodayExercises } from '../../hooks/useTodayExercises';
 import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
+import DayJustificationButton from './TodayTab/components/DayJustificationButton.jsx';
+import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
 
 const TodayTab = () => {
   const {
@@ -602,8 +604,11 @@ const TodayTab = () => {
 
   if (!workout.exercices || workout.exercices.length === 0) {
     const activeChallenges = getActiveChallenges();
+    const currentData = getCurrentData();
+    const hasNoActivity = isDayWithoutActivity(currentData, dateStr);
+    
     return (
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         <div className="text-center py-12 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700">
           <div className="text-gray-400 mb-4">
             <div className="text-6xl mb-4">🎉</div>
@@ -611,9 +616,15 @@ const TodayTab = () => {
             <p>Profitez de votre journée de récupération !</p>
           </div>
         </div>
+        
+        {/* ✅ NOUVEAU : Bouton/Badge de justification si jour sans activité */}
+        {hasNoActivity && (
+          <DayJustificationButton date={currentDate} />
+        )}
+        
         {/* Section des défis actifs, même si jour de repos */}
         {activeChallenges.length > 0 && (
-          <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 mt-8">
+          <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20">
             <Card.Header>
               <Card.Title className="flex items-center text-purple-200">
                 <Award className="mr-2" size={20} />
@@ -683,6 +694,13 @@ const TodayTab = () => {
           </div>
         )}
       </div>
+
+      {/* ✅ NOUVEAU : Bouton/Badge de justification si jour sans activité (même avec exercices prévus) */}
+      {(() => {
+        const currentData = getCurrentData();
+        const hasNoActivity = isDayWithoutActivity(currentData, dateStr);
+        return hasNoActivity ? <DayJustificationButton date={currentDate} /> : null;
+      })()}
 
       {/* Exercices */}
       <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">

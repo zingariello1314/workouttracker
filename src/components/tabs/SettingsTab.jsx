@@ -200,6 +200,24 @@ const SettingsTab = () => {
           enduranceLastUpdated: dataToExport.enduranceData?.lastUpdated || null,
           enduranceSchemaVersion: dataToExport.enduranceData?.schemaVersion || ENDURANCE_SCHEMA_VERSION,
           enduranceChallenges: (dataToExport.enduranceData?.challenges || []).length,
+          
+          // ✅ NOUVEAU : Justifications des jours sans activité
+          dayJustifications: {
+            total: Object.keys(dataToExport.dayJustifications || {}).length,
+            byReason: Object.values(dataToExport.dayJustifications || {}).reduce((acc, justification) => {
+              const reason = justification?.reason || 'autre';
+              acc[reason] = (acc[reason] || 0) + 1;
+              return acc;
+            }, {}),
+            dateRange: (() => {
+              const dates = Object.keys(dataToExport.dayJustifications || {}).sort();
+              return {
+                earliest: dates[0] || null,
+                latest: dates[dates.length - 1] || null
+              };
+            })(),
+            version: dataToExport.dayJustificationsVersion || '1.0'
+          },
           enduranceSessionsLegacyKeys: {
             pushupSessions: Array.isArray(dataToExport.enduranceData?.pushupSessions) ? dataToExport.enduranceData.pushupSessions.length : 0,
             boxingSessions: Array.isArray(dataToExport.enduranceData?.boxingSessions) ? dataToExport.enduranceData.boxingSessions.length : 0,

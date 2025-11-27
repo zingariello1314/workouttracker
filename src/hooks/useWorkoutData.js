@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { cleanJustifications } from '../utils/dayJustificationUtils';
 
 // Données de test pour l'historique d'entraînement
 const generateTestWorkoutData = () => {
@@ -109,7 +110,10 @@ export const useWorkoutData = () => {
     sessionFeedbacks: {}, // Stockage des feedbacks de session par date
     // ✅ NOUVEAU : Système de variations journalières pour l'onglet "Aujourd'hui"
     dailyVariations: {}, // Format: { "YYYY-MM-DD": DailyVariation }
-    dailyVariationsVersion: '1.0' // Version du schéma pour migrations futures
+    dailyVariationsVersion: '1.0', // Version du schéma pour migrations futures
+    // ✅ NOUVEAU : Système de justification des jours sans activité
+    dayJustifications: {}, // Format: { "YYYY-MM-DD": { reason, note?, createdAt, updatedAt } }
+    dayJustificationsVersion: '1.0' // Version du schéma pour migrations futures
     // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
   });
 
@@ -118,6 +122,34 @@ export const useWorkoutData = () => {
   const isInitialLoadRef = useRef(true);
   const dbConnectionRef = useRef(null);
   const dbConnectionPromiseRef = useRef(null);
+
+  // ✅ Migration automatique des dayJustifications depuis ancien format
+  // DOIT être définie AVANT loadFromDB qui l'utilise
+  // Pattern identique à migrateDailyVariations pour cohérence
+  const migrateDayJustifications = (rawData) => {
+    // Si dayJustifications n'existe pas, initialiser vide
+    if (!rawData.dayJustifications) {
+      return {
+        ...rawData,
+        dayJustifications: {},
+        dayJustificationsVersion: '1.0'
+      };
+    }
+    
+    // ✅ Nettoyer les justifications invalides (dates futures, structures invalides)
+    // Utilise cleanJustifications importé depuis dayJustificationUtils
+    const { cleaned, removed } = cleanJustifications(rawData.dayJustifications);
+    
+    if (removed.length > 0) {
+      console.log(`🔄 Migration dayJustifications: ${removed.length} justification(s) invalide(s) supprimée(s)`);
+    }
+    
+    return {
+      ...rawData,
+      dayJustifications: cleaned,
+      dayJustificationsVersion: rawData.dayJustificationsVersion || '1.0'
+    };
+  };
 
   // ✅ Migration automatique des dailyVariations depuis ancien format
   // DOIT être définie AVANT loadFromDB qui l'utilise
@@ -322,6 +354,11 @@ export const useWorkoutData = () => {
           ? { ...newData.dailyVariations } 
           : {},
         dailyVariationsVersion: newData && newData.dailyVariationsVersion ? newData.dailyVariationsVersion : '1.0',
+        // ✅ NOUVEAU : dayJustifications avec validation stricte
+        dayJustifications: newData && newData.dayJustifications && typeof newData.dayJustifications === 'object' 
+          ? { ...newData.dayJustifications } 
+          : {},
+        dayJustificationsVersion: newData && newData.dayJustificationsVersion ? newData.dayJustificationsVersion : '1.0',
         // Données d'endurance - CRUCIAL pour la persistance
         enduranceData: newData && newData.enduranceData ? { ...newData.enduranceData } : {
           sessions: {
@@ -519,8 +556,10 @@ export const useWorkoutData = () => {
           const result = request.result;
           
           if (result) {
-            // ✅ Migration automatique : Initialiser dailyVariations si absent
-            const migratedData = migrateDailyVariations(result.data || result);
+            // ✅ Migration automatique : Initialiser dailyVariations et dayJustifications si absents
+            // Ordre important : d'abord dailyVariations, puis dayJustifications
+            const migratedDataStep1 = migrateDailyVariations(result.data || result);
+            const migratedData = migrateDayJustifications(migratedDataStep1);
             
             // Validation des données chargées
             const validatedData = {
@@ -537,6 +576,9 @@ export const useWorkoutData = () => {
               // ✅ NOUVEAU : dailyVariations avec migration automatique
               dailyVariations: migratedData.dailyVariations || {},
               dailyVariationsVersion: migratedData.dailyVariationsVersion || '1.0',
+              // ✅ NOUVEAU : dayJustifications avec migration automatique
+              dayJustifications: migratedData.dayJustifications || {},
+              dayJustificationsVersion: migratedData.dayJustificationsVersion || '1.0',
               // Données d'endurance - CRUCIAL pour la persistance
               enduranceData: migratedData.enduranceData || result.enduranceData || {
                 sessions: {

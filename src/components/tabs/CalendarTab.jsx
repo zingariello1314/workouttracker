@@ -7,6 +7,12 @@ import CalendarHeatmap from '../CalendarHeatmap';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { getDateStr } from '../../utils/dateUtils';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
+import {
+  JUSTIFICATION_REASONS,
+  JUSTIFICATION_LABELS,
+  JUSTIFICATION_COLORS,
+  JUSTIFICATION_ICONS
+} from '../../utils/dayJustificationUtils';
 
 const CalendarTab = () => {
   // Récupérer les données directement du contexte pour la réactivité
@@ -326,7 +332,7 @@ const CalendarTab = () => {
               Activité des 7 derniers jours
             </h4>
             <div className="bg-slate-800/30 rounded-lg p-4">
-              {/* Légende */}
+              {/* Légende des intensités */}
               <div className="flex items-center justify-between mb-4 text-xs text-slate-400">
                 <span>Faible activité</span>
                 <span>Activité élevée</span>
@@ -398,6 +404,35 @@ const CalendarTab = () => {
       </Card>
 
       {/* Calendrier existant */}
+      {/* ✅ NOUVEAU : Légende des justifications */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white text-sm">Légende des Justifications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {Object.entries(JUSTIFICATION_REASONS).map(([key, reason]) => {
+              const label = JUSTIFICATION_LABELS[reason];
+              const icon = JUSTIFICATION_ICONS[reason];
+              const colorClasses = JUSTIFICATION_COLORS[reason];
+              
+              return (
+                <div
+                  key={reason}
+                  className={`flex items-center gap-2 p-2 rounded-lg border-2 ${colorClasses}`}
+                >
+                  <span className="text-lg" aria-hidden="true">{icon}</span>
+                  <span className="text-white text-sm font-medium">{label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-slate-400 mt-3">
+            Cliquez sur un jour sans activité dans le calendrier pour le justifier.
+          </p>
+        </CardContent>
+      </Card>
+
       <CalendarHeatmap workoutHistory={workoutHistory} garminData={garminData} />
     </div>
   );

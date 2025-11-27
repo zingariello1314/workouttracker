@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
 import { getDateStr } from '../utils/dateUtils';
+import JustificationModal from './modals/JustificationModal';
 import { workoutProgram } from '../data/workoutProgram';
 import { calculateDayIntensityWithGarmin, getGarminActivityIcons } from '../utils/garminCalendarUtils';
 import { 
@@ -26,12 +27,22 @@ import {
   validateDate,
   validateNumericValue
 } from '../utils/calendarUtils';
+import {
+  getDayJustification,
+  isDayWithoutActivity,
+  JUSTIFICATION_REASONS,
+  JUSTIFICATION_LABELS,
+  JUSTIFICATION_COLORS,
+  JUSTIFICATION_ICONS
+} from '../utils/dayJustificationUtils';
 
 const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('year'); // 'month', 'year', 'streaks'
   const [selectedDate, setSelectedDate] = useState(null);
   const [showStats, setShowStats] = useState(false);
+  // ✅ NOUVEAU : État pour la modal de justification
+  const [justificationModalDate, setJustificationModalDate] = useState(null);
 
   // Récupérer les données du contexte pour le calcul du temps réel
   const { data, getCurrentData } = useWorkout();
@@ -44,8 +55,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   // ✅ PHASE 2.3 : Invalider le cache lorsque les données sources changent
   useEffect(() => {
     // Vider le cache lorsque allData change (les données sources ont changé)
+    // ✅ NOUVEAU : Invalider aussi si les justifications changent
     intensityCache.current = {};
-  }, [allData, garminData]);
+  }, [allData, garminData, allData?.dayJustifications]);
 
   // Fonction pour obtenir le nom du jour
   const getDayName = (date) => {
@@ -176,7 +188,12 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     // ✅ PHASE 2.3 : Vérifier le cache avant de calculer
     const cacheKey = dateStr;
     if (intensityCache.current[cacheKey]) {
-      return intensityCache.current[cacheKey];
+      const cached = intensityCache.current[cacheKey];
+      // ✅ NOUVEAU : Ajouter justification si absente du cache (pour éviter recalcul)
+      if (!cached.justification) {
+        cached.justification = getDayJustification(allData, dateStr);
+      }
+      return cached;
     }
     
     const dayName = getDayName(date);
@@ -1097,6 +1114,27 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     
     return days;
   };
+  
+  // ✅ NOUVEAU : Fonction pour calculer les statistiques de justifications par mois
+  const calculateMonthJustificationStats = (monthDays) => {
+    const stats = {
+      [JUSTIFICATION_REASONS.MALADIE]: 0,
+      [JUSTIFICATION_REASONS.FLEMME]: 0,
+      [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 0,
+      [JUSTIFICATION_REASONS.AUTRE]: 0
+    };
+    
+    monthDays.forEach(day => {
+      if (day.isCurrentMonth && day.intensity?.justification) {
+        const reason = day.intensity.justification.reason;
+        if (stats[reason] !== undefined) {
+          stats[reason]++;
+        }
+      }
+    });
+    
+    return stats;
+  };
 
   // Génération complète de l'année avec statistiques
   const generateYearData = (date) => {
@@ -1173,6 +1211,35 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     
     const todayRing = isToday ? ' ring-2 ring-blue-400' : '';
     return `${baseColors[level]}${todayRing}`;
+  };
+  
+  // ✅ NOUVEAU : Fonction de couleur combinée (priorité justification > intensité)
+  const getDayColor = (intensity, isToday = false) => {
+    // Si justification existe, utiliser sa couleur
+    if (intensity?.justification) {
+      const reason = intensity.justification.reason;
+      const baseColor = JUSTIFICATION_COLORS[reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE];
+      const todayRing = isToday ? ' ring-2 ring-blue-400' : '';
+      return `${baseColor}${todayRing}`;
+    }
+    
+    // Sinon, utiliser la couleur d'intensité existante
+    return getIntensityColor(intensity?.level || 0, isToday);
+  };
+  
+  // ✅ NOUVEAU : Fonction pour obtenir le tooltip avec justification
+  const getDayTooltip = (day, intensity) => {
+    const dateStr = day.date.toLocaleDateString('fr-FR');
+    const baseTooltip = `${dateStr} - ${getIntensityLabel(intensity?.level || 0)}${intensity?.duration > 0 ? ` (${intensity.duration}min)` : ''}${intensity?.reps > 0 ? ` - ${intensity.reps} reps` : ''}`;
+    
+    // Si justification existe, l'ajouter au tooltip
+    if (intensity?.justification) {
+      const reasonLabel = JUSTIFICATION_LABELS[intensity.justification.reason] || 'Autre';
+      const note = intensity.justification.note ? ` : ${intensity.justification.note}` : '';
+      return `${baseTooltip}\nJustifié : ${reasonLabel}${note}`;
+    }
+    
+    return baseTooltip;
   };
 
   const getIntensityLabel = (level) => {
@@ -1287,17 +1354,31 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             {monthDays.map((day, index) => (
               <div
                 key={index}
-                onClick={() => setSelectedDate(day)}
+                onClick={() => {
+                  // ✅ CORRECTION : Seulement les jours BLANCS (sans activité ET sans justification) ouvrent la modal
+                  // Un jour est "blanc" si : level === 0 ET pas de justification
+                  const dateStr = getDateStr(day.date);
+                  const hasJustification = !!day.intensity?.justification;
+                  const isWhiteDay = day.intensity.level === 0 && !hasJustification;
+                  
+                  if (isWhiteDay && isDayWithoutActivity(allData, dateStr)) {
+                    // Jour blanc sans activité → ouvrir modal de justification
+                    setJustificationModalDate(day.date);
+                  } else {
+                    // Jour avec activité OU justifié → afficher le recap normal
+                    setSelectedDate(day);
+                  }
+                }}
                 className={`
                   aspect-square rounded-lg border-2 cursor-pointer transition-all duration-200 relative
-                  ${getIntensityColor(day.intensity.level, day.isToday)}
+                  ${getDayColor(day.intensity, day.isToday)}
                   ${day.isCurrentMonth ? 'border-transparent' : 'border-slate-600 opacity-30'}
                   ${selectedDate?.date.toDateString() === day.date.toDateString() 
                     ? 'ring-2 ring-purple-400' : ''
                   }
                   hover:ring-2 hover:ring-purple-300 hover:scale-105
                 `}
-                  title={`${day.date.toLocaleDateString('fr-FR')} - ${getIntensityLabel(day.intensity.level)}${day.intensity.duration > 0 ? ` (${day.intensity.duration}min)` : ''}${day.intensity.reps > 0 ? ` - ${day.intensity.reps} reps` : ''}`}
+                  title={getDayTooltip(day, day.intensity)}
               >
                 <div className="w-full h-full flex flex-col items-center justify-center relative">
                   <span className={`text-sm font-medium ${
@@ -1331,6 +1412,50 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
             ))}
           </div>
+          
+          {/* ✅ NOUVEAU : Compteurs de justifications en bas du mois */}
+          {(() => {
+            const monthStats = calculateMonthJustificationStats(monthDays);
+            const hasJustifications = Object.values(monthStats).some(count => count > 0);
+            
+            if (!hasJustifications) return null;
+            
+            return (
+              <div className="mt-4 pt-4 border-t border-slate-700/50">
+                <div className="text-xs text-slate-400 mb-2">Justifications du mois :</div>
+                <div className="flex flex-wrap gap-2">
+                  {monthStats[JUSTIFICATION_REASONS.MALADIE] > 0 && (
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.MALADIE]}`}>
+                      <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.MALADIE]}</span>
+                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.MALADIE]}</span>
+                      <span className="text-white/80">{JUSTIFICATION_LABELS[JUSTIFICATION_REASONS.MALADIE]}</span>
+                    </div>
+                  )}
+                  {monthStats[JUSTIFICATION_REASONS.FLEMME] > 0 && (
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.FLEMME]}`}>
+                      <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.FLEMME]}</span>
+                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.FLEMME]}</span>
+                      <span className="text-white/80">{JUSTIFICATION_LABELS[JUSTIFICATION_REASONS.FLEMME]}</span>
+                    </div>
+                  )}
+                  {monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS] > 0 && (
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}`}>
+                      <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
+                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
+                      <span className="text-white/80">{JUSTIFICATION_LABELS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
+                    </div>
+                  )}
+                  {monthStats[JUSTIFICATION_REASONS.AUTRE] > 0 && (
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]}`}>
+                      <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.AUTRE]}</span>
+                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.AUTRE]}</span>
+                      <span className="text-white/80">{JUSTIFICATION_LABELS[JUSTIFICATION_REASONS.AUTRE]}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -1402,15 +1527,17 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                           key={dayIndex}
                           className={`
                             aspect-square rounded-sm cursor-pointer transition-all text-xs flex items-center justify-center
-                            ${getIntensityColor(day.intensity.level)}
+                            ${getDayColor(day.intensity)}
                             ${day.isCurrentMonth ? '' : 'opacity-20'}
                             hover:ring-1 hover:ring-purple-300 hover:scale-110
                           `}
                           onClick={() => {
+                            // ✅ CORRECTION : Dans la vue 12 mois, toujours changer de vue (comportement normal)
+                            // La modal de justification s'ouvrira seulement si on clique sur un jour blanc dans la vue mois
                             setCurrentDate(new Date(day.date));
                             setViewMode('month');
                           }}
-                          title={`${day.date.toLocaleDateString('fr-FR')} - ${getIntensityLabel(day.intensity.level)} (${day.intensity.reps} reps)`}
+                          title={getDayTooltip(day, day.intensity)}
                         >
                           {day.isCurrentMonth && day.intensity.level > 0 && (
                             <span className="text-white font-bold">
@@ -1433,6 +1560,45 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                       <div className="text-slate-400">temps total</div>
                     </div>
                   </div>
+                  
+                  {/* ✅ NOUVEAU : Compteurs de justifications en dessous des stats */}
+                  {(() => {
+                    const monthStats = calculateMonthJustificationStats(month.days);
+                    const hasJustifications = Object.values(monthStats).some(count => count > 0);
+                    
+                    if (!hasJustifications) return null;
+                    
+                    return (
+                      <div className="mt-2 pt-2 border-t border-slate-700/50">
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {monthStats[JUSTIFICATION_REASONS.MALADIE] > 0 && (
+                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.MALADIE]}`}>
+                              <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.MALADIE]}</span>
+                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.MALADIE]}</span>
+                            </div>
+                          )}
+                          {monthStats[JUSTIFICATION_REASONS.FLEMME] > 0 && (
+                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.FLEMME]}`}>
+                              <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.FLEMME]}</span>
+                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.FLEMME]}</span>
+                            </div>
+                          )}
+                          {monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS] > 0 && (
+                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}`}>
+                              <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
+                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
+                            </div>
+                          )}
+                          {monthStats[JUSTIFICATION_REASONS.AUTRE] > 0 && (
+                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]}`}>
+                              <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.AUTRE]}</span>
+                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.AUTRE]}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
@@ -1470,6 +1636,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
         const swimming = (garminData?.activities?.swimming || []).filter(a => a.date === dateStr);
         const jumpRope = (garminData?.activities?.jumpRope || []).filter(a => a.date === dateStr);
         const cardio = (garminData?.activities?.cardio || []).filter(a => a.date === dateStr);
+        // ✅ NOUVEAU : Récupérer la justification pour ce jour
+        const justification = selectedDate.intensity?.justification || getDayJustification(allData, dateStr);
         
         // Calculer les ajustements Garmin pour cette date
         let garminAdjustments = null;
@@ -1505,39 +1673,77 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </button>
             </div>
             
-            {/* Statistiques principales */}
-            <div>
-              <h4 className="text-white font-medium mb-3 flex items-center">
-                <Activity className="mr-2" size={16} />
-                Statistiques d'entraînement
-              </h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-white">{selectedDate.intensity.reps}</div>
-                  <div className="text-slate-400 text-sm">Répétitions totales</div>
-                </div>
-                <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-white">{selectedDate.intensity.completedCount}</div>
-                  <div className="text-slate-400 text-sm">Exercices classiques</div>
-                </div>
-                <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-white">{selectedDate.intensity.duration}min</div>
-                  <div className="text-slate-400 text-sm">Durée totale</div>
-                </div>
-                <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-white">{getIntensityLabel(selectedDate.intensity.level)}</div>
-                  <div className="text-slate-400 text-sm">Intensité globale</div>
-                  {garminAdjustments && (
-                    <div className="text-xs text-green-400 mt-1">
-                      {garminAdjustments.multiplier > 1 ? '⬆' : '⬇'} Ajusté Garmin
+            {/* ✅ NOUVEAU : Bandeau de justification si le jour est justifié */}
+            {justification && (
+              <div className={`mb-4 p-4 rounded-lg border-2 ${JUSTIFICATION_COLORS[justification.reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]} flex items-start gap-3`}>
+                <span className="text-2xl" aria-hidden="true">{JUSTIFICATION_ICONS[justification.reason] || '❓'}</span>
+                <div className="flex-1">
+                  <div className="text-white font-semibold mb-1">
+                    {JUSTIFICATION_LABELS[justification.reason] || 'Autre'}
+                  </div>
+                  {justification.note && (
+                    <div className="text-white/90 text-sm">
+                      {justification.note}
                     </div>
                   )}
                 </div>
+                <button
+                  onClick={() => {
+                    setSelectedDate(null);
+                    setJustificationModalDate(selectedDate.date);
+                  }}
+                  className="text-white/70 hover:text-white text-sm underline"
+                  title="Modifier la justification"
+                >
+                  Modifier
+                </button>
               </div>
-            </div>
+            )}
+            
+            {/* Statistiques principales - Masquer si jour justifié */}
+            {!justification && (
+              <div>
+                <h4 className="text-white font-medium mb-3 flex items-center">
+                  <Activity className="mr-2" size={16} />
+                  Statistiques d'entraînement
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-white">{selectedDate.intensity.reps}</div>
+                    <div className="text-slate-400 text-sm">Répétitions totales</div>
+                  </div>
+                  <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-white">{selectedDate.intensity.completedCount}</div>
+                    <div className="text-slate-400 text-sm">Exercices classiques</div>
+                  </div>
+                  <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-white">{selectedDate.intensity.duration}min</div>
+                    <div className="text-slate-400 text-sm">Durée totale</div>
+                  </div>
+                  <div className="bg-slate-700/50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-white">{getIntensityLabel(selectedDate.intensity.level)}</div>
+                    <div className="text-slate-400 text-sm">Intensité globale</div>
+                    {garminAdjustments && (
+                      <div className="text-xs text-green-400 mt-1">
+                        {garminAdjustments.multiplier > 1 ? '⬆' : '⬇'} Ajusté Garmin
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* ✅ NOUVEAU : Message si jour justifié (pas d'entraînement) */}
+            {justification && (
+              <div className="bg-slate-700/30 rounded-lg p-4 text-center">
+                <div className="text-slate-400 text-sm">
+                  Aucun entraînement enregistré ce jour (jour justifié)
+                </div>
+              </div>
+            )}
 
-            {/* Ajustements Garmin appliqués */}
-            {garminAdjustments && (
+            {/* Ajustements Garmin appliqués - Masquer si jour justifié */}
+            {!justification && garminAdjustments && (
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                 <h4 className="text-green-400 font-medium mb-2 flex items-center">
                   <Target className="mr-2" size={16} />
@@ -1580,8 +1786,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
             )}
             
-            {/* Activités Garmin */}
-            {(swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) && (
+            {/* Activités Garmin - Masquer si jour justifié */}
+            {!justification && (swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) && (
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
                   <Zap className="mr-2 text-green-400" size={16} />
@@ -1758,8 +1964,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
             )}
           
-            {/* Exercices réalisés */}
-            {selectedDate.intensity.session && selectedDate.intensity.session.exercises.length > 0 && (
+            {/* Exercices réalisés - Masquer si jour justifié */}
+            {!justification && selectedDate.intensity.session && selectedDate.intensity.session.exercises.length > 0 && (
               <div>
                 <h4 className="text-white font-medium mb-2">Exercices réalisés</h4>
                 <div className="space-y-2">
@@ -1775,6 +1981,16 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
           </div>
         );
       })()}
+      
+      {/* ✅ NOUVEAU : Modal de justification */}
+      {justificationModalDate && (
+        <JustificationModal
+          isOpen={!!justificationModalDate}
+          onClose={() => setJustificationModalDate(null)}
+          date={justificationModalDate}
+          existingJustification={getDayJustification(allData, getDateStr(justificationModalDate))}
+        />
+      )}
     </div>
   );
 };

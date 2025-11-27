@@ -5,6 +5,14 @@ import { workoutProgram } from '../data/workoutProgram';
 import { findExerciseInDatabase } from '../data/exerciseDatabase';
 import { getDateStr, getDayName } from '../utils/dateUtils';
 import { isMockEnduranceSession } from '../utils/calendarUtils';
+import { 
+  createJustification, 
+  updateJustification,
+  isValidJustificationDate,
+  isValidJustificationReason,
+  isValidJustificationNote,
+  getDayJustification as getDayJustificationUtil
+} from '../utils/dayJustificationUtils';
 
 const WorkoutContext = createContext();
 
@@ -2241,6 +2249,97 @@ const WorkoutProvider = ({ children }) => {
     }
   }, [getCurrentData, updateData]);
 
+  // ✅ NOUVEAU : Fonctions de gestion des justifications des jours sans activité
+  // Pattern identique aux autres fonctions de gestion (useCallback pour performance)
+  
+  /**
+   * Crée ou met à jour une justification pour un jour
+   * @param {string} dateStr - Date au format YYYY-MM-DD
+   * @param {string} reason - Raison de justification (maladie, flemme, pas_le_temps, autre)
+   * @param {string} note - Note optionnelle (max 200 caractères)
+   * @returns {Promise<{success: boolean}>}
+   */
+  const setDayJustification = useCallback(async (dateStr, reason, note = '') => {
+    try {
+      // Validation de la date
+      if (!isValidJustificationDate(dateStr)) {
+        throw new Error('Impossible de justifier une date future');
+      }
+      
+      // Validation de la raison
+      if (!isValidJustificationReason(reason)) {
+        throw new Error(`Raison invalide: ${reason}`);
+      }
+      
+      // Validation de la note
+      if (!isValidJustificationNote(note)) {
+        throw new Error(`Note trop longue (max 200 caractères)`);
+      }
+      
+      const currentData = getCurrentData();
+      const existingJustification = currentData.dayJustifications?.[dateStr];
+      
+      // Créer ou mettre à jour la justification
+      const justification = existingJustification
+        ? updateJustification(existingJustification, reason, note)
+        : createJustification(reason, note);
+      
+      // Mettre à jour les données
+      await updateData({
+        ...currentData,
+        dayJustifications: {
+          ...(currentData.dayJustifications || {}),
+          [dateStr]: justification
+        }
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('[WorkoutContext] ❌ Erreur lors de la sauvegarde de justification:', error);
+      throw error;
+    }
+  }, [getCurrentData, updateData]);
+
+  /**
+   * Supprime une justification pour un jour
+   * @param {string} dateStr - Date au format YYYY-MM-DD
+   * @returns {Promise<{success: boolean}>}
+   */
+  const removeDayJustification = useCallback(async (dateStr) => {
+    try {
+      const currentData = getCurrentData();
+      const dayJustifications = currentData.dayJustifications || {};
+      
+      // Vérifier si la justification existe
+      if (!dayJustifications[dateStr]) {
+        return { success: false, message: 'Aucune justification trouvée pour cette date' };
+      }
+      
+      // Supprimer la justification
+      const { [dateStr]: removed, ...rest } = dayJustifications;
+      
+      await updateData({
+        ...currentData,
+        dayJustifications: rest
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('[WorkoutContext] ❌ Erreur lors de la suppression de justification:', error);
+      throw error;
+    }
+  }, [getCurrentData, updateData]);
+
+  /**
+   * Récupère la justification d'un jour
+   * @param {string} dateStr - Date au format YYYY-MM-DD
+   * @returns {Object|null} Justification ou null si absente
+   */
+  const getDayJustification = useCallback((dateStr) => {
+    const currentData = getCurrentData();
+    return getDayJustificationUtil(currentData, dateStr);
+  }, [getCurrentData]);
+
   const contextValue = {
     // États principaux
     currentDate,
@@ -2343,7 +2442,12 @@ const WorkoutProvider = ({ children }) => {
     getWorkoutHistory,
     
     // ✅ NOUVEAU : Fonction pour supprimer les sessions mock d'endurance
-    deleteMockEnduranceSessions
+    deleteMockEnduranceSessions,
+    
+    // ✅ NOUVEAU : Gestion des justifications des jours sans activité
+    setDayJustification,
+    removeDayJustification,
+    getDayJustification
   };
 
   // Sauvegarde automatique du contexte
