@@ -3,11 +3,14 @@ import { useWorkout } from '../context/WorkoutContext';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import { preloadAdjacentImages, preloadImage } from '../utils/imageLazyLoader';
 import logger from '../utils/logger';
+import LanguageSelector from './ui/LanguageSelector';
+import { useTranslation } from '../utils/translations';
 
 const log = logger.component('HomePage');
 
 const HomePage = () => {
   const { setActiveTab } = useWorkout();
+  const t = useTranslation();
   const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [userLocation, setUserLocation] = useState('Localisation...');
@@ -389,8 +392,9 @@ const HomePage = () => {
 
   return (
     <div 
-      className="relative h-screen overflow-hidden bg-gradient-to-br from-slate-900/20 via-slate-800/10 to-slate-900/20"
+      className="relative h-screen overflow-hidden bg-gradient-to-br from-slate-900/20 via-slate-800/10 to-slate-900/20 flex flex-col"
       onClick={handleInteraction}
+      style={{ minHeight: '100vh', maxHeight: '100vh' }}
     >
       {/* ✅ Chargement initial : Écran de chargement élégant et professionnel */}
       {shouldShowLoading && (
@@ -481,7 +485,7 @@ const HomePage = () => {
       {!shouldShowLoading && (
         <>
       {/* Header */}
-      <header className="relative z-10 flex justify-between items-center p-8">
+      <header className="relative z-10 flex justify-between items-center p-8 flex-shrink-0">
         {/* Logo et informations */}
         <div className="flex flex-col items-center space-y-0.5 -ml-8 mr-8 -mt-24">
           <img 
@@ -590,25 +594,23 @@ const HomePage = () => {
       </header>
 
       {/* Contenu principal */}
-      <main className="relative z-10 flex-1 flex items-center justify-start px-8 pt-20">
-        <div className="max-w-2xl">
-          {/* Titre principal */}
-          <h1 className="text-6xl md:text-7xl font-light leading-tight mb-8" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-            <span className="text-white">Où</span>
-            <br />
-            <span className="text-white font-bold">Imagination</span>
-            <br />
-            <span className="text-white">Rencontre l'Intelligence</span>
+      <main className="relative z-10 flex-1 flex items-center justify-start px-8 pt-20 min-h-0 overflow-hidden">
+        <div className="max-w-2xl flex-shrink-0">
+          {/* Titre principal - Proportions ajustées */}
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-light leading-[1.1] mb-8" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)', minHeight: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: '0.25rem' }}>
+            <span className="text-white">{t('home.title.line1')}</span>
+            <span className="text-white font-bold">{t('home.title.line2')}</span>
+            <span className="text-white">{t('home.title.line3')}</span>
           </h1>
 
-          {/* Bouton CTA */}
-          <div className="relative">
+          {/* Bouton CTA - Texte non coupé */}
+          <div className="relative flex-shrink-0">
             <button 
               onClick={() => navigateToTab('today')}
-              className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-8 py-4 rounded-2xl text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl"
+              className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-8 py-4 rounded-2xl text-base md:text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl whitespace-nowrap overflow-visible"
               style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
             >
-              COMMENCER L'ENTRAÎNEMENT
+              {t('home.cta')}
             </button>
             
           </div>
@@ -616,7 +618,7 @@ const HomePage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 flex justify-between items-end p-8 pb-12">
+      <footer className="relative z-10 flex justify-between items-end p-8 pb-12 flex-shrink-0" style={{ minHeight: 'fit-content' }}>
         {/* Section À propos améliorée */}
         <div className="max-w-2xl bg-black/10 backdrop-blur-3xl rounded-3xl p-10 border border-white/5 shadow-2xl">
           <div className="flex items-center mb-6">
@@ -652,8 +654,8 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Mots-clés simplifiés */}
-        <div className="text-right">
+        {/* Mots-clés simplifiés - Collés tout à droite */}
+        <div className="text-right flex flex-col items-end flex-shrink-0" style={{ minHeight: 'fit-content' }}>
           <div className="text-white text-base font-semibold space-y-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
             <div>Fitness</div>
             <div>Performance</div>
@@ -661,6 +663,11 @@ const HomePage = () => {
             <div>Intelligence</div>
             <div>Commencez votre transformation</div>
             <div>{userLocation}</div>
+          </div>
+          
+          {/* Sélecteur de langue en dessous de Localisation - Dimensions fixes pour éviter les décalages */}
+          <div className="mt-2 w-[44px] h-[44px] flex items-center justify-end flex-shrink-0">
+            <LanguageSelector variant="compact" />
           </div>
         </div>
       </footer>

@@ -35,6 +35,8 @@ import {
   JUSTIFICATION_COLORS,
   JUSTIFICATION_ICONS
 } from '../utils/dayJustificationUtils';
+import { useTranslation } from '../utils/translations';
+import { useFormatters } from '../utils/translations/formatters-hook';
 
 const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -48,6 +50,10 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   const { data, getCurrentData } = useWorkout();
   // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées)
   const allData = getCurrentData();
+  
+  // ✅ NOUVEAU : Traductions
+  const t = useTranslation();
+  const { formatDate: formatLocaleDate } = useFormatters();
 
   // ✅ PHASE 2.3 : Cache pour les intensités calculées (useRef pour persister entre renders)
   const intensityCache = useRef({});
@@ -1244,11 +1250,11 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
 
   const getIntensityLabel = (level) => {
     const labels = {
-      4: 'Extrême',
-      3: 'Intense',
-      2: 'Modéré', 
-      1: 'Léger',
-      0: 'Repos'
+      4: t('calendar.heatmap.intensityLabels.extreme'),
+      3: t('calendar.heatmap.intensityLabels.intense'),
+      2: t('calendar.heatmap.intensityLabels.moderate'), 
+      1: t('calendar.heatmap.intensityLabels.light'),
+      0: t('calendar.heatmap.intensityLabels.rest')
     };
     return labels[level];
   };
@@ -1259,10 +1265,20 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   const streaks = useMemo(() => calculateStreaks(), [workoutHistory]);
 
   // Constantes pour l'affichage
-  const monthNames = [
-    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-  ];
+  const monthNames = useMemo(() => [
+    t('calendar.heatmap.monthNames.january'),
+    t('calendar.heatmap.monthNames.february'),
+    t('calendar.heatmap.monthNames.march'),
+    t('calendar.heatmap.monthNames.april'),
+    t('calendar.heatmap.monthNames.may'),
+    t('calendar.heatmap.monthNames.june'),
+    t('calendar.heatmap.monthNames.july'),
+    t('calendar.heatmap.monthNames.august'),
+    t('calendar.heatmap.monthNames.september'),
+    t('calendar.heatmap.monthNames.october'),
+    t('calendar.heatmap.monthNames.november'),
+    t('calendar.heatmap.monthNames.december')
+  ], [t]);
   
   const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
@@ -1282,7 +1298,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
-                {mode === 'month' ? 'Mois' : mode === 'year' ? 'Année' : 'Streaks'}
+                {mode === 'month' ? t('calendar.heatmap.viewModes.month') : mode === 'year' ? t('calendar.heatmap.viewModes.year') : t('calendar.heatmap.viewModes.streaks')}
               </button>
             ))}
           </div>
@@ -1301,7 +1317,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               ? `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
               : viewMode === 'year'
               ? currentDate.getFullYear()
-              : 'Analyse des Streaks'
+              : t('calendar.heatmap.streaksAnalysis')
             }
           </h3>
           
@@ -1318,7 +1334,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-slate-300 text-sm">Intensité:</span>
+            <span className="text-slate-300 text-sm">{t('calendar.heatmap.intensity')}</span>
             <div className="flex gap-2">
               {[0, 1, 2, 3, 4].map(level => (
                 <div key={level} className="flex items-center gap-1">
@@ -1332,7 +1348,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             onClick={() => setShowStats(!showStats)}
             className="text-sm text-purple-400 hover:text-purple-300"
           >
-            {showStats ? 'Masquer stats' : 'Afficher stats'}
+            {showStats ? t('calendar.heatmap.hideStats') : t('calendar.heatmap.showStats')}
           </button>
         </div>
       </div>
@@ -1422,7 +1438,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             
             return (
               <div className="mt-4 pt-4 border-t border-slate-700/50">
-                <div className="text-xs text-slate-400 mb-2">Justifications du mois :</div>
+                <div className="text-xs text-slate-400 mb-2">{t('calendar.heatmap.monthlyJustifications')}</div>
                 <div className="flex flex-wrap gap-2">
                   {monthStats[JUSTIFICATION_REASONS.MALADIE] > 0 && (
                     <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.MALADIE]}`}>
@@ -1466,12 +1482,12 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <TrendingUp className="text-green-400" />
-              Résumé {currentDate.getFullYear()}
+              {t('calendar.heatmap.yearSummary', { year: currentDate.getFullYear() })}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div className="bg-slate-700/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm">Meilleur mois</div>
+                <div className="text-slate-400 text-sm">{t('calendar.heatmap.bestMonth')}</div>
                 <div className="text-xl font-bold text-white">
                   {yearStats.bestMonth ? monthNames[yearStats.bestMonth.date.getMonth()] : 'N/A'}
                 </div>
@@ -1481,7 +1497,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
               
               <div className="bg-slate-700/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm">Meilleur jour</div>
+                <div className="text-slate-400 text-sm">{t('calendar.heatmap.bestDay')}</div>
                 <div className="text-xl font-bold text-white">
                   {yearStats.bestDay ? yearStats.bestDay.date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : 'N/A'}
                 </div>
@@ -1491,9 +1507,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
               
               <div className="bg-slate-700/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm">Moyenne/séance</div>
+                <div className="text-slate-400 text-sm">{t('calendar.heatmap.avgPerSession')}</div>
                 <div className="text-xl font-bold text-white">{yearStats.avgIntensity}</div>
-                <div className="text-sm text-slate-300">reps par séance</div>
+                <div className="text-sm text-slate-300">{t('calendar.heatmap.repsPerSession')}</div>
               </div>
             </div>
           </div>
@@ -1508,7 +1524,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                       {monthNames[month.date.getMonth()]}
                     </h4>
                     <div className="text-xs text-slate-400">
-                      {month.sessionsCount} séances
+                      {t('calendar.stats.sessions', { count: month.sessionsCount })}
                     </div>
                   </div>
                   
@@ -1553,11 +1569,11 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-slate-700/50 rounded p-2 text-center">
                       <div className="text-white font-bold">{month.totalReps}</div>
-                      <div className="text-slate-400">reps + endurance</div>
+                      <div className="text-slate-400">{t('calendar.stats.reps_endurance')}</div>
                     </div>
                     <div className="bg-slate-700/50 rounded p-2 text-center">
                       <div className="text-white font-bold">{month.totalDuration}min</div>
-                      <div className="text-slate-400">temps total</div>
+                      <div className="text-slate-400">{t('calendar.stats.total_time')}</div>
                     </div>
                   </div>
                   
@@ -1613,17 +1629,17 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             <div className="bg-slate-700/50 rounded-lg p-6 text-center">
               <Flame className="w-12 h-12 text-orange-500 mx-auto mb-4" />
               <div className="text-3xl font-bold text-white mb-2">{streaks.currentStreak}</div>
-              <div className="text-slate-300">Streak actuel</div>
+              <div className="text-slate-300">{t('calendar.heatmap.streaks.currentStreak')}</div>
               <div className="text-sm text-slate-400 mt-2">
-                {streaks.currentStreak > 0 ? 'Jours consécutifs' : 'Aucun streak en cours'}
+                {streaks.currentStreak > 0 ? t('calendar.heatmap.streaks.consecutiveDays') : t('calendar.heatmap.streaks.noStreak')}
               </div>
             </div>
             
             <div className="bg-slate-700/50 rounded-lg p-6 text-center">
               <Award className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
               <div className="text-3xl font-bold text-white mb-2">{streaks.longestStreak}</div>
-              <div className="text-slate-300">Record personnel</div>
-              <div className="text-sm text-slate-400 mt-2">Plus long streak</div>
+              <div className="text-slate-300">{t('calendar.heatmap.streaks.longestStreak')}</div>
+              <div className="text-sm text-slate-400 mt-2">{t('calendar.heatmap.streaks.longestStreakDesc')}</div>
             </div>
           </div>
         </div>
@@ -1658,7 +1674,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             {/* En-tête */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white">
-                {selectedDate.date.toLocaleDateString('fr-FR', { 
+                {formatLocaleDate(selectedDate.date, { 
                   weekday: 'long', 
                   year: 'numeric', 
                   month: 'long', 
@@ -1693,9 +1709,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                     setJustificationModalDate(selectedDate.date);
                   }}
                   className="text-white/70 hover:text-white text-sm underline"
-                  title="Modifier la justification"
+                  title={t('calendar.heatmap.dayDetails.modifyJustification')}
                 >
-                  Modifier
+                  {t('calendar.heatmap.dayDetails.modify')}
                 </button>
               </div>
             )}
@@ -1705,27 +1721,27 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
                   <Activity className="mr-2" size={16} />
-                  Statistiques d'entraînement
+                  {t('calendar.heatmap.dayDetails.workoutStats')}
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-slate-700/50 rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-white">{selectedDate.intensity.reps}</div>
-                    <div className="text-slate-400 text-sm">Répétitions totales</div>
+                    <div className="text-slate-400 text-sm">{t('calendar.heatmap.dayDetails.totalReps')}</div>
                   </div>
                   <div className="bg-slate-700/50 rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-white">{selectedDate.intensity.completedCount}</div>
-                    <div className="text-slate-400 text-sm">Exercices classiques</div>
+                    <div className="text-slate-400 text-sm">{t('calendar.heatmap.dayDetails.classicExercises')}</div>
                   </div>
                   <div className="bg-slate-700/50 rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-white">{selectedDate.intensity.duration}min</div>
-                    <div className="text-slate-400 text-sm">Durée totale</div>
+                    <div className="text-slate-400 text-sm">{t('calendar.heatmap.dayDetails.totalDuration')}</div>
                   </div>
                   <div className="bg-slate-700/50 rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-white">{getIntensityLabel(selectedDate.intensity.level)}</div>
-                    <div className="text-slate-400 text-sm">Intensité globale</div>
+                    <div className="text-slate-400 text-sm">{t('calendar.heatmap.dayDetails.globalIntensity')}</div>
                     {garminAdjustments && (
                       <div className="text-xs text-green-400 mt-1">
-                        {garminAdjustments.multiplier > 1 ? '⬆' : '⬇'} Ajusté Garmin
+                        {garminAdjustments.multiplier > 1 ? '⬆' : '⬇'} {t('calendar.heatmap.dayDetails.garminAdjusted')}
                       </div>
                     )}
                   </div>
@@ -1737,7 +1753,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             {justification && (
               <div className="bg-slate-700/30 rounded-lg p-4 text-center">
                 <div className="text-slate-400 text-sm">
-                  Aucun entraînement enregistré ce jour (jour justifié)
+                  {t('calendar.heatmap.dayDetails.noWorkoutJustified')}
                 </div>
               </div>
             )}
@@ -1747,38 +1763,38 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                 <h4 className="text-green-400 font-medium mb-2 flex items-center">
                   <Target className="mr-2" size={16} />
-                  Ajustements Garmin appliqués
+                  {t('calendar.heatmap.dayDetails.garminAdjustments')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   {garminAdjustments.adjustments.timeReal && (
                     <div className="bg-slate-800/50 rounded p-2">
-                      <div className="text-slate-300">⏱️ Temps réel</div>
+                      <div className="text-slate-300">⏱️ {t('calendar.heatmap.dayDetails.realTime')}</div>
                       <div className="text-white">
-                        {garminAdjustments.adjustments.timeReal.réel.toFixed(0)}min (prévu: {garminAdjustments.adjustments.timeReal.prévu}min)
+                        {garminAdjustments.adjustments.timeReal.réel.toFixed(0)}min ({t('calendar.heatmap.dayDetails.planned')}: {garminAdjustments.adjustments.timeReal.prévu}min)
                       </div>
                     </div>
                   )}
                   {garminAdjustments.adjustments.swimmingRecord && garminAdjustments.adjustments.swimmingRecord.distance > garminAdjustments.adjustments.swimmingRecord.record && (
                     <div className="bg-slate-800/50 rounded p-2">
-                      <div className="text-slate-300">🏊 Record natation</div>
+                      <div className="text-slate-300">🏊 {t('calendar.heatmap.dayDetails.swimmingRecord')}</div>
                       <div className="text-white">
-                        {garminAdjustments.adjustments.swimmingRecord.distance}m (record: {garminAdjustments.adjustments.swimmingRecord.record}m)
+                        {garminAdjustments.adjustments.swimmingRecord.distance}m ({t('calendar.heatmap.dayDetails.record')}: {garminAdjustments.adjustments.swimmingRecord.record}m)
                       </div>
                     </div>
                   )}
                   {garminAdjustments.adjustments.jumpRopeRecord && garminAdjustments.adjustments.jumpRopeRecord.sauts > garminAdjustments.adjustments.jumpRopeRecord.record && (
                     <div className="bg-slate-800/50 rounded p-2">
-                      <div className="text-slate-300">🪢 Record corde</div>
+                      <div className="text-slate-300">🪢 {t('calendar.heatmap.dayDetails.jumpRopeRecord')}</div>
                       <div className="text-white">
-                        {garminAdjustments.adjustments.jumpRopeRecord.sauts} sauts (record: {garminAdjustments.adjustments.jumpRopeRecord.record})
+                        {garminAdjustments.adjustments.jumpRopeRecord.sauts} {t('calendar.heatmap.dayDetails.jumps')} ({t('calendar.heatmap.dayDetails.record')}: {garminAdjustments.adjustments.jumpRopeRecord.record})
                       </div>
                     </div>
                   )}
                   {garminAdjustments.adjustments.caloriesActive && (
                     <div className="bg-slate-800/50 rounded p-2">
-                      <div className="text-slate-300">🔥 Calories actives</div>
+                      <div className="text-slate-300">🔥 {t('calendar.heatmap.dayDetails.activeCalories')}</div>
                       <div className="text-white">
-                        {Math.round(garminAdjustments.adjustments.caloriesActive.calories)} (moy: {Math.round(garminAdjustments.adjustments.caloriesActive.moyenne)})
+                        {Math.round(garminAdjustments.adjustments.caloriesActive.calories)} ({t('calendar.heatmap.dayDetails.average')}: {Math.round(garminAdjustments.adjustments.caloriesActive.moyenne)})
                       </div>
                     </div>
                   )}
@@ -1791,18 +1807,18 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
                   <Zap className="mr-2 text-green-400" size={16} />
-                  Données Garmin Connect
+                  {t('calendar.heatmap.dayDetails.garminData')}
                 </h4>
                 <div className="space-y-4">
                   {/* Natation */}
                   {swimming.length > 0 && (
                     <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-4">
-                      <div className="text-cyan-400 font-medium mb-2">🏊 Natation ({swimming.length} session{swimming.length > 1 ? 's' : ''})</div>
+                      <div className="text-cyan-400 font-medium mb-2">🏊 {t('calendar.heatmap.dayDetails.swimming')} ({swimming.length} {swimming.length > 1 ? t('calendar.heatmap.dayDetails.sessions') : t('calendar.heatmap.dayDetails.session')})</div>
                       {swimming.map((act, idx) => (
                         <div key={idx} className="bg-slate-800/50 rounded p-2 mt-2 text-sm">
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <span className="text-slate-400">Distance:</span>
+                              <span className="text-slate-400">{t('calendar.heatmap.dayDetails.distance')}:</span>
                               <span className="text-white ml-2">{act.distance || act.totalDistance || 0}m</span>
                             </div>
                             <div>
@@ -1813,7 +1829,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                             </div>
                             {act.avgHR && (
                               <div>
-                                <span className="text-slate-400">FC moy:</span>
+                                <span className="text-slate-400">{t('calendar.heatmap.dayDetails.avgHR')}:</span>
                                 <span className="text-white ml-2">{act.avgHR} bpm</span>
                               </div>
                             )}
@@ -1832,12 +1848,12 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                   {/* Corde à sauter */}
                   {jumpRope.length > 0 && (
                     <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                      <div className="text-green-400 font-medium mb-2">🪢 Corde à sauter ({jumpRope.length} session{jumpRope.length > 1 ? 's' : ''})</div>
+                      <div className="text-green-400 font-medium mb-2">🪢 {t('calendar.heatmap.dayDetails.jumpRope')} ({jumpRope.length} {jumpRope.length > 1 ? t('calendar.heatmap.dayDetails.sessions') : t('calendar.heatmap.dayDetails.session')})</div>
                       {jumpRope.map((act, idx) => (
                         <div key={idx} className="bg-slate-800/50 rounded p-2 mt-2 text-sm">
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <span className="text-slate-400">Sauts:</span>
+                              <span className="text-slate-400">{t('calendar.heatmap.dayDetails.jumps')}:</span>
                               <span className="text-white ml-2">{act.jumps || 0}</span>
                             </div>
                             <div>
@@ -1848,13 +1864,13 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                             </div>
                             {act.speed && (
                               <div>
-                                <span className="text-slate-400">Vitesse:</span>
-                                <span className="text-white ml-2">{act.speed.toFixed(1)} sauts/min</span>
+                                <span className="text-slate-400">{t('calendar.heatmap.dayDetails.speed')}:</span>
+                                <span className="text-white ml-2">{act.speed.toFixed(1)} {t('calendar.heatmap.dayDetails.jumps')}/min</span>
                               </div>
                             )}
                             {act.maxContinuous && (
                               <div>
-                                <span className="text-slate-400">Max continu:</span>
+                                <span className="text-slate-400">{t('calendar.heatmap.dayDetails.maxContinuous')}:</span>
                                 <span className="text-white ml-2">{act.maxContinuous}</span>
                               </div>
                             )}
@@ -1867,7 +1883,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                   {/* Cardio */}
                   {cardio.length > 0 && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
-                      <div className="text-red-400 font-medium mb-2">❤️ Activités cardio ({cardio.length} session{cardio.length > 1 ? 's' : ''})</div>
+                      <div className="text-red-400 font-medium mb-2">❤️ {t('calendar.heatmap.dayDetails.cardioActivities')} ({cardio.length} {cardio.length > 1 ? t('calendar.heatmap.dayDetails.sessions') : t('calendar.heatmap.dayDetails.session')})</div>
                       {cardio.map((act, idx) => (
                         <div key={idx} className="bg-slate-800/50 rounded p-2 mt-2 text-sm">
                           <div className="grid grid-cols-2 gap-2">
@@ -1892,29 +1908,29 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                   {/* Métriques quotidiennes */}
                   {dailyMetrics && (
                     <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
-                      <div className="text-purple-400 font-medium mb-2">📊 Métriques quotidiennes</div>
+                      <div className="text-purple-400 font-medium mb-2">📊 {t('calendar.heatmap.dayDetails.dailyMetrics')}</div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         {dailyMetrics.steps > 0 && (
                           <div className="bg-slate-800/50 rounded p-2">
-                            <div className="text-slate-400">Pas</div>
+                            <div className="text-slate-400">{t('calendar.heatmap.dayDetails.steps')}</div>
                             <div className="text-white font-semibold">{dailyMetrics.steps.toLocaleString()}</div>
                           </div>
                         )}
                         {dailyMetrics.distance > 0 && (
                           <div className="bg-slate-800/50 rounded p-2">
-                            <div className="text-slate-400">Distance</div>
+                            <div className="text-slate-400">{t('calendar.heatmap.dayDetails.distance')}</div>
                             <div className="text-white font-semibold">{dailyMetrics.distance.toFixed(1)} km</div>
                           </div>
                         )}
                         {dailyMetrics.calories?.active > 0 && (
                           <div className="bg-slate-800/50 rounded p-2">
-                            <div className="text-slate-400">Calories actives</div>
+                            <div className="text-slate-400">{t('calendar.heatmap.dayDetails.activeCalories')}</div>
                             <div className="text-white font-semibold">{Math.round(dailyMetrics.calories.active)}</div>
                           </div>
                         )}
                         {dailyMetrics.heartRate?.resting > 0 && (
                           <div className="bg-slate-800/50 rounded p-2">
-                            <div className="text-slate-400">FC repos</div>
+                            <div className="text-slate-400">{t('calendar.heatmap.dayDetails.restingHR')}</div>
                             <div className="text-white font-semibold">{dailyMetrics.heartRate.resting} bpm</div>
                           </div>
                         )}
@@ -1930,17 +1946,17 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
                   <Activity className="mr-2" size={16} />
-                  Activités d'endurance
+                  {t('calendar.heatmap.dayDetails.enduranceActivities')}
                 </h4>
                 <div className={`grid gap-4 ${selectedDate.intensity.enduranceData.reps > 0 ? 'grid-cols-2 md:grid-cols-5' : 'grid-cols-2 md:grid-cols-4'}`}>
                   <div className="bg-orange-700/30 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-orange-200">{selectedDate.intensity.enduranceData.sessions}</div>
-                    <div className="text-orange-300 text-sm">Sessions</div>
+                    <div className="text-orange-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceSessions')}</div>
                   </div>
                   {selectedDate.intensity.enduranceData.reps > 0 && (
                     <div className="bg-red-700/30 rounded-lg p-3 text-center">
                       <div className="text-lg font-bold text-red-200">{selectedDate.intensity.enduranceData.reps}</div>
-                      <div className="text-red-300 text-sm">Pompes</div>
+                      <div className="text-red-300 text-sm">{t('calendar.heatmap.dayDetails.pushups')}</div>
                     </div>
                   )}
                   <div className="bg-blue-700/30 rounded-lg p-3 text-center">
@@ -1950,15 +1966,15 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                         : parseFloat(selectedDate.intensity.enduranceData.distance.toFixed(1))
                       }m
                     </div>
-                    <div className="text-blue-300 text-sm">Distance</div>
+                    <div className="text-blue-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceDistance')}</div>
                   </div>
                   <div className="bg-green-700/30 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-green-200">{selectedDate.intensity.enduranceData.jumps}</div>
-                    <div className="text-green-300 text-sm">Sauts</div>
+                    <div className="text-green-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceJumps')}</div>
                   </div>
                   <div className="bg-purple-700/30 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-purple-200">{selectedDate.intensity.enduranceData.duration}min</div>
-                    <div className="text-purple-300 text-sm">Durée endurance</div>
+                    <div className="text-purple-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceDuration')}</div>
                   </div>
                 </div>
               </div>
@@ -1967,12 +1983,12 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             {/* Exercices réalisés - Masquer si jour justifié */}
             {!justification && selectedDate.intensity.session && selectedDate.intensity.session.exercises.length > 0 && (
               <div>
-                <h4 className="text-white font-medium mb-2">Exercices réalisés</h4>
+                <h4 className="text-white font-medium mb-2">{t('calendar.heatmap.dayDetails.exercisesCompleted')}</h4>
                 <div className="space-y-2">
                   {selectedDate.intensity.session.exercises.map((exercise, index) => (
                     <div key={index} className="bg-slate-700/30 rounded p-2 flex justify-between">
                       <span className="text-slate-300">{exercise.name}</span>
-                      <span className="text-white font-medium">{exercise.reps} reps</span>
+                      <span className="text-white font-medium">{exercise.reps} {t('calendar.heatmap.dayDetails.reps')}</span>
                     </div>
                   ))}
                 </div>

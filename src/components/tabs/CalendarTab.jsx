@@ -13,10 +13,12 @@ import {
   JUSTIFICATION_COLORS,
   JUSTIFICATION_ICONS
 } from '../../utils/dayJustificationUtils';
+import { useTranslation } from '../../utils/translations';
 
 const CalendarTab = () => {
   // Récupérer les données directement du contexte pour la réactivité
   const { data, getCurrentData, deleteMockEnduranceSessions } = useWorkout();
+  const t = useTranslation();
   
   // Utiliser getCurrentData() pour inclure les données temporaires non sauvegardées
   const currentData = getCurrentData();
@@ -207,7 +209,7 @@ const CalendarTab = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <Activity className="text-purple-400" size={24} />
-            Compteur de Séances
+            {t('calendar.sessionCounter.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -217,40 +219,40 @@ const CalendarTab = () => {
             <div className="bg-slate-800/50 rounded-lg p-4 text-center">
               <div className="flex items-center justify-center mb-2">
                 <Calendar className="text-blue-400 mr-2" size={20} />
-                <span className="text-slate-300 text-sm">Total Séances</span>
+                <span className="text-slate-300 text-sm">{t('calendar.sessionCounter.totalSessions')}</span>
               </div>
               <div className="text-2xl font-bold text-white">{sessionStats.totalSessions}</div>
-              <div className="text-xs text-slate-400">jours d'entraînement</div>
+              <div className="text-xs text-slate-400">{t('calendar.sessionCounter.trainingDays')}</div>
             </div>
 
             {/* Total des exercices */}
             <div className="bg-slate-800/50 rounded-lg p-4 text-center">
               <div className="flex items-center justify-center mb-2">
                 <Target className="text-green-400 mr-2" size={20} />
-                <span className="text-slate-300 text-sm">Total Exercices</span>
+                <span className="text-slate-300 text-sm">{t('calendar.sessionCounter.totalExercises')}</span>
               </div>
               <div className="text-2xl font-bold text-white">{sessionStats.totalExercises}</div>
-              <div className="text-xs text-slate-400">exercices réalisés</div>
+              <div className="text-xs text-slate-400">{t('calendar.sessionCounter.exercisesCompleted')}</div>
             </div>
 
             {/* Moyenne par séance */}
             <div className="bg-slate-800/50 rounded-lg p-4 text-center">
               <div className="flex items-center justify-center mb-2">
                 <Activity className="text-yellow-400 mr-2" size={20} />
-                <span className="text-slate-300 text-sm">Moy./Séance</span>
+                <span className="text-slate-300 text-sm">{t('calendar.sessionCounter.avgPerSession')}</span>
               </div>
               <div className="text-2xl font-bold text-white">{sessionStats.avgExercisesPerSession}</div>
-              <div className="text-xs text-slate-400">exercices/séance</div>
+              <div className="text-xs text-slate-400">{t('calendar.sessionCounter.exercisesPerSession')}</div>
             </div>
 
             {/* Séances cette semaine */}
             <div className="bg-slate-800/50 rounded-lg p-4 text-center">
               <div className="flex items-center justify-center mb-2">
                 <Flame className="text-orange-400 mr-2" size={20} />
-                <span className="text-slate-300 text-sm">Cette Semaine</span>
+                <span className="text-slate-300 text-sm">{t('calendar.sessionCounter.thisWeek')}</span>
               </div>
               <div className="text-2xl font-bold text-white">{sessionStats.sessionsThisWeek}</div>
-              <div className="text-xs text-slate-400">séances / 7 jours</div>
+              <div className="text-xs text-slate-400">{t('calendar.sessionCounter.sessionsPer7Days')}</div>
             </div>
           </div>
 
@@ -259,7 +261,7 @@ const CalendarTab = () => {
             <div className="mb-6">
               <h4 className="text-white font-medium mb-3 flex items-center">
                 <Zap className="mr-2 text-purple-400" size={16} />
-                Défis d'Endurance
+                {t('calendar.enduranceChallenges.title')}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
                 {/* Boxe */}
@@ -267,10 +269,10 @@ const CalendarTab = () => {
                   <div className="bg-red-900/30 border border-red-500/30 rounded-lg p-3 text-center">
                     <div className="flex items-center justify-center mb-1">
                       <Dumbbell className="text-red-400 mr-1" size={16} />
-                      <span className="text-red-300 text-xs font-medium">Boxe</span>
+                      <span className="text-red-300 text-xs font-medium">{t('calendar.enduranceChallenges.boxing')}</span>
                     </div>
                     <div className="text-lg font-bold text-white">{enduranceStats.byActivity.boxing.sessions}</div>
-                    <div className="text-xs text-red-400">{enduranceStats.byActivity.boxing.reps} reps</div>
+                    <div className="text-xs text-red-400">{enduranceStats.byActivity.boxing.reps} {t('calendar.enduranceChallenges.reps')}</div>
                   </div>
                 )}
 
@@ -279,10 +281,10 @@ const CalendarTab = () => {
                   <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-3 text-center">
                     <div className="flex items-center justify-center mb-1">
                       <Activity className="text-blue-400 mr-1" size={16} />
-                      <span className="text-blue-300 text-xs font-medium">Pompes</span>
+                      <span className="text-blue-300 text-xs font-medium">{t('calendar.enduranceChallenges.pushups')}</span>
                     </div>
                     <div className="text-lg font-bold text-white">{enduranceStats.byActivity.pushups.sessions}</div>
-                    <div className="text-xs text-blue-400">{enduranceStats.byActivity.pushups.reps} reps</div>
+                    <div className="text-xs text-blue-400">{enduranceStats.byActivity.pushups.reps} {t('calendar.enduranceChallenges.reps')}</div>
                   </div>
                 )}
 
@@ -291,10 +293,10 @@ const CalendarTab = () => {
                   <div className="bg-cyan-900/30 border border-cyan-500/30 rounded-lg p-3 text-center">
                     <div className="flex items-center justify-center mb-1">
                       <Target className="text-cyan-400 mr-1" size={16} />
-                      <span className="text-cyan-300 text-xs font-medium">Natation</span>
+                      <span className="text-cyan-300 text-xs font-medium">{t('calendar.enduranceChallenges.swimming')}</span>
                     </div>
                     <div className="text-lg font-bold text-white">{enduranceStats.byActivity.swimming.sessions}</div>
-                    <div className="text-xs text-cyan-400">{enduranceStats.byActivity.swimming.distance}m</div>
+                    <div className="text-xs text-cyan-400">{enduranceStats.byActivity.swimming.distance}{t('calendar.enduranceChallenges.meters')}</div>
                   </div>
                 )}
 
@@ -303,10 +305,10 @@ const CalendarTab = () => {
                   <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3 text-center">
                     <div className="flex items-center justify-center mb-1">
                       <Zap className="text-green-400 mr-1" size={16} />
-                      <span className="text-green-300 text-xs font-medium">Corde</span>
+                      <span className="text-green-300 text-xs font-medium">{t('calendar.enduranceChallenges.jumpropeShort')}</span>
                     </div>
                     <div className="text-lg font-bold text-white">{enduranceStats.byActivity.jumprope.sessions}</div>
-                    <div className="text-xs text-green-400">{enduranceStats.byActivity.jumprope.jumps} sauts</div>
+                    <div className="text-xs text-green-400">{enduranceStats.byActivity.jumprope.jumps} {t('calendar.enduranceChallenges.jumps')}</div>
                   </div>
                 )}
 
@@ -315,10 +317,10 @@ const CalendarTab = () => {
                   <div className="bg-orange-900/30 border border-orange-500/30 rounded-lg p-3 text-center">
                     <div className="flex items-center justify-center mb-1">
                       <Flame className="text-orange-400 mr-1" size={16} />
-                      <span className="text-orange-300 text-xs font-medium">Course</span>
+                      <span className="text-orange-300 text-xs font-medium">{t('calendar.enduranceChallenges.running')}</span>
                     </div>
                     <div className="text-lg font-bold text-white">{enduranceStats.byActivity.running.sessions}</div>
-                    <div className="text-xs text-orange-400">{enduranceStats.byActivity.running.distance}m</div>
+                    <div className="text-xs text-orange-400">{enduranceStats.byActivity.running.distance}{t('calendar.enduranceChallenges.meters')}</div>
                   </div>
                 )}
               </div>
@@ -329,13 +331,13 @@ const CalendarTab = () => {
           <div className="mt-6">
             <h4 className="text-white font-medium mb-3 flex items-center">
               <Activity className="mr-2" size={16} />
-              Activité des 7 derniers jours
+              {t('calendar.activityChart.title')}
             </h4>
             <div className="bg-slate-800/30 rounded-lg p-4">
               {/* Légende des intensités */}
               <div className="flex items-center justify-between mb-4 text-xs text-slate-400">
-                <span>Faible activité</span>
-                <span>Activité élevée</span>
+                <span>{t('calendar.activityChart.lowActivity')}</span>
+                <span>{t('calendar.activityChart.highActivity')}</span>
               </div>
               
               {/* Graphique en barres */}
@@ -361,7 +363,7 @@ const CalendarTab = () => {
                         />
                         {/* Tooltip */}
                         <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                          {dayName}: {count} exercices
+                          {dayName}: {count} {t('calendar.activityChart.exercises')}
                         </div>
                       </div>
                       
@@ -384,17 +386,17 @@ const CalendarTab = () => {
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-lg font-bold text-white">{sessionStats.last7Days.reduce((a, b) => a + b, 0)}</div>
-                    <div className="text-xs text-slate-400">Total exercices</div>
+                    <div className="text-xs text-slate-400">{t('calendar.activityChart.totalExercises')}</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-white">{sessionStats.last7Days.filter(count => count > 0).length}</div>
-                    <div className="text-xs text-slate-400">Jours actifs</div>
+                    <div className="text-xs text-slate-400">{t('calendar.activityChart.activeDays')}</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-white">
                       {sessionStats.last7Days.length > 0 ? Math.round(sessionStats.last7Days.reduce((a, b) => a + b, 0) / sessionStats.last7Days.length) : 0}
                     </div>
-                    <div className="text-xs text-slate-400">Moyenne/jour</div>
+                    <div className="text-xs text-slate-400">{t('calendar.activityChart.avgPerDay')}</div>
                   </div>
                 </div>
               </div>
@@ -407,7 +409,7 @@ const CalendarTab = () => {
       {/* ✅ NOUVEAU : Légende des justifications */}
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white text-sm">Légende des Justifications</CardTitle>
+          <CardTitle className="text-white text-sm">{t('calendar.legend.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -428,7 +430,7 @@ const CalendarTab = () => {
             })}
           </div>
           <p className="text-xs text-slate-400 mt-3">
-            Cliquez sur un jour sans activité dans le calendrier pour le justifier.
+            {t('calendar.legend.description')}
           </p>
         </CardContent>
       </Card>

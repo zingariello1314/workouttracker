@@ -1,0 +1,73 @@
+{
+  "restDay": {
+    "title": "Jour de repos",
+    "message": "Profitez de votre journée de récupération !"
+  },
+  "workout": {
+    "trainingMode": "Mode d'entraînement:",
+    "home": "🏠 Maison",
+    "gym": "🏋️ Salle",
+    "week": "Semaine {{week}}"
+  },
+  "exercises": {
+    "title": "Exercices",
+    "save": "Enregistrer",
+    "discard": "Annuler",
+    "suppress": "Supprimer pour aujourd'hui",
+    "suppressTitle": "Supprimer pour aujourd'hui",
+    "restore": "Restaurer",
+    "addExceptional": "Ajouter un exercice exceptionnel",
+    "removeExceptional": "Supprimer l'exercice exceptionnel",
+    "removeExceptionalTitle": "Supprimer cet exercice exceptionnel",
+    "markComplete": "Marquer comme complété",
+    "exceptionalTitle": "Exercices Exceptionnels",
+    "exceptional": "Exceptionnel",
+    "unsavedChanges": "Modifications non sauvegardées"
+  },
+  "stretches": {
+    "title": "Étirements",
+    "titleOfDay": "Étirements du jour",
+    "save": "Enregistrer",
+    "discard": "Annuler",
+    "unsavedChanges": "Modifications non sauvegardées"
+  },
+  "challenges": {
+    "title": "Défis actifs",
+    "count": "{{count}} défi actif",
+    "count_plural": "{{count}} défis actifs",
+    "validate": "Valider",
+    "completed": "Défi validé avec succès ! 🎉"
+  },
+  "messages": {
+    "exercisesSaved": "Exercices enregistrés avec succès",
+    "stretchesSaved": "Étirements enregistrés avec succès",
+    "exerciseSuppressed": "Exercice supprimé pour aujourd'hui",
+    "exerciseRestored": "Exercice restauré pour aujourd'hui",
+    "exceptionalExerciseCompleted": "Exercice exceptionnel marqué comme complété",
+    "exceptionalExerciseRemoved": "Exercice exceptionnel supprimé",
+    "errorSavingExercises": "Erreur lors de la sauvegarde des exercices",
+    "errorSavingStretches": "Erreur lors de la sauvegarde des étirements",
+    "errorSuppressing": "Erreur lors de la suppression",
+    "errorRestoring": "Erreur lors de la restauration",
+    "errorCompleting": "Erreur lors de la complétion",
+    "errorRemoving": "Erreur lors de la suppression",
+    "saveFailed": "Échec de la sauvegarde",
+    "suppressFailed": "Échec de la suppression",
+    "restoreFailed": "Échec de la restauration",
+    "completeFailed": "Échec de la complétion",
+    "removeFailed": "Échec de la suppression",
+    "errorMessage": "Une erreur est survenue lors de l'enregistrement. Veuillez réessayer.",
+    "suggestions": {
+      "checkInternet": "Vérifiez votre connexion internet",
+      "refresh": "Rafraîchissez la page et réessayez",
+      "contactSupport": "Contactez le support si le problème persiste",
+      "checkExerciseExists": "Vérifiez que l'exercice existe dans le programme",
+      "tryAgain": "Réessayez dans quelques instants",
+      "checkWasSuppressed": "Vérifiez que l'exercice était bien supprimé"
+    }
+  },
+  "confirmations": {
+    "suppressExercise": "Êtes-vous sûr de vouloir supprimer cet exercice pour aujourd'hui ?\n\nCette action peut être annulée en restaurant l'exercice.",
+    "removeExceptionalExercise": "Êtes-vous sûr de vouloir supprimer cet exercice exceptionnel ?"
+  }
+}

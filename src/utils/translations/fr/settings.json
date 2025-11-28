@@ -1,0 +1,32 @@
+{
+  "title": "Paramètres",
+  "language": "Langue",
+  "language.description": "Choisissez la langue de l'interface",
+  "modal": {
+    "title": "Paramètres",
+    "trainingProgram": {
+      "title": "Programme d'entraînement",
+      "weekVariant": "Variante de semaine",
+      "weekA": "Semaine A",
+      "weekB": "Semaine B",
+      "programEditor": "Éditeur de programmes"
+    },
+    "advancedTools": {
+      "title": "Outils avancés",
+      "advancedStats": "Statistiques avancées",
+      "trainingCycles": "Cycles d'entraînement"
+    },
+    "backup": {
+      "title": "Sauvegarde et restauration",
+      "export": "Exporter les données",
+      "import": "Importer les données",
+      "importSuccess": "Données importées avec succès !",
+      "importError": "Erreur lors de l'importation des données"
+    },
+    "dangerZone": {
+      "title": "Zone de danger",
+      "reset": "Réinitialiser toutes les données",
+      "resetConfirm": "Êtes-vous sûr de vouloir réinitialiser toutes les données ? Cette action est irréversible."
+    }
+  }
+}

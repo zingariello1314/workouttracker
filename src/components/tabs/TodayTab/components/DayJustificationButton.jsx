@@ -27,6 +27,7 @@ import {
 import { getDateStr } from '../../../../utils/dateUtils';
 import Button from '../../../ui/Button';
 import JustificationModal from '../../../modals/JustificationModal';
+import { useTranslation } from '../../../../utils/translations';
 
 /**
  * Composant pour afficher le bouton/badge de justification
@@ -40,6 +41,7 @@ import JustificationModal from '../../../modals/JustificationModal';
 const DayJustificationButton = memo(({ date }) => {
   // ✅ OPTIMISATION : Récupérer les données et fonctions du contexte
   const { currentDate, getCurrentData, getDayJustification: getDayJustificationFromContext } = useWorkout();
+  const t = useTranslation();
   
   // Utiliser la date fournie ou currentDate par défaut
   const targetDate = date || currentDate;
@@ -93,7 +95,7 @@ const DayJustificationButton = memo(({ date }) => {
           <div className="flex items-center gap-3 flex-1">
             <span className="text-2xl" aria-hidden="true">{reasonIcon}</span>
             <div className="flex-1">
-              <p className="text-sm text-slate-300 font-medium">Jour justifié</p>
+              <p className="text-sm text-slate-300 font-medium">{t('justification.button.dayJustified')}</p>
               <p className="text-white font-semibold">{reasonLabel}</p>
               {justification.note && (
                 <p className="text-xs text-slate-400 mt-1 line-clamp-1" title={justification.note}>
@@ -108,9 +110,9 @@ const DayJustificationButton = memo(({ date }) => {
             onClick={handleOpenModal}
             icon={Edit2}
             className="flex-shrink-0"
-            aria-label="Modifier la justification"
+            aria-label={t('justification.button.modifyAriaLabel')}
           >
-            Modifier
+            {t('justification.button.modify')}
           </Button>
         </div>
         
@@ -132,8 +134,8 @@ const DayJustificationButton = memo(({ date }) => {
           <div className="flex items-center gap-3">
             <Calendar className="text-slate-400" size={20} />
             <div>
-              <p className="text-sm text-slate-300 font-medium">Aucune activité enregistrée</p>
-              <p className="text-xs text-slate-500">Justifiez votre absence si nécessaire</p>
+              <p className="text-sm text-slate-300 font-medium">{t('justification.button.noActivity')}</p>
+              <p className="text-xs text-slate-500">{t('justification.button.justifyHint')}</p>
             </div>
           </div>
           <Button
@@ -143,7 +145,7 @@ const DayJustificationButton = memo(({ date }) => {
             icon={Calendar}
             className="flex-shrink-0"
           >
-            Justifier
+            {t('justification.button.justify')}
           </Button>
         </div>
       </div>

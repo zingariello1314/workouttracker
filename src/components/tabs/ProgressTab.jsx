@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   User, 
   Camera, 
@@ -12,6 +12,7 @@ import {
   Zap
 } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { useTranslation } from '../../utils/translations';
 import MetricsSection from '../BodyTracking/MetricsSection';
 import PhotoGallerySection from '../BodyTracking/PhotoGallerySection';
 import ImpedanceSection from '../BodyTracking/ImpedanceSection';
@@ -27,19 +28,20 @@ import CleanupNotification from '../BodyTracking/components/CleanupNotification'
 
 const ProgressTab = () => {
   const [activeSection, setActiveSection] = useState('metrics');
+  const t = useTranslation();
 
-  const sections = [
-    { id: 'metrics', label: 'Métriques', icon: User, description: 'Poids, taille, mensurations', category: 'basic' },
-    { id: 'photos', label: 'Photos', icon: Camera, description: 'Galerie de progression', category: 'basic' },
-    { id: 'impedance', label: 'Impédancemètre', icon: Activity, description: 'Données détaillées', category: 'basic' },
-    { id: 'summary', label: 'Récapitulatif', icon: BarChart3, description: 'Tableau de bord', category: 'basic' },
-    { id: 'reminders', label: 'Rappels', icon: Bell, description: 'Notifications automatiques', category: 'basic' },
-    { id: 'correlations', label: 'Corrélations', icon: TrendingUp, description: 'Analyse des relations', category: 'advanced' },
-    { id: 'predictions', label: 'Prévisions', icon: Target, description: 'Projections futures', category: 'advanced' },
-    { id: 'stability', label: 'Stabilité', icon: Zap, description: 'Détection de stagnations', category: 'advanced' },
-    { id: 'insights', label: 'Analyses Intelligentes', icon: Brain, description: 'Pourquoi j\'ai changé ?', category: 'advanced' },
-    { id: 'comments', label: 'Commentaires', icon: MessageSquare, description: 'Analyse automatique', category: 'advanced' }
-  ];
+  const sections = useMemo(() => [
+    { id: 'metrics', label: t('progress.sections.metrics.label'), icon: User, description: t('progress.sections.metrics.description'), category: 'basic' },
+    { id: 'photos', label: t('progress.sections.photos.label'), icon: Camera, description: t('progress.sections.photos.description'), category: 'basic' },
+    { id: 'impedance', label: t('progress.sections.impedance.label'), icon: Activity, description: t('progress.sections.impedance.description'), category: 'basic' },
+    { id: 'summary', label: t('progress.sections.summary.label'), icon: BarChart3, description: t('progress.sections.summary.description'), category: 'basic' },
+    { id: 'reminders', label: t('progress.sections.reminders.label'), icon: Bell, description: t('progress.sections.reminders.description'), category: 'basic' },
+    { id: 'correlations', label: t('progress.sections.correlations.label'), icon: TrendingUp, description: t('progress.sections.correlations.description'), category: 'advanced' },
+    { id: 'predictions', label: t('progress.sections.predictions.label'), icon: Target, description: t('progress.sections.predictions.description'), category: 'advanced' },
+    { id: 'stability', label: t('progress.sections.stability.label'), icon: Zap, description: t('progress.sections.stability.description'), category: 'advanced' },
+    { id: 'insights', label: t('progress.sections.insights.label'), icon: Brain, description: t('progress.sections.insights.description'), category: 'advanced' },
+    { id: 'comments', label: t('progress.sections.comments.label'), icon: MessageSquare, description: t('progress.sections.comments.description'), category: 'advanced' }
+  ], [t]);
 
   const basicSections = sections.filter(s => s.category === 'basic');
   const advancedSections = sections.filter(s => s.category === 'advanced');
@@ -106,15 +108,15 @@ const ProgressTab = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="w-6 h-6 text-orange-400" />
-            Suivi Corporel Complet
+            {t('progress.title')}
             <span className="text-sm font-normal text-slate-400">
-              - Système intégré de progression
+              - {t('progress.subtitle')}
             </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {renderSectionGrid(basicSections, 'Fonctionnalités de base')}
-          {renderSectionGrid(advancedSections, 'Analyses avancées')}
+          {renderSectionGrid(basicSections, t('progress.categories.basic'))}
+          {renderSectionGrid(advancedSections, t('progress.categories.advanced'))}
         </CardContent>
       </Card>
 

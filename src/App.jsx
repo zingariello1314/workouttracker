@@ -1,5 +1,6 @@
 import React from 'react';
 import { WorkoutProvider } from './context/WorkoutContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { ToastProvider } from './components/ui/Toast';
 import Header from './components/layout/Header';
 import Navigation from './components/layout/Navigation';
@@ -28,11 +29,13 @@ import { useGarminData } from './hooks/useGarminData';
 
 const WorkoutTrackerApp = () => {
   return (
-    <ToastProvider>
-      <WorkoutProvider>
-        <WorkoutTrackerContent />
-      </WorkoutProvider>
-    </ToastProvider>
+    <LanguageProvider>
+      <ToastProvider>
+        <WorkoutProvider>
+          <WorkoutTrackerContent />
+        </WorkoutProvider>
+      </ToastProvider>
+    </LanguageProvider>
   );
 };
 

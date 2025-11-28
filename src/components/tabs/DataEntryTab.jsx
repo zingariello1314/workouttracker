@@ -9,9 +9,15 @@ import { Calendar, Save, RotateCcw, TrendingUp, Clock, Target, ChevronDown, Chev
 import { typography } from '../../styles/typography';
 import WorkoutHistorySection from '../WorkoutHistorySection';
 import { calculateAutoReps } from '../../utils/exerciseCalculations';
+import { useTranslation } from '../../utils/translations';
+import { useFormatters } from '../../utils/translations/formatters-hook';
+import { useToast } from '../ui/Toast';
 
 const DataEntryTab = () => {
   const { data, updateReps, toggleCheck, getDateStr, getDayName, getCurrentData } = useWorkout();
+  const t = useTranslation();
+  const { formatDate: formatLocaleDate } = useFormatters();
+  const { showSuccess, showError } = useToast();
   
   // Utiliser getCurrentData() pour obtenir les données actuelles (incluant tempData)
   const currentData = getCurrentData();
@@ -25,8 +31,16 @@ const DataEntryTab = () => {
   const dayName = getDayName(selectedDate);
   const workout = workoutProgram[dayName];
 
-  // Ordre chronologique des jours
-  const daysOrder = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  // Ordre chronologique des jours (traduits)
+  const daysOrder = [
+    t('dataEntry.days.monday'),
+    t('dataEntry.days.tuesday'),
+    t('dataEntry.days.wednesday'),
+    t('dataEntry.days.thursday'),
+    t('dataEntry.days.friday'),
+    t('dataEntry.days.saturday'),
+    t('dataEntry.days.sunday')
+  ];
 
   // Fonction pour basculer l'état plié/déplié d'un jour
   const toggleDayCollapse = (day) => {
@@ -138,9 +152,9 @@ const DataEntryTab = () => {
     
     // Message de confirmation avec détails
     if (errorCount === 0) {
-      alert(`${savedCount} exercice(s) sauvegardé(s) avec succès !`);
+      showSuccess(t('dataEntry.messages.saveSuccess', { count: savedCount }));
     } else {
-      alert(`${savedCount} exercice(s) sauvegardé(s), ${errorCount} erreur(s) détectée(s). Vérifiez la console pour plus de détails.`);
+      showError(t('dataEntry.messages.savePartial', { savedCount, errorCount }));
     }
   };
 
@@ -154,7 +168,7 @@ const DataEntryTab = () => {
 
   // Réinitialiser les données de la journée
   const handleResetDay = () => {
-    if (confirm('Êtes-vous sûr de vouloir réinitialiser toutes les données de cette journée ?')) {
+    if (window.confirm(t('dataEntry.messages.resetConfirm'))) {
       if (workout) {
         // Réinitialiser les exercices normaux
         workout.exercices.forEach(exercise => {
@@ -226,10 +240,10 @@ const DataEntryTab = () => {
         <div className="bg-slate-800/50 rounded-lg p-8">
           <Calendar className="mx-auto mb-4 text-slate-400" size={48} />
           <h3 className={`${typography.presets.h3} text-white mb-2`}>
-            Jour de repos
+            {t('dataEntry.restDay.title')}
           </h3>
           <p className={`${typography.presets.bodyLarge} text-slate-400`}>
-            Aucun exercice programmé pour {dayName.toLowerCase()}
+            {t('dataEntry.restDay.message', { dayName: dayName.toLowerCase() })}
           </p>
         </div>
       </div>
@@ -242,10 +256,10 @@ const DataEntryTab = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className={`${typography.presets.h1} text-white mb-2`}>
-            Saisie de données
+            {t('dataEntry.title')}
           </h1>
           <p className={`${typography.presets.bodyLarge} text-slate-400`}>
-            Enregistrez vos répétitions pour le {dayName.toLowerCase()} {selectedDate.toLocaleDateString('fr-FR')}
+            {t('dataEntry.subtitle', { dayName: dayName.toLowerCase(), date: formatLocaleDate(selectedDate) })}
           </p>
         </div>
         
@@ -262,7 +276,7 @@ const DataEntryTab = () => {
             className="whitespace-nowrap"
           >
             <TrendingUp size={16} className="mr-2" />
-            Mode avancé
+            {t('dataEntry.advancedMode.label')}
           </Button>
         </div>
       </div>
@@ -272,7 +286,7 @@ const DataEntryTab = () => {
         <CardHeader>
           <CardTitle className={`${typography.presets.h2} text-white flex items-center gap-2`}>
              <Target size={20} className="text-blue-400" />
-             {workout.name} - Saisie rapide
+             {t('dataEntry.quickEntry.title', { workoutName: workout.name })}
            </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -290,7 +304,7 @@ const DataEntryTab = () => {
                     {exercise.name}
                   </h4>
                   <p className={`${typography.presets.bodySmall} text-slate-400`}>
-                    {exercise.series} • {exercise.materiel || 'Poids du corps'}
+                    {exercise.series} • {exercise.materiel || t('dataEntry.exercise.bodyWeight')}
                   </p>
                   {exercise.notes && (
                     <p className={`${typography.presets.bodySmall} text-slate-500 mt-1`}>
@@ -302,7 +316,7 @@ const DataEntryTab = () => {
                 <div className="flex items-center gap-3">
                   <Input
                     type="number"
-                    placeholder="Reps"
+                    placeholder={t('dataEntry.exercise.placeholder')}
                     value={tempReps}
                     onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
                     onFocus={() => handleInputFocus(exercise.id, exercise)}
@@ -311,12 +325,12 @@ const DataEntryTab = () => {
                   />
                   
                   {isCompleted && (
-                    <div className="text-green-400 text-sm font-medium">✓ Fait</div>
+                    <div className="text-green-400 text-sm font-medium">{t('dataEntry.exercise.done')}</div>
                   )}
                   
                   {currentReps && !isCompleted && (
                     <Badge variant="outline" className="border-yellow-500 text-yellow-400">
-                      {currentReps} reps
+                      {currentReps} {t('dataEntry.exercise.reps')}
                     </Badge>
                   )}
                 </div>
@@ -327,11 +341,11 @@ const DataEntryTab = () => {
           <div className="flex gap-3 pt-4">
             <Button onClick={handleSaveReps} className="flex-1">
               <Save size={16} className="mr-2" />
-              Sauvegarder
+              {t('dataEntry.buttons.save')}
             </Button>
             <Button variant="outline" onClick={handleResetDay}>
               <RotateCcw size={16} className="mr-2" />
-              Réinitialiser
+              {t('dataEntry.buttons.reset')}
             </Button>
           </div>
         </CardContent>
@@ -343,7 +357,7 @@ const DataEntryTab = () => {
           <CardHeader>
             <CardTitle className={`${typography.presets.h2} text-white flex items-center gap-2`}>
               <Clock size={20} className="text-purple-400" />
-              Saisie avancée - 7 derniers jours
+              {t('dataEntry.advancedMode.title')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -352,7 +366,7 @@ const DataEntryTab = () => {
                 <thead>
                   <tr className="border-b border-slate-700">
                     <th className={`${typography.presets.bodyLarge} text-white text-left p-3`}>
-                      Exercice
+                      {t('dataEntry.exercise.label')}
                     </th>
                     {lastSevenDays.map((day) => (
                       <th key={day.dateStr} className={`${typography.presets.bodySmall} text-center p-3 min-w-[100px] ${day.isToday ? 'text-blue-400' : 'text-slate-400'}`}>
@@ -425,10 +439,10 @@ const DataEntryTab = () => {
             
             <div className="mt-4 p-4 bg-slate-900/50 rounded-lg">
               <p className={`${typography.presets.bodySmall} text-slate-400 mb-2`}>
-                💡 <strong>Astuce :</strong> Vous pouvez saisir vos répétitions en avance ou rattraper celles en retard directement dans ce tableau.
+                {t('dataEntry.advancedMode.tip')}
               </p>
               <p className={`${typography.presets.bodySmall} text-slate-500`}>
-                Les exercices sont automatiquement marqués comme terminés quand vous saisissez des répétitions &gt; 0.
+                {t('dataEntry.advancedMode.autoComplete')}
               </p>
             </div>
           </CardContent>
@@ -443,7 +457,7 @@ const DataEntryTab = () => {
             <CardHeader>
               <CardTitle className={`${typography.presets.h2} text-white flex items-center gap-2`}>
                 <Target size={20} className="text-orange-400" />
-                {workout.salleVariants.semaineA.name} - Semaine A
+                {workout.salleVariants.semaineA.name} - {t('dataEntry.weekVariants.weekA')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -473,7 +487,7 @@ const DataEntryTab = () => {
                     <div className="flex items-center gap-3">
                    <Input
                      type="number"
-                     placeholder="Reps"
+                     placeholder={t('dataEntry.exercise.placeholder')}
                      value={tempReps}
                      onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
                      onFocus={() => handleInputFocus(exercise.id, exercise)}
@@ -482,12 +496,12 @@ const DataEntryTab = () => {
                    />
                    
                    {isCompleted && (
-                     <div className="text-green-400 text-sm font-medium">✓ Fait</div>
+                     <div className="text-green-400 text-sm font-medium">{t('dataEntry.exercise.done')}</div>
                    )}
                    
                    {currentReps && !isCompleted && (
                      <Badge variant="outline" className="border-yellow-500 text-yellow-400">
-                       {currentReps} reps
+                       {currentReps} {t('dataEntry.exercise.reps')}
                      </Badge>
                    )}
                  </div>
@@ -498,11 +512,11 @@ const DataEntryTab = () => {
               <div className="flex gap-3 pt-4">
                 <Button onClick={handleSaveReps} className="flex-1">
                   <Save size={16} className="mr-2" />
-                  Sauvegarder
+                  {t('dataEntry.buttons.save')}
                 </Button>
                 <Button variant="outline" onClick={handleResetDay}>
                   <RotateCcw size={16} className="mr-2" />
-                  Réinitialiser
+                  {t('dataEntry.buttons.reset')}
                 </Button>
               </div>
             </CardContent>
@@ -513,7 +527,7 @@ const DataEntryTab = () => {
             <CardHeader>
               <CardTitle className={`${typography.presets.h2} text-white flex items-center gap-2`}>
                 <Target size={20} className="text-purple-400" />
-                {workout.salleVariants.semaineB.name} - Semaine B
+                {workout.salleVariants.semaineB.name} - {t('dataEntry.weekVariants.weekB')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -543,7 +557,7 @@ const DataEntryTab = () => {
                     <div className="flex items-center gap-3">
                        <Input
                          type="number"
-                         placeholder="Reps"
+                         placeholder={t('dataEntry.exercise.placeholder')}
                          value={tempReps}
                          onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
                          onFocus={() => handleInputFocus(exercise.id, exercise)}
@@ -552,12 +566,12 @@ const DataEntryTab = () => {
                        />
                        
                        {isCompleted && (
-                         <div className="text-green-400 text-sm font-medium">✓ Fait</div>
+                         <div className="text-green-400 text-sm font-medium">{t('dataEntry.exercise.done')}</div>
                        )}
                        
                        {currentReps && !isCompleted && (
                          <Badge variant="outline" className="border-yellow-500 text-yellow-400">
-                           {currentReps} reps
+                           {currentReps} {t('dataEntry.exercise.reps')}
                          </Badge>
                        )}
                      </div>
@@ -568,11 +582,11 @@ const DataEntryTab = () => {
               <div className="flex gap-3 pt-4">
                 <Button onClick={handleSaveReps} className="flex-1">
                   <Save size={16} className="mr-2" />
-                  Sauvegarder
+                  {t('dataEntry.buttons.save')}
                 </Button>
                 <Button variant="outline" onClick={handleResetDay}>
                   <RotateCcw size={16} className="mr-2" />
-                  Réinitialiser
+                  {t('dataEntry.buttons.reset')}
                 </Button>
               </div>
             </CardContent>
@@ -584,7 +598,7 @@ const DataEntryTab = () => {
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className={`${typography.presets.h3} text-white`}>
-            Résumé de la journée
+            {t('dataEntry.summary.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -618,7 +632,7 @@ const DataEntryTab = () => {
                 })()}
               </div>
               <div className={`${typography.presets.bodySmall} text-slate-400`}>
-                Répétitions totales
+                {t('dataEntry.summary.totalReps')}
               </div>
             </div>
             
@@ -651,7 +665,7 @@ const DataEntryTab = () => {
                 })()}
               </div>
               <div className={`${typography.presets.bodySmall} text-slate-400`}>
-                Exercices terminés
+                {t('dataEntry.summary.completedExercises')}
               </div>
             </div>
             
@@ -688,7 +702,7 @@ const DataEntryTab = () => {
                 })()}%
               </div>
               <div className={`${typography.presets.bodySmall} text-slate-400`}>
-                Progression
+                {t('dataEntry.summary.progress')}
               </div>
             </div>
           </div>

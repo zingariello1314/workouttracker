@@ -2,6 +2,10 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import StarRating from '../ui/StarRating';
+import { useTranslation } from '../../utils/translations';
+import { useFormatters } from '../../utils/translations/formatters-hook';
+import { getCachedNamespace } from '../../utils/translations/loader';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   loadEnduranceData as loadEnduranceDataService,
   persistEnduranceData,
@@ -21,6 +25,9 @@ import EnduranceSectionHeader from './EnduranceTab/components/ui/EnduranceSectio
 
 const EnduranceTab = () => {
   const { data, updateData, getWorkoutHistory } = useWorkout();
+  const t = useTranslation();
+  const { formatDate } = useFormatters();
+  const { language } = useLanguage();
   
   // État unifié pour toutes les sessions d'endurance
   const [enduranceState, setEnduranceState] = useState({
@@ -157,7 +164,7 @@ const EnduranceTab = () => {
   const saveEnduranceData = useCallback(async (newData) => {
     try {
       if (!newData || typeof newData !== 'object') {
-        throw new Error('Données invalides pour la sauvegarde');
+        throw new Error(t('endurance.errors.invalidData'));
       }
 
       const mergedSessions = {
@@ -279,7 +286,7 @@ const EnduranceTab = () => {
     
       return enduranceExercises.sort((a, b) => new Date(b.date) - new Date(a.date));
     } catch (error) {
-      console.error('Erreur lors de la récupération des exercices d\'endurance:', error);
+      console.error(t('endurance.errors.fetchError'), error);
       return [];
     }
   }, [getWorkoutHistory, isEnduranceExercise]);
@@ -288,7 +295,7 @@ const EnduranceTab = () => {
   const getExerciseName = useCallback((exerciseId) => {
     // Cette fonction devrait récupérer le nom depuis votre base de données d'exercices
     // Pour l'instant, on utilise l'ID comme nom (à améliorer avec une vraie base de données)
-    return exerciseId || 'Exercice inconnu';
+    return exerciseId || t('endurance.errors.unknownExercise');
   }, []);
 
   // Système de rappel des défis actifs
@@ -535,7 +542,7 @@ const EnduranceTab = () => {
   const addChallenge = useCallback(async () => {
     try {
       if (!challengeForm.name || !challengeForm.activityType) {
-        throw new Error('Nom et type d\'activité requis');
+        throw new Error(t('endurance.errors.nameAndTypeRequired'));
       }
 
       const newChallenge = {
@@ -772,7 +779,7 @@ const EnduranceTab = () => {
       
       return { success: true };
     } catch (error) {
-      console.error('Erreur lors de la modification du défi:', error);
+      console.error(t('endurance.errors.updateError'), error);
       return { success: false, error: error.message };
     }
   }, [challenges, saveEnduranceData, setUI]);
@@ -854,10 +861,12 @@ const EnduranceTab = () => {
     return uniqueDays.size;
   }, [enduranceState?.sessions]);
 
-  const getMonthLabels = () => {
-    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-    return months;
-  };
+  const getMonthLabels = useMemo(() => {
+    // Récupérer directement depuis le namespace pour obtenir l'array
+    const enduranceData = getCachedNamespace(language, 'endurance');
+    const months = enduranceData?.calendar?.months?.short;
+    return Array.isArray(months) ? months : ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+  }, [language]);
 
   const getCalendarDays = () => {
     const year = ui.selectedYear;
@@ -999,14 +1008,14 @@ const EnduranceTab = () => {
   const activeChallenges = useMemo(() => getActiveChallenges(), [getActiveChallenges]);
   const urgentChallenges = useMemo(() => getUrgentChallenges(), [getUrgentChallenges]);
 
-  const menuItems = [
-    { id: 'boxing', label: 'Boxe', icon: Box },
-    { id: 'pushups', label: 'Pompes', icon: Dumbbell },
-    { id: 'swimming', label: 'Natation', icon: Waves },
-    { id: 'jumprope', label: 'Corde à sauter', icon: Activity },
-    { id: 'running', label: 'Course', icon: Play },
-    { id: 'calendar', label: 'Calendrier', icon: Calendar }
-  ];
+  const menuItems = useMemo(() => [
+    { id: 'boxing', label: t('endurance.menu.boxing'), icon: Box },
+    { id: 'pushups', label: t('endurance.menu.pushups'), icon: Dumbbell },
+    { id: 'swimming', label: t('endurance.menu.swimming'), icon: Waves },
+    { id: 'jumprope', label: t('endurance.menu.jumprope'), icon: Activity },
+    { id: 'running', label: t('endurance.menu.running'), icon: Play },
+    { id: 'calendar', label: t('endurance.menu.calendar'), icon: Calendar }
+  ], [t]);
 
   // Composant pour afficher les exercices d'endurance depuis l'historique (optimisé)
   const EnduranceHistorySection = useMemo(() => {
@@ -1015,8 +1024,8 @@ const EnduranceTab = () => {
     if (enduranceExercises.length === 0) {
       return (
         <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8">
-          <h3 className="text-xl font-bold text-white mb-4">Exercices d'Endurance depuis vos Séances</h3>
-          <p className="text-slate-400">Aucun exercice d'endurance trouvé dans vos séances passées.</p>
+          <h3 className="text-xl font-bold text-white mb-4">{t('endurance.history.fromWorkouts.title')}</h3>
+          <p className="text-slate-400">{t('endurance.history.fromWorkouts.none')}</p>
         </div>
       );
     }
@@ -1030,7 +1039,7 @@ const EnduranceTab = () => {
               <div className="flex justify-between items-center">
                 <div>
                   <span className="text-white font-medium">{exercise.name}</span>
-                  <span className="text-slate-400 ml-2">{exercise.reps} répétitions</span>
+                  <span className="text-slate-400 ml-2">{t('endurance.history.fromWorkouts.reps', { count: exercise.reps })}</span>
                 </div>
                 <div className="text-slate-400 text-sm">{exercise.date}</div>
               </div>
@@ -1047,9 +1056,9 @@ const EnduranceTab = () => {
       <div className="w-72 bg-slate-900/50 backdrop-blur-xl border-r border-slate-700/50">
         <div className="p-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-violet-500 bg-clip-text text-transparent">
-            Endurance
+            {t('endurance.title')}
           </h1>
-          <p className="text-slate-400 text-sm mt-2">Suivez votre progression</p>
+          <p className="text-slate-400 text-sm mt-2">{t('endurance.subtitle')}</p>
         </div>
         
         <nav className="px-4">
@@ -1098,12 +1107,12 @@ const EnduranceTab = () => {
           {activeTab === 'boxing' && (
             <>
               <EnduranceSectionHeader
-                title="Boxe"
-                subtitle="Enregistrez vos sessions d'entraînement"
+                title={t('endurance.sections.boxing.title')}
+                subtitle={t('endurance.sections.boxing.subtitle')}
                 actions={[
                   {
                     key: 'new-boxing-session',
-                    label: 'Nouvelle session',
+                    label: t('endurance.actions.newSession'),
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
@@ -1111,7 +1120,7 @@ const EnduranceTab = () => {
                   },
                   {
                     key: 'past-boxing-session',
-                    label: 'Données antérieures',
+                    label: t('endurance.actions.pastData'),
                     icon: Calendar,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true }),
                     className:
@@ -1125,11 +1134,11 @@ const EnduranceTab = () => {
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-bold text-white">
-                      {ui.editingSession ? 'Modifier la session de boxe' : 'Enregistrer une session de boxe'}
+                      {ui.editingSession ? t('endurance.sections.boxing.editSession') : t('endurance.sections.boxing.newSession')}
                     </h3>
                     {ui.allowPastDates && (
                       <span className="bg-orange-500/20 border border-orange-500/30 text-orange-400 px-3 py-1 rounded-lg text-sm font-medium">
-                        📅 Mode données antérieures
+                        {t('endurance.modes.pastDataMode')}
                       </span>
                     )}
                   </div>
@@ -1149,24 +1158,24 @@ const EnduranceTab = () => {
 
               {/* Historique boxe */}
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
+                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
                   {sessions.boxing.length === 0 ? (
                     <div className="p-12 text-center">
                       <Box className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
-                      <p className="text-slate-500 text-sm mt-2">Commencez par créer votre première session</p>
+                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
+                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
                           <tr className="border-b border-slate-700/50">
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Date</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Heure</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Durée</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Notes</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.date')}</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.time')}</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.duration')}</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.notes')}</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.actions')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1186,14 +1195,14 @@ const EnduranceTab = () => {
                                   <button
                                     onClick={() => editSession('boxing', session.id)}
                                     className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                                    title="Modifier la session"
+                                    title={t('endurance.session.edit')}
                                   >
                                     <Edit className="w-4 h-4" />
                                   </button>
                                 <button
                                   onClick={() => deleteBoxingSession(session.id, idx)}
                                   className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                                    title="Supprimer la session"
+                                    title={t('endurance.session.delete')}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -1214,12 +1223,12 @@ const EnduranceTab = () => {
           {activeTab === 'pushups' && (
             <>
               <EnduranceSectionHeader
-                title="Pompes"
-                subtitle="Gérez vos sessions et défis"
+                title={t('endurance.sections.pushups.title')}
+                subtitle={t('endurance.sections.pushups.subtitle')}
                 actions={[
                   {
                     key: 'new-pushup-session',
-                    label: 'Nouvelle session',
+                    label: t('endurance.actions.newSession'),
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
@@ -1227,7 +1236,7 @@ const EnduranceTab = () => {
                   },
                   {
                     key: 'past-pushup-session',
-                    label: 'Données antérieures',
+                    label: t('endurance.actions.pastData'),
                     icon: Calendar,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true }),
                     className:
@@ -1235,7 +1244,7 @@ const EnduranceTab = () => {
                   },
                   {
                     key: 'create-pushup-challenge',
-                    label: 'Créer un défi',
+                    label: t('endurance.actions.createChallenge'),
                     icon: Award,
                     onClick: () => setUI({ showChallengeModal: true }),
                     className:
@@ -1253,7 +1262,10 @@ const EnduranceTab = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">
-                        {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} en cours
+                        {activeChallenges.length === 1 
+                          ? t('endurance.challenges.active', { count: activeChallenges.length })
+                          : t('endurance.challenges.activePlural', { count: activeChallenges.length })
+                        }
                       </h3>
                       <div className="space-y-2">
                         {activeChallenges.map((c, idx) => (
@@ -1271,7 +1283,7 @@ const EnduranceTab = () => {
               {/* Formulaire de session */}
               {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
-                  <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session</h3>
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="pushups"
                     formState={sessionForm}
@@ -1289,7 +1301,7 @@ const EnduranceTab = () => {
               {/* Liste des défis */}
               {challenges.filter(c => c.activityType === 'pushups').length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">Défis</h3>
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
                   <div className="grid gap-4">
                     {challenges.filter(c => c.activityType === 'pushups').map((challenge, idx) => (
                       <div key={`pushups-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
@@ -1301,14 +1313,22 @@ const EnduranceTab = () => {
                             </div>
                             <div className="space-y-1 text-slate-400 text-sm">
                               <p>
-                                {challenge.type === 'ponctuel' && `📅 Date cible: ${challenge.targetDate}`}
-                                {challenge.type === 'recurrent' && `🔄 ${challenge.frequency === 'daily' ? 'Quotidien' : 'Hebdomadaire'} - ${challenge.moment}`}
-                                {challenge.type === 'periode' && `📆 ${challenge.startDate} → ${challenge.endDate}`}
+                                {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                                {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
+                                  ? t('endurance.challenges.details.recurrentDaily')
+                                  : t('endurance.challenges.details.recurrentWeekly')
+                                )}
+                                {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
                               <p className="text-purple-300">
-                                🎯 Objectif: {challenge.goalCount && `${challenge.goalCount} pompes`}
-                                {challenge.goalCount && challenge.goalDuration && ' en '}
-                                {challenge.goalDuration && `${challenge.goalDuration} min`}
+                                {challenge.goalCount && challenge.goalDuration
+                                  ? t('endurance.challenges.details.goalPushupsWithDuration', { count: challenge.goalCount, duration: challenge.goalDuration })
+                                  : challenge.goalCount
+                                  ? t('endurance.challenges.details.goalPushups', { count: challenge.goalCount })
+                                  : challenge.goalDuration
+                                  ? `${challenge.goalDuration} min`
+                                  : ''
+                                }
                               </p>
                             </div>
                           </div>
@@ -1318,12 +1338,12 @@ const EnduranceTab = () => {
                                 ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                                 : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                             }`}>
-                              {challenge.status === 'active' ? '🔥 En cours' : '✅ Terminé'}
+                              {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
                             </span>
                             <button
                               onClick={() => editChallenge(challenge.id)}
                               className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                              title="Modifier le défi"
+                              title={t('endurance.session.editChallenge')}
                             >
                               <Edit className="w-5 h-5" />
                             </button>
@@ -1334,7 +1354,7 @@ const EnduranceTab = () => {
                                 deleteChallenge(challenge.id, realIndex);
                               }}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                              title="Supprimer le défi"
+                              title={t('endurance.session.deleteChallenge')}
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -1348,13 +1368,13 @@ const EnduranceTab = () => {
 
               {/* Historique */}
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
+                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
                   {sessions.pushups.length === 0 ? (
                     <div className="p-12 text-center">
                       <Dumbbell className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
-                      <p className="text-slate-500 text-sm mt-2">Commencez par créer votre première session</p>
+                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
+                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
@@ -1363,7 +1383,7 @@ const EnduranceTab = () => {
                           <tr className="border-b border-slate-700/50">
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Date</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Heure</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Pompes</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.pushups')}</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Durée</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Notes</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
@@ -1389,20 +1409,20 @@ const EnduranceTab = () => {
                                 <div className="flex items-center gap-2">
                                   {session.validatedChallenges?.length > 0 && (
                                     <span className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400 px-3 py-1 rounded-lg text-xs font-medium">
-                                      ✓ Défi validé
+                                      {t('endurance.challenges.validated')}
                                     </span>
                                   )}
                                   <button
                                     onClick={() => editSession('pushups', session.id)}
                                     className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                                    title="Modifier la session"
+                                    title={t('endurance.session.edit')}
                                   >
                                     <Edit className="w-4 h-4" />
                                   </button>
                                   <button
                                     onClick={() => deletePushupSession(session.id, originalIndex)}
                                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                                    title="Supprimer la session"
+                                    title={t('endurance.session.delete')}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -1424,12 +1444,12 @@ const EnduranceTab = () => {
           {activeTab === 'swimming' && (
             <>
               <EnduranceSectionHeader
-                title="Natation"
-                subtitle="Suivez vos longueurs et performances"
+                title={t('endurance.sections.swimming.title')}
+                subtitle={t('endurance.sections.swimming.subtitle')}
                 actions={[
                   {
                     key: 'new-swimming-session',
-                    label: 'Nouvelle session',
+                    label: t('endurance.actions.newSession'),
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
@@ -1437,7 +1457,7 @@ const EnduranceTab = () => {
                   },
                   {
                     key: 'create-swimming-challenge',
-                    label: 'Créer un défi',
+                    label: t('endurance.actions.createChallenge'),
                     icon: Award,
                     onClick: () => setUI({ showChallengeModal: true }),
                     className:
@@ -1454,7 +1474,10 @@ const EnduranceTab = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">
-                        {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} en cours
+                        {activeChallenges.length === 1 
+                          ? t('endurance.challenges.active', { count: activeChallenges.length })
+                          : t('endurance.challenges.activePlural', { count: activeChallenges.length })
+                        }
                       </h3>
                       <div className="space-y-2">
                         {activeChallenges.map((c, idx) => (
@@ -1471,7 +1494,7 @@ const EnduranceTab = () => {
 
               {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
-                  <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session de natation</h3>
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.sections.swimming.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="swimming"
                     formState={swimmingForm}
@@ -1499,13 +1522,13 @@ const EnduranceTab = () => {
                       }}
                       className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
                     >
-                      Annuler
+                      {t('endurance.actions.cancel')}
                     </button>
                     <button
                       onClick={addSwimmingSession}
                       className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
                     >
-                      Enregistrer
+                      {t('endurance.actions.save')}
                     </button>
                   </div>
                 </div>
@@ -1513,7 +1536,7 @@ const EnduranceTab = () => {
 
               {challenges.filter(c => c.activityType === 'swimming').length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">Défis</h3>
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
                   <div className="grid gap-4">
                     {challenges.filter(c => c.activityType === 'swimming').map((challenge, idx) => (
                       <div key={`swimming-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
@@ -1525,14 +1548,22 @@ const EnduranceTab = () => {
                             </div>
                             <div className="space-y-1 text-slate-400 text-sm">
                               <p>
-                                {challenge.type === 'ponctuel' && `📅 Date cible: ${challenge.targetDate}`}
-                                {challenge.type === 'recurrent' && `🔄 ${challenge.frequency === 'daily' ? 'Quotidien' : 'Hebdomadaire'}`}
-                                {challenge.type === 'periode' && `📆 ${challenge.startDate} → ${challenge.endDate}`}
+                                {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                                {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
+                                  ? t('endurance.challenges.details.recurrentDaily')
+                                  : t('endurance.challenges.details.recurrentWeekly')
+                                )}
+                                {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
                               <p className="text-purple-300">
-                                🎯 Objectif: {challenge.goalDistance && `${challenge.goalDistance}m`}
-                                {challenge.goalDistance && challenge.goalTime && ' en '}
-                                {challenge.goalTime && `${challenge.goalTime} min`}
+                                {challenge.goalDistance && challenge.goalTime
+                                  ? t('endurance.challenges.details.goalSwimmingWithTime', { distance: challenge.goalDistance, time: challenge.goalTime })
+                                  : challenge.goalDistance
+                                  ? t('endurance.challenges.details.goalSwimming', { distance: challenge.goalDistance })
+                                  : challenge.goalTime
+                                  ? `${challenge.goalTime} min`
+                                  : ''
+                                }
                               </p>
                             </div>
                           </div>
@@ -1542,12 +1573,12 @@ const EnduranceTab = () => {
                                 ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                                 : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                             }`}>
-                              {challenge.status === 'active' ? '🔥 En cours' : '✅ Terminé'}
+                              {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
                             </span>
                             <button
                               onClick={() => editChallenge(challenge.id)}
                               className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                              title="Modifier le défi"
+                              title={t('endurance.session.editChallenge')}
                             >
                               <Edit className="w-5 h-5" />
                             </button>
@@ -1558,7 +1589,7 @@ const EnduranceTab = () => {
                                 deleteChallenge(challenge.id, realIndex);
                               }}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                              title="Supprimer le défi"
+                              title={t('endurance.session.deleteChallenge')}
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -1571,13 +1602,13 @@ const EnduranceTab = () => {
               )}
 
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
+                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
                   {sessions.swimming.length === 0 ? (
                     <div className="p-12 text-center">
                       <Waves className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
-                      <p className="text-slate-500 text-sm mt-2">Commencez par créer votre première session</p>
+                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
+                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <div className="space-y-4 p-6">
@@ -1591,16 +1622,16 @@ const EnduranceTab = () => {
                                 <span className="text-white font-bold text-lg">{session.date}</span>
                                 <span className="text-slate-400">{session.time}</span>
                                 <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg text-sm">
-                                  {session.swimType ? (session.swimType.charAt(0).toUpperCase() + session.swimType.slice(1)) : 'Natation'}
+                                  {session.swimType ? (session.swimType.charAt(0).toUpperCase() + session.swimType.slice(1)) : t('endurance.swimming.details.swimType')}
                                 </span>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                                 <div>
-                                  <span className="text-slate-400">Distance totale:</span>
+                                  <span className="text-slate-400">{t('endurance.swimming.details.totalDistance')}</span>
                                   <span className="text-white font-bold ml-2">{session.totalDistance}m</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400">Temps total:</span>
+                                  <span className="text-slate-400">{t('endurance.swimming.details.totalTime')}</span>
                                   <span className="text-white font-bold ml-2">
                                     {(() => {
                                       // totalTime est en secondes
@@ -1613,18 +1644,18 @@ const EnduranceTab = () => {
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400">Allure moy:</span>
+                                  <span className="text-slate-400">{t('endurance.swimming.details.avgPace')}</span>
                                   <span className="text-white font-bold ml-2">{session.avgPace}s/25m</span>
                                 </div>
                                 {session.heartRate && (
                                   <div>
-                                    <span className="text-slate-400">FC moyenne:</span>
+                                    <span className="text-slate-400">{t('endurance.swimming.details.heartRate')}</span>
                                     <span className="text-white font-bold ml-2">{session.heartRate} bpm</span>
                                   </div>
                                 )}
                                 {session.calories && (
                                   <div>
-                                    <span className="text-slate-400">Calories:</span>
+                                    <span className="text-slate-400">{t('endurance.swimming.details.calories')}</span>
                                     <span className="text-white font-bold ml-2">
                                       {typeof session.calories === 'object' 
                                         ? (session.calories.total || session.calories.active || 0) 
@@ -1634,7 +1665,7 @@ const EnduranceTab = () => {
                                 )}
                                 {session.pace100m && (
                                   <div>
-                                    <span className="text-slate-400">Allure 100m:</span>
+                                    <span className="text-slate-400">{t('endurance.swimming.details.pace100m')}</span>
                                     <span className="text-white font-bold ml-2">{session.pace100m}</span>
                                   </div>
                                 )}
@@ -1664,7 +1695,7 @@ const EnduranceTab = () => {
                           </div>
                           {session.laps && Array.isArray(session.laps) && session.laps.length > 0 && (
                             <div className="border-t border-slate-700/50 pt-4">
-                              <h5 className="text-slate-400 text-sm mb-3">Détail des longueurs:</h5>
+                              <h5 className="text-slate-400 text-sm mb-3">{t('endurance.swimming.details.title')}</h5>
                               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                 {session.laps.map((lap, idx) => (
                                   <div key={idx} className="bg-slate-800/50 px-3 py-2 rounded-lg">
@@ -1678,7 +1709,7 @@ const EnduranceTab = () => {
                           )}
                           {session.notes && (
                             <div className="mt-4 text-slate-400 text-sm">
-                              <span className="font-medium">Notes:</span> {session.notes}
+                              <span className="font-medium">{t('endurance.swimming.details.notes')}</span> {session.notes}
                             </div>
                           )}
                         </div>
@@ -1695,12 +1726,12 @@ const EnduranceTab = () => {
           {activeTab === 'jumprope' && (
             <>
               <EnduranceSectionHeader
-                title="Corde à Sauter"
-                subtitle="Suivez vos sessions et défis"
+                title={t('endurance.sections.jumprope.title')}
+                subtitle={t('endurance.sections.jumprope.subtitle')}
                 actions={[
                   {
                     key: 'new-jumprope-session',
-                    label: 'Nouvelle session',
+                    label: t('endurance.actions.newSession'),
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
@@ -1708,7 +1739,7 @@ const EnduranceTab = () => {
                   },
                   {
                     key: 'create-jumprope-challenge',
-                    label: 'Créer un défi',
+                    label: t('endurance.actions.createChallenge'),
                     icon: Award,
                     onClick: () => setUI({ showChallengeModal: true }),
                     className:
@@ -1726,7 +1757,10 @@ const EnduranceTab = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">
-                        ⚠️ Vous avez {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} à accomplir
+                        {activeChallenges.length === 1
+                          ? t('endurance.challenges.toComplete', { count: activeChallenges.length })
+                          : t('endurance.challenges.toCompletePlural', { count: activeChallenges.length })
+                        }
                       </h3>
                       <div className="space-y-2">
                         {activeChallenges.map((c, idx) => (
@@ -1743,7 +1777,7 @@ const EnduranceTab = () => {
 
               {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
-                  <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session de corde à sauter</h3>
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.sections.jumprope.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="jumprope"
                     formState={jumpropeForm}
@@ -1755,13 +1789,13 @@ const EnduranceTab = () => {
                       onClick={() => setUI({ showSessionForm: false })}
                       className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
                     >
-                      Annuler
+                      {t('endurance.actions.cancel')}
                     </button>
                     <button
                       onClick={addJumpropeSession}
                       className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
                     >
-                      Enregistrer
+                      {t('endurance.actions.save')}
                     </button>
                     <button
                       onClick={() => {
@@ -1770,7 +1804,7 @@ const EnduranceTab = () => {
                       }}
                       className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-green-500/50 transition-all"
                     >
-                      Enregistrer et créer une autre
+                      {t('endurance.actions.saveAndCreateAnother')}
                     </button>
                   </div>
                 </div>
@@ -1779,7 +1813,7 @@ const EnduranceTab = () => {
               {/* Liste des défis */}
               {challenges.filter(c => c.activityType === 'jumprope').length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">Défis</h3>
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
                   <div className="grid gap-4">
                     {challenges.filter(c => c.activityType === 'jumprope').map((challenge, idx) => (
                       <div key={`jumprope-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
@@ -1793,19 +1827,27 @@ const EnduranceTab = () => {
                                   ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                                   : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                               }`}>
-                                {challenge.status === 'active' ? '🔥 En cours' : '✅ Terminé'}
+                                {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
                               </span>
                             </div>
                             <div className="space-y-1 text-slate-400 text-sm">
                               <p>
-                                {challenge.type === 'ponctuel' && `📅 Date cible: ${challenge.targetDate}`}
-                                {challenge.type === 'recurrent' && `🔄 ${challenge.frequency === 'daily' ? 'Quotidien' : 'Hebdomadaire'} - ${challenge.moment}`}
-                                {challenge.type === 'periode' && `📆 ${challenge.startDate} → ${challenge.endDate}`}
+                                {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                                {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
+                                  ? t('endurance.challenges.details.recurrentDaily')
+                                  : t('endurance.challenges.details.recurrentWeekly')
+                                )}
+                                {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
                               <p className="text-purple-300">
-                                🎯 Objectif: {challenge.goalDuration && `${challenge.goalDuration} min`}
-                                {challenge.goalDuration && challenge.goalCount && ' ou '}
-                                {challenge.goalCount && `${challenge.goalCount} sauts`}
+                                {challenge.goalDuration && challenge.goalCount
+                                  ? t('endurance.challenges.details.goalJumpropeOrJumps', { duration: challenge.goalDuration, jumps: challenge.goalCount })
+                                  : challenge.goalDuration
+                                  ? t('endurance.challenges.details.goalJumprope', { duration: challenge.goalDuration })
+                                  : challenge.goalCount
+                                  ? `${challenge.goalCount} sauts`
+                                  : ''
+                                }
                               </p>
                             </div>
                           </div>
@@ -1813,7 +1855,7 @@ const EnduranceTab = () => {
                             <button
                               onClick={() => editChallenge(challenge.id)}
                               className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                              title="Modifier le défi"
+                              title={t('endurance.session.editChallenge')}
                             >
                               <Edit className="w-5 h-5" />
                             </button>
@@ -1824,7 +1866,7 @@ const EnduranceTab = () => {
                                 deleteChallenge(challenge.id, realIndex);
                               }}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                              title="Supprimer le défi"
+                              title={t('endurance.session.deleteChallenge')}
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -1838,13 +1880,13 @@ const EnduranceTab = () => {
 
               {/* Historique */}
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
+                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
                   {sessions.jumprope.length === 0 ? (
                     <div className="p-12 text-center">
                       <Activity className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
-                      <p className="text-slate-500 text-sm mt-2">Commencez par créer votre première session</p>
+                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
+                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
@@ -1854,9 +1896,9 @@ const EnduranceTab = () => {
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Date</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Heure</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Durée</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Type</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Sauts</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Session</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.type')}</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.jumps')}</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.session')}</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Notes</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
                           </tr>
@@ -1876,7 +1918,7 @@ const EnduranceTab = () => {
                               </td>
                               <td className="px-6 py-4">
                                 <span className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg text-xs">
-                                  {session.type ? (session.type.charAt(0).toUpperCase() + session.type.slice(1)) : 'Corde à sauter'}
+                                  {session.type ? (session.type.charAt(0).toUpperCase() + session.type.slice(1)) : t('endurance.menu.jumprope')}
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-slate-300">{session.jumps || '-'}</td>
@@ -1886,20 +1928,20 @@ const EnduranceTab = () => {
                                 <div className="flex items-center gap-2">
                                   {session.validatedChallenges?.length > 0 && (
                                     <span className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400 px-3 py-1 rounded-lg text-xs font-medium">
-                                      ✓ Défi validé
+                                      {t('endurance.challenges.validated')}
                                     </span>
                                   )}
                                   <button
                                     onClick={() => editSession('jumprope', session.id)}
                                     className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                                    title="Modifier la session"
+                                    title={t('endurance.session.edit')}
                                   >
                                     <Edit className="w-4 h-4" />
                                   </button>
                                   <button
                                     onClick={() => deleteJumpropeSession(session.id, originalIndex)}
                                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                                    title="Supprimer la session"
+                                    title={t('endurance.session.delete')}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -1921,12 +1963,12 @@ const EnduranceTab = () => {
           {activeTab === 'running' && (
             <>
               <EnduranceSectionHeader
-                title="Course"
-                subtitle="Suivez vos performances et défis"
+                title={t('endurance.sections.running.title')}
+                subtitle={t('endurance.sections.running.subtitle')}
                 actions={[
                   {
                     key: 'new-running-session',
-                    label: 'Nouvelle session',
+                    label: t('endurance.actions.newSession'),
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
@@ -1934,7 +1976,7 @@ const EnduranceTab = () => {
                   },
                   {
                     key: 'create-running-challenge',
-                    label: 'Créer un défi',
+                    label: t('endurance.actions.createChallenge'),
                     icon: Award,
                     onClick: () => setUI({ showChallengeModal: true }),
                     className:
@@ -1952,7 +1994,10 @@ const EnduranceTab = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">
-                        ⚠️ Vous avez {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} à accomplir
+                        {activeChallenges.length === 1
+                          ? t('endurance.challenges.toComplete', { count: activeChallenges.length })
+                          : t('endurance.challenges.toCompletePlural', { count: activeChallenges.length })
+                        }
                       </h3>
                       <div className="space-y-2">
                         {activeChallenges.map((c, idx) => (
@@ -1970,7 +2015,7 @@ const EnduranceTab = () => {
               {/* Formulaire de session */}
               {ui.showSessionForm && (
                 <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
-                  <h3 className="text-2xl font-bold text-white mb-6">Enregistrer une session</h3>
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="running"
                     formState={runningForm}
@@ -1990,13 +2035,13 @@ const EnduranceTab = () => {
                       onClick={() => setUI({ showSessionForm: false })}
                       className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
                     >
-                      Annuler
+                      {t('endurance.actions.cancel')}
                     </button>
                     <button
                       onClick={addRunningSession}
                       className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
                     >
-                      Enregistrer
+                      {t('endurance.actions.save')}
                     </button>
                   </div>
                 </div>
@@ -2005,7 +2050,7 @@ const EnduranceTab = () => {
               {/* Liste des défis */}
               {challenges.filter(c => c.activityType === 'running').length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">Défis</h3>
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
                   <div className="grid gap-4">
                     {challenges.filter(c => c.activityType === 'running').map((challenge, idx) => (
                       <div key={`running-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
@@ -2019,19 +2064,27 @@ const EnduranceTab = () => {
                                   ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                                   : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                               }`}>
-                                {challenge.status === 'active' ? '🔥 En cours' : '✅ Terminé'}
+                                {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
                               </span>
                             </div>
                             <div className="space-y-1 text-slate-400 text-sm">
                               <p>
-                                {challenge.type === 'ponctuel' && `📅 Date cible: ${challenge.targetDate}`}
-                                {challenge.type === 'recurrent' && `🔄 ${challenge.frequency === 'daily' ? 'Quotidien' : 'Hebdomadaire'} - ${challenge.moment}`}
-                                {challenge.type === 'periode' && `📆 ${challenge.startDate} → ${challenge.endDate}`}
+                                {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                                {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
+                                  ? t('endurance.challenges.details.recurrentDaily')
+                                  : t('endurance.challenges.details.recurrentWeekly')
+                                )}
+                                {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
                               <p className="text-purple-300">
-                                🎯 Objectif: {challenge.goalDistance && `${challenge.goalDistance}km`}
-                                {challenge.goalDistance && challenge.goalDuration && ' en '}
-                                {challenge.goalDuration && `${challenge.goalDuration} min`}
+                                {challenge.goalDistance && challenge.goalDuration
+                                  ? t('endurance.challenges.details.goalRunningWithDuration', { distance: challenge.goalDistance, duration: challenge.goalDuration })
+                                  : challenge.goalDistance
+                                  ? t('endurance.challenges.details.goalRunning', { distance: challenge.goalDistance })
+                                  : challenge.goalDuration
+                                  ? `${challenge.goalDuration} min`
+                                  : ''
+                                }
                               </p>
                             </div>
                           </div>
@@ -2039,7 +2092,7 @@ const EnduranceTab = () => {
                             <button
                               onClick={() => editChallenge(challenge.id)}
                               className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                              title="Modifier le défi"
+                              title={t('endurance.session.editChallenge')}
                             >
                               <Edit className="w-5 h-5" />
                             </button>
@@ -2050,7 +2103,7 @@ const EnduranceTab = () => {
                                 deleteChallenge(challenge.id, realIndex);
                               }}
                               className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                              title="Supprimer le défi"
+                              title={t('endurance.session.deleteChallenge')}
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -2064,13 +2117,13 @@ const EnduranceTab = () => {
 
               {/* Historique */}
               <div>
-                <h3 className="text-2xl font-bold text-white mb-6">Historique</h3>
+                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
                   {sessions.running.length === 0 ? (
                     <div className="p-12 text-center">
                       <Play className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">Aucune session enregistrée</p>
-                      <p className="text-slate-500 text-sm mt-2">Commencez par créer votre première session</p>
+                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
+                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
                     </div>
                   ) : (
                     <div className="space-y-4 p-6">
@@ -2084,29 +2137,29 @@ const EnduranceTab = () => {
                                 <span className="text-white font-bold text-lg">{session.date}</span>
                                 <span className="text-slate-400">{session.time}</span>
                                 <span className="px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 rounded-lg text-sm">
-                                  {session.type ? (session.type.charAt(0).toUpperCase() + session.type.slice(1)) : 'Boxing'}
+                                  {session.type ? (session.type.charAt(0).toUpperCase() + session.type.slice(1)) : t('endurance.running.details.type')}
                                 </span>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                 <div>
-                                  <span className="text-slate-400">Distance:</span>
+                                  <span className="text-slate-400">{t('endurance.running.details.distance')}</span>
                                   <span className="text-white font-bold ml-2">{session.distance}km</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400">Durée:</span>
+                                  <span className="text-slate-400">{t('endurance.running.details.duration')}</span>
                                   <span className="text-white font-bold ml-2">{session.duration}</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400">Allure:</span>
+                                  <span className="text-slate-400">{t('endurance.running.details.pace')}</span>
                                   <span className="text-white font-bold ml-2">{session.pace} min/km</span>
                                 </div>
                                 <div>
-                                  <span className="text-slate-400">Vitesse:</span>
+                                  <span className="text-slate-400">{t('endurance.running.details.speed')}</span>
                                   <span className="text-white font-bold ml-2">{session.speed} km/h</span>
                                 </div>
                                 {session.elevation && (
                                   <div>
-                                    <span className="text-slate-400">Dénivelé:</span>
+                                    <span className="text-slate-400">{t('endurance.running.details.elevation')}</span>
                                     <span className="text-white font-bold ml-2">{session.elevation}m</span>
                                   </div>
                                 )}
@@ -2136,7 +2189,7 @@ const EnduranceTab = () => {
                           </div>
                           {session.notes && (
                             <div className="mt-4 text-slate-400 text-sm">
-                              <span className="font-medium">Notes:</span> {session.notes}
+                              <span className="font-medium">{t('endurance.swimming.details.notes')}</span> {session.notes}
                             </div>
                           )}
                         </div>
@@ -2154,8 +2207,8 @@ const EnduranceTab = () => {
             <>
               <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h2 className="text-4xl font-bold text-white mb-2">Calendrier d'Activité</h2>
-                  <p className="text-slate-400">Vue d'ensemble de vos activités d'endurance</p>
+                  <h2 className="text-4xl font-bold text-white mb-2">{t('endurance.sections.calendar.title')}</h2>
+                  <p className="text-slate-400">{t('endurance.sections.calendar.subtitle')}</p>
                 </div>
                 <div className="flex gap-3">
                   <select
@@ -2171,12 +2224,12 @@ const EnduranceTab = () => {
                     onChange={(e) => setUI({ selectedActivityFilter: e.target.value })}
                     className="px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
                   >
-                    <option value="all">Toutes les activités</option>
-                    <option value="boxing">Boxe</option>
-                    <option value="pushups">Pompes</option>
-                    <option value="swimming">Natation</option>
-                    <option value="jumprope">Corde à sauter</option>
-                    <option value="running">Course</option>
+                    <option value="all">{t('endurance.calendar.filters.all')}</option>
+                    <option value="boxing">{t('endurance.calendar.filters.boxing')}</option>
+                    <option value="pushups">{t('endurance.calendar.filters.pushups')}</option>
+                    <option value="swimming">{t('endurance.calendar.filters.swimming')}</option>
+                    <option value="jumprope">{t('endurance.calendar.filters.jumprope')}</option>
+                    <option value="running">{t('endurance.calendar.filters.running')}</option>
                   </select>
                 </div>
               </div>
@@ -2185,19 +2238,19 @@ const EnduranceTab = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
                   <div className="text-2xl font-bold text-white">{getTotalActivities}</div>
-                  <div className="text-slate-400 text-sm">Activités totales</div>
+                  <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.totalActivities')}</div>
                 </div>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
                   <div className="text-2xl font-bold text-white">{getCurrentStreak}</div>
-                  <div className="text-slate-400 text-sm">Jours consécutifs</div>
+                  <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.consecutiveDays')}</div>
                 </div>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
                   <div className="text-2xl font-bold text-white">{getBestStreak}</div>
-                  <div className="text-slate-400 text-sm">Meilleure série</div>
+                  <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.bestStreak')}</div>
                 </div>
                 <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
                   <div className="text-2xl font-bold text-white">{getActiveDays}</div>
-                  <div className="text-slate-400 text-sm">Jours actifs</div>
+                  <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.activeDays')}</div>
                 </div>
               </div>
 
@@ -2207,17 +2260,17 @@ const EnduranceTab = () => {
                   onClick={diagnoseDataState}
                   className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 rounded-lg text-blue-300 hover:text-blue-200 transition-all text-sm"
                 >
-                  🔍 Diagnostic des données (Console)
+                  {t('endurance.calendar.diagnostic')}
                 </button>
               </div>
 
               {/* Heatmap */}
               <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 mb-8">
-                <h3 className="text-xl font-bold text-white mb-4">Heatmap d'Activité - {ui.selectedYear}</h3>
+                <h3 className="text-xl font-bold text-white mb-4">{t('endurance.calendar.heatmap.title', { year: ui.selectedYear })}</h3>
                 
                 {/* Légende */}
                 <div className="flex items-center gap-2 mb-6">
-                  <span className="text-slate-400 text-sm">Moins d'activité</span>
+                  <span className="text-slate-400 text-sm">{t('endurance.calendar.heatmap.less')}</span>
                   <div className="flex gap-1">
                     {[0, 1, 2, 3, 4].map(level => (
                       <div
@@ -2232,13 +2285,13 @@ const EnduranceTab = () => {
                       />
                     ))}
                   </div>
-                  <span className="text-slate-400 text-sm">Plus d'activité</span>
+                  <span className="text-slate-400 text-sm">{t('endurance.calendar.heatmap.more')}</span>
                 </div>
 
                 {/* Calendrier simplifié */}
                 <div className="space-y-4">
                   {Array.from({ length: 12 }, (_, monthIndex) => {
-                    const monthName = getMonthLabels()[monthIndex];
+                    const monthName = getMonthLabels[monthIndex];
                     const monthDate = new Date(ui.selectedYear, monthIndex, 1);
                     const daysInMonth = new Date(ui.selectedYear, monthIndex + 1, 0).getDate();
                     const firstDayOfWeek = monthDate.getDay();
@@ -2248,7 +2301,11 @@ const EnduranceTab = () => {
                         <h4 className="text-white font-semibold mb-3">{monthName}</h4>
                         <div className="grid grid-cols-7 gap-1">
                           {/* Jours de la semaine */}
-                          {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((day, dayIndex) => (
+                          {(() => {
+                            const enduranceData = getCachedNamespace(language, 'endurance');
+                            const weekdays = enduranceData?.calendar?.weekdays?.short;
+                            return Array.isArray(weekdays) ? weekdays : ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+                          })().map((day, dayIndex) => (
                             <div key={`header-${dayIndex}`} className="text-slate-500 text-xs text-center py-1">
                               {day}
                             </div>
@@ -2277,7 +2334,10 @@ const EnduranceTab = () => {
                                   'bg-green-500 hover:bg-green-400 text-white'
                                 }`}
                                 onClick={() => handleDayClick(dayDate)}
-                                title={`${dayDate.toLocaleDateString('fr-FR')} - ${activityCount} activité${activityCount > 1 ? 's' : ''}`}
+                                title={activityCount === 1
+                                  ? t('endurance.calendar.heatmap.dayTitle', { date: dayDate.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US'), count: activityCount })
+                                  : t('endurance.calendar.heatmap.dayTitlePlural', { date: dayDate.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US'), count: activityCount })
+                                }
                               >
                                 {dayNumber}
                               </div>
@@ -2296,15 +2356,17 @@ const EnduranceTab = () => {
                   <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl">
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-2xl font-bold text-white">
-                        Activités du {ui.selectedDay.toLocaleDateString('fr-FR', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
+                        {t('endurance.calendar.heatmap.dayActivities', { 
+                          date: formatDate(ui.selectedDay, { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })
                         })}
                       </h3>
                       <button
-                        onClick={() => setSelectedDay(null)}
+                        onClick={() => setUI({ selectedDay: null })}
                         className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
                       >
                         <X className="w-6 h-6" />
@@ -2329,11 +2391,11 @@ const EnduranceTab = () => {
                               }`} />
                               <div>
                                 <div className="text-white font-medium">
-                                  {activity.type === 'boxing' ? 'Boxe' :
-                                   activity.type === 'pushups' ? 'Pompes' :
-                                   activity.type === 'swimming' ? 'Natation' :
-                                   activity.type === 'jumprope' ? 'Corde à sauter' :
-                                   'Course'}
+                                  {activity.type === 'boxing' ? t('endurance.menu.boxing') :
+                                   activity.type === 'pushups' ? t('endurance.menu.pushups') :
+                                   activity.type === 'swimming' ? t('endurance.menu.swimming') :
+                                   activity.type === 'jumprope' ? t('endurance.menu.jumprope') :
+                                   t('endurance.menu.running')}
                                 </div>
                                 <div className="text-slate-400 text-sm">{activity.time}</div>
                               </div>
@@ -2350,7 +2412,7 @@ const EnduranceTab = () => {
                       
                       {getActivitiesForDay(ui.selectedDay).length === 0 && (
                         <div className="text-center py-8 text-slate-400">
-                          Aucune activité enregistrée ce jour
+                          {t('endurance.calendar.heatmap.noActivities')}
                         </div>
                       )}
                     </div>
@@ -2367,7 +2429,7 @@ const EnduranceTab = () => {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-3xl font-bold text-white">Créer un défi</h3>
+              <h3 className="text-3xl font-bold text-white">{t('endurance.challenges.modal.title')}</h3>
               <button
                 onClick={() => setUI({ showChallengeModal: false })}
                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
@@ -2378,46 +2440,46 @@ const EnduranceTab = () => {
             
             <div className="space-y-5">
               <div>
-                <label className="block text-slate-300 text-sm font-medium mb-2">Nom du défi</label>
+                <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.name')}</label>
                 <input
                   type="text"
                   value={challengeForm.name}
                   onChange={(e) => setChallengeForm({...challengeForm, name: e.target.value})}
                   className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                  placeholder="Ex: 100 pompes par jour"
+                  placeholder={t('endurance.challenges.modal.namePlaceholder')}
                 />
               </div>
               
               <div>
-                <label className="block text-slate-300 text-sm font-medium mb-2">Type d'activité</label>
+                <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.activityType')}</label>
                 <select
                   value={challengeForm.activityType}
                   onChange={(e) => setChallengeForm({...challengeForm, activityType: e.target.value})}
                   className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
                 >
-                  <option value="pushups">Pompes</option>
-                  <option value="swimming">Natation</option>
-                  <option value="jumprope">Corde à sauter</option>
-                  <option value="running">Course</option>
+                  <option value="pushups">{t('endurance.menu.pushups')}</option>
+                  <option value="swimming">{t('endurance.menu.swimming')}</option>
+                  <option value="jumprope">{t('endurance.menu.jumprope')}</option>
+                  <option value="running">{t('endurance.menu.running')}</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-slate-300 text-sm font-medium mb-2">Type de défi</label>
+                <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.challengeType')}</label>
                 <select
                   value={challengeForm.type}
                   onChange={(e) => setChallengeForm({...challengeForm, type: e.target.value})}
                   className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
                 >
-                  <option value="ponctuel">Ponctuel</option>
-                  <option value="recurrent">Récurrent</option>
-                  <option value="periode">Sur une période</option>
+                  <option value="ponctuel">{t('endurance.challenges.types.ponctuel')}</option>
+                  <option value="recurrent">{t('endurance.challenges.types.recurrent')}</option>
+                  <option value="periode">{t('endurance.challenges.types.periode')}</option>
                 </select>
               </div>
 
               {challengeForm.type === 'ponctuel' && (
                 <div>
-                  <label className="block text-slate-300 text-sm font-medium mb-2">Date cible</label>
+                  <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.targetDate')}</label>
                   <input
                     type="date"
                     value={challengeForm.targetDate}
@@ -2430,26 +2492,26 @@ const EnduranceTab = () => {
               {challengeForm.type === 'recurrent' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Fréquence</label>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.frequency')}</label>
                     <select
                       value={challengeForm.frequency}
                       onChange={(e) => setChallengeForm({...challengeForm, frequency: e.target.value})}
                       className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
                     >
-                      <option value="daily">Quotidien</option>
-                      <option value="weekly">Hebdomadaire</option>
+                      <option value="daily">{t('endurance.challenges.frequencies.daily')}</option>
+                      <option value="weekly">{t('endurance.challenges.frequencies.weekly')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Moment</label>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.moment')}</label>
                     <select
                       value={challengeForm.moment}
                       onChange={(e) => setChallengeForm({...challengeForm, moment: e.target.value})}
                       className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
                     >
-                      <option value="matin">Matin</option>
-                      <option value="midi">Midi</option>
-                      <option value="soir">Soir</option>
+                      <option value="matin">{t('endurance.challenges.moments.morning')}</option>
+                      <option value="midi">{t('endurance.challenges.moments.midday')}</option>
+                      <option value="soir">{t('endurance.challenges.moments.evening')}</option>
                     </select>
                   </div>
                 </div>
@@ -2458,7 +2520,7 @@ const EnduranceTab = () => {
               {challengeForm.type === 'periode' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Date début</label>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.startDate')}</label>
                     <input
                       type="date"
                       value={challengeForm.startDate}
@@ -2467,7 +2529,7 @@ const EnduranceTab = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Date fin</label>
+                    <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.endDate')}</label>
                     <input
                       type="date"
                       value={challengeForm.endDate}
@@ -2481,28 +2543,25 @@ const EnduranceTab = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 text-sm font-medium mb-2">
-                    {challengeForm.activityType === 'swimming' ? 'Distance (mètres)' : 
-                     challengeForm.activityType === 'running' ? 'Distance (km)' : 
-                     challengeForm.activityType === 'jumprope' ? 'Nombre de sauts' :
-                     'Nombre'}
+                    {t(`endurance.challenges.modal.goalCount.${challengeForm.activityType}`, { fallback: t('endurance.challenges.modal.goalCount.default') })}
                   </label>
                   <input
                     type="number"
                     value={challengeForm.goalCount}
                     onChange={(e) => setChallengeForm({...challengeForm, goalCount: e.target.value})}
                     className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                    placeholder="Optionnel"
+                    placeholder={t('endurance.challenges.modal.optional')}
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 text-sm font-medium mb-2">Durée max (minutes)</label>
+                  <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.goalDuration')}</label>
                   <input
                     type="number"
                     step="0.5"
                     value={challengeForm.goalDuration}
                     onChange={(e) => setChallengeForm({...challengeForm, goalDuration: e.target.value})}
                     className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                    placeholder="Optionnel"
+                    placeholder={t('endurance.challenges.modal.optional')}
                   />
                 </div>
               </div>
@@ -2519,7 +2578,7 @@ const EnduranceTab = () => {
                 onClick={addChallenge}
                 className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all"
               >
-                Créer le défi
+                {t('endurance.challenges.modal.create')}
               </button>
             </div>
           </div>

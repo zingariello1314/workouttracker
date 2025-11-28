@@ -1,0 +1,77 @@
+{
+  "restDay": {
+    "title": "Rest day",
+    "message": "Enjoy your recovery day!"
+  },
+  "workout": {
+    "trainingMode": "Training mode:",
+    "home": "🏠 Home",
+    "gym": "🏋️ Gym",
+    "week": "Week {{week}}"
+  },
+  "exercises": {
+    "title": "Exercises",
+    "save": "Save",
+    "discard": "Discard",
+    "suppress": "Suppress for today",
+    "suppressTitle": "Suppress for today",
+    "restore": "Restore",
+    "addExceptional": "Add exceptional exercise",
+    "removeExceptional": "Remove exceptional exercise",
+    "removeExceptionalTitle": "Remove this exceptional exercise",
+    "markComplete": "Mark as completed",
+    "exceptionalTitle": "Exceptional Exercises",
+    "exceptional": "Exceptional",
+    "unsavedChanges": "Unsaved changes"
+  },
+  "stretches": {
+    "title": "Stretches",
+    "titleOfDay": "Stretches of the day",
+    "save": "Save",
+    "discard": "Discard",
+    "unsavedChanges": "Unsaved changes"
+  },
+  "challenges": {
+    "title": "Active challenges",
+    "count": "{{count}} active challenge",
+    "count_plural": "{{count}} active challenges",
+    "validate": "Validate",
+    "completed": "Challenge validated successfully! 🎉"
+  },
+  "messages": {
+    "exercisesSaved": "Exercises saved successfully",
+    "stretchesSaved": "Stretches saved successfully",
+    "exerciseSuppressed": "Exercise suppressed for today",
+    "exerciseRestored": "Exercise restored for today",
+    "exceptionalExerciseCompleted": "Exceptional exercise marked as completed",
+    "exceptionalExerciseRemoved": "Exceptional exercise removed",
+    "errorSavingExercises": "Error saving exercises",
+    "errorSavingStretches": "Error saving stretches",
+    "errorSuppressing": "Error suppressing",
+    "errorRestoring": "Error restoring",
+    "errorCompleting": "Error completing",
+    "errorRemoving": "Error removing",
+    "errorValidating": "Error validating challenge",
+    "validationFailed": "Validation failed",
+    "errorValidatingMessage": "An error occurred while validating the challenge.",
+    "saveFailed": "Save failed",
+    "suppressFailed": "Suppression failed",
+    "restoreFailed": "Restoration failed",
+    "completeFailed": "Completion failed",
+    "removeFailed": "Removal failed",
+    "errorMessage": "An error occurred while saving. Please try again.",
+    "suggestions": {
+      "checkInternet": "Check your internet connection",
+      "refresh": "Refresh the page and try again",
+      "contactSupport": "Contact support if the problem persists",
+      "checkExerciseExists": "Check that the exercise exists in the program",
+      "tryAgain": "Try again in a few moments",
+      "checkWasSuppressed": "Check that the exercise was suppressed",
+      "checkFields": "Check that all fields are filled"
+    }
+  },
+  "confirmations": {
+    "suppressExercise": "Are you sure you want to suppress this exercise for today?\n\nThis action can be undone by restoring the exercise.",
+    "removeExceptionalExercise": "Are you sure you want to remove this exceptional exercise?"
+  }
+}

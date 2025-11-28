@@ -1,0 +1,23 @@
+{
+  "title": "Nutrition",
+  "subtitle": "Suivez votre alimentation, créez des programmes nutritionnels et analysez vos habitudes",
+  "sections": {
+    "journal": "Journal",
+    "programs": "Programmes",
+    "analyses": "Analyses",
+    "gamification": "Gamification",
+    "challenges": "Défis",
+    "progress": "Progression",
+    "sharing": "Partage"
+  },
+  "skeletons": {
+    "journal": "du journal nutritionnel",
+    "programs": "des programmes",
+    "analyses": "des analyses",
+    "gamification": "de la gamification",
+    "challenges": "des défis",
+    "progress": "de la progression",
+    "sharing": "du partage"
+  }
+}
+

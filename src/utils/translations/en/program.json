@@ -1,0 +1,75 @@
+{
+  "title": "Training Programs",
+  "subtitle": "Manage your programs and track your progress",
+  "currentProgram": {
+    "title": "Current Program",
+    "activeSince": "Active since {{duration}}",
+    "plannedDuration": "Planned duration: {{weeks}} weeks",
+    "progress": "Progress",
+    "deactivate": "Deactivate"
+  },
+  "buttons": {
+    "import": "Import Program",
+    "new": "New Program",
+    "create": "Create Program",
+    "cancel": "Cancel",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "export": "Export"
+  },
+  "createForm": {
+    "title": "Create a New Program",
+    "name": "Program Name",
+    "nameRequired": "*",
+    "namePlaceholder": "Ex: Beginner Strength Program",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the goals and characteristics of this program...",
+    "duration": "Duration (weeks)"
+  },
+  "list": {
+    "title": "All Programs",
+    "duration": "Duration: {{weeks}} weeks",
+    "usedFor": "Used for {{duration}}",
+    "activeSince": "Active since {{duration}}",
+    "createdOn": "Created on {{date}}"
+  },
+  "status": {
+    "active": "Active",
+    "completed": "Completed",
+    "inactive": "Inactive"
+  },
+  "duration": {
+    "day": "{{count}} day",
+    "days": "{{count}} days",
+    "week": "{{count}} week",
+    "weeks": "{{count}} weeks",
+    "month": "{{count}} month",
+    "months": "{{count}} months"
+  },
+  "import": {
+    "success": "Current program imported successfully!",
+    "defaultName": "Cycle 3+1 Program",
+    "defaultDescription": "Complete training program - Street Workout, Boxing, Swimming and Weight Training",
+    "defaultGoal": "Strength, endurance and complete muscle development"
+  },
+  "stretches": {
+    "morning": "Morning stretches",
+    "midday": "Active break",
+    "evening": "Recovery"
+  },
+  "equipment": {
+    "boxingGloves": "Boxing gloves",
+    "pool": "Pool",
+    "gym": "gym",
+    "bodyWeight": "body weight"
+  },
+  "misc": {
+    "notSpecified": "Not specified",
+    "noPrograms": "No programs created",
+    "noProgramsHint": "Start by creating your first training program"
+  }
+}
+

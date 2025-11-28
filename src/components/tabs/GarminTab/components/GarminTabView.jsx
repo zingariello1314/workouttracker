@@ -11,6 +11,7 @@ import MetricsSection from './sections/MetricsSection';
 import ChartsSection from './sections/ChartsSection';
 import UtilitiesSection from './sections/UtilitiesSection';
 import { GarminDebugPortal } from './GarminDebugPortal';
+import { useTranslation } from '../../../../utils/translations';
 
 const GarminDashboard = React.lazy(() => import('./GarminDashboard'));
 const GarminActivities = React.lazy(() => import('./GarminActivities'));
@@ -27,23 +28,27 @@ const DebugPanel = React.lazy(() => import('./DebugPanel'));
  * @param {string} props.label - Label à afficher dans le message de chargement
  * @param {string} props.minHeight - Hauteur minimale du conteneur
  */
-const SectionFallback = React.memo(({ label = 'du contenu', minHeight = '240px' }) => (
-  <div
-    className="rounded-lg border border-slate-700 bg-slate-800/60 flex items-center justify-center text-slate-300 text-sm"
-    style={{ minHeight }}
-    role="status"
-    aria-live="polite"
-    aria-busy="true"
-  >
-    <div className="flex items-center gap-3">
-      <span 
-        className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin" 
-        aria-hidden="true"
-      />
-      <span>Chargement {label}…</span>
+const SectionFallback = React.memo(({ label, minHeight = '240px' }) => {
+  const t = useTranslation();
+  const displayLabel = label || t('garmin.fallback.default');
+  return (
+    <div
+      className="rounded-lg border border-slate-700 bg-slate-800/60 flex items-center justify-center text-slate-300 text-sm"
+      style={{ minHeight }}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div className="flex items-center gap-3">
+        <span 
+          className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin" 
+          aria-hidden="true"
+        />
+        <span>{t('garmin.fallback.loading', { label: displayLabel })}</span>
+      </div>
     </div>
-  </div>
-), (prevProps, nextProps) => {
+  );
+}, (prevProps, nextProps) => {
   // Comparaison optimisée : ne re-render que si label ou minHeight change
   return prevProps.label === nextProps.label && prevProps.minHeight === nextProps.minHeight;
 });
@@ -130,6 +135,8 @@ export function GarminTabView({
   // Callbacks pour Provider
   handleForcedRangeRecorded
 }) {
+  const t = useTranslation();
+  
   // ✅ Optimisation : Mémoïser tous les handlers pour éviter création fonctions inline
   const handleToggleRaw = React.useCallback(() => {
     setShowRaw((v) => !v);
@@ -213,7 +220,7 @@ export function GarminTabView({
               tabs={tabItems}
               activeTab={activeTab}
               onSelect={setActiveTab}
-              ariaLabel="Navigation principale Garmin"
+              ariaLabel={t('garmin.navigation.ariaLabel')}
               onTabHover={prefetchTabModules}
               onTabFocus={prefetchTabModules}
             />
@@ -223,13 +230,13 @@ export function GarminTabView({
           {garminData && (
             <div className="mt-6">
               {activeTab === 'dashboard' && (
-                <DashboardSection fallback={<SectionFallback label="du tableau de bord" minHeight="320px" />}>
+                <DashboardSection fallback={<SectionFallback label={t('garmin.fallback.dashboard')} minHeight="320px" />}>
                   <GarminDashboard />
                 </DashboardSection>
               )}
 
               {activeTab === 'activities' && (
-                <ActivitiesSection fallback={<SectionFallback label="des activités" minHeight="280px" />}>
+                <ActivitiesSection fallback={<SectionFallback label={t('garmin.fallback.activities')} minHeight="280px" />}>
                   <GarminActivities
                     activities={memoizedActivities}
                     selectedDate={selectedDate}
@@ -238,7 +245,7 @@ export function GarminTabView({
               )}
 
               {activeTab === 'metrics' && (
-                <MetricsSection fallback={<SectionFallback label="des métriques" minHeight="360px" />}>
+                <MetricsSection fallback={<SectionFallback label={t('garmin.fallback.metrics')} minHeight="360px" />}>
                   <AdvancedStatistics
                     dailyMetrics={memoizedDailyMetrics}
                     selectedDate={selectedDate}
@@ -260,7 +267,7 @@ export function GarminTabView({
               )}
 
               {activeTab === 'charts' && (
-                <ChartsSection fallback={<SectionFallback label="des graphiques" minHeight="620px" />} />
+                <ChartsSection fallback={<SectionFallback label={t('garmin.fallback.charts')} minHeight="620px" />} />
               )}
 
               {/* Vue JSON brute */}
@@ -275,8 +282,8 @@ export function GarminTabView({
           {/* Message si aucune donnée */}
           {!garminData && (
             <div className="mt-6 bg-slate-800/60 border border-slate-700 rounded-lg p-8 text-center text-slate-400">
-              <p className="text-lg mb-2">Aucune donnée Garmin</p>
-              <p className="text-sm">Synchronisez vos données Garmin pour commencer.</p>
+              <p className="text-lg mb-2">{t('garmin.empty.title')}</p>
+              <p className="text-sm">{t('garmin.empty.message')}</p>
             </div>
           )}
 
@@ -318,14 +325,14 @@ export function GarminTabView({
               customEndDate={customEndDate}
               autoSyncHistory={autoSyncHistory}
               autoSyncStats={autoSyncStats}
-              fallback={<SectionFallback label="des utilitaires" minHeight="160px" />}
+              fallback={<SectionFallback label={t('garmin.fallback.utilities')} minHeight="160px" />}
             />
           </div>
         </GarminTabLayout>
 
         {/* Panneau de diagnostic via portail React */}
         <GarminDebugPortal isOpen={showDebugPanel}>
-          <React.Suspense fallback={<SectionFallback label="du panneau de diagnostic" minHeight="240px" />}>
+          <React.Suspense fallback={<SectionFallback label={t('garmin.fallback.diagnostics')} minHeight="240px" />}>
             <DebugPanel
               onClose={() => handleToggleDebugPanel(false, 'panel-close')}
               cacheMeta={cacheMeta}

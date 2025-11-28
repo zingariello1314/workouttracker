@@ -1,0 +1,75 @@
+{
+  "title": "Programmes d'Entraînement",
+  "subtitle": "Gérez vos programmes et suivez votre progression",
+  "currentProgram": {
+    "title": "Programme Actuel",
+    "activeSince": "Actif depuis {{duration}}",
+    "plannedDuration": "Durée prévue: {{weeks}} semaines",
+    "progress": "Progression",
+    "deactivate": "Désactiver"
+  },
+  "buttons": {
+    "import": "Importer Programme",
+    "new": "Nouveau Programme",
+    "create": "Créer le Programme",
+    "cancel": "Annuler",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "view": "Voir",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "export": "Exporter"
+  },
+  "createForm": {
+    "title": "Créer un Nouveau Programme",
+    "name": "Nom du Programme",
+    "nameRequired": "*",
+    "namePlaceholder": "Ex: Programme Force Débutant",
+    "description": "Description",
+    "descriptionPlaceholder": "Décrivez les objectifs et caractéristiques de ce programme...",
+    "duration": "Durée (semaines)"
+  },
+  "list": {
+    "title": "Tous les Programmes",
+    "duration": "Durée: {{weeks}} semaines",
+    "usedFor": "Utilisé {{duration}}",
+    "activeSince": "Actif depuis {{duration}}",
+    "createdOn": "Créé le {{date}}"
+  },
+  "status": {
+    "active": "Actif",
+    "completed": "Terminé",
+    "inactive": "Inactif"
+  },
+  "duration": {
+    "day": "{{count}} jour",
+    "days": "{{count}} jours",
+    "week": "{{count}} semaine",
+    "weeks": "{{count}} semaines",
+    "month": "{{count}} mois",
+    "months": "{{count}} mois"
+  },
+  "import": {
+    "success": "Programme actuel importé avec succès !",
+    "defaultName": "Programme Cycle 3+1",
+    "defaultDescription": "Programme d'entraînement complet - Street Workout, Boxe, Natation et Musculation",
+    "defaultGoal": "Force, endurance et développement musculaire complet"
+  },
+  "stretches": {
+    "morning": "Étirements matinaux",
+    "midday": "Pause active",
+    "evening": "Récupération"
+  },
+  "equipment": {
+    "boxingGloves": "Gants de boxe",
+    "pool": "Piscine",
+    "gym": "salle de sport",
+    "bodyWeight": "poids du corps"
+  },
+  "misc": {
+    "notSpecified": "Non spécifié",
+    "noPrograms": "Aucun programme créé",
+    "noProgramsHint": "Commencez par créer votre premier programme d'entraînement"
+  }
+}
+

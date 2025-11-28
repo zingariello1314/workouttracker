@@ -1,6 +1,8 @@
 import React from 'react';
 import { useWorkout } from '../../context/WorkoutContext';
 import Button from '../ui/Button';
+import { useTranslation } from '../../utils/translations';
+import { useFormatters } from '../../utils/translations/formatters-hook';
 
 const Header = () => {
   const { 
@@ -9,6 +11,8 @@ const Header = () => {
     endWorkout,
     currentWorkout 
   } = useWorkout();
+  const t = useTranslation();
+  const { formatDate } = useFormatters();
 
   return (
     <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/50 shadow-lg">
@@ -19,7 +23,7 @@ const Header = () => {
             <div className="flex items-center space-x-3">
               <img 
                 src="/logo.png" 
-                alt="Momentum Logo" 
+                alt={t('common.header.logoAlt')} 
                 className="w-12 h-12 rounded-lg"
               />
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -27,7 +31,7 @@ const Header = () => {
               </h1>
             </div>
             <div className="text-sm text-slate-300">
-              {new Date().toLocaleDateString('fr-FR', { 
+              {formatDate(new Date(), { 
                 weekday: 'long', 
                 year: 'numeric', 
                 month: 'long', 
@@ -43,7 +47,7 @@ const Header = () => {
                 <div className="text-sm text-slate-300">
                   <span className="inline-flex items-center">
                     <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                    Séance en cours
+                    {t('common.header.sessionInProgress')}
                   </span>
                 </div>
                 <Button 
@@ -51,7 +55,7 @@ const Header = () => {
                   size="sm"
                   onClick={endWorkout}
                 >
-                  Terminer
+                  {t('common.header.end')}
                 </Button>
               </div>
             ) : (
@@ -60,7 +64,7 @@ const Header = () => {
                 size="sm"
                 onClick={startWorkout}
               >
-                Commencer
+                {t('common.header.start')}
               </Button>
             )}
           </div>

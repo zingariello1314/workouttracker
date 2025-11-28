@@ -1,0 +1,56 @@
+{
+  "maladie": "Sickness",
+  "flemme": "Laziness",
+  "pas_le_temps": "No time",
+  "autre": "Other",
+  "title": "Justify absence of activity",
+  "titleWithDate": "Justify absence of activity - {{date}}",
+  "select_reason": "Select a reason",
+  "reason": "Reason for absence",
+  "reasonRequired": "*",
+  "note": "Note (optional)",
+  "note.placeholder": "Add details if necessary (e.g. 'Flu with fever', 'Business trip')",
+  "dateConcerned": "Date concerned",
+  "monthly": "Monthly justifications",
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "modify": "Modify"
+  },
+  "messages": {
+    "saved": "Justification saved",
+    "savedWithReason": "Day justified: {{reason}}",
+    "deleted": "Justification deleted",
+    "validationFailed": "Validation failed",
+    "validationFailedMessage": "Please correct errors before saving",
+    "invalidDate": "Invalid date",
+    "invalidDateSave": "Cannot save: invalid date",
+    "invalidDateDelete": "Cannot delete: invalid date",
+    "noJustification": "No justification",
+    "noJustificationToDelete": "No justification to delete",
+    "deleteConfirm": "Are you sure you want to delete the justification for {{date}}?",
+    "saveError": "Save error",
+    "saveErrorMessage": "An error occurred while saving the justification",
+    "deleteError": "Delete error",
+    "deleteErrorMessage": "An error occurred while deleting the justification"
+  },
+  "validation": {
+    "reasonRequired": "Please select a reason",
+    "reasonInvalid": "Invalid reason",
+    "noteTooLong": "Note too long (max {{max}} characters)"
+  },
+  "help": {
+    "keyboardShortcut": "Ctrl/Cmd + Enter to save quickly",
+    "characters": "{{current}}/{{max}} characters"
+  },
+  "button": {
+    "justify": "Justify",
+    "modify": "Modify",
+    "modifyAriaLabel": "Modify justification",
+    "dayJustified": "Day justified",
+    "noActivity": "No activity recorded",
+    "justifyHint": "Justify your absence if necessary"
+  }
+}
+

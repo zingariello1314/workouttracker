@@ -1,0 +1,23 @@
+{
+  "title": "Nutrition",
+  "subtitle": "Track your nutrition, create nutrition programs and analyze your habits",
+  "sections": {
+    "journal": "Journal",
+    "programs": "Programs",
+    "analyses": "Analyses",
+    "gamification": "Gamification",
+    "challenges": "Challenges",
+    "progress": "Progress",
+    "sharing": "Sharing"
+  },
+  "skeletons": {
+    "journal": "nutrition journal",
+    "programs": "programs",
+    "analyses": "analyses",
+    "gamification": "gamification",
+    "challenges": "challenges",
+    "progress": "progress",
+    "sharing": "sharing"
+  }
+}
+

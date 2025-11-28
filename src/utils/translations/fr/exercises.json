@@ -1,0 +1,90 @@
+{
+  "exceptional": {
+    "title": "Ajouter un exercice exceptionnel",
+    "name": {
+      "label": "Nom de l'exercice",
+      "required": "*",
+      "placeholder": "Ex: Développé couché avec haltères",
+      "help": "Le nom doit contenir au moins 2 caractères"
+    },
+    "type": {
+      "label": "Type d'exercice",
+      "required": "*",
+      "reps": "Par répétitions (séries × reps)",
+      "duration": "Par durée (secondes/minutes)"
+    },
+    "series": {
+      "label": "Nombre de séries",
+      "required": "*",
+      "help": "Entre 1 et 50 séries"
+    },
+    "repsPerSeries": {
+      "label": "Répétitions par série",
+      "required": "*",
+      "series": "série",
+      "seriesPlural": "séries"
+    },
+    "duration": {
+      "label": "Durée",
+      "required": "*",
+      "unit": "secondes",
+      "help": "Durée en secondes (ex: 60 = 1 minute)"
+    },
+    "materiel": {
+      "label": "Matériel",
+      "placeholder": "Ex: Haltères, barre, élastique..."
+    },
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Ajoutez des notes supplémentaires..."
+    },
+    "reason": {
+      "label": "Raison",
+      "placeholder": "Pourquoi cet exercice est exceptionnel ?"
+    },
+    "buttons": {
+      "save": "Sauvegarder",
+      "cancel": "Annuler"
+    },
+    "messages": {
+      "success": "Exercice exceptionnel ajouté avec succès !",
+      "validationError": "Erreur de validation",
+      "errorsToFix": "Erreurs à corriger",
+      "warningsTitle": "Avertissements",
+      "suggestionsTitle": "Suggestions",
+      "addError": "Erreur lors de l'ajout",
+      "addFailed": "Échec de l'ajout",
+      "addErrorMessage": "Une erreur est survenue lors de l'ajout de l'exercice.",
+      "warnings": "⚠️ Avertissements :",
+      "warningsContinue": "Souhaitez-vous continuer quand même ?",
+      "suggestions": {
+        "checkFields": "Vérifiez que tous les champs sont correctement remplis",
+        "tryAgain": "Réessayez dans quelques instants"
+      }
+    },
+    "validation": {
+      "nameRequired": "Le nom de l'exercice est requis",
+      "nameMinLength": "Le nom de l'exercice doit contenir au moins 2 caractères",
+      "nameMaxLength": "Le nom est très long (> 100 caractères)",
+      "typeRequired": "Le type d'exercice doit être \"reps\" ou \"duration\"",
+      "seriesRequired": "Le nombre de séries doit être supérieur à 0",
+      "seriesTooHigh": "Un nombre très élevé de séries (> 50) peut être une erreur",
+      "seriesHigh": "Un nombre élevé de séries (> 20) peut être fatigant",
+      "seriesLow": "Une seule série peut être peu efficace pour la progression",
+      "repsRequired": "Au moins une série doit avoir des répétitions",
+      "repsMismatch": "Le nombre de séries ({{series}}) ne correspond pas au nombre de valeurs de répétitions ({{repsCount}})",
+      "repsInvalid": "Toutes les répétitions doivent être positives et inférieures à 1000",
+      "repsLow": "Certaines séries ont très peu de reps (< 5) - vérifiez",
+      "repsHigh": "Certaines séries ont beaucoup de reps (> 100) - vérifiez",
+      "durationRequired": "La durée doit être positive",
+      "durationTooLong": "Durée très longue (> 2 heures) - est-ce correct ?",
+      "durationTooShort": "Durée très courte (< 10 secondes) - est-ce correct ?"
+    },
+    "suggestions": {
+      "allSameReps": "Toutes les séries ont le même nombre de reps ({{reps}}) - vous pouvez simplifier",
+      "progressionDetected": "Progression détectée : {{diff}} reps par série",
+      "durationMinutes": "Durée : {{minutes}}min (vérifiez si c'est bien en secondes)"
+    }
+  }
+}
+

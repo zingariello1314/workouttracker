@@ -1,0 +1,56 @@
+{
+  "maladie": "Maladie",
+  "flemme": "Flemme",
+  "pas_le_temps": "Pas le temps",
+  "autre": "Autre",
+  "title": "Justifier l'absence d'activité",
+  "titleWithDate": "Justifier l'absence d'activité - {{date}}",
+  "select_reason": "Sélectionnez une raison",
+  "reason": "Raison de l'absence",
+  "reasonRequired": "*",
+  "note": "Note (optionnelle)",
+  "note.placeholder": "Ajoutez des détails si nécessaire (ex: 'Grippe avec fièvre', 'Déplacement professionnel')",
+  "dateConcerned": "Date concernée",
+  "monthly": "Justifications du mois",
+  "buttons": {
+    "save": "Sauvegarder",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "modify": "Modifier"
+  },
+  "messages": {
+    "saved": "Justification enregistrée",
+    "savedWithReason": "Jour justifié : {{reason}}",
+    "deleted": "Justification supprimée",
+    "validationFailed": "Validation échouée",
+    "validationFailedMessage": "Veuillez corriger les erreurs avant de sauvegarder",
+    "invalidDate": "Date invalide",
+    "invalidDateSave": "Impossible de sauvegarder : date invalide",
+    "invalidDateDelete": "Impossible de supprimer : date invalide",
+    "noJustification": "Aucune justification",
+    "noJustificationToDelete": "Aucune justification à supprimer",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer la justification pour le {{date}} ?",
+    "saveError": "Erreur de sauvegarde",
+    "saveErrorMessage": "Une erreur est survenue lors de la sauvegarde de la justification",
+    "deleteError": "Erreur de suppression",
+    "deleteErrorMessage": "Une erreur est survenue lors de la suppression de la justification"
+  },
+  "validation": {
+    "reasonRequired": "Veuillez sélectionner une raison",
+    "reasonInvalid": "Raison invalide",
+    "noteTooLong": "Note trop longue (max {{max}} caractères)"
+  },
+  "help": {
+    "keyboardShortcut": "Ctrl/Cmd + Enter pour sauvegarder rapidement",
+    "characters": "{{current}}/{{max}} caractères"
+  },
+  "button": {
+    "justify": "Justifier",
+    "modify": "Modifier",
+    "modifyAriaLabel": "Modifier la justification",
+    "dayJustified": "Jour justifié",
+    "noActivity": "Aucune activité enregistrée",
+    "justifyHint": "Justifiez votre absence si nécessaire"
+  }
+}
+

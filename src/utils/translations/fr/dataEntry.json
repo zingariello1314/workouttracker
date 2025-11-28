@@ -1,0 +1,53 @@
+{
+  "title": "Saisie de données",
+  "subtitle": "Enregistrez vos répétitions pour le {{dayName}} {{date}}",
+  "restDay": {
+    "title": "Jour de repos",
+    "message": "Aucun exercice programmé pour {{dayName}}"
+  },
+  "advancedMode": {
+    "label": "Mode avancé",
+    "title": "Saisie avancée - 7 derniers jours",
+    "tip": "💡 <strong>Astuce :</strong> Vous pouvez saisir vos répétitions en avance ou rattraper celles en retard directement dans ce tableau.",
+    "autoComplete": "Les exercices sont automatiquement marqués comme terminés quand vous saisissez des répétitions > 0."
+  },
+  "quickEntry": {
+    "title": "{{workoutName}} - Saisie rapide"
+  },
+  "weekVariants": {
+    "weekA": "Semaine A",
+    "weekB": "Semaine B"
+  },
+  "exercise": {
+    "label": "Exercice",
+    "bodyWeight": "Poids du corps",
+    "reps": "reps",
+    "done": "✓ Fait",
+    "placeholder": "Reps"
+  },
+  "buttons": {
+    "save": "Sauvegarder",
+    "reset": "Réinitialiser"
+  },
+  "summary": {
+    "title": "Résumé de la journée",
+    "totalReps": "Répétitions totales",
+    "completedExercises": "Exercices terminés",
+    "progress": "Progression"
+  },
+  "messages": {
+    "saveSuccess": "{{count}} exercice(s) sauvegardé(s) avec succès !",
+    "savePartial": "{{savedCount}} exercice(s) sauvegardé(s), {{errorCount}} erreur(s) détectée(s). Vérifiez la console pour plus de détails.",
+    "resetConfirm": "Êtes-vous sûr de vouloir réinitialiser toutes les données de cette journée ?"
+  },
+  "days": {
+    "monday": "Lundi",
+    "tuesday": "Mardi",
+    "wednesday": "Mercredi",
+    "thursday": "Jeudi",
+    "friday": "Vendredi",
+    "saturday": "Samedi",
+    "sunday": "Dimanche"
+  }
+}
+

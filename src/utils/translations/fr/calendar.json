@@ -1,0 +1,132 @@
+{
+  "sessionCounter": {
+    "title": "Compteur de Séances",
+    "totalSessions": "Total Séances",
+    "trainingDays": "jours d'entraînement",
+    "totalExercises": "Total Exercices",
+    "exercisesCompleted": "exercices réalisés",
+    "avgPerSession": "Moy./Séance",
+    "exercisesPerSession": "exercices/séance",
+    "thisWeek": "Cette Semaine",
+    "sessionsPer7Days": "séances / 7 jours"
+  },
+  "enduranceChallenges": {
+    "title": "Défis d'Endurance",
+    "boxing": "Boxe",
+    "pushups": "Pompes",
+    "swimming": "Natation",
+    "jumprope": "Corde à sauter",
+    "jumpropeShort": "Corde",
+    "running": "Course",
+    "reps": "reps",
+    "meters": "m",
+    "jumps": "sauts",
+    "minutes": "min"
+  },
+  "activityChart": {
+    "title": "Activité des 7 derniers jours",
+    "lowActivity": "Faible activité",
+    "highActivity": "Activité élevée",
+    "exercises": "exercices",
+    "totalExercises": "Total exercices",
+    "activeDays": "Jours actifs",
+    "avgPerDay": "Moyenne/jour"
+  },
+  "legend": {
+    "title": "Légende des Justifications",
+    "description": "Cliquez sur un jour sans activité dans le calendrier pour le justifier."
+  },
+  "stats": {
+    "reps_endurance": "reps + endurance",
+    "total_time": "temps total",
+    "sessions": "séances"
+  },
+  "heatmap": {
+    "viewModes": {
+      "month": "Mois",
+      "year": "Année",
+      "streaks": "Streaks"
+    },
+    "streaksAnalysis": "Analyse des Streaks",
+    "intensity": "Intensité:",
+    "showStats": "Afficher stats",
+    "hideStats": "Masquer stats",
+    "monthlyJustifications": "Justifications du mois :",
+    "yearSummary": "Résumé {{year}}",
+    "bestMonth": "Meilleur mois",
+    "bestDay": "Meilleur jour",
+    "avgPerSession": "Moyenne/séance",
+    "repsPerSession": "reps par séance",
+    "intensityLabels": {
+      "extreme": "Extrême",
+      "intense": "Intense",
+      "moderate": "Modéré",
+      "light": "Léger",
+      "rest": "Repos"
+    },
+    "streaks": {
+      "currentStreak": "Streak actuel",
+      "longestStreak": "Record personnel",
+      "longestStreakDesc": "Plus long streak",
+      "consecutiveDays": "Jours consécutifs",
+      "noStreak": "Aucun streak en cours"
+    },
+    "dayDetails": {
+      "workoutStats": "Statistiques d'entraînement",
+      "totalReps": "Répétitions totales",
+      "classicExercises": "Exercices classiques",
+      "totalDuration": "Durée totale",
+      "globalIntensity": "Intensité globale",
+      "garminAdjusted": "Ajusté Garmin",
+      "noWorkoutJustified": "Aucun entraînement enregistré ce jour (jour justifié)",
+      "garminAdjustments": "Ajustements Garmin appliqués",
+      "realTime": "Temps réel",
+      "planned": "prévu",
+      "swimmingRecord": "Record natation",
+      "record": "record",
+      "jumpRopeRecord": "Record corde",
+      "jumps": "sauts",
+      "activeCalories": "Calories actives",
+      "average": "moy",
+      "garminData": "Données Garmin Connect",
+      "swimming": "Natation",
+      "session": "session",
+      "sessions": "sessions",
+      "distance": "Distance",
+      "duration": "Durée",
+      "avgHR": "FC moy",
+      "calories": "Calories",
+      "jumpRope": "Corde à sauter",
+      "speed": "Vitesse",
+      "maxContinuous": "Max continu",
+      "cardioActivities": "Activités cardio",
+      "dailyMetrics": "Métriques quotidiennes",
+      "steps": "Pas",
+      "restingHR": "FC repos",
+      "enduranceActivities": "Activités d'endurance",
+      "enduranceSessions": "Sessions",
+      "pushups": "Pompes",
+      "enduranceDistance": "Distance",
+      "enduranceJumps": "Sauts",
+      "enduranceDuration": "Durée endurance",
+      "exercisesCompleted": "Exercices réalisés",
+      "reps": "reps",
+      "modifyJustification": "Modifier la justification",
+      "modify": "Modifier"
+    },
+    "monthNames": {
+      "january": "Janvier",
+      "february": "Février",
+      "march": "Mars",
+      "april": "Avril",
+      "may": "Mai",
+      "june": "Juin",
+      "july": "Juillet",
+      "august": "Août",
+      "september": "Septembre",
+      "october": "Octobre",
+      "november": "Novembre",
+      "december": "Décembre"
+    }
+  }
+}

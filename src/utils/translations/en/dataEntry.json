@@ -1,0 +1,53 @@
+{
+  "title": "Data entry",
+  "subtitle": "Record your repetitions for {{dayName}} {{date}}",
+  "restDay": {
+    "title": "Rest day",
+    "message": "No exercise scheduled for {{dayName}}"
+  },
+  "advancedMode": {
+    "label": "Advanced mode",
+    "title": "Advanced entry - Last 7 days",
+    "tip": "💡 <strong>Tip:</strong> You can enter your repetitions in advance or catch up on missed ones directly in this table.",
+    "autoComplete": "Exercises are automatically marked as completed when you enter repetitions > 0."
+  },
+  "quickEntry": {
+    "title": "{{workoutName}} - Quick entry"
+  },
+  "weekVariants": {
+    "weekA": "Week A",
+    "weekB": "Week B"
+  },
+  "exercise": {
+    "label": "Exercise",
+    "bodyWeight": "Body weight",
+    "reps": "reps",
+    "done": "✓ Done",
+    "placeholder": "Reps"
+  },
+  "buttons": {
+    "save": "Save",
+    "reset": "Reset"
+  },
+  "summary": {
+    "title": "Day summary",
+    "totalReps": "Total repetitions",
+    "completedExercises": "Completed exercises",
+    "progress": "Progress"
+  },
+  "messages": {
+    "saveSuccess": "{{count}} exercise(s) saved successfully!",
+    "savePartial": "{{savedCount}} exercise(s) saved, {{errorCount}} error(s) detected. Check the console for more details.",
+    "resetConfirm": "Are you sure you want to reset all data for this day?"
+  },
+  "days": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  }
+}
+

@@ -1,6 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image } from 'lucide-react';
+import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image, Languages } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useLanguage } from '../../context/LanguageContext';
+import LanguageSelector from '../ui/LanguageSelector';
+import { useTranslation } from '../../utils/translations';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import { compressGarminExport, decompressGarminExport, isCompressed } from './GarminTab/utils/jsonCompression';
@@ -25,6 +28,7 @@ import { ENDURANCE_SCHEMA_VERSION } from '../../services/endurance/enduranceData
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
+  const t = useTranslation();
   const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
   const { exportAll: exportNutritionData } = useNutritionData();
   const [exportStatus, setExportStatus] = useState(null);
@@ -2013,6 +2017,24 @@ const SettingsTab = () => {
                 Restaurer la sauvegarde pré-nettoyage
               </Button>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section Langue */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <Languages className="mr-2" size={20} />
+            {t('settings.language')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-gray-300 text-sm">
+              {t('settings.language.description')}
+            </p>
+            <LanguageSelector variant="dropdown" position="bottom-left" />
           </div>
         </CardContent>
       </Card>

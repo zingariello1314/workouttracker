@@ -1,0 +1,40 @@
+{
+  "fallback": {
+    "loading": "Loading {{label}}…",
+    "default": "content",
+    "dashboard": "dashboard",
+    "activities": "activities",
+    "metrics": "metrics",
+    "charts": "charts",
+    "utilities": "utilities",
+    "diagnostics": "diagnostics panel"
+  },
+  "empty": {
+    "title": "No Garmin data",
+    "message": "Sync your Garmin data to get started."
+  },
+  "navigation": {
+    "ariaLabel": "Main Garmin navigation"
+  },
+  "sync": {
+    "deleteMocks": {
+      "title": "Delete test data",
+      "message": "Delete all test (mock) data: activities AND daily metrics?\n\nThis action is irreversible.\n\nAfter deletion, a sync will be performed to retrieve your real data.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "cache": {
+      "timestamp": "Timestamp",
+      "ttl": "Remaining TTL",
+      "key": "Cache key",
+      "failures": "Consecutive failures"
+    },
+    "error": {
+      "history": "Unable to generate history file. Check the console for more details."
+    }
+  },
+  "toast": {
+    "close": "Close message"
+  }
+}
+

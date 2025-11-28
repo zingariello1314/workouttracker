@@ -22,6 +22,7 @@ import { Calendar, Plus, Target, TrendingUp, BarChart3, Trophy, Share2, Camera, 
 import { typography } from '../../styles/typography';
 import { registerNutritionServiceWorker } from '../../utils/nutritionServiceWorkerManager';
 import { getNutritionConfig } from '../../config/nutrition.config';
+import { useTranslation } from '../../utils/translations';
 
 // ✅ OPTIMISATION Phase 11.1 : Lazy loading sections (réduction bundle initial 30-40%)
 const NutritionJournal = lazy(() => import('./nutrition/components/NutritionJournal'));
@@ -40,6 +41,7 @@ const NutritionTab = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const nutritionData = useNutritionData();
   const garminData = useGarminData();
+  const t = useTranslation();
 
   // ✅ OPTIMISATION Phase 15.1 : Configuration pour préservation état sections
   const config = useMemo(() => getNutritionConfig(), []);
@@ -89,14 +91,14 @@ const NutritionTab = () => {
 
   // Navigation entre sections
   const sections = useMemo(() => [
-    { id: 'journal', label: 'Journal', icon: Calendar },
-    { id: 'programs', label: 'Programmes', icon: Target },
-    { id: 'analyses', label: 'Analyses', icon: BarChart3 },
-    { id: 'gamification', label: 'Gamification', icon: Trophy },
-    { id: 'challenges', label: 'Défis', icon: Zap },
-    { id: 'progress', label: 'Progression', icon: Camera },
-    { id: 'sharing', label: 'Partage', icon: Share2 }
-  ], []);
+    { id: 'journal', label: t('nutrition.sections.journal'), icon: Calendar },
+    { id: 'programs', label: t('nutrition.sections.programs'), icon: Target },
+    { id: 'analyses', label: t('nutrition.sections.analyses'), icon: BarChart3 },
+    { id: 'gamification', label: t('nutrition.sections.gamification'), icon: Trophy },
+    { id: 'challenges', label: t('nutrition.sections.challenges'), icon: Zap },
+    { id: 'progress', label: t('nutrition.sections.progress'), icon: Camera },
+    { id: 'sharing', label: t('nutrition.sections.sharing'), icon: Share2 }
+  ], [t]);
 
   // ✅ OPTIMISATION Phase 15.1 : Helper pour rendre section avec préservation état
   const renderSection = useCallback((sectionId, Component, props = {}, skeletonLabel) => {
@@ -146,10 +148,10 @@ const NutritionTab = () => {
       <div className="mb-8">
         <h1 className={`${typography.presets.h1} text-white mb-2 flex items-center gap-3`}>
           <span className="text-5xl">🥗</span>
-          Nutrition
+          {t('nutrition.title')}
         </h1>
         <p className={`${typography.presets.bodyLarge} text-slate-400`}>
-          Suivez votre alimentation, créez des programmes nutritionnels et analysez vos habitudes
+          {t('nutrition.subtitle')}
         </p>
       </div>
 
@@ -190,49 +192,49 @@ const NutritionTab = () => {
             nutritionData,
             garminData
           },
-          'du journal nutritionnel'
+          t('nutrition.skeletons.journal')
         )}
         
         {renderSection(
           'programs',
           NutritionPrograms,
           { nutritionData },
-          'des programmes'
+          t('nutrition.skeletons.programs')
         )}
         
         {renderSection(
           'analyses',
           NutritionAnalyses,
           { nutritionData, garminData },
-          'des analyses'
+          t('nutrition.skeletons.analyses')
         )}
         
         {renderSection(
           'gamification',
           NutritionGamification,
           {},
-          'de la gamification'
+          t('nutrition.skeletons.gamification')
         )}
         
         {renderSection(
           'challenges',
           NutritionDailyChallenges,
           {},
-          'des défis'
+          t('nutrition.skeletons.challenges')
         )}
         
         {renderSection(
           'progress',
           NutritionProgressPhotos,
           {},
-          'de la progression'
+          t('nutrition.skeletons.progress')
         )}
         
         {renderSection(
           'sharing',
           NutritionSharing,
           {},
-          'du partage'
+          t('nutrition.skeletons.sharing')
         )}
       </div>
     </div>

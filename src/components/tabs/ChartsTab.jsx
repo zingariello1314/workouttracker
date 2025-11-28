@@ -5,6 +5,7 @@ import { findExerciseInDatabase } from '../../data/exerciseDatabase';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { useGarminData } from '../../hooks/useGarminData';
+import { useTranslation } from '../../utils/translations';
 
 // Composants modulaires pour les graphiques - NOUVEAUX GRAPHIQUES
 import VolumeRepetitionsChart from './charts/VolumeRepetitionsChart';
@@ -38,6 +39,7 @@ import { createGarminChartWrapper, createGarminTimeSeriesChartWrapper, createGar
 const ChartsTab = () => {
   const { data, getWorkoutHistory, activeProgram } = useWorkout();
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
+  const t = useTranslation();
   
   // PHASE 5.1 : Charger données Garmin
   const { loadAllData, dbReady } = useGarminData();
@@ -55,12 +57,12 @@ const ChartsTab = () => {
   }, [dbReady, loadAllData]);
 
   // Périodes disponibles
-  const periods = [
-    { value: '7days', label: '7 derniers jours' },
-    { value: '30days', label: '30 derniers jours' },
-    { value: '90days', label: '90 derniers jours' },
-    { value: '1year', label: '1 an' }
-  ];
+  const periods = useMemo(() => [
+    { value: '7days', label: t('charts.periods.7days') },
+    { value: '30days', label: t('charts.periods.30days') },
+    { value: '90days', label: t('charts.periods.90days') },
+    { value: '1year', label: t('charts.periods.1year') }
+  ], [t]);
 
   // Calculer la date de début selon la période sélectionnée
   const getStartDate = (period) => {
@@ -140,13 +142,13 @@ const ChartsTab = () => {
   );
 
   // Configuration des graphiques avec votre design exact
-  const chartConfigs = [
+  const chartConfigs = useMemo(() => [
     // ==========================================
     // SECTION GARMIN (au-dessus des graphiques existants)
     // ==========================================
     {
       id: 'garmin-heart-rate',
-      title: 'Fréquence Cardiaque',
+      title: t('charts.garmin.heartRate'),
       icon: Heart,
       color: 'red',
       bgColor: 'bg-red-500/20',
@@ -157,7 +159,7 @@ const ChartsTab = () => {
     },
     {
       id: 'garmin-heart-rate-timeseries',
-      title: 'FC 24h (Time Series)',
+      title: t('charts.garmin.heartRateTimeSeries'),
       icon: Activity,
       color: 'red',
       bgColor: 'bg-red-500/20',
@@ -168,7 +170,7 @@ const ChartsTab = () => {
     },
     {
       id: 'garmin-body-battery',
-      title: 'Body Battery',
+      title: t('charts.garmin.bodyBattery'),
       icon: Battery,
       color: 'green',
       bgColor: 'bg-green-500/20',
@@ -179,7 +181,7 @@ const ChartsTab = () => {
     },
     {
       id: 'garmin-stress',
-      title: 'Stress',
+      title: t('charts.garmin.stress'),
       icon: Thermometer,
       color: 'purple',
       bgColor: 'bg-purple-500/20',
@@ -190,7 +192,7 @@ const ChartsTab = () => {
     },
     {
       id: 'garmin-sleep',
-      title: 'Sommeil',
+      title: t('charts.garmin.sleep'),
       icon: Moon,
       color: 'indigo',
       bgColor: 'bg-indigo-500/20',
@@ -201,7 +203,7 @@ const ChartsTab = () => {
     },
     {
       id: 'garmin-respiration',
-      title: 'Respiration',
+      title: t('charts.garmin.respiration'),
       icon: Wind,
       color: 'cyan',
       bgColor: 'bg-cyan-500/20',
@@ -212,7 +214,7 @@ const ChartsTab = () => {
     },
     {
       id: 'garmin-activities-heatmap',
-      title: 'Calendrier Activités',
+      title: t('charts.garmin.activityHeatmap'),
       icon: Calendar,
       color: 'teal',
       bgColor: 'bg-teal-500/20',
@@ -223,7 +225,7 @@ const ChartsTab = () => {
     },
     {
       id: 'garmin-correlations',
-      title: 'Corrélations',
+      title: t('charts.garmin.correlations'),
       icon: BarChart3,
       color: 'pink',
       bgColor: 'bg-pink-500/20',
@@ -239,7 +241,7 @@ const ChartsTab = () => {
     // ROW 1 - 3 Cartes KPI
     {
       id: 'volume-repetitions',
-      title: 'Volume & Répétitions',
+      title: t('charts.workout.volumeRepetitions'),
       icon: Dumbbell,
       color: 'purple',
       bgColor: 'bg-purple-500/20',
@@ -249,7 +251,7 @@ const ChartsTab = () => {
     },
     {
       id: 'activite-regularite',
-      title: 'Activité & Régularité',
+      title: t('charts.workout.activityRegularity'),
       icon: Flame,
       color: 'pink',
       bgColor: 'bg-pink-500/20',
@@ -259,7 +261,7 @@ const ChartsTab = () => {
     },
     {
       id: 'objectifs-performance',
-      title: 'Objectifs',
+      title: t('charts.workout.objectives'),
       icon: Target,
       color: 'cyan',
       bgColor: 'bg-cyan-500/20',
@@ -270,7 +272,7 @@ const ChartsTab = () => {
     // ROW 2 - 3 Graphiques
     {
       id: 'evolution-volume',
-      title: 'Évolution du Volume',
+      title: t('charts.workout.volumeEvolution'),
       icon: TrendingUp,
       color: 'purple',
       bgColor: 'bg-purple-500/20',
@@ -280,7 +282,7 @@ const ChartsTab = () => {
     },
     {
       id: 'repartition-musculaire',
-      title: 'Répartition Musculaire',
+      title: t('charts.workout.muscleDistribution'),
       icon: Target,
       color: 'pink',
       bgColor: 'bg-pink-500/20',
@@ -290,7 +292,7 @@ const ChartsTab = () => {
     },
     {
       id: 'top-exercices',
-      title: 'Top Exercices',
+      title: t('charts.workout.topExercises'),
       icon: Award,
       color: 'cyan',
       bgColor: 'bg-cyan-500/20',
@@ -301,7 +303,7 @@ const ChartsTab = () => {
     // ROW 3 - 3 Graphiques
     {
       id: 'calendrier-activite',
-      title: 'Calendrier d\'Activité',
+      title: t('charts.workout.activityCalendar'),
       icon: Calendar,
       color: 'purple',
       bgColor: 'bg-purple-500/20',
@@ -311,7 +313,7 @@ const ChartsTab = () => {
     },
     {
       id: 'distribution-temporelle',
-      title: 'Distribution',
+      title: t('charts.workout.distribution'),
       icon: Clock,
       color: 'cyan',
       bgColor: 'bg-cyan-500/20',
@@ -321,7 +323,7 @@ const ChartsTab = () => {
     },
     {
       id: 'progression-individuelle',
-      title: 'Progression Individuelle',
+      title: t('charts.workout.individualProgression'),
       icon: TrendingUp,
       color: 'pink',
       bgColor: 'bg-pink-500/20',
@@ -332,7 +334,7 @@ const ChartsTab = () => {
     // Section Activités Complémentaires
     {
       id: 'boxe-activite',
-      title: 'Activité Boxe',
+      title: t('charts.workout.boxingActivity'),
       icon: Zap,
       color: 'red',
       bgColor: 'bg-red-500/20',
@@ -342,7 +344,7 @@ const ChartsTab = () => {
     },
     {
       id: 'natation-performance',
-      title: 'Performance Natation',
+      title: t('charts.workout.swimmingPerformance'),
       icon: Waves,
       color: 'cyan',
       bgColor: 'bg-cyan-500/20',
@@ -352,7 +354,7 @@ const ChartsTab = () => {
     },
     {
       id: 'natation-evolution-distance',
-      title: 'Évolution Distance',
+      title: t('charts.workout.distanceEvolution'),
       icon: TrendingUp,
       color: 'blue',
       bgColor: 'bg-blue-500/20',
@@ -362,7 +364,7 @@ const ChartsTab = () => {
     },
     {
       id: 'natation-temps-allure',
-      title: 'Temps & Allure',
+      title: t('charts.workout.timePace'),
       icon: Clock,
       color: 'blue',
       bgColor: 'bg-blue-500/20',
@@ -372,7 +374,7 @@ const ChartsTab = () => {
     },
     {
       id: 'natation-volume-regularite',
-      title: 'Volume & Régularité',
+      title: t('charts.workout.volumeRegularity'),
       icon: Calendar,
       color: 'cyan',
       bgColor: 'bg-cyan-500/20',
@@ -382,7 +384,7 @@ const ChartsTab = () => {
     },
     {
       id: 'etirements-zone',
-      title: 'Étirements par Zone',
+      title: t('charts.workout.stretchesByZone'),
       icon: Activity,
       color: 'purple',
       bgColor: 'bg-purple-500/20',
@@ -390,7 +392,7 @@ const ChartsTab = () => {
       component: EtirementsZoneChart,
       props: { data: chartData, colors: themeColors }
     }
-  ];
+  ], [t, garminData, selectedPeriod, themeColors, chartData, GarminHeartRateChartWrapped, GarminHeartRateTimeSeriesChartWrapped, GarminBodyBatteryChartWrapped, GarminStressChartWrapped, GarminSleepChartWrapped, GarminRespirationChartWrapped, GarminActivityHeatmapWrapped, GarminCorrelationChartsWrapped]);
 
   // Mémorisation des configurations pour éviter les re-rendus (avec filtrage conditionnel)
   const memoizedChartConfigs = useMemo(() => {
@@ -410,7 +412,7 @@ const ChartsTab = () => {
     memoizedChartConfigs.find(c => c.id === 'garmin-body-battery'),
     {
       id: 'garmin-daily-activity',
-      title: 'Activité Quotidienne',
+      title: t('charts.garmin.dailyActivity'),
       icon: Activity,
       color: 'blue',
       bgColor: 'bg-blue-500/20',
@@ -439,9 +441,9 @@ const ChartsTab = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-            Graphiques & Analyses
+            {t('charts.title')}
           </h1>
-          <p className="text-slate-400 mt-1">Vue d'ensemble de vos performances</p>
+          <p className="text-slate-400 mt-1">{t('charts.subtitle')}</p>
         </div>
         <div className="flex gap-2 bg-slate-900/50 backdrop-blur-sm rounded-lg p-1 border border-purple-500/20">
           {periods.map(period => (

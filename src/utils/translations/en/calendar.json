@@ -1,0 +1,132 @@
+{
+  "sessionCounter": {
+    "title": "Session Counter",
+    "totalSessions": "Total Sessions",
+    "trainingDays": "training days",
+    "totalExercises": "Total Exercises",
+    "exercisesCompleted": "exercises completed",
+    "avgPerSession": "Avg./Session",
+    "exercisesPerSession": "exercises/session",
+    "thisWeek": "This Week",
+    "sessionsPer7Days": "sessions / 7 days"
+  },
+  "enduranceChallenges": {
+    "title": "Endurance Challenges",
+    "boxing": "Boxing",
+    "pushups": "Push-ups",
+    "swimming": "Swimming",
+    "jumprope": "Jump Rope",
+    "jumpropeShort": "Rope",
+    "running": "Running",
+    "reps": "reps",
+    "meters": "m",
+    "jumps": "jumps",
+    "minutes": "min"
+  },
+  "activityChart": {
+    "title": "Activity of the last 7 days",
+    "lowActivity": "Low activity",
+    "highActivity": "High activity",
+    "exercises": "exercises",
+    "totalExercises": "Total exercises",
+    "activeDays": "Active days",
+    "avgPerDay": "Average/day"
+  },
+  "legend": {
+    "title": "Justification Legend",
+    "description": "Click on a day without activity in the calendar to justify it."
+  },
+  "stats": {
+    "reps_endurance": "reps + endurance",
+    "total_time": "total time",
+    "sessions": "sessions"
+  },
+  "heatmap": {
+    "viewModes": {
+      "month": "Month",
+      "year": "Year",
+      "streaks": "Streaks"
+    },
+    "streaksAnalysis": "Streaks Analysis",
+    "intensity": "Intensity:",
+    "showStats": "Show stats",
+    "hideStats": "Hide stats",
+    "monthlyJustifications": "Monthly justifications:",
+    "yearSummary": "{{year}} Summary",
+    "bestMonth": "Best month",
+    "bestDay": "Best day",
+    "avgPerSession": "Average/session",
+    "repsPerSession": "reps per session",
+    "intensityLabels": {
+      "extreme": "Extreme",
+      "intense": "Intense",
+      "moderate": "Moderate",
+      "light": "Light",
+      "rest": "Rest"
+    },
+    "streaks": {
+      "currentStreak": "Current streak",
+      "longestStreak": "Personal record",
+      "longestStreakDesc": "Longest streak",
+      "consecutiveDays": "Consecutive days",
+      "noStreak": "No streak in progress"
+    },
+    "dayDetails": {
+      "workoutStats": "Workout statistics",
+      "totalReps": "Total repetitions",
+      "classicExercises": "Classic exercises",
+      "totalDuration": "Total duration",
+      "globalIntensity": "Global intensity",
+      "garminAdjusted": "Garmin adjusted",
+      "noWorkoutJustified": "No workout recorded this day (justified day)",
+      "garminAdjustments": "Garmin adjustments applied",
+      "realTime": "Real time",
+      "planned": "planned",
+      "swimmingRecord": "Swimming record",
+      "record": "record",
+      "jumpRopeRecord": "Jump rope record",
+      "jumps": "jumps",
+      "activeCalories": "Active calories",
+      "average": "avg",
+      "garminData": "Garmin Connect data",
+      "swimming": "Swimming",
+      "session": "session",
+      "sessions": "sessions",
+      "distance": "Distance",
+      "duration": "Duration",
+      "avgHR": "Avg HR",
+      "calories": "Calories",
+      "jumpRope": "Jump rope",
+      "speed": "Speed",
+      "maxContinuous": "Max continuous",
+      "cardioActivities": "Cardio activities",
+      "dailyMetrics": "Daily metrics",
+      "steps": "Steps",
+      "restingHR": "Resting HR",
+      "enduranceActivities": "Endurance activities",
+      "enduranceSessions": "Sessions",
+      "pushups": "Push-ups",
+      "enduranceDistance": "Distance",
+      "enduranceJumps": "Jumps",
+      "enduranceDuration": "Endurance duration",
+      "exercisesCompleted": "Exercises completed",
+      "reps": "reps",
+      "modifyJustification": "Modify justification",
+      "modify": "Modify"
+    },
+    "monthNames": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    }
+  }
+}

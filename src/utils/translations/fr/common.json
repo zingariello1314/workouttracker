@@ -1,0 +1,18 @@
+{
+  "save": "Enregistrer",
+  "cancel": "Annuler",
+  "delete": "Supprimer",
+  "edit": "Modifier",
+  "close": "Fermer",
+  "loading": "Chargement...",
+  "error": "Erreur",
+  "success": "Succès",
+  "header": {
+    "logoAlt": "Logo Momentum",
+    "sessionInProgress": "Séance en cours",
+    "start": "Commencer",
+    "end": "Terminer",
+    "locale": "fr-FR"
+  }
+}
+

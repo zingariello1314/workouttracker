@@ -1,0 +1,39 @@
+{
+  "title": "Graphiques & Analyses",
+  "subtitle": "Vue d'ensemble de vos performances",
+  "periods": {
+    "7days": "7 derniers jours",
+    "30days": "30 derniers jours",
+    "90days": "90 derniers jours",
+    "1year": "1 an"
+  },
+  "garmin": {
+    "heartRate": "Fréquence Cardiaque",
+    "heartRateTimeSeries": "FC 24h (Time Series)",
+    "bodyBattery": "Body Battery",
+    "stress": "Stress",
+    "sleep": "Sommeil",
+    "respiration": "Respiration",
+    "activityHeatmap": "Calendrier Activités",
+    "correlations": "Corrélations",
+    "dailyActivity": "Activité Quotidienne"
+  },
+  "workout": {
+    "volumeRepetitions": "Volume & Répétitions",
+    "activityRegularity": "Activité & Régularité",
+    "objectives": "Objectifs",
+    "volumeEvolution": "Évolution du Volume",
+    "muscleDistribution": "Répartition Musculaire",
+    "topExercises": "Top Exercices",
+    "activityCalendar": "Calendrier d'Activité",
+    "distribution": "Distribution",
+    "individualProgression": "Progression Individuelle",
+    "boxingActivity": "Activité Boxe",
+    "swimmingPerformance": "Performance Natation",
+    "distanceEvolution": "Évolution Distance",
+    "timePace": "Temps & Allure",
+    "volumeRegularity": "Volume & Régularité",
+    "stretchesByZone": "Étirements par Zone"
+  }
+}
+

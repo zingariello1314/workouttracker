@@ -1,0 +1,40 @@
+{
+  "fallback": {
+    "loading": "Chargement {{label}}…",
+    "default": "du contenu",
+    "dashboard": "du tableau de bord",
+    "activities": "des activités",
+    "metrics": "des métriques",
+    "charts": "des graphiques",
+    "utilities": "des utilitaires",
+    "diagnostics": "du panneau de diagnostic"
+  },
+  "empty": {
+    "title": "Aucune donnée Garmin",
+    "message": "Synchronisez vos données Garmin pour commencer."
+  },
+  "navigation": {
+    "ariaLabel": "Navigation principale Garmin"
+  },
+  "sync": {
+    "deleteMocks": {
+      "title": "Supprimer les données de test",
+      "message": "Supprimer toutes les données de test (mock) : activités ET métriques quotidiennes ?\n\nCette action est irréversible.\n\nAprès suppression, une synchronisation sera effectuée pour récupérer vos vraies données.",
+      "confirm": "Supprimer",
+      "cancel": "Annuler"
+    },
+    "cache": {
+      "timestamp": "Horodatage",
+      "ttl": "TTL restant",
+      "key": "Cache key",
+      "failures": "Échecs consécutifs"
+    },
+    "error": {
+      "history": "Impossible de générer le fichier d'historique. Consulte la console pour plus de détails."
+    }
+  },
+  "toast": {
+    "close": "Fermer le message"
+  }
+}
+

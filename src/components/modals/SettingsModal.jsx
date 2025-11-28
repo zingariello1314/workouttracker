@@ -6,6 +6,8 @@ import Button from '../ui/Button';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Select } from '../ui/Input';
 import { typography } from '../../styles/typography';
+import { useTranslation } from '../../utils/translations';
+import { useToast } from '../ui/Toast';
 
 const SettingsModal = ({ isOpen, onClose }) => {
   const {
@@ -18,6 +20,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
     setShowAdvancedStats,
     setShowTrainingCycles
   } = useWorkout();
+  const t = useTranslation();
+  const { showSuccess, showError } = useToast();
 
   const handleImport = (e) => {
     const file = e.target.files[0];
@@ -27,9 +31,9 @@ const SettingsModal = ({ isOpen, onClose }) => {
         try {
           const data = JSON.parse(e.target.result);
           importData(data);
-          alert('Données importées avec succès !');
+          showSuccess(t('settings.modal.backup.importSuccess'));
         } catch (error) {
-          alert('Erreur lors de l\'importation des données');
+          showError(t('settings.modal.backup.importError'));
         }
       };
       reader.readAsText(file);
@@ -37,7 +41,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
   };
 
   const handleReset = () => {
-    if (window.confirm('Êtes-vous sûr de vouloir réinitialiser toutes les données ? Cette action est irréversible.')) {
+    if (window.confirm(t('settings.modal.dangerZone.resetConfirm'))) {
       resetAllData();
       onClose();
     }
@@ -49,21 +53,21 @@ const SettingsModal = ({ isOpen, onClose }) => {
         {/* Variante de semaine */}
         <Card>
           <CardHeader>
-            <CardTitle>Programme d'entraînement</CardTitle>
+            <CardTitle>{t('settings.modal.trainingProgram.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
                 <label className={`${typography.presets.label} block mb-2`}>
-                  Variante de semaine
+                  {t('settings.modal.trainingProgram.weekVariant')}
                 </label>
                 <Select
                   value={weekVariant}
                   onChange={(e) => setWeekVariant(e.target.value)}
                   className="w-full"
                 >
-                  <option value="A">Semaine A</option>
-                  <option value="B">Semaine B</option>
+                  <option value="A">{t('settings.modal.trainingProgram.weekA')}</option>
+                  <option value="B">{t('settings.modal.trainingProgram.weekB')}</option>
                 </Select>
               </div>
               
@@ -76,7 +80,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 variant="outline"
                 className="w-full"
               >
-                Éditeur de programmes
+                {t('settings.modal.trainingProgram.programEditor')}
               </Button>
             </div>
           </CardContent>
@@ -85,7 +89,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
         {/* Outils avancés */}
         <Card>
           <CardHeader>
-            <CardTitle>Outils avancés</CardTitle>
+            <CardTitle>{t('settings.modal.advancedTools.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -98,7 +102,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 variant="outline"
                 className="w-full justify-start"
               >
-                Statistiques avancées
+                {t('settings.modal.advancedTools.advancedStats')}
               </Button>
               
               <Button
@@ -110,7 +114,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 variant="outline"
                 className="w-full justify-start"
               >
-                Cycles d'entraînement
+                {t('settings.modal.advancedTools.trainingCycles')}
               </Button>
             </div>
           </CardContent>
@@ -119,7 +123,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
         {/* Sauvegarde et restauration */}
         <Card>
           <CardHeader>
-            <CardTitle>Sauvegarde et restauration</CardTitle>
+            <CardTitle>{t('settings.modal.backup.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -129,7 +133,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 variant="outline"
                 className="w-full justify-start"
               >
-                Exporter les données
+                {t('settings.modal.backup.export')}
               </Button>
               
               <div>
@@ -146,7 +150,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                   variant="outline"
                   className="w-full justify-start"
                 >
-                  Importer les données
+                  {t('settings.modal.backup.import')}
                 </Button>
               </div>
             </div>
@@ -156,7 +160,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
         {/* Zone de danger */}
         <Card className="border-red-500/50 bg-red-950/20">
           <CardHeader>
-            <CardTitle className="text-red-400">Zone de danger</CardTitle>
+            <CardTitle className="text-red-400">{t('settings.modal.dangerZone.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <Button
@@ -165,7 +169,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
               variant="danger"
               className="w-full justify-start"
             >
-              Réinitialiser toutes les données
+              {t('settings.modal.dangerZone.reset')}
             </Button>
           </CardContent>
         </Card>

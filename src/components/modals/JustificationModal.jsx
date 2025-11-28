@@ -31,6 +31,7 @@ import {
   MAX_NOTE_LENGTH
 } from '../../utils/dayJustificationUtils';
 import { formatDate, getDateStr } from '../../utils/dateUtils';
+import { useTranslation } from '../../utils/translations';
 
 /**
  * Composant JustificationModal
@@ -50,6 +51,7 @@ const JustificationModal = ({
   // ✅ OPTIMISATION : Récupérer les fonctions du contexte
   const { setDayJustification, removeDayJustification } = useWorkout();
   const { showSuccess, showError } = useToast();
+  const t = useTranslation();
   
   // ✅ OPTIMISATION : Normaliser la date en string
   const dateStr = useMemo(() => {
@@ -88,16 +90,16 @@ const JustificationModal = ({
     
     // Valider la raison
     if (!reason) {
-      validationErrors.reason = 'Veuillez sélectionner une raison';
+      validationErrors.reason = t('justification.validation.reasonRequired');
       isValid = false;
     } else if (!isValidJustificationReason(reason)) {
-      validationErrors.reason = 'Raison invalide';
+      validationErrors.reason = t('justification.validation.reasonInvalid');
       isValid = false;
     }
     
     // Valider la note (optionnelle mais doit respecter la longueur max)
     if (note && !isValidJustificationNote(note)) {
-      validationErrors.note = `Note trop longue (max ${MAX_NOTE_LENGTH} caractères)`;
+      validationErrors.note = t('justification.validation.noteTooLong', 'Note trop longue (max {{max}} caractères)', { max: MAX_NOTE_LENGTH });
       isValid = false;
     }
     
@@ -137,12 +139,12 @@ const JustificationModal = ({
     // Vérifier la validation finale
     if (!validation.isValid) {
       setErrors(validation.errors);
-      showError('Validation échouée', 'Veuillez corriger les erreurs avant de sauvegarder');
+      showError(t('justification.messages.validationFailed'), t('justification.messages.validationFailedMessage'));
       return;
     }
     
     if (!dateStr) {
-      showError('Date invalide', 'Impossible de sauvegarder : date invalide');
+      showError(t('justification.messages.invalidDate'), t('justification.messages.invalidDateSave'));
       return;
     }
     
@@ -151,13 +153,13 @@ const JustificationModal = ({
     
     try {
       await setDayJustification(dateStr, reason, note);
-      showSuccess('Justification enregistrée', `Jour justifié : ${JUSTIFICATION_LABELS[reason]}`);
+      showSuccess(t('justification.messages.saved'), t('justification.messages.savedWithReason', 'Jour justifié : {{reason}}', { reason: JUSTIFICATION_LABELS[reason] }));
       onClose();
     } catch (error) {
       console.error('[JustificationModal] Erreur lors de la sauvegarde:', error);
       showError(
-        'Erreur de sauvegarde', 
-        error.message || 'Une erreur est survenue lors de la sauvegarde de la justification'
+        t('justification.messages.saveError'), 
+        error.message || t('justification.messages.saveErrorMessage')
       );
     } finally {
       setIsLoading(false);
@@ -167,18 +169,18 @@ const JustificationModal = ({
   // ✅ OPTIMISATION : Handler de suppression optimisé
   const handleDelete = useCallback(async () => {
     if (!dateStr) {
-      showError('Date invalide', 'Impossible de supprimer : date invalide');
+      showError(t('justification.messages.invalidDate'), t('justification.messages.invalidDateDelete'));
       return;
     }
     
     if (!existingJustification) {
-      showError('Aucune justification', 'Aucune justification à supprimer');
+      showError(t('justification.messages.noJustification'), t('justification.messages.noJustificationToDelete'));
       return;
     }
     
     // Confirmation avant suppression
     const confirmed = window.confirm(
-      `Êtes-vous sûr de vouloir supprimer la justification pour le ${formattedDate} ?`
+      t('justification.messages.deleteConfirm', 'Êtes-vous sûr de vouloir supprimer la justification pour le {{date}} ?', { date: formattedDate })
     );
     
     if (!confirmed) return;
@@ -187,13 +189,13 @@ const JustificationModal = ({
     
     try {
       await removeDayJustification(dateStr);
-      showSuccess('Justification supprimée', 'La justification a été supprimée avec succès');
+      showSuccess(t('justification.messages.deleted'), t('justification.messages.deleted', 'La justification a été supprimée avec succès'));
       onClose();
     } catch (error) {
       console.error('[JustificationModal] Erreur lors de la suppression:', error);
       showError(
-        'Erreur de suppression', 
-        error.message || 'Une erreur est survenue lors de la suppression de la justification'
+        t('justification.messages.deleteError'), 
+        error.message || t('justification.messages.deleteErrorMessage')
       );
     } finally {
       setIsLoading(false);
@@ -250,7 +252,7 @@ const JustificationModal = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCancel}
-      title={`Justifier l'absence d'activité${formattedDate ? ` - ${formattedDate}` : ''}`}
+      title={formattedDate ? t('justification.titleWithDate', 'Justifier l\'absence d\'activité - {{date}}', { date: formattedDate }) : t('justification.title')}
       size="md"
       variant="glass"
     >
@@ -258,7 +260,7 @@ const JustificationModal = ({
         {/* Date affichée (info seulement) */}
         {formattedDate && (
           <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-            <p className="text-sm text-slate-400">Date concernée</p>
+            <p className="text-sm text-slate-400">{t('justification.dateConcerned')}</p>
             <p className="text-lg font-semibold text-white">{formattedDate}</p>
           </div>
         )}
@@ -266,7 +268,7 @@ const JustificationModal = ({
         {/* Sélection de la raison */}
         <div>
           <label className="block text-slate-300 font-medium mb-3">
-            Raison de l'absence <span className="text-red-400">*</span>
+            {t('justification.reason')} <span className="text-red-400">{t('justification.reasonRequired')}</span>
           </label>
           
           <div className="space-y-2">
@@ -319,14 +321,14 @@ const JustificationModal = ({
         <div>
           <TextArea
             ref={noteTextareaRef}
-            label="Note (optionnelle)"
+            label={t('justification.note')}
             value={note}
             onChange={handleNoteChange}
-            placeholder="Ajoutez des détails si nécessaire (ex: 'Grippe avec fièvre', 'Déplacement professionnel')"
+            placeholder={t('justification.note.placeholder')}
             rows={3}
             maxLength={MAX_NOTE_LENGTH}
             error={errors.note}
-            help={note.length > 0 ? `${note.length}/${MAX_NOTE_LENGTH} caractères` : undefined}
+            help={note.length > 0 ? t('justification.help.characters', '{{current}}/{{max}} caractères', { current: note.length, max: MAX_NOTE_LENGTH }) : undefined}
             className="w-full"
           />
         </div>
@@ -343,7 +345,7 @@ const JustificationModal = ({
               icon={Trash2}
               className="flex-1"
             >
-              Supprimer
+              {t('justification.buttons.delete')}
             </Button>
           )}
           
@@ -355,7 +357,7 @@ const JustificationModal = ({
               disabled={isLoading}
               className="min-w-[100px]"
             >
-              Annuler
+              {t('justification.buttons.cancel')}
             </Button>
             <Button
               variant="primary"
@@ -365,14 +367,14 @@ const JustificationModal = ({
               icon={Save}
               className="min-w-[120px]"
             >
-              Sauvegarder
+              {t('justification.buttons.save')}
             </Button>
           </div>
         </div>
         
         {/* Aide clavier */}
         <div className="text-xs text-slate-500 text-center pt-2 border-t border-slate-800/50">
-          <kbd className="px-2 py-1 bg-slate-800 rounded text-slate-400">Ctrl/Cmd + Enter</kbd> pour sauvegarder rapidement
+          <kbd className="px-2 py-1 bg-slate-800 rounded text-slate-400">Ctrl/Cmd + Enter</kbd> {t('justification.help.keyboardShortcut', 'pour sauvegarder rapidement')}
         </div>
       </div>
     </Modal>

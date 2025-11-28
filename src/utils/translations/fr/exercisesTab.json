@@ -1,0 +1,64 @@
+{
+  "sync": {
+    "title": "Synchronisation automatique",
+    "enabled": "Synchronisation automatique activée",
+    "disabled": "Synchronisation automatique désactivée",
+    "lastSync": "Dernière sync: {{time}}",
+    "exercisesSynced": "{{count}} exercices synchronisés depuis {{sourceName}}",
+    "categorizationApplied": "Catégorisation automatique appliquée ({{time}})",
+    "categorizationNow": "maintenant",
+    "changesDetected": "Changements détectés: {{changeType}}"
+  },
+  "source": {
+    "title": "Source des exercices",
+    "default": "Programme par défaut",
+    "activeProgram": "Programme actif",
+    "activeProgramNone": "(Aucun)",
+    "allPrograms": "Tous les programmes ({{count}})",
+    "description": {
+      "default": "Affichage des exercices du programme par défaut",
+      "activeProgram": "Affichage des exercices du programme \"{{programName}}\"",
+      "activeProgramNone": "Aucun programme actif sélectionné",
+      "allProgramsSelect": "Sélectionnez un programme parmi les {{count}} disponibles",
+      "allProgramsView": "Affichage des exercices du programme \"{{programName}}\""
+    }
+  },
+  "stats": {
+    "totalExercises": "Total exercices",
+    "categories": "Catégories",
+    "muscleGroups": "Groupes musculaires",
+    "filtered": "Filtrés"
+  },
+  "filters": {
+    "title": "Filtres et recherche"
+  },
+  "navigation": {
+    "backToPrograms": "Retour à la liste des programmes"
+  },
+  "programs": {
+    "title": "Programmes disponibles ({{count}})",
+    "none": "Aucun programme trouvé",
+    "noneHint": "Créez votre premier programme dans l'onglet Programmes"
+  },
+  "exercises": {
+    "title": "Exercices ({{count}})",
+    "titleWithProgram": "Exercices ({{count}}) - {{programName}}",
+    "none": "Aucun exercice trouvé",
+    "noneWithProgram": "Le programme \"{{programName}}\" ne contient aucun exercice",
+    "noneHint": "Essayez de modifier vos critères de recherche ou de filtrage"
+  },
+  "difficulty": {
+    "beginner": "Débutant",
+    "intermediate": "Intermédiaire",
+    "advanced": "Avancé"
+  },
+  "misc": {
+    "notSpecified": "Non spécifié",
+    "defaultProgram": "Programme par défaut"
+  },
+  "equipment": {
+    "boxingGloves": "Gants de boxe",
+    "pool": "Piscine"
+  }
+}
+

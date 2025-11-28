@@ -1,0 +1,209 @@
+{
+  "title": "Endurance",
+  "subtitle": "Track your progress",
+  "menu": {
+    "boxing": "Boxing",
+    "pushups": "Push-ups",
+    "swimming": "Swimming",
+    "jumprope": "Jump Rope",
+    "running": "Running",
+    "calendar": "Calendar"
+  },
+  "sections": {
+    "boxing": {
+      "title": "Boxing",
+      "subtitle": "Record your training sessions",
+      "editSession": "Edit boxing session",
+      "newSession": "Record a boxing session"
+    },
+    "pushups": {
+      "title": "Push-ups",
+      "subtitle": "Manage your sessions and challenges"
+    },
+    "swimming": {
+      "title": "Swimming",
+      "subtitle": "Track your laps and performance",
+      "newSession": "Record a swimming session"
+    },
+    "jumprope": {
+      "title": "Jump Rope",
+      "subtitle": "Track your sessions and challenges",
+      "newSession": "Record a jump rope session"
+    },
+    "running": {
+      "title": "Running",
+      "subtitle": "Track your performance and challenges"
+    },
+    "calendar": {
+      "title": "Activity Calendar",
+      "subtitle": "Overview of your endurance activities"
+    }
+  },
+  "actions": {
+    "newSession": "New session",
+    "pastData": "Past data",
+    "createChallenge": "Create a challenge",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saveAndCreateAnother": "Save and create another"
+  },
+  "modes": {
+    "pastDataMode": "📅 Past data mode"
+  },
+  "history": {
+    "title": "History",
+    "noSessions": "No sessions recorded",
+    "noSessionsHint": "Start by creating your first session",
+    "fromWorkouts": {
+      "title": "Endurance Exercises from your Workouts",
+      "none": "No endurance exercises found in your past workouts.",
+      "reps": "{{count}} repetitions"
+    }
+  },
+  "table": {
+    "headers": {
+      "date": "Date",
+      "time": "Time",
+      "duration": "Duration",
+      "notes": "Notes",
+      "actions": "Actions",
+      "pushups": "Push-ups",
+      "type": "Type",
+      "jumps": "Jumps",
+      "session": "Session"
+    }
+  },
+  "challenges": {
+    "title": "Challenges",
+    "active": "{{count}} challenge in progress",
+    "activePlural": "{{count}} challenges in progress",
+    "toComplete": "⚠️ You have {{count}} challenge to complete",
+    "toCompletePlural": "⚠️ You have {{count}} challenges to complete",
+    "status": {
+      "active": "🔥 In progress",
+      "completed": "✅ Completed"
+    },
+    "validated": "✓ Challenge validated",
+    "types": {
+      "ponctuel": "One-time",
+      "recurrent": "Recurring",
+      "periode": "Over a period"
+    },
+    "frequencies": {
+      "daily": "Daily",
+      "weekly": "Weekly"
+    },
+    "moments": {
+      "morning": "Morning",
+      "midday": "Midday",
+      "evening": "Evening"
+    },
+    "modal": {
+      "title": "Create a challenge",
+      "name": "Challenge name",
+      "namePlaceholder": "Ex: 100 push-ups per day",
+      "activityType": "Activity type",
+      "challengeType": "Challenge type",
+      "targetDate": "Target date",
+      "frequency": "Frequency",
+      "moment": "Moment",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "goalCount": {
+        "swimming": "Distance (meters)",
+        "running": "Distance (km)",
+        "jumprope": "Number of jumps",
+        "default": "Number"
+      },
+      "goalDuration": "Max duration (minutes)",
+      "optional": "Optional",
+      "create": "Create challenge"
+    },
+    "details": {
+      "targetDate": "📅 Target date: {{date}}",
+      "recurrentDaily": "🔄 Daily",
+      "recurrentWeekly": "🔄 Weekly",
+      "period": "📆 {{startDate}} → {{endDate}}",
+      "goalPushups": "🎯 Goal: {{count}} push-ups",
+      "goalPushupsWithDuration": "🎯 Goal: {{count}} push-ups in {{duration}} min",
+      "goalSwimming": "🎯 Goal: {{distance}}m",
+      "goalSwimmingWithTime": "🎯 Goal: {{distance}}m in {{time}} min",
+      "goalJumprope": "🎯 Goal: {{duration}} min",
+      "goalJumpropeOrJumps": "🎯 Goal: {{duration}} min or {{jumps}} jumps",
+      "goalRunning": "🎯 Goal: {{distance}}km",
+      "goalRunningWithDuration": "🎯 Goal: {{distance}}km in {{duration}} min"
+    }
+  },
+  "swimming": {
+    "details": {
+      "title": "Lap details:",
+      "totalDistance": "Total distance:",
+      "totalTime": "Total time:",
+      "avgPace": "Avg pace:",
+      "heartRate": "Avg heart rate:",
+      "calories": "Calories:",
+      "pace100m": "Pace 100m:",
+      "notes": "Notes:",
+      "swimType": "Swimming"
+    }
+  },
+  "running": {
+    "details": {
+      "distance": "Distance:",
+      "duration": "Duration:",
+      "pace": "Pace:",
+      "speed": "Speed:",
+      "elevation": "Elevation:",
+      "notes": "Notes:",
+      "type": "Boxing"
+    }
+  },
+  "calendar": {
+    "stats": {
+      "totalActivities": "Total activities",
+      "consecutiveDays": "Consecutive days",
+      "bestStreak": "Best streak",
+      "activeDays": "Active days"
+    },
+    "filters": {
+      "all": "All activities",
+      "boxing": "Boxing",
+      "pushups": "Push-ups",
+      "swimming": "Swimming",
+      "jumprope": "Jump Rope",
+      "running": "Running"
+    },
+    "heatmap": {
+      "title": "Activity Heatmap - {{year}}",
+      "less": "Less activity",
+      "more": "More activity",
+      "dayTitle": "{{date}} - {{count}} activity",
+      "dayTitlePlural": "{{date}} - {{count}} activities",
+      "dayActivities": "Activities on {{date}}",
+      "noActivities": "No activities recorded on this day"
+    },
+    "months": {
+      "short": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    },
+    "weekdays": {
+      "short": ["S", "M", "T", "W", "T", "F", "S"]
+    },
+    "diagnostic": "🔍 Data diagnostic (Console)"
+  },
+  "errors": {
+    "invalidData": "Invalid data for saving",
+    "fetchError": "Error retrieving endurance exercises",
+    "unknownExercise": "Unknown exercise",
+    "nameAndTypeRequired": "Name and activity type required",
+    "updateError": "Error updating challenge"
+  },
+  "session": {
+    "edit": "Edit session",
+    "delete": "Delete session",
+    "editChallenge": "Edit challenge",
+    "deleteChallenge": "Delete challenge"
+  }
+}
+

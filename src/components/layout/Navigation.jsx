@@ -1,28 +1,31 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useTranslation } from '../../utils/translations';
 
 const Navigation = () => {
   const { activeTab, setActiveTab } = useWorkout();
+  const t = useTranslation();
 
-  const tabs = [
-    { id: 'home', label: 'Accueil', icon: '🏠' },
-    { id: 'today', label: "Aujourd'hui", icon: '📅' },
-    { id: 'data-entry', label: 'Saisie', icon: '✏️' },
-    { id: 'progress', label: 'Suivi Corporel', icon: '📸' },
-    { id: 'endurance', label: 'Endurance', icon: '🏃' },
-    { id: 'calendar', label: 'Calendrier', icon: '🗓️' },
-    { id: 'program', label: 'Programme', icon: '🎯' },
-    { id: 'nutrition', label: 'Nutrition', icon: '🥗' },
-    { id: 'charts', label: 'Graphiques', icon: '📊' },
-    { id: 'stats', label: 'Statistiques', icon: '📈' },
-    { id: 'exercises', label: 'Exercices', icon: '💪' },
-    { id: 'history', label: 'Historique', icon: '📊' },
-    { id: 'predictions', label: 'Prédictions', icon: '🔮' },
-    { id: 'garmin', label: 'Garmin', icon: '⌚' },
-    { id: 'smart-balancing', label: 'Équilibrage IA', icon: '🧠' },
-    { id: 'coach', label: 'Coach', icon: '👁️' },
-    { id: 'settings', label: 'Paramètres', icon: '⚙️' }
-  ];
+  // ✅ OPTIMISATION : Mémoriser les tabs avec traductions pour éviter recalculs
+  const tabs = useMemo(() => [
+    { id: 'home', labelKey: 'nav.home', icon: '🏠' },
+    { id: 'today', labelKey: 'nav.today', icon: '📅' },
+    { id: 'data-entry', labelKey: 'nav.dataEntry', icon: '✏️' },
+    { id: 'progress', labelKey: 'nav.progress', icon: '📸' },
+    { id: 'endurance', labelKey: 'nav.endurance', icon: '🏃' },
+    { id: 'calendar', labelKey: 'nav.calendar', icon: '🗓️' },
+    { id: 'program', labelKey: 'nav.program', icon: '🎯' },
+    { id: 'nutrition', labelKey: 'nav.nutrition', icon: '🥗' },
+    { id: 'charts', labelKey: 'nav.charts', icon: '📊' },
+    { id: 'stats', labelKey: 'nav.stats', icon: '📈' },
+    { id: 'exercises', labelKey: 'nav.exercises', icon: '💪' },
+    { id: 'history', labelKey: 'nav.history', icon: '📊' },
+    { id: 'predictions', labelKey: 'nav.predictions', icon: '🔮' },
+    { id: 'garmin', labelKey: 'nav.garmin', icon: '⌚' },
+    { id: 'smart-balancing', labelKey: 'nav.smartBalancing', icon: '🧠' },
+    { id: 'coach', labelKey: 'nav.coach', icon: '👁️' },
+    { id: 'settings', labelKey: 'nav.settings', icon: '⚙️' }
+  ], []);
 
   return (
     <nav className="bg-slate-800/90 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-40">
@@ -42,7 +45,7 @@ const Navigation = () => {
               `}
             >
               <span className="text-sm">{tab.icon}</span>
-              <span className="hidden lg:inline text-xs">{tab.label}</span>
+              <span className="hidden lg:inline text-xs">{t(tab.labelKey)}</span>
             </button>
           ))}
         </div>

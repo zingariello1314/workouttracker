@@ -15,6 +15,7 @@ import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
 import DayJustificationButton from './TodayTab/components/DayJustificationButton.jsx';
 import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
+import { useTranslation } from '../../utils/translations';
 
 const TodayTab = () => {
   const {
@@ -50,6 +51,7 @@ const TodayTab = () => {
   } = useWorkout();
   
   const { showSuccess, showError } = useToast();
+  const t = useTranslation();
 
   // Récupérer les défis actifs
   const getActiveChallenges = () => {
@@ -143,15 +145,15 @@ const TodayTab = () => {
         }
       });
 
-      showSuccess('Défi validé avec succès ! 🎉');
+      showSuccess(t('today.challenges.completed'));
     } catch (error) {
       console.error('❌ Erreur lors de la validation du défi:', error);
-      showError('Erreur lors de la validation du défi', {
-        title: 'Échec de la validation',
-        message: 'Une erreur est survenue lors de la validation du défi.',
+      showError(t('today.messages.errorValidating'), {
+        title: t('today.messages.validationFailed'),
+        message: t('today.messages.errorValidatingMessage'),
         suggestions: [
-          'Vérifiez que tous les champs sont remplis',
-          'Réessayez dans quelques instants'
+          t('today.messages.suggestions.checkFields'),
+          t('today.messages.suggestions.tryAgain')
         ]
       });
       throw error;
@@ -325,16 +327,16 @@ const TodayTab = () => {
     try {
       // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
       await saveExerciseChanges();
-      showSuccess('Exercices enregistrés avec succès');
+      showSuccess(t('today.messages.exercisesSaved'));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des exercices:', error);
-      showError('Erreur lors de la sauvegarde des exercices', {
-        title: 'Échec de la sauvegarde',
-        message: 'Une erreur est survenue lors de l\'enregistrement. Veuillez réessayer.',
+      showError(t('today.messages.errorSavingExercises'), {
+        title: t('today.messages.saveFailed'),
+        message: t('today.messages.errorMessage'),
         suggestions: [
-          'Vérifiez votre connexion internet',
-          'Rafraîchissez la page et réessayez',
-          'Contactez le support si le problème persiste'
+          t('today.messages.suggestions.checkInternet'),
+          t('today.messages.suggestions.refresh'),
+          t('today.messages.suggestions.contactSupport')
         ]
       });
     }
@@ -345,16 +347,16 @@ const TodayTab = () => {
     try {
       // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
       await saveStretchChanges();
-      showSuccess('Étirements enregistrés avec succès');
+      showSuccess(t('today.messages.stretchesSaved'));
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des étirements:', error);
-      showError('Erreur lors de la sauvegarde des étirements', {
-        title: 'Échec de la sauvegarde',
-        message: 'Une erreur est survenue lors de l\'enregistrement. Veuillez réessayer.',
+      showError(t('today.messages.errorSavingStretches'), {
+        title: t('today.messages.saveFailed'),
+        message: t('today.messages.errorMessage'),
         suggestions: [
-          'Vérifiez votre connexion internet',
-          'Rafraîchissez la page et réessayez',
-          'Contactez le support si le problème persiste'
+          t('today.messages.suggestions.checkInternet'),
+          t('today.messages.suggestions.refresh'),
+          t('today.messages.suggestions.contactSupport')
         ]
       });
     }
@@ -373,7 +375,7 @@ const TodayTab = () => {
     try {
       // Confirmation avant suppression
       const confirmed = window.confirm(
-        'Êtes-vous sûr de vouloir supprimer cet exercice pour aujourd\'hui ?\n\nCette action peut être annulée en restaurant l\'exercice.'
+        t('today.confirmations.suppressExercise')
       );
       
       if (!confirmed) {
@@ -381,15 +383,15 @@ const TodayTab = () => {
       }
 
       await suppressExerciseForToday(exerciseId);
-      showSuccess('Exercice supprimé pour aujourd\'hui');
+      showSuccess(t('today.messages.exerciseSuppressed'));
     } catch (error) {
       console.error('❌ Erreur lors de la suppression de l\'exercice:', error);
-      showError('Erreur lors de la suppression', {
-        title: 'Échec de la suppression',
-        message: error.message || 'Une erreur est survenue lors de la suppression de l\'exercice.',
+      showError(t('today.messages.errorSuppressing'), {
+        title: t('today.messages.suppressFailed'),
+        message: error.message || t('today.messages.errorMessage'),
         suggestions: [
-          'Vérifiez que l\'exercice existe dans le programme',
-          'Réessayez dans quelques instants'
+          t('today.messages.suggestions.checkExerciseExists'),
+          t('today.messages.suggestions.tryAgain')
         ]
       });
     }
@@ -399,15 +401,15 @@ const TodayTab = () => {
   const handleRestoreExercise = async (exerciseId) => {
     try {
       await restoreExerciseForToday(exerciseId);
-      showSuccess('Exercice restauré pour aujourd\'hui');
+      showSuccess(t('today.messages.exerciseRestored'));
     } catch (error) {
       console.error('❌ Erreur lors de la restauration de l\'exercice:', error);
-      showError('Erreur lors de la restauration', {
-        title: 'Échec de la restauration',
-        message: error.message || 'Une erreur est survenue lors de la restauration de l\'exercice.',
+      showError(t('today.messages.errorRestoring'), {
+        title: t('today.messages.restoreFailed'),
+        message: error.message || t('today.messages.errorMessage'),
         suggestions: [
-          'Vérifiez que l\'exercice était bien supprimé',
-          'Réessayez dans quelques instants'
+          t('today.messages.suggestions.checkWasSuppressed'),
+          t('today.messages.suggestions.tryAgain')
         ]
       });
     }
@@ -417,15 +419,15 @@ const TodayTab = () => {
   const handleExceptionalExerciseComplete = async (exerciseId, actualReps, actualDuration) => {
     try {
       await markExceptionalExerciseComplete(exerciseId, actualReps, actualDuration);
-      showSuccess('Exercice exceptionnel marqué comme complété');
+      showSuccess(t('today.messages.exceptionalExerciseCompleted'));
     } catch (error) {
       console.error('❌ Erreur lors de la complétion de l\'exercice exceptionnel:', error);
-      showError('Erreur lors de la complétion', {
-        title: 'Échec de la complétion',
-        message: error.message || 'Une erreur est survenue lors de la complétion de l\'exercice.',
+      showError(t('today.messages.errorCompleting'), {
+        title: t('today.messages.completeFailed'),
+        message: error.message || t('today.messages.errorMessage'),
         suggestions: [
-          'Vérifiez que l\'exercice existe',
-          'Réessayez dans quelques instants'
+          t('today.messages.suggestions.checkExerciseExists'),
+          t('today.messages.suggestions.tryAgain')
         ]
       });
     }
@@ -435,7 +437,7 @@ const TodayTab = () => {
   const handleRemoveExceptionalExercise = async (exerciseId) => {
     try {
       const confirmed = window.confirm(
-        'Êtes-vous sûr de vouloir supprimer cet exercice exceptionnel ?'
+        t('today.confirmations.removeExceptionalExercise')
       );
       
       if (!confirmed) {
@@ -443,15 +445,15 @@ const TodayTab = () => {
       }
 
       await removeExceptionalExercise(exerciseId);
-      showSuccess('Exercice exceptionnel supprimé');
+      showSuccess(t('today.messages.exceptionalExerciseRemoved'));
     } catch (error) {
       console.error('❌ Erreur lors de la suppression de l\'exercice exceptionnel:', error);
-      showError('Erreur lors de la suppression', {
-        title: 'Échec de la suppression',
-        message: error.message || 'Une erreur est survenue lors de la suppression de l\'exercice.',
+      showError(t('today.messages.errorRemoving'), {
+        title: t('today.messages.removeFailed'),
+        message: error.message || t('today.messages.errorMessage'),
         suggestions: [
-          'Vérifiez que l\'exercice existe',
-          'Réessayez dans quelques instants'
+          t('today.messages.suggestions.checkExerciseExists'),
+          t('today.messages.suggestions.tryAgain')
         ]
       });
     }
@@ -612,8 +614,8 @@ const TodayTab = () => {
         <div className="text-center py-12 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700">
           <div className="text-gray-400 mb-4">
             <div className="text-6xl mb-4">🎉</div>
-            <h3 className="text-xl font-semibold mb-2 text-white">Jour de repos</h3>
-            <p>Profitez de votre journée de récupération !</p>
+            <h3 className="text-xl font-semibold mb-2 text-white">{t('today.restDay.title')}</h3>
+            <p>{t('today.restDay.message')}</p>
           </div>
         </div>
         
@@ -628,7 +630,7 @@ const TodayTab = () => {
             <Card.Header>
               <Card.Title className="flex items-center text-purple-200">
                 <Award className="mr-2" size={20} />
-                Défis actifs ({activeChallenges.length})
+                {t('today.challenges.title')} ({activeChallenges.length})
               </Card.Title>
             </Card.Header>
             <Card.Content>
@@ -663,7 +665,7 @@ const TodayTab = () => {
         {/* Toggle Gym/Maison - seulement pour samedi et dimanche */}
         {hasGymVariants && (
           <div className="mt-4 flex items-center gap-3">
-            <span className="text-sm text-gray-200">Mode d'entraînement:</span>
+            <span className="text-sm text-gray-200">{t('today.workout.trainingMode')}</span>
             <div className="flex items-center bg-slate-700/50 rounded-lg p-1">
               <button
                 onClick={() => setIsGymMode(false)}
@@ -673,7 +675,7 @@ const TodayTab = () => {
                     : 'text-gray-300 hover:text-white'
                 }`}
               >
-                🏠 Maison
+                {t('today.workout.home')}
               </button>
               <button
                 onClick={() => setIsGymMode(true)}
@@ -683,12 +685,12 @@ const TodayTab = () => {
                     : 'text-gray-300 hover:text-white'
                 }`}
               >
-                🏋️ Salle
+                {t('today.workout.gym')}
               </button>
             </div>
             {data.weekVariant && (
               <span className="text-xs text-gray-400 bg-slate-700/30 px-2 py-1 rounded">
-                Semaine {currentWeekVariant}
+                {t('today.workout.week', 'Semaine {{week}}', { week: currentWeekVariant })}
               </span>
             )}
           </div>
@@ -789,7 +791,7 @@ const TodayTab = () => {
                     onClick={() => handleSuppressExercise(exercise.id)}
                     icon={Trash2}
                     className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                    title="Supprimer pour aujourd'hui"
+                    title={t('today.exercises.suppressTitle')}
                   />
                 </div>
               </div>
@@ -802,7 +804,7 @@ const TodayTab = () => {
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-semibold text-white flex items-center gap-2">
                   <span className="text-yellow-400">⭐</span>
-                  Exercices Exceptionnels
+                  {t('today.exercises.exceptionalTitle', 'Exercices Exceptionnels')}
                   {exercisesMetadata.additionalCount > 0 && (
                     <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full">
                       {exercisesMetadata.additionalCount}
@@ -823,7 +825,7 @@ const TodayTab = () => {
                         <div className="font-medium text-white flex items-center gap-2">
                           {exercise.name}
                           <span className="text-xs bg-yellow-500/30 text-yellow-200 px-2 py-0.5 rounded-full">
-                            Exceptionnel
+                            {t('today.exercises.exceptional', 'Exceptionnel')}
                           </span>
                         </div>
                         <div className="text-sm text-gray-300 mt-1">
@@ -882,7 +884,7 @@ const TodayTab = () => {
                           onClick={() => handleRemoveExceptionalExercise(exercise.id)}
                           icon={X}
                           className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                          title="Supprimer cet exercice exceptionnel"
+                          title={t('today.exercises.removeExceptionalTitle')}
                         />
                       </div>
                     </div>
@@ -901,7 +903,7 @@ const TodayTab = () => {
               icon={Plus}
               className="w-full border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
             >
-              Ajouter un exercice exceptionnel
+              {t('today.exercises.addExceptional')}
             </Button>
           </div>
           
@@ -967,7 +969,7 @@ const TodayTab = () => {
             <div className="flex items-center justify-between">
               <div className="text-sm text-yellow-400 flex items-center gap-2">
                 <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                Modifications non sauvegardées
+                {t('today.exercises.unsavedChanges')}
               </div>
               <div className="flex gap-3">
                 <Button
@@ -977,7 +979,7 @@ const TodayTab = () => {
                   icon={X}
                   className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                 >
-                  Annuler
+                  {t('today.exercises.discard')}
                 </Button>
                 <Button
                   variant="primary"
@@ -986,7 +988,7 @@ const TodayTab = () => {
                   icon={Save}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  Enregistrer
+                  {t('today.exercises.save')}
                 </Button>
               </div>
             </div>
@@ -999,7 +1001,7 @@ const TodayTab = () => {
         <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">
           <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
             <span className="text-purple-400">🧘‍♂️</span>
-            Étirements du jour
+            {t('today.stretches.titleOfDay')}
           </h3>
           <div className="space-y-4">
             {Object.entries(workout.etirements).map(([moment, description]) => (
@@ -1028,7 +1030,7 @@ const TodayTab = () => {
               <div className="flex items-center justify-between">
                 <div className="text-sm text-yellow-400 flex items-center gap-2">
                   <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                  Modifications non sauvegardées
+                  {t('today.exercises.unsavedChanges')}
                 </div>
                 <div className="flex gap-3">
                   <Button
@@ -1038,7 +1040,7 @@ const TodayTab = () => {
                     icon={X}
                     className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                   >
-                    Annuler
+                    {t('today.exercises.discard')}
                   </Button>
                   <Button
                     variant="primary"
@@ -1047,7 +1049,7 @@ const TodayTab = () => {
                     icon={Save}
                     className="bg-green-600 hover:bg-green-700"
                   >
-                    Enregistrer
+                    {t('today.stretches.save')}
                   </Button>
                 </div>
               </div>
@@ -1158,7 +1160,7 @@ const TodayTab = () => {
             <Card.Header>
               <Card.Title className="flex items-center text-purple-200">
                 <Award className="mr-2" size={20} />
-                Défis actifs ({activeChallenges.length})
+                {t('today.challenges.title')} ({activeChallenges.length})
               </Card.Title>
             </Card.Header>
             <Card.Content>

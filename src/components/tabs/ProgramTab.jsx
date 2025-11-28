@@ -6,9 +6,15 @@ import Button from '../ui/Button';
 import { typography } from '../../styles/typography';
 import { workoutProgram } from '../../data/workoutProgram';
 import ProgramDetailView from '../ProgramDetailView';
+import { useTranslation } from '../../utils/translations';
+import { useFormatters } from '../../utils/translations/formatters-hook';
+import { useToast } from '../ui/Toast';
 
 const ProgramTab = () => {
   const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram } = useContext(WorkoutContext);
+  const t = useTranslation();
+  const { formatDate: formatLocaleDate } = useFormatters();
+  const { showSuccess } = useToast();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [newProgram, setNewProgram] = useState({
@@ -25,13 +31,13 @@ const ProgramTab = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays < 7) {
-      return `${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+      return t('program.duration.' + (diffDays > 1 ? 'days' : 'day'), { count: diffDays });
     } else if (diffDays < 30) {
       const weeks = Math.floor(diffDays / 7);
-      return `${weeks} semaine${weeks > 1 ? 's' : ''}`;
+      return t('program.duration.' + (weeks > 1 ? 'weeks' : 'week'), { count: weeks });
     } else {
       const months = Math.floor(diffDays / 30);
-      return `${months} mois`;
+      return t('program.duration.months', { count: months });
     }
   };
 
@@ -73,21 +79,21 @@ const ProgramTab = () => {
       convertedSchedule[day] = {
         name: dayData.name,
         focus: dayData.focus,
-        duration: dayData.duree || "Non spécifié",
+        duration: dayData.duree || t('program.misc.notSpecified'),
         notes: dayData.notes || "",
         etirements: {
           matin: { 
-            name: "Étirements matinaux", 
+            name: t('program.stretches.morning'), 
             duration: "5-7 min", 
             instructions: dayData.etirements?.matin || "" 
           },
           midi: { 
-            name: "Pause active", 
+            name: t('program.stretches.midday'), 
             duration: "4-6 min", 
             instructions: dayData.etirements?.midi || "" 
           },
           soir: { 
-            name: "Récupération", 
+            name: t('program.stretches.evening'), 
             duration: "5-7 min", 
             instructions: dayData.etirements?.soir || "" 
           }
@@ -102,7 +108,7 @@ const ProgramTab = () => {
             rest: exercise.type?.includes('circuit') ? 30 : (exercise.type?.includes('superset') ? 45 : 90),
             intensity: exercise.series?.includes('4×') ? "heavy" : (exercise.series?.includes('3×') ? "moderate" : "light"),
             notes: exercise.notes || "",
-            materiel: exercise.materiel || "poids du corps",
+            materiel: exercise.materiel || t('program.equipment.bodyWeight'),
             type: exercise.type || "standard"
           })) || []),
           // Activités complémentaires
@@ -114,7 +120,7 @@ const ProgramTab = () => {
             rest: 0,
             intensity: "moderate",
             notes: `${dayData.complementaryActivity.timeSlot} - ${dayData.complementaryActivity.benefits.join(', ')}`,
-            materiel: dayData.complementaryActivity.name === "Boxe" ? "Gants de boxe" : "Piscine",
+            materiel: dayData.complementaryActivity.name === "Boxe" ? t('program.equipment.boxingGloves') : t('program.equipment.pool'),
             type: dayData.complementaryActivity.type
           }] : [])
         ],
@@ -130,7 +136,7 @@ const ProgramTab = () => {
               rest: 90,
               intensity: "moderate",
               notes: ex.notes || "",
-              materiel: "salle de sport",
+              materiel: t('program.equipment.gym'),
               type: "standard"
             }))
           },
@@ -144,7 +150,7 @@ const ProgramTab = () => {
               rest: 90,
               intensity: "moderate",
               notes: ex.notes || "",
-              materiel: "salle de sport",
+              materiel: t('program.equipment.gym'),
               type: "standard"
             }))
           }
@@ -154,17 +160,17 @@ const ProgramTab = () => {
 
     const currentProgram = {
       id: Date.now().toString(),
-      name: "Programme Cycle 3+1",
-      description: "Programme d'entraînement complet - Street Workout, Boxe, Natation et Musculation",
+      name: t('program.import.defaultName'),
+      description: t('program.import.defaultDescription'),
       duration: 12, // 12 semaines
-      goal: "Force, endurance et développement musculaire complet",
+      goal: t('program.import.defaultGoal'),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       schedule: convertedSchedule
     };
 
     addProgram(currentProgram);
-    alert('Programme actuel importé avec succès !');
+    showSuccess(t('program.import.success'));
   };
 
   return (
@@ -182,9 +188,9 @@ const ProgramTab = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
               <div>
                 <h1 className={`${typography.presets.h1} mb-2`}>
-                  Programmes d'Entraînement
+                  {t('program.title')}
                 </h1>
-                <p className="text-slate-300">Gérez vos programmes et suivez votre progression</p>
+                <p className="text-slate-300">{t('program.subtitle')}</p>
               </div>
               <div className="flex gap-3">
                 <Button
@@ -192,14 +198,14 @@ const ProgramTab = () => {
                   className="bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 flex items-center gap-2"
                 >
                   <Download size={20} />
-                  Importer Programme
+                  {t('program.buttons.import')}
                 </Button>
                 <Button
                   onClick={() => setShowCreateForm(true)}
                   className="btn-primary flex items-center gap-2"
                 >
                   <Plus size={20} />
-                  Nouveau Programme
+                  {t('program.buttons.new')}
                 </Button>
               </div>
             </div>
@@ -210,7 +216,7 @@ const ProgramTab = () => {
             <CardContent>
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h2 className={`${typography.presets.h3} mb-2`}>Programme Actuel</h2>
+                  <h2 className={`${typography.presets.h3} mb-2`}>{t('program.currentProgram.title')}</h2>
                   <h3 className={`${typography.presets.h2} font-bold`}>{activeProgram.name}</h3>
                   {activeProgram.description && (
                     <p className="text-white/90 mt-2">{activeProgram.description}</p>
@@ -221,25 +227,25 @@ const ProgramTab = () => {
                   className="bg-red-500/20 text-red-200 border border-red-400/30 hover:bg-red-500/30 px-3 py-2 rounded-lg transition-colors"
                 >
                   <Pause size={16} className="mr-2" />
-                  Désactiver
+                  {t('program.currentProgram.deactivate')}
                 </Button>
               </div>
               
               <div className="flex flex-wrap items-center gap-6 text-sm text-white/80 mb-4">
                 <div className="flex items-center gap-2">
                   <Clock size={16} />
-                  <span>Actif depuis {formatDuration(activeProgram.startDate)}</span>
+                  <span>{t('program.currentProgram.activeSince', { duration: formatDuration(activeProgram.startDate) })}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar size={16} />
-                  <span>Durée prévue: {activeProgram.duration} semaines</span>
+                  <span>{t('program.currentProgram.plannedDuration', { weeks: activeProgram.duration })}</span>
                 </div>
               </div>
 
               {/* Progression du programme */}
               <div className="mt-4">
                 <div className="flex justify-between text-sm text-white/80 mb-2">
-                  <span>Progression</span>
+                  <span>{t('program.currentProgram.progress')}</span>
                   <span>{Math.min(100, Math.round((new Date() - new Date(activeProgram.startDate)) / (activeProgram.duration * 7 * 24 * 60 * 60 * 1000) * 100))}%</span>
                 </div>
                 <div className="w-full bg-white/20 rounded-full h-2">
@@ -259,39 +265,39 @@ const ProgramTab = () => {
         {showCreateForm && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className={typography.presets.h3}>Créer un Nouveau Programme</CardTitle>
+              <CardTitle className={typography.presets.h3}>{t('program.createForm.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Nom du Programme *
+                    {t('program.createForm.name')} {t('program.createForm.nameRequired')}
                   </label>
                   <input
                     type="text"
                     value={newProgram.name}
                     onChange={(e) => setNewProgram({ ...newProgram, name: e.target.value })}
                     className="input-field"
-                    placeholder="Ex: Programme Force Débutant"
+                    placeholder={t('program.createForm.namePlaceholder')}
                   />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Description
+                    {t('program.createForm.description')}
                   </label>
                   <textarea
                     value={newProgram.description}
                     onChange={(e) => setNewProgram({ ...newProgram, description: e.target.value })}
                     className="input-field"
                     rows="3"
-                    placeholder="Décrivez les objectifs et caractéristiques de ce programme..."
+                    placeholder={t('program.createForm.descriptionPlaceholder')}
                   />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Durée (semaines)
+                    {t('program.createForm.duration')}
                   </label>
                   <input
                     type="number"
@@ -309,13 +315,13 @@ const ProgramTab = () => {
                   onClick={handleCreateProgram}
                   className="btn-primary"
                 >
-                  Créer le Programme
+                  {t('program.buttons.create')}
                 </Button>
                 <Button
                   onClick={() => setShowCreateForm(false)}
                   className="btn-secondary"
                 >
-                  Annuler
+                  {t('program.buttons.cancel')}
                 </Button>
               </div>
             </CardContent>
@@ -325,7 +331,7 @@ const ProgramTab = () => {
         {/* Liste des Programmes */}
         <Card>
           <CardHeader>
-            <CardTitle className={typography.presets.h3}>Tous les Programmes</CardTitle>
+            <CardTitle className={typography.presets.h3}>{t('program.list.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             {programs && programs.length > 0 ? (
@@ -352,7 +358,7 @@ const ProgramTab = () => {
                               ? 'bg-green-500/20 text-green-200 border border-green-400/30'
                               : 'bg-slate-600/20 text-slate-300 border border-slate-500/30'
                           }`}>
-                            {program.id === activeProgram?.id ? 'Actif' : program.status === 'completed' ? 'Terminé' : 'Inactif'}
+                            {program.id === activeProgram?.id ? t('program.status.active') : program.status === 'completed' ? t('program.status.completed') : t('program.status.inactive')}
                           </span>
                         </div>
                         
@@ -363,17 +369,17 @@ const ProgramTab = () => {
                         <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
                           <div className="flex items-center gap-1">
                             <Calendar size={14} />
-                            <span>Durée: {program.duration} semaines</span>
+                            <span>{t('program.list.duration', { weeks: program.duration })}</span>
                           </div>
                           {program.startDate && (
                             <div className="flex items-center gap-1">
                               <Clock size={14} />
                               <span>
                                 {program.status === 'completed' 
-                                  ? `Utilisé ${formatDuration(program.startDate, program.endDate)}`
+                                  ? t('program.list.usedFor', { duration: formatDuration(program.startDate, program.endDate) })
                                   : program.id === activeProgram?.id
-                                  ? `Actif depuis ${formatDuration(program.startDate)}`
-                                  : `Créé le ${new Date(program.createdAt).toLocaleDateString()}`
+                                  ? t('program.list.activeSince', { duration: formatDuration(program.startDate) })
+                                  : t('program.list.createdOn', { date: formatLocaleDate(new Date(program.createdAt)) })
                                 }
                               </span>
                             </div>
@@ -388,7 +394,7 @@ const ProgramTab = () => {
                             className="bg-green-500/20 text-green-200 border border-green-400/30 hover:bg-green-500/30 px-3 py-1 text-sm"
                           >
                             <Play size={14} className="mr-1" />
-                            Activer
+                            {t('program.buttons.activate')}
                           </Button>
                         )}
                         
@@ -397,7 +403,7 @@ const ProgramTab = () => {
                           className="bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 px-3 py-1 text-sm"
                         >
                           <Eye size={14} className="mr-1" />
-                          Voir
+                          {t('program.buttons.view')}
                         </Button>
                         
                         <button className="p-2 text-slate-400 hover:text-slate-200 transition-colors">
@@ -420,8 +426,8 @@ const ProgramTab = () => {
             ) : (
               <div className="text-center py-12 text-slate-400">
                 <Archive size={48} className="mx-auto mb-4 text-slate-500" />
-                <p className={`${typography.presets.bodyLarge} mb-2`}>Aucun programme créé</p>
-                <p className="text-sm">Commencez par créer votre premier programme d'entraînement</p>
+                <p className={`${typography.presets.bodyLarge} mb-2`}>{t('program.misc.noPrograms')}</p>
+                <p className="text-sm">{t('program.misc.noProgramsHint')}</p>
               </div>
             )}
           </CardContent>

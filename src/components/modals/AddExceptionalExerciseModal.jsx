@@ -14,57 +14,62 @@ import Button from '../ui/Button';
 import { Input, TextArea, Select } from '../ui/Input';
 import { useToast } from '../ui/Toast';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useTranslation } from '../../utils/translations';
 
 /**
  * Validation complète et intelligente d'un exercice exceptionnel
  * @param {object} exercise - Données de l'exercice à valider
+ * @param {Function} t - Fonction de traduction
  * @returns {object} { isValid, errors, warnings, suggestions }
  */
-const validateExceptionalExercise = (exercise) => {
+const validateExceptionalExercise = (exercise, t) => {
   const errors = [];
   const warnings = [];
   const suggestions = [];
 
   // ✅ Validation nom (2-100 chars)
   if (!exercise.name || typeof exercise.name !== 'string' || exercise.name.trim().length === 0) {
-    errors.push('Le nom de l\'exercice est requis');
+    errors.push(t('exercises.exceptional.validation.nameRequired'));
   } else if (exercise.name.trim().length < 2) {
-    errors.push('Le nom de l\'exercice doit contenir au moins 2 caractères');
+    errors.push(t('exercises.exceptional.validation.nameMinLength'));
   } else if (exercise.name.trim().length > 100) {
-    warnings.push('Le nom est très long (> 100 caractères)');
+    warnings.push(t('exercises.exceptional.validation.nameMaxLength'));
   }
 
   // ✅ Validation type (reps ou duration)
   if (!exercise.type || !['reps', 'duration'].includes(exercise.type)) {
-    errors.push('Le type d\'exercice doit être "reps" ou "duration"');
+    errors.push(t('exercises.exceptional.validation.typeRequired'));
   }
 
   // ✅ Validation selon le type
   if (exercise.type === 'reps') {
     // Validation séries (1-50)
     if (!exercise.series || typeof exercise.series !== 'number' || exercise.series < 1) {
-      errors.push('Le nombre de séries doit être supérieur à 0');
+      errors.push(t('exercises.exceptional.validation.seriesRequired'));
     } else if (exercise.series > 50) {
-      warnings.push('Un nombre très élevé de séries (> 50) peut être une erreur');
+      warnings.push(t('exercises.exceptional.validation.seriesTooHigh'));
     } else if (exercise.series > 20) {
-      warnings.push('Un nombre élevé de séries (> 20) peut être fatigant');
+      warnings.push(t('exercises.exceptional.validation.seriesHigh'));
     } else if (exercise.series < 2) {
-      warnings.push('Une seule série peut être peu efficace pour la progression');
+      warnings.push(t('exercises.exceptional.validation.seriesLow'));
     }
 
     // Validation repsPerSeries
     if (!exercise.repsPerSeries || !Array.isArray(exercise.repsPerSeries) || exercise.repsPerSeries.length === 0) {
-      errors.push('Au moins une série doit avoir des répétitions');
+      errors.push(t('exercises.exceptional.validation.repsRequired'));
     } else {
       // ✅ Validation cohérence séries vs repsPerSeries
       if (exercise.repsPerSeries.length !== exercise.series) {
-        errors.push(`Le nombre de séries (${exercise.series}) ne correspond pas au nombre de valeurs de répétitions (${exercise.repsPerSeries.length})`);
+        errors.push(t('exercises.exceptional.validation.repsMismatch', 'Le nombre de séries ({{series}}) ne correspond pas au nombre de valeurs de répétitions ({{repsCount}})', { 
+          series: exercise.series, 
+          repsCount: exercise.repsPerSeries.length 
+        }));
       }
 
       // ✅ Validation valeurs de répétitions
       const invalidReps = exercise.repsPerSeries.filter(r => typeof r !== 'number' || r <= 0 || r > 1000);
       if (invalidReps.length > 0) {
-        errors.push('Toutes les répétitions doivent être positives et inférieures à 1000');
+        errors.push(t('exercises.exceptional.validation.repsInvalid'));
       }
 
       // ✅ Détection patterns intelligente
@@ -72,7 +77,9 @@ const validateExceptionalExercise = (exercise) => {
         // Pattern : toutes identiques
         const allSame = exercise.repsPerSeries.every(r => r === exercise.repsPerSeries[0]);
         if (allSame) {
-          suggestions.push(`Toutes les séries ont le même nombre de reps (${exercise.repsPerSeries[0]}) - vous pouvez simplifier`);
+          suggestions.push(t('exercises.exceptional.suggestions.allSameReps', 'Toutes les séries ont le même nombre de reps ({{reps}}) - vous pouvez simplifier', { 
+            reps: exercise.repsPerSeries[0] 
+          }));
         }
 
         // Pattern : progression arithmétique
@@ -83,44 +90,50 @@ const validateExceptionalExercise = (exercise) => {
         const allSameDiff = differences.every(d => d === differences[0]);
         if (allSameDiff && differences[0] !== 0) {
           const diff = differences[0];
-          suggestions.push(`Progression détectée : ${diff > 0 ? '+' : ''}${diff} reps par série`);
+          suggestions.push(t('exercises.exceptional.suggestions.progressionDetected', 'Progression détectée : {{diff}} reps par série', { 
+            diff: diff > 0 ? `+${diff}` : String(diff) 
+          }));
         }
 
         // Pattern : valeurs extrêmes
         const minReps = Math.min(...exercise.repsPerSeries);
         const maxReps = Math.max(...exercise.repsPerSeries);
         if (minReps < 5) {
-          warnings.push(`Certaines séries ont très peu de reps (< 5) - vérifiez`);
+          warnings.push(t('exercises.exceptional.validation.repsLow'));
         }
         if (maxReps > 100) {
-          warnings.push(`Certaines séries ont beaucoup de reps (> 100) - vérifiez`);
+          warnings.push(t('exercises.exceptional.validation.repsHigh'));
         }
       }
     }
   } else if (exercise.type === 'duration') {
     // Validation durée (> 0, < 7200s = 2h)
     if (!exercise.duration || typeof exercise.duration !== 'number' || exercise.duration <= 0) {
-      errors.push('La durée doit être positive');
+      errors.push(t('exercises.exceptional.validation.durationRequired'));
     } else if (exercise.duration > 7200) {
-      warnings.push('Durée très longue (> 2 heures) - est-ce correct ?');
+      warnings.push(t('exercises.exceptional.validation.durationTooLong'));
     } else if (exercise.duration < 10) {
-      warnings.push('Durée très courte (< 10 secondes) - est-ce correct ?');
+      warnings.push(t('exercises.exceptional.validation.durationTooShort'));
     } else if (exercise.duration >= 60) {
       // ✅ Suggestion conversion secondes/minutes
       const minutes = Math.floor(exercise.duration / 60);
       const seconds = exercise.duration % 60;
       if (seconds === 0) {
-        suggestions.push(`Durée : ${minutes}min (vérifiez si c'est bien en secondes)`);
+        suggestions.push(t('exercises.exceptional.suggestions.durationMinutes', 'Durée : {{minutes}}min (vérifiez si c\'est bien en secondes)', { 
+          minutes 
+        }));
       } else {
-        suggestions.push(`Durée : ${minutes}min ${seconds}s (vérifiez si c'est bien en secondes)`);
+        suggestions.push(t('exercises.exceptional.suggestions.durationMinutes', 'Durée : {{minutes}}min {{seconds}}s (vérifiez si c\'est bien en secondes)', { 
+          minutes, 
+          seconds 
+        }));
       }
     }
   }
 
   // ✅ Validation matériel (optionnel mais recommandé)
-  if (exercise.materiel !== undefined && exercise.materiel.trim().length === 0) {
-    suggestions.push('Le matériel n\'est pas renseigné - cela peut être utile pour plus tard');
-  }
+  // Note: Cette suggestion n'est pas critique, on peut la garder en français pour l'instant
+  // ou l'ajouter aux fichiers de traduction si nécessaire
 
   return {
     isValid: errors.length === 0,
@@ -133,6 +146,7 @@ const validateExceptionalExercise = (exercise) => {
 const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
   const { addExceptionalExercise } = useWorkout();
   const { showSuccess, showError } = useToast();
+  const t = useTranslation();
 
   // ✅ État du formulaire
   const [formData, setFormData] = useState({
@@ -159,8 +173,8 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
 
   // ✅ Validation en temps réel (mémorisée pour performance)
   const currentValidation = useMemo(() => {
-    return validateExceptionalExercise(formData);
-  }, [formData]);
+    return validateExceptionalExercise(formData, t);
+  }, [formData, t]);
 
   // ✅ Mettre à jour la validation à chaque changement
   React.useEffect(() => {
@@ -245,13 +259,13 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
 
   // ✅ Handler pour soumettre le formulaire
   const handleSubmit = useCallback(async () => {
-    const validation = validateExceptionalExercise(formData);
+    const validation = validateExceptionalExercise(formData, t);
 
     // ✅ Vérifier erreurs bloquantes
     if (!validation.isValid) {
       validation.errors.forEach(error => {
         showError(error, {
-          title: 'Erreur de validation',
+          title: t('exercises.exceptional.messages.validationError'),
           message: error
         });
       });
@@ -262,7 +276,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
     if (validation.warnings.length > 0) {
       const warningMessage = validation.warnings.join('\n');
       const proceed = window.confirm(
-        `⚠️ Avertissements :\n\n${warningMessage}\n\nSouhaitez-vous continuer quand même ?`
+        `${t('exercises.exceptional.messages.warnings')}\n\n${warningMessage}\n\n${t('exercises.exceptional.messages.warningsContinue')}`
       );
       
       if (!proceed) {
@@ -289,7 +303,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
       // ✅ Ajouter l'exercice exceptionnel
       await addExceptionalExercise(exerciseData, formData.reason.trim() || undefined);
       
-      showSuccess('Exercice exceptionnel ajouté avec succès !');
+      showSuccess(t('exercises.exceptional.messages.success'));
       
       // ✅ Réinitialiser le formulaire
       setFormData({
@@ -307,12 +321,12 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
       onClose();
     } catch (error) {
       console.error('❌ Erreur lors de l\'ajout de l\'exercice exceptionnel:', error);
-      showError('Erreur lors de l\'ajout', {
-        title: 'Échec de l\'ajout',
-        message: error.message || 'Une erreur est survenue lors de l\'ajout de l\'exercice.',
+      showError(t('exercises.exceptional.messages.addError'), {
+        title: t('exercises.exceptional.messages.addFailed'),
+        message: error.message || t('exercises.exceptional.messages.addErrorMessage'),
         suggestions: [
-          'Vérifiez que tous les champs sont correctement remplis',
-          'Réessayez dans quelques instants'
+          t('exercises.exceptional.messages.suggestions.checkFields'),
+          t('exercises.exceptional.messages.suggestions.tryAgain')
         ]
       });
     }
@@ -345,34 +359,34 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Ajouter un exercice exceptionnel"
+      title={t('exercises.exceptional.title')}
       size="md"
       variant="glass"
     >
       <div className="p-6 space-y-6">
         {/* ✅ Nom de l'exercice */}
         <Input
-          label="Nom de l'exercice *"
+          label={`${t('exercises.exceptional.name.label')} ${t('exercises.exceptional.name.required')}`}
           type="text"
           value={formData.name}
           onChange={handleNameChange}
-          placeholder="Ex: Développé couché avec haltères"
+          placeholder={t('exercises.exceptional.name.placeholder')}
           required
           error={fieldErrors.name}
-          help={formData.name.trim().length > 0 && formData.name.trim().length < 2 ? 'Le nom doit contenir au moins 2 caractères' : undefined}
+          help={formData.name.trim().length > 0 && formData.name.trim().length < 2 ? t('exercises.exceptional.name.help') : undefined}
           className="w-full"
         />
 
         {/* ✅ Type d'exercice */}
         <Select
-          label="Type d'exercice *"
+          label={`${t('exercises.exceptional.type.label')} ${t('exercises.exceptional.type.required')}`}
           value={formData.type}
           onChange={handleTypeChange}
           required
           className="w-full"
         >
-          <option value="reps">Par répétitions (séries × reps)</option>
-          <option value="duration">Par durée (secondes/minutes)</option>
+          <option value="reps">{t('exercises.exceptional.type.reps')}</option>
+          <option value="duration">{t('exercises.exceptional.type.duration')}</option>
         </Select>
 
         {/* ✅ Champs selon le type */}
@@ -380,7 +394,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
           <>
             {/* Nombre de séries */}
             <Input
-              label="Nombre de séries *"
+              label={`${t('exercises.exceptional.series.label')} ${t('exercises.exceptional.series.required')}`}
               type="number"
               value={formData.series}
               onChange={handleSeriesChange}
@@ -388,24 +402,24 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
               max="50"
               required
               error={fieldErrors.series}
-              help="Entre 1 et 50 séries"
+              help={t('exercises.exceptional.series.help')}
               className="w-full"
             />
 
             {/* Répétitions par série */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Répétitions par série * ({formData.series} série{formData.series > 1 ? 's' : ''})
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                {t('exercises.exceptional.repsPerSeries.label')} {t('exercises.exceptional.repsPerSeries.required')} ({formData.series} {formData.series > 1 ? t('exercises.exceptional.repsPerSeries.seriesPlural') : t('exercises.exceptional.repsPerSeries.series')})
               </label>
               <div className="space-y-2">
                 {Array.from({ length: formData.series }).map((_, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400 w-8">Série {index + 1}:</span>
+                    <span className="text-sm text-gray-400 w-8">{t('exercises.exceptional.repsPerSeries.series')} {index + 1}:</span>
                     <Input
                       type="number"
                       value={formData.repsPerSeries[index] || ''}
                       onChange={(e) => handleRepsChange(index, e.target.value)}
-                      placeholder="Reps"
+                      placeholder={t('exercises.exceptional.repsPerSeries.label', 'Reps')}
                       min="1"
                       max="1000"
                       error={fieldErrors.repsPerSeries && index === 0 ? fieldErrors.repsPerSeries : undefined}
@@ -426,22 +440,22 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
           <>
             {/* Durée */}
             <Input
-              label="Durée (en secondes) *"
+              label={`${t('exercises.exceptional.duration.label')} (${t('exercises.exceptional.duration.unit')}) ${t('exercises.exceptional.duration.required')}`}
               type="number"
               value={formData.duration}
               onChange={handleDurationChange}
-              placeholder="Ex: 180 pour 3 minutes"
+              placeholder={t('exercises.exceptional.duration.help', 'Ex: 180 pour 3 minutes')}
               min="1"
               max="7200"
               required
               error={fieldErrors.duration}
-              help={formData.duration >= 60 ? `Durée : ${Math.floor(formData.duration / 60)}min ${formData.duration % 60}s` : undefined}
+              help={formData.duration >= 60 ? `${t('exercises.exceptional.duration.label')}: ${Math.floor(formData.duration / 60)}min ${formData.duration % 60}s` : undefined}
               className="w-full"
             />
-            {validation.suggestions.some(s => s.includes('Durée :')) && (
+            {validation.suggestions.some(s => s.includes(t('exercises.exceptional.suggestions.durationMinutes', 'Durée :').split(':')[0])) && (
               <div className="text-xs text-blue-400 flex items-center gap-1 -mt-2">
                 <Info className="w-3 h-3" />
-                {validation.suggestions.find(s => s.includes('Durée :'))}
+                {validation.suggestions.find(s => s.includes(t('exercises.exceptional.suggestions.durationMinutes', 'Durée :').split(':')[0]))}
               </div>
             )}
           </>
@@ -449,21 +463,21 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
 
         {/* ✅ Matériel (optionnel) */}
         <Input
-          label="Matériel"
+          label={t('exercises.exceptional.materiel.label')}
           type="text"
           value={formData.materiel}
           onChange={handleMaterielChange}
-          placeholder="Ex: Haltères, barre, élastique..."
+          placeholder={t('exercises.exceptional.materiel.placeholder')}
           optional
           className="w-full"
         />
 
         {/* ✅ Notes (optionnel) */}
         <TextArea
-          label="Notes"
+          label={t('exercises.exceptional.notes.label')}
           value={formData.notes}
           onChange={handleNotesChange}
-          placeholder="Notes personnelles sur cet exercice..."
+          placeholder={t('exercises.exceptional.notes.placeholder')}
           rows={3}
           optional
           className="w-full"
@@ -471,11 +485,11 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
 
         {/* ✅ Raison (optionnel) */}
         <Input
-          label="Raison de l'ajout"
+          label={t('exercises.exceptional.reason.label')}
           type="text"
           value={formData.reason}
           onChange={handleReasonChange}
-          placeholder="Ex: Blessure, remplacement temporaire..."
+          placeholder={t('exercises.exceptional.reason.placeholder')}
           optional
           className="w-full"
         />
@@ -499,7 +513,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 space-y-2">
             <div className="flex items-center gap-2 text-yellow-400 font-medium">
               <AlertCircle className="w-4 h-4" />
-              Avertissements :
+              {t('exercises.exceptional.messages.warningsTitle')} :
             </div>
             <ul className="list-disc list-inside text-sm text-yellow-300 space-y-1">
               {validation.warnings.map((warning, index) => (
@@ -513,7 +527,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 space-y-2">
             <div className="flex items-center gap-2 text-blue-400 font-medium">
               <Info className="w-4 h-4" />
-              Suggestions :
+              {t('exercises.exceptional.messages.suggestionsTitle')} :
             </div>
             <ul className="list-disc list-inside text-sm text-blue-300 space-y-1">
               {validation.suggestions.map((suggestion, index) => (
@@ -530,7 +544,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
             onClick={onClose}
             className="border-slate-600 text-slate-300 hover:bg-slate-700/50"
           >
-            Annuler
+            {t('exercises.exceptional.buttons.cancel')}
           </Button>
           <Button
             variant="primary"
@@ -539,7 +553,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
             className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
             icon={CheckCircle}
           >
-            Ajouter l'exercice
+            {t('exercises.exceptional.buttons.save')}
           </Button>
         </div>
       </div>

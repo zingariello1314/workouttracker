@@ -8,6 +8,8 @@ import { isBrowser } from '../../../../utils/isBrowser';
  * Supporte aria-live, instrumentation, et fermeture automatique
  */
 export function Toast({ message, type = 'success', duration = 3000, onClose, id }) {
+  const t = useTranslation();
+  
   useEffect(() => {
     // Instrumentation : enregistrer l'affichage du toast
     // ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées
@@ -74,7 +76,7 @@ export function Toast({ message, type = 'success', duration = 3000, onClose, id 
             onClose?.();
           }}
           className="text-white/80 hover:text-white flex-shrink-0 ml-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 rounded"
-          aria-label="Fermer le message"
+          aria-label={t('garmin.toast.close')}
         >
           ✕
         </button>

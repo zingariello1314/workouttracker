@@ -1,0 +1,64 @@
+{
+  "sync": {
+    "title": "Automatic synchronization",
+    "enabled": "Automatic synchronization enabled",
+    "disabled": "Automatic synchronization disabled",
+    "lastSync": "Last sync: {{time}}",
+    "exercisesSynced": "{{count}} exercises synchronized from {{sourceName}}",
+    "categorizationApplied": "Automatic categorization applied ({{time}})",
+    "categorizationNow": "now",
+    "changesDetected": "Changes detected: {{changeType}}"
+  },
+  "source": {
+    "title": "Exercise source",
+    "default": "Default program",
+    "activeProgram": "Active program",
+    "activeProgramNone": "(None)",
+    "allPrograms": "All programs ({{count}})",
+    "description": {
+      "default": "Displaying exercises from the default program",
+      "activeProgram": "Displaying exercises from program \"{{programName}}\"",
+      "activeProgramNone": "No active program selected",
+      "allProgramsSelect": "Select a program from the {{count}} available",
+      "allProgramsView": "Displaying exercises from program \"{{programName}}\""
+    }
+  },
+  "stats": {
+    "totalExercises": "Total exercises",
+    "categories": "Categories",
+    "muscleGroups": "Muscle groups",
+    "filtered": "Filtered"
+  },
+  "filters": {
+    "title": "Filters and search"
+  },
+  "navigation": {
+    "backToPrograms": "Back to programs list"
+  },
+  "programs": {
+    "title": "Available programs ({{count}})",
+    "none": "No programs found",
+    "noneHint": "Create your first program in the Programs tab"
+  },
+  "exercises": {
+    "title": "Exercises ({{count}})",
+    "titleWithProgram": "Exercises ({{count}}) - {{programName}}",
+    "none": "No exercises found",
+    "noneWithProgram": "Program \"{{programName}}\" contains no exercises",
+    "noneHint": "Try modifying your search or filter criteria"
+  },
+  "difficulty": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "misc": {
+    "notSpecified": "Not specified",
+    "defaultProgram": "Default program"
+  },
+  "equipment": {
+    "boxingGloves": "Boxing gloves",
+    "pool": "Pool"
+  }
+}
+

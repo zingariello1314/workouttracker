@@ -1,0 +1,53 @@
+{
+  "title": "Workout History",
+  "subtitle": "Track your progress and review past sessions",
+  "empty": {
+    "title": "No history",
+    "message": "Start your first workout to see your history here."
+  },
+  "stats": {
+    "sessions": "{{count}} session recorded",
+    "sessionsPlural": "{{count}} sessions recorded",
+    "totalSessions": "Total sessions",
+    "totalReps": "Total repetitions",
+    "totalMinutes": "Training minutes",
+    "avgPerSession": "Average per session",
+    "totalStretches": "Total stretches",
+    "global": "Global statistics"
+  },
+  "filters": {
+    "label": "Filter exercises:",
+    "all": "All",
+    "program": "Program",
+    "exceptional": "Exceptional",
+    "suppressed": "Suppressed"
+  },
+  "session": {
+    "number": "Session #{{number}}",
+    "reps": "{{count}} repetition",
+    "repsPlural": "{{count}} repetitions",
+    "minutes": "{{count}} minute",
+    "minutesPlural": "{{count}} minutes",
+    "exercises": "{{count}} exercise",
+    "exercisesPlural": "{{count}} exercises"
+  },
+  "exercises": {
+    "title": "Exercises performed:",
+    "exceptional": "Exceptional",
+    "exceptionalCount": "{{count}} exceptional",
+    "exceptionalCountPlural": "{{count}} exceptionals",
+    "suppressed": "Suppressed",
+    "suppressedCount": "{{count}} suppressed",
+    "suppressedCountPlural": "{{count}} suppressed",
+    "reps": "{{count}} reps"
+  },
+  "stretches": {
+    "title": "Stretches performed:",
+    "type": "{{type}} stretches",
+    "completed": "✓ Completed"
+  },
+  "notes": {
+    "label": "Notes:"
+  }
+}
+

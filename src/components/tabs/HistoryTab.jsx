@@ -6,9 +6,11 @@ import { Badge } from '../ui/Badge';
 import { formatDate } from '../../utils/dateUtils';
 import { typography } from '../../styles/typography';
 import { calculateTotalRepsExcludingJumps, calculateValidReps } from '../../utils/enduranceUtils';
+import { useTranslation } from '../../utils/translations';
 
 const HistoryTab = () => {
   const { getWorkoutHistory } = useWorkout();
+  const t = useTranslation();
   
   const history = getWorkoutHistory();
   
@@ -60,10 +62,10 @@ const HistoryTab = () => {
       <div className="space-y-6">
         <div className="text-center space-y-2">
           <h1 className={typography.presets.h2Gradient}>
-            Historique des Entraînements
+            {t('history.title')}
           </h1>
           <p className={typography.presets.body}>
-            Suivez vos progrès et consultez vos séances passées
+            {t('history.subtitle')}
           </p>
         </div>
 
@@ -71,9 +73,9 @@ const HistoryTab = () => {
           <div className="space-y-4">
             <Calendar className="w-16 h-16 mx-auto text-slate-400" />
             <div>
-              <h3 className={typography.presets.h4}>Aucun historique</h3>
+              <h3 className={typography.presets.h4}>{t('history.empty.title')}</h3>
               <p className={typography.presets.body}>
-                Commencez votre premier entraînement pour voir votre historique ici.
+                {t('history.empty.message')}
               </p>
             </div>
           </div>
@@ -90,7 +92,10 @@ const HistoryTab = () => {
           Historique des Entraînements
         </h1>
         <p className={typography.presets.body}>
-          {history.length} séance{history.length > 1 ? 's' : ''} enregistrée{history.length > 1 ? 's' : ''}
+          {history.length === 1
+            ? t('history.stats.sessions', { count: history.length })
+            : t('history.stats.sessionsPlural', { count: history.length })
+          }
         </p>
       </div>
 
@@ -101,7 +106,7 @@ const HistoryTab = () => {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-slate-400" />
               <span className={`${typography.presets.label} text-slate-300`}>
-                Filtrer les exercices :
+                {t('history.filters.label')}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -113,7 +118,7 @@ const HistoryTab = () => {
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
-                Tous ({history.reduce((sum, s) => sum + (s.exercises?.length || 0), 0)})
+                {t('history.filters.all')} ({history.reduce((sum, s) => sum + (s.exercises?.length || 0), 0)})
               </button>
               <button
                 onClick={() => setExerciseFilter('program')}
@@ -123,7 +128,7 @@ const HistoryTab = () => {
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                 }`}
               >
-                Programme ({stats.totalProgram})
+                {t('history.filters.program')} ({stats.totalProgram})
               </button>
               <button
                 onClick={() => setExerciseFilter('exceptional')}
@@ -134,7 +139,7 @@ const HistoryTab = () => {
                 }`}
               >
                 <Star className="w-3 h-3" />
-                Exceptionnels ({stats.totalExceptional})
+                {t('history.filters.exceptional')} ({stats.totalExceptional})
               </button>
               <button
                 onClick={() => setExerciseFilter('suppressed')}
@@ -145,7 +150,7 @@ const HistoryTab = () => {
                 }`}
               >
                 <XCircle className="w-3 h-3" />
-                Supprimés ({stats.totalSuppressed})
+                {t('history.filters.suppressed')} ({stats.totalSuppressed})
               </button>
             </div>
           </div>
@@ -157,7 +162,7 @@ const HistoryTab = () => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Award className="w-5 h-5 text-yellow-400" />
-            <span>Statistiques globales</span>
+            <span>{t('history.stats.global')}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -167,7 +172,7 @@ const HistoryTab = () => {
                 {history.length}
               </div>
               <div className={typography.presets.caption}>
-                Séances totales
+                {t('history.stats.totalSessions')}
               </div>
             </div>
             <div className="text-center">
@@ -175,7 +180,7 @@ const HistoryTab = () => {
                 {calculateTotalRepsExcludingJumps(history)}
               </div>
               <div className={typography.presets.caption}>
-                Répétitions totales
+                {t('history.stats.totalReps')}
               </div>
             </div>
             <div className="text-center">
@@ -183,7 +188,7 @@ const HistoryTab = () => {
                 {Math.round(history.reduce((sum, session) => sum + (session.duration || 0), 0) / 60)}
               </div>
               <div className={typography.presets.caption}>
-                Minutes d'entraînement
+                {t('history.stats.totalMinutes')}
               </div>
             </div>
             <div className="text-center">
@@ -191,7 +196,7 @@ const HistoryTab = () => {
                 {history.length > 0 ? Math.round(calculateTotalRepsExcludingJumps(history) / history.length) : 0}
               </div>
               <div className={typography.presets.caption}>
-                Moyenne par séance
+                {t('history.stats.avgPerSession')}
               </div>
             </div>
             <div className="text-center">
@@ -199,7 +204,7 @@ const HistoryTab = () => {
                 {history.reduce((sum, session) => sum + (session.completedStretches || 0), 0)}
               </div>
               <div className={typography.presets.caption}>
-                Étirements total
+                {t('history.stats.totalStretches')}
               </div>
             </div>
           </div>
@@ -221,7 +226,7 @@ const HistoryTab = () => {
                 <div className="flex items-center space-x-1">
                   <Flame className="w-4 h-4 text-orange-400" />
                   <span className={`${typography.presets.caption} text-orange-400`}>
-                    Séance #{history.length - index}
+                    {t('history.session.number', { number: history.length - index })}
                   </span>
                 </div>
               </div>
@@ -230,19 +235,34 @@ const HistoryTab = () => {
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-4 h-4 text-green-400" />
                   <span className={typography.presets.bodySmall}>
-                    {calculateValidReps(session)} répétitions
+                    {(() => {
+                      const reps = calculateValidReps(session);
+                      return reps === 1
+                        ? t('history.session.reps', { count: reps })
+                        : t('history.session.repsPlural', { count: reps });
+                    })()}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="w-4 h-4 text-blue-400" />
                   <span className={typography.presets.bodySmall}>
-                    {Math.round((session.duration || 0) / 60)} minutes
+                    {(() => {
+                      const minutes = Math.round((session.duration || 0) / 60);
+                      return minutes === 1
+                        ? t('history.session.minutes', { count: minutes })
+                        : t('history.session.minutesPlural', { count: minutes });
+                    })()}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Target className="w-4 h-4 text-purple-400" />
                   <span className={typography.presets.bodySmall}>
-                    {session.exercises?.length || 0} exercices
+                    {(() => {
+                      const exercises = session.exercises?.length || 0;
+                      return exercises === 1
+                        ? t('history.session.exercises', { count: exercises })
+                        : t('history.session.exercisesPlural', { count: exercises });
+                    })()}
                   </span>
                 </div>
               </div>
@@ -253,13 +273,19 @@ const HistoryTab = () => {
                   {session.exceptionalCount > 0 && (
                     <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 flex items-center gap-1">
                       <Star className="w-3 h-3" />
-                      {session.exceptionalCount} exceptionnel{session.exceptionalCount > 1 ? 's' : ''}
+                      {session.exceptionalCount === 1
+                        ? t('history.exercises.exceptionalCount', { count: session.exceptionalCount })
+                        : t('history.exercises.exceptionalCountPlural', { count: session.exceptionalCount })
+                      }
                     </Badge>
                   )}
                   {session.suppressedCount > 0 && (
                     <Badge className="bg-red-500/20 text-red-400 border-red-500/30 flex items-center gap-1">
                       <XCircle className="w-3 h-3" />
-                      {session.suppressedCount} supprimé{session.suppressedCount > 1 ? 's' : ''}
+                      {session.suppressedCount === 1
+                        ? t('history.exercises.suppressedCount', { count: session.suppressedCount })
+                        : t('history.exercises.suppressedCountPlural', { count: session.suppressedCount })
+                      }
                     </Badge>
                   )}
                   {session.variationReason && (
@@ -273,7 +299,7 @@ const HistoryTab = () => {
               {/* Détails des exercices */}
               {session.exercises && session.exercises.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className={`${typography.presets.label} mb-2`}>Exercices réalisés:</h4>
+                  <h4 className={`${typography.presets.label} mb-2`}>{t('history.exercises.title')}</h4>
                   <div className="grid gap-2">
                     {session.exercises.map((exercise, exerciseIndex) => (
                       <div 
@@ -296,14 +322,14 @@ const HistoryTab = () => {
                           {exercise.isExceptional && (
                             <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 flex items-center gap-1 text-xs">
                               <Star className="w-3 h-3" />
-                              Exceptionnel
+                              {t('history.exercises.exceptional')}
                             </Badge>
                           )}
                           {/* ✅ Badge Supprimé */}
                           {exercise.isSuppressed && (
                             <Badge className="bg-red-500/20 text-red-400 border-red-500/30 flex items-center gap-1 text-xs">
                               <XCircle className="w-3 h-3" />
-                              Supprimé
+                              {t('history.exercises.suppressed')}
                             </Badge>
                           )}
                           {/* ✅ Raison de suppression */}
@@ -334,7 +360,7 @@ const HistoryTab = () => {
                         <div className="flex items-center space-x-4">
                           {!exercise.isSuppressed && (
                             <span className={`${typography.presets.caption} text-green-400`}>
-                              {exercise.reps || 0} reps
+                              {t('history.exercises.reps', { count: exercise.reps || 0 })}
                             </span>
                           )}
                           {exercise.weight && (
@@ -352,7 +378,7 @@ const HistoryTab = () => {
               {/* Détails des étirements */}
               {session.stretches && session.stretches.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className={`${typography.presets.label} mb-2`}>Étirements réalisés:</h4>
+                  <h4 className={`${typography.presets.label} mb-2`}>{t('history.stretches.title')}</h4>
                   <div className="grid gap-2">
                     {session.stretches.map((stretch, stretchIndex) => (
                       <div 
@@ -360,11 +386,11 @@ const HistoryTab = () => {
                         className="flex items-center justify-between p-3 bg-purple-800/20 rounded-lg border border-purple-700/50"
                       >
                         <span className={`${typography.presets.bodySmall} text-purple-200`}>
-                          🧘‍♂️ Étirements {stretch.type}
+                          🧘‍♂️ {t('history.stretches.type', { type: stretch.type })}
                         </span>
                         <div className="flex items-center space-x-2">
                           <span className={`${typography.presets.caption} text-purple-400`}>
-                            ✓ Terminé
+                            {t('history.stretches.completed')}
                           </span>
                         </div>
                       </div>
@@ -376,7 +402,7 @@ const HistoryTab = () => {
               {/* Notes de la séance */}
               {session.notes && (
                 <div className="mt-4 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                  <h4 className={`${typography.presets.label} mb-2`}>Notes:</h4>
+                  <h4 className={`${typography.presets.label} mb-2`}>{t('history.notes.label')}</h4>
                   <p className={typography.presets.bodySmall}>
                     {session.notes}
                   </p>

@@ -1,0 +1,51 @@
+{
+  "title": "Complete Body Tracking",
+  "subtitle": "Integrated progression system",
+  "sections": {
+    "metrics": {
+      "label": "Metrics",
+      "description": "Weight, height, measurements"
+    },
+    "photos": {
+      "label": "Photos",
+      "description": "Progress gallery"
+    },
+    "impedance": {
+      "label": "Impedance Meter",
+      "description": "Detailed data"
+    },
+    "summary": {
+      "label": "Summary",
+      "description": "Dashboard"
+    },
+    "reminders": {
+      "label": "Reminders",
+      "description": "Automatic notifications"
+    },
+    "correlations": {
+      "label": "Correlations",
+      "description": "Relationship analysis"
+    },
+    "predictions": {
+      "label": "Predictions",
+      "description": "Future projections"
+    },
+    "stability": {
+      "label": "Stability",
+      "description": "Stagnation detection"
+    },
+    "insights": {
+      "label": "Smart Insights",
+      "description": "Why did I change?"
+    },
+    "comments": {
+      "label": "Comments",
+      "description": "Automatic analysis"
+    }
+  },
+  "categories": {
+    "basic": "Basic Features",
+    "advanced": "Advanced Analysis"
+  }
+}
+

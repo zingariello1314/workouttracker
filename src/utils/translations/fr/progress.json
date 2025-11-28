@@ -1,0 +1,51 @@
+{
+  "title": "Suivi Corporel Complet",
+  "subtitle": "Système intégré de progression",
+  "sections": {
+    "metrics": {
+      "label": "Métriques",
+      "description": "Poids, taille, mensurations"
+    },
+    "photos": {
+      "label": "Photos",
+      "description": "Galerie de progression"
+    },
+    "impedance": {
+      "label": "Impédancemètre",
+      "description": "Données détaillées"
+    },
+    "summary": {
+      "label": "Récapitulatif",
+      "description": "Tableau de bord"
+    },
+    "reminders": {
+      "label": "Rappels",
+      "description": "Notifications automatiques"
+    },
+    "correlations": {
+      "label": "Corrélations",
+      "description": "Analyse des relations"
+    },
+    "predictions": {
+      "label": "Prévisions",
+      "description": "Projections futures"
+    },
+    "stability": {
+      "label": "Stabilité",
+      "description": "Détection de stagnations"
+    },
+    "insights": {
+      "label": "Analyses Intelligentes",
+      "description": "Pourquoi j'ai changé ?"
+    },
+    "comments": {
+      "label": "Commentaires",
+      "description": "Analyse automatique"
+    }
+  },
+  "categories": {
+    "basic": "Fonctionnalités de base",
+    "advanced": "Analyses avancées"
+  }
+}
+

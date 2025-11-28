@@ -1,0 +1,53 @@
+{
+  "title": "Historique des Entraînements",
+  "subtitle": "Suivez vos progrès et consultez vos séances passées",
+  "empty": {
+    "title": "Aucun historique",
+    "message": "Commencez votre premier entraînement pour voir votre historique ici."
+  },
+  "stats": {
+    "sessions": "{{count}} séance enregistrée",
+    "sessionsPlural": "{{count}} séances enregistrées",
+    "totalSessions": "Séances totales",
+    "totalReps": "Répétitions totales",
+    "totalMinutes": "Minutes d'entraînement",
+    "avgPerSession": "Moyenne par séance",
+    "totalStretches": "Étirements total",
+    "global": "Statistiques globales"
+  },
+  "filters": {
+    "label": "Filtrer les exercices :",
+    "all": "Tous",
+    "program": "Programme",
+    "exceptional": "Exceptionnels",
+    "suppressed": "Supprimés"
+  },
+  "session": {
+    "number": "Séance #{{number}}",
+    "reps": "{{count}} répétition",
+    "repsPlural": "{{count}} répétitions",
+    "minutes": "{{count}} minute",
+    "minutesPlural": "{{count}} minutes",
+    "exercises": "{{count}} exercice",
+    "exercisesPlural": "{{count}} exercices"
+  },
+  "exercises": {
+    "title": "Exercices réalisés:",
+    "exceptional": "Exceptionnel",
+    "exceptionalCount": "{{count}} exceptionnel",
+    "exceptionalCountPlural": "{{count}} exceptionnels",
+    "suppressed": "Supprimé",
+    "suppressedCount": "{{count}} supprimé",
+    "suppressedCountPlural": "{{count}} supprimés",
+    "reps": "{{count}} reps"
+  },
+  "stretches": {
+    "title": "Étirements réalisés:",
+    "type": "Étirements {{type}}",
+    "completed": "✓ Terminé"
+  },
+  "notes": {
+    "label": "Notes:"
+  }
+}
+

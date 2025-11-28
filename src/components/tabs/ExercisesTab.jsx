@@ -14,10 +14,14 @@ import ExerciseFilter from '../ExerciseFilter';
 import ProgramCard from '../ProgramCard';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Activity, Target, Dumbbell, Clock, Filter, RefreshCw, Zap, AlertCircle, ArrowLeft } from 'lucide-react';
+import { useTranslation } from '../../utils/translations';
+import { useLanguage } from '../../context/LanguageContext';
 
 const ExercisesTab = () => {
   const { state } = useWorkout();
   const { programs, activeProgram } = useContext(WorkoutContext);
+  const t = useTranslation();
+  const { language } = useLanguage();
   const [filters, setFilters] = useState({});
   const [dataSource, setDataSource] = useState('default'); // 'default', 'active_program', 'all_programs'
   const [syncData, setSyncData] = useState(null);
@@ -70,7 +74,7 @@ const ExercisesTab = () => {
                   name: dayData.complementaryActivity.name,
                   series: `1×${dayData.complementaryActivity.duration}min`,
                   type: dayData.complementaryActivity.type,
-                  materiel: dayData.complementaryActivity.name === "Boxe" ? "Gants de boxe" : "Piscine",
+                  materiel: dayData.complementaryActivity.name === "Boxe" ? t('exercisesTab.equipment.boxingGloves') : t('exercisesTab.equipment.pool'),
                   notes: `${dayData.complementaryActivity.timeSlot} - ${dayData.complementaryActivity.benefits.join(', ')}`
                 }] : [])
               ],
@@ -99,7 +103,7 @@ const ExercisesTab = () => {
                       name: dayData.complementaryActivity.name,
                       series: `1×${dayData.complementaryActivity.duration}min`,
                       type: dayData.complementaryActivity.type,
-                      materiel: dayData.complementaryActivity.name === "Boxe" ? "Gants de boxe" : "Piscine",
+                      materiel: dayData.complementaryActivity.name === "Boxe" ? t('exercisesTab.equipment.boxingGloves') : t('exercisesTab.equipment.pool'),
                       notes: `${dayData.complementaryActivity.timeSlot} - ${dayData.complementaryActivity.benefits.join(', ')}`
                     }] : [])
                   ],
@@ -128,7 +132,7 @@ const ExercisesTab = () => {
                       name: dayData.complementaryActivity.name,
                       series: `1×${dayData.complementaryActivity.duration}min`,
                       type: dayData.complementaryActivity.type,
-                      materiel: dayData.complementaryActivity.name === "Boxe" ? "Gants de boxe" : "Piscine",
+                      materiel: dayData.complementaryActivity.name === "Boxe" ? t('exercisesTab.equipment.boxingGloves') : t('exercisesTab.equipment.pool'),
                       notes: `${dayData.complementaryActivity.timeSlot} - ${dayData.complementaryActivity.benefits.join(', ')}`
                     }] : [])
                   ],
@@ -155,7 +159,7 @@ const ExercisesTab = () => {
                 name: dayData.complementaryActivity.name,
                 series: `1×${dayData.complementaryActivity.duration}min`,
                 type: dayData.complementaryActivity.type,
-                materiel: dayData.complementaryActivity.name === "Boxe" ? "Gants de boxe" : "Piscine",
+                materiel: dayData.complementaryActivity.name === "Boxe" ? t('exercisesTab.equipment.boxingGloves') : t('exercisesTab.equipment.pool'),
                 notes: `${dayData.complementaryActivity.timeSlot} - ${dayData.complementaryActivity.benefits.join(', ')}`
               }] : [])
             ]
@@ -208,7 +212,7 @@ const ExercisesTab = () => {
     // Ajouter des informations sur la source
     return uniqueExercises.map(exercise => ({
       ...exercise,
-      sourceDay: exercise.sourceDay || 'Programme par défaut'
+      sourceDay: exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
     }));
   }, [enhancedProgram, syncData]);
 
@@ -229,10 +233,10 @@ const ExercisesTab = () => {
       ...exercise,
       metadata: {
         ...exercise.metadata,
-        category: exercise.metadata?.category || exercise.category || 'Non spécifié',
-        primaryMuscleGroup: exercise.metadata?.primaryMuscleGroup || exercise.muscleGroup || 'Non spécifié',
-        difficulty: exercise.metadata?.difficulty || exercise.difficulty || 'Non spécifié',
-        equipment: exercise.metadata?.equipment || exercise.equipment || 'Non spécifié'
+        category: exercise.metadata?.category || exercise.category || t('exercisesTab.misc.notSpecified'),
+        primaryMuscleGroup: exercise.metadata?.primaryMuscleGroup || exercise.muscleGroup || t('exercisesTab.misc.notSpecified'),
+        difficulty: exercise.metadata?.difficulty || exercise.difficulty || t('exercisesTab.misc.notSpecified'),
+        equipment: exercise.metadata?.equipment || exercise.equipment || t('exercisesTab.misc.notSpecified')
       }
     };
     
@@ -274,15 +278,15 @@ const ExercisesTab = () => {
       }
       
       // Par catégorie
-      const category = exercise.metadata?.category || 'Non spécifié';
+      const category = exercise.metadata?.category || t('exercisesTab.misc.notSpecified');
       stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
       
       // Par groupe musculaire
-      const muscleGroup = exercise.metadata?.primaryMuscleGroup || 'Non spécifié';
+      const muscleGroup = exercise.metadata?.primaryMuscleGroup || t('exercisesTab.misc.notSpecified');
       stats.byMuscleGroup[muscleGroup] = (stats.byMuscleGroup[muscleGroup] || 0) + 1;
       
       // Par difficulté
-      const difficulty = exercise.metadata?.difficulty || 'Non spécifié';
+      const difficulty = exercise.metadata?.difficulty || t('exercisesTab.misc.notSpecified');
       stats.byDifficulty[difficulty] = (stats.byDifficulty[difficulty] || 0) + 1;
     });
     
@@ -297,12 +301,11 @@ const ExercisesTab = () => {
   };
 
   const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Débutant': return 'text-green-400';
-      case 'Intermédiaire': return 'text-yellow-400';
-      case 'Avancé': return 'text-red-400';
-      default: return 'text-slate-400';
-    }
+    // Comparer avec les traductions pour déterminer la couleur
+    if (difficulty === t('exercisesTab.difficulty.beginner') || difficulty === 'Débutant') return 'text-green-400';
+    if (difficulty === t('exercisesTab.difficulty.intermediate') || difficulty === 'Intermédiaire') return 'text-yellow-400';
+    if (difficulty === t('exercisesTab.difficulty.advanced') || difficulty === 'Avancé') return 'text-red-400';
+    return 'text-slate-400';
   };
 
   return (
@@ -331,13 +334,13 @@ const ExercisesTab = () => {
                 />
               </button>
               <span className="text-sm font-medium">
-                Synchronisation automatique {autoSync ? 'activée' : 'désactivée'}
+                {autoSync ? t('exercisesTab.sync.enabled') : t('exercisesTab.sync.disabled')}
               </span>
             </div>
             
             {lastSyncTime && (
               <div className="text-sm text-slate-400">
-                Dernière sync: {lastSyncTime.toLocaleTimeString()}
+                {t('exercisesTab.sync.lastSync', { time: lastSyncTime.toLocaleTimeString(language === 'fr' ? 'fr-FR' : 'en-US') })}
               </div>
             )}
           </div>
@@ -347,7 +350,7 @@ const ExercisesTab = () => {
               <div className="flex items-center gap-2 text-sm">
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <span>
-                  {syncData.totalExercises} exercices synchronisés depuis {syncData.sourceInfo.name}
+                  {t('exercisesTab.sync.exercisesSynced', { count: syncData.totalExercises, sourceName: syncData.sourceInfo.name })}
                 </span>
               </div>
               
@@ -355,7 +358,7 @@ const ExercisesTab = () => {
                 <div className="flex items-center gap-2 text-sm text-green-400">
                   <Zap className="w-4 h-4" />
                   <span>
-                    Catégorisation automatique appliquée ({syncData.categorizationTimestamp ? new Date(syncData.categorizationTimestamp).toLocaleTimeString() : 'maintenant'})
+                    {t('exercisesTab.sync.categorizationApplied', { time: syncData.categorizationTimestamp ? new Date(syncData.categorizationTimestamp).toLocaleTimeString(language === 'fr' ? 'fr-FR' : 'en-US') : t('exercisesTab.sync.categorizationNow') })}
                   </span>
                 </div>
               )}
@@ -364,7 +367,7 @@ const ExercisesTab = () => {
                 <div className="flex items-center gap-2 text-sm text-yellow-400">
                   <AlertCircle className="w-4 h-4" />
                   <span>
-                    Changements détectés: {syncData.changes.changeType}
+                    {t('exercisesTab.sync.changesDetected', { changeType: syncData.changes.changeType })}
                   </span>
                 </div>
               )}
@@ -376,7 +379,7 @@ const ExercisesTab = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <RefreshCw className="w-5 h-5" />
-            Source des exercices
+            {t('exercisesTab.source.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -393,7 +396,7 @@ const ExercisesTab = () => {
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               }`}
             >
-              Programme par défaut
+              {t('exercisesTab.source.default')}
             </button>
             <button
               onClick={() => {
@@ -410,7 +413,7 @@ const ExercisesTab = () => {
                   : 'bg-slate-800 text-slate-500 cursor-not-allowed'
               }`}
             >
-              Programme actif {activeProgram ? `(${activeProgram.name})` : '(Aucun)'}
+              {t('exercisesTab.source.activeProgram')} {activeProgram ? `(${activeProgram.name})` : t('exercisesTab.source.activeProgramNone')}
             </button>
             <button
               onClick={() => {
@@ -427,15 +430,15 @@ const ExercisesTab = () => {
                   : 'bg-slate-800 text-slate-500 cursor-not-allowed'
               }`}
             >
-              Tous les programmes ({programs.length})
+              {t('exercisesTab.source.allPrograms', { count: programs.length })}
             </button>
           </div>
           <div className="mt-3 text-sm text-slate-400">
-            {dataSource === 'default' && 'Affichage des exercices du programme par défaut'}
-            {dataSource === 'active_program' && activeProgram && `Affichage des exercices du programme "${activeProgram.name}"`}
-            {dataSource === 'active_program' && !activeProgram && 'Aucun programme actif sélectionné'}
-            {dataSource === 'all_programs' && viewMode === 'programs' && `Sélectionnez un programme parmi les ${programs.length} disponibles`}
-            {dataSource === 'all_programs' && viewMode === 'exercises' && selectedProgram && `Affichage des exercices du programme "${selectedProgram.name}"`}
+            {dataSource === 'default' && t('exercisesTab.source.description.default')}
+            {dataSource === 'active_program' && activeProgram && t('exercisesTab.source.description.activeProgram', { programName: activeProgram.name })}
+            {dataSource === 'active_program' && !activeProgram && t('exercisesTab.source.description.activeProgramNone')}
+            {dataSource === 'all_programs' && viewMode === 'programs' && t('exercisesTab.source.description.allProgramsSelect', { count: programs.length })}
+            {dataSource === 'all_programs' && viewMode === 'exercises' && selectedProgram && t('exercisesTab.source.description.allProgramsView', { programName: selectedProgram.name })}
           </div>
         </CardContent>
       </Card>
@@ -449,7 +452,7 @@ const ExercisesTab = () => {
                 <Dumbbell className="w-5 h-5 text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Total exercices</p>
+                <p className="text-sm text-slate-400">{t('exercisesTab.stats.totalExercises')}</p>
                 <p className="text-xl font-bold text-white">{exerciseStats.total}</p>
               </div>
             </div>
@@ -463,7 +466,7 @@ const ExercisesTab = () => {
                 <Target className="w-5 h-5 text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Catégories</p>
+                <p className="text-sm text-slate-400">{t('exercisesTab.stats.categories')}</p>
                 <p className="text-xl font-bold text-white">
                   {Object.keys(exerciseStats.byCategory).length}
                 </p>
@@ -479,7 +482,7 @@ const ExercisesTab = () => {
                 <Activity className="w-5 h-5 text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Groupes musculaires</p>
+                <p className="text-sm text-slate-400">{t('exercisesTab.stats.muscleGroups')}</p>
                 <p className="text-xl font-bold text-white">
                   {Object.keys(exerciseStats.byMuscleGroup).length}
                 </p>
@@ -495,7 +498,7 @@ const ExercisesTab = () => {
                 <Clock className="w-5 h-5 text-orange-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Filtrés</p>
+                <p className="text-sm text-slate-400">{t('exercisesTab.stats.filtered')}</p>
                 <p className="text-xl font-bold text-white">{filteredExercises.length}</p>
               </div>
             </div>
@@ -509,7 +512,7 @@ const ExercisesTab = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
-              Filtres et recherche
+              {t('exercisesTab.filters.title')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -534,7 +537,7 @@ const ExercisesTab = () => {
               className="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Retour à la liste des programmes
+              {t('exercisesTab.navigation.backToPrograms')}
             </button>
           </CardContent>
         </Card>
@@ -546,16 +549,16 @@ const ExercisesTab = () => {
         <Card>
           <CardHeader>
             <CardTitle>
-              Programmes disponibles ({programs.length})
+              {t('exercisesTab.programs.title', { count: programs.length })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {programs.length === 0 ? (
               <div className="text-center py-12">
                 <Target className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-400 text-lg mb-2">Aucun programme trouvé</p>
+                <p className="text-slate-400 text-lg mb-2">{t('exercisesTab.programs.none')}</p>
                 <p className="text-slate-500 text-sm">
-                  Créez votre premier programme dans l'onglet Programmes
+                  {t('exercisesTab.programs.noneHint')}
                 </p>
               </div>
             ) : (
@@ -580,19 +583,21 @@ const ExercisesTab = () => {
         <Card>
           <CardHeader>
             <CardTitle>
-              Exercices ({filteredExercises.length})
-              {selectedProgram && ` - ${selectedProgram.name}`}
+              {selectedProgram 
+                ? t('exercisesTab.exercises.titleWithProgram', { count: filteredExercises.length, programName: selectedProgram.name })
+                : t('exercisesTab.exercises.title', { count: filteredExercises.length })
+              }
             </CardTitle>
           </CardHeader>
           <CardContent>
             {filteredExercises.length === 0 ? (
               <div className="text-center py-12">
                 <Dumbbell className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-400 text-lg mb-2">Aucun exercice trouvé</p>
+                <p className="text-slate-400 text-lg mb-2">{t('exercisesTab.exercises.none')}</p>
                 <p className="text-slate-500 text-sm">
                   {selectedProgram 
-                    ? `Le programme "${selectedProgram.name}" ne contient aucun exercice`
-                    : 'Essayez de modifier vos critères de recherche ou de filtrage'
+                    ? t('exercisesTab.exercises.noneWithProgram', { programName: selectedProgram.name })
+                    : t('exercisesTab.exercises.noneHint')
                   }
                 </p>
               </div>

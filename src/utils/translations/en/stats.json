@@ -1,0 +1,73 @@
+{
+  "periods": {
+    "week": "Week",
+    "month": "Month",
+    "year": "Year"
+  },
+  "mainStats": {
+    "sessions": "Sessions",
+    "reps": "Repetitions",
+    "currentStreak": "Current streak",
+    "longestStreak": "Longest streak",
+    "stretches": "Stretches"
+  },
+  "garmin": {
+    "title": "Garmin Connect Metrics",
+    "totalSteps": "Total Steps",
+    "avgStepsPerDay": "Avg: {{avg}}/day",
+    "totalDistance": "Total Distance",
+    "avgDistancePerDay": "Avg: {{avg}} km/day",
+    "totalCalories": "Total Calories",
+    "avgCaloriesPerDay": "Avg: {{avg}}/day",
+    "avgRestingHR": "Avg Resting HR",
+    "maxHR": "Max HR: {{max}} bpm",
+    "avgBodyBattery": "Avg Body Battery",
+    "avgOverPeriod": "Average over period",
+    "avgSleep": "Avg Sleep",
+    "sleepQuality": "Quality: {{quality}}/100",
+    "intensityMinutes": "Intensity Minutes",
+    "totalOverPeriod": "Total over period",
+    "garminActivities": "Garmin Activities",
+    "activeDays": "Active days: {{days}}"
+  },
+  "endurance": {
+    "title": "Endurance Activities",
+    "sessions": "Sessions",
+    "reps": "Repetitions",
+    "distance": "Distance",
+    "jumps": "Jumps",
+    "duration": "Duration"
+  },
+  "justifications": {
+    "title": "Justified Days",
+    "justifiedDays": "justified days",
+    "thisWeek": "this week",
+    "thisMonth": "this month",
+    "thisYear": "this year",
+    "total": "total"
+  },
+  "performance": {
+    "title": "Performance",
+    "avgPerSession": "Average per session",
+    "activeDays": "Active days",
+    "regularityRate": "Regularity rate",
+    "totalStretches": "Total stretches",
+    "avgStretchesPerSession": "Average stretches/session",
+    "reps": "reps"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "currentStreak": "🔥 Current streak",
+    "longestStreak": "🏆 Personal record",
+    "totalReps": "💪 Total repetitions",
+    "days": "days"
+  },
+  "complementary": {
+    "boxing": "🥊 Boxing",
+    "swimming": "🏊 Swimming",
+    "sessions": "Sessions",
+    "totalDuration": "Total duration",
+    "avgPerSession": "Average per session",
+    "minutes": "min"
+  }
+}

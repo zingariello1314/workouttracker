@@ -1,0 +1,32 @@
+{
+  "title": "Settings",
+  "language": "Language",
+  "language.description": "Choose the interface language",
+  "modal": {
+    "title": "Settings",
+    "trainingProgram": {
+      "title": "Training program",
+      "weekVariant": "Week variant",
+      "weekA": "Week A",
+      "weekB": "Week B",
+      "programEditor": "Program editor"
+    },
+    "advancedTools": {
+      "title": "Advanced tools",
+      "advancedStats": "Advanced statistics",
+      "trainingCycles": "Training cycles"
+    },
+    "backup": {
+      "title": "Backup and restore",
+      "export": "Export data",
+      "import": "Import data",
+      "importSuccess": "Data imported successfully!",
+      "importError": "Error importing data"
+    },
+    "dangerZone": {
+      "title": "Danger zone",
+      "reset": "Reset all data",
+      "resetConfirm": "Are you sure you want to reset all data? This action is irreversible."
+    }
+  }
+}

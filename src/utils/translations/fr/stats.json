@@ -1,0 +1,73 @@
+{
+  "periods": {
+    "week": "Semaine",
+    "month": "Mois",
+    "year": "Année"
+  },
+  "mainStats": {
+    "sessions": "Séances",
+    "reps": "Répétitions",
+    "currentStreak": "Série actuelle",
+    "longestStreak": "Meilleure série",
+    "stretches": "Étirements"
+  },
+  "garmin": {
+    "title": "Métriques Garmin Connect",
+    "totalSteps": "Total Pas",
+    "avgStepsPerDay": "Moy: {{avg}}/jour",
+    "totalDistance": "Distance Totale",
+    "avgDistancePerDay": "Moy: {{avg}} km/jour",
+    "totalCalories": "Calories Totales",
+    "avgCaloriesPerDay": "Moy: {{avg}}/jour",
+    "avgRestingHR": "FC Repos Moy.",
+    "maxHR": "FC Max: {{max}} bpm",
+    "avgBodyBattery": "Body Battery Moy.",
+    "avgOverPeriod": "Moyenne sur période",
+    "avgSleep": "Sommeil Moy.",
+    "sleepQuality": "Qualité: {{quality}}/100",
+    "intensityMinutes": "Minutes Intensives",
+    "totalOverPeriod": "Total sur période",
+    "garminActivities": "Activités Garmin",
+    "activeDays": "Jours actifs: {{days}}"
+  },
+  "endurance": {
+    "title": "Activités d'endurance",
+    "sessions": "Sessions",
+    "reps": "Répétitions",
+    "distance": "Distance",
+    "jumps": "Sauts",
+    "duration": "Durée"
+  },
+  "justifications": {
+    "title": "Jours Justifiés",
+    "justifiedDays": "jours justifiés",
+    "thisWeek": "cette semaine",
+    "thisMonth": "ce mois",
+    "thisYear": "cette année",
+    "total": "au total"
+  },
+  "performance": {
+    "title": "Performance",
+    "avgPerSession": "Moyenne par séance",
+    "activeDays": "Jours actifs",
+    "regularityRate": "Taux de régularité",
+    "totalStretches": "Étirements total",
+    "avgStretchesPerSession": "Moyenne étirements/séance",
+    "reps": "reps"
+  },
+  "achievements": {
+    "title": "Réalisations",
+    "currentStreak": "🔥 Série actuelle",
+    "longestStreak": "🏆 Record personnel",
+    "totalReps": "💪 Total répétitions",
+    "days": "jours"
+  },
+  "complementary": {
+    "boxing": "🥊 Boxe",
+    "swimming": "🏊 Natation",
+    "sessions": "Séances",
+    "totalDuration": "Durée totale",
+    "avgPerSession": "Moyenne par séance",
+    "minutes": "min"
+  }
+}

@@ -42,6 +42,7 @@ export default function SyncControls({
   const debugShortcutHintId = React.useId();
   const { showConfirm, ConfirmDialogComponent } = useConfirmDialog();
   const { showToast, ToastContainer } = useToast();
+  const t = useTranslation();
 
   const lastForcedRange = forcedRangesHistory?.[0] || null;
   const dateFormatter = React.useMemo(() => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }), []);
@@ -148,7 +149,7 @@ export default function SyncControls({
     if (!cacheMeta) return [];
     const entries = [];
     if (cacheMeta.timestamp) {
-      entries.push(['Horodatage', formatTimestamp(cacheMeta.timestamp)]);
+      entries.push([t('garmin.sync.cache.timestamp'), formatTimestamp(cacheMeta.timestamp)]);
     }
     if (cacheMeta.lastSyncTimestamp) {
       entries.push(['LastSync', formatTimestamp(cacheMeta.lastSyncTimestamp)]);
@@ -163,7 +164,7 @@ export default function SyncControls({
       }
     }
     if (cacheMeta.cacheKey) {
-      entries.push(['Cache key', cacheMeta.cacheKey]);
+      entries.push([t('garmin.sync.cache.key'), cacheMeta.cacheKey]);
     }
     if (cacheMeta.ageSeconds !== undefined && cacheMeta.ageSeconds !== null) {
       entries.push(['Âge', `${cacheMeta.ageSeconds}s`]);
@@ -175,7 +176,7 @@ export default function SyncControls({
       }
     }
     if (cacheMeta.failureCount !== undefined && cacheMeta.failureCount !== null) {
-      entries.push(['Échecs consécutifs', cacheMeta.failureCount]);
+      entries.push([t('garmin.sync.cache.failures'), cacheMeta.failureCount]);
     }
     return entries.map(([label, value]) => {
       let formattedValue = value;
@@ -184,7 +185,7 @@ export default function SyncControls({
       }
       return [label, formattedValue];
     });
-  }, [cacheMeta, formatTimestamp, formatDuration]);
+  }, [cacheMeta, formatTimestamp, formatDuration, t]);
  
   // ✅ Item 16 : Utiliser isBrowser() et getWindow() pour vérifications centralisées
   const cacheStats = React.useMemo(() => {
@@ -222,7 +223,7 @@ export default function SyncControls({
       URL.revokeObjectURL(url);
       } catch (error) {
         console.error('[SyncControls] Export history failed:', error);
-        showToast('Impossible de générer le fichier d\'historique. Consulte la console pour plus de détails.', 'error', 5000);
+        showToast(t('garmin.sync.error.history'), 'error', 5000);
       }
   }, [cacheMeta, forcedRangesHistory, historyLimit, showToast]);
 

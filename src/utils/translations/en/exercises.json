@@ -1,0 +1,90 @@
+{
+  "exceptional": {
+    "title": "Add exceptional exercise",
+    "name": {
+      "label": "Exercise name",
+      "required": "*",
+      "placeholder": "E.g.: Dumbbell bench press",
+      "help": "Name must contain at least 2 characters"
+    },
+    "type": {
+      "label": "Exercise type",
+      "required": "*",
+      "reps": "By repetitions (sets × reps)",
+      "duration": "By duration (seconds/minutes)"
+    },
+    "series": {
+      "label": "Number of sets",
+      "required": "*",
+      "help": "Between 1 and 50 sets"
+    },
+    "repsPerSeries": {
+      "label": "Repetitions per set",
+      "required": "*",
+      "series": "set",
+      "seriesPlural": "sets"
+    },
+    "duration": {
+      "label": "Duration",
+      "required": "*",
+      "unit": "seconds",
+      "help": "Duration in seconds (e.g.: 60 = 1 minute)"
+    },
+    "materiel": {
+      "label": "Equipment",
+      "placeholder": "E.g.: Dumbbells, bar, resistance band..."
+    },
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Add additional notes..."
+    },
+    "reason": {
+      "label": "Reason",
+      "placeholder": "Why is this exercise exceptional?"
+    },
+    "buttons": {
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "success": "Exceptional exercise added successfully!",
+      "validationError": "Validation error",
+      "errorsToFix": "Errors to fix",
+      "warningsTitle": "Warnings",
+      "suggestionsTitle": "Suggestions",
+      "addError": "Error adding exercise",
+      "addFailed": "Add failed",
+      "addErrorMessage": "An error occurred while adding the exercise.",
+      "warnings": "⚠️ Warnings:",
+      "warningsContinue": "Do you want to continue anyway?",
+      "suggestions": {
+        "checkFields": "Check that all fields are correctly filled",
+        "tryAgain": "Try again in a few moments"
+      }
+    },
+    "validation": {
+      "nameRequired": "Exercise name is required",
+      "nameMinLength": "Exercise name must contain at least 2 characters",
+      "nameMaxLength": "Name is very long (> 100 characters)",
+      "typeRequired": "Exercise type must be \"reps\" or \"duration\"",
+      "seriesRequired": "Number of sets must be greater than 0",
+      "seriesTooHigh": "Very high number of sets (> 50) may be an error",
+      "seriesHigh": "High number of sets (> 20) may be tiring",
+      "seriesLow": "A single set may be less effective for progression",
+      "repsRequired": "At least one set must have repetitions",
+      "repsMismatch": "Number of sets ({{series}}) does not match number of repetition values ({{repsCount}})",
+      "repsInvalid": "All repetitions must be positive and less than 1000",
+      "repsLow": "Some sets have very few reps (< 5) - check",
+      "repsHigh": "Some sets have many reps (> 100) - check",
+      "durationRequired": "Duration must be positive",
+      "durationTooLong": "Very long duration (> 2 hours) - is this correct?",
+      "durationTooShort": "Very short duration (< 10 seconds) - is this correct?"
+    },
+    "suggestions": {
+      "allSameReps": "All sets have the same number of reps ({{reps}}) - you can simplify",
+      "progressionDetected": "Progression detected: {{diff}} reps per set",
+      "durationMinutes": "Duration: {{minutes}}min (check if it's in seconds)"
+    }
+  }
+}
+

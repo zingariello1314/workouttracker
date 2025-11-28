@@ -1,0 +1,15 @@
+{
+  "days": {
+    "one": "{{count}} day",
+    "other": "{{count}} days"
+  },
+  "minutes": {
+    "one": "{{count}} minute",
+    "other": "{{count}} minutes"
+  },
+  "reps": {
+    "one": "{{count}} repetition",
+    "other": "{{count}} repetitions"
+  }
+}
+
