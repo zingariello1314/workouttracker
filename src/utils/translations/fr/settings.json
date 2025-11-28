@@ -28,5 +28,17 @@
       "reset": "Réinitialiser toutes les données",
       "resetConfirm": "Êtes-vous sûr de vouloir réinitialiser toutes les données ? Cette action est irréversible."
     }
+  },
+  "tooltips": {
+    "import": {
+      "placeholder": "Collez ici le contenu JSON de votre sauvegarde...",
+      "previewBodyTracking": "Prévisualiser l'import Body Tracking uniquement",
+      "previewComplete": "Prévisualiser l'import COMPLET (toutes les données d'entraînement)",
+      "importGarmin": "Importer uniquement les données Garmin"
+    },
+    "cleanup": {
+      "debugConsole": "Debug : Identifier les sessions mockées dans la console",
+      "removeMocked": "Supprimer toutes les données mockées d'endurance détectées"
+    }
   }
 }

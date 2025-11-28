@@ -1,0 +1,45 @@
+{
+  "errors": {
+    "generic": "Une erreur est survenue.",
+    "network": "Erreur de connexion réseau. Vérifiez votre connexion et réessayez.",
+    "debug": "Erreur lors du debug : {{error}}",
+    "cleanup": "Erreur lors du nettoyage : {{error}}",
+    "cleanupGeneric": "Erreur lors du nettoyage. Vérifiez la console pour plus de détails.",
+    "validation": {
+      "required": "Ce champ est obligatoire.",
+      "invalidFormat": "Le format de cette valeur est invalide.",
+      "minLength": "Ce champ doit contenir au moins {{min}} caractères.",
+      "maxLength": "Ce champ doit contenir au maximum {{max}} caractères."
+    }
+  },
+  "success": {
+    "generic": "Opération effectuée avec succès.",
+    "saved": "Données sauvegardées avec succès.",
+    "imported": "Données importées avec succès.",
+    "exported": "Données exportées avec succès.",
+    "restoreBackup": "Sauvegarde restaurée avec succès !"
+  },
+  "importExport": {
+    "importing": "Import des données en cours...",
+    "exporting": "Export des données en cours...",
+    "invalidJson": "Le fichier importé n'est pas un JSON valide.",
+    "incompatibleVersion": "Le format du fichier importé n'est pas compatible avec cette version de l'application.",
+    "garminSuccess": "Import Garmin réussi ! Les données ont été importées.",
+    "garminError": "Erreur lors de l'import Garmin. Vérifiez le format JSON.",
+    "fullSuccess": "Import complet réussi ! Toutes vos données ont été importées.",
+    "fullError": "Erreur lors de l'import complet. Vérifiez le format JSON et réessayez.",
+    "fullReloadConfirm": "Import réussi ! Souhaitez-vous recharger la page pour voir les changements ?",
+    "restoreError": "Erreur lors de la restauration : {{error}}",
+    "exportError": "Erreur lors de l'export. Veuillez réessayer.",
+    "exportSuccess": "Export réussi ! Le fichier a été téléchargé.",
+    "garminExportError": "Erreur lors de l'export Garmin. Veuillez réessayer.",
+    "garminExportSuccess": "Export Garmin réussi ! Le fichier a été téléchargé.",
+    "nutritionExportError": "Erreur lors de l'export Nutrition. Veuillez réessayer.",
+    "nutritionExportSuccess": "Export Nutrition réussi ! Le fichier a été téléchargé.",
+    "reloadConfirm": "Souhaitez-vous recharger la page pour voir les changements ?",
+    "importError": "Erreur lors de l'import. Veuillez réessayer.",
+    "importErrorWithDetail": "Erreur lors de l'import : {{error}}"
+  }
+}
+
+

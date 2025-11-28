@@ -13,6 +13,13 @@
     "start": "Commencer",
     "end": "Terminer",
     "locale": "fr-FR"
+  },
+  "ariaLabels": {
+    "languageSwitch": {
+      "toEnglish": "Passer en anglais",
+      "toFrench": "Switch to English",
+      "selectLanguage": "Sélectionner la langue"
+    }
   }
 }
 

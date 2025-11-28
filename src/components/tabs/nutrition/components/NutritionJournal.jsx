@@ -27,6 +27,7 @@ import MealEntryForm from './MealEntryForm';
 import HydrationTracker from './HydrationTracker';
 // ✅ PHASE 12.2 : Importer hooks Observer pour synchronisation automatique
 import { useDailyMeal, useMealsByDate, useActiveProgram } from '../../../../hooks/useRepositoryObserver';
+import { useTranslation } from '../../../../utils/translations';
 // ✅ OPTIMISATION Phase 15.2 : Prefetching intelligent jour suivant/précédent
 import { usePrefetchNutritionDays } from '../../../../hooks/usePrefetchNutritionDays';
 import { getNutritionConfig } from '../../../../config/nutrition.config';
@@ -72,6 +73,8 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
   // ✅ OPTIMISATION 19 : Modal personnalisée pour confirmation suppression
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [mealToDelete, setMealToDelete] = useState(null);
+  
+  const t = useTranslation();
 
   // ✅ PHASE 12.2 : Loading combiné (toutes les données doivent être chargées)
   // ✅ CORRECTION : Ne pas bloquer sur dbReady (peut être temporaire, repository gère fallback)
@@ -319,7 +322,7 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
       <Modal
         isOpen={showDeleteConfirm}
         onClose={handleMealDeleteCancel}
-        title="Confirmer la suppression"
+        title={t('nutrition.tooltips.journal.confirmDelete')}
         size="sm"
         showCloseButton={true}
       >

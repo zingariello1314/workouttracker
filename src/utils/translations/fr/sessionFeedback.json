@@ -1,0 +1,226 @@
+{
+  "title": "Feedback de séance",
+  "step": "Étape {{current}}/{{total}}",
+  "summary": {
+    "title": "Résumé de ta séance",
+    "totalReps": "Total reps",
+    "exercises": "Exercices",
+    "estimatedDuration": "Durée estimée",
+    "today": "Aujourd'hui"
+  },
+  "step1": {
+    "title": "1. Ressenti général",
+    "questions": {
+      "feeling": "Comment tu te sens globalement ?",
+      "difficulty": "Quelle était la difficulté ?",
+      "motivation": "Ton niveau de motivation ?",
+      "pain": "Niveau de douleur/gêne ?",
+      "painHint": "0 = aucune douleur"
+    },
+    "goal": {
+      "title": "As-tu atteint ton objectif de séance ?",
+      "yes": "✅ Oui, objectif atteint!",
+      "no": "❌ Non, pas cette fois",
+      "none": "🤷 Pas d'objectif précis"
+    },
+    "notEvaluated": "Non évalué"
+  },
+  "step2": {
+    "title": "2. Énergie et condition",
+    "questions": {
+      "energyBefore": "Énergie avant la séance",
+      "energyAfter": "Énergie après la séance",
+      "sleep": "Qualité du sommeil (nuit précédente)",
+      "hydration": "Niveau d'hydratation",
+      "nutrition": "Qualité de ta nutrition aujourd'hui"
+    },
+    "analysis": {
+      "title": "📊 Analyse énergétique",
+      "gained": "⬆️ Tu as gagné en énergie pendant la séance ! Excellent signe.",
+      "stable": "➡️ Énergie stable. Bonne gestion de l'effort.",
+      "slightDrop": "⬇️ Légère baisse d'énergie, mais tu restes dans le vert.",
+      "bigDrop": "⬇️ Grosse dépense énergétique. Pense à bien récupérer !"
+    }
+  },
+  "step3": {
+    "title": "3. Contexte de la séance",
+    "environment": {
+      "title": "Où as-tu fait ta séance ?",
+      "gym": "🏋️ Salle de sport",
+      "home": "🏠 À la maison",
+      "outdoor": "🌳 Extérieur",
+      "park": "🌲 Parc"
+    },
+    "weather": {
+      "title": "Quel temps faisait-il ?",
+      "sunny": "☀️ Ensoleillé",
+      "cloudy": "☁️ Nuageux",
+      "rainy": "🌧️ Pluvieux",
+      "windy": "💨 Venteux",
+      "cold": "❄️ Froid",
+      "hot": "🔥 Chaud"
+    },
+    "equipment": {
+      "title": "Quel équipement as-tu utilisé ?"
+    },
+    "partner": {
+      "title": "As-tu fait ta séance seul(e) ?",
+      "alone": "🧘 Seul(e)",
+      "withSomeone": "👥 Avec quelqu'un"
+    },
+    "restTime": {
+      "title": "Temps de repos entre les séries",
+      "placeholder": "ex: 1-2 min, 30-45 sec, variable..."
+    }
+  },
+  "step4": {
+    "title": "4. Derniers détails",
+    "tags": {
+      "title": "Comment décrirais-tu cette séance ?"
+    },
+    "nextGoal": {
+      "title": "Quel est ton objectif pour la prochaine séance ?",
+      "placeholder": "ex: Augmenter les poids, améliorer la technique, faire plus de reps..."
+    },
+    "music": {
+      "title": "Musiques qui t'ont motivé(e) ?",
+      "placeholder": "ex: Rock, Hip-hop, Électro, ou titres spécifiques..."
+    },
+    "notes": {
+      "title": "Notes personnelles (optionnel)",
+      "placeholder": "Ajoute tes observations, sensations, points à améliorer, victoires du jour..."
+    },
+    "analysis": {
+      "title": "🎯 Analyse de ta séance",
+      "excellent": "✅ Excellente séance ! Tu peux peut-être augmenter l'intensité la prochaine fois.",
+      "difficult": "⚠️ Séance difficile avec ressenti faible. Pense à bien récupérer et peut-être réduire l'intensité.",
+      "transformed": "💪 Bravo ! Tu as su transformer une faible énergie en excellente séance.",
+      "ratio": "📊 Ratio efficacité: {{ratio}}% {{comment}}",
+      "ratioComments": {
+        "veryEffective": "(Très efficace ⭐)",
+        "wellBalanced": "(Bien équilibré 👍)",
+        "canOptimize": "(Peut être optimisé 🎯)"
+      },
+      "goalReached": "🎉 Objectif atteint ! Continue sur cette lancée.",
+      "highPain": "🚨 Attention au niveau de douleur élevé. Pense à consulter si ça persiste."
+    }
+  },
+  "actions": {
+    "previous": "← Précédent",
+    "skip": "Passer",
+    "next": "Suivant →",
+    "save": "Enregistrer le feedback"
+  },
+  "descriptions": {
+    "feeling": {
+      "1": "😞 Très mauvais",
+      "2": "😔 Mauvais",
+      "3": "😐 Pas terrible",
+      "4": "😕 Moyen-",
+      "5": "😐 Moyen",
+      "6": "🙂 Correct",
+      "7": "😊 Bien",
+      "8": "😄 Très bien",
+      "9": "🤩 Excellent",
+      "10": "🚀 Parfait!"
+    },
+    "difficulty": {
+      "1": "😴 Très facile",
+      "2": "😌 Facile",
+      "3": "🙂 Accessible",
+      "4": "💪 Modéré-",
+      "5": "💪 Modéré",
+      "6": "🔥 Challengeant",
+      "7": "💥 Difficile",
+      "8": "🚀 Très difficile",
+      "9": "🔥 Extrême",
+      "10": "💀 Au maximum"
+    },
+    "energyBefore": {
+      "1": "😴 Épuisé",
+      "2": "😪 Très fatigué",
+      "3": "😔 Fatigué",
+      "4": "😐 Peu d'énergie",
+      "5": "🙂 Énergie normale",
+      "6": "😊 Bonne énergie",
+      "7": "😄 Très énergique",
+      "8": "🤩 Plein d'énergie",
+      "9": "🚀 Débordant d'énergie",
+      "10": "⚡ Énergie maximale"
+    },
+    "energyAfter": {
+      "1": "😵 Complètement vidé",
+      "2": "😪 Très épuisé",
+      "3": "😔 Épuisé",
+      "4": "😐 Fatigué",
+      "5": "🙂 Normalement fatigué",
+      "6": "😊 Encore de l'énergie",
+      "7": "😄 Bien récupéré",
+      "8": "🤩 Plein d'énergie",
+      "9": "🚀 Prêt à continuer",
+      "10": "⚡ Inépuisable"
+    },
+    "motivation": {
+      "1": "😞 Aucune envie",
+      "2": "😔 Très peu motivé",
+      "3": "😐 Pas motivé",
+      "4": "😕 Peu motivé",
+      "5": "🙂 Motivation normale",
+      "6": "😊 Bien motivé",
+      "7": "😄 Très motivé",
+      "8": "🤩 Super motivé",
+      "9": "🚀 Hyper motivé",
+      "10": "🔥 Motivation au max"
+    },
+    "pain": {
+      "0": "😊 Aucune douleur",
+      "1": "🙂 Très légère",
+      "2": "😐 Légère",
+      "3": "😕 Modérée",
+      "4": "😔 Gênante",
+      "5": "😣 Inconfortable",
+      "6": "😖 Douloureuse",
+      "7": "😫 Très douloureuse",
+      "8": "😰 Intense",
+      "9": "😱 Très intense",
+      "10": "🚨 Insupportable"
+    },
+    "sleep": {
+      "1": "😴 Très mauvais",
+      "2": "😪 Mauvais",
+      "3": "😔 Médiocre",
+      "4": "😐 Pas terrible",
+      "5": "🙂 Correct",
+      "6": "😊 Bon",
+      "7": "😄 Très bon",
+      "8": "🤩 Excellent",
+      "9": "🚀 Parfait",
+      "10": "⭐ Réparateur"
+    },
+    "hydration": {
+      "1": "🏜️ Très déshydraté",
+      "2": "😰 Déshydraté",
+      "3": "😔 Mal hydraté",
+      "4": "😐 Peu hydraté",
+      "5": "🙂 Hydratation normale",
+      "6": "😊 Bien hydraté",
+      "7": "😄 Très bien hydraté",
+      "8": "🤩 Parfaitement hydraté",
+      "9": "💧 Hydratation optimale",
+      "10": "🌊 Hydratation parfaite"
+    },
+    "nutrition": {
+      "1": "🍔 Très mauvaise",
+      "2": "😔 Mauvaise",
+      "3": "😐 Médiocre",
+      "4": "😕 Pas terrible",
+      "5": "🙂 Correcte",
+      "6": "😊 Bonne",
+      "7": "😄 Très bonne",
+      "8": "🤩 Excellente",
+      "9": "🥗 Optimale",
+      "10": "⭐ Parfaite"
+    }
+  }
+}
+

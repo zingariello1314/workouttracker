@@ -1,0 +1,45 @@
+{
+  "errors": {
+    "generic": "An error has occurred.",
+    "network": "Network error. Please check your connection and try again.",
+    "debug": "Error during debug: {{error}}",
+    "cleanup": "Error during cleanup: {{error}}",
+    "cleanupGeneric": "Error during cleanup. Check the console for more details.",
+    "validation": {
+      "required": "This field is required.",
+      "invalidFormat": "The format of this value is invalid.",
+      "minLength": "This field must contain at least {{min}} characters.",
+      "maxLength": "This field must contain at most {{max}} characters."
+    }
+  },
+  "success": {
+    "generic": "Operation completed successfully.",
+    "saved": "Data saved successfully.",
+    "imported": "Data imported successfully.",
+    "exported": "Data exported successfully.",
+    "restoreBackup": "Backup restored successfully!"
+  },
+  "importExport": {
+    "importing": "Importing data...",
+    "exporting": "Exporting data...",
+    "invalidJson": "The imported file is not valid JSON.",
+    "incompatibleVersion": "The format of the imported file is not compatible with this version of the application.",
+    "garminSuccess": "Garmin import successful! Data has been imported.",
+    "garminError": "Error during Garmin import. Check the JSON format.",
+    "fullSuccess": "Full import successful! All your data has been imported.",
+    "fullError": "Error during full import. Check the JSON format and try again.",
+    "fullReloadConfirm": "Import successful! Do you want to reload the page to see the changes?",
+    "restoreError": "Error while restoring backup: {{error}}",
+    "exportError": "Error during export. Please try again.",
+    "exportSuccess": "Export successful! The file has been downloaded.",
+    "garminExportError": "Error during Garmin export. Please try again.",
+    "garminExportSuccess": "Garmin export successful! The file has been downloaded.",
+    "nutritionExportError": "Error during Nutrition export. Please try again.",
+    "nutritionExportSuccess": "Nutrition export successful! The file has been downloaded.",
+    "reloadConfirm": "Do you want to reload the page to see the changes?",
+    "importError": "Error during import. Please try again.",
+    "importErrorWithDetail": "Error during import: {{error}}"
+  }
+}
+
+

@@ -22,7 +22,16 @@
     "markComplete": "Mark as completed",
     "exceptionalTitle": "Exceptional Exercises",
     "exceptional": "Exceptional",
-    "unsavedChanges": "Unsaved changes"
+    "unsavedChanges": "Unsaved changes",
+    "completed": "Done",
+    "series": "series",
+    "reps": "reps",
+    "duration": "Duration",
+    "completedWithReps": "✓ Completed: {{reps}} reps",
+    "completedWithDuration": "✓ Completed: {{minutes}}min {{seconds}}s",
+    "completedSimple": "✓ Completed",
+    "minutes": "Min",
+    "minutesLabel": "min"
   },
   "stretches": {
     "title": "Stretches",
@@ -35,8 +44,27 @@
     "title": "Active challenges",
     "count": "{{count}} active challenge",
     "count_plural": "{{count}} active challenges",
-    "validate": "Validate",
-    "completed": "Challenge validated successfully! 🎉"
+    "validate": "Validate challenge",
+    "validating": "Validating...",
+    "completed": "Challenge validated successfully! 🎉",
+    "goal": "Goal",
+    "targetDate": "Target date",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "notes": "Notes",
+    "validation": {
+      "repsRequired": "Please enter the number of repetitions/jumps",
+      "durationRequired": "Please enter the duration (min)",
+      "distanceRequired": "Please enter the distance"
+    },
+    "placeholders": {
+      "reps": "Number of reps",
+      "jumps": "Number of jumps",
+      "duration": "Duration in minutes",
+      "distanceMeters": "Distance in meters",
+      "distanceKm": "Distance in km",
+      "notes": "How did the challenge go?"
+    }
   },
   "messages": {
     "exercisesSaved": "Exercises saved successfully",
@@ -73,5 +101,27 @@
   "confirmations": {
     "suppressExercise": "Are you sure you want to suppress this exercise for today?\n\nThis action can be undone by restoring the exercise.",
     "removeExceptionalExercise": "Are you sure you want to remove this exceptional exercise?"
+  },
+  "endurance": {
+    "sessionsTitle": "Today's endurance sessions",
+    "repetitions": "Repetitions",
+    "duration": "Duration",
+    "distance": "Distance",
+    "jumps": "Jumps",
+    "activities": {
+      "boxing": "Boxing",
+      "pushups": "Push-ups",
+      "swimming": "Swimming",
+      "jumprope": "Jump rope",
+      "running": "Running"
+    }
+  },
+  "sessionFeedback": {
+    "button": "Session feedback"
+  },
+  "stretchMoments": {
+    "matin": "Morning",
+    "midi": "Noon",
+    "soir": "Evening"
   }
 }

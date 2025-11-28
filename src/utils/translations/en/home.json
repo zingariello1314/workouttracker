@@ -4,6 +4,45 @@
     "line2": "Imagination",
     "line3": "Meets Intelligence"
   },
-  "cta": "START TRAINING"
+  "cta": "START TRAINING",
+  "loading": {
+    "title": "Loading Momentum",
+    "subtitle": "Preparing your experience..."
+  },
+  "about": {
+    "title": "ABOUT MOMENTUM",
+    "description": "Momentum is your intelligent companion to transform your body and mind. Thanks to advanced artificial intelligence, we understand your fitness goals and adapt your training path in real-time.",
+    "features": {
+      "title": "🎯 Features",
+      "items": {
+        "bodyTracking": "• Intelligent body tracking",
+        "programs": "• Personalized programs",
+        "predictions": "• AI predictions",
+        "analyses": "• Advanced analyses"
+      }
+    },
+    "data": {
+      "title": "📊 Data",
+      "items": {
+        "photos": "• Progress photos",
+        "metrics": "• Body metrics",
+        "history": "• Complete history",
+        "statistics": "• Detailed statistics"
+      }
+    }
+  },
+  "keywords": {
+    "fitness": "Fitness",
+    "performance": "Performance",
+    "progress": "Progress",
+    "intelligence": "Intelligence",
+    "startTransformation": "Start your transformation"
+  },
+  "location": {
+    "loading": "Location...",
+    "notSupported": "Geolocation not supported",
+    "notAvailable": "Position not available"
+  }
 }
+
 

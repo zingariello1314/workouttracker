@@ -22,7 +22,16 @@
     "markComplete": "Marquer comme complété",
     "exceptionalTitle": "Exercices Exceptionnels",
     "exceptional": "Exceptionnel",
-    "unsavedChanges": "Modifications non sauvegardées"
+    "unsavedChanges": "Modifications non sauvegardées",
+    "completed": "Fait",
+    "series": "séries",
+    "reps": "reps",
+    "duration": "Durée",
+    "completedWithReps": "✓ Complété : {{reps}} reps",
+    "completedWithDuration": "✓ Complété : {{minutes}}min {{seconds}}s",
+    "completedSimple": "✓ Complété",
+    "minutes": "Min",
+    "minutesLabel": "min"
   },
   "stretches": {
     "title": "Étirements",
@@ -35,8 +44,27 @@
     "title": "Défis actifs",
     "count": "{{count}} défi actif",
     "count_plural": "{{count}} défis actifs",
-    "validate": "Valider",
-    "completed": "Défi validé avec succès ! 🎉"
+    "validate": "Valider le défi",
+    "validating": "Validation...",
+    "completed": "Défi validé avec succès ! 🎉",
+    "goal": "Objectif",
+    "targetDate": "Date cible",
+    "daily": "Quotidien",
+    "weekly": "Hebdomadaire",
+    "notes": "Notes",
+    "validation": {
+      "repsRequired": "Veuillez renseigner le nombre de répétitions/sauts",
+      "durationRequired": "Veuillez renseigner la durée (min)",
+      "distanceRequired": "Veuillez renseigner la distance"
+    },
+    "placeholders": {
+      "reps": "Nombre de reps",
+      "jumps": "Nombre de sauts",
+      "duration": "Durée en minutes",
+      "distanceMeters": "Distance en mètres",
+      "distanceKm": "Distance en km",
+      "notes": "Comment s'est passé le défi ?"
+    }
   },
   "messages": {
     "exercisesSaved": "Exercices enregistrés avec succès",
@@ -69,5 +97,27 @@
   "confirmations": {
     "suppressExercise": "Êtes-vous sûr de vouloir supprimer cet exercice pour aujourd'hui ?\n\nCette action peut être annulée en restaurant l'exercice.",
     "removeExceptionalExercise": "Êtes-vous sûr de vouloir supprimer cet exercice exceptionnel ?"
+  },
+  "endurance": {
+    "sessionsTitle": "Sessions d'endurance d'aujourd'hui",
+    "repetitions": "Répétitions",
+    "duration": "Durée",
+    "distance": "Distance",
+    "jumps": "Sauts",
+    "activities": {
+      "boxing": "Boxe",
+      "pushups": "Pompes",
+      "swimming": "Natation",
+      "jumprope": "Corde à sauter",
+      "running": "Course"
+    }
+  },
+  "sessionFeedback": {
+    "button": "Feedback de session"
+  },
+  "stretchMoments": {
+    "matin": "Matin",
+    "midi": "Midi",
+    "soir": "Soir"
   }
 }

@@ -51,6 +51,9 @@
     "dayJustified": "Day justified",
     "noActivity": "No activity recorded",
     "justifyHint": "Justify your absence if necessary"
+  },
+  "ariaLabels": {
+    "reason": "Reason: {{label}}"
   }
 }
 

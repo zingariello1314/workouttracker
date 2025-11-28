@@ -2,6 +2,7 @@ import React, { memo, useCallback } from 'react';
 import { Languages } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { LANGUAGES, LANGUAGE_LABELS } from '../../utils/translations/constants';
+import { useTranslation } from '../../utils/translations';
 import Button from './Button';
 
 /**
@@ -12,6 +13,7 @@ import Button from './Button';
  */
 const LanguageSelector = memo(({ variant = 'button', position = 'bottom-right' }) => {
   const { language, setLanguage } = useLanguage();
+  const t = useTranslation();
   const [isOpen, setIsOpen] = React.useState(false);
 
   const toggleLanguage = useCallback(() => {
@@ -27,8 +29,8 @@ const LanguageSelector = memo(({ variant = 'button', position = 'bottom-right' }
         onClick={toggleLanguage}
         className="p-2 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-colors duration-200 hover:scale-110 w-[44px] h-[44px] flex items-center justify-center flex-shrink-0"
         style={{ willChange: 'transform' }}
-        title={language === LANGUAGES.FR ? 'Switch to English' : 'Passer en français'}
-        aria-label={language === LANGUAGES.FR ? 'Switch to English' : 'Passer en français'}
+        title={language === LANGUAGES.FR ? t('common.ariaLabels.languageSwitch.toEnglish') : t('common.ariaLabels.languageSwitch.toFrench')}
+        aria-label={language === LANGUAGES.FR ? t('common.ariaLabels.languageSwitch.toEnglish') : t('common.ariaLabels.languageSwitch.toFrench')}
       >
         <span className="text-white font-semibold text-sm inline-block min-w-[20px] text-center">
           {language.toUpperCase()}
@@ -51,7 +53,7 @@ const LanguageSelector = memo(({ variant = 'button', position = 'bottom-right' }
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all duration-200"
-          aria-label="Select language"
+          aria-label={t('common.ariaLabels.languageSwitch.selectLanguage')}
         >
           <Languages className="w-4 h-4 text-white" />
           <span className="text-white font-medium text-sm">

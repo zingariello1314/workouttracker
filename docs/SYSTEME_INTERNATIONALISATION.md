@@ -173,3 +173,4 @@ const MyComponent = () => {
 
 **Prochaine étape :** Voir `PLAN_AMELIORATION_I18N.md` pour le plan d'implémentation complet des améliorations.
 
+

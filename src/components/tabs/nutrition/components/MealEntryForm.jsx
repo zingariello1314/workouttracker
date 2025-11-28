@@ -16,6 +16,7 @@ import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
 import { X, Plus, Trash2, Save, Search, Mic, Camera } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
+import { useTranslation } from '../../../../utils/translations';
 import FoodSearch from './FoodSearch';
 import VoiceInput from './VoiceInput';
 import FoodPhotoScanner from './FoodPhotoScanner';
@@ -52,6 +53,8 @@ const MealEntryForm = memo(({ isOpen, onClose, meal, dateStr, onSave, nutritionD
   const [timestamp, setTimestamp] = useState('');
   const [loading, setLoading] = useState(false);
   const [showFoodSearch, setShowFoodSearch] = useState(false);
+  
+  const t = useTranslation();
 
   // Types de repas
   const mealTypes = [
@@ -217,7 +220,7 @@ const MealEntryForm = memo(({ isOpen, onClose, meal, dateStr, onSave, nutritionD
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={meal ? 'Modifier le repas' : 'Ajouter un repas'}
+      title={meal ? t('nutrition.tooltips.mealEntry.editMeal') : t('nutrition.tooltips.mealEntry.addMeal')}
       size="lg"
     >
       <div className="p-6 space-y-6">
@@ -368,7 +371,7 @@ const MealEntryForm = memo(({ isOpen, onClose, meal, dateStr, onSave, nutritionD
                         type="text"
                         value={food.name}
                         onChange={(e) => handleUpdateFood(food.id, 'name', e.target.value)}
-                        placeholder="Ex: Poulet grillé"
+                        placeholder={t('nutrition.tooltips.mealEntry.foodNamePlaceholder')}
                         className="bg-slate-900 border-slate-600 text-white"
                       />
                     </div>
@@ -526,7 +529,7 @@ const MealEntryForm = memo(({ isOpen, onClose, meal, dateStr, onSave, nutritionD
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Ex: Repas post-entraînement"
+            placeholder={t('nutrition.tooltips.mealEntry.notesPlaceholder')}
             rows={3}
             className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -558,7 +561,7 @@ const MealEntryForm = memo(({ isOpen, onClose, meal, dateStr, onSave, nutritionD
       <Modal
         isOpen={showFoodSearch}
         onClose={() => setShowFoodSearch(false)}
-        title="Rechercher un aliment"
+        title={t('nutrition.tooltips.mealEntry.searchFood')}
         size="lg"
       >
         <div className="p-4">

@@ -1,0 +1,226 @@
+{
+  "title": "Session feedback",
+  "step": "Step {{current}}/{{total}}",
+  "summary": {
+    "title": "Summary of your session",
+    "totalReps": "Total reps",
+    "exercises": "Exercises",
+    "estimatedDuration": "Estimated duration",
+    "today": "Today"
+  },
+  "step1": {
+    "title": "1. General feeling",
+    "questions": {
+      "feeling": "How do you feel overall?",
+      "difficulty": "What was the difficulty?",
+      "motivation": "Your level of motivation?",
+      "pain": "Level of pain/discomfort?",
+      "painHint": "0 = no pain"
+    },
+    "goal": {
+      "title": "Did you reach your session goal?",
+      "yes": "✅ Yes, goal reached!",
+      "no": "❌ No, not this time",
+      "none": "🤷 No specific goal"
+    },
+    "notEvaluated": "Not evaluated"
+  },
+  "step2": {
+    "title": "2. Energy and condition",
+    "questions": {
+      "energyBefore": "Energy before the session",
+      "energyAfter": "Energy after the session",
+      "sleep": "Sleep quality (previous night)",
+      "hydration": "Hydration level",
+      "nutrition": "Quality of your nutrition today"
+    },
+    "analysis": {
+      "title": "📊 Energy analysis",
+      "gained": "⬆️ You gained energy during the session! Excellent sign.",
+      "stable": "➡️ Stable energy. Good effort management.",
+      "slightDrop": "⬇️ Slight energy drop, but you're still in the green.",
+      "bigDrop": "⬇️ High energy expenditure. Remember to recover well!"
+    }
+  },
+  "step3": {
+    "title": "3. Session context",
+    "environment": {
+      "title": "Where did you do your session?",
+      "gym": "🏋️ Gym",
+      "home": "🏠 At home",
+      "outdoor": "🌳 Outdoor",
+      "park": "🌲 Park"
+    },
+    "weather": {
+      "title": "What was the weather like?",
+      "sunny": "☀️ Sunny",
+      "cloudy": "☁️ Cloudy",
+      "rainy": "🌧️ Rainy",
+      "windy": "💨 Windy",
+      "cold": "❄️ Cold",
+      "hot": "🔥 Hot"
+    },
+    "equipment": {
+      "title": "What equipment did you use?"
+    },
+    "partner": {
+      "title": "Did you do your session alone?",
+      "alone": "🧘 Alone",
+      "withSomeone": "👥 With someone"
+    },
+    "restTime": {
+      "title": "Rest time between sets",
+      "placeholder": "ex: 1-2 min, 30-45 sec, variable..."
+    }
+  },
+  "step4": {
+    "title": "4. Final details",
+    "tags": {
+      "title": "How would you describe this session?"
+    },
+    "nextGoal": {
+      "title": "What is your goal for the next session?",
+      "placeholder": "ex: Increase weights, improve technique, do more reps..."
+    },
+    "music": {
+      "title": "Music that motivated you?",
+      "placeholder": "ex: Rock, Hip-hop, Electronic, or specific tracks..."
+    },
+    "notes": {
+      "title": "Personal notes (optional)",
+      "placeholder": "Add your observations, sensations, points to improve, victories of the day..."
+    },
+    "analysis": {
+      "title": "🎯 Analysis of your session",
+      "excellent": "✅ Excellent session! You might be able to increase intensity next time.",
+      "difficult": "⚠️ Difficult session with low feeling. Remember to recover well and maybe reduce intensity.",
+      "transformed": "💪 Well done! You managed to transform low energy into an excellent session.",
+      "ratio": "📊 Efficiency ratio: {{ratio}}% {{comment}}",
+      "ratioComments": {
+        "veryEffective": "(Very effective ⭐)",
+        "wellBalanced": "(Well balanced 👍)",
+        "canOptimize": "(Can be optimized 🎯)"
+      },
+      "goalReached": "🎉 Goal reached! Keep up the momentum.",
+      "highPain": "🚨 Watch out for high pain level. Consider consulting if it persists."
+    }
+  },
+  "actions": {
+    "previous": "← Previous",
+    "skip": "Skip",
+    "next": "Next →",
+    "save": "Save feedback"
+  },
+  "descriptions": {
+    "feeling": {
+      "1": "😞 Very bad",
+      "2": "😔 Bad",
+      "3": "😐 Not great",
+      "4": "😕 Below average",
+      "5": "😐 Average",
+      "6": "🙂 Okay",
+      "7": "😊 Good",
+      "8": "😄 Very good",
+      "9": "🤩 Excellent",
+      "10": "🚀 Perfect!"
+    },
+    "difficulty": {
+      "1": "😴 Very easy",
+      "2": "😌 Easy",
+      "3": "🙂 Accessible",
+      "4": "💪 Moderate-",
+      "5": "💪 Moderate",
+      "6": "🔥 Challenging",
+      "7": "💥 Difficult",
+      "8": "🚀 Very difficult",
+      "9": "🔥 Extreme",
+      "10": "💀 Maximum"
+    },
+    "energyBefore": {
+      "1": "😴 Exhausted",
+      "2": "😪 Very tired",
+      "3": "😔 Tired",
+      "4": "😐 Low energy",
+      "5": "🙂 Normal energy",
+      "6": "😊 Good energy",
+      "7": "😄 Very energetic",
+      "8": "🤩 Full of energy",
+      "9": "🚀 Overflowing with energy",
+      "10": "⚡ Maximum energy"
+    },
+    "energyAfter": {
+      "1": "😵 Completely drained",
+      "2": "😪 Very exhausted",
+      "3": "😔 Exhausted",
+      "4": "😐 Tired",
+      "5": "🙂 Normally tired",
+      "6": "😊 Still have energy",
+      "7": "😄 Well recovered",
+      "8": "🤩 Full of energy",
+      "9": "🚀 Ready to continue",
+      "10": "⚡ Inexhaustible"
+    },
+    "motivation": {
+      "1": "😞 No desire",
+      "2": "😔 Very little motivated",
+      "3": "😐 Not motivated",
+      "4": "😕 Little motivated",
+      "5": "🙂 Normal motivation",
+      "6": "😊 Well motivated",
+      "7": "😄 Very motivated",
+      "8": "🤩 Super motivated",
+      "9": "🚀 Hyper motivated",
+      "10": "🔥 Maximum motivation"
+    },
+    "pain": {
+      "0": "😊 No pain",
+      "1": "🙂 Very slight",
+      "2": "😐 Slight",
+      "3": "😕 Moderate",
+      "4": "😔 Annoying",
+      "5": "😣 Uncomfortable",
+      "6": "😖 Painful",
+      "7": "😫 Very painful",
+      "8": "😰 Intense",
+      "9": "😱 Very intense",
+      "10": "🚨 Unbearable"
+    },
+    "sleep": {
+      "1": "😴 Very bad",
+      "2": "😪 Bad",
+      "3": "😔 Poor",
+      "4": "😐 Not great",
+      "5": "🙂 Okay",
+      "6": "😊 Good",
+      "7": "😄 Very good",
+      "8": "🤩 Excellent",
+      "9": "🚀 Perfect",
+      "10": "⭐ Restorative"
+    },
+    "hydration": {
+      "1": "🏜️ Very dehydrated",
+      "2": "😰 Dehydrated",
+      "3": "😔 Poorly hydrated",
+      "4": "😐 Little hydrated",
+      "5": "🙂 Normal hydration",
+      "6": "😊 Well hydrated",
+      "7": "😄 Very well hydrated",
+      "8": "🤩 Perfectly hydrated",
+      "9": "💧 Optimal hydration",
+      "10": "🌊 Perfect hydration"
+    },
+    "nutrition": {
+      "1": "🍔 Very bad",
+      "2": "😔 Bad",
+      "3": "😐 Poor",
+      "4": "😕 Not great",
+      "5": "🙂 Okay",
+      "6": "😊 Good",
+      "7": "😄 Very good",
+      "8": "🤩 Excellent",
+      "9": "🥗 Optimal",
+      "10": "⭐ Perfect"
+    }
+  }
+}
+

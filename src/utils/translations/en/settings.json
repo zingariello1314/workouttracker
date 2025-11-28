@@ -28,5 +28,17 @@
       "reset": "Reset all data",
       "resetConfirm": "Are you sure you want to reset all data? This action is irreversible."
     }
+  },
+  "tooltips": {
+    "import": {
+      "placeholder": "Paste your backup JSON content here...",
+      "previewBodyTracking": "Preview Body Tracking import only",
+      "previewComplete": "Preview COMPLETE import (all training data)",
+      "importGarmin": "Import Garmin data only"
+    },
+    "cleanup": {
+      "debugConsole": "Debug: Identify mocked sessions in console",
+      "removeMocked": "Remove all detected mocked endurance data"
+    }
   }
 }

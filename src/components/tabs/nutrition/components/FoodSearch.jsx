@@ -17,6 +17,7 @@ import { searchUSDA } from '../../../../services/nutrition/usdaService';
 import { getFavoriteFoods } from '../../../../hooks/nutritionDataCRUD';
 import { useDebouncedCallback } from '../../../../hooks/useDebouncedCallback';
 import logger from '../../../../utils/logger';
+import { useTranslation } from '../../../../utils/translations';
 import BarcodeScanner from './BarcodeScanner';
 import VoiceInput from './VoiceInput';
 
@@ -29,6 +30,7 @@ const log = logger.module('FoodSearch');
  * Mémorisé pour éviter re-renders quand props ne changent pas.
  */
 const FoodSearch = memo(({ onFoodSelected, onClose }) => {
+  const t = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -343,7 +345,7 @@ const FoodSearch = memo(({ onFoodSelected, onClose }) => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un aliment (ex: poulet, riz, pomme)..."
+            placeholder={t('nutrition.tooltips.foodSearch.placeholder')}
             className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             autoFocus
           />
@@ -367,7 +369,7 @@ const FoodSearch = memo(({ onFoodSelected, onClose }) => {
         <button
           onClick={() => setShowBarcodeScanner(true)}
           className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-          title="Scanner un code-barres"
+          title={t('nutrition.tooltips.foodSearch.scanBarcode')}
         >
           <Camera size={18} />
           <span className="hidden sm:inline">Scanner</span>

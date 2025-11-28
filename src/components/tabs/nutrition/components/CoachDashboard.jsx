@@ -17,6 +17,7 @@ import { useLazyCalculation } from '../../../../hooks/useLazyCalculation';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
+import { useTranslation } from '../../../../utils/translations';
 import {
   Upload,
   FileText,
@@ -89,6 +90,7 @@ const formatScope = (scope) => {
 // ✅ PHASE 5 : CustomTooltip déplacé dans ChartComponents.jsx (mémorisé)
 
 const CoachDashboard = () => {
+  const t = useTranslation();
   const { showError } = useToast();
   const {
     shareData,
@@ -328,7 +330,7 @@ const CoachDashboard = () => {
                 ref={dropZoneRef}
                 role="button"
                 tabIndex={0}
-                aria-label="Zone d'import de fichier JSON. Appuyez sur Entrée ou Espace pour sélectionner un fichier, ou glissez-déposez un fichier ici."
+                aria-label={t('nutrition.tooltips.coachDashboard.uploadZone')}
                 aria-describedby="upload-instructions"
                 aria-disabled={loading || false}
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-all outline-none ${
@@ -389,7 +391,7 @@ const CoachDashboard = () => {
                   }}
                   disabled={loading}
                   className="bg-blue-600 hover:bg-blue-700 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
-                  aria-label="Sélectionner un fichier JSON à importer"
+                  aria-label={t('nutrition.tooltips.coachDashboard.selectFile')}
                 >
                   <FileText size={18} className="mr-2" aria-hidden="true" />
                   Sélectionner un fichier JSON
@@ -461,7 +463,7 @@ const CoachDashboard = () => {
               onClick={clearData}
               variant="outline"
               className="text-slate-300 border-slate-600 hover:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
-              aria-label="Réinitialiser et importer un nouveau fichier"
+              aria-label={t('nutrition.tooltips.coachDashboard.resetAndImport')}
             >
               <RefreshCw size={16} className="mr-2" aria-hidden="true" />
               Nouveau import

@@ -5,15 +5,22 @@ import { preloadAdjacentImages, preloadImage } from '../utils/imageLazyLoader';
 import logger from '../utils/logger';
 import LanguageSelector from './ui/LanguageSelector';
 import { useTranslation } from '../utils/translations';
+import { useLanguage } from '../context/LanguageContext';
 
 const log = logger.component('HomePage');
 
 const HomePage = () => {
   const { setActiveTab } = useWorkout();
   const t = useTranslation();
+  const { language } = useLanguage();
   const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [userLocation, setUserLocation] = useState('Localisation...');
+  const [userLocation, setUserLocation] = useState('');
+  
+  // Initialiser userLocation avec la traduction
+  useEffect(() => {
+    setUserLocation(t('home.location.loading'));
+  }, [t]);
   
   // ✅ Phase 7: Double buffering pour transitions ultra-fluides
   const [activeLayer, setActiveLayer] = useState(0); // 0 ou 1
@@ -35,7 +42,7 @@ const HomePage = () => {
   // ✅ FIX: Géolocalisation uniquement après interaction utilisateur (conformité navigateur)
   const requestUserLocation = () => {
     if (!navigator.geolocation) {
-      setUserLocation('Géolocalisation non supportée');
+      setUserLocation(t('home.location.notSupported'));
       return;
     }
 
@@ -43,7 +50,8 @@ const HomePage = () => {
       (position) => {
         const { latitude, longitude } = position.coords;
         // Utiliser une API de géocodage inverse pour obtenir le nom de la ville
-        fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=fr`)
+        const lang = language === 'en' ? 'en' : 'fr';
+        fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=${lang}`)
           .then(response => response.json())
           .then(data => {
             if (data.city && data.countryName) {
@@ -59,7 +67,7 @@ const HomePage = () => {
           });
       },
       () => {
-        setUserLocation('Position non disponible');
+        setUserLocation(t('home.location.notAvailable'));
       }
     );
   };
@@ -424,10 +432,10 @@ const HomePage = () => {
             
             {/* Texte de chargement */}
             <p className="text-white text-lg font-medium mb-2" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-              Chargement de Momentum
+              {t('home.loading.title')}
             </p>
             <p className="text-white/70 text-sm" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
-              Préparation de votre expérience...
+              {t('home.loading.subtitle')}
             </p>
           </div>
         </div>
@@ -503,91 +511,91 @@ const HomePage = () => {
               onClick={() => navigateToTab('today')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Aujourd'hui
+              {t('nav.today')}
             </button>
             <button 
               onClick={() => navigateToTab('data-entry')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Saisie
+              {t('nav.dataEntry')}
             </button>
             <button 
               onClick={() => navigateToTab('program')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Programme
+              {t('nav.program')}
             </button>
             <button 
               onClick={() => navigateToTab('nutrition')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Nutrition
+              {t('nav.nutrition')}
             </button>
             <button 
               onClick={() => navigateToTab('exercises')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Exercices
+              {t('nav.exercises')}
             </button>
             <button 
               onClick={() => navigateToTab('progress')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Suivi Corporel
+              {t('nav.progress')}
             </button>
             <button 
               onClick={() => navigateToTab('endurance')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Endurance
+              {t('nav.endurance')}
             </button>
             <button 
               onClick={() => navigateToTab('calendar')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Calendrier
+              {t('nav.calendar')}
             </button>
             <button 
               onClick={() => navigateToTab('history')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Historique
+              {t('nav.history')}
             </button>
             <button 
               onClick={() => navigateToTab('charts')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Graphiques
+              {t('nav.charts')}
             </button>
             <button 
               onClick={() => navigateToTab('stats')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Statistiques
+              {t('nav.stats')}
             </button>
             <button 
               onClick={() => navigateToTab('predictions')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Prédictions
+              {t('nav.predictions')}
             </button>
             <button 
               onClick={() => navigateToTab('smart-balancing')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Équilibrage IA
+              {t('nav.smartBalancing')}
             </button>
             <button 
               onClick={() => navigateToTab('garmin')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Garmin
+              {t('nav.garmin')}
             </button>
             <button 
               onClick={() => navigateToTab('settings')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              Paramètres
+              {t('nav.settings')}
             </button>
           </div>
         </nav>
@@ -622,32 +630,30 @@ const HomePage = () => {
         {/* Section À propos améliorée */}
         <div className="max-w-2xl bg-black/10 backdrop-blur-3xl rounded-3xl p-10 border border-white/5 shadow-2xl">
           <div className="flex items-center mb-6">
-            <h3 className="text-white font-bold text-sm tracking-wider mr-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>À PROPOS DE MOMENTUM</h3>
+            <h3 className="text-white font-bold text-sm tracking-wider mr-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.title')}</h3>
             <div className="flex-1 h-px bg-gradient-to-r from-white/20 via-white/40 to-transparent"></div>
           </div>
           <div className="space-y-4">
             <p className="text-white text-sm font-medium leading-relaxed" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
-              Momentum est votre compagnon intelligent pour transformer votre corps et votre esprit. 
-              Grâce à l'intelligence artificielle avancée, nous comprenons vos objectifs de fitness 
-              et adaptons votre parcours d'entraînement en temps réel.
+              {t('home.about.description')}
             </p>
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <h4 className="font-semibold text-white mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>🎯 Fonctionnalités</h4>
+                <h4 className="font-semibold text-white mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.features.title')}</h4>
                 <ul className="space-y-1 text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
-                  <li>• Suivi corporel intelligent</li>
-                  <li>• Programmes personnalisés</li>
-                  <li>• Prédictions IA</li>
-                  <li>• Analyses avancées</li>
+                  <li>{t('home.about.features.items.bodyTracking')}</li>
+                  <li>{t('home.about.features.items.programs')}</li>
+                  <li>{t('home.about.features.items.predictions')}</li>
+                  <li>{t('home.about.features.items.analyses')}</li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-white mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>📊 Données</h4>
+                <h4 className="font-semibold text-white mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.data.title')}</h4>
                 <ul className="space-y-1 text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
-                  <li>• Photos de progression</li>
-                  <li>• Métriques corporelles</li>
-                  <li>• Historique complet</li>
-                  <li>• Statistiques détaillées</li>
+                  <li>{t('home.about.data.items.photos')}</li>
+                  <li>{t('home.about.data.items.metrics')}</li>
+                  <li>{t('home.about.data.items.history')}</li>
+                  <li>{t('home.about.data.items.statistics')}</li>
                 </ul>
               </div>
             </div>
@@ -657,11 +663,11 @@ const HomePage = () => {
         {/* Mots-clés simplifiés - Collés tout à droite */}
         <div className="text-right flex flex-col items-end flex-shrink-0" style={{ minHeight: 'fit-content' }}>
           <div className="text-white text-base font-semibold space-y-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
-            <div>Fitness</div>
-            <div>Performance</div>
-            <div>Progrès</div>
-            <div>Intelligence</div>
-            <div>Commencez votre transformation</div>
+            <div>{t('home.keywords.fitness')}</div>
+            <div>{t('home.keywords.performance')}</div>
+            <div>{t('home.keywords.progress')}</div>
+            <div>{t('home.keywords.intelligence')}</div>
+            <div>{t('home.keywords.startTransformation')}</div>
             <div>{userLocation}</div>
           </div>
           

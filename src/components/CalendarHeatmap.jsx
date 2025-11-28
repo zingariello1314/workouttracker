@@ -31,7 +31,6 @@ import {
   getDayJustification,
   isDayWithoutActivity,
   JUSTIFICATION_REASONS,
-  JUSTIFICATION_LABELS,
   JUSTIFICATION_COLORS,
   JUSTIFICATION_ICONS
 } from '../utils/dayJustificationUtils';
@@ -1240,9 +1239,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     
     // Si justification existe, l'ajouter au tooltip
     if (intensity?.justification) {
-      const reasonLabel = JUSTIFICATION_LABELS[intensity.justification.reason] || 'Autre';
+      const reasonLabel = t(`justification.${intensity.justification.reason}`) || t('justification.autre');
       const note = intensity.justification.note ? ` : ${intensity.justification.note}` : '';
-      return `${baseTooltip}\nJustifié : ${reasonLabel}${note}`;
+      return `${baseTooltip}\n${t('justification.button.dayJustified')} : ${reasonLabel}${note}`;
     }
     
     return baseTooltip;
@@ -1444,28 +1443,28 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                     <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.MALADIE]}`}>
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.MALADIE]}</span>
                       <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.MALADIE]}</span>
-                      <span className="text-white/80">{JUSTIFICATION_LABELS[JUSTIFICATION_REASONS.MALADIE]}</span>
+                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.MALADIE}`)}</span>
                     </div>
                   )}
                   {monthStats[JUSTIFICATION_REASONS.FLEMME] > 0 && (
                     <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.FLEMME]}`}>
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.FLEMME]}</span>
                       <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.FLEMME]}</span>
-                      <span className="text-white/80">{JUSTIFICATION_LABELS[JUSTIFICATION_REASONS.FLEMME]}</span>
+                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.FLEMME}`)}</span>
                     </div>
                   )}
                   {monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS] > 0 && (
                     <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}`}>
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
                       <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
-                      <span className="text-white/80">{JUSTIFICATION_LABELS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
+                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.PAS_LE_TEMPS}`)}</span>
                     </div>
                   )}
                   {monthStats[JUSTIFICATION_REASONS.AUTRE] > 0 && (
                     <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]}`}>
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.AUTRE]}</span>
                       <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.AUTRE]}</span>
-                      <span className="text-white/80">{JUSTIFICATION_LABELS[JUSTIFICATION_REASONS.AUTRE]}</span>
+                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.AUTRE}`)}</span>
                     </div>
                   )}
                 </div>
@@ -1695,7 +1694,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                 <span className="text-2xl" aria-hidden="true">{JUSTIFICATION_ICONS[justification.reason] || '❓'}</span>
                 <div className="flex-1">
                   <div className="text-white font-semibold mb-1">
-                    {JUSTIFICATION_LABELS[justification.reason] || 'Autre'}
+                    {t(`justification.${justification.reason}`) || t('justification.autre')}
                   </div>
                   {justification.note && (
                     <div className="text-white/90 text-sm">

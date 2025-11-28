@@ -18,6 +18,32 @@
     "challenges": "challenges",
     "progress": "progress",
     "sharing": "sharing"
+  },
+  "tooltips": {
+    "journal": {
+      "confirmDelete": "Confirm deletion"
+    },
+    "foodSearch": {
+      "placeholder": "Search for a food (e.g.: chicken, rice, apple)...",
+      "scanBarcode": "Scan a barcode"
+    },
+    "mealEntry": {
+      "editMeal": "Edit meal",
+      "addMeal": "Add meal",
+      "foodNamePlaceholder": "Ex: Grilled chicken",
+      "notesPlaceholder": "Ex: Post-workout meal",
+      "searchFood": "Search for a food"
+    },
+    "gamification": {
+      "badgeUnlocked": "{{name}}",
+      "badgeLocked": "{{name}} - Not unlocked"
+    },
+    "coachDashboard": {
+      "uploadZone": "JSON file import zone. Press Enter or Space to select a file, or drag and drop a file here.",
+      "selectFile": "Select a JSON file to import",
+      "resetAndImport": "Reset and import a new file"
+    }
   }
 }
+
 

@@ -1200,7 +1200,7 @@ const SettingsTab = () => {
       setTimeout(() => {
         setAllDataImportStatus(null);
         // Suggérer de recharger la page pour voir les changements
-        if (window.confirm('Import réussi ! Souhaitez-vous recharger la page pour voir les changements ?')) {
+        if (window.confirm(t('messages.importExport.fullReloadConfirm'))) {
           window.location.reload();
         }
       }, 3000);
@@ -1253,7 +1253,7 @@ const SettingsTab = () => {
       }
     } catch (error) {
       console.error('❌ Erreur lors du debug:', error);
-      alert(`❌ Erreur lors du debug : ${error.message}`);
+      alert(`❌ ${t('messages.errors.debug', { error: error.message })}`);
     }
   };
 
@@ -1296,7 +1296,7 @@ const SettingsTab = () => {
         
         setTimeout(() => {
           setCleanupStatus(null);
-          if (window.confirm('Souhaitez-vous recharger la page pour voir les changements ?')) {
+          if (window.confirm(t('messages.importExport.reloadConfirm'))) {
             window.location.reload();
           }
         }, 3000);
@@ -1308,7 +1308,7 @@ const SettingsTab = () => {
     } catch (error) {
       console.error('❌ Erreur lors du nettoyage des sessions mockées:', error);
       setCleanupStatus('error');
-      alert(`❌ Erreur lors du nettoyage : ${error.message}`);
+      alert(`❌ ${t('messages.errors.cleanup', { error: error.message })}`);
       setTimeout(() => setCleanupStatus(null), 5000);
     }
   };
@@ -1513,35 +1513,35 @@ const SettingsTab = () => {
             {exportStatus === 'error' && (
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
-                Erreur lors de l'export. Veuillez réessayer.
+                {t('messages.importExport.exportError')}
               </div>
             )}
 
             {garminExportStatus === 'success' && (
               <div className="flex items-center text-green-400 text-sm">
                 <CheckCircle className="mr-2" size={16} />
-                Export Garmin réussi ! Le fichier a été téléchargé.
+                {t('messages.importExport.garminExportSuccess')}
               </div>
             )}
 
             {garminExportStatus === 'error' && (
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
-                Erreur lors de l'export Garmin. Veuillez réessayer.
+                {t('messages.importExport.garminExportError')}
               </div>
             )}
 
             {nutritionExportStatus === 'success' && (
               <div className="flex items-center text-green-400 text-sm">
                 <CheckCircle className="mr-2" size={16} />
-                Export Nutrition réussi ! Le fichier a été téléchargé.
+                {t('messages.importExport.nutritionExportSuccess')}
               </div>
             )}
 
             {nutritionExportStatus === 'error' && (
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
-                Erreur lors de l'export Nutrition. Veuillez réessayer.
+                {t('messages.importExport.nutritionExportError')}
               </div>
             )}
           </div>
@@ -1591,7 +1591,7 @@ const SettingsTab = () => {
                 <textarea
                   value={importData}
                   onChange={(e) => setImportData(e.target.value)}
-                  placeholder="Collez ici le contenu JSON de votre sauvegarde..."
+                  placeholder={t('settings.tooltips.import.placeholder')}
                   className="w-full h-32 px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 />
               </div>
@@ -1604,7 +1604,7 @@ const SettingsTab = () => {
                 icon={FileText}
                 variant="outline"
                 className="flex-1"
-                title="Prévisualiser l'import Body Tracking uniquement"
+                title={t('settings.tooltips.import.previewBodyTracking')}
               >
                 Prévisualiser (Body Tracking)
               </Button>
@@ -1616,7 +1616,7 @@ const SettingsTab = () => {
                 icon={FileText}
                 variant="outline"
                 className="flex-1 bg-blue-600/20 border-blue-500/50 text-blue-300 hover:bg-blue-600/30"
-                title="Prévisualiser l'import COMPLET (toutes les données d'entraînement)"
+                title={t('settings.tooltips.import.previewComplete')}
               >
                 {allDataImportStatus === 'loading' ? 'Prévisualisation...' : 'Prévisualiser (Complet)'}
               </Button>
@@ -1627,7 +1627,7 @@ const SettingsTab = () => {
                 icon={Upload}
                 variant="outline"
                 className="bg-purple-600/20 border-purple-500/50 text-purple-300 hover:bg-purple-600/30"
-                title="Importer uniquement les données Garmin"
+                title={t('settings.tooltips.import.importGarmin')}
               >
                 {garminImportStatus === 'loading' ? 'Import...' : 'Import Garmin'}
               </Button>
@@ -1647,35 +1647,35 @@ const SettingsTab = () => {
             {importStatus === 'error' && (
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
-                Données JSON invalides. Vérifiez le format.
+                {t('messages.importExport.invalidJson')}
               </div>
             )}
 
             {importStatus === 'success' && (
               <div className="flex items-center text-green-400 text-sm">
                 <CheckCircle className="mr-2" size={16} />
-                Import réussi ! Vos données ont été mises à jour.
+                {t('messages.success.imported')}
               </div>
             )}
 
             {importStatus === 'restored' && (
               <div className="flex items-center text-blue-400 text-sm">
                 <CheckCircle className="mr-2" size={16} />
-                Sauvegarde restaurée avec succès !
+                {t('messages.success.restoreBackup')}
               </div>
             )}
 
             {garminImportStatus === 'success' && (
               <div className="flex items-center text-green-400 text-sm">
                 <CheckCircle className="mr-2" size={16} />
-                Import Garmin réussi ! Les données ont été importées.
+                {t('messages.importExport.garminSuccess')}
               </div>
             )}
 
             {garminImportStatus === 'error' && (
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
-                Erreur lors de l'import Garmin. Vérifiez le format JSON.
+                {t('messages.importExport.garminError')}
               </div>
             )}
 
@@ -1683,14 +1683,14 @@ const SettingsTab = () => {
             {allDataImportStatus === 'success' && (
               <div className="flex items-center text-green-400 text-sm">
                 <CheckCircle className="mr-2" size={16} />
-                Import complet réussi ! Toutes vos données ont été importées.
+                {t('messages.importExport.fullSuccess')}
               </div>
             )}
 
             {allDataImportStatus === 'error' && (
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
-                Erreur lors de l'import complet. Vérifiez le format JSON et réessayez.
+                {t('messages.importExport.fullError')}
               </div>
             )}
           </div>
@@ -1958,7 +1958,7 @@ const SettingsTab = () => {
                 variant="outline"
                 icon={AlertTriangle}
                 className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
-                title="Debug : Identifier les sessions mockées dans la console"
+                title={t('settings.tooltips.cleanup.debugConsole')}
               >
                 Debug (Console)
               </Button>
@@ -1968,7 +1968,7 @@ const SettingsTab = () => {
                 disabled={cleanupStatus === 'loading'}
                 icon={AlertTriangle}
                 className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-800"
-                title="Supprimer toutes les données mockées d'endurance détectées"
+                title={t('settings.tooltips.cleanup.removeMocked')}
               >
                 {cleanupStatus === 'loading' ? 'Nettoyage...' : 'Supprimer mockées'}
               </Button>
@@ -1991,7 +1991,7 @@ const SettingsTab = () => {
             {cleanupStatus === 'error' && (
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
-                Erreur lors du nettoyage. Vérifiez la console pour plus de détails.
+                {t('messages.errors.cleanupGeneric')}
               </div>
             )}
 
@@ -2003,11 +2003,11 @@ const SettingsTab = () => {
                     if (backup) {
                       const parsedBackup = JSON.parse(backup);
                       await updateData(parsedBackup.data);
-                      alert('✅ Sauvegarde restaurée avec succès !');
+                      alert(`✅ ${t('messages.success.restoreBackup')}`);
                       window.location.reload();
                     }
                   } catch (error) {
-                    alert(`❌ Erreur lors de la restauration : ${error.message}`);
+                    alert(`❌ ${t('messages.importExport.restoreError', { error: error.message })}`);
                   }
                 }}
                 icon={RotateCcw}

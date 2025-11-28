@@ -707,7 +707,7 @@ const TodayTab = () => {
       {/* Exercices */}
       <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">
         <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-          Exercices
+          {t('today.exercises.title')}
         </h3>
         <div className="space-y-3">
           {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
@@ -772,7 +772,7 @@ const TodayTab = () => {
                     );
                   })()}
                   {isChecked && (
-                    <div className="text-green-400 text-sm font-medium">✓ Fait</div>
+                    <div className="text-green-400 text-sm font-medium">✓ {t('today.exercises.completed')}</div>
                   )}
                   <Button
                     variant="primary"
@@ -831,16 +831,16 @@ const TodayTab = () => {
                         <div className="text-sm text-gray-300 mt-1">
                           {exercise.type === 'reps' ? (
                             <>
-                              {exercise.series} séries
+                              {exercise.series} {t('today.exercises.series')}
                               {exercise.repsPerSeries && exercise.repsPerSeries.length > 0 && (
                                 <span className="ml-2">
-                                  ({exercise.repsPerSeries.join(' + ')} reps)
+                                  ({exercise.repsPerSeries.join(' + ')} {t('today.exercises.reps')})
                                 </span>
                               )}
                             </>
                           ) : (
                             <>
-                              {exercise.duration ? `${Math.floor(exercise.duration / 60)}min ${exercise.duration % 60}s` : 'Durée'}
+                              {exercise.duration ? `${Math.floor(exercise.duration / 60)}min ${exercise.duration % 60}s` : t('today.exercises.duration')}
                             </>
                           )}
                           {exercise.materiel && ` • ${exercise.materiel}`}
@@ -849,11 +849,14 @@ const TodayTab = () => {
                         {exercise.completed && (
                           <div className="text-xs text-green-300 mt-1">
                             {exercise.type === 'reps' && exercise.totalReps ? (
-                              `✓ Complété : ${exercise.totalReps} reps`
+                              t('today.exercises.completedWithReps', { reps: exercise.totalReps })
                             ) : exercise.type === 'duration' && exercise.actualDuration ? (
-                              `✓ Complété : ${Math.floor(exercise.actualDuration / 60)}min ${exercise.actualDuration % 60}s`
+                              t('today.exercises.completedWithDuration', { 
+                                minutes: Math.floor(exercise.actualDuration / 60), 
+                                seconds: exercise.actualDuration % 60 
+                              })
                             ) : (
-                              '✓ Complété'
+                              t('today.exercises.completedSimple')
                             )}
                           </div>
                         )}
@@ -937,7 +940,7 @@ const TodayTab = () => {
                 <div className="flex items-center space-x-2">
                   <Input
                     type="number"
-                    placeholder="Min"
+                    placeholder={t('today.exercises.minutes')}
                     value={getCurrentData().reps[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`] || ''}
                     onChange={(e) => updateReps(`complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`, e.target.value, currentDate)}
                     onFocus={() => handleInputFocus(`complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`, { series: `1×${workout.complementaryActivity.duration}min` })}
@@ -945,7 +948,7 @@ const TodayTab = () => {
                     min="0"
                     max="300"
                   />
-                  <span className="text-purple-300 text-sm font-medium">min</span>
+                  <span className="text-purple-300 text-sm font-medium">{t('today.exercises.minutesLabel')}</span>
                 </div>
                 
                 <Button
@@ -1004,12 +1007,20 @@ const TodayTab = () => {
             {t('today.stretches.titleOfDay')}
           </h3>
           <div className="space-y-4">
-            {Object.entries(workout.etirements).map(([moment, description]) => (
+            {Object.entries(workout.etirements).map(([moment, description]) => {
+              // Traduire le moment (Matin, Midi, Soir)
+              const momentKey = moment.toLowerCase();
+              const translatedMoment = momentKey === 'matin' ? t('today.stretchMoments.matin') :
+                                      momentKey === 'midi' ? t('today.stretchMoments.midi') :
+                                      momentKey === 'soir' ? t('today.stretchMoments.soir') :
+                                      moment;
+              
+              return (
               <div key={moment} className="border-l-4 border-purple-500/50 pl-4 bg-slate-700/30 rounded-r-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-medium text-white capitalize flex items-center gap-2">
                     <span className="text-purple-400">•</span>
-                    {moment}
+                    {translatedMoment}
                   </h4>
                   <label className="flex items-center">
                     <Checkbox
@@ -1021,7 +1032,8 @@ const TodayTab = () => {
                 </div>
                 <p className="text-sm text-gray-300">{description}</p>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Boutons de sauvegarde */}
@@ -1080,11 +1092,11 @@ const TodayTab = () => {
                     ...session,
                     activityType,
                     activityName: {
-                      boxing: 'Boxe',
-                      pushups: 'Pompes',
-                      swimming: 'Natation',
-                      jumprope: 'Corde à sauter',
-                      running: 'Course'
+                      boxing: t('today.endurance.activities.boxing'),
+                      pushups: t('today.endurance.activities.pushups'),
+                      swimming: t('today.endurance.activities.swimming'),
+                      jumprope: t('today.endurance.activities.jumprope'),
+                      running: t('today.endurance.activities.running')
                     }[activityType] || activityType
                   });
                 }
@@ -1100,7 +1112,7 @@ const TodayTab = () => {
             <Card.Header>
               <Card.Title className="flex items-center text-orange-200">
                 <Zap className="mr-2" size={20} />
-                Sessions d'endurance d'aujourd'hui
+                {t('today.endurance.sessionsTitle')}
               </Card.Title>
             </Card.Header>
             <Card.Content>
@@ -1115,25 +1127,25 @@ const TodayTab = () => {
                       {session.count && (
                         <div className="text-center">
                           <div className="text-orange-200 font-bold">{session.count}</div>
-                          <div className="text-orange-300">Répétitions</div>
+                          <div className="text-orange-300">{t('today.endurance.repetitions')}</div>
                         </div>
                       )}
                       {session.duration && (
                         <div className="text-center">
                           <div className="text-orange-200 font-bold">{session.duration}min</div>
-                          <div className="text-orange-300">Durée</div>
+                          <div className="text-orange-300">{t('today.endurance.duration')}</div>
                         </div>
                       )}
                       {session.distance && (
                         <div className="text-center">
                           <div className="text-orange-200 font-bold">{session.distance}m</div>
-                          <div className="text-orange-300">Distance</div>
+                          <div className="text-orange-300">{t('today.endurance.distance')}</div>
                         </div>
                       )}
                       {session.jumps && (
                         <div className="text-center">
                           <div className="text-orange-200 font-bold">{session.jumps}</div>
-                          <div className="text-orange-300">Sauts</div>
+                          <div className="text-orange-300">{t('today.endurance.jumps')}</div>
                         </div>
                       )}
                     </div>
@@ -1186,7 +1198,7 @@ const TodayTab = () => {
           icon={MessageSquare}
           className="bg-green-600 hover:bg-green-700"
         >
-          Feedback de session
+          {t('today.sessionFeedback.button')}
         </Button>
       </div>
 

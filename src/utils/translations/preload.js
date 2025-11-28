@@ -39,6 +39,7 @@ export const CRITICAL_NAMESPACES = [
 export const SECONDARY_NAMESPACES = [
   'settings',  // Paramètres (accessible depuis plusieurs endroits)
   'general',   // Termes généraux (jours, minutes, etc.)
+  'messages',  // Messages système (erreurs, succès, import/export)
   'justification', // Justifications de jours
   'calendar',  // Calendrier
   'stats',    // Statistiques
@@ -54,7 +55,8 @@ export const SECONDARY_NAMESPACES = [
   'nutrition',   // Onglet Nutrition
   'garmin',      // Onglet Garmin
   'bodyTracking', // Suivi corporel
-  'nutritionAnalyses' // Analyses nutritionnelles
+  'nutritionAnalyses', // Analyses nutritionnelles
+  'sessionFeedback' // Feedback de séance
 ];
 
 /**

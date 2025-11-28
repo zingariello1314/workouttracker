@@ -20,7 +20,6 @@ import {
   getDayJustification, 
   isDayWithoutActivity,
   JUSTIFICATION_REASONS,
-  JUSTIFICATION_LABELS,
   JUSTIFICATION_ICONS,
   JUSTIFICATION_COLORS
 } from '../../../../utils/dayJustificationUtils';
@@ -81,7 +80,7 @@ const DayJustificationButton = memo(({ date }) => {
   
   // Si justification existe, afficher un badge avec possibilité d'édition
   if (justification) {
-    const reasonLabel = JUSTIFICATION_LABELS[justification.reason] || 'Autre';
+    const reasonLabel = t(`justification.${justification.reason}`) || t('justification.autre');
     const reasonIcon = JUSTIFICATION_ICONS[justification.reason] || '📝';
     const colorClasses = JUSTIFICATION_COLORS[justification.reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE];
     

@@ -4,6 +4,45 @@
     "line2": "Imagination",
     "line3": "Rencontre l'Intelligence"
   },
-  "cta": "COMMENCER L'ENTRAÎNEMENT"
+  "cta": "COMMENCER L'ENTRAÎNEMENT",
+  "loading": {
+    "title": "Chargement de Momentum",
+    "subtitle": "Préparation de votre expérience..."
+  },
+  "about": {
+    "title": "À PROPOS DE MOMENTUM",
+    "description": "Momentum est votre compagnon intelligent pour transformer votre corps et votre esprit. Grâce à l'intelligence artificielle avancée, nous comprenons vos objectifs de fitness et adaptons votre parcours d'entraînement en temps réel.",
+    "features": {
+      "title": "🎯 Fonctionnalités",
+      "items": {
+        "bodyTracking": "• Suivi corporel intelligent",
+        "programs": "• Programmes personnalisés",
+        "predictions": "• Prédictions IA",
+        "analyses": "• Analyses avancées"
+      }
+    },
+    "data": {
+      "title": "📊 Données",
+      "items": {
+        "photos": "• Photos de progression",
+        "metrics": "• Métriques corporelles",
+        "history": "• Historique complet",
+        "statistics": "• Statistiques détaillées"
+      }
+    }
+  },
+  "keywords": {
+    "fitness": "Fitness",
+    "performance": "Performance",
+    "progress": "Progrès",
+    "intelligence": "Intelligence",
+    "startTransformation": "Commencez votre transformation"
+  },
+  "location": {
+    "loading": "Localisation...",
+    "notSupported": "Géolocalisation non supportée",
+    "notAvailable": "Position non disponible"
+  }
 }
+
 

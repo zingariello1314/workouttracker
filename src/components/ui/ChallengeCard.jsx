@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Award, Target, Clock, CheckCircle, MessageSquare, Save, X } from 'lucide-react';
 import Button from './Button';
 import { Input } from './Input';
+import { useTranslation } from '../../utils/translations';
 
 const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
+  const t = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [reps, setReps] = useState('');
   const [duration, setDuration] = useState('');
@@ -19,15 +21,15 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
     const needDistance = ['swimming', 'running'].includes(type);
 
     if (needReps && !reps) {
-      alert('Veuillez renseigner le nombre de répétitions/sauts');
+      alert(t('today.challenges.validation.repsRequired'));
       return;
     }
     if (needDuration && !duration) {
-      alert('Veuillez renseigner la durée (min)');
+      alert(t('today.challenges.validation.durationRequired'));
       return;
     }
     if (needDistance && !distance) {
-      alert('Veuillez renseigner la distance');
+      alert(t('today.challenges.validation.distanceRequired'));
       return;
     }
 
@@ -69,9 +71,11 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
   const getChallengeTypeText = () => {
     switch (challenge.type) {
       case 'ponctuel':
-        return `📅 Date cible: ${challenge.targetDate}`;
+        return `📅 ${t('today.challenges.targetDate')}: ${challenge.targetDate}`;
       case 'recurrent':
-        return `🔄 ${challenge.frequency === 'daily' ? 'Quotidien' : 'Hebdomadaire'} - ${challenge.moment}`;
+        const frequency = challenge.frequency === 'daily' ? t('today.challenges.daily') : t('today.challenges.weekly');
+        const moment = challenge.moment ? t(`today.stretchMoments.${challenge.moment.toLowerCase()}`, challenge.moment) : '';
+        return `🔄 ${frequency}${moment ? ` - ${moment}` : ''}`;
       case 'periode':
         return `📆 ${challenge.startDate} → ${challenge.endDate}`;
       default:
@@ -81,8 +85,8 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
 
   const getGoalText = () => {
     const parts = [];
-    if (challenge.goalCount) parts.push(`${challenge.goalCount} reps`);
-    if (challenge.goalDuration) parts.push(`${challenge.goalDuration} min`);
+    if (challenge.goalCount) parts.push(`${challenge.goalCount} ${t('today.exercises.reps')}`);
+    if (challenge.goalDuration) parts.push(`${challenge.goalDuration} ${t('today.exercises.minutesLabel')}`);
     if (challenge.goalDistance) parts.push(`${challenge.goalDistance} m`);
     return parts.join(' • ');
   };
@@ -111,50 +115,56 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
 
       <div className="space-y-2 text-sm text-slate-300">
         <p>{getChallengeTypeText()}</p>
-        <p className="text-purple-200">🎯 Objectif: {getGoalText()}</p>
+        <p className="text-purple-200">🎯 {t('today.challenges.goal')}: {getGoalText()}</p>
       </div>
 
       {isExpanded && (
         <div className="mt-4 space-y-4 p-4 bg-slate-800/50 rounded-xl border border-slate-600/50">
           <h5 className="font-semibold text-white flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
-            Valider le défi
+            {t('today.challenges.validate')}
           </h5>
           
           <div className="grid grid-cols-2 gap-4">
             {(['pushups','jumprope'].includes(challenge.activityType)) && (
               <div>
-                <label className="block text-sm text-slate-300 mb-1">{challenge.activityType === 'jumprope' ? 'Sauts' : 'Répétitions'}</label>
+                <label className="block text-sm text-slate-300 mb-1">
+                  {challenge.activityType === 'jumprope' ? t('today.endurance.jumps') : t('today.endurance.repetitions')}
+                </label>
                 <Input
                   type="number"
                   value={reps}
                   onChange={(e) => setReps(e.target.value)}
-                  placeholder={challenge.activityType === 'jumprope' ? 'Nombre de sauts' : 'Nombre de reps'}
+                  placeholder={challenge.activityType === 'jumprope' ? t('today.challenges.placeholders.jumps') : t('today.challenges.placeholders.reps')}
                   className="w-full"
                 />
               </div>
             )}
             {(['boxing','running','jumprope','swimming'].includes(challenge.activityType)) && (
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Durée (min)</label>
+                <label className="block text-sm text-slate-300 mb-1">
+                  {t('today.endurance.duration')} ({t('today.exercises.minutesLabel')})
+                </label>
                 <Input
                   type="number"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
-                  placeholder="Durée en minutes"
+                  placeholder={t('today.challenges.placeholders.duration')}
                   className="w-full"
                 />
               </div>
             )}
             {(['swimming','running'].includes(challenge.activityType)) && (
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Distance ({challenge.activityType === 'swimming' ? 'm' : 'km'})</label>
+                <label className="block text-sm text-slate-300 mb-1">
+                  {t('today.endurance.distance')} ({challenge.activityType === 'swimming' ? 'm' : 'km'})
+                </label>
                 <Input
                   type="number"
                   step="0.01"
                   value={distance}
                   onChange={(e) => setDistance(e.target.value)}
-                  placeholder={challenge.activityType === 'swimming' ? 'Distance en mètres' : 'Distance en km'}
+                  placeholder={challenge.activityType === 'swimming' ? t('today.challenges.placeholders.distanceMeters') : t('today.challenges.placeholders.distanceKm')}
                   className="w-full"
                 />
               </div>
@@ -162,11 +172,11 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
           </div>
 
           <div>
-            <label className="block text-sm text-slate-300 mb-1">Notes</label>
+            <label className="block text-sm text-slate-300 mb-1">{t('today.challenges.notes')}</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Comment s'est passé le défi ?"
+              placeholder={t('today.challenges.placeholders.notes')}
               className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-purple-500 focus:outline-none"
               rows={3}
             />
@@ -178,14 +188,14 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
               onClick={() => setIsExpanded(false)}
               className="text-slate-400 hover:text-white"
             >
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleComplete}
               disabled={isCompleting || (!reps && !duration)}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              {isCompleting ? 'Validation...' : 'Valider le défi'}
+              {isCompleting ? t('today.challenges.validating') : t('today.challenges.validate')}
             </Button>
           </div>
         </div>

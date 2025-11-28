@@ -15,6 +15,7 @@
  */
 
 import { LANGUAGES } from './constants';
+import { getBestAvailableLocale, getBaseLanguage } from './regions';
 import logger from '../logger';
 
 const log = logger.module('translations-detection');
@@ -129,25 +130,92 @@ const extractLanguageCode = (locale) => {
  * 2. Détection automatique du navigateur
  * 3. Français par défaut
  * 
+ * ✅ PHASE 5.1 : Support des locales complètes (fr-FR, en-US, etc.)
+ * 
  * @param {Function} getStoredLanguage - Fonction pour récupérer la langue depuis localStorage
- * @returns {string} Code de langue final ('fr' ou 'en')
+ * @param {boolean} returnLocale - Si true, retourne la locale complète (ex: 'fr-FR'), sinon la langue de base (ex: 'fr')
+ * @returns {string} Code de langue final ('fr' ou 'en') ou locale complète si returnLocale=true
  */
-export const detectLanguageWithPriority = (getStoredLanguage) => {
+export const detectLanguageWithPriority = (getStoredLanguage, returnLocale = false) => {
   try {
     // 1. Vérifier localStorage en priorité (préférence utilisateur)
     const stored = getStoredLanguage();
-    if (stored && (stored === LANGUAGES.FR || stored === LANGUAGES.EN)) {
-      log.debug(`[detectLanguageWithPriority] Langue depuis localStorage: ${stored}`);
-      return stored;
+    if (stored) {
+      // Support rétrocompatible : si c'est une langue de base (fr, en), la retourner
+      if (stored === LANGUAGES.FR || stored === LANGUAGES.EN) {
+        if (returnLocale) {
+          // Convertir en locale complète
+          const locale = getBestAvailableLocale(`${stored}-${stored === LANGUAGES.FR ? 'FR' : 'US'}`);
+          log.debug(`[detectLanguageWithPriority] Locale depuis localStorage: ${locale}`);
+          return locale;
+        }
+        log.debug(`[detectLanguageWithPriority] Langue depuis localStorage: ${stored}`);
+        return stored;
+      }
+      
+      // Si c'est déjà une locale complète (fr-FR, en-US, etc.)
+      if (stored.includes('-')) {
+        const bestLocale = getBestAvailableLocale(stored);
+        log.debug(`[detectLanguageWithPriority] Locale depuis localStorage: ${bestLocale}`);
+        return returnLocale ? bestLocale : getBaseLanguage(bestLocale);
+      }
     }
     
     // 2. Détecter depuis le navigateur
-    const detected = detectBrowserLanguage();
-    log.debug(`[detectLanguageWithPriority] Langue détectée: ${detected}`);
-    return detected;
+    if (returnLocale) {
+      // Détecter la locale complète depuis navigator
+      const browserLocale = detectBrowserLocale();
+      const bestLocale = getBestAvailableLocale(browserLocale);
+      log.debug(`[detectLanguageWithPriority] Locale détectée: ${bestLocale}`);
+      return bestLocale;
+    } else {
+      const detected = detectBrowserLanguage();
+      log.debug(`[detectLanguageWithPriority] Langue détectée: ${detected}`);
+      return detected;
+    }
   } catch (error) {
     log.error('[detectLanguageWithPriority] Erreur lors de la détection:', error);
-    return LANGUAGES.FR;
+    return returnLocale ? 'fr-FR' : LANGUAGES.FR;
   }
 };
+
+/**
+ * ✅ PHASE 5.1 : Détecte la locale complète du navigateur (ex: 'fr-FR', 'en-US')
+ * @returns {string} Locale complète détectée
+ */
+export const detectBrowserLocale = () => {
+  if (typeof navigator === 'undefined') {
+    return 'fr-FR';
+  }
+  
+  try {
+    // Utiliser navigator.languages en priorité
+    const languages = navigator.languages || [];
+    for (const lang of languages) {
+      if (lang && typeof lang === 'string') {
+        const bestLocale = getBestAvailableLocale(lang);
+        if (bestLocale) {
+          log.debug(`[detectBrowserLocale] Locale détectée depuis navigator.languages: ${lang} -> ${bestLocale}`);
+          return bestLocale;
+        }
+      }
+    }
+    
+    // Fallback vers navigator.language
+    if (navigator.language) {
+      const bestLocale = getBestAvailableLocale(navigator.language);
+      if (bestLocale) {
+        log.debug(`[detectBrowserLocale] Locale détectée depuis navigator.language: ${navigator.language} -> ${bestLocale}`);
+        return bestLocale;
+      }
+    }
+    
+    // Fallback final
+    return 'fr-FR';
+  } catch (error) {
+    log.error('[detectBrowserLocale] Erreur lors de la détection:', error);
+    return 'fr-FR';
+  }
+};
+
 

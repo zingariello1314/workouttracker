@@ -23,15 +23,15 @@ import Button from '../ui/Button';
 import { TextArea } from '../ui/Input';
 import { 
   JUSTIFICATION_REASONS, 
-  JUSTIFICATION_LABELS, 
   JUSTIFICATION_ICONS,
   isValidJustificationReason,
   isValidJustificationNote,
   isValidJustificationDate,
   MAX_NOTE_LENGTH
 } from '../../utils/dayJustificationUtils';
-import { formatDate, getDateStr } from '../../utils/dateUtils';
+import { getDateStr } from '../../utils/dateUtils';
 import { useTranslation } from '../../utils/translations';
+import { useFormatters } from '../../utils/translations/formatters-hook';
 
 /**
  * Composant JustificationModal
@@ -52,6 +52,7 @@ const JustificationModal = ({
   const { setDayJustification, removeDayJustification } = useWorkout();
   const { showSuccess, showError } = useToast();
   const t = useTranslation();
+  const { formatDate: formatLocaleDate } = useFormatters();
   
   // ✅ OPTIMISATION : Normaliser la date en string
   const dateStr = useMemo(() => {
@@ -59,12 +60,17 @@ const JustificationModal = ({
     return typeof date === 'string' ? date : getDateStr(date);
   }, [date]);
   
-  // ✅ OPTIMISATION : Formater la date pour affichage
+  // ✅ OPTIMISATION : Formater la date pour affichage (localisé)
   const formattedDate = useMemo(() => {
     if (!dateStr) return '';
     const dateObj = typeof date === 'string' ? new Date(date + 'T00:00:00') : date;
-    return formatDate(dateObj);
-  }, [dateStr, date]);
+    return formatLocaleDate(dateObj, { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  }, [dateStr, date, formatLocaleDate]);
   
   // ✅ OPTIMISATION : État local avec initialisation depuis existingJustification
   const [reason, setReason] = useState(() => existingJustification?.reason || '');
@@ -153,7 +159,7 @@ const JustificationModal = ({
     
     try {
       await setDayJustification(dateStr, reason, note);
-      showSuccess(t('justification.messages.saved'), t('justification.messages.savedWithReason', 'Jour justifié : {{reason}}', { reason: JUSTIFICATION_LABELS[reason] }));
+      showSuccess(t('justification.messages.saved'), t('justification.messages.savedWithReason', 'Jour justifié : {{reason}}', { reason: t(`justification.${reason}`) }));
       onClose();
     } catch (error) {
       console.error('[JustificationModal] Erreur lors de la sauvegarde:', error);
@@ -275,7 +281,7 @@ const JustificationModal = ({
             {Object.entries(JUSTIFICATION_REASONS).map(([key, value], index) => {
               const isFirst = index === 0;
               const Icon = JUSTIFICATION_ICONS[value];
-              const label = JUSTIFICATION_LABELS[value];
+              const label = t(`justification.${value}`);
               const isSelected = reason === value;
               
               return (
@@ -297,7 +303,7 @@ const JustificationModal = ({
                     checked={isSelected}
                     onChange={() => handleReasonChange(value)}
                     className="w-5 h-5 text-purple-600 bg-slate-700 border-slate-500 focus:ring-purple-500 focus:ring-2"
-                    aria-label={`Raison : ${label}`}
+                    aria-label={t('justification.ariaLabels.reason', { label })}
                   />
                   <span className="text-2xl" aria-hidden="true">{Icon}</span>
                   <span className="flex-1 font-medium">{label}</span>

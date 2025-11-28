@@ -12,10 +12,12 @@ import { exportBanners, downloadBannerExport } from '../utils/bannerExport';
 import { importBanners } from '../utils/bannerImport';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import logger from '../utils/logger';
+import { useTranslation } from '../utils/translations';
 
 const log = logger.component('BannerExportImport');
 
 export default function BannerExportImport() {
+  const t = useTranslation();
   const { backgroundImages, saveImages, loadImages, checkSystemHealth } = useHomepageImages();
   const [exportStatus, setExportStatus] = useState(null); // 'loading' | 'success' | 'error'
   const [importStatus, setImportStatus] = useState(null); // 'loading' | 'success' | 'error'
@@ -107,7 +109,7 @@ export default function BannerExportImport() {
     } catch (error) {
       log.error('❌ Erreur import', error);
       setImportStatus('error');
-      alert(`❌ Erreur lors de l'import: ${error.message}`);
+      alert(`❌ ${t('messages.importExport.importErrorWithDetail', { error: error.message })}`);
       
       setTimeout(() => {
         setImportStatus(null);
@@ -185,7 +187,7 @@ export default function BannerExportImport() {
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Erreur lors de l'export
+            {t('messages.importExport.exportError')}
           </div>
         )}
 
@@ -250,7 +252,7 @@ export default function BannerExportImport() {
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Erreur lors de l'import
+            {t('messages.importExport.importError')}
           </div>
         )}
 

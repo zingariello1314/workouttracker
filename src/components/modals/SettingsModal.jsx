@@ -48,7 +48,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Paramètres" size="lg" variant="glass">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('settings.modal.title')} size="lg" variant="glass">
       <div className="space-y-6 p-6">
         {/* Variante de semaine */}
         <Card>

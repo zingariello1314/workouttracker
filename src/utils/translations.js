@@ -5,6 +5,8 @@ import { LRUCache } from './lruCache';
 import logger from './logger';
 import { loadTranslationNamespace, getCachedNamespace } from './translations/loader';
 import { tPluralFromNamespaces, getPluralKey } from './translations/pluralization';
+import { validateAndWarn } from './translations/validator';
+import { initHotReload } from './translations/hot-reload';
 
 const log = logger.module('translations');
 
@@ -26,6 +28,11 @@ const log = logger.module('translations');
 const TRANSLATION_CACHE_SIZE = 1000;
 const translationCache = new LRUCache(TRANSLATION_CACHE_SIZE, { enableStats: false });
 
+// ✅ PHASE 4.3 : Initialiser le hot-reload en développement
+if (process.env.NODE_ENV === 'development') {
+  initHotReload(translationCache);
+}
+
 // Cache de la langue actuelle pour invalidation
 let currentCachedLanguage = null;
 
@@ -46,15 +53,38 @@ const hashParams = (params) => {
 
 /**
  * Interpole les paramètres dans un template de traduction
- * @param {string} template - Template avec {{variable}}
+ * ✅ PHASE 5.3 : Support de l'interpolation avancée avec fallback vers simple
+ * 
+ * @param {string} template - Template avec {{variable}} ou syntaxe avancée
  * @param {Object} params - Paramètres à interpoler
+ * @param {string} language - Langue actuelle (pour les formatters)
  * @returns {string} Texte interpolé
  */
-const interpolateTranslation = (template, params) => {
+const interpolateTranslation = (template, params, language = LANGUAGES.FR) => {
   if (!params || Object.keys(params).length === 0) {
     return template;
   }
   
+  // ✅ PHASE 5.3 : Essayer l'interpolation avancée d'abord
+  // Si le template contient des patterns avancés (conditions, formatage), utiliser interpolateAdvanced
+  const hasAdvancedPatterns = /\{\{if\s+\w+\s+then/.test(template) || 
+                                /\{\{\w+\|[^}]+\}\}/.test(template);
+  
+  if (hasAdvancedPatterns) {
+    // Préparer les formatters avec la locale
+    const locale = language === LANGUAGES.FR ? 'fr-FR' : 'en-US';
+    const formatters = {
+      number: (value, options) => builtInFormatters.number(value, locale, options),
+      date: (value, options) => builtInFormatters.date(value, locale, options),
+      currency: (value, currency) => builtInFormatters.currency(value, currency, locale),
+      percent: (value) => builtInFormatters.percent(value, locale),
+      duration: (value) => builtInFormatters.duration(value)
+    };
+    
+    return interpolateAdvanced(template, params, formatters);
+  }
+  
+  // ✅ RÉTROCOMPATIBILITÉ : Fallback vers interpolation simple
   // Support de {{variable}} et {variable} pour flexibilité
   return template.replace(/\{\{(\w+)\}\}|\{(\w+)\}/g, (match, key1, key2) => {
     const key = key1 || key2;
@@ -237,7 +267,31 @@ export const useTranslation = () => {
    */
   const parseKey = (key) => {
     const parts = key.split('.');
-            const knownNamespaces = ['nav', 'home', 'settings', 'common', 'justification', 'calendar', 'stats', 'today', 'general', 'exercises', 'dataEntry', 'program', 'exercisesTab', 'endurance', 'progress', 'history', 'charts', 'nutrition', 'garmin', 'bodyTracking', 'nutritionAnalyses'];
+    const knownNamespaces = [
+      'nav',
+      'home',
+      'settings',
+      'common',
+      'justification',
+      'calendar',
+      'stats',
+      'today',
+      'general',
+      'exercises',
+      'dataEntry',
+      'program',
+      'exercisesTab',
+      'endurance',
+      'progress',
+      'history',
+      'charts',
+      'nutrition',
+      'garmin',
+      'bodyTracking',
+      'nutritionAnalyses',
+      'messages',
+      'sessionFeedback'
+    ];
     
     // Si le premier segment est un namespace connu, l'utiliser
     if (knownNamespaces.includes(parts[0])) {
@@ -291,6 +345,52 @@ export const useTranslation = () => {
     });
   }, [language]);
   
+  // ✅ PHASE 4.3 : Écouter les événements de hot-reload pour recharger les namespaces
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
+    
+    const handleHotReload = (event) => {
+      const { namespaces, languages, force } = event.detail || {};
+      
+      // Si force est true, tout recharger
+      if (force) {
+        translationCache.clear();
+        setLoadedNamespaces({});
+        log.debug('[useTranslation] Hot-reload: tous les namespaces rechargés');
+        return;
+      }
+      
+      // Sinon, recharger seulement les namespaces affectés
+      if (languages && languages.includes(language)) {
+        const affectedNamespaces = namespaces || [];
+        
+        // Invalider les namespaces affectés
+        affectedNamespaces.forEach(namespace => {
+          setLoadedNamespaces(prev => {
+            const updated = { ...prev };
+            delete updated[namespace];
+            return updated;
+          });
+        });
+        
+        // Invalider le cache de traduction
+        translationCache.clear();
+        
+        log.debug(`[useTranslation] Hot-reload: namespaces ${affectedNamespaces.join(', ')} rechargés`);
+      }
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('i18n:reload', handleHotReload);
+      
+      return () => {
+        window.removeEventListener('i18n:reload', handleHotReload);
+      };
+    }
+  }, [language]);
+  
   /**
    * Récupère une traduction depuis les namespaces ou l'ancien système
    * @param {string} key - Clé de traduction
@@ -317,8 +417,22 @@ export const useTranslation = () => {
   }, [loadedNamespaces]);
   
   // ✅ OPTIMISATION : Mémoriser la fonction t avec la langue actuelle
-  const t = useCallback((key, fallback = key, params = {}) => {
+  const t = useCallback((key, fallbackOrParams = key, paramsOrUndefined = {}) => {
     const lang = language || LANGUAGES.FR;
+    
+    // ✅ Détection automatique : si le deuxième argument est un objet (et pas une string), c'est params
+    let fallback = key;
+    let params = {};
+    
+    if (typeof fallbackOrParams === 'object' && fallbackOrParams !== null && !Array.isArray(fallbackOrParams)) {
+      // Le deuxième argument est un objet → c'est params, pas fallback
+      params = fallbackOrParams;
+      fallback = key; // Utiliser la clé comme fallback par défaut
+    } else {
+      // Le deuxième argument est une string → c'est fallback
+      fallback = fallbackOrParams;
+      params = paramsOrUndefined;
+    }
     
     // ✅ PHASE 2.3 : Support de la pluralisation si params.count est présent
     if (params && typeof params.count === 'number') {
@@ -375,6 +489,12 @@ export const useTranslation = () => {
       });
     }
     
+    // ✅ PHASE 4.1 : Validation des clés manquantes (uniquement en développement)
+    if (process.env.NODE_ENV === 'development') {
+      // Valider la clé même si on utilise le fallback (pour détecter les clés manquantes)
+      validateAndWarn(key, lang, translations);
+    }
+    
     // Utiliser le fallback si traduction non trouvée
     if (!translation) {
       translation = fallback;
@@ -382,7 +502,7 @@ export const useTranslation = () => {
     
     // Interpoler les paramètres si présents
     const result = params && Object.keys(params).length > 0
-      ? interpolateTranslation(translation, params)
+      ? interpolateTranslation(translation, params, lang)
       : translation;
     
     // ✅ OPTIMISATION : Mettre en cache (éviction automatique si limite atteinte)

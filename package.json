@@ -22,7 +22,8 @@
     "bench:load": "node scripts/bench/loadData.js",
     "bench:network": "node scripts/bench/networkResilience.js",
     "bench:metrics": "node scripts/bench/exportServerMetrics.js",
-    "bench:metrics:diff": "node scripts/bench/compareMetrics.js"
+    "bench:metrics:diff": "node scripts/bench/compareMetrics.js",
+    "i18n:extract": "node scripts/extract-translations.js"
   },
   "dependencies": {
     "@mediapipe/pose": "^0.5.1635988167",

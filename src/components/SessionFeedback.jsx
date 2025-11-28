@@ -18,8 +18,29 @@ import {
 } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
 import { getDateStr } from '../utils/dateUtils';
+import { useTranslation } from '../utils/translations';
+import { useFormatters } from '../utils/translations/formatters-hook';
 
 const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
+  const t = useTranslation();
+  const { formatDate } = useFormatters();
+  
+  const environmentOptions = [
+    { value: 'salle', label: t('sessionFeedback.step3.environment.gym'), icon: '🏋️' },
+    { value: 'maison', label: t('sessionFeedback.step3.environment.home'), icon: '🏠' },
+    { value: 'exterieur', label: t('sessionFeedback.step3.environment.outdoor'), icon: '🌳' },
+    { value: 'parc', label: t('sessionFeedback.step3.environment.park'), icon: '🌲' }
+  ];
+
+  const weatherOptions = [
+    { value: 'ensoleille', label: t('sessionFeedback.step3.weather.sunny'), icon: '☀️' },
+    { value: 'nuageux', label: t('sessionFeedback.step3.weather.cloudy'), icon: '☁️' },
+    { value: 'pluvieux', label: t('sessionFeedback.step3.weather.rainy'), icon: '🌧️' },
+    { value: 'venteux', label: t('sessionFeedback.step3.weather.windy'), icon: '💨' },
+    { value: 'froid', label: t('sessionFeedback.step3.weather.cold'), icon: '❄️' },
+    { value: 'chaud', label: t('sessionFeedback.step3.weather.hot'), icon: '🔥' }
+  ];
+  
   const [feedback, setFeedback] = useState({
     ressenti: 0, // 1-10
     difficulte: 0, // 1-10
@@ -61,22 +82,6 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
   const equipmentOptions = [
     'Haltères', 'Barres', 'Machines', 'Poids du corps', 'Élastiques', 
     'Kettlebells', 'TRX', 'Médecine ball', 'Corde à sauter', 'Tapis de course'
-  ];
-
-  const environmentOptions = [
-    { value: 'salle', label: '🏋️ Salle de sport', icon: '🏋️' },
-    { value: 'maison', label: '🏠 À la maison', icon: '🏠' },
-    { value: 'exterieur', label: '🌳 Extérieur', icon: '🌳' },
-    { value: 'parc', label: '🌲 Parc', icon: '🌲' }
-  ];
-
-  const weatherOptions = [
-    { value: 'ensoleille', label: '☀️ Ensoleillé', icon: '☀️' },
-    { value: 'nuageux', label: '☁️ Nuageux', icon: '☁️' },
-    { value: 'pluvieux', label: '🌧️ Pluvieux', icon: '🌧️' },
-    { value: 'venteux', label: '💨 Venteux', icon: '💨' },
-    { value: 'froid', label: '❄️ Froid', icon: '❄️' },
-    { value: 'chaud', label: '🔥 Chaud', icon: '🔥' }
   ];
 
   useEffect(() => {
@@ -177,7 +182,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
           </button>
         ))}
         <span className="ml-2 text-slate-300 text-sm font-medium">
-          {value > 0 ? `${value}/10` : 'Non évalué'}
+          {value > 0 ? `${value}/10` : t('sessionFeedback.step1.notEvaluated')}
         </span>
       </div>
       {value > 0 && (
@@ -189,54 +194,19 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
   );
 
   const getValueDescription = (field, value) => {
-    const descriptions = {
-      ressenti: {
-        1: '😞 Très mauvais', 2: '😔 Mauvais', 3: '😐 Pas terrible', 4: '😕 Moyen-',
-        5: '😐 Moyen', 6: '🙂 Correct', 7: '😊 Bien', 8: '😄 Très bien',
-        9: '🤩 Excellent', 10: '🚀 Parfait!'
-      },
-      difficulte: {
-        1: '😴 Très facile', 2: '😌 Facile', 3: '🙂 Accessible', 4: '💪 Modéré-',
-        5: '💪 Modéré', 6: '🔥 Challengeant', 7: '💥 Difficile', 8: '🚀 Très difficile',
-        9: '🔥 Extrême', 10: '💀 Au maximum'
-      },
-      energieDebut: {
-        1: '😴 Épuisé', 2: '😪 Très fatigué', 3: '😔 Fatigué', 4: '😐 Peu d\'énergie',
-        5: '🙂 Énergie normale', 6: '😊 Bonne énergie', 7: '😄 Très énergique', 8: '🤩 Plein d\'énergie',
-        9: '🚀 Débordant d\'énergie', 10: '⚡ Énergie maximale'
-      },
-      energieFin: {
-        1: '😵 Complètement vidé', 2: '😪 Très épuisé', 3: '😔 Épuisé', 4: '😐 Fatigué',
-        5: '🙂 Normalement fatigué', 6: '😊 Encore de l\'énergie', 7: '😄 Bien récupéré', 8: '🤩 Plein d\'énergie',
-        9: '🚀 Prêt à continuer', 10: '⚡ Inépuisable'
-      },
-      motivation: {
-        1: '😞 Aucune envie', 2: '😔 Très peu motivé', 3: '😐 Pas motivé', 4: '😕 Peu motivé',
-        5: '🙂 Motivation normale', 6: '😊 Bien motivé', 7: '😄 Très motivé', 8: '🤩 Super motivé',
-        9: '🚀 Hyper motivé', 10: '🔥 Motivation au max'
-      },
-      douleur: {
-        0: '😊 Aucune douleur', 1: '🙂 Très légère', 2: '😐 Légère', 3: '😕 Modérée',
-        4: '😔 Gênante', 5: '😣 Inconfortable', 6: '😖 Douloureuse', 7: '😫 Très douloureuse',
-        8: '😰 Intense', 9: '😱 Très intense', 10: '🚨 Insupportable'
-      },
-      sommeil: {
-        1: '😴 Très mauvais', 2: '😪 Mauvais', 3: '😔 Médiocre', 4: '😐 Pas terrible',
-        5: '🙂 Correct', 6: '😊 Bon', 7: '😄 Très bon', 8: '🤩 Excellent',
-        9: '🚀 Parfait', 10: '⭐ Réparateur'
-      },
-      hydratation: {
-        1: '🏜️ Très déshydraté', 2: '😰 Déshydraté', 3: '😔 Mal hydraté', 4: '😐 Peu hydraté',
-        5: '🙂 Hydratation normale', 6: '😊 Bien hydraté', 7: '😄 Très bien hydraté', 8: '🤩 Parfaitement hydraté',
-        9: '💧 Hydratation optimale', 10: '🌊 Hydratation parfaite'
-      },
-      nutrition: {
-        1: '🍔 Très mauvaise', 2: '😔 Mauvaise', 3: '😐 Médiocre', 4: '😕 Pas terrible',
-        5: '🙂 Correcte', 6: '😊 Bonne', 7: '😄 Très bonne', 8: '🤩 Excellente',
-        9: '🥗 Optimale', 10: '⭐ Parfaite'
-      }
+    const fieldMap = {
+      ressenti: 'feeling',
+      difficulte: 'difficulty',
+      energieDebut: 'energyBefore',
+      energieFin: 'energyAfter',
+      motivation: 'motivation',
+      douleur: 'pain',
+      sommeil: 'sleep',
+      hydratation: 'hydration',
+      nutrition: 'nutrition'
     };
-    return descriptions[field]?.[value] || '';
+    const mappedField = fieldMap[field] || field;
+    return t(`sessionFeedback.descriptions.${mappedField}.${value}`, '');
   };
 
   const getRessentiFace = (value) => {
@@ -264,10 +234,10 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               <MessageSquare className="text-purple-400" />
-              Feedback de séance
+              {t('sessionFeedback.title')}
             </h2>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-400">Étape {currentStep}/{totalSteps}</span>
+              <span className="text-sm text-slate-400">{t('sessionFeedback.step', { current: currentStep, total: totalSteps })}</span>
               <div className="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
                 <div 
                   className={`h-full transition-all duration-300 ${getProgressColor()}`}
@@ -290,32 +260,32 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
             <div className="bg-slate-700/50 rounded-lg p-4 mb-6">
               <h3 className="text-white font-medium mb-3 flex items-center gap-2">
                 <Activity className="text-green-400" size={16} />
-                Résumé de ta séance
+                {t('sessionFeedback.summary.title')}
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">
                     {sessionData.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0}
                   </div>
-                  <div className="text-slate-400">Total reps</div>
+                  <div className="text-slate-400">{t('sessionFeedback.summary.totalReps')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">
                     {sessionData.exercises?.length || 0}
                   </div>
-                  <div className="text-slate-400">Exercices</div>
+                  <div className="text-slate-400">{t('sessionFeedback.summary.exercises')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">
                     {Math.round((sessionData.duration || 0) / 60) || 'N/A'}min
                   </div>
-                  <div className="text-slate-400">Durée estimée</div>
+                  <div className="text-slate-400">{t('sessionFeedback.summary.estimatedDuration')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">
-                    {new Date().toLocaleDateString('fr-FR', { weekday: 'short' })}
+                    {formatDate(new Date(), { weekday: 'short' })}
                   </div>
-                  <div className="text-slate-400">Aujourd'hui</div>
+                  <div className="text-slate-400">{t('sessionFeedback.summary.today')}</div>
                 </div>
               </div>
             </div>
@@ -326,27 +296,27 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <Heart className="text-red-400" />
-                1. Ressenti général
+                {t('sessionFeedback.step1.title')}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    {renderStarRating('ressenti', 'Comment tu te sens globalement ?', feedback.ressenti, 'green')}
+                    {renderStarRating('ressenti', t('sessionFeedback.step1.questions.feeling'), feedback.ressenti, 'green')}
                     {getRessentiFace(feedback.ressenti)}
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  {renderStarRating('difficulte', 'Quelle était la difficulté ?', feedback.difficulte, 'red')}
+                  {renderStarRating('difficulte', t('sessionFeedback.step1.questions.difficulty'), feedback.difficulte, 'red')}
                 </div>
 
                 <div className="space-y-4">
-                  {renderStarRating('motivation', 'Ton niveau de motivation ?', feedback.motivation, 'purple')}
+                  {renderStarRating('motivation', t('sessionFeedback.step1.questions.motivation'), feedback.motivation, 'purple')}
                 </div>
 
                 <div className="space-y-4">
-                  {renderStarRating('douleur', 'Niveau de douleur/gêne ?', feedback.douleur, 'orange', '0 = aucune douleur')}
+                  {renderStarRating('douleur', t('sessionFeedback.step1.questions.pain'), feedback.douleur, 'orange', t('sessionFeedback.step1.questions.painHint'))}
                 </div>
               </div>
 
@@ -354,13 +324,13 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
               <div className="space-y-3">
                 <label className="text-white font-medium flex items-center gap-2">
                   <Target className="text-blue-400" size={16} />
-                  As-tu atteint ton objectif de séance ?
+                  {t('sessionFeedback.step1.goal.title')}
                 </label>
                 <div className="flex gap-3">
                   {[
-                    { value: true, label: '✅ Oui, objectif atteint!', color: 'bg-green-600' },
-                    { value: false, label: '❌ Non, pas cette fois', color: 'bg-red-600' },
-                    { value: null, label: '🤷 Pas d\'objectif précis', color: 'bg-slate-600' }
+                    { value: true, label: t('sessionFeedback.step1.goal.yes'), color: 'bg-green-600' },
+                    { value: false, label: t('sessionFeedback.step1.goal.no'), color: 'bg-red-600' },
+                    { value: null, label: t('sessionFeedback.step1.goal.none'), color: 'bg-slate-600' }
                   ].map(option => (
                     <button
                       key={String(option.value)}
@@ -384,28 +354,28 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <Zap className="text-yellow-400" />
-                2. Énergie et condition
+                {t('sessionFeedback.step2.title')}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  {renderStarRating('energieDebut', 'Énergie avant la séance', feedback.energieDebut, 'blue')}
+                  {renderStarRating('energieDebut', t('sessionFeedback.step2.questions.energyBefore'), feedback.energieDebut, 'blue')}
                 </div>
 
                 <div className="space-y-4">
-                  {renderStarRating('energieFin', 'Énergie après la séance', feedback.energieFin, 'cyan')}
+                  {renderStarRating('energieFin', t('sessionFeedback.step2.questions.energyAfter'), feedback.energieFin, 'cyan')}
                 </div>
 
                 <div className="space-y-4">
-                  {renderStarRating('sommeil', 'Qualité du sommeil (nuit précédente)', feedback.sommeil, 'indigo')}
+                  {renderStarRating('sommeil', t('sessionFeedback.step2.questions.sleep'), feedback.sommeil, 'indigo')}
                 </div>
 
                 <div className="space-y-4">
-                  {renderStarRating('hydratation', 'Niveau d\'hydratation', feedback.hydratation, 'blue')}
+                  {renderStarRating('hydratation', t('sessionFeedback.step2.questions.hydration'), feedback.hydratation, 'blue')}
                 </div>
 
                 <div className="space-y-4 md:col-span-2">
-                  {renderStarRating('nutrition', 'Qualité de ta nutrition aujourd\'hui', feedback.nutrition, 'green')}
+                  {renderStarRating('nutrition', t('sessionFeedback.step2.questions.nutrition'), feedback.nutrition, 'green')}
                 </div>
               </div>
 
@@ -414,20 +384,20 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
                 <div className="bg-slate-700/30 rounded-lg p-4">
                   <h4 className="text-white font-medium mb-2 flex items-center gap-2">
                     <TrendingUp size={16} className="text-green-400" />
-                    📊 Analyse énergétique
+                    {t('sessionFeedback.step2.analysis.title')}
                   </h4>
                   <div className="text-sm text-slate-300">
                     {feedback.energieFin > feedback.energieDebut && (
-                      <div className="text-green-400">⬆️ Tu as gagné en énergie pendant la séance ! Excellent signe.</div>
+                      <div className="text-green-400">{t('sessionFeedback.step2.analysis.gained')}</div>
                     )}
                     {feedback.energieFin === feedback.energieDebut && (
-                      <div className="text-blue-400">➡️ Énergie stable. Bonne gestion de l'effort.</div>
+                      <div className="text-blue-400">{t('sessionFeedback.step2.analysis.stable')}</div>
                     )}
                     {feedback.energieFin < feedback.energieDebut && feedback.energieFin >= 5 && (
-                      <div className="text-yellow-400">⬇️ Légère baisse d'énergie, mais tu restes dans le vert.</div>
+                      <div className="text-yellow-400">{t('sessionFeedback.step2.analysis.slightDrop')}</div>
                     )}
                     {feedback.energieFin < feedback.energieDebut && feedback.energieFin < 5 && (
-                      <div className="text-orange-400">⬇️ Grosse dépense énergétique. Pense à bien récupérer !</div>
+                      <div className="text-orange-400">{t('sessionFeedback.step2.analysis.bigDrop')}</div>
                     )}
                   </div>
                 </div>
@@ -440,12 +410,12 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <Calendar className="text-purple-400" />
-                3. Contexte de la séance
+                {t('sessionFeedback.step3.title')}
               </h3>
 
               {/* Environnement */}
               <div className="space-y-3">
-                <label className="text-white font-medium">Où as-tu fait ta séance ?</label>
+                <label className="text-white font-medium">{t('sessionFeedback.step3.environment.title')}</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {environmentOptions.map(env => (
                     <button
@@ -467,7 +437,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
               {/* Météo si extérieur */}
               {(feedback.environnement === 'exterieur' || feedback.environnement === 'parc') && (
                 <div className="space-y-3">
-                  <label className="text-white font-medium">Quel temps faisait-il ?</label>
+                  <label className="text-white font-medium">{t('sessionFeedback.step3.weather.title')}</label>
                   <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                     {weatherOptions.map(weather => (
                       <button
@@ -489,7 +459,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
 
               {/* Équipement utilisé */}
               <div className="space-y-3">
-                <label className="text-white font-medium">Quel équipement as-tu utilisé ?</label>
+                <label className="text-white font-medium">{t('sessionFeedback.step3.equipment.title')}</label>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   {equipmentOptions.map(equipment => (
                     <button
@@ -509,7 +479,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
 
               {/* Partenaire */}
               <div className="space-y-3">
-                <label className="text-white font-medium">As-tu fait ta séance seul(e) ?</label>
+                <label className="text-white font-medium">{t('sessionFeedback.step3.partner.title')}</label>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setFeedback(prev => ({ ...prev, partenaire: false }))}
@@ -519,7 +489,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
                         : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     }`}
                   >
-                    🧘 Seul(e)
+                    {t('sessionFeedback.step3.partner.alone')}
                   </button>
                   <button
                     onClick={() => setFeedback(prev => ({ ...prev, partenaire: true }))}
@@ -529,19 +499,19 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
                         : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     }`}
                   >
-                    👥 Avec quelqu'un
+                    {t('sessionFeedback.step3.partner.withSomeone')}
                   </button>
                 </div>
               </div>
 
               {/* Temps de repos */}
               <div className="space-y-3">
-                <label className="text-white font-medium">Temps de repos entre les séries</label>
+                <label className="text-white font-medium">{t('sessionFeedback.step3.restTime.title')}</label>
                 <input
                   type="text"
                   value={feedback.tempsRepos}
                   onChange={(e) => setFeedback(prev => ({ ...prev, tempsRepos: e.target.value }))}
-                  placeholder="ex: 1-2 min, 30-45 sec, variable..."
+                  placeholder={t('sessionFeedback.step3.restTime.placeholder')}
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
@@ -553,12 +523,12 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <Award className="text-yellow-400" />
-                4. Derniers détails
+                {t('sessionFeedback.step4.title')}
               </h3>
 
               {/* Tags prédéfinis */}
               <div className="space-y-4">
-                <label className="text-white font-medium">Comment décrirais-tu cette séance ?</label>
+                <label className="text-white font-medium">{t('sessionFeedback.step4.tags.title')}</label>
                 <div className="flex flex-wrap gap-2">
                   {predefinedTags.map(tag => (
                     <button
@@ -580,36 +550,36 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
               <div className="space-y-3">
                 <label className="text-white font-medium flex items-center gap-2">
                   <Target className="text-green-400" size={16} />
-                  Quel est ton objectif pour la prochaine séance ?
+                  {t('sessionFeedback.step4.nextGoal.title')}
                 </label>
                 <input
                   type="text"
                   value={feedback.prochainObjectif}
                   onChange={(e) => setFeedback(prev => ({ ...prev, prochainObjectif: e.target.value }))}
-                  placeholder="ex: Augmenter les poids, améliorer la technique, faire plus de reps..."
+                  placeholder={t('sessionFeedback.step4.nextGoal.placeholder')}
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               {/* Musiques */}
               <div className="space-y-3">
-                <label className="text-white font-medium">Musiques qui t'ont motivé(e) ?</label>
+                <label className="text-white font-medium">{t('sessionFeedback.step4.music.title')}</label>
                 <input
                   type="text"
                   value={feedback.musiquesEcoutees}
                   onChange={(e) => setFeedback(prev => ({ ...prev, musiquesEcoutees: e.target.value }))}
-                  placeholder="ex: Rock, Hip-hop, Électro, ou titres spécifiques..."
+                  placeholder={t('sessionFeedback.step4.music.placeholder')}
                   className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               {/* Notes libres */}
               <div className="space-y-4">
-                <label className="text-white font-medium">Notes personnelles (optionnel)</label>
+                <label className="text-white font-medium">{t('sessionFeedback.step4.notes.title')}</label>
                 <textarea
                   value={feedback.notes}
                   onChange={(e) => setFeedback(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Ajoute tes observations, sensations, points à améliorer, victoires du jour..."
+                  placeholder={t('sessionFeedback.step4.notes.placeholder')}
                   className="w-full h-32 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                 />
               </div>
@@ -619,47 +589,52 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
                 <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg p-4 border border-purple-600/30">
                   <h4 className="text-white font-medium mb-3 flex items-center gap-2">
                     <TrendingUp size={16} className="text-green-400" />
-                    🎯 Analyse de ta séance
+                    {t('sessionFeedback.step4.analysis.title')}
                   </h4>
                   <div className="text-sm text-slate-300 space-y-2">
                     {feedback.ressenti >= 8 && feedback.difficulte <= 6 && (
                       <div className="text-green-400 flex items-center gap-2">
                         <span>✅</span>
-                        <span>Excellente séance ! Tu peux peut-être augmenter l'intensité la prochaine fois.</span>
+                        <span>{t('sessionFeedback.step4.analysis.excellent')}</span>
                       </div>
                     )}
                     {feedback.ressenti <= 4 && feedback.difficulte >= 7 && (
                       <div className="text-orange-400 flex items-center gap-2">
                         <span>⚠️</span>
-                        <span>Séance difficile avec ressenti faible. Pense à bien récupérer et peut-être réduire l'intensité.</span>
+                        <span>{t('sessionFeedback.step4.analysis.difficult')}</span>
                       </div>
                     )}
                     {feedback.energieDebut <= 3 && feedback.ressenti >= 7 && (
                       <div className="text-blue-400 flex items-center gap-2">
                         <span>💪</span>
-                        <span>Bravo ! Tu as su transformer une faible énergie en excellente séance.</span>
+                        <span>{t('sessionFeedback.step4.analysis.transformed')}</span>
                       </div>
                     )}
                     {feedback.ressenti > 0 && feedback.difficulte > 0 && (
                       <div className="text-slate-300 flex items-center gap-2">
                         <span>📊</span>
                         <span>
-                          Ratio efficacité: {Math.round((feedback.ressenti / feedback.difficulte) * 100)}% 
-                          {feedback.ressenti / feedback.difficulte > 1.2 ? ' (Très efficace ⭐)' : 
-                           feedback.ressenti / feedback.difficulte > 0.8 ? ' (Bien équilibré 👍)' : ' (Peut être optimisé 🎯)'}
+                          {t('sessionFeedback.step4.analysis.ratio', {
+                            ratio: Math.round((feedback.ressenti / feedback.difficulte) * 100),
+                            comment: feedback.ressenti / feedback.difficulte > 1.2 
+                              ? t('sessionFeedback.step4.analysis.ratioComments.veryEffective')
+                              : feedback.ressenti / feedback.difficulte > 0.8 
+                              ? t('sessionFeedback.step4.analysis.ratioComments.wellBalanced')
+                              : t('sessionFeedback.step4.analysis.ratioComments.canOptimize')
+                          })}
                         </span>
                       </div>
                     )}
                     {feedback.objectifAtteint === true && (
                       <div className="text-green-400 flex items-center gap-2">
                         <span>🎉</span>
-                        <span>Objectif atteint ! Continue sur cette lancée.</span>
+                        <span>{t('sessionFeedback.step4.analysis.goalReached')}</span>
                       </div>
                     )}
                     {feedback.douleur >= 6 && (
                       <div className="text-red-400 flex items-center gap-2">
                         <span>🚨</span>
-                        <span>Attention au niveau de douleur élevé. Pense à consulter si ça persiste.</span>
+                        <span>{t('sessionFeedback.step4.analysis.highPain')}</span>
                       </div>
                     )}
                   </div>
@@ -677,14 +652,14 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
                 onClick={prevStep}
                 className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all"
               >
-                ← Précédent
+                {t('sessionFeedback.actions.previous')}
               </button>
             )}
             <button
               onClick={onClose}
               className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all"
             >
-              Passer
+              {t('sessionFeedback.actions.skip')}
             </button>
           </div>
           
@@ -694,7 +669,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
                 onClick={nextStep}
                 className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all"
               >
-                Suivant →
+                {t('sessionFeedback.actions.next')}
               </button>
             ) : (
               <button
@@ -703,7 +678,7 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-all flex items-center gap-2"
               >
                 <Save size={16} />
-                Enregistrer le feedback
+                {t('sessionFeedback.actions.save')}
               </button>
             )}
           </div>

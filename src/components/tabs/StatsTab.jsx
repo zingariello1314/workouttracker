@@ -8,7 +8,6 @@ import Card from '../ui/Card';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
 import {
   JUSTIFICATION_REASONS,
-  JUSTIFICATION_LABELS,
   JUSTIFICATION_COLORS,
   JUSTIFICATION_ICONS
 } from '../../utils/dayJustificationUtils';
@@ -545,7 +544,7 @@ const StatsTab = () => {
                 const count = justificationStats.byReason[reason] || 0;
                 if (count === 0) return null;
                 
-                const label = JUSTIFICATION_LABELS[reason];
+                const label = t(`justification.${reason}`);
                 const icon = JUSTIFICATION_ICONS[reason];
                 const colorClasses = JUSTIFICATION_COLORS[reason];
                 

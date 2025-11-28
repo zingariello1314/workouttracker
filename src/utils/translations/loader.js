@@ -13,6 +13,7 @@
  */
 
 import { LANGUAGES } from './constants';
+import { getBaseLanguage, loadRegionalTranslations } from './regions';
 import logger from '../logger';
 
 const log = logger.module('translations-loader');
@@ -31,50 +32,83 @@ const loadingPromises = {
 
 /**
  * Charge un namespace de traduction de manière lazy
- * @param {string} language - Code de la langue (fr, en)
+ * ✅ PHASE 5.1 : Support des locales complètes (fr-FR, en-US, etc.)
+ * 
+ * @param {string} language - Code de la langue (fr, en) ou locale complète (fr-FR, en-US)
  * @param {string} namespace - Nom du namespace (common, nav, home, etc.)
  * @returns {Promise<Object>} Objet de traductions du namespace
  */
 export const loadTranslationNamespace = async (language, namespace) => {
   const lang = language || LANGUAGES.FR;
+  const baseLang = getBaseLanguage(lang);
+  
+  // ✅ PHASE 5.1 : Utiliser la locale complète comme clé de cache si disponible
+  const cacheKey = lang.includes('-') ? lang : baseLang;
   
   // Si déjà chargé, retourner depuis le cache
-  if (loadedNamespaces[lang]?.[namespace]) {
-    log.debug(`[loadTranslationNamespace] Cache hit: ${lang}:${namespace}`);
-    return loadedNamespaces[lang][namespace];
+  if (loadedNamespaces[cacheKey]?.[namespace]) {
+    log.debug(`[loadTranslationNamespace] Cache hit: ${cacheKey}:${namespace}`);
+    return loadedNamespaces[cacheKey][namespace];
   }
   
   // Si chargement en cours, retourner la promesse existante
-  if (loadingPromises[lang]?.[namespace]) {
-    log.debug(`[loadTranslationNamespace] Loading in progress: ${lang}:${namespace}`);
-    return loadingPromises[lang][namespace];
+  if (loadingPromises[cacheKey]?.[namespace]) {
+    log.debug(`[loadTranslationNamespace] Loading in progress: ${cacheKey}:${namespace}`);
+    return loadingPromises[cacheKey][namespace];
   }
   
   // Créer la promesse de chargement
   const loadPromise = (async () => {
     try {
-      log.debug(`[loadTranslationNamespace] Loading: ${lang}:${namespace}`);
+      log.debug(`[loadTranslationNamespace] Loading: ${cacheKey}:${namespace}`);
       
-      // Charger le namespace avec import() dynamique
-      const module = await import(`./${lang}/${namespace}.json`);
-      const translations = module.default || module;
+      // ✅ PHASE 5.1 : Si c'est une locale complète, charger les variantes régionales
+      // ✅ PHASE 5.2 : Support des sous-namespaces (ex: 'calendar/heatmap')
+      let translations;
+      if (lang.includes('-')) {
+        // Locale complète : charger les variantes régionales
+        translations = await loadRegionalTranslations(lang, namespace);
+      } else {
+        // Langue de base : charger normalement
+        // Support des sous-namespaces : convertir 'calendar/heatmap' en './fr/calendar/heatmap.json'
+        const namespacePath = namespace.replace(/\//g, '/');
+        const modulePath = `./${baseLang}/${namespacePath}.json`;
+        
+        try {
+          const module = await import(modulePath);
+          translations = module.default || module;
+        } catch (error) {
+          // Si le sous-namespace n'existe pas, essayer de charger depuis le namespace parent
+          // Ex: si 'calendar/heatmap' n'existe pas, essayer 'calendarHeatmap'
+          const fallbackNamespace = namespace.replace(/\//g, '');
+          log.debug(`[loadTranslationNamespace] Fallback vers namespace plat: ${fallbackNamespace}`);
+          try {
+            const fallbackModule = await import(`./${baseLang}/${fallbackNamespace}.json`);
+            translations = fallbackModule.default || fallbackModule;
+          } catch (fallbackError) {
+            // Si même le fallback échoue, retourner un objet vide
+            log.warn(`[loadTranslationNamespace] Impossible de charger ${namespace} ni ${fallbackNamespace}`);
+            translations = {};
+          }
+        }
+      }
       
       // Mettre en cache
-      if (!loadedNamespaces[lang]) {
-        loadedNamespaces[lang] = {};
+      if (!loadedNamespaces[cacheKey]) {
+        loadedNamespaces[cacheKey] = {};
       }
-      loadedNamespaces[lang][namespace] = translations;
+      loadedNamespaces[cacheKey][namespace] = translations;
       
       // Nettoyer la promesse de chargement
-      delete loadingPromises[lang][namespace];
+      delete loadingPromises[cacheKey][namespace];
       
-      log.debug(`[loadTranslationNamespace] Loaded: ${lang}:${namespace}`);
+      log.debug(`[loadTranslationNamespace] Loaded: ${cacheKey}:${namespace}`);
       return translations;
     } catch (error) {
       // Nettoyer la promesse de chargement en cas d'erreur
-      delete loadingPromises[lang][namespace];
+      delete loadingPromises[cacheKey][namespace];
       
-      log.error(`[loadTranslationNamespace] Error loading ${lang}:${namespace}:`, error);
+      log.error(`[loadTranslationNamespace] Error loading ${cacheKey}:${namespace}:`, error);
       
       // Retourner un objet vide plutôt que de throw pour éviter de casser l'app
       return {};
@@ -82,10 +116,10 @@ export const loadTranslationNamespace = async (language, namespace) => {
   })();
   
   // Stocker la promesse de chargement
-  if (!loadingPromises[lang]) {
-    loadingPromises[lang] = {};
+  if (!loadingPromises[cacheKey]) {
+    loadingPromises[cacheKey] = {};
   }
-  loadingPromises[lang][namespace] = loadPromise;
+  loadingPromises[cacheKey][namespace] = loadPromise;
   
   return loadPromise;
 };

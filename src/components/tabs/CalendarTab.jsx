@@ -9,7 +9,6 @@ import { getDateStr } from '../../utils/dateUtils';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
 import {
   JUSTIFICATION_REASONS,
-  JUSTIFICATION_LABELS,
   JUSTIFICATION_COLORS,
   JUSTIFICATION_ICONS
 } from '../../utils/dayJustificationUtils';
@@ -414,7 +413,7 @@ const CalendarTab = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Object.entries(JUSTIFICATION_REASONS).map(([key, reason]) => {
-              const label = JUSTIFICATION_LABELS[reason];
+              const label = t(`justification.${reason}`);
               const icon = JUSTIFICATION_ICONS[reason];
               const colorClasses = JUSTIFICATION_COLORS[reason];
               

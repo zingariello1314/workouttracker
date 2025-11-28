@@ -20,10 +20,12 @@ import Button from '../../ui/Button';
 import { getCleanupPreview, cleanupBodyTrackingData, shouldShowCleanupNotification } from '../utils/dataCleanup';
 import { useToast } from '../hooks/useToast';
 import logger from '../../../utils/logger';
+import { useTranslation } from '../../../utils/translations';
 
 const log = logger.component('CleanupNotification');
 
 const CleanupNotification = () => {
+  const t = useTranslation();
   const { data, updateData } = useWorkout();
   const { showSuccess, showInfo, ToastContainer } = useToast();
   const [isVisible, setIsVisible] = useState(false);
@@ -75,7 +77,7 @@ const CleanupNotification = () => {
       }
     } catch (error) {
       log.error('Erreur lors du nettoyage:', error);
-      showInfo('Erreur lors du nettoyage. Veuillez réessayer.');
+      showInfo(t('messages.errors.cleanupGeneric'));
     } finally {
       setIsProcessing(false);
     }

@@ -14,6 +14,7 @@ import React, { useState, useEffect, useMemo, memo } from 'react';
 import { useLazyCalculation } from '../../../../hooks/useLazyCalculation';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
+import { useTranslation } from '../../../../utils/translations';
 import { 
   Trophy, 
   Award, 
@@ -55,6 +56,7 @@ const getCategoryIcon = (category) => {
 };
 
 const NutritionGamification = () => {
+  const t = useTranslation();
   const {
     achievements,
     experience,
@@ -435,7 +437,7 @@ const NutritionGamification = () => {
                         <div
                           key={badge.id}
                           className={baseClasses}
-                          title={isUnlocked ? badge.name : `${badge.name} - Non débloqué`}
+                          title={isUnlocked ? t('nutrition.tooltips.gamification.badgeUnlocked', { name: badge.name }) : t('nutrition.tooltips.gamification.badgeLocked', { name: badge.name })}
                           onClick={() => setSelectedBadge(badge)}
                         >
                           {/* Badge de verrouillage pour non débloqués */}
