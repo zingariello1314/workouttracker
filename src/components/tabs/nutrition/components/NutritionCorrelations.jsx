@@ -25,9 +25,11 @@ import {
   XCircle
 } from 'lucide-react';
 import { useNutritionCorrelations } from '../../../../hooks/useNutritionCorrelations';
+import { useTranslation } from '../../../../utils/translations';
 
 // ✅ OPTIMISATION 2.5 : React.memo pour éviter re-renders inutiles (50-80% réduction)
 const NutritionCorrelations = React.memo(() => {
+  const t = useTranslation();
   const {
     correlations,
     metadata,
@@ -89,11 +91,11 @@ const NutritionCorrelations = React.memo(() => {
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
-            <BarChart3 size={20} className="text-blue-400" /> Corrélations
+            <BarChart3 size={20} className="text-blue-400" /> {t('nutritionAnalyses.correlations.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-400">Analyse en cours...</p>
+          <p className="text-slate-400">{t('nutritionAnalyses.correlations.loading')}</p>
         </CardContent>
       </Card>
     );
@@ -104,15 +106,15 @@ const NutritionCorrelations = React.memo(() => {
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
-            <AlertTriangle size={20} className="text-red-400" /> Corrélations
+            <AlertTriangle size={20} className="text-red-400" /> {t('nutritionAnalyses.correlations.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-red-400">
-            {error?.message || metadata.errorMessage || 'Erreur lors du chargement des corrélations.'}
+            {error?.message || metadata.errorMessage || t('nutritionAnalyses.correlations.error')}
           </p>
           <Button onClick={refresh} variant="outline" className="mt-4">
-            <RefreshCw size={16} className="mr-2" /> Réessayer
+            <RefreshCw size={16} className="mr-2" /> {t('nutritionAnalyses.correlations.retry')}
           </Button>
         </CardContent>
       </Card>
@@ -124,13 +126,13 @@ const NutritionCorrelations = React.memo(() => {
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
-            <BarChart3 size={20} className="text-blue-400" /> Corrélations
+            <BarChart3 size={20} className="text-blue-400" /> {t('nutritionAnalyses.correlations.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
             <Info size={48} className="text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-300 text-lg font-medium mb-2">Données insuffisantes</p>
+            <p className="text-slate-300 text-lg font-medium mb-2">{t('nutritionAnalyses.correlations.insufficientData')}</p>
             <p className="text-slate-400 mb-4">
               {metadata.totalDays < 10 
                 ? `Seulement ${metadata.totalDays} jours de données (minimum 10 requis)`

@@ -1,0 +1,25 @@
+{
+  "title": "Advanced Analyses",
+  "subtitle": "Analyze your nutritional habits and your program compliance",
+  "recommendations": {
+    "title": "Personalized Recommendations",
+    "refresh": "Refresh"
+  },
+  "correlations": {
+    "title": "Correlations",
+    "loading": "Analysis in progress...",
+    "error": "Error loading correlations.",
+    "retry": "Retry",
+    "insufficientData": "Insufficient data"
+  },
+  "chronobiology": {
+    "title": "Chronobiology",
+    "periods": {
+      "7days": "Last 7 days",
+      "30days": "Last 30 days",
+      "90days": "Last 90 days",
+      "all": "All history"
+    }
+  }
+}
+

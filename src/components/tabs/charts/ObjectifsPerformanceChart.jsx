@@ -1,8 +1,10 @@
 import React from 'react';
+import { useTranslation } from '../../../utils/translations';
 import { Target } from 'lucide-react';
 import { workoutProgram } from '../../../data/workoutProgram';
 
 const ObjectifsPerformanceChart = ({ data, colors }) => {
+  const t = useTranslation();
   // Récupérer le programme actif depuis les données
   const activeProgram = data?.activeProgram || null;
   
@@ -178,8 +180,8 @@ const ObjectifsPerformanceChart = ({ data, colors }) => {
       // Si pas de métriques, afficher un message
       if (!latestMetrics) {
         return {
-          weight: { hasData: false, message: 'Aucune donnée de poids enregistrée' },
-          waist: { hasData: false, message: 'Aucune donnée de tour de taille enregistrée' }
+          weight: { hasData: false, message: t('charts.noData.weightRecorded') },
+          waist: { hasData: false, message: t('charts.noData.waistRecorded') }
         };
       }
       

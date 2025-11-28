@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../../utils/translations';
 import { Calendar } from 'lucide-react';
 import { findExerciseInDatabase } from '../../../data/exerciseDatabase';
 
@@ -61,8 +62,8 @@ const ProgressChart = ({ data, colors }) => {
       <div className="flex items-center justify-center h-80 text-gray-400">
         <div className="text-center">
           <Calendar className="mx-auto mb-4 text-gray-500" size={48} />
-          <p className="text-lg font-medium">Aucune donnée de progression</p>
-          <p className="text-sm text-gray-500 mt-2">Continuez vos entraînements pour voir votre progression !</p>
+          <p className="text-lg font-medium">{t('charts.noData.progression')}</p>
+          <p className="text-sm text-gray-500 mt-2">{t('charts.noData.progressionHint')}</p>
         </div>
       </div>
     );

@@ -237,7 +237,7 @@ export const useTranslation = () => {
    */
   const parseKey = (key) => {
     const parts = key.split('.');
-            const knownNamespaces = ['nav', 'home', 'settings', 'common', 'justification', 'calendar', 'stats', 'today', 'general', 'exercises', 'dataEntry', 'program', 'exercisesTab', 'endurance', 'progress', 'history', 'charts', 'nutrition', 'garmin'];
+            const knownNamespaces = ['nav', 'home', 'settings', 'common', 'justification', 'calendar', 'stats', 'today', 'general', 'exercises', 'dataEntry', 'program', 'exercisesTab', 'endurance', 'progress', 'history', 'charts', 'nutrition', 'garmin', 'bodyTracking', 'nutritionAnalyses'];
     
     // Si le premier segment est un namespace connu, l'utiliser
     if (knownNamespaces.includes(parts[0])) {

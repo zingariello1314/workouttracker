@@ -2,8 +2,10 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Scale, TrendingUp, TrendingDown, Target } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../ui/Card';
+import { useTranslation } from '../../../utils/translations';
 
 const WeightProgressionChart = ({ data, colors }) => {
+  const t = useTranslation();
   // Traiter les données de progression pour extraire les données de poids
   const processData = () => {
     const currentData = data.data || {};
@@ -113,7 +115,7 @@ const WeightProgressionChart = ({ data, colors }) => {
         <CardContent>
           <div className="text-center py-8">
             <Scale className="w-12 h-12 mx-auto text-slate-400 mb-4" />
-            <p className="text-slate-400">Aucune donnée de poids disponible</p>
+            <p className="text-slate-400">{t('charts.noData.weight')}</p>
             <p className="text-sm text-slate-500 mt-2">
               Enregistrez vos métriques dans l'onglet Progression pour voir l'évolution
             </p>

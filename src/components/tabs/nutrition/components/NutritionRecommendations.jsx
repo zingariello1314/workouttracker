@@ -29,6 +29,7 @@ import { useNutritionRecommendations } from '../../../../hooks/useNutritionRecom
 
 // ✅ OPTIMISATION 2.5 : React.memo pour éviter re-renders inutiles (50-80% réduction)
 const NutritionRecommendations = React.memo(() => {
+  const t = useTranslation();
   const {
     recommendations,
     summary,
@@ -129,7 +130,7 @@ const NutritionRecommendations = React.memo(() => {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-white">
-            <Lightbulb size={20} className="text-yellow-400" /> Recommandations Personnalisées
+            <Lightbulb size={20} className="text-yellow-400" /> {t('nutritionAnalyses.recommendations.title')}
           </CardTitle>
           <Button
             onClick={refresh}
@@ -139,7 +140,7 @@ const NutritionRecommendations = React.memo(() => {
             className="text-slate-400 hover:text-white"
           >
             <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Actualiser
+            {t('nutritionAnalyses.recommendations.refresh')}
           </Button>
         </div>
       </CardHeader>

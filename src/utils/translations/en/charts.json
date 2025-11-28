@@ -1,39 +1,17 @@
 {
-  "title": "Charts & Analysis",
-  "subtitle": "Overview of your performance",
-  "periods": {
-    "7days": "Last 7 days",
-    "30days": "Last 30 days",
-    "90days": "Last 90 days",
-    "1year": "1 year"
-  },
-  "garmin": {
-    "heartRate": "Heart Rate",
-    "heartRateTimeSeries": "HR 24h (Time Series)",
-    "bodyBattery": "Body Battery",
-    "stress": "Stress",
-    "sleep": "Sleep",
-    "respiration": "Respiration",
-    "activityHeatmap": "Activity Calendar",
-    "correlations": "Correlations",
-    "dailyActivity": "Daily Activity"
-  },
-  "workout": {
-    "volumeRepetitions": "Volume & Repetitions",
-    "activityRegularity": "Activity & Regularity",
-    "objectives": "Objectives",
-    "volumeEvolution": "Volume Evolution",
-    "muscleDistribution": "Muscle Distribution",
-    "topExercises": "Top Exercises",
-    "activityCalendar": "Activity Calendar",
-    "distribution": "Distribution",
-    "individualProgression": "Individual Progression",
-    "boxingActivity": "Boxing Activity",
-    "swimmingPerformance": "Swimming Performance",
-    "distanceEvolution": "Distance Evolution",
-    "timePace": "Time & Pace",
-    "volumeRegularity": "Volume & Regularity",
-    "stretchesByZone": "Stretches by Zone"
+  "noData": {
+    "garmin": "No Garmin data available. Sync your data from the Garmin tab.",
+    "garminSync": "No Garmin data available. Sync your Garmin data.",
+    "period": "No data available for the selected period ({{period}}).",
+    "time": "No time data available.",
+    "timeHint": "Add swimming sessions with lap times to see your progression.",
+    "timeSeries": "No heart rate time series data available.",
+    "progression": "No progression data available",
+    "progressionHint": "Continue your workouts to see your progression!",
+    "weight": "No weight data available",
+    "weightRecorded": "No weight data recorded",
+    "waistRecorded": "No waist measurement data recorded",
+    "stretches": "No stretches data available",
+    "insufficient": "Insufficient data"
   }
 }
-

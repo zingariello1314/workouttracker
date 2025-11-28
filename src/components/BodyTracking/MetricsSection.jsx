@@ -18,12 +18,16 @@ import { formatDate } from '../../utils/dateUtils';
 import { validateMetricsForm } from './utils/validation';
 import { useToast } from './hooks/useToast';
 import logger from '../../utils/logger';
+import { useTranslation } from '../../utils/translations';
+import { useFormatters } from '../../utils/translations/formatters-hook';
 
 const log = logger.component('MetricsSection');
 
 const MetricsSection = () => {
   const { data, addProgressEntry } = useWorkout();
   const { showSuccess, showError, showInfo, ToastContainer } = useToast();
+  const t = useTranslation();
+  const { formatDate: formatLocaleDate } = useFormatters();
   const [formData, setFormData] = useState({
     weight: '',
     height: '',
@@ -223,7 +227,7 @@ const MetricsSection = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Scale className="w-5 h-5 text-blue-400" />
-            Saisie des métriques corporelles
+            {t('bodyTracking.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -232,7 +236,7 @@ const MetricsSection = () => {
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />
-                Date de mesure
+                {t('bodyTracking.form.date.label')}
               </label>
               <input
                 type="date"
@@ -247,7 +251,7 @@ const MetricsSection = () => {
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   <Scale className="w-4 h-4 inline mr-2" />
-                  Poids (kg) *
+                  {t('bodyTracking.form.weight.label')}
                 </label>
                 <input
                   type="number"
@@ -257,7 +261,7 @@ const MetricsSection = () => {
                   className={`w-full bg-slate-700 border rounded-lg px-3 py-2 text-white ${
                     errors.weight ? 'border-red-500' : 'border-slate-600'
                   }`}
-                  placeholder="Ex: 75.2"
+                  placeholder={t('bodyTracking.form.weight.placeholder')}
                 />
                 {errors.weight && (
                   <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
@@ -267,7 +271,7 @@ const MetricsSection = () => {
                 )}
                 {lastEntry?.weight && (
                   <p className="text-slate-400 text-sm mt-1">
-                    Dernière mesure: {lastEntry.weight} kg ({formatDate(lastEntry.date)})
+                    {t('bodyTracking.form.weight.lastMeasurement', { weight: lastEntry.weight, date: formatLocaleDate(new Date(lastEntry.date)) })}
                   </p>
                 )}
               </div>
@@ -275,7 +279,7 @@ const MetricsSection = () => {
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   <Ruler className="w-4 h-4 inline mr-2" />
-                  Taille (cm)
+                  {t('bodyTracking.form.height.label')}
                 </label>
                 <input
                   type="number"
@@ -285,7 +289,7 @@ const MetricsSection = () => {
                   className={`w-full bg-slate-700 border rounded-lg px-3 py-2 text-white ${
                     errors.height ? 'border-red-500' : 'border-slate-600'
                   }`}
-                  placeholder="Ex: 175"
+                  placeholder={t('bodyTracking.form.height.placeholder')}
                 />
                 {errors.height && (
                   <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
@@ -295,7 +299,7 @@ const MetricsSection = () => {
                 )}
                 {lastEntry?.height && (
                   <p className="text-slate-400 text-sm mt-1">
-                    Dernière mesure: {lastEntry.height} cm
+                    {t('bodyTracking.form.height.lastMeasurement', { height: lastEntry.height })}
                   </p>
                 )}
               </div>
@@ -304,20 +308,20 @@ const MetricsSection = () => {
             {/* Mensurations */}
             <div>
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                📏 Mensurations corporelles
+                📏 {t('bodyTracking.form.measurements.title')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { key: 'waist', label: 'Tour de taille', last: lastEntry?.waist },
-                  { key: 'chest', label: 'Tour de poitrine', last: lastEntry?.chest },
-                  { key: 'arms', label: 'Tour de bras', last: lastEntry?.arms },
-                  { key: 'thighs', label: 'Tour de cuisse', last: lastEntry?.thighs },
-                  { key: 'neck', label: 'Tour de cou', last: lastEntry?.neck },
-                  { key: 'hips', label: 'Tour de hanches', last: lastEntry?.hips }
-                ].map(({ key, label, last }) => (
+                  { key: 'waist', translationKey: 'waist', last: lastEntry?.waist },
+                  { key: 'chest', translationKey: 'chest', last: lastEntry?.chest },
+                  { key: 'arms', translationKey: 'arms', last: lastEntry?.arms },
+                  { key: 'thighs', translationKey: 'thighs', last: lastEntry?.thighs },
+                  { key: 'neck', translationKey: 'neck', last: lastEntry?.neck },
+                  { key: 'hips', translationKey: 'hips', last: lastEntry?.hips }
+                ].map(({ key, translationKey, last }) => (
                   <div key={key}>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      {label} (cm)
+                      {t(`bodyTracking.form.measurements.${translationKey}`)} {t('bodyTracking.form.measurements.unit')}
                     </label>
                     <input
                       type="number"
@@ -337,7 +341,7 @@ const MetricsSection = () => {
                     )}
                     {last && (
                       <p className="text-slate-400 text-sm mt-1">
-                        Dernier: {last} cm
+                        {t('bodyTracking.form.measurements.last', { value: last })}
                       </p>
                     )}
                   </div>
@@ -348,20 +352,20 @@ const MetricsSection = () => {
             {/* Notes */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Notes (optionnel)
+                {t('bodyTracking.form.notes.label')}
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
                 rows="3"
-                placeholder="Commentaires, conditions de mesure, objectifs..."
+                placeholder={t('bodyTracking.form.notes.placeholder')}
               />
             </div>
 
             <Button type="submit" className="w-full">
               <Save className="w-4 h-4 mr-2" />
-              Enregistrer les mesures
+              {t('bodyTracking.form.save')}
             </Button>
           </form>
         </CardContent>

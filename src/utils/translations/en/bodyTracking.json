@@ -1,0 +1,35 @@
+{
+  "title": "Body Metrics Entry",
+  "form": {
+    "date": {
+      "label": "Measurement Date"
+    },
+    "weight": {
+      "label": "Weight (kg) *",
+      "placeholder": "Ex: 75.2",
+      "lastMeasurement": "Last measurement: {{weight}} kg ({{date}})"
+    },
+    "height": {
+      "label": "Height (cm)",
+      "placeholder": "Ex: 175",
+      "lastMeasurement": "Last measurement: {{height}} cm"
+    },
+    "measurements": {
+      "title": "Body Measurements",
+      "waist": "Waist circumference",
+      "chest": "Chest circumference",
+      "arms": "Arm circumference",
+      "thighs": "Thigh circumference",
+      "neck": "Neck circumference",
+      "hips": "Hip circumference",
+      "last": "Last: {{value}} cm",
+      "unit": "(cm)"
+    },
+    "notes": {
+      "label": "Notes (optional)",
+      "placeholder": "Comments, measurement conditions, objectives..."
+    },
+    "save": "Save Measurements"
+  }
+}
+

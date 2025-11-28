@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { TrendingUp } from 'lucide-react';
+import { useTranslation } from '../../../utils/translations';
 
 const CorrelationsChart = ({ data, colors }) => {
+  const t = useTranslation();
   const [selectedMetrics, setSelectedMetrics] = useState({
     x: 'weight',
     y: 'waist'
@@ -58,7 +60,7 @@ const CorrelationsChart = ({ data, colors }) => {
       <div className="flex items-center justify-center h-80 text-gray-400">
         <div className="text-center">
           <TrendingUp className="mx-auto mb-4 text-gray-500" size={48} />
-          <p className="text-lg font-medium">Données insuffisantes</p>
+          <p className="text-lg font-medium">{t('charts.noData.insufficient')}</p>
           <p className="text-sm text-gray-500 mt-2">Enregistrez plus de mesures pour voir les corrélations !</p>
         </div>
       </div>

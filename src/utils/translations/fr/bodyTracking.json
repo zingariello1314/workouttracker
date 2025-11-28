@@ -1,0 +1,35 @@
+{
+  "title": "Saisie des métriques corporelles",
+  "form": {
+    "date": {
+      "label": "Date de mesure"
+    },
+    "weight": {
+      "label": "Poids (kg) *",
+      "placeholder": "Ex: 75.2",
+      "lastMeasurement": "Dernière mesure: {{weight}} kg ({{date}})"
+    },
+    "height": {
+      "label": "Taille (cm)",
+      "placeholder": "Ex: 175",
+      "lastMeasurement": "Dernière mesure: {{height}} cm"
+    },
+    "measurements": {
+      "title": "Mensurations corporelles",
+      "waist": "Tour de taille",
+      "chest": "Tour de poitrine",
+      "arms": "Tour de bras",
+      "thighs": "Tour de cuisse",
+      "neck": "Tour de cou",
+      "hips": "Tour de hanches",
+      "last": "Dernier: {{value}} cm",
+      "unit": "(cm)"
+    },
+    "notes": {
+      "label": "Notes (optionnel)",
+      "placeholder": "Commentaires, conditions de mesure, objectifs..."
+    },
+    "save": "Enregistrer les mesures"
+  }
+}
+

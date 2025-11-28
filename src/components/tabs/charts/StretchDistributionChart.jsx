@@ -3,8 +3,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { Activity, PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import { useState } from 'react';
+import { useTranslation } from '../../../utils/translations';
 
 const StretchDistributionChart = ({ data, colors }) => {
+  const t = useTranslation();
   const [chartType, setChartType] = useState('pie'); // 'pie' ou 'bar'
 
   // Traiter les données pour créer la répartition
@@ -100,7 +102,7 @@ const StretchDistributionChart = ({ data, colors }) => {
         <CardContent>
           <div className="text-center py-8">
             <Activity className="w-12 h-12 mx-auto text-slate-400 mb-4" />
-            <p className="text-slate-400">Aucune donnée d'étirements disponible</p>
+            <p className="text-slate-400">{t('charts.noData.stretches')}</p>
             <p className="text-sm text-slate-500 mt-2">
               Commencez à enregistrer vos étirements pour voir la répartition
             </p>

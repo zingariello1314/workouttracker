@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../../utils/translations';
 
 /**
  * Wrapper générique pour adapter les graphiques Garmin à ChartsTab
@@ -6,6 +7,7 @@ import React from 'react';
  */
 export function createGarminChartWrapper(GarminChartComponent, needsActivities = false) {
   return function GarminChartWrapper({ garminData, selectedPeriod, colors }) {
+    const t = useTranslation();
     // Convertir selectedPeriod (7days, 30days, 90days, 1year) en periodFilter
     const periodFilter = React.useMemo(() => {
       switch (selectedPeriod) {
@@ -84,7 +86,7 @@ export function createGarminChartWrapper(GarminChartComponent, needsActivities =
     if (!garminData || !garminData.dailyMetrics || Object.keys(garminData.dailyMetrics).length === 0) {
       return (
         <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400 text-sm">
-          Aucune donnée Garmin disponible. Synchronisez vos données depuis l'onglet Garmin.
+          {t('charts.noData.garmin')}
         </div>
       );
     }
@@ -132,6 +134,7 @@ export function createGarminChartWrapper(GarminChartComponent, needsActivities =
  */
 export function createGarminCorrelationChartsWrapper(GarminChartComponent) {
   return function GarminCorrelationChartsWrapper({ garminData, selectedPeriod, colors }) {
+    const t = useTranslation();
     // Convertir selectedPeriod (7days, 30days, 90days, 1year) en periodFilter
     const periodFilter = React.useMemo(() => {
       switch (selectedPeriod) {
@@ -210,7 +213,7 @@ export function createGarminCorrelationChartsWrapper(GarminChartComponent) {
     if (!garminData || !garminData.dailyMetrics || Object.keys(garminData.dailyMetrics).length === 0) {
       return (
         <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400 text-sm">
-          Aucune donnée Garmin disponible. Synchronisez vos données depuis l'onglet Garmin.
+          {t('charts.noData.garmin')}
         </div>
       );
     }
@@ -248,6 +251,7 @@ export function createGarminCorrelationChartsWrapper(GarminChartComponent) {
  */
 export function createGarminTimeSeriesChartWrapper(GarminChartComponent) {
   return function GarminTimeSeriesChartWrapper({ garminData, selectedPeriod, colors }) {
+    const t = useTranslation();
     // Calculer les dates de la période
     const { startDate, endDate } = React.useMemo(() => {
       const now = new Date();
@@ -299,7 +303,7 @@ export function createGarminTimeSeriesChartWrapper(GarminChartComponent) {
     if (!garminData || !garminData.dailyMetrics) {
       return (
         <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400 text-sm">
-          Aucune donnée Garmin disponible. Synchronisez vos données depuis l'onglet Garmin.
+          {t('charts.noData.garmin')}
         </div>
       );
     }
@@ -307,7 +311,7 @@ export function createGarminTimeSeriesChartWrapper(GarminChartComponent) {
     if (!selectedDate) {
       return (
         <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400 text-sm">
-          Aucune donnée disponible pour la période sélectionnée ({selectedPeriod}).
+          {t('charts.noData.period', { period: selectedPeriod })}
         </div>
       );
     }

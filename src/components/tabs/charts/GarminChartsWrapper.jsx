@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from '../../../utils/translations';
 
 /**
  * Convertit selectedPeriod (7days, 30days, 90days, 1year) en periodFilter (week, month, 3months, year)
@@ -27,10 +28,11 @@ export const convertPeriodToGarminFilter = (selectedPeriod) => {
  * Wrapper pour GarminHeartRateChart
  */
 export const GarminHeartRateChartWrapper = ({ garminData, selectedPeriod, colors }) => {
+  const t = useTranslation();
   if (!garminData || !garminData.dailyMetrics) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée Garmin disponible. Synchronisez vos données Garmin.
+        {t('charts.noData.garminSync')}
       </div>
     );
   }
@@ -61,7 +63,7 @@ export const GarminHeartRateTimeSeriesChartWrapper = ({ garminData, selectedPeri
   if (!garminData || !garminData.dailyMetrics) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée Garmin disponible. Synchronisez vos données Garmin.
+        {t('charts.noData.garminSync')}
       </div>
     );
   }
@@ -76,7 +78,7 @@ export const GarminHeartRateTimeSeriesChartWrapper = ({ garminData, selectedPeri
   if (!hasTimeSeries) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune série temporelle de fréquence cardiaque disponible.
+        {t('charts.noData.timeSeries')}
       </div>
     );
   }
@@ -99,7 +101,7 @@ export const GarminBodyBatteryChartWrapper = ({ garminData, selectedPeriod, colo
   if (!garminData || !garminData.dailyMetrics) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée Garmin disponible. Synchronisez vos données Garmin.
+        {t('charts.noData.garminSync')}
       </div>
     );
   }
@@ -127,10 +129,11 @@ export const GarminBodyBatteryChartWrapper = ({ garminData, selectedPeriod, colo
  * Wrapper pour GarminStressChart
  */
 export const GarminStressChartWrapper = ({ garminData, selectedPeriod, colors }) => {
+  const t = useTranslation();
   if (!garminData || !garminData.dailyMetrics) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée Garmin disponible. Synchronisez vos données Garmin.
+        {t('charts.noData.garminSync')}
       </div>
     );
   }
@@ -158,10 +161,11 @@ export const GarminStressChartWrapper = ({ garminData, selectedPeriod, colors })
  * Wrapper pour GarminSleepChart
  */
 export const GarminSleepChartWrapper = ({ garminData, selectedPeriod, colors }) => {
+  const t = useTranslation();
   if (!garminData || !garminData.dailyMetrics) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée Garmin disponible. Synchronisez vos données Garmin.
+        {t('charts.noData.garminSync')}
       </div>
     );
   }
@@ -189,10 +193,11 @@ export const GarminSleepChartWrapper = ({ garminData, selectedPeriod, colors }) 
  * Wrapper pour GarminRespirationChart
  */
 export const GarminRespirationChartWrapper = ({ garminData, selectedPeriod, colors }) => {
+  const t = useTranslation();
   if (!garminData || !garminData.dailyMetrics) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée Garmin disponible. Synchronisez vos données Garmin.
+        {t('charts.noData.garminSync')}
       </div>
     );
   }
@@ -220,10 +225,11 @@ export const GarminRespirationChartWrapper = ({ garminData, selectedPeriod, colo
  * Wrapper pour GarminActivityHeatmap
  */
 export const GarminActivityHeatmapWrapper = ({ garminData, selectedPeriod, colors }) => {
+  const t = useTranslation();
   if (!garminData || !garminData.activities || !garminData.dailyMetrics) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée Garmin disponible. Synchronisez vos données Garmin.
+        {t('charts.noData.garminSync')}
       </div>
     );
   }
@@ -252,10 +258,11 @@ export const GarminActivityHeatmapWrapper = ({ garminData, selectedPeriod, color
  * Wrapper pour GarminCorrelationCharts
  */
 export const GarminCorrelationChartsWrapper = ({ garminData, selectedPeriod, colors }) => {
+  const t = useTranslation();
   if (!garminData || !garminData.dailyMetrics) {
     return (
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
-        Aucune donnée Garmin disponible. Synchronisez vos données Garmin.
+        {t('charts.noData.garminSync')}
       </div>
     );
   }

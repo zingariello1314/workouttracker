@@ -49,6 +49,7 @@ import { useGarminData } from '../../../../hooks/useGarminData';
 import { calculateDailyTotals, getNutritionStats } from '../../../../hooks/nutritionCalculations';
 import { typography } from '../../../../styles/typography';
 import logger from '../../../../utils/logger';
+import { useTranslation } from '../../../../utils/translations';
 import { getMealsByDateRange } from '../../../../hooks/nutritionDataCRUD';
 // ✅ OPTIMISATION : Web Workers pour calculs lourds (non bloquants)
 import { useProcessDataForAnalysis } from '../../../../hooks/useNutritionWorker';
@@ -61,6 +62,7 @@ import NutritionPredictions from './NutritionPredictions';
 const log = logger.component('NutritionAnalyses');
 
 const NutritionAnalyses = ({ nutritionData, garminData }) => {
+  const t = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
   // ✅ OPTIMISATION 5.1 : Debounce changement période (évite recalculs multiples rapides)
   const [debouncedPeriod, setDebouncedPeriod] = useState('30days');
@@ -614,10 +616,10 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
         <div>
           <h2 className={`${typography.presets.h2} text-white mb-2 flex items-center gap-2`}>
             <BarChart3 size={28} className="text-blue-400" />
-            Analyses Avancées
+            {t('nutritionAnalyses.title')}
           </h2>
           <p className="text-slate-400">
-            Analysez vos habitudes nutritionnelles et votre conformité au programme
+            {t('nutritionAnalyses.subtitle')}
           </p>
         </div>
         <div className="flex gap-2">

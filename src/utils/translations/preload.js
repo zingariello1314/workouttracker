@@ -52,7 +52,9 @@ export const SECONDARY_NAMESPACES = [
   'history',     // Onglet Historique
   'charts',      // Onglet Graphiques
   'nutrition',   // Onglet Nutrition
-  'garmin'       // Onglet Garmin
+  'garmin',      // Onglet Garmin
+  'bodyTracking', // Suivi corporel
+  'nutritionAnalyses' // Analyses nutritionnelles
 ];
 
 /**

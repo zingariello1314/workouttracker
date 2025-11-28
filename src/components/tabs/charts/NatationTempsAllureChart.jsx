@@ -135,7 +135,7 @@ const NatationTempsAllureChart = ({ data, colors }) => {
         <div className="bg-slate-800/50 rounded-lg p-6 border border-blue-500/10 text-center">
           <div className="text-slate-400 mb-2">ÉVOLUTION DES TEMPS AU 100M</div>
           <div className="text-slate-500 text-sm">
-            Aucune donnée de temps disponible.<br />
+            {t('charts.noData.time')}<br />
             Ajoutez des sessions de natation avec des temps de longueurs pour voir votre progression.
           </div>
         </div>
@@ -215,9 +215,9 @@ const NatationTempsAllureChart = ({ data, colors }) => {
           {(() => {
             const validTimes = tempsData.temps100m.filter(t => t > 0);
             if (validTimes.length === 0) {
-              return "📊 Aucune donnée de progression disponible";
+              return `📊 ${t('charts.noData.progression')}`;
             } else if (validTimes.length === 1) {
-              return "📈 Commencez à nager régulièrement pour voir votre progression !";
+              return `📈 ${t('charts.noData.progressionHint')}`;
             } else {
               const improvement = tempsData.temps100m.length > 1 ? 
                 Math.floor(tempsData.temps100m[0] - tempsData.temps100m[tempsData.temps100m.length - 1]) : 0;

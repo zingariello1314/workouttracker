@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../../../utils/translations';
 import { TrendingUp } from 'lucide-react';
 
 const ProgressionIndividuelleChart = ({ data, colors }) => {
@@ -87,8 +88,8 @@ const ProgressionIndividuelleChart = ({ data, colors }) => {
       <div className="flex items-center justify-center h-48 text-slate-400">
         <div className="text-center">
           <TrendingUp className="mx-auto mb-4 text-slate-500" size={48} />
-          <p className="text-lg font-medium">Aucune donnée de progression</p>
-          <p className="text-sm text-slate-500 mt-2">Commencez vos entraînements pour voir vos progrès</p>
+          <p className="text-lg font-medium">{t('charts.noData.progression')}</p>
+          <p className="text-sm text-slate-500 mt-2">{t('charts.noData.progressionHint')}</p>
         </div>
       </div>
     );

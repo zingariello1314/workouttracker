@@ -13,9 +13,11 @@ import Button from '../../../ui/Button';
 import { Clock, TrendingUp, Activity, Droplet, RefreshCw, AlertCircle, CheckCircle, Info } from 'lucide-react';
 import { typography } from '../../../../styles/typography';
 import { useNutritionChronobiology } from '../../../../hooks/useNutritionChronobiology';
+import { useTranslation } from '../../../../utils/translations';
 
 // ✅ OPTIMISATION 2.5 : React.memo pour éviter re-renders inutiles (50-80% réduction)
 const NutritionChronobiology = React.memo(() => {
+  const t = useTranslation();
   const [period, setPeriod] = useState('30days');
   const { analysis, loading, error, refresh } = useNutritionChronobiology({ period });
 
@@ -64,7 +66,7 @@ const NutritionChronobiology = React.memo(() => {
       {/* En-tête avec sélecteur de période */}
       <div className="flex items-center justify-between">
         <h2 className={`${typography.presets.h2} text-white flex items-center gap-2`}>
-          <Clock size={28} className="text-blue-400" /> Chronobiologie
+          <Clock size={28} className="text-blue-400" /> {t('nutritionAnalyses.chronobiology.title')}
         </h2>
         <div className="flex items-center gap-2">
           <select
@@ -72,10 +74,10 @@ const NutritionChronobiology = React.memo(() => {
             onChange={(e) => setPeriod(e.target.value)}
             className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="7days">7 derniers jours</option>
-            <option value="30days">30 derniers jours</option>
-            <option value="90days">90 derniers jours</option>
-            <option value="all">Tout l'historique</option>
+            <option value="7days">{t('nutritionAnalyses.chronobiology.periods.7days')}</option>
+            <option value="30days">{t('nutritionAnalyses.chronobiology.periods.30days')}</option>
+            <option value="90days">{t('nutritionAnalyses.chronobiology.periods.90days')}</option>
+            <option value="all">{t('nutritionAnalyses.chronobiology.periods.all')}</option>
           </select>
           <Button onClick={refresh} variant="ghost" size="sm">
             <RefreshCw size={18} />
