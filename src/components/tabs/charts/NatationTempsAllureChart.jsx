@@ -1,7 +1,9 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
+import { useTranslation } from '../../../utils/translations';
 
 const NatationTempsAllureChart = ({ data, colors }) => {
+  const t = useTranslation();
   // Fonction utilitaire pour convertir le temps en secondes
   const parseTimeToSeconds = (timeStr) => {
     if (!timeStr) return 0;
