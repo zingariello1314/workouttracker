@@ -245,6 +245,7 @@ export const useTranslation = () => {
   const { language } = useLanguage();
   const languageRef = useRef(language);
   const [loadedNamespaces, setLoadedNamespaces] = useState({});
+  const [forceUpdate, setForceUpdate] = useState(0);
   
   // ✅ OPTIMISATION : Invalider le cache si la langue change
   useEffect(() => {
@@ -254,6 +255,7 @@ export const useTranslation = () => {
       currentCachedLanguage = language;
       languageRef.current = language;
       setLoadedNamespaces({}); // Réinitialiser les namespaces chargés
+      setForceUpdate(prev => prev + 1); // Forcer le re-render pour recharger les traductions
       log.debug(`[useTranslation] Cache invalidé - changement de langue: ${languageRef.current} → ${language}`);
     }
   }, [language]);
@@ -478,15 +480,27 @@ export const useTranslation = () => {
     
     // Si namespace pas encore chargé, déclencher le chargement en arrière-plan
     const { namespace } = parseKey(key);
-    if (!translation && namespace && !loadedNamespaces[namespace]) {
-      loadTranslationNamespace(lang, namespace).then(() => {
-        setLoadedNamespaces(prev => ({
-          ...prev,
-          [namespace]: true
-        }));
-      }).catch(error => {
-        log.warn(`[useTranslation] Error loading namespace ${namespace}:`, error);
-      });
+    if (!translation && namespace) {
+      // Vérifier d'abord si le namespace est déjà chargé dans le loader (via preload)
+      const cachedNamespace = getCachedNamespace(lang, namespace);
+      if (cachedNamespace) {
+        // Le namespace est chargé via preload, utiliser directement
+        const cachedTranslation = getNestedValue(cachedNamespace, namespaceKey);
+        if (cachedTranslation) {
+          translation = cachedTranslation;
+        }
+      } else if (!loadedNamespaces[namespace]) {
+        // Le namespace n'est pas chargé, le charger maintenant
+        loadTranslationNamespace(lang, namespace).then(() => {
+          setLoadedNamespaces(prev => ({
+            ...prev,
+            [namespace]: true
+          }));
+          setForceUpdate(prev => prev + 1); // Forcer le re-render pour afficher la traduction
+        }).catch(error => {
+          log.warn(`[useTranslation] Error loading namespace ${namespace}:`, error);
+        });
+      }
     }
     
     // ✅ PHASE 4.1 : Validation des clés manquantes (uniquement en développement)

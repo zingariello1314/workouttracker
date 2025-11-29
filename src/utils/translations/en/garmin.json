@@ -35,6 +35,17 @@
   },
   "toast": {
     "close": "Close message"
+  },
+  "errors": {
+    "serverUnreachable": "Unable to contact Garmin server. Make sure it's running on http://localhost:3031 (or configure VITE_GARMIN_SERVER_URL) and check http://localhost:3001/api/garmin/debug.",
+    "serverUnreachableDetails": "Details: {{details}}",
+    "serverInaccessible": "Server unreachable",
+    "allAttemptsFailed": "All attempts failed",
+    "circuitOpen": "Circuit open: retry in {{seconds}}s"
+  },
+  "messages": {
+    "todayNotInData": "Today ({{today}}) is not in available data. The most recent date is {{latestDate}}. Sync recommended.",
+    "todayNotInDataSimple": "Today ({{today}}) is not in available data. Sync recommended."
   }
 }
 

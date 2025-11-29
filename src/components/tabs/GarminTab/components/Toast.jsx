@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import TelemetryCoordinator from '../utils/TelemetryCoordinator';
 // ✅ Item 16 : Utiliser isBrowser() pour vérifications centralisées
 import { isBrowser } from '../../../../utils/isBrowser';
+import { useTranslation } from '../../../../utils/translations';
 
 /**
  * Composant Toast accessible pour feedback visuel

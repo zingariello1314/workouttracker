@@ -10,6 +10,7 @@ import React, {
 import { useThrottle } from '../../../../hooks/useThrottle';
 import { DEBOUNCE_DELAY_MS, DATE_RANGE, ARIA_LABELS, KEYBOARD } from '../constants';
 import { areTimeNavigationPropsEqual } from '../../../../utils/chartComparison';
+import { useTranslation } from '../../../../utils/translations';
 
 /**
  * 🟡 FIX #17 : Composant de navigation temporelle avancée avec optimisations
@@ -33,6 +34,7 @@ function TimeNavigation({
   customEndDate,
   setCustomEndDate
 }) {
+  const t = useTranslation();
   const [showFilters, setShowFilters] = React.useState(false);
   const [showComparison, setShowComparison] = React.useState(false);
   const filtersSectionId = useId();
@@ -161,7 +163,7 @@ function TimeNavigation({
     
     // Afficher un message si la date n'est pas disponible
     if (dateKeys.length > 0 && !dateKeys.includes(todayLocal)) {
-      console.log(`[TimeNavigation] Aujourd'hui (${todayLocal}) n'est pas dans les données disponibles. Synchronisation recommandée.`);
+      console.log(`[TimeNavigation] ${t('garmin.messages.todayNotInDataSimple', { today: todayLocal })}`);
     }
   }, [dateKeys, setSelectedDate]);
 

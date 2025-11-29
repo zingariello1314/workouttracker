@@ -9,6 +9,8 @@ import { useConfirmDialog } from './modals/ConfirmDialog';
 import { useToast } from './Toast';
 import telemetryEvents from '../utils/telemetryEvents';
 import { isBrowser, getWindow, hasDispatchEvent, hasCustomEvent } from '../../../../utils/isBrowser';
+import { useTranslation } from '../../../../utils/translations';
+import { useLanguage } from '../../../../context/LanguageContext';
 
 /**
  * Composant pour les contrôles de synchronisation Garmin
@@ -43,10 +45,13 @@ export default function SyncControls({
   const { showConfirm, ConfirmDialogComponent } = useConfirmDialog();
   const { showToast, ToastContainer } = useToast();
   const t = useTranslation();
+  const { language } = useLanguage();
 
   const lastForcedRange = forcedRangesHistory?.[0] || null;
-  const dateFormatter = React.useMemo(() => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }), []);
-  const dateTimeFormatter = React.useMemo(() => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }), []);
+  // ✅ Utiliser la locale appropriée selon la langue sélectionnée
+  const locale = language === 'en' ? 'en-US' : 'fr-FR';
+  const dateFormatter = React.useMemo(() => new Intl.DateTimeFormat(locale, { dateStyle: 'short' }), [locale]);
+  const dateTimeFormatter = React.useMemo(() => new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short' }), [locale]);
 
   const lastRangeDescriptor = React.useMemo(() => {
     if (!lastForcedRange) return null;

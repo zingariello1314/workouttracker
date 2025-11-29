@@ -1,0 +1,364 @@
+{
+  "steps": 58,
+  "distance": 0.046,
+  "floors": 0,
+  "calories": {
+    "total": 1979,
+    "active": 1,
+    "resting": 1978
+  },
+  "heartRate": {
+    "resting": 58,
+    "max": 81,
+    "avg": 68,
+    "timeSeries": [
+      {
+        "timestamp": "2025-11-25T20:58:00Z",
+        "bpm": 76
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -7
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -2
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 4
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -3
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 0
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": -1
+      },
+      {
+        "d_ts": 120000,
+        "d_val": 6
+      }
+    ]
+  },
+  "respiration": {
+    "awake": {
+      "min": 12,
+      "max": 27,
+      "avg": 20.0
+    },
+    "sleep": {
+      "min": 12,
+      "max": 27,
+      "avg": null
+    }
+  },
+  "intensityMinutes": null,
+  "bodyBattery": {
+    "current": 32,
+    "timeSeries": [
+      {
+        "timestamp": "2025-11-25T20:57:00Z",
+        "value": 27
+      },
+      {
+        "timestamp": "2025-11-25T22:54:00Z",
+        "value": 32
+      },
+      {
+        "timestamp": null,
+        "value": 100
+      }
+    ]
+  },
+  "stress": {
+    "average": 23,
+    "max": 57,
+    "timeSeries": []
+  },
+  "spo2": null,
+  "heartRateZones": {
+    "zone1": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone2": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone3": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone4": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone5": {
+      "time": 1,
+      "percentage": 100.0
+    },
+    "total": 1,
+    "zonesDefinition": {
+      "zone1": {
+        "min": 0,
+        "max": 48,
+        "name": "Zone 1 - \u00c9chauffement"
+      },
+      "zone2": {
+        "min": 48,
+        "max": 56,
+        "name": "Zone 2 - Br\u00fblage graisses"
+      },
+      "zone3": {
+        "min": 56,
+        "max": 64,
+        "name": "Zone 3 - A\u00e9robie"
+      },
+      "zone4": {
+        "min": 64,
+        "max": 72,
+        "name": "Zone 4 - Seuil"
+      },
+      "zone5": {
+        "min": 72,
+        "max": 81,
+        "name": "Zone 5 - Maximale"
+      }
+    },
+    "calculatedFromTimeSeries": true
+  },
+  "sleep": {
+    "duration": 0,
+    "quality": 0,
+    "deepSleep": null,
+    "lightSleep": null,
+    "remSleep": null,
+    "bedTime": null,
+    "wakeTime": null,
+    "awakenings": null,
+    "movements": null,
+    "phasesDetails": null
+  },
+  "date": "2025-11-25",
+  "_cached_at": 1764371738.8158174,
+  "_cache_version": 2,
+  "_raw_data_hash": "1c73122859869b2c7c48499318de08a2"
+}

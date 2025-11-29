@@ -178,6 +178,7 @@ const recordNetworkEvent = (event) => {
  * @param {Object} options - Options fetch (method, body, headers, etc.)
  * @param {number} retries - Nombre de tentatives max (défaut: RETRY_MAX_ATTEMPTS)
  * @param {Function|null} onBaseUrlChange - Callback appelé quand une base URL est utilisée (pour mettre à jour l'état)
+ * @param {Function|null} translateFn - Fonction de traduction optionnelle (ex: (key, params) => string)
  * @returns {Promise<Object>} Réponse JSON du serveur
  * @throws {Error} Si toutes les tentatives échouent
  * 
@@ -189,8 +190,11 @@ const recordNetworkEvent = (event) => {
  * const json = await tryFetch('/api/garmin/sync', { method: 'POST' }, 3, (baseUrl) => {
  *   setBaseUrl(baseUrl);
  * });
+ * 
+ * // Avec fonction de traduction
+ * const json = await tryFetch('/api/garmin/sync', { method: 'POST' }, 3, null, t);
  */
-export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS, onBaseUrlChange = null) => {
+export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS, onBaseUrlChange = null, translateFn = null) => {
   let lastErr;
   
   // Validation des paramètres
@@ -213,7 +217,15 @@ export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS,
       circuit: circuitBreaker.getState(),
       failureCount: circuitBreaker.getFailureCount()
     });
-    const error = new Error(`Circuit ouvert: nouvelle tentative dans ${Math.ceil(remaining / 1000)}s`);
+    // ✅ Utiliser la fonction de traduction si disponible
+    const getCircuitOpenMessage = () => {
+      if (translateFn && typeof translateFn === 'function') {
+        return translateFn('garmin.errors.circuitOpen', { seconds: Math.ceil(remaining / 1000) });
+      }
+      // Fallback en français
+      return `Circuit ouvert: nouvelle tentative dans ${Math.ceil(remaining / 1000)}s`;
+    };
+    const error = new Error(getCircuitOpenMessage());
     error.code = 'GARMIN_CIRCUIT_OPEN';
     throw error;
   }
@@ -227,6 +239,8 @@ export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS,
     const bases = baseUrlRegistry.getAll();
     for (let baseIndex = 0; baseIndex < bases.length; baseIndex++) {
       const baseUrl = bases[baseIndex];
+      // ✅ Déclarer attemptStart avant le try pour qu'il soit accessible dans le catch
+      const attemptStart = Date.now();
       try {
         // Timeout avec AbortController
         const controller = new AbortController();
@@ -237,8 +251,6 @@ export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS,
         
         const fullUrl = `${baseUrl}${path}`;
         log.debug(`[tryFetch] Attempt ${attempt + 1}/${retries} - Fetching ${fullUrl}`);
-        
-        const attemptStart = Date.now();
         const res = await fetch(fullUrl, { 
           ...options, 
           signal: controller.signal 
@@ -328,12 +340,32 @@ export const tryFetch = async (path, options = {}, retries = RETRY_MAX_ATTEMPTS,
   }
   
   // Toutes les tentatives ont échoué
-  const troubleshootingHint =
-    'Impossible de contacter le serveur Garmin. Vérifie qu’il tourne sur http://localhost:3031 (ou configure VITE_GARMIN_SERVER_URL) et consulte http://localhost:3001/api/garmin/debug.';
-  const errorMessage = `${troubleshootingHint} Détails: ${lastErr?.message || 'Serveur inaccessible'}`;
+  // ✅ Utiliser la fonction de traduction si disponible, sinon fallback en français
+  const getTranslation = (key, params = {}) => {
+    if (translateFn && typeof translateFn === 'function') {
+      return translateFn(key, params);
+    }
+    // Fallback en français si pas de traduction
+    const fallbacks = {
+      'garmin.errors.serverUnreachable': 'Impossible de contacter le serveur Garmin. Vérifie qu\'il tourne sur http://localhost:3031 (ou configure VITE_GARMIN_SERVER_URL) et consulte http://localhost:3001/api/garmin/debug.',
+      'garmin.errors.serverUnreachableDetails': (details) => `Détails: ${details}`,
+      'garmin.errors.serverInaccessible': 'Serveur inaccessible',
+      'garmin.errors.allAttemptsFailed': 'Tous les essais ont échoué'
+    };
+    const fallback = fallbacks[key];
+    if (typeof fallback === 'function') {
+      return fallback(params.details || '');
+    }
+    return fallback || key;
+  };
+  
+  const troubleshootingHint = getTranslation('garmin.errors.serverUnreachable');
+  const detailsText = getTranslation('garmin.errors.serverUnreachableDetails', { details: lastErr?.message || getTranslation('garmin.errors.serverInaccessible') });
+  const errorMessage = `${troubleshootingHint} ${detailsText}`;
   log.error(`[tryFetch] ❌ All attempts failed: ${errorMessage}`);
   if (typeof console !== 'undefined') {
-    console.error('[GarminSyncFetch] Tous les essais ont échoué', {
+    const allAttemptsFailedText = getTranslation('garmin.errors.allAttemptsFailed');
+    console.error(`[GarminSyncFetch] ${allAttemptsFailedText}`, {
       retries,
       bases: baseUrlRegistry.getAll(),
       lastError: lastErr?.message

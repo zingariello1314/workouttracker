@@ -15,6 +15,7 @@ import { ARIA_LABELS } from '../constants';
 import { KEYBOARD_SHORTCUTS, KEYBOARD_OPTIONS, createKeyboardShortcut } from '../constants/keyboard';
 import { isBrowser } from '../../../../utils/isBrowser';
 import { getActivitiesStabilityKey, getDailyMetricsStabilityKey } from '../utils/dataStability';
+import { useTranslation } from '../../../../utils/translations';
 
 // Constante locale (était dans GarminTab.jsx)
 const FORCED_HISTORY_DISPLAY_LIMIT = 200;
@@ -83,6 +84,7 @@ const TAB_ITEMS = Object.freeze([
  * Ne contient PAS de JSX (délégué à GarminTabView)
  */
 export function useGarminTabContainer(options = {}) {
+  const t = useTranslation();
   const {
     onForcedRangeRecorded: externalOnForcedRangeRecorded = null
   } = options;
@@ -381,7 +383,7 @@ export function useGarminTabContainer(options = {}) {
             } else {
               setSelectedDate(todayLocal);
               if (datesToUse.length > 0) {
-                console.log(`[GarminTabContainer] Aujourd'hui (${todayLocal}) n'est pas dans les données disponibles. La date la plus récente est ${datesToUse[datesToUse.length - 1]}. Synchronisation recommandée.`);
+                console.log(`[GarminTabContainer] ${t('garmin.messages.todayNotInData', { today: todayLocal, latestDate: datesToUse[datesToUse.length - 1] })}`);
               }
             }
           } else if (dates.length === 0 && !selectedDate) {

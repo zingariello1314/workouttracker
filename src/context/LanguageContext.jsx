@@ -36,7 +36,7 @@ export const LanguageProvider = ({ children }) => {
   });
 
   // Sauvegarder la langue dans localStorage
-  const setLanguage = useCallback((newLanguage) => {
+  const setLanguage = useCallback(async (newLanguage) => {
     if (newLanguage !== LANGUAGES.FR && newLanguage !== LANGUAGES.EN) {
       console.warn(`[LanguageContext] Langue invalide: ${newLanguage}, utilisation de ${LANGUAGES.FR}`);
       newLanguage = LANGUAGES.FR;
@@ -44,13 +44,26 @@ export const LanguageProvider = ({ children }) => {
     
     try {
       localStorage.setItem('app_language', newLanguage);
+      
+      // ✅ OPTIMISATION : Réinitialiser et précharger les traductions critiques AVANT de changer la langue
+      // Cela évite d'afficher les clés de traduction lors du premier changement
+      resetPreloadState(newLanguage);
+      
+      // Attendre le chargement des traductions critiques avant de changer la langue
+      // waitForCritical: true pour garantir que les traductions sont disponibles
+      await initI18n(newLanguage, { preloadSecondary: false, waitForCritical: true });
+      
+      // Maintenant que les traductions critiques sont chargées, changer la langue
       setLanguageState(newLanguage);
       
-      // ✅ PHASE 1.3 : Réinitialiser et précharger les traductions pour la nouvelle langue
-      resetPreloadState(newLanguage);
-      initI18n(newLanguage, { preloadSecondary: true, waitForCritical: false });
+      // Précharger les traductions secondaires en arrière-plan (non bloquant)
+      initI18n(newLanguage, { preloadSecondary: true, waitForCritical: false }).catch(error => {
+        log.warn('[LanguageContext] Erreur lors du preload secondaire (non bloquant):', error);
+      });
     } catch (error) {
       console.error('[LanguageContext] Erreur lors de la sauvegarde de la langue:', error);
+      // En cas d'erreur, changer quand même la langue (fallback)
+      setLanguageState(newLanguage);
     }
   }, []);
 
