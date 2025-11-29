@@ -52,15 +52,32 @@
   "hint": {
     "localStorage": "All data is stored locally (localStorage). You can back it up or restore it using the buttons above."
   },
+  "filters": {
+    "title": "Advanced filters",
+    "genre": "Filter by genre",
+    "minYear": "Min year",
+    "maxYear": "Max year",
+    "minScore": "Minimum rating",
+    "sortTitle": "Sorting",
+    "sortBy": "Sort by",
+    "sort.recent": "Most recent first",
+    "sort.title": "Title (A → Z)",
+    "sort.author": "Author (A → Z)",
+    "sort.pages": "Number of pages (descending)",
+    "sort.score": "Personal rating (descending)"
+  },
   "sections": {
     "inProgress": "Books in progress",
     "completed": "Completed books",
+    "toRead": "Books to read",
     "inProgressExtra": "+ {{count}} other books not displayed",
-    "completedExtra": "+ {{count}} other books not displayed"
+    "completedExtra": "+ {{count}} other books not displayed",
+    "toReadExtra": "+ {{count}} other books not displayed"
   },
   "empty": {
     "inProgress": "No books in progress yet. Add a book using the form above.",
-    "completed": "You haven’t marked any book as completed yet."
+    "completed": "You haven’t marked any book as completed yet.",
+    "toRead": "You don’t have any books marked as \"To read\" yet."
   },
   "detail": {
     "noTitle": "Untitled book",

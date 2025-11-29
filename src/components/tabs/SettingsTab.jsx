@@ -25,9 +25,9 @@ import {
   createDefaultChallengeFormState
 } from '../../services/endurance/enduranceFormSchema';
 import { ENDURANCE_SCHEMA_VERSION } from '../../services/endurance/enduranceDataService';
-import { prepareBooksExportData } from '../../utils/booksExportImport';
-import { getAllBooksFromIndexedDB } from '../../utils/booksIndexedDB';
-import { loadBooks as loadBooksFromLocalStorage } from '../../utils/booksStorage';
+import { prepareBooksExportData, processBooksImportData } from '../../utils/booksExportImport';
+import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../../utils/booksIndexedDB';
+import { loadBooks as loadBooksFromLocalStorage, saveBooks as saveBooksToLocalStorage } from '../../utils/booksStorage';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
@@ -889,22 +889,52 @@ const SettingsTab = () => {
         return;
       }
       
-      // Valider les données
+      // Valider les données d'entraînement
       const validation = validateAllWorkoutData(parsedData);
-      
       if (!validation.isValid) {
         setAllDataImportStatus('error');
         console.error('Erreurs de validation:', validation.errors);
         return;
       }
-      
+
+      // Prévisualisation des données Livres (si présentes dans l'export global)
+      let booksPreview = null;
+      let booksWarnings = [];
+      try {
+        const rawBooksExport =
+          (parsedData.data && parsedData.data.booksData) || parsedData.booksData || null;
+
+        if (rawBooksExport) {
+          const booksResult = processBooksImportData(rawBooksExport);
+
+          if (!booksResult.valid) {
+            booksWarnings.push(
+              `Livres: ${booksResult.errors?.[0] || 'Erreur de validation des données Livres'}`
+            );
+          } else {
+            booksPreview = {
+              valid: true,
+              totalBooks: (booksResult.books || []).length,
+              metadata: booksResult.metadata || null,
+              books: booksResult.books || []
+            };
+          }
+        }
+      } catch (booksError) {
+        console.warn('⚠️ Erreur lors de la prévisualisation des données Livres:', booksError);
+        booksWarnings.push('Livres: erreur lors de la lecture des données (voir console).');
+      }
+
+      const combinedWarnings = [...validation.warnings, ...booksWarnings];
+
       // Préparer les données de prévisualisation
       setAllDataPreviewData({
         data: validation.data,
         stats: validation.stats,
-        warnings: validation.warnings,
+        warnings: combinedWarnings,
         errors: validation.errors,
-        isExportFormat: !!parsedData.data || !!parsedData.metadata
+        isExportFormat: !!parsedData.data || !!parsedData.metadata,
+        booksPreview
       });
       
       setShowAllDataImportPreview(true);
@@ -930,7 +960,7 @@ const SettingsTab = () => {
         backupDate: new Date().toISOString()
       }));
       
-      // Utiliser les données de prévisualisation validées
+      // Utiliser les données de prévisualisation validées (entraînement)
       const importedData = allDataPreviewData.data;
       
       // ✅ Fusion intelligente : Fusionner avec données existantes (stratégie merge conservatrice)
@@ -1220,10 +1250,44 @@ const SettingsTab = () => {
         }
       }
       
-      // ✅ Sauvegarder les données fusionnées et nettoyées
+      // ✅ Sauvegarder les données fusionnées et nettoyées (entraînement)
       await updateData(mergedData);
       
-      // ✅ Forcer rechargement depuis IndexedDB pour mettre à jour le state
+      // ✅ Importer également les données Livres si présentes et valides
+      try {
+        const booksPreview = allDataPreviewData?.booksPreview;
+        if (booksPreview && booksPreview.valid && Array.isArray(booksPreview.books)) {
+          const booksToSave = booksPreview.books;
+
+          let indexedOk = false;
+          try {
+            indexedOk = await saveBooksToIndexedDB(booksToSave);
+          } catch (booksDbError) {
+            console.warn('⚠️ Erreur lors de la sauvegarde des Livres en IndexedDB:', booksDbError);
+          }
+
+          // Toujours tenter de synchroniser le fallback localStorage
+          try {
+            saveBooksToLocalStorage(booksToSave);
+          } catch (lsError) {
+            console.warn('⚠️ Erreur lors de la sauvegarde des Livres en localStorage:', lsError);
+          }
+
+          if (indexedOk) {
+            console.log(
+              `[Settings] ✅ Import Livres réussi (${booksToSave.length} livres restaurés depuis l'export global)`
+            );
+          } else {
+            console.log(
+              `[Settings] ⚠️ Import Livres effectué uniquement en localStorage (${booksToSave.length} livres)`
+            );
+          }
+        }
+      } catch (booksImportError) {
+        console.error('❌ Erreur lors de l’import des données Livres depuis l’export global:', booksImportError);
+      }
+
+      // ✅ Forcer rechargement depuis IndexedDB pour mettre à jour le state principal
       const reloadedData = await loadFromDB();
       if (reloadedData) {
         // Les données sont maintenant dans IndexedDB et seront chargées automatiquement

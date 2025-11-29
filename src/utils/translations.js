@@ -190,8 +190,10 @@ export const translations = {
     'books.hint.localStorage': 'Toutes les données sont stockées localement (localStorage). Tu peux les sauvegarder ou les restaurer via les boutons ci-dessus.',
     'books.sections.inProgress': 'Livres en cours',
     'books.sections.completed': 'Livres terminés',
+    'books.sections.toRead': 'Livres à lire',
     'books.empty.inProgress': 'Aucun livre en cours pour le moment. Ajoute un livre avec le formulaire ci-dessus.',
     'books.empty.completed': 'Tu n’as pas encore marqué de livre comme terminé.',
+    'books.empty.toRead': 'Tu n’as pas encore de livres marqués comme "À lire".',
     'books.detail.noTitle': 'Livre sans titre',
     'books.detail.noSelection': 'Aucun livre sélectionné',
     'books.detail.subtitle': 'Historique de lecture et statistiques pour ce livre.',
@@ -231,7 +233,19 @@ export const translations = {
     'books.assets.viewCover': 'Voir la couverture',
     'books.dome.show': 'Activer la vue 3D',
     'books.dome.hide': 'Masquer la vue 3D',
-    'books.dome.loading': 'Chargement de la vue 3D...'
+    'books.dome.loading': 'Chargement de la vue 3D...',
+    'books.filters.title': 'Filtres avancés',
+    'books.filters.genre': 'Filtrer par genre',
+    'books.filters.minYear': 'Année min',
+    'books.filters.maxYear': 'Année max',
+    'books.filters.minScore': 'Note minimale',
+    'books.filters.sortTitle': 'Tri',
+    'books.filters.sortBy': 'Trier par',
+    'books.filters.sort.recent': 'Plus récents d’abord',
+    'books.filters.sort.title': 'Titre (A → Z)',
+    'books.filters.sort.author': 'Auteur (A → Z)',
+    'books.filters.sort.pages': 'Nombre de pages (décroissant)',
+    'books.filters.sort.score': 'Note perso (décroissante)'
   },
   
   [LANGUAGES.EN]: {
@@ -328,8 +342,10 @@ export const translations = {
     'books.hint.localStorage': 'All data is stored locally (localStorage). You can back it up or restore it using the buttons above.',
     'books.sections.inProgress': 'Books in progress',
     'books.sections.completed': 'Completed books',
+    'books.sections.toRead': 'Books to read',
     'books.empty.inProgress': 'No books in progress yet. Add a book using the form above.',
     'books.empty.completed': 'You haven’t marked any book as completed yet.',
+    'books.empty.toRead': 'You don’t have any books marked as "To read" yet.',
     'books.detail.noTitle': 'Untitled book',
     'books.detail.noSelection': 'No book selected',
     'books.detail.subtitle': 'Reading history and statistics for this book.',
@@ -365,7 +381,19 @@ export const translations = {
     'books.assets.viewCover': 'View cover',
     'books.dome.show': 'Enable 3D view',
     'books.dome.hide': 'Hide 3D view',
-    'books.dome.loading': 'Loading 3D view...'
+    'books.dome.loading': 'Loading 3D view...',
+    'books.filters.title': 'Advanced filters',
+    'books.filters.genre': 'Filter by genre',
+    'books.filters.minYear': 'Min year',
+    'books.filters.maxYear': 'Max year',
+    'books.filters.minScore': 'Minimum rating',
+    'books.filters.sortTitle': 'Sorting',
+    'books.filters.sortBy': 'Sort by',
+    'books.filters.sort.recent': 'Most recent first',
+    'books.filters.sort.title': 'Title (A → Z)',
+    'books.filters.sort.author': 'Author (A → Z)',
+    'books.filters.sort.pages': 'Number of pages (descending)',
+    'books.filters.sort.score': 'Personal rating (descending)'
   }
 };
 

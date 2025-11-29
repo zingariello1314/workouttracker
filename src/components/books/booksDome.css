@@ -1,0 +1,290 @@
+.books-dome-container {
+  position: relative;
+  width: 100%;
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.books-dome-empty {
+  font-size: 0.875rem;
+  color: rgb(148 163 184);
+}
+
+.books-dome-sphere-root {
+  position: relative;
+  width: 90%;
+  max-width: 1200px;
+  height: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(15, 118, 110, 0.52), transparent 55%),
+    radial-gradient(circle at 50% 50%, #020617 0%, #020617 45%, #020617 70%, #000000 100%);
+
+  --radius: 520px;
+  --viewer-pad: 100px;
+  --circ: calc(var(--radius) * 3.14);
+  --rot-y: calc((360deg / var(--segments-x)) / 2);
+  --rot-x: calc((360deg / var(--segments-y)) / 2);
+  --item-width: calc(var(--circ) / var(--segments-x));
+  --item-height: calc(var(--circ) / var(--segments-y));
+}
+
+.books-dome-sphere-root * {
+  box-sizing: border-box;
+}
+
+.books-dome-sphere,
+.books-dome-item,
+.books-dome-item__image {
+  transform-style: preserve-3d;
+}
+
+.books-dome-main {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background: transparent;
+}
+
+.books-dome-stage {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  perspective: calc(var(--radius) * 2);
+  perspective-origin: 50% 50%;
+  contain: layout paint size;
+}
+
+.books-dome-sphere {
+  transform: translateZ(calc(var(--radius) * -1));
+  will-change: transform;
+}
+
+.books-dome-item {
+  width: calc(var(--item-width) * var(--item-size-x));
+  height: calc(var(--item-height) * var(--item-size-y));
+  position: absolute;
+  top: -999px;
+  bottom: -999px;
+  left: -999px;
+  right: -999px;
+  margin: auto;
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 260ms ease-out;
+  transform:
+    rotateY(
+      calc(
+        var(--rot-y) * (var(--offset-x) + ((var(--item-size-x) - 1) / 2)) +
+          var(--rot-y-delta, 0deg)
+      )
+    )
+    rotateX(
+      calc(
+        var(--rot-x) * (var(--offset-y) - ((var(--item-size-y) - 1) / 2)) +
+          var(--rot-x-delta, 0deg)
+      )
+    )
+    translateZ(var(--radius));
+}
+
+.books-dome-item__image {
+  position: absolute;
+  inset: 10px;
+  border-radius: var(--tile-radius, 12px);
+  background: transparent;
+  overflow: hidden;
+  backface-visibility: hidden;
+  transition:
+    transform 260ms ease-out,
+    box-shadow 260ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  pointer-events: auto;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.books-dome-item__image:hover {
+  transform: translateZ(18px) scale(1.04);
+  box-shadow:
+    0 20px 45px rgba(15, 23, 42, 0.8),
+    0 0 0 1px rgba(129, 140, 248, 0.25);
+}
+
+.books-dome-item__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  backface-visibility: hidden;
+  filter: var(--image-filter, none);
+}
+
+.books-dome-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.books-dome-overlay--blur {
+  backdrop-filter: blur(20px);
+  background:
+    radial-gradient(circle at 50% 15%, rgba(15, 23, 42, 0.38), transparent 55%),
+    radial-gradient(circle at 50% 80%, rgba(6, 95, 70, 0.25), transparent 70%);
+}
+
+.books-dome-edge-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 80px;
+  pointer-events: none;
+}
+
+.books-dome-edge-fade--top {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(6, 78, 59, 0.95), transparent);
+}
+
+.books-dome-edge-fade--bottom {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(6, 78, 59, 0.95), transparent);
+}
+
+.books-dome-enlarge-scrim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 10%, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.95));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  cursor: zoom-out;
+}
+
+.books-dome-enlarge-frame {
+  max-width: 360px;
+  width: 70%;
+  max-height: 480px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.98);
+  box-shadow:
+    0 25px 60px rgba(15, 23, 42, 0.9),
+    0 0 0 1px rgba(148, 163, 184, 0.4);
+  padding: 16px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transform: scale(0.9);
+  opacity: 0;
+  animation: books-dome-enlarge-in 220ms ease-out forwards;
+  cursor: auto;
+}
+
+.books-dome-enlarge-image {
+  width: 100%;
+  flex: 1 1 auto;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.books-dome-enlarge-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.books-dome-enlarge-meta {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.books-dome-enlarge-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin: 0;
+}
+
+.books-dome-enlarge-author {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.books-dome-enlarge-extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.books-dome-enlarge-pill {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  color: #e5e7eb;
+  background: rgba(51, 65, 85, 0.8);
+}
+
+.books-dome-enlarge-pill--status {
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.9), rgba(147, 51, 234, 0.9));
+}
+
+.books-dome-enlarge-button {
+  margin-top: 6px;
+  align-self: flex-start;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(129, 140, 248, 0.6);
+  background: linear-gradient(to right, rgba(30, 64, 175, 0.7), rgba(91, 33, 182, 0.85));
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 160ms ease-out,
+    transform 160ms ease-out,
+    box-shadow 160ms ease-out;
+}
+
+.books-dome-enlarge-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.85);
+  background: linear-gradient(to right, rgba(37, 99, 235, 0.9), rgba(124, 58, 237, 0.95));
+}
+
+@keyframes books-dome-enlarge-in {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+

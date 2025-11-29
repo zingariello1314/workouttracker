@@ -142,9 +142,16 @@ export const saveBooksToIndexedDB = async (books) => {
             personalScore: typeof book.personalScore === 'number' ? book.personalScore : 0,
             notes: book.notes || '',
             readingSessions: Array.isArray(book.readingSessions) ? book.readingSessions : [],
+            // Champs récents : on les préserve explicitement
+            genre: book.genre || '',
+            shortSummary: book.shortSummary || '',
+            longSummary: book.longSummary || '',
+            hasPdf: !!book.hasPdf,
+            hasCover: !!book.hasCover,
+            coverInline: book.coverInline || null,
             createdAt: book.createdAt || null,
             updatedAt: book.updatedAt || null,
-            version: book.version || '1.0',
+            version: book.version || '1.1',
           };
 
           const putRequest = store.put(normalized);

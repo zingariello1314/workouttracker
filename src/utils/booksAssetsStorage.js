@@ -1,7 +1,8 @@
 // Stockage des assets Livres (PDFs, couvertures) dans IndexedDB
 // Version minimaliste, non branchée à la UI pour l'instant.
 
-const DB_NAME = 'WorkoutTrackerDB';
+// DB dédiée aux assets Livres pour éviter toute collision de schéma
+const DB_NAME = 'WorkoutTrackerBooksAssets';
 const PDF_STORE = 'bookPdfFiles';
 const IMAGE_STORE = 'bookImages';
 
