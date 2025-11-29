@@ -275,3 +275,4 @@ function getMonthName(month) {
   return months[month - 1] || 'inconnu';
 }
 
+

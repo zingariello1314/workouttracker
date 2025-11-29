@@ -91,6 +91,9 @@
     "genre": "Genre",
     "year": "Année",
     "pages": "Pages",
+    "status": "Statut",
+    "shortSummary": "Résumé court",
+    "longSummary": "Résumé détaillé",
     "notes": "Notes",
     "noSelectionLong": "Sélectionne un livre dans les listes ci-dessus pour voir ses détails, son historique de lecture et ajouter des sessions."
   },
@@ -118,7 +121,7 @@
     "info": "Cette première version de l’onglet Livres implémente la gestion locale des livres et des sessions de lecture. Les fonctionnalités avancées décrites dans la documentation (sphère 3D, PDFs en IndexedDB, sauvegardes multi‑formats) pourront être ajoutées progressivement sans impacter le reste du site."
   },
   "dome": {
-    "show": "Activer la vue 3D",
+    "show": "Afficher la vue 3D",
     "hide": "Masquer la vue 3D",
     "loading": "Chargement de la vue 3D..."
   }

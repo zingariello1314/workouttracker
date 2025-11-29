@@ -22,12 +22,20 @@ export const loadBooks = () => {
 export const saveBooks = (books) => {
   try {
     const safeBooks = (Array.isArray(books) ? books : []).map((book) => {
-      const { _pdfBlobUrl, ...rest } = book || {};
+      // Exclure les champs volumineux qui sont stockés dans IndexedDB
+      const { _pdfBlobUrl, coverInline, ...rest } = book || {};
+      // Garder hasCover pour savoir qu'une couverture existe, mais pas coverInline (trop volumineux)
       return rest;
     });
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(safeBooks));
-  } catch {
+    const jsonString = JSON.stringify(safeBooks);
+    const sizeKB = (jsonString.length / 1024).toFixed(2);
+    console.log('[booksStorage] Sauvegarde localStorage:', safeBooks.length, 'livres,', sizeKB, 'KB');
+    window.localStorage.setItem(STORAGE_KEY, jsonString);
+    return true;
+  } catch (error) {
     // En cas d'erreur de quota ou autre, on ne casse pas l'app
+    console.error('[booksStorage] Erreur sauvegarde localStorage:', error);
+    return false;
   }
 };
 
@@ -67,5 +75,6 @@ export const importBooksFromFile = (file) => {
     reader.readAsText(file, 'utf-8');
   });
 };
+
 
 

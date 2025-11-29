@@ -329,3 +329,4 @@ export function useJustificationAnalysis(dayJustifications, options = {}) {
   }, [dayJustifications, period, customStartDate, customEndDate, workoutHistory, includePatterns]);
 }
 
+

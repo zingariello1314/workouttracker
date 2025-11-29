@@ -4,7 +4,7 @@ import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card
 import Button from '../ui/Button';
 import { Input, TextArea, Select } from '../ui/Input';
 import { useTranslation } from '../../utils/translations';
-import { importBooksFromFile } from '../../utils/booksStorage';
+import { importBooksFromFile, saveBooks, loadBooks } from '../../utils/booksStorage';
 import {
   prepareBooksExportData,
   processBooksImportData,
@@ -18,6 +18,7 @@ import {
   getBookCover,
 } from '../../utils/booksAssetsStorage';
 import { useBooksStorage } from '../../hooks/useBooksStorage';
+import { saveBooksToIndexedDB, getAllBooksFromIndexedDB } from '../../utils/booksIndexedDB';
 
 const BooksDomeGallery = React.lazy(() =>
   import('../books/BooksDomeGallery')
@@ -81,6 +82,22 @@ const BooksTab = () => {
   const [pageInProgress, setPageInProgress] = useState(0);
   const [pageCompleted, setPageCompleted] = useState(0);
   const [pageToRead, setPageToRead] = useState(0);
+  const [show3D, setShow3D] = useState(true);
+
+  // Debug: Log les livres quand ils changent
+  useEffect(() => {
+    if (books.length > 0) {
+      console.log('[BooksTab] Livres dans l\'état:', books.length);
+      console.log('[BooksTab] Répartition par statut:', {
+        'in-progress': books.filter(b => b.status === 'in-progress').length,
+        'completed': books.filter(b => b.status === 'completed').length,
+        'to-read': books.filter(b => b.status === 'to-read').length,
+        'abandoned': books.filter(b => b.status === 'abandoned').length,
+        'paused': books.filter(b => b.status === 'paused').length,
+        'sans-statut': books.filter(b => !b.status || !['in-progress', 'completed', 'to-read', 'abandoned', 'paused'].includes(b.status)).map(b => ({ id: b.id, title: b.title, status: b.status })),
+      });
+    }
+  }, [books]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({
@@ -117,12 +134,42 @@ const BooksTab = () => {
   }, []);
 
   // Charger paresseusement les miniatures de couverture pour les livres qui en ont une
+  // Charger d'abord les coverInline (synchrone), puis IndexedDB (asynchrone) si show3D est activé
   useEffect(() => {
     let cancelled = false;
 
-    const loadCovers = async () => {
-      const toLoad = books.filter((book) => !coverUrlsRef.current[book.id]);
+    // Étape 1 : Charger immédiatement les coverInline (dataURL) pour tous les livres
+    const loadInlineCovers = () => {
+      const newCoverUrls = { ...coverUrlsRef.current };
+      let hasChanges = false;
+      
+      books.forEach((book) => {
+        if (book.coverInline && !newCoverUrls[book.id]) {
+          newCoverUrls[book.id] = book.coverInline;
+          hasChanges = true;
+        }
+      });
+      
+      if (hasChanges) {
+        coverUrlsRef.current = newCoverUrls;
+        setCoverUrls(newCoverUrls);
+      }
+    };
+
+    // Charger les coverInline immédiatement (synchrone)
+    loadInlineCovers();
+
+    // Étape 2 : Charger depuis IndexedDB pour toutes les couvertures manquantes
+    // (même si show3D est désactivé, pour afficher les couvertures dans les cartes)
+    const loadCoversFromIndexedDB = async () => {
+      const toLoad = books.filter((book) => {
+        // Ne charger que si on n'a pas déjà une URL (ni coverInline, ni IndexedDB)
+        return !coverUrlsRef.current[book.id] && book.hasCover;
+      });
+      
       for (const book of toLoad) {
+        if (cancelled) return;
+        
         try {
           const record = await getBookCover(`cover_${book.id}`);
           let src = null;
@@ -134,9 +181,6 @@ const BooksTab = () => {
               return;
             }
             src = objectUrl;
-          } else if (book.coverInline) {
-            // Fallback : miniature intégrée (dataURL)
-            src = book.coverInline;
           }
 
           if (!src) continue;
@@ -162,13 +206,23 @@ const BooksTab = () => {
     };
 
     if (books && books.length > 0) {
-      loadCovers();
+      loadCoversFromIndexedDB();
     }
 
     return () => {
       cancelled = true;
+      // Nettoyer les ObjectURL créés pour éviter les fuites mémoire
+      Object.values(coverUrlsRef.current).forEach((url) => {
+        if (url && typeof url === 'string' && url.startsWith('blob:')) {
+          try {
+            URL.revokeObjectURL(url);
+          } catch {
+            // ignore
+          }
+        }
+      });
     };
-  }, [books]);
+  }, [books, show3D]);
 
   // Cleanup des ObjectURLs à la fermeture de l’onglet
   useEffect(
@@ -212,6 +266,13 @@ const BooksTab = () => {
       personalScore: Number(form.personalScore) || 0,
     };
 
+    // Préparer coverInline AVANT setBooks pour garantir la persistance atomique
+    let coverInlineDataUrl = null;
+    if (formCoverFile) {
+      coverInlineDataUrl = await readFileAsDataUrl(formCoverFile);
+    }
+
+    // Mettre à jour le livre avec hasCover et coverInline en une seule opération
     setBooks((prev) => {
       if (isEditing) {
         return prev.map((book) =>
@@ -220,6 +281,7 @@ const BooksTab = () => {
                 ...book,
                 ...baseBook,
                 hasCover: book.hasCover || !!formCoverFile,
+                coverInline: coverInlineDataUrl || book.coverInline || null,
                 // préserve createdAt si déjà présent
                 createdAt: book.createdAt || nowIso,
               }
@@ -231,6 +293,7 @@ const BooksTab = () => {
         {
           ...baseBook,
           hasCover: !!formCoverFile,
+          coverInline: coverInlineDataUrl || null,
           readingSessions: [],
           createdAt: nowIso,
         },
@@ -238,26 +301,8 @@ const BooksTab = () => {
       ];
     });
 
+    // Mettre à jour l'aperçu immédiatement pour l'affichage
     if (formCoverFile) {
-      const coverId = `cover_${id}`;
-      // On enregistre en arrière-plan, sans bloquer l’UI
-      const ok = await saveBookCover(coverId, formCoverFile, {
-        name: formCoverFile.name || null,
-        from: 'book-form',
-      });
-
-      if (!ok) {
-        // Fallback : stocker une petite version inline pour garantir la persistance
-        const dataUrl = await readFileAsDataUrl(formCoverFile);
-        if (dataUrl) {
-          setBooks((prev) =>
-            prev.map((book) =>
-              book.id === id ? { ...book, hasCover: true, coverInline: dataUrl } : book
-            )
-          );
-        }
-      }
-
       const localUrl = URL.createObjectURL(formCoverFile);
       setCoverUrls((prev) => {
         const existing = prev[id];
@@ -268,10 +313,22 @@ const BooksTab = () => {
         coverUrlsRef.current = next;
         return next;
       });
-      setFormCoverFile(null);
-      if (coverFormInputRef.current) {
-        coverFormInputRef.current.value = '';
-      }
+    }
+
+    // Essayer de sauvegarder dans IndexedDB en arrière-plan (non bloquant)
+    if (formCoverFile) {
+      const coverId = `cover_${id}`;
+      saveBookCover(coverId, formCoverFile, {
+        name: formCoverFile.name || null,
+        from: 'book-form',
+      }).catch(() => {
+        // Échec silencieux : on a déjà coverInline comme fallback
+      });
+    }
+
+    setFormCoverFile(null);
+    if (coverFormInputRef.current) {
+      coverFormInputRef.current.value = '';
     }
 
     resetForm();
@@ -305,6 +362,14 @@ const BooksTab = () => {
     if (selectedBookId === book.id) {
       setSelectedBookId(null);
     }
+  };
+
+  const handleStatusChange = (bookId, newStatus) => {
+    setBooks((prevBooks) =>
+      prevBooks.map((b) =>
+        b.id === bookId ? { ...b, status: newStatus } : b
+      )
+    );
   };
 
   const selectedBook = useMemo(
@@ -418,11 +483,17 @@ const BooksTab = () => {
   const domeBooks = useMemo(
     () =>
       books
-        .filter((b) => coverUrls[b.id])
+        .filter((b) => b.hasCover && coverUrls[b.id]) // Tous les livres avec couverture, peu importe le statut
         .map((b) => ({
           id: b.id,
           title: b.title || t('books.detail.noTitle', 'Livre sans titre'),
           author: b.author || '',
+          genre: b.genre || '',
+          year: b.year || null,
+          pages: b.pages || null,
+          personalScore: typeof b.personalScore === 'number' ? b.personalScore : 0,
+          status: b.status || 'in-progress',
+          shortSummary: b.shortSummary || b.notes || '',
           coverUrl: coverUrls[b.id],
         })),
     [books, coverUrls, t]
@@ -616,25 +687,10 @@ const BooksTab = () => {
     const file = event.target.files?.[0];
     if (!file || !selectedBook) return;
 
-    const coverId = `cover_${selectedBook.id}`;
-    const ok = await saveBookCover(coverId, file, { name: file.name || null });
+    // Préparer coverInline AVANT setBooks pour garantir la persistance atomique
+    const inlineDataUrl = await readFileAsDataUrl(file);
 
-    let inlineDataUrl = null;
-    if (!ok) {
-      // Fallback robuste : encoder une miniature inline pour garantir la persistance
-      inlineDataUrl = await readFileAsDataUrl(file);
-      if (inlineDataUrl) {
-        alert(
-          "IndexedDB ne permet pas de stocker cette couverture (quota ou compatibilité). " +
-            'Une version intégrée sera utilisée pour la persistance dans tes sauvegardes.'
-        );
-      } else {
-        alert(
-          "Erreur lors de l'enregistrement de la couverture du livre. Tu peux réessayer avec une image plus légère."
-        );
-      }
-    }
-
+    // Mettre à jour le livre avec hasCover et coverInline en une seule opération
     setBooks((prev) =>
       prev.map((book) =>
         book.id === selectedBook.id
@@ -647,6 +703,7 @@ const BooksTab = () => {
       )
     );
 
+    // Mettre à jour l'aperçu immédiatement pour l'affichage
     const localUrl = URL.createObjectURL(file);
     setCoverUrls((prev) => {
       const existing = prev[selectedBook.id];
@@ -657,6 +714,22 @@ const BooksTab = () => {
       coverUrlsRef.current = next;
       return next;
     });
+
+    // Essayer de sauvegarder dans IndexedDB en arrière-plan (non bloquant)
+    const coverId = `cover_${selectedBook.id}`;
+    const ok = await saveBookCover(coverId, file, { name: file.name || null });
+
+    if (!ok && inlineDataUrl) {
+      // Alerte informative si IndexedDB échoue (mais on a déjà coverInline)
+      alert(
+        "IndexedDB ne permet pas de stocker cette couverture (quota ou compatibilité). " +
+          'Une version intégrée sera utilisée pour la persistance dans tes sauvegardes.'
+      );
+    } else if (!ok) {
+      alert(
+        "Erreur lors de l'enregistrement de la couverture du livre. Tu peux réessayer avec une image plus légère."
+      );
+    }
   };
 
   const handleRemoveCover = async () => {
@@ -672,7 +745,7 @@ const BooksTab = () => {
     setBooks((prev) =>
       prev.map((book) =>
         book.id === selectedBook.id
-          ? { ...book, hasCover: false }
+          ? { ...book, hasCover: false, coverInline: null }
           : book
       )
     );
@@ -681,7 +754,10 @@ const BooksTab = () => {
       const existing = prev[selectedBook.id];
       if (existing) {
         try {
-          URL.revokeObjectURL(existing);
+          // Ne révoquer que les ObjectURL, pas les dataURL
+          if (existing.startsWith('blob:')) {
+            URL.revokeObjectURL(existing);
+          }
         } catch {
           // ignore
         }
@@ -768,27 +844,238 @@ const BooksTab = () => {
 
     setIsImporting(true);
     try {
-      const fileData = await importBooksFromFile(file);
-      const result = processBooksImportData(
-        typeof fileData === 'string' ? fileData : { data: { books: fileData } }
-      );
+      // Lire le fichier brut pour laisser processBooksImportData gérer tous les formats
+      const fileText = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file, 'utf-8');
+      });
+
+      let parsedData;
+      try {
+        parsedData = JSON.parse(fileText);
+      } catch (parseError) {
+        alert("Le fichier n'est pas un JSON valide.");
+        return;
+      }
+
+      // Gérer les différents formats possibles :
+      // 1. Format nouveau : { version: '1.1', data: { books: [...] } }
+      // 2. Format ancien simple : { version: 1, books: [...] }
+      // 3. Format tableau direct : [...]
+      let dataToProcess = parsedData;
+      
+      // Si c'est le format ancien avec books à la racine, le convertir
+      if (parsedData && !parsedData.data && Array.isArray(parsedData.books)) {
+        dataToProcess = {
+          version: parsedData.version || '1.0',
+          data: { books: parsedData.books },
+        };
+      }
+      // Si c'est un tableau direct (format très ancien)
+      else if (Array.isArray(parsedData)) {
+        dataToProcess = {
+          version: '1.0',
+          data: { books: parsedData },
+        };
+      }
+
+      const result = processBooksImportData(dataToProcess);
+
+      console.log('[BooksTab] Résultat import:', {
+        valid: result.valid,
+        booksCount: result.books?.length || 0,
+        errors: result.errors,
+        warnings: result.warnings,
+        stats: result.stats,
+      });
 
       if (!result.valid) {
+        console.error('[BooksTab] Erreurs d\'import:', result.errors);
         alert(
-          `Erreur lors de l'import Livres: ${result.errors?.[0] || 'inconnu'}`
+          `Erreur lors de l'import Livres: ${result.errors?.join(', ') || 'inconnu'}`
         );
         return;
       }
 
-      setBooks(result.books);
+      if (result.books.length === 0) {
+        console.warn('[BooksTab] Aucun livre valide dans le fichier');
+        alert('Aucun livre valide trouvé dans le fichier.');
+        return;
+      }
+
+      console.log('[BooksTab] Import réussi, sauvegarde de', result.books.length, 'livres');
+      
+      // Log détaillé du premier livre pour debug
+      if (result.books.length > 0) {
+        const firstBook = result.books[0];
+        console.log('[BooksTab] Premier livre (détails complets):', {
+          id: firstBook.id,
+          title: firstBook.title,
+          author: firstBook.author,
+          year: firstBook.year,
+          pages: firstBook.pages,
+          genre: firstBook.genre,
+          status: firstBook.status,
+          shortSummary: firstBook.shortSummary ? `${firstBook.shortSummary.substring(0, 100)}...` : 'VIDE',
+          shortSummaryLength: firstBook.shortSummary ? firstBook.shortSummary.length : 0,
+          longSummary: firstBook.longSummary ? `${firstBook.longSummary.substring(0, 100)}...` : 'VIDE',
+          longSummaryLength: firstBook.longSummary ? firstBook.longSummary.length : 0,
+          notes: firstBook.notes ? `${firstBook.notes.substring(0, 100)}...` : 'VIDE',
+          personalScore: firstBook.personalScore,
+          hasCover: firstBook.hasCover,
+          hasPdf: firstBook.hasPdf,
+          coverInline: firstBook.coverInline ? `${firstBook.coverInline.substring(0, 100)}...` : 'ABSENT',
+          coverInlineLength: firstBook.coverInline ? firstBook.coverInline.length : 0,
+          readingSessions: firstBook.readingSessions?.length || 0,
+          allKeys: Object.keys(firstBook),
+        });
+      }
+      
+      console.log('[BooksTab] Détails de tous les livres importés:', result.books.map(b => ({
+        id: b.id,
+        title: b.title,
+        author: b.author,
+        year: b.year,
+        pages: b.pages,
+        genre: b.genre,
+        status: b.status,
+        shortSummary: b.shortSummary ? `${b.shortSummary.substring(0, 50)}...` : '',
+        longSummary: b.longSummary ? `${b.longSummary.substring(0, 50)}...` : '',
+        personalScore: b.personalScore,
+        hasCover: b.hasCover,
+        hasPdf: b.hasPdf,
+        coverInline: b.coverInline ? `présent (${b.coverInline.length} chars)` : 'absent',
+        readingSessions: b.readingSessions?.length || 0,
+      })));
+      
+      // Vérifier que tous les livres ont un statut valide et charger les couvertures
+      const booksWithValidStatus = result.books.map(book => {
+        const validStatuses = ['in-progress', 'completed', 'to-read', 'abandoned', 'paused'];
+        let normalizedBook = book;
+        if (!book.status || !validStatuses.includes(book.status)) {
+          console.warn('[BooksTab] Livre sans statut valide, utilisation de "in-progress" par défaut:', book.id, book.title, 'statut actuel:', book.status);
+          normalizedBook = { ...book, status: 'in-progress' };
+        }
+        
+        // S'assurer que hasCover est true si coverInline existe
+        if (normalizedBook.coverInline && !normalizedBook.hasCover) {
+          normalizedBook.hasCover = true;
+        }
+        
+        return normalizedBook;
+      });
+      
+      // Fonction helper pour convertir dataURL en Blob
+      const dataURLtoBlob = (dataURL) => {
+        try {
+          const arr = dataURL.split(',');
+          const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          return new Blob([u8arr], { type: mime });
+        } catch (error) {
+          console.error('[BooksTab] Erreur conversion dataURL vers Blob:', error);
+          return null;
+        }
+      };
+
+      // Charger immédiatement les couvertures coverInline dans coverUrls
+      const newCoverUrls = { ...coverUrls };
+      const coverSavePromises = [];
+      
+      booksWithValidStatus.forEach(book => {
+        if (book.coverInline && !newCoverUrls[book.id]) {
+          // coverInline est déjà une dataURL, on peut l'utiliser directement pour l'affichage
+          newCoverUrls[book.id] = book.coverInline;
+          
+          // Convertir en Blob et sauvegarder dans IndexedDB pour la persistance
+          const blob = dataURLtoBlob(book.coverInline);
+          if (blob) {
+            coverSavePromises.push(
+              saveBookCover(book.id, blob, { 
+                name: `cover_${book.id}.${blob.type.split('/')[1] || 'jpg'}` 
+              }).then(success => {
+                if (success) {
+                  console.log(`[BooksTab] Couverture sauvegardée pour livre ${book.id}`);
+                } else {
+                  console.warn(`[BooksTab] Échec sauvegarde couverture pour livre ${book.id}`);
+                }
+                return success;
+              })
+            );
+          }
+        }
+      });
+      
+      setCoverUrls(newCoverUrls);
+      coverUrlsRef.current = newCoverUrls;
+      
+      console.log('[BooksTab] Couvertures chargées:', Object.keys(newCoverUrls).length, 'livres avec couverture');
+      
+      // IMPORTANT: Sauvegarder d'abord dans IndexedDB AVANT de mettre à jour le state
+      // Cela garantit la persistance même si l'utilisateur rafraîchit la page immédiatement
+      console.log('[BooksTab] Début sauvegarde pour', booksWithValidStatus.length, 'livres');
+      
+      // 1. Sauvegarder d'abord dans IndexedDB (BLOQUANT)
+      const saveIndexedDBSuccess = await saveBooksToIndexedDB(booksWithValidStatus);
+      if (!saveIndexedDBSuccess) {
+        console.error('[BooksTab] ❌ Échec sauvegarde IndexedDB');
+        alert('❌ Erreur : Impossible de sauvegarder les livres dans IndexedDB. L\'import a été annulé.');
+        return;
+      }
+      console.log('[BooksTab] ✅ Sauvegarde IndexedDB réussie');
+      
+      // 2. Vérifier que les données sont bien sauvegardées
+      const verifyIndexedDB = await getAllBooksFromIndexedDB();
+      if (verifyIndexedDB.length !== booksWithValidStatus.length) {
+        console.error('[BooksTab] ❌ Vérification échouée :', verifyIndexedDB.length, 'livres au lieu de', booksWithValidStatus.length);
+        alert(`❌ Erreur : Vérification échouée. ${verifyIndexedDB.length} livres sauvegardés au lieu de ${booksWithValidStatus.length}. L'import a été annulé.`);
+        return;
+      }
+      console.log('[BooksTab] ✅ Vérification IndexedDB réussie :', verifyIndexedDB.length, 'livres');
+      
+      // 3. Sauvegarder dans localStorage (fallback, NON BLOQUANT)
+      try {
+        const localStorageSuccess = saveBooks(booksWithValidStatus);
+        if (localStorageSuccess) {
+          console.log('[BooksTab] ✅ Sauvegarde localStorage réussie');
+        } else {
+          console.warn('[BooksTab] ⚠️ Sauvegarde localStorage échouée (non bloquant)');
+        }
+      } catch (error) {
+        console.warn('[BooksTab] ⚠️ Erreur sauvegarde localStorage (non bloquant):', error);
+      }
+      
+      // 4. SEULEMENT MAINTENANT mettre à jour le state (les données sont déjà persistées)
+      setBooks(booksWithValidStatus);
+      console.log('[BooksTab] ✅ State mis à jour,', booksWithValidStatus.length, 'livres importés');
+      
+      // Attendre que toutes les couvertures soient sauvegardées
+      const coverResults = await Promise.allSettled(coverSavePromises);
+      const successfulCovers = coverResults.filter(r => r.status === 'fulfilled' && r.value).length;
+      console.log(`[BooksTab] Couvertures sauvegardées dans IndexedDB: ${successfulCovers}/${coverSavePromises.length}`);
+      
       setSelectedBookId(null);
       resetForm();
       resetSessionForm();
+      
+      // Afficher un message de succès (seulement si tout s'est bien passé)
+      alert(`✅ ${result.books.length} livre(s) importé(s) et sauvegardé(s) avec succès !\n${successfulCovers} couverture(s) sauvegardée(s).\n\nLes données sont maintenant persistées et survivront à un rafraîchissement.`);
     } catch (error) {
       console.error('Erreur import livres:', error);
-      alert("Erreur lors de l'import. Vérifie le fichier JSON.");
+      alert(`Erreur lors de l'import: ${error.message || 'Vérifie le fichier JSON.'}`);
     } finally {
       setIsImporting(false);
+      // Réinitialiser l'input pour permettre de réimporter le même fichier
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -897,6 +1184,15 @@ const BooksTab = () => {
               </p>
             </div>
           </div>
+          <Button
+            onClick={() => setShow3D(!show3D)}
+            variant={show3D ? 'primary' : 'secondary'}
+            size="sm"
+          >
+            {show3D
+              ? t('books.dome.hide', 'Masquer la vue 3D')
+              : t('books.dome.show', 'Afficher la vue 3D')}
+          </Button>
         </CardHeader>
         <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           {/* Formulaire principal livre */}
@@ -1154,25 +1450,31 @@ const BooksTab = () => {
         </CardContent>
       </Card>
 
-      <Suspense
-        fallback={
-          <Card>
-            <CardContent>
-              <p className="text-sm text-slate-300">
-                {t('books.dome.loading', 'Chargement de la vue 3D...')}
-              </p>
-            </CardContent>
-          </Card>
-        }
-      >
-        <BooksDomeGallery
-          books={domeBooks}
-          onBookOpen={(id) => setSelectedBookId(id)}
-          dragSensitivity={50}
-          dragDampening={0.3}
-          maxVerticalRotationDeg={8}
-        />
-      </Suspense>
+      {show3D && (
+        <Suspense
+          fallback={
+            <Card>
+              <CardContent>
+                <p className="text-sm text-slate-300">
+                  {t('books.dome.loading', 'Chargement de la vue 3D...')}
+                </p>
+              </CardContent>
+            </Card>
+          }
+        >
+          <BooksDomeGallery
+            books={domeBooks}
+            onBookOpen={(id) => setSelectedBookId(id)}
+            dragSensitivity={50}
+            dragDampening={0.3}
+            maxVerticalRotationDeg={8}
+            fit={0.9}
+            minRadius={600}
+            maxRadius={1400}
+            padFactor={0.05}
+          />
+        </Suspense>
+      )}
 
       {/* Carrousels simplifiés */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -1516,6 +1818,24 @@ const BooksTab = () => {
                 </div>
               </div>
 
+              {selectedBook.shortSummary && (
+                <div className="text-sm text-slate-300">
+                  <p className="font-semibold mb-1">
+                    {t('books.detail.shortSummary', 'Résumé court')}
+                  </p>
+                  <p className="whitespace-pre-line">{selectedBook.shortSummary}</p>
+                </div>
+              )}
+
+              {selectedBook.longSummary && (
+                <div className="text-sm text-slate-300">
+                  <p className="font-semibold mb-1">
+                    {t('books.detail.longSummary', 'Résumé détaillé')}
+                  </p>
+                  <p className="whitespace-pre-line">{selectedBook.longSummary}</p>
+                </div>
+              )}
+
               {selectedBook.notes && (
                 <div className="text-sm text-slate-300">
                   <p className="font-semibold mb-1">
@@ -1708,6 +2028,40 @@ const BooksTab = () => {
                     )}
                   </Button>
                 </form>
+              </div>
+
+              {/* Sélecteur de statut en bas de la page */}
+              <div className="mt-6 pt-6 border-t border-slate-700">
+                <div className="flex items-center gap-4">
+                  <label
+                    htmlFor="book-status-detail"
+                    className="text-sm font-semibold text-slate-300 whitespace-nowrap"
+                  >
+                    {t('books.detail.status', 'Statut du livre')}:
+                  </label>
+                  <Select
+                    id="book-status-detail"
+                    value={selectedBook.status || 'in-progress'}
+                    onChange={(e) => handleStatusChange(selectedBook.id, e.target.value)}
+                    className="flex-1 max-w-xs"
+                  >
+                    <option value="in-progress">
+                      {t('books.status.inProgress', 'En cours')}
+                    </option>
+                    <option value="completed">
+                      {t('books.status.completed', 'Terminé')}
+                    </option>
+                    <option value="to-read">
+                      {t('books.status.toRead', 'À lire')}
+                    </option>
+                    <option value="paused">
+                      {t('books.status.paused', 'En pause')}
+                    </option>
+                    <option value="abandoned">
+                      {t('books.status.abandoned', 'Abandonné')}
+                    </option>
+                  </Select>
+                </div>
               </div>
             </>
           ) : (

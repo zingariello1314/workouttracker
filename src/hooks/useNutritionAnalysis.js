@@ -418,3 +418,4 @@ export function useNutritionAnalysis(dailyMeals, meals = [], activeProgram = nul
   }, [dailyMeals, meals, activeProgram, period, customStartDate, customEndDate]);
 }
 
+

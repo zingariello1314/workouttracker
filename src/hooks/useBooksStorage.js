@@ -39,7 +39,9 @@ export const useBooksStorage = () => {
       try {
         // 1) Essayer IndexedDB
         const indexedBooks = await getAllBooksFromIndexedDB();
+        console.log('[useBooksStorage] Chargement IndexedDB:', indexedBooks.length, 'livres trouvés');
         if (isMounted && Array.isArray(indexedBooks) && indexedBooks.length > 0) {
+          console.log('[useBooksStorage] ✅ Utilisation des livres depuis IndexedDB');
           setBooks(indexedBooks);
           lastSavedHashRef.current = computeHash(indexedBooks);
           return;
@@ -47,13 +49,21 @@ export const useBooksStorage = () => {
 
         // 2) Sinon, fallback vers localStorage
         const localBooks = loadBooks();
+        console.log('[useBooksStorage] Chargement localStorage:', localBooks.length, 'livres trouvés');
         if (isMounted) {
+          if (localBooks.length > 0) {
+            console.log('[useBooksStorage] ✅ Utilisation des livres depuis localStorage');
+          } else {
+            console.log('[useBooksStorage] ⚠️ Aucun livre trouvé (IndexedDB et localStorage vides)');
+          }
           setBooks(localBooks);
           lastSavedHashRef.current = computeHash(localBooks);
         }
-      } catch {
+      } catch (error) {
+        console.error('[useBooksStorage] ❌ Erreur lors du chargement:', error);
         if (isMounted) {
           const fallback = loadBooks();
+          console.log('[useBooksStorage] Fallback localStorage:', fallback.length, 'livres');
           setBooks(fallback);
           lastSavedHashRef.current = computeHash(fallback);
         }
@@ -61,6 +71,7 @@ export const useBooksStorage = () => {
         if (isMounted) {
           setIsLoading(false);
           isInitialLoadRef.current = false;
+          console.log('[useBooksStorage] Chargement initial terminé, isInitialLoadRef = false');
         }
       }
     };
@@ -132,5 +143,6 @@ export const useBooksStorage = () => {
 };
 
 export default useBooksStorage;
+
 
 

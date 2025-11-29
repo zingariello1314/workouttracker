@@ -481,3 +481,4 @@ export function useGarminWorkoutCorrelations(garminData, workoutHistory, options
   }, [garminData, workoutHistory, period, customStartDate, customEndDate]);
 }
 
+

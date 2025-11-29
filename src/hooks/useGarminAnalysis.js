@@ -403,3 +403,4 @@ export function useGarminAnalysis(garminData, options = {}) {
   }, [garminData, period, customStartDate, customEndDate]);
 }
 
+

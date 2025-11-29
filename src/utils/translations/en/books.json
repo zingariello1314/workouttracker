@@ -90,6 +90,9 @@
     "genre": "Genre",
     "year": "Year",
     "pages": "Pages",
+    "status": "Status",
+    "shortSummary": "Short summary",
+    "longSummary": "Detailed summary",
     "notes": "Notes",
     "noSelectionLong": "Select a book from the lists above to see its details, reading history and to add sessions."
   },
@@ -117,7 +120,7 @@
     "info": "This first version of the Books tab implements local management of books and reading sessions. The advanced features described in the documentation (3D sphere, PDFs in IndexedDB, multi‑format backups) can be added progressively without impacting the rest of the site."
   },
   "dome": {
-    "show": "Enable 3D view",
+    "show": "Show 3D view",
     "hide": "Hide 3D view",
     "loading": "Loading 3D view..."
   }

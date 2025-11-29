@@ -16,12 +16,14 @@ export const openBooksDB = () => {
       return;
     }
 
+    // Ouvrir sans version spécifique pour obtenir la version actuelle
     const request = indexedDB.open(DB_NAME);
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
 
       if (!db.objectStoreNames.contains(BOOKS_STORE)) {
+        console.log('[booksIndexedDB] Création du store "books"');
         const store = db.createObjectStore(BOOKS_STORE, { keyPath: 'id' });
         // Index simple sur le statut pour d'éventuels filtres futurs
         try {
@@ -33,7 +35,38 @@ export const openBooksDB = () => {
     };
 
     request.onsuccess = (event) => {
-      resolve(event.target.result);
+      const db = event.target.result;
+      // Vérifier que le store existe, sinon forcer un upgrade
+      if (!db.objectStoreNames.contains(BOOKS_STORE)) {
+        console.warn('[booksIndexedDB] ⚠️ Le store "books" n\'existe pas, fermeture et réouverture avec upgrade');
+        const currentVersion = db.version;
+        db.close();
+        // Réessayer avec une version supérieure pour forcer l'upgrade
+        const upgradeRequest = indexedDB.open(DB_NAME, currentVersion + 1);
+        upgradeRequest.onupgradeneeded = (e) => {
+          const upgradeDb = e.target.result;
+          if (!upgradeDb.objectStoreNames.contains(BOOKS_STORE)) {
+            console.log('[booksIndexedDB] Création du store "books" (upgrade forcé)');
+            const store = upgradeDb.createObjectStore(BOOKS_STORE, { keyPath: 'id' });
+            try {
+              store.createIndex('status', 'status', { unique: false });
+            } catch {
+              // Index optionnel
+            }
+          }
+        };
+        upgradeRequest.onsuccess = (e) => {
+          console.log('[booksIndexedDB] ✅ Base mise à jour avec le store "books"');
+          resolve(e.target.result);
+        };
+        upgradeRequest.onerror = (e) => {
+          console.error('[booksIndexedDB] ❌ Erreur lors de l\'upgrade forcé:', e.target.error);
+          resolve(null);
+        };
+        return;
+      }
+      console.log('[booksIndexedDB] ✅ Base ouverte, store "books" présent');
+      resolve(db);
     };
 
     request.onerror = (event) => {
@@ -109,10 +142,12 @@ export const getAllBooksFromIndexedDB = async () => {
 export const saveBooksToIndexedDB = async (books) => {
   const db = await openBooksDB();
   if (!db) {
+    console.error('[booksIndexedDB] ❌ Impossible d\'ouvrir IndexedDB');
     return false;
   }
 
   const safeBooks = Array.isArray(books) ? books : [];
+  console.log('[booksIndexedDB] Sauvegarde de', safeBooks.length, 'livres');
 
   return new Promise((resolve) => {
     try {
@@ -123,56 +158,79 @@ export const saveBooksToIndexedDB = async (books) => {
 
       clearRequest.onsuccess = () => {
         if (safeBooks.length === 0) {
+          console.log('[booksIndexedDB] ✅ Base vidée (0 livres)');
           resolve(true);
           return;
         }
 
         let remaining = safeBooks.length;
         let failed = false;
+        let savedCount = 0;
 
         safeBooks.forEach((book) => {
-          // Nettoyage léger : garantir la présence de champs basiques
+          // Préserver TOUS les champs du livre, en normalisant seulement ceux qui sont manquants
           const normalized = {
+            ...book, // Préserver TOUS les champs existants (y compris ceux non listés)
             id: book.id,
-            title: book.title || '',
-            author: book.author || '',
-            year: book.year ?? '',
-            pages: book.pages ?? '',
-            status: book.status || 'in-progress',
-            personalScore: typeof book.personalScore === 'number' ? book.personalScore : 0,
-            notes: book.notes || '',
             readingSessions: Array.isArray(book.readingSessions) ? book.readingSessions : [],
-            // Champs récents : on les préserve explicitement
-            genre: book.genre || '',
-            shortSummary: book.shortSummary || '',
-            longSummary: book.longSummary || '',
-            hasPdf: !!book.hasPdf,
-            hasCover: !!book.hasCover,
-            coverInline: book.coverInline || null,
-            createdAt: book.createdAt || null,
-            updatedAt: book.updatedAt || null,
-            version: book.version || '1.1',
           };
+          
+          // Normaliser seulement les champs manquants (sans écraser les valeurs existantes)
+          if (normalized.title === undefined || normalized.title === null) normalized.title = '';
+          if (normalized.author === undefined || normalized.author === null) normalized.author = '';
+          if (normalized.year === undefined || normalized.year === null) normalized.year = '';
+          if (normalized.pages === undefined || normalized.pages === null) normalized.pages = '';
+          if (normalized.status === undefined || normalized.status === null) normalized.status = 'in-progress';
+          if (normalized.genre === undefined || normalized.genre === null) normalized.genre = '';
+          if (normalized.coverUrl === undefined || normalized.coverUrl === null) normalized.coverUrl = '';
+          if (normalized.shortSummary === undefined || normalized.shortSummary === null) normalized.shortSummary = '';
+          if (normalized.longSummary === undefined || normalized.longSummary === null) normalized.longSummary = '';
+          if (normalized.notes === undefined || normalized.notes === null) normalized.notes = '';
+          if (normalized.personalScore === undefined || normalized.personalScore === null) {
+            normalized.personalScore = typeof book.personalScore === 'number' ? book.personalScore : 0;
+          }
+          if (normalized.hasPdf === undefined || normalized.hasPdf === null) {
+            normalized.hasPdf = book.hasPdf === true || book.hasPdf === 'true' || book.hasPdf === 1;
+          }
+          // hasCover doit être true si coverInline existe
+          if (normalized.hasCover === undefined || normalized.hasCover === null) {
+            normalized.hasCover = !!normalized.coverInline;
+          } else if (!normalized.hasCover && normalized.coverInline) {
+            normalized.hasCover = true;
+          }
+          // Préserver coverInline tel quel (même si null)
+          if (normalized.coverInline === undefined) normalized.coverInline = null;
+          if (normalized.createdAt === undefined || normalized.createdAt === null) normalized.createdAt = null;
+          if (normalized.updatedAt === undefined || normalized.updatedAt === null) normalized.updatedAt = null;
+          if (normalized.version === undefined || normalized.version === null) normalized.version = '1.1';
 
           const putRequest = store.put(normalized);
-          putRequest.onerror = () => {
+          putRequest.onerror = (error) => {
+            console.error(`[booksIndexedDB] ❌ Erreur sauvegarde livre ${book.id || 'sans-id'}:`, error);
             failed = true;
             if (--remaining === 0) {
-              resolve(!failed);
+              console.error('[booksIndexedDB] ❌ Échec sauvegarde:', savedCount, '/', safeBooks.length, 'livres sauvegardés');
+              resolve(false);
             }
           };
           putRequest.onsuccess = () => {
+            savedCount++;
             if (--remaining === 0) {
+              if (!failed) {
+                console.log('[booksIndexedDB] ✅', savedCount, 'livres sauvegardés avec succès');
+              }
               resolve(!failed);
             }
           };
         });
       };
 
-      clearRequest.onerror = () => {
+      clearRequest.onerror = (error) => {
+        console.error('[booksIndexedDB] ❌ Erreur lors du clear:', error);
         resolve(false);
       };
-    } catch {
+    } catch (error) {
+      console.error('[booksIndexedDB] ❌ Exception lors de la sauvegarde:', error);
       resolve(false);
     }
   });
