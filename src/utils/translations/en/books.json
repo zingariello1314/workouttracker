@@ -1,0 +1,109 @@
+{
+  "subtitle": "Manage your personal library, reading sessions and backups — everything is stored locally in your browser.",
+  "pages": "pages",
+  "form": {
+    "title": "Book title",
+    "author": "Author",
+    "year": "Year",
+    "genre": "Genre",
+    "genre.placeholder": "Ex: Science-Fiction, Essay...",
+    "pages": "Number of pages",
+    "status": "Status",
+    "coverUpload": "Cover image (upload)",
+    "shortSummary": "Short summary",
+    "longSummary": "Detailed summary",
+    "score": {
+      "_": "Personal rating (0–5 stars)",
+      "help": "This rating is purely indicative and stays local."
+    }
+  },
+  "status": {
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "toRead": "To read",
+    "abandoned": "Abandoned",
+    "paused": "Paused"
+  },
+  "actions": {
+    "addBook": "Add book",
+    "updateBook": "Update book",
+    "cancelEdit": "Cancel edit",
+    "export": "Export JSON",
+    "import": "Import JSON",
+    "editBook": "Edit",
+    "deleteBook": "Delete"
+  },
+  "assets": {
+    "pdfAttached": "PDF attached",
+    "noPdf": "No PDF attached",
+    "attachPdf": "Attach PDF",
+    "removePdf": "Remove PDF",
+    "coverAttached": "Cover attached",
+    "noCover": "No cover attached",
+    "attachCover": "Add cover",
+    "changeCover": "Change cover",
+    "removeCover": "Remove cover",
+    "viewCover": "View cover"
+  },
+  "search": {
+    "label": "Search",
+    "placeholder": "Filter by title or author..."
+  },
+  "hint": {
+    "localStorage": "All data is stored locally (localStorage). You can back it up or restore it using the buttons above."
+  },
+  "sections": {
+    "inProgress": "Books in progress",
+    "completed": "Completed books",
+    "inProgressExtra": "+ {{count}} other books not displayed",
+    "completedExtra": "+ {{count}} other books not displayed"
+  },
+  "empty": {
+    "inProgress": "No books in progress yet. Add a book using the form above.",
+    "completed": "You haven’t marked any book as completed yet."
+  },
+  "detail": {
+    "noTitle": "Untitled book",
+    "noSelection": "No book selected",
+    "subtitle": {
+      "_": "Reading history and statistics for this book.",
+      "empty": "Click a book in the carousels to see its details and add reading sessions."
+    },
+    "author": "Author",
+    "genre": "Genre",
+    "year": "Year",
+    "pages": "Pages",
+    "notes": "Notes",
+    "noSelectionLong": "Select a book from the lists above to see its details, reading history and to add sessions."
+  },
+  "stats": {
+    "totalTime": "Total reading time",
+    "minutes": "minutes",
+    "totalPages": "Total pages read",
+    "sessionsCount": "Number of sessions",
+    "avgPagesPerSession": "Average pages per session",
+    "avgDurationPerSession": "Average duration per session (minutes)",
+    "progress": "Estimated book progress (%)",
+    "estimatedRemaining": "Estimated remaining time"
+  },
+  "sessions": {
+    "listTitle": "Reading sessions",
+    "empty": "No sessions recorded yet.",
+    "addTitle": "Add a reading session",
+    "date": "Date",
+    "duration": "Duration (minutes)",
+    "pages": "Pages read during the session",
+    "note": "Note (optional)",
+    "addButton": "Add reading session"
+  },
+  "footer": {
+    "info": "This first version of the Books tab implements local management of books and reading sessions. The advanced features described in the documentation (3D sphere, PDFs in IndexedDB, multi‑format backups) can be added progressively without impacting the rest of the site."
+  },
+  "dome": {
+    "show": "Enable 3D view",
+    "hide": "Hide 3D view",
+    "loading": "Loading 3D view..."
+  }
+}
+
+

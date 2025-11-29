@@ -24,6 +24,7 @@ const Navigation = () => {
     { id: 'garmin', labelKey: 'nav.garmin', icon: '⌚' },
     { id: 'smart-balancing', labelKey: 'nav.smartBalancing', icon: '🧠' },
     { id: 'coach', labelKey: 'nav.coach', icon: '👁️' },
+    { id: 'books', labelKey: 'nav.books', icon: '📚' },
     { id: 'settings', labelKey: 'nav.settings', icon: '⚙️' }
   ], []);
 

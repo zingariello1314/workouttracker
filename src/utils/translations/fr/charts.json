@@ -1,4 +1,40 @@
 {
+  "title": "Vue d’ensemble des graphiques avancés",
+  "subtitle": "Analyse détaillée de votre activité, de vos performances et de vos données Garmin",
+  "periods": {
+    "7days": "7 jours",
+    "30days": "30 jours",
+    "90days": "90 jours",
+    "1year": "1 an"
+  },
+  "garmin": {
+    "heartRate": "Fréquence cardiaque journalière",
+    "heartRateTimeSeries": "Fréquence cardiaque 24h",
+    "bodyBattery": "Body Battery",
+    "stress": "Stress",
+    "sleep": "Sommeil",
+    "respiration": "Respiration",
+    "activityHeatmap": "Carte de chaleur des activités",
+    "correlations": "Corrélations Garmin",
+    "dailyActivity": "Activité quotidienne"
+  },
+  "workout": {
+    "volumeRepetitions": "Volume de répétitions",
+    "activityRegularity": "Régularité de l’activité",
+    "objectives": "Objectifs & performance",
+    "volumeEvolution": "Évolution du volume",
+    "muscleDistribution": "Répartition musculaire",
+    "topExercises": "Top exercices",
+    "activityCalendar": "Calendrier d’activité",
+    "distribution": "Distribution temporelle",
+    "individualProgression": "Progression individuelle",
+    "boxingActivity": "Activité boxe / cardio",
+    "swimmingPerformance": "Performance natation",
+    "distanceEvolution": "Évolution distance natation",
+    "timePace": "Temps & allure natation",
+    "volumeRegularity": "Volume & régularité natation",
+    "stretchesByZone": "Étirements par zone"
+  },
   "noData": {
     "garmin": "Aucune donnée Garmin disponible. Synchronisez vos données depuis l'onglet Garmin.",
     "garminSync": "Aucune donnée Garmin disponible. Synchronisez vos données Garmin.",

@@ -1,0 +1,110 @@
+{
+  "subtitle": "Gère ta bibliothèque personnelle, tes sessions de lecture et tes sauvegardes — tout est stocké localement dans ton navigateur.",
+  "pages": "pages",
+  "form": {
+    "title": "Titre du livre",
+    "author": "Auteur",
+    "year": "Année",
+    "genre": "Genre",
+    "genre.placeholder": "Ex : Science-Fiction, Essai...",
+    "pages": "Nombre de pages",
+    "status": "Statut",
+    "coverUpload": "Image de couverture (upload)",
+    "shortSummary": "Résumé court",
+    "longSummary": "Résumé détaillé",
+    "score": {
+      "_": "Note perso (0–5 étoiles)",
+      "help": "Cette note est purement indicative et reste locale."
+    }
+  },
+  "status": {
+    "inProgress": "En cours",
+    "completed": "Terminé",
+    "toRead": "À lire",
+    "abandoned": "Abandonné",
+    "paused": "En pause"
+  },
+  "actions": {
+    "addBook": "Ajouter le livre",
+    "updateBook": "Mettre à jour le livre",
+    "cancelEdit": "Annuler la modification",
+    "export": "Exporter JSON",
+    "import": "Importer JSON",
+    "editBook": "Éditer",
+    "deleteBook": "Supprimer"
+  },
+  "assets": {
+    "pdfAttached": "PDF associé",
+    "noPdf": "Aucun PDF associé",
+    "attachPdf": "Joindre un PDF",
+    "removePdf": "Supprimer le PDF",
+    "coverAttached": "Couverture associée",
+    "noCover": "Aucune couverture associée",
+    "attachCover": "Ajouter une couverture",
+    "changeCover": "Changer la couverture",
+    "removeCover": "Supprimer la couverture",
+    "viewCover": "Voir la couverture"
+  },
+  "search": {
+    "label": "Recherche",
+    "placeholder": "Filtrer par titre ou auteur..."
+  },
+  "hint": {
+    "localStorage": "Toutes les données sont stockées localement (localStorage). Tu peux les sauvegarder ou les restaurer via les boutons ci-dessus."
+  },
+  "sections": {
+    "inProgress": "Livres en cours",
+    "completed": "Livres terminés",
+    "inProgressExtra": "+ {{count}} autres livres non affichés",
+    "completedExtra": "+ {{count}} autres livres non affichés"
+  },
+  "empty": {
+    "inProgress": "Aucun livre en cours pour le moment. Ajoute un livre avec le formulaire ci-dessus.",
+    "completed": "Tu n’as pas encore marqué de livre comme terminé."
+  },
+  "detail": {
+    "noTitle": "Livre sans titre",
+    "noSelection": "Aucun livre sélectionné",
+    "subtitle": "Historique de lecture et statistiques pour ce livre.",
+    "subtitle": {
+      "_": "Historique de lecture et statistiques pour ce livre.",
+      "empty": "Clique sur un livre dans les carrousels pour voir son détail et ajouter des sessions de lecture."
+    },
+    "author": "Auteur",
+    "genre": "Genre",
+    "year": "Année",
+    "pages": "Pages",
+    "notes": "Notes",
+    "noSelectionLong": "Sélectionne un livre dans les listes ci-dessus pour voir ses détails, son historique de lecture et ajouter des sessions."
+  },
+  "stats": {
+    "totalTime": "Temps total de lecture",
+    "minutes": "minutes",
+    "totalPages": "Pages lues au total",
+    "sessionsCount": "Nombre de sessions",
+    "avgPagesPerSession": "Pages moyennes par session",
+    "avgDurationPerSession": "Durée moyenne par session (minutes)",
+    "progress": "Progression estimée du livre (%)",
+    "estimatedRemaining": "Temps estimé restant"
+  },
+  "sessions": {
+    "listTitle": "Sessions de lecture",
+    "empty": "Aucune session enregistrée pour le moment.",
+    "addTitle": "Ajouter une session de lecture",
+    "date": "Date",
+    "duration": "Durée (minutes)",
+    "pages": "Pages lues pendant la session",
+    "note": "Note (optionnel)",
+    "addButton": "Ajouter la session de lecture"
+  },
+  "footer": {
+    "info": "Cette première version de l’onglet Livres implémente la gestion locale des livres et des sessions de lecture. Les fonctionnalités avancées décrites dans la documentation (sphère 3D, PDFs en IndexedDB, sauvegardes multi‑formats) pourront être ajoutées progressivement sans impacter le reste du site."
+  },
+  "dome": {
+    "show": "Activer la vue 3D",
+    "hide": "Masquer la vue 3D",
+    "loading": "Chargement de la vue 3D..."
+  }
+}
+
+

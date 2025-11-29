@@ -3,6 +3,7 @@ import { useTranslation } from '../../../utils/translations';
 import { TrendingUp } from 'lucide-react';
 
 const ProgressionIndividuelleChart = ({ data, colors }) => {
+  const t = useTranslation();
   // Calculer les données de progression par exercice
   const calculateProgressionData = () => {
     const workoutHistory = data.workoutHistory || [];

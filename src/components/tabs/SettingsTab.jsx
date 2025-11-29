@@ -20,11 +20,14 @@ import {
   validateBodyTrackingData 
 } from '../BodyTracking/utils/exportImport';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
-import {
-  createDefaultFormState,
+import { 
+  createDefaultFormState, 
   createDefaultChallengeFormState
 } from '../../services/endurance/enduranceFormSchema';
 import { ENDURANCE_SCHEMA_VERSION } from '../../services/endurance/enduranceDataService';
+import { prepareBooksExportData } from '../../utils/booksExportImport';
+import { getAllBooksFromIndexedDB } from '../../utils/booksIndexedDB';
+import { loadBooks as loadBooksFromLocalStorage } from '../../utils/booksStorage';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
@@ -158,6 +161,29 @@ const SettingsTab = () => {
         // Ne pas bloquer l'export si nutrition échoue
       }
       
+      // Récupérer les données Livres (IndexedDB → fallback localStorage)
+      let booksForExport = [];
+      try {
+        const indexedBooks = await getAllBooksFromIndexedDB();
+        if (Array.isArray(indexedBooks) && indexedBooks.length > 0) {
+          booksForExport = indexedBooks;
+        } else {
+          booksForExport = loadBooksFromLocalStorage();
+        }
+      } catch (booksError) {
+        console.warn('⚠️ Erreur récupération données Livres pour export global:', booksError);
+        try {
+          booksForExport = loadBooksFromLocalStorage();
+        } catch {
+          booksForExport = [];
+        }
+      }
+
+      const booksExport = prepareBooksExportData(booksForExport, {
+        includeSessions: true,
+        includeMetadata: true
+      });
+
       // Ajouter des métadonnées complètes
       const exportObject = {
         version: '1.0',
@@ -247,7 +273,16 @@ const SettingsTab = () => {
           
           // Statistiques générales
           totalDataPoints: Object.keys(dataToExport).length,
-          exportSize: JSON.stringify(dataToExport).length
+          exportSize: JSON.stringify(dataToExport).length,
+
+          // ✅ Données Livres
+          booksSummary: {
+            totalBooks: booksExport.metadata?.totalBooks || 0,
+            totalSessions: booksExport.metadata?.totalSessions || 0,
+            statuses: booksExport.metadata?.statuses || { 'in-progress': 0, completed: 0 },
+            dateRange: booksExport.metadata?.dateRange || { earliest: null, latest: null },
+            estimatedSizeKB: booksExport.metadata?.estimatedSizeKB || 0
+          }
         }
       };
       
@@ -255,6 +290,9 @@ const SettingsTab = () => {
       if (nutritionData) {
         exportObject.data.nutritionData = nutritionData;
       }
+
+      // ✅ Ajouter les données Livres dans l'export global (structure complète)
+      exportObject.data.booksData = booksExport;
 
       // Créer le fichier JSON
       const jsonString = JSON.stringify(exportObject, null, 2);

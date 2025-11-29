@@ -1,4 +1,40 @@
 {
+  "title": "Advanced charts overview",
+  "subtitle": "Detailed analysis of your activity, performance and Garmin data",
+  "periods": {
+    "7days": "7 days",
+    "30days": "30 days",
+    "90days": "90 days",
+    "1year": "1 year"
+  },
+  "garmin": {
+    "heartRate": "Daily heart rate",
+    "heartRateTimeSeries": "24h heart rate",
+    "bodyBattery": "Body Battery",
+    "stress": "Stress",
+    "sleep": "Sleep",
+    "respiration": "Respiration",
+    "activityHeatmap": "Activity heatmap",
+    "correlations": "Garmin correlations",
+    "dailyActivity": "Daily activity"
+  },
+  "workout": {
+    "volumeRepetitions": "Repetition volume",
+    "activityRegularity": "Activity regularity",
+    "objectives": "Goals & performance",
+    "volumeEvolution": "Volume evolution",
+    "muscleDistribution": "Muscle distribution",
+    "topExercises": "Top exercises",
+    "activityCalendar": "Activity calendar",
+    "distribution": "Time distribution",
+    "individualProgression": "Individual progression",
+    "boxingActivity": "Boxing / cardio activity",
+    "swimmingPerformance": "Swimming performance",
+    "distanceEvolution": "Swimming distance evolution",
+    "timePace": "Swimming time & pace",
+    "volumeRegularity": "Swimming volume & regularity",
+    "stretchesByZone": "Stretches by body zone"
+  },
   "noData": {
     "garmin": "No Garmin data available. Sync your data from the Garmin tab.",
     "garminSync": "No Garmin data available. Sync your Garmin data.",

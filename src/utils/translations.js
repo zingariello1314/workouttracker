@@ -156,7 +156,82 @@ export const translations = {
     // General
     'general.days': 'jours',
     'general.minutes': 'minutes',
-    'general.reps': 'répétitions'
+    'general.reps': 'répétitions',
+
+    // Books (fallback ancien système pour compatibilité / validation)
+    'books.subtitle': 'Gère ta bibliothèque personnelle, tes sessions de lecture et tes sauvegardes — tout est stocké localement dans ton navigateur.',
+    'books.pages': 'pages',
+    'books.form.title': 'Titre du livre',
+    'books.form.author': 'Auteur',
+    'books.form.year': 'Année',
+    'books.form.genre': 'Genre',
+    'books.form.genre.placeholder': 'Ex : Science-Fiction, Essai...',
+    'books.form.pages': 'Nombre de pages',
+    'books.form.status': 'Statut',
+    'books.form.coverUpload': 'Image de couverture (upload)',
+    'books.form.shortSummary': 'Résumé court',
+    'books.form.longSummary': 'Résumé détaillé',
+    'books.form.score': 'Note perso (0–5 étoiles)',
+    'books.form.score.help': 'Cette note est purement indicative et reste locale.',
+    'books.status.inProgress': 'En cours',
+    'books.status.completed': 'Terminé',
+    'books.status.toRead': 'À lire',
+    'books.status.abandoned': 'Abandonné',
+    'books.status.paused': 'En pause',
+    'books.actions.addBook': 'Ajouter le livre',
+    'books.actions.updateBook': 'Mettre à jour le livre',
+    'books.actions.cancelEdit': 'Annuler la modification',
+    'books.actions.export': 'Exporter JSON',
+    'books.actions.import': 'Importer JSON',
+    'books.actions.editBook': 'Éditer',
+    'books.actions.deleteBook': 'Supprimer',
+    'books.search.label': 'Recherche',
+    'books.search.placeholder': 'Filtrer par titre ou auteur...',
+    'books.hint.localStorage': 'Toutes les données sont stockées localement (localStorage). Tu peux les sauvegarder ou les restaurer via les boutons ci-dessus.',
+    'books.sections.inProgress': 'Livres en cours',
+    'books.sections.completed': 'Livres terminés',
+    'books.empty.inProgress': 'Aucun livre en cours pour le moment. Ajoute un livre avec le formulaire ci-dessus.',
+    'books.empty.completed': 'Tu n’as pas encore marqué de livre comme terminé.',
+    'books.detail.noTitle': 'Livre sans titre',
+    'books.detail.noSelection': 'Aucun livre sélectionné',
+    'books.detail.subtitle': 'Historique de lecture et statistiques pour ce livre.',
+    'books.detail.subtitle.empty': 'Clique sur un livre dans les carrousels pour voir son détail et ajouter des sessions de lecture.',
+    'books.detail.author': 'Auteur',
+    'books.detail.genre': 'Genre',
+    'books.detail.year': 'Année',
+    'books.detail.pages': 'Pages',
+    'books.detail.notes': 'Notes',
+    'books.detail.noSelectionLong': 'Sélectionne un livre dans les listes ci-dessus pour voir ses détails, son historique de lecture et ajouter des sessions.',
+    'books.stats.totalTime': 'Temps total de lecture',
+    'books.stats.minutes': 'minutes',
+    'books.stats.totalPages': 'Pages lues au total',
+    'books.stats.sessionsCount': 'Nombre de sessions',
+    'books.stats.avgPagesPerSession': 'Pages moyennes par session',
+    'books.stats.avgDurationPerSession': 'Durée moyenne par session (minutes)',
+    'books.stats.progress': 'Progression estimée du livre (%)',
+    'books.stats.estimatedRemaining': 'Temps estimé restant',
+    'books.sessions.listTitle': 'Sessions de lecture',
+    'books.sessions.empty': 'Aucune session enregistrée pour le moment.',
+    'books.sessions.addTitle': 'Ajouter une session de lecture',
+    'books.sessions.date': 'Date',
+    'books.sessions.duration': 'Durée (minutes)',
+    'books.sessions.pages': 'Pages lues pendant la session',
+    'books.sessions.note': 'Note (optionnel)',
+    'books.sessions.addButton': 'Ajouter la session de lecture',
+    'books.footer.info': 'Cette première version de l’onglet Livres implémente la gestion locale des livres et des sessions de lecture. Les fonctionnalités avancées décrites dans la documentation (sphère 3D, PDFs en IndexedDB, sauvegardes multi‑formats) pourront être ajoutées progressivement sans impacter le reste du site.',
+    'books.assets.pdfAttached': 'PDF associé',
+    'books.assets.noPdf': 'Aucun PDF associé',
+    'books.assets.attachPdf': 'Joindre un PDF',
+    'books.assets.removePdf': 'Supprimer le PDF',
+    'books.assets.coverAttached': 'Couverture associée',
+    'books.assets.noCover': 'Aucune couverture associée',
+    'books.assets.attachCover': 'Ajouter une couverture',
+    'books.assets.changeCover': 'Changer la couverture',
+    'books.assets.removeCover': 'Supprimer la couverture',
+    'books.assets.viewCover': 'Voir la couverture',
+    'books.dome.show': 'Activer la vue 3D',
+    'books.dome.hide': 'Masquer la vue 3D',
+    'books.dome.loading': 'Chargement de la vue 3D...'
   },
   
   [LANGUAGES.EN]: {
@@ -219,7 +294,78 @@ export const translations = {
     // General
     'general.days': 'days',
     'general.minutes': 'minutes',
-    'general.reps': 'repetitions'
+    'general.reps': 'repetitions',
+
+    // Books (fallback old system for compatibility / validation)
+    'books.subtitle': 'Manage your personal library, reading sessions and backups — everything is stored locally in your browser.',
+    'books.pages': 'pages',
+    'books.form.title': 'Book title',
+    'books.form.author': 'Author',
+    'books.form.year': 'Year',
+    'books.form.genre': 'Genre',
+    'books.form.genre.placeholder': 'Ex: Science-Fiction, Essay...',
+    'books.form.pages': 'Number of pages',
+    'books.form.status': 'Status',
+    'books.form.coverUpload': 'Cover image (upload)',
+    'books.form.shortSummary': 'Short summary',
+    'books.form.longSummary': 'Detailed summary',
+    'books.form.score': 'Personal rating (0–5 stars)',
+    'books.form.score.help': 'This rating is purely indicative and stays local.',
+    'books.status.inProgress': 'In progress',
+    'books.status.completed': 'Completed',
+    'books.status.toRead': 'To read',
+    'books.status.abandoned': 'Abandoned',
+    'books.status.paused': 'Paused',
+    'books.actions.addBook': 'Add book',
+    'books.actions.updateBook': 'Update book',
+    'books.actions.cancelEdit': 'Cancel edit',
+    'books.actions.export': 'Export JSON',
+    'books.actions.import': 'Import JSON',
+    'books.actions.editBook': 'Edit',
+    'books.actions.deleteBook': 'Delete',
+    'books.search.label': 'Search',
+    'books.search.placeholder': 'Filter by title or author...',
+    'books.hint.localStorage': 'All data is stored locally (localStorage). You can back it up or restore it using the buttons above.',
+    'books.sections.inProgress': 'Books in progress',
+    'books.sections.completed': 'Completed books',
+    'books.empty.inProgress': 'No books in progress yet. Add a book using the form above.',
+    'books.empty.completed': 'You haven’t marked any book as completed yet.',
+    'books.detail.noTitle': 'Untitled book',
+    'books.detail.noSelection': 'No book selected',
+    'books.detail.subtitle': 'Reading history and statistics for this book.',
+    'books.detail.subtitle.empty': 'Click a book in the carrousels to see its details and add reading sessions.',
+    'books.detail.author': 'Author',
+    'books.detail.year': 'Year',
+    'books.detail.pages': 'Pages',
+    'books.detail.notes': 'Notes',
+    'books.detail.noSelectionLong': 'Select a book from the lists above to see its details, reading history and to add sessions.',
+    'books.stats.totalTime': 'Total reading time',
+    'books.stats.minutes': 'minutes',
+    'books.stats.totalPages': 'Total pages read',
+    'books.stats.sessionsCount': 'Number of sessions',
+    'books.stats.estimatedRemaining': 'Estimated remaining time',
+    'books.sessions.listTitle': 'Reading sessions',
+    'books.sessions.empty': 'No sessions recorded yet.',
+    'books.sessions.addTitle': 'Add a reading session',
+    'books.sessions.date': 'Date',
+    'books.sessions.duration': 'Duration (minutes)',
+    'books.sessions.pages': 'Pages read during the session',
+    'books.sessions.note': 'Note (optional)',
+    'books.sessions.addButton': 'Add reading session',
+    'books.footer.info': 'This first version of the Books tab implements local management of books and reading sessions. The advanced features described in the documentation (3D sphere, PDFs in IndexedDB, multi‑format backups) can be added progressively without impacting the rest of the site.',
+    'books.assets.pdfAttached': 'PDF attached',
+    'books.assets.noPdf': 'No PDF attached',
+    'books.assets.attachPdf': 'Attach PDF',
+    'books.assets.removePdf': 'Remove PDF',
+    'books.assets.coverAttached': 'Cover attached',
+    'books.assets.noCover': 'No cover attached',
+    'books.assets.attachCover': 'Add cover',
+    'books.assets.changeCover': 'Change cover',
+    'books.assets.removeCover': 'Remove cover',
+    'books.assets.viewCover': 'View cover',
+    'books.dome.show': 'Enable 3D view',
+    'books.dome.hide': 'Hide 3D view',
+    'books.dome.loading': 'Loading 3D view...'
   }
 };
 
@@ -292,7 +438,8 @@ export const useTranslation = () => {
       'bodyTracking',
       'nutritionAnalyses',
       'messages',
-      'sessionFeedback'
+      'sessionFeedback',
+      'books'
     ];
     
     // Si le premier segment est un namespace connu, l'utiliser
@@ -479,13 +626,13 @@ export const useTranslation = () => {
     let translation = getTranslationFromSource(key, lang);
     
     // Si namespace pas encore chargé, déclencher le chargement en arrière-plan
-    const { namespace } = parseKey(key);
+    const { namespace, key: parsedNamespaceKey } = parseKey(key);
     if (!translation && namespace) {
       // Vérifier d'abord si le namespace est déjà chargé dans le loader (via preload)
       const cachedNamespace = getCachedNamespace(lang, namespace);
       if (cachedNamespace) {
         // Le namespace est chargé via preload, utiliser directement
-        const cachedTranslation = getNestedValue(cachedNamespace, namespaceKey);
+        const cachedTranslation = getNestedValue(cachedNamespace, parsedNamespaceKey);
         if (cachedTranslation) {
           translation = cachedTranslation;
         }

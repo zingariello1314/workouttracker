@@ -14,7 +14,12 @@ import { useBodyTrackingAnalysis } from '../hooks/useBodyTrackingAnalysis';
 import { useBodyTrackingWorkoutCorrelations } from '../hooks/useBodyTrackingWorkoutCorrelations';
 import { useSessionFeedbackAnalysis } from '../hooks/useSessionFeedbackAnalysis';
 import { useSessionFeedbackWorkoutCorrelations } from '../hooks/useSessionFeedbackWorkoutCorrelations';
+import { useMultiSourceCorrelations } from '../hooks/useMultiSourceCorrelations';
 import { calculateUnifiedScore } from '../utils/balancing/unifiedScoring';
+import { computeGlobalScoreProjection, buildWhatIfScenarios } from '../utils/balancing/predictions';
+import JustificationAnalysisSection from './balancing/JustificationAnalysisSection';
+import CorrelationsSection from './balancing/CorrelationsSection';
+import TemporalAnalysisSection from './balancing/TemporalAnalysisSection';
 import { 
   Brain, 
   TrendingUp, 
@@ -54,6 +59,7 @@ const SmartBalancingTab = () => {
   const { getWorkoutHistory, data, updateData, activeProgram } = useWorkout();
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
   const [showAdvancedAnalysis, setShowAdvancedAnalysis] = useState(false);
+  const [selectedComponent, setSelectedComponent] = useState('workout'); // 'workout' | 'justification' | 'garmin' | 'nutrition' | 'bodyTracking' | 'sessionFeedback'
   
   const workoutHistory = useMemo(() => {
     return getWorkoutHistory();
@@ -186,6 +192,8 @@ const SmartBalancingTab = () => {
     workoutHistory,
     { period: '30days' }
   );
+
+  // ✅ NOUVEAU : Corrélations multi-sources (patterns croisés)
 
   // Nouvelle fonction pour analyser le programme prévu vs réalisé
   const programComparisonAnalysis = useMemo(() => {
@@ -434,6 +442,20 @@ const SmartBalancingTab = () => {
     };
   }, [workoutHistory, programComparisonAnalysis]);
 
+  // Corrélations multi-sources à partir de toutes les analyses disponibles
+  const multiSourceCorrelations = useMultiSourceCorrelations({
+    programAnalysis,
+    justificationAnalysis,
+    garminAnalysis,
+    garminCorrelations,
+    nutritionAnalysis,
+    nutritionCorrelations,
+    bodyTrackingAnalysis,
+    bodyTrackingCorrelations,
+    sessionFeedbackAnalysis,
+    sessionFeedbackCorrelations,
+  });
+
   // ✅ NOUVEAU : Score Global Unifié
   const unifiedScore = useMemo(() => {
     return calculateUnifiedScore({
@@ -445,6 +467,23 @@ const SmartBalancingTab = () => {
       sessionFeedbackAnalysis
     });
   }, [programAnalysis, justificationAnalysis, garminAnalysis, nutritionAnalysis, bodyTrackingAnalysis, sessionFeedbackAnalysis]);
+
+  // 🔮 Prédictions simples à 30 jours basées sur le score unifié
+  const globalProjection = useMemo(() => {
+    return computeGlobalScoreProjection(unifiedScore, {
+      programAnalysis,
+      justificationAnalysis,
+      garminAnalysis,
+      nutritionAnalysis,
+      bodyTrackingAnalysis,
+      sessionFeedbackAnalysis,
+    });
+  }, [unifiedScore, programAnalysis, justificationAnalysis, garminAnalysis, nutritionAnalysis, bodyTrackingAnalysis, sessionFeedbackAnalysis]);
+
+  // 🔮 Scénarios "et si..." dérivés du score unifié
+  const whatIfScenarios = useMemo(() => {
+    return buildWhatIfScenarios(unifiedScore);
+  }, [unifiedScore]);
 
   // ✅ NOUVEAU : Recommandations basées sur Garmin
   const garminBasedRecommendations = useMemo(() => {
@@ -1327,6 +1366,41 @@ const SmartBalancingTab = () => {
     // ✅ NOUVEAU : Ajouter les recommandations basées sur Session Feedbacks
     recs.push(...sessionFeedbackBasedRecommendations);
 
+    // ✅ NOUVEAU : Ajouter les recommandations basées sur patterns multi-sources
+    if (multiSourceCorrelations) {
+      multiSourceCorrelations.riskPatterns.forEach((pattern) => {
+        recs.push({
+          id: `multi_risk_${pattern.id}`,
+          type: 'multi_source_risk',
+          priority: pattern.severity === 'high' ? 'high' : 'medium',
+          title: pattern.label,
+          description: pattern.description,
+          impact: 'Réduction des risques liés à la combinaison de plusieurs facteurs (récupération, nutrition, charge, etc.)',
+          action: pattern.recommendation,
+          icon: <AlertTriangle className="w-5 h-5" />,
+          color: pattern.severity === 'high' ? 'text-red-400' : 'text-orange-400',
+          bgColor: pattern.severity === 'high' ? 'bg-red-400/10' : 'bg-orange-400/10',
+          data: pattern.data,
+        });
+      });
+
+      multiSourceCorrelations.favorablePatterns.forEach((pattern) => {
+        recs.push({
+          id: `multi_favorable_${pattern.id}`,
+          type: 'multi_source_success',
+          priority: 'low',
+          title: pattern.label,
+          description: pattern.description,
+          impact: 'Consolidation de ce qui fonctionne déjà très bien dans ton contexte global',
+          action: pattern.recommendation,
+          icon: <Star className="w-5 h-5" />,
+          color: 'text-green-400',
+          bgColor: 'bg-green-400/10',
+          data: pattern.data,
+        });
+      });
+    }
+
     // Recommandations basées sur la comparaison programme vs réalité
     if (programComparisonAnalysis) {
       if (programComparisonAnalysis.completion.weekly < 50) {
@@ -1771,14 +1845,26 @@ const SmartBalancingTab = () => {
         </Card>
       )}
       
-      {/* Score de consistance global */}
+      {/* Score global unifié / consistance */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Gauge className="w-8 h-8 text-blue-400" />
             <div>
-              <h3 className="text-xl font-bold text-white">Score de Consistance</h3>
-              <p className="text-sm text-slate-400">Évaluation globale de ton programme</p>
+              <h3 className="text-xl font-bold text-white">
+                {unifiedScore && unifiedScore.globalScore !== null
+                  ? 'Score Global Unifié'
+                  : 'Score de Consistance'}
+              </h3>
+              <p className="text-sm text-slate-400 flex items-center gap-2">
+                {unifiedScore && unifiedScore.globalScore !== null
+                  ? 'Évaluation globale multi-source (Entraînement, Justifications, Garmin, Nutrition, Body Tracking, Feedbacks)'
+                  : 'Évaluation globale de ton programme'}
+                <Info
+                  className="w-4 h-4 text-slate-500 cursor-help"
+                  title="Le score global combine plusieurs dimensions : entraînement, justifications, données Garmin, nutrition, body tracking et feedbacks de session, avec une pondération intelligente."
+                />
+              </p>
             </div>
           </div>
           <div className="text-right">
@@ -1835,7 +1921,7 @@ const SmartBalancingTab = () => {
           </div>
         </div>
         
-        <div className="w-full bg-slate-700 rounded-full h-3 mb-4">
+        <div className="w-full bg-slate-700 rounded-full h-3 mb-2">
           <div 
             className={`h-3 rounded-full transition-all duration-500 ${
               (unifiedScore?.globalScore ?? programAnalysis?.consistency?.score ?? 0) >= 80 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
@@ -1846,214 +1932,222 @@ const SmartBalancingTab = () => {
             style={{ width: `${unifiedScore?.globalScore ?? programAnalysis?.consistency?.score ?? 0}%` }}
           ></div>
         </div>
+
+        {/* 🔮 Projection simple à 30 jours */}
+        {unifiedScore && unifiedScore.globalScore !== null && globalProjection && (
+          <p className="text-xs text-slate-400 mb-3">
+            Si tu améliores progressivement les points faibles identifiés, ton score global pourrait passer autour de{' '}
+            <span className="font-semibold text-white">{globalProjection.projected30d}/100</span>{' '}
+            dans les 30 prochains jours ({globalProjection.trend === 'up' ? 'tendance haussière potentielle' :
+              globalProjection.trend === 'down' ? 'risque de baisse' : 'tendance plutôt stable'}).
+          </p>
+        )}
         
-        {/* ✅ NOUVEAU : Détail des composantes du Score Global Unifié */}
+        {/* ✅ NOUVEAU : Détail des composantes du Score Global Unifié (cliquable) */}
         {unifiedScore && unifiedScore.globalScore !== null && unifiedScore.components && (
           <div className="mb-4 p-4 bg-slate-800/50 rounded-lg">
             <h5 className="text-sm font-medium text-white mb-3">Composantes du Score Global</h5>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {unifiedScore.components.workout !== null && (
-                <div className="text-center p-2 bg-blue-400/10 rounded border border-blue-400/30">
+                <button
+                  type="button"
+                  onClick={() => setSelectedComponent('workout')}
+                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                    selectedComponent === 'workout'
+                      ? 'border-blue-400 bg-blue-500/20 ring-1 ring-blue-400'
+                      : 'border-blue-400/30 bg-blue-400/10 hover:bg-blue-400/15 hover:-translate-y-0.5'
+                  }`}
+                  title="Impact de l'entraînement sur le score global"
+                >
                   <div className="text-lg font-bold text-blue-400">{unifiedScore.components.workout}</div>
                   <div className="text-xs text-slate-300">Entraînement</div>
-                  <div className="text-xs text-slate-400">({Math.round(unifiedScore.weights.workout * 100)}%)</div>
-                </div>
+                  <div className="text-xs text-slate-400">Poids&nbsp;: {Math.round(unifiedScore.weights.workout * 100)}%</div>
+                </button>
               )}
               {unifiedScore.components.justification !== null && (
-                <div className="text-center p-2 bg-purple-400/10 rounded border border-purple-400/30">
+                <button
+                  type="button"
+                  onClick={() => setSelectedComponent('justification')}
+                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                    selectedComponent === 'justification'
+                      ? 'border-purple-400 bg-purple-500/20 ring-1 ring-purple-400'
+                      : 'border-purple-400/30 bg-purple-400/10 hover:bg-purple-400/15 hover:-translate-y-0.5'
+                  }`}
+                  title="Impact des justifications sur le score global"
+                >
                   <div className="text-lg font-bold text-purple-400">{unifiedScore.components.justification}</div>
                   <div className="text-xs text-slate-300">Justifications</div>
-                  <div className="text-xs text-slate-400">({Math.round(unifiedScore.weights.justification * 100)}%)</div>
-                </div>
+                  <div className="text-xs text-slate-400">Poids&nbsp;: {Math.round(unifiedScore.weights.justification * 100)}%</div>
+                </button>
               )}
               {unifiedScore.components.garmin !== null && (
-                <div className="text-center p-2 bg-cyan-400/10 rounded border border-cyan-400/30">
+                <button
+                  type="button"
+                  onClick={() => setSelectedComponent('garmin')}
+                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                    selectedComponent === 'garmin'
+                      ? 'border-cyan-400 bg-cyan-500/20 ring-1 ring-cyan-400'
+                      : 'border-cyan-400/30 bg-cyan-400/10 hover:bg-cyan-400/15 hover:-translate-y-0.5'
+                  }`}
+                  title="Impact des données Garmin sur le score global"
+                >
                   <div className="text-lg font-bold text-cyan-400">{unifiedScore.components.garmin}</div>
                   <div className="text-xs text-slate-300">Garmin</div>
-                  <div className="text-xs text-slate-400">({Math.round(unifiedScore.weights.garmin * 100)}%)</div>
-                </div>
+                  <div className="text-xs text-slate-400">Poids&nbsp;: {Math.round(unifiedScore.weights.garmin * 100)}%</div>
+                </button>
               )}
               {unifiedScore.components.nutrition !== null && (
-                <div className="text-center p-2 bg-orange-400/10 rounded border border-orange-400/30">
+                <button
+                  type="button"
+                  onClick={() => setSelectedComponent('nutrition')}
+                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                    selectedComponent === 'nutrition'
+                      ? 'border-orange-400 bg-orange-500/20 ring-1 ring-orange-400'
+                      : 'border-orange-400/30 bg-orange-400/10 hover:bg-orange-400/15 hover:-translate-y-0.5'
+                  }`}
+                  title="Impact de la nutrition sur le score global"
+                >
                   <div className="text-lg font-bold text-orange-400">{unifiedScore.components.nutrition}</div>
                   <div className="text-xs text-slate-300">Nutrition</div>
-                  <div className="text-xs text-slate-400">({Math.round(unifiedScore.weights.nutrition * 100)}%)</div>
-                </div>
+                  <div className="text-xs text-slate-400">Poids&nbsp;: {Math.round(unifiedScore.weights.nutrition * 100)}%</div>
+                </button>
               )}
               {unifiedScore.components.bodyTracking !== null && (
-                <div className="text-center p-2 bg-pink-400/10 rounded border border-pink-400/30">
+                <button
+                  type="button"
+                  onClick={() => setSelectedComponent('bodyTracking')}
+                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                    selectedComponent === 'bodyTracking'
+                      ? 'border-pink-400 bg-pink-500/20 ring-1 ring-pink-400'
+                      : 'border-pink-400/30 bg-pink-400/10 hover:bg-pink-400/15 hover:-translate-y-0.5'
+                  }`}
+                  title="Impact du suivi corporel sur le score global"
+                >
                   <div className="text-lg font-bold text-pink-400">{unifiedScore.components.bodyTracking}</div>
                   <div className="text-xs text-slate-300">Body Tracking</div>
-                  <div className="text-xs text-slate-400">({Math.round(unifiedScore.weights.bodyTracking * 100)}%)</div>
-                </div>
+                  <div className="text-xs text-slate-400">Poids&nbsp;: {Math.round(unifiedScore.weights.bodyTracking * 100)}%</div>
+                </button>
               )}
               {unifiedScore.components.sessionFeedback !== null && (
-                <div className="text-center p-2 bg-yellow-400/10 rounded border border-yellow-400/30">
+                <button
+                  type="button"
+                  onClick={() => setSelectedComponent('sessionFeedback')}
+                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                    selectedComponent === 'sessionFeedback'
+                      ? 'border-yellow-400 bg-yellow-500/20 ring-1 ring-yellow-400'
+                      : 'border-yellow-400/30 bg-yellow-400/10 hover:bg-yellow-400/15 hover:-translate-y-0.5'
+                  }`}
+                  title="Impact des feedbacks de session sur le score global"
+                >
                   <div className="text-lg font-bold text-yellow-400">{unifiedScore.components.sessionFeedback}</div>
                   <div className="text-xs text-slate-300">Feedbacks</div>
-                  <div className="text-xs text-slate-400">({Math.round(unifiedScore.weights.sessionFeedback * 100)}%)</div>
-                </div>
+                  <div className="text-xs text-slate-400">Poids&nbsp;: {Math.round(unifiedScore.weights.sessionFeedback * 100)}%</div>
+                </button>
               )}
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-400">
-              {programAnalysis.frequency.current.toFixed(1)}
+        {/* ✅ NOUVEAU : Détail contextuel de la composante sélectionnée */}
+        {unifiedScore && unifiedScore.globalScore !== null && (
+          <div className="mb-4 p-4 bg-slate-900/40 rounded-lg border border-slate-700">
+            {selectedComponent === 'workout' && programAnalysis && (
+              <p className="text-xs sm:text-sm text-slate-300">
+                Basé sur ta fréquence ({programAnalysis.frequency.current.toFixed(1)} séance(s)/semaine, objectif {programAnalysis.frequency.optimal}),
+                ton intensité moyenne ({Math.round(programAnalysis.intensity.current)} reps) et la variété de tes exercices ({programAnalysis.exercises.total} différents).
+              </p>
+            )}
+            {selectedComponent === 'justification' && justificationAnalysis && (
+              <p className="text-xs sm:text-sm text-slate-300">
+                {justificationAnalysis.justificationRate}% de tes absences sont justifiées, avec {justificationAnalysis.unaccountedDays} jour(s) sans activité ni justification.
+                Les patterns hebdomadaires et saisonniers influencent ce score.
+              </p>
+            )}
+            {selectedComponent === 'garmin' && garminAnalysis && (
+              <p className="text-xs sm:text-sm text-slate-300">
+                Moyenne Body Battery&nbsp;: {garminAnalysis.bodyBattery?.stats?.avg !== null ? Math.round(garminAnalysis.bodyBattery.stats.avg) : '—'},
+                Stress moyen&nbsp;: {garminAnalysis.stress?.stats?.avg !== null ? Math.round(garminAnalysis.stress.stats.avg) : '—'},
+                Sommeil moyen&nbsp;: {garminAnalysis.sleep?.avgDuration ? `${garminAnalysis.sleep.avgDuration.toFixed(1)}h` : '—'}.
+              </p>
+            )}
+            {selectedComponent === 'nutrition' && nutritionAnalysis && (
+              <p className="text-xs sm:text-sm text-slate-300">
+                Conformité calories&nbsp;: {nutritionAnalysis.calories?.compliance?.rate ?? '—'}%, macros&nbsp;: {nutritionAnalysis.macros?.compliance?.rate ?? '—'}%.
+                Le score reflète ta régularité à suivre les objectifs de ton programme nutritionnel.
+              </p>
+            )}
+            {selectedComponent === 'bodyTracking' && bodyTrackingAnalysis && (
+              <p className="text-xs sm:text-sm text-slate-300">
+                Poids moyen&nbsp;: {bodyTrackingAnalysis.weight?.stats?.avg !== null ? `${bodyTrackingAnalysis.weight.stats.avg.toFixed(1)} kg` : '—'},
+                masse grasse moyenne&nbsp;: {bodyTrackingAnalysis.composition?.bodyFat?.avg !== null ? `${Math.round(bodyTrackingAnalysis.composition.bodyFat.avg)}%` : '—'},
+                IMC moyen&nbsp;: {bodyTrackingAnalysis.bmi?.stats?.avg !== null ? bodyTrackingAnalysis.bmi.stats.avg.toFixed(1) : '—'}.
+              </p>
+            )}
+            {selectedComponent === 'sessionFeedback' && sessionFeedbackAnalysis && (
+              <p className="text-xs sm:text-sm text-slate-300">
+                Ressenti moyen&nbsp;: {sessionFeedbackAnalysis.evaluations?.ressenti?.avg ?? '—'}/10,
+                motivation moyenne&nbsp;: {sessionFeedbackAnalysis.evaluations?.motivation?.avg ?? '—'}/10,
+                taux d’objectifs atteints&nbsp;: {sessionFeedbackAnalysis.objectives?.rate ?? '—'}%.
+              </p>
+            )}
+          </div>
+        )}
+
+        {programAnalysis ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-400">
+                {programAnalysis.frequency.current.toFixed(1)}
+              </div>
+              <div className="text-sm text-slate-400">Séances/semaine</div>
+              <div className="text-xs text-slate-500">
+                Optimal: {programAnalysis.frequency.optimal}
+              </div>
             </div>
-            <div className="text-sm text-slate-400">Séances/semaine</div>
-            <div className="text-xs text-slate-500">
-              Optimal: {programAnalysis.frequency.optimal}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-400">
+                {Math.round(programAnalysis.intensity.current)}
+              </div>
+              <div className="text-sm text-slate-400">Reps moyennes</div>
+              <div className="text-xs text-slate-500">
+                Optimal: {programAnalysis.intensity.optimal}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-400">
+                {programAnalysis.exercises.total}
+              </div>
+              <div className="text-sm text-slate-400">Exercices différents</div>
+              <div className="text-xs text-slate-500">
+                Recommandé: 8-12
+              </div>
             </div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-400">
-              {Math.round(programAnalysis.intensity.current)}
-            </div>
-            <div className="text-sm text-slate-400">Reps moyennes</div>
-            <div className="text-xs text-slate-500">
-              Optimal: {programAnalysis.intensity.optimal}
-            </div>
+        ) : (
+          <div className="mt-4 text-center text-sm text-slate-400">
+            Aucune séance enregistrée sur la période analysée. Les métriques de fréquence et d’intensité seront affichées dès que tu auras au moins une session.
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-400">
-              {programAnalysis.exercises.total}
-            </div>
-            <div className="text-sm text-slate-400">Exercices différents</div>
-            <div className="text-xs text-slate-500">
-              Recommandé: 8-12
-            </div>
-          </div>
-        </div>
+        )}
       </Card>
 
-      {/* ✅ NOUVEAU : Analyse des Justifications */}
-      {justificationAnalysis && justificationAnalysis.total > 0 && (
-        <Card className="p-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-purple-400" />
-              Analyse des Justifications
-              <Badge variant="outline" className="text-purple-400 border-purple-400">
-                {justificationAnalysis.total} jour{justificationAnalysis.total > 1 ? 's' : ''}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Statistiques par raison */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center p-3 bg-red-400/10 rounded-lg border border-red-400/30">
-                <div className="text-2xl font-bold text-red-400 mb-1">
-                  {justificationAnalysis.byReason.maladie}
-                </div>
-                <div className="text-xs text-slate-300">Maladie</div>
-              </div>
-              <div className="text-center p-3 bg-orange-400/10 rounded-lg border border-orange-400/30">
-                <div className="text-2xl font-bold text-orange-400 mb-1">
-                  {justificationAnalysis.byReason.flemme}
-                </div>
-                <div className="text-xs text-slate-300">Flemme</div>
-              </div>
-              <div className="text-center p-3 bg-yellow-400/10 rounded-lg border border-yellow-400/30">
-                <div className="text-2xl font-bold text-yellow-400 mb-1">
-                  {justificationAnalysis.byReason.pas_le_temps}
-                </div>
-                <div className="text-xs text-slate-300">Pas le temps</div>
-              </div>
-              <div className="text-center p-3 bg-gray-400/10 rounded-lg border border-gray-400/30">
-                <div className="text-2xl font-bold text-gray-400 mb-1">
-                  {justificationAnalysis.byReason.autre}
-                </div>
-                <div className="text-xs text-slate-300">Autre</div>
-              </div>
-            </div>
+      {/* ✅ NOUVEAU : Analyse des Justifications (section dédiée) */}
+      <JustificationAnalysisSection justificationAnalysis={justificationAnalysis} />
 
-            {/* Taux de justification */}
-            <div className="mb-6 p-4 bg-slate-800/50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-slate-300">Taux de justification</span>
-                <span className="text-sm font-semibold text-white">
-                  {justificationAnalysis.justificationRate}%
-                </span>
-              </div>
-              <div className="w-full bg-slate-700 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${justificationAnalysis.justificationRate}%` }}
-                ></div>
-              </div>
-              {justificationAnalysis.unaccountedDays > 0 && (
-                <p className="text-xs text-slate-400 mt-2">
-                  {justificationAnalysis.unaccountedDays} jour{justificationAnalysis.unaccountedDays > 1 ? 's' : ''} sans activité ni justification
-                </p>
-              )}
-            </div>
+      {/* ✅ Section dédiée : Corrélations multi-sources */}
+      <CorrelationsSection
+        garminCorrelations={garminCorrelations}
+        nutritionCorrelations={nutritionCorrelations}
+        bodyTrackingCorrelations={bodyTrackingCorrelations}
+        multiSourceCorrelations={multiSourceCorrelations}
+      />
 
-            {/* Patterns hebdomadaires */}
-            {justificationAnalysis.weeklyPattern && (
-              <div className="mb-6">
-                <h5 className="text-sm font-medium text-white mb-3">Répartition Hebdomadaire</h5>
-                <div className="space-y-2">
-                  {justificationAnalysis.weeklyPattern.map((day, index) => {
-                    const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-                    const total = day.total;
-                    const maxTotal = Math.max(...justificationAnalysis.weeklyPattern.map(d => d.total), 1);
-                    
-                    return (
-                      <div key={index} className="flex items-center gap-3">
-                        <span className="text-xs text-slate-400 w-10">{dayNames[day.day]}</span>
-                        <div className="flex-1 bg-slate-700 rounded-full h-2">
-                          <div 
-                            className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${maxTotal > 0 ? (total / maxTotal) * 100 : 0}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-slate-300 w-8 text-right">{total}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+      {/* ✅ Section dédiée : Analyse temporelle (jours / horaires / justifications) */}
+      <TemporalAnalysisSection
+        programAnalysis={programAnalysis}
+        justificationAnalysis={justificationAnalysis}
+      />
 
-            {/* Patterns récurrents détectés */}
-            {justificationAnalysis.recurringPatterns && (
-              (justificationAnalysis.recurringPatterns.weekly?.length > 0 ||
-               justificationAnalysis.recurringPatterns.seasonal?.length > 0) && (
-                <div className="pt-4 border-t border-slate-600">
-                  <h5 className="text-sm font-medium text-white mb-3">Patterns Détectés</h5>
-                  <div className="space-y-2">
-                    {justificationAnalysis.recurringPatterns.weekly?.map((pattern, index) => (
-                      <div key={`weekly-${index}`} className="p-2 bg-blue-400/10 rounded border border-blue-400/30">
-                        <div className="text-xs font-medium text-blue-400">
-                          Pattern hebdomadaire : {pattern.dayName}
-                        </div>
-                        <div className="text-xs text-slate-400">
-                          {pattern.total} justification{pattern.total > 1 ? 's' : ''} (confiance: {Math.round(pattern.confidence * 100)}%)
-                        </div>
-                      </div>
-                    ))}
-                    {justificationAnalysis.recurringPatterns.seasonal?.map((pattern, index) => (
-                      <div key={`seasonal-${index}`} className="p-2 bg-purple-400/10 rounded border border-purple-400/30">
-                        <div className="text-xs font-medium text-purple-400">
-                          Pattern saisonnier : {pattern.monthName}
-                        </div>
-                        <div className="text-xs text-slate-400">
-                          {pattern.total} justification{pattern.total > 1 ? 's' : ''} (confiance: {Math.round(pattern.confidence * 100)}%)
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ✅ NOUVEAU : Analyse Garmin */}
+      {/* ✅ Analyse Garmin */}
       {garminAnalysis && garminAnalysis.period.daysCount > 0 && (
         <Card className="p-6">
           <CardHeader>
@@ -2135,45 +2229,7 @@ const SmartBalancingTab = () => {
               )}
             </div>
 
-            {/* Corrélations avec entraînement */}
-            {garminCorrelations && (
-              <div className="mb-6 p-4 bg-slate-800/50 rounded-lg">
-                <h5 className="text-sm font-medium text-white mb-3">Corrélations avec Entraînement</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {garminCorrelations.bodyBatteryWorkout.correlation !== null && (
-                    <div className="p-2 bg-blue-400/10 rounded border border-blue-400/30">
-                      <div className="text-xs font-medium text-blue-400">Body Battery ↔ Performance</div>
-                      <div className="text-xs text-slate-300 mt-1">
-                        Corrélation: {Math.round(garminCorrelations.bodyBatteryWorkout.correlation * 100)}%
-                        {garminCorrelations.bodyBatteryWorkout.interpretation && (
-                          <span className={`ml-2 ${
-                            garminCorrelations.bodyBatteryWorkout.interpretation === 'positive' ? 'text-green-400' :
-                            garminCorrelations.bodyBatteryWorkout.interpretation === 'negative' ? 'text-red-400' : 'text-slate-400'
-                          }`}>
-                            ({garminCorrelations.bodyBatteryWorkout.interpretation === 'positive' ? 'positive' :
-                              garminCorrelations.bodyBatteryWorkout.interpretation === 'negative' ? 'négative' : 'faible'})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {garminCorrelations.recoveryWorkout.intensityDifference !== null && (
-                    <div className="p-2 bg-green-400/10 rounded border border-green-400/30">
-                      <div className="text-xs font-medium text-green-400">Récupération ↔ Performance</div>
-                      <div className="text-xs text-slate-300 mt-1">
-                        Différence: {Math.round(garminCorrelations.recoveryWorkout.intensityDifference)}%
-                        {garminCorrelations.recoveryWorkout.intensityDifference > 0 && (
-                          <span className="text-green-400 ml-2">
-                            (meilleure performance avec récupération normale)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Corrélations déplacées dans la section dédiée Corrélations */}
 
             {/* Anomalies détectées */}
             {garminAnalysis.anomalies && garminAnalysis.anomalies.length > 0 && (
@@ -2270,7 +2326,7 @@ const SmartBalancingTab = () => {
             </div>
 
             {/* Conformité au programme */}
-            {nutritionAnalysis.programCompliance && nutritionAnalysis.programCompliance.overall !== null && (
+            {nutritionAnalysis?.programCompliance && nutritionAnalysis.programCompliance.overall !== null && (
               <div className="mb-6 p-4 bg-slate-800/50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-slate-300">Conformité au Programme</span>
