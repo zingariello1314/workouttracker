@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image, Languages } from 'lucide-react';
+import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image, Languages, BookOpen } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useLanguage } from '../../context/LanguageContext';
 import LanguageSelector from '../ui/LanguageSelector';
@@ -25,7 +25,7 @@ import {
   createDefaultChallengeFormState
 } from '../../services/endurance/enduranceFormSchema';
 import { ENDURANCE_SCHEMA_VERSION } from '../../services/endurance/enduranceDataService';
-import { prepareBooksExportData, processBooksImportData } from '../../utils/booksExportImport';
+import { prepareBooksExportData, processBooksImportData, downloadBooksExportFile } from '../../utils/booksExportImport';
 import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../../utils/booksIndexedDB';
 import { loadBooks as loadBooksFromLocalStorage, saveBooks as saveBooksToLocalStorage } from '../../utils/booksStorage';
 
@@ -43,6 +43,8 @@ const SettingsTab = () => {
   const [garminExportStatus, setGarminExportStatus] = useState(null);
   const [garminImportStatus, setGarminImportStatus] = useState(null);
   const [nutritionExportStatus, setNutritionExportStatus] = useState(null);
+  const [booksExportStatus, setBooksExportStatus] = useState(null);
+  const [booksImportStatus, setBooksImportStatus] = useState(null);
   const [allDataImportStatus, setAllDataImportStatus] = useState(null);
   const [showAllDataImportPreview, setShowAllDataImportPreview] = useState(false);
   const [allDataPreviewData, setAllDataPreviewData] = useState(null);
@@ -426,6 +428,102 @@ const SettingsTab = () => {
       console.error('❌ Erreur export Nutrition:', error);
       setNutritionExportStatus('error');
       setTimeout(() => setNutritionExportStatus(null), 3000);
+    }
+  };
+
+  // Fonction pour exporter les données Livres
+  const handleExportBooksData = async () => {
+    try {
+      setBooksExportStatus('loading');
+      
+      // Récupérer les livres depuis IndexedDB (fallback localStorage)
+      let booksForExport = [];
+      try {
+        const indexedBooks = await getAllBooksFromIndexedDB();
+        if (Array.isArray(indexedBooks) && indexedBooks.length > 0) {
+          booksForExport = indexedBooks;
+        } else {
+          booksForExport = loadBooksFromLocalStorage();
+        }
+      } catch (booksError) {
+        console.warn('⚠️ Erreur récupération données Livres pour export:', booksError);
+        try {
+          booksForExport = loadBooksFromLocalStorage();
+        } catch {
+          booksForExport = [];
+        }
+      }
+
+      if (booksForExport.length === 0) {
+        alert('Aucun livre à exporter.');
+        setBooksExportStatus(null);
+        return;
+      }
+
+      // Préparer l'export
+      const booksExport = prepareBooksExportData(booksForExport, {
+        includeSessions: true,
+        includeMetadata: true
+      });
+
+      // Télécharger le fichier
+      downloadBooksExportFile(booksExport);
+
+      setBooksExportStatus('success');
+      setTimeout(() => setBooksExportStatus(null), 3000);
+      
+    } catch (error) {
+      console.error('❌ Erreur export Livres:', error);
+      setBooksExportStatus('error');
+      setTimeout(() => setBooksExportStatus(null), 3000);
+    }
+  };
+
+  // Fonction pour importer les données Livres
+  const handleImportBooksData = async (jsonData) => {
+    try {
+      setBooksImportStatus('loading');
+      
+      let parsed;
+      if (typeof jsonData === 'string') {
+        parsed = JSON.parse(jsonData);
+      } else {
+        parsed = jsonData;
+      }
+
+      // Traiter l'import
+      const result = processBooksImportData(parsed);
+
+      if (!result.valid) {
+        throw new Error(result.errors?.join(', ') || 'Erreur de validation des données Livres');
+      }
+
+      if (result.books.length === 0) {
+        throw new Error('Aucun livre valide trouvé dans le fichier');
+      }
+
+      // Sauvegarder dans IndexedDB
+      const indexedOk = await saveBooksToIndexedDB(result.books);
+      
+      if (indexedOk) {
+        console.log(`[Settings] ✅ Import Livres réussi (${result.books.length} livres restaurés dans IndexedDB)`);
+        setBooksImportStatus('success');
+        setTimeout(() => {
+          setBooksImportStatus(null);
+          // Recharger la page pour voir les changements
+          if (window.confirm(`${result.books.length} livre(s) importé(s) avec succès ! Voulez-vous recharger la page pour voir les changements ?`)) {
+            window.location.reload();
+          }
+        }, 2000);
+      } else {
+        throw new Error('Échec de la sauvegarde dans IndexedDB');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erreur import Livres:', error);
+      setBooksImportStatus('error');
+      alert(`Erreur lors de l'import des Livres : ${error.message}`);
+      setTimeout(() => setBooksImportStatus(null), 3000);
     }
   };
 
@@ -1259,28 +1357,22 @@ const SettingsTab = () => {
         if (booksPreview && booksPreview.valid && Array.isArray(booksPreview.books)) {
           const booksToSave = booksPreview.books;
 
+          // Sauvegarder UNIQUEMENT dans IndexedDB (localStorage saturé, utilisé uniquement en fallback de lecture)
           let indexedOk = false;
           try {
             indexedOk = await saveBooksToIndexedDB(booksToSave);
+            if (indexedOk) {
+              console.log(
+                `[Settings] ✅ Import Livres réussi (${booksToSave.length} livres restaurés dans IndexedDB depuis l'export global)`
+              );
+            } else {
+              console.warn(
+                `[Settings] ⚠️ Échec sauvegarde IndexedDB pour ${booksToSave.length} livres`
+              );
+            }
           } catch (booksDbError) {
-            console.warn('⚠️ Erreur lors de la sauvegarde des Livres en IndexedDB:', booksDbError);
-          }
-
-          // Toujours tenter de synchroniser le fallback localStorage
-          try {
-            saveBooksToLocalStorage(booksToSave);
-          } catch (lsError) {
-            console.warn('⚠️ Erreur lors de la sauvegarde des Livres en localStorage:', lsError);
-          }
-
-          if (indexedOk) {
-            console.log(
-              `[Settings] ✅ Import Livres réussi (${booksToSave.length} livres restaurés depuis l'export global)`
-            );
-          } else {
-            console.log(
-              `[Settings] ⚠️ Import Livres effectué uniquement en localStorage (${booksToSave.length} livres)`
-            );
+            console.error('❌ Erreur lors de la sauvegarde des Livres en IndexedDB:', booksDbError);
+            // NE PLUS sauvegarder dans localStorage (saturé)
           }
         }
       } catch (booksImportError) {
@@ -1564,6 +1656,14 @@ const SettingsTab = () => {
                     <li>• Taille données : {(JSON.stringify(data).length / 1024).toFixed(1)} KB</li>
                   </ul>
                 </div>
+                <div className="space-y-1">
+                  <h5 className="text-sm font-medium text-indigo-300">📚 Livres</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Livres inclus dans l'export global</li>
+                    <li>• Sessions de lecture incluses</li>
+                    <li>• Métadonnées complètes</li>
+                  </ul>
+                </div>
               </div>
             </div>
 
@@ -1602,6 +1702,15 @@ const SettingsTab = () => {
                 className="w-full bg-orange-600 hover:bg-orange-700"
               >
                 {nutritionExportStatus === 'loading' ? 'Export en cours...' : 'Export Nutrition'}
+              </Button>
+              
+              <Button
+                onClick={handleExportBooksData}
+                disabled={booksExportStatus === 'loading'}
+                icon={BookOpen}
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
+              >
+                {booksExportStatus === 'loading' ? 'Export en cours...' : 'Export Livres'}
               </Button>
             </div>
 
@@ -1644,6 +1753,110 @@ const SettingsTab = () => {
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
                 {t('messages.importExport.nutritionExportError')}
+              </div>
+            )}
+
+            {booksExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Export Livres réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
+
+            {booksExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'export des Livres
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section Livres - Export/Import dédié */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <BookOpen className="mr-2" size={20} />
+            Livres
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-gray-300 text-sm">
+              Gérez vos livres, sessions de lecture et métadonnées. Exportez et importez vos données de bibliothèque.
+            </p>
+            
+            <div className="bg-slate-700/50 rounded-lg p-4">
+              <h4 className="font-medium text-white mb-2">Fonctionnalités :</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>• Gestion complète de votre bibliothèque personnelle</li>
+                <li>• Suivi des sessions de lecture (durée, pages lues, notes)</li>
+                <li>• Stockage des couvertures et PDFs dans IndexedDB</li>
+                <li>• Export/Import au format JSON versionné</li>
+                <li>• Intégration avec l'export global de l'application</li>
+              </ul>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button
+                onClick={handleExportBooksData}
+                disabled={booksExportStatus === 'loading'}
+                icon={Download}
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
+              >
+                {booksExportStatus === 'loading' ? 'Export en cours...' : 'Exporter les Livres'}
+              </Button>
+              
+              <Button
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.json';
+                  input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      handleImportBooksData(event.target.result);
+                    };
+                    reader.readAsText(file);
+                  };
+                  input.click();
+                }}
+                disabled={booksImportStatus === 'loading'}
+                icon={Upload}
+                className="w-full bg-indigo-500 hover:bg-indigo-600"
+              >
+                {booksImportStatus === 'loading' ? 'Import en cours...' : 'Importer les Livres'}
+              </Button>
+            </div>
+
+            {booksExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Export réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
+
+            {booksExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'export
+              </div>
+            )}
+
+            {booksImportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Import réussi ! Les livres ont été restaurés.
+              </div>
+            )}
+
+            {booksImportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'import
               </div>
             )}
           </div>

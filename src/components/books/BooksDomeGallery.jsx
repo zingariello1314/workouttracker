@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, memo, useCallback } from 'react';
 import './booksDome.css';
 
 /**
@@ -109,13 +109,26 @@ const BooksDomeGallery = ({
   const lastMoveTimeRef = useRef(0);
   const velocityRef = useRef(0);
   const inertiaFrameRef = useRef(null);
+  const lastInertiaTimeRef = useRef(null);
+  const pendingTransformRef = useRef(null);
+  const transformRafIdRef = useRef(null);
+  const moveRafIdRef = useRef(null);
+  const pendingDeltaXRef = useRef(0);
+  const pendingTimeRef = useRef(0);
 
   const [openedItem, setOpenedItem] = useState(null);
   const [overlayVisible, setOverlayVisible] = useState(false);
+  
+  // Solution 4: Virtualisation avec Intersection Observer pour les items du dôme
+  const [visibleItems, setVisibleItems] = useState(new Set());
+  const itemRefs = useRef(new Map());
 
   // ResizeObserver pour calculer dynamiquement le radius (comme dans la référence Vue.js)
+  // Optimisé avec RAF pour éviter les recalculs excessifs
   useEffect(() => {
     const root = rootRef.current;
+    let resizeRafId = null;
+    
     if (!root) {
       // Réessayer après un court délai si root n'est pas encore disponible
       const timer = setTimeout(() => {
@@ -165,69 +178,96 @@ const BooksDomeGallery = ({
       return () => clearTimeout(timer);
     }
 
+    let resizeTimeout = null;
+    
     const ro = new ResizeObserver((entries) => {
-      const cr = entries[0].contentRect;
-      const w = Math.max(1, cr.width);
-      const h = Math.max(1, cr.height);
-      const minDim = Math.min(w, h);
-      const maxDim = Math.max(w, h);
-      const aspect = w / h;
-
-      // Utiliser les options passées en props (comme dans la référence avec override)
-
-      let basis;
-      switch (fitBasis) {
-        case 'min':
-          basis = minDim;
-          break;
-        case 'max':
-          basis = maxDim;
-          break;
-        case 'width':
-          basis = w;
-          break;
-        case 'height':
-          basis = h;
-          break;
-        default:
-          basis = aspect >= 1.3 ? w : minDim;
+      // Solution 10: Debounce agressif avec setTimeout + RAF pour éviter les recalculs excessifs
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
       }
+      
+      resizeTimeout = setTimeout(() => {
+        if (resizeRafId) return; // Ignorer si déjà en attente de RAF
+        
+        resizeRafId = requestAnimationFrame(() => {
+          const cr = entries[0].contentRect;
+          const w = Math.max(1, cr.width);
+          const h = Math.max(1, cr.height);
+        const minDim = Math.min(w, h);
+        const maxDim = Math.max(w, h);
+        const aspect = w / h;
 
-      let radius = basis * fit;
-      const heightGuard = h * 1.35;
-      radius = Math.min(radius, heightGuard);
-      radius = clamp(radius, minRadius, maxRadius);
-      const finalRadius = Math.round(radius);
+        // Utiliser les options passées en props (comme dans la référence avec override)
 
-      const viewerPad = Math.max(8, Math.round(minDim * padFactor));
+        let basis;
+        switch (fitBasis) {
+          case 'min':
+            basis = minDim;
+            break;
+          case 'max':
+            basis = maxDim;
+            break;
+          case 'width':
+            basis = w;
+            break;
+          case 'height':
+            basis = h;
+            break;
+          default:
+            basis = aspect >= 1.3 ? w : minDim;
+        }
 
-      root.style.setProperty('--radius', `${finalRadius}px`);
-      root.style.setProperty('--viewer-pad', `${viewerPad}px`);
-      root.style.setProperty('--overlay-blur-color', overlayBlurColor);
-      root.style.setProperty('--tile-radius', imageBorderRadius);
-      root.style.setProperty('--enlarge-radius', openedImageBorderRadius);
-      root.style.setProperty('--image-filter', grayscale ? 'grayscale(1)' : 'none');
+        let radius = basis * fit;
+        const heightGuard = h * 1.35;
+        radius = Math.min(radius, heightGuard);
+        radius = clamp(radius, minRadius, maxRadius);
+        const finalRadius = Math.round(radius);
+
+        const viewerPad = Math.max(8, Math.round(minDim * padFactor));
+
+        root.style.setProperty('--radius', `${finalRadius}px`);
+        root.style.setProperty('--viewer-pad', `${viewerPad}px`);
+        root.style.setProperty('--overlay-blur-color', overlayBlurColor);
+        root.style.setProperty('--tile-radius', imageBorderRadius);
+        root.style.setProperty('--enlarge-radius', openedImageBorderRadius);
+        root.style.setProperty('--image-filter', grayscale ? 'grayscale(1)' : 'none');
+        
+        resizeRafId = null;
+      });
+      }, 200); // Délai de 200ms pour debounce agressif
     });
 
     ro.observe(root);
 
     return () => {
       ro.disconnect();
+      if (resizeRafId) {
+        cancelAnimationFrame(resizeRafId);
+        resizeRafId = null;
+      }
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = null;
+      }
     };
   }, [fit, fitBasis, minRadius, maxRadius, padFactor, overlayBlurColor, imageBorderRadius, openedImageBorderRadius, grayscale]);
 
-  // Appliquer le transform à chaque changement de rotation
+  // Appliquer le transform uniquement pour l'initialisation (optimisé pour éviter les conflits)
   useEffect(() => {
     const sphere = sphereRef.current;
     if (!sphere) return;
     
-    // Ne pas interférer pendant le drag actif ou l'inertie (le drag/inertie gère directement le transform)
+    // Ne pas interférer pendant le drag actif ou l'inertie
     if (draggingRef.current || inertiaActiveRef.current) return;
+    
+    // Seulement si la rotation a vraiment changé (évite les updates inutiles)
+    if (rotationYRef.current === rotationY) return;
 
-    // Transition douce seulement quand ni drag ni inertie
+    // Initialisation ou changement externe uniquement
+    rotationYRef.current = rotationY;
     sphere.style.transition = 'transform 120ms ease-out';
     sphere.style.transform = `translateZ(calc(var(--radius) * -1)) rotateX(0deg) rotateY(${rotationY}deg)`;
-  }, [rotationX, rotationY]);
+  }, []); // Dépendances vides - seulement au mount
 
   // Forcer le montage après le premier rendu
   useEffect(() => {
@@ -267,14 +307,43 @@ const BooksDomeGallery = ({
       let lastMoveTime = 0;
       let lastMoveX = 0; // Position X du dernier mouvement pour calculer la vélocité instantanée
       let velocity = 0;
-      let inertiaInterval = null;
+      let inertiaFrameId = null; // Utiliser requestAnimationFrame au lieu de setInterval
+      const velocityHistory = []; // Pour moyenne glissante
+      const MAX_VELOCITY_HISTORY = 5;
+      
+      // Fonction pour appliquer le transform avec batching (RAF)
+      const applyTransformBatched = (rotationY) => {
+        pendingTransformRef.current = rotationY;
+        
+        if (!transformRafIdRef.current) {
+          transformRafIdRef.current = requestAnimationFrame(() => {
+            const sphere = sphereRef.current;
+            if (sphere && pendingTransformRef.current !== null) {
+              sphere.style.transform = `translateZ(calc(var(--radius) * -1)) rotateX(0deg) rotateY(${pendingTransformRef.current}deg)`;
+              pendingTransformRef.current = null;
+            }
+            transformRafIdRef.current = null;
+          });
+        }
+      };
 
       const handleMouseDown = (e) => {
         // Arrêter l'inertie si elle était en cours
-        if (inertiaInterval) {
-          clearInterval(inertiaInterval);
-          inertiaInterval = null;
+        if (inertiaFrameId) {
+          cancelAnimationFrame(inertiaFrameId);
+          inertiaFrameId = null;
+          inertiaFrameRef.current = null;
           inertiaActiveRef.current = false;
+        }
+        
+        // Annuler les RAF en attente
+        if (moveRafIdRef.current) {
+          cancelAnimationFrame(moveRafIdRef.current);
+          moveRafIdRef.current = null;
+        }
+        if (transformRafIdRef.current) {
+          cancelAnimationFrame(transformRafIdRef.current);
+          transformRafIdRef.current = null;
         }
         
         // Démarrer le drag
@@ -284,12 +353,15 @@ const BooksDomeGallery = ({
         startRotationY = rotationYRef.current;
         lastMoveTime = Date.now();
         lastMoveX = e.clientX; // Initialiser pour le calcul de vélocité instantanée
+        velocityHistory.length = 0; // Réinitialiser l'historique
         document.body.style.cursor = 'grabbing';
         
         // Désactiver la transition pendant le drag
         const currentSphereEl = sphereRef.current;
         if (currentSphereEl) {
           currentSphereEl.style.transition = 'none';
+          // Appliquer will-change pendant le drag
+          currentSphereEl.style.willChange = 'transform';
         }
       };
 
@@ -331,6 +403,18 @@ const BooksDomeGallery = ({
         draggingRef.current = false;
         document.body.style.cursor = '';
         
+        // Nettoyer les RAF en attente
+        if (moveRafIdRef.current) {
+          cancelAnimationFrame(moveRafIdRef.current);
+          moveRafIdRef.current = null;
+        }
+        
+        // Retirer will-change après le drag
+        const currentSphereEl = sphereRef.current;
+        if (currentSphereEl) {
+          currentSphereEl.style.willChange = 'auto';
+        }
+        
         // Enregistrer le moment de fin du drag
         lastDragEndAtRef.current = performance.now();
         
@@ -342,12 +426,34 @@ const BooksDomeGallery = ({
           const friction = 0.93; // Friction légèrement réduite pour traînée plus longue
           
           inertiaActiveRef.current = true; // Marquer l'inertie comme active
+          lastInertiaTimeRef.current = null; // Réinitialiser le temps pour RAF
           
-          const applyInertia = () => {
+          const applyInertia = (timestamp) => {
+            // Gérer la visibilité de l'onglet
+            if (document.hidden) {
+              cancelAnimationFrame(inertiaFrameId);
+              inertiaFrameId = null;
+              inertiaFrameRef.current = null;
+              inertiaActiveRef.current = false;
+              return;
+            }
+            
+            // Initialiser le temps si première frame
+            if (lastInertiaTimeRef.current === null) {
+              lastInertiaTimeRef.current = timestamp;
+            }
+            
+            const deltaTime = timestamp - lastInertiaTimeRef.current;
+            lastInertiaTimeRef.current = timestamp;
+            
+            // Normaliser la friction en fonction du temps réel (indépendant de la fréquence)
+            const frictionFactor = Math.pow(friction, deltaTime / 16); // Normaliser à 16ms
+            
             if (Math.abs(inertiaVelocity) < 0.02) {
-              if (inertiaInterval) {
-                clearInterval(inertiaInterval);
-                inertiaInterval = null;
+              if (inertiaFrameId) {
+                cancelAnimationFrame(inertiaFrameId);
+                inertiaFrameId = null;
+                inertiaFrameRef.current = null;
               }
               inertiaActiveRef.current = false; // Marquer l'inertie comme terminée
               // Synchroniser avec le state seulement à la fin
@@ -356,22 +462,26 @@ const BooksDomeGallery = ({
               const currentSphereEl = sphereRef.current;
               if (currentSphereEl) {
                 currentSphereEl.style.transition = 'transform 120ms ease-out';
+                currentSphereEl.style.willChange = 'auto';
               }
               return;
             }
             
-            rotationYRef.current += inertiaVelocity;
-            const currentSphereEl = sphereRef.current;
-            if (currentSphereEl) {
-              // Pas de transition pendant l'inertie pour fluidité maximale
-              currentSphereEl.style.transition = 'none';
-              currentSphereEl.style.transform = `translateZ(calc(var(--radius) * -1)) rotateX(0deg) rotateY(${rotationYRef.current}deg)`;
-            }
+            // Appliquer l'inertie normalisée par le temps
+            rotationYRef.current += inertiaVelocity * (deltaTime / 16); // Normaliser à 16ms
+            applyTransformBatched(rotationYRef.current);
             
-            inertiaVelocity *= friction;
+            // Appliquer la friction normalisée
+            inertiaVelocity *= frictionFactor;
+            
+            // Continuer avec RAF
+            inertiaFrameId = requestAnimationFrame(applyInertia);
+            inertiaFrameRef.current = inertiaFrameId;
           };
           
-          inertiaInterval = setInterval(applyInertia, 16); // 60fps
+          // Démarrer l'inertie avec RAF
+          inertiaFrameId = requestAnimationFrame(applyInertia);
+          inertiaFrameRef.current = inertiaFrameId;
         } else {
           setRotationY(rotationYRef.current);
         }
@@ -379,10 +489,21 @@ const BooksDomeGallery = ({
 
       const handleTouchStart = (e) => {
         // Arrêter l'inertie si elle était en cours
-        if (inertiaInterval) {
-          clearInterval(inertiaInterval);
-          inertiaInterval = null;
+        if (inertiaFrameId) {
+          cancelAnimationFrame(inertiaFrameId);
+          inertiaFrameId = null;
+          inertiaFrameRef.current = null;
           inertiaActiveRef.current = false;
+        }
+        
+        // Annuler les RAF en attente
+        if (moveRafIdRef.current) {
+          cancelAnimationFrame(moveRafIdRef.current);
+          moveRafIdRef.current = null;
+        }
+        if (transformRafIdRef.current) {
+          cancelAnimationFrame(transformRafIdRef.current);
+          transformRafIdRef.current = null;
         }
         
         e.preventDefault();
@@ -397,7 +518,10 @@ const BooksDomeGallery = ({
         const currentSphereEl = sphereRef.current;
         if (currentSphereEl) {
           currentSphereEl.style.transition = 'none';
+          // Appliquer will-change pendant le drag
+          currentSphereEl.style.willChange = 'transform';
         }
+        velocityHistory.length = 0; // Réinitialiser l'historique
       };
 
       const handleTouchMove = (e) => {
@@ -411,25 +535,40 @@ const BooksDomeGallery = ({
         const currentTime = Date.now();
         const deltaTime = currentTime - lastMoveTime;
         
-        // Calculer la vélocité instantanée pour l'inertie (delta depuis le dernier mouvement)
-        if (deltaTime > 0) {
-          velocity = moveDeltaX / deltaTime;
-        }
-        lastMoveTime = currentTime;
+        // Accumuler les deltas pour le throttling
+        pendingDeltaXRef.current += moveDeltaX;
+        pendingTimeRef.current = deltaTime;
         lastMoveX = currentX;
         
-        // Sensibilité encore plus réduite pour rotation très douce
-        const sensitivity = 0.08; // Réduit de 0.12 à 0.08 pour rotation plus lente
-        const newRotationY = startRotationY + deltaX * sensitivity;
+        // Calculer la vélocité instantanée avec moyenne glissante
+        if (deltaTime > 0) {
+          const instantVelocity = moveDeltaX / deltaTime;
+          velocityHistory.push(instantVelocity);
+          if (velocityHistory.length > MAX_VELOCITY_HISTORY) {
+            velocityHistory.shift();
+          }
+          // Moyenne des dernières vélocités pour plus de cohérence
+          velocity = velocityHistory.reduce((a, b) => a + b, 0) / velocityHistory.length;
+        }
+        lastMoveTime = currentTime;
         
-        // Garder la rotation X fixe à 0
-        rotationXRef.current = 0;
-        rotationYRef.current = newRotationY;
-        
-        // Appliquer le transform directement (sans transition)
-        const currentSphereEl = sphereRef.current;
-        if (currentSphereEl) {
-          currentSphereEl.style.transform = `translateZ(calc(var(--radius) * -1)) rotateX(0deg) rotateY(${newRotationY}deg)`;
+        // Throttler avec RAF (limiter à 60 FPS)
+        if (!moveRafIdRef.current) {
+          moveRafIdRef.current = requestAnimationFrame(() => {
+            // Sensibilité encore plus réduite pour rotation très douce
+            const sensitivity = 0.08; // Réduit de 0.12 à 0.08 pour rotation plus lente
+            const newRotationY = startRotationY + deltaX * sensitivity;
+            
+            // Garder la rotation X fixe à 0
+            rotationXRef.current = 0;
+            rotationYRef.current = newRotationY;
+            
+            // Appliquer le transform avec batching
+            applyTransformBatched(newRotationY);
+            
+            pendingDeltaXRef.current = 0;
+            moveRafIdRef.current = null;
+          });
         }
       };
 
@@ -437,6 +576,18 @@ const BooksDomeGallery = ({
         if (!isDragging) return;
         isDragging = false;
         draggingRef.current = false;
+        
+        // Nettoyer les RAF en attente
+        if (moveRafIdRef.current) {
+          cancelAnimationFrame(moveRafIdRef.current);
+          moveRafIdRef.current = null;
+        }
+        
+        // Retirer will-change après le drag
+        const currentSphereEl = sphereRef.current;
+        if (currentSphereEl) {
+          currentSphereEl.style.willChange = 'auto';
+        }
         
         // Enregistrer le moment de fin du drag
         lastDragEndAtRef.current = performance.now();
@@ -448,12 +599,34 @@ const BooksDomeGallery = ({
           const friction = 0.93; // Friction légèrement réduite pour traînée plus longue
           
           inertiaActiveRef.current = true; // Marquer l'inertie comme active
+          lastInertiaTimeRef.current = null; // Réinitialiser le temps pour RAF
           
-          const applyInertia = () => {
+          const applyInertia = (timestamp) => {
+            // Gérer la visibilité de l'onglet
+            if (document.hidden) {
+              cancelAnimationFrame(inertiaFrameId);
+              inertiaFrameId = null;
+              inertiaFrameRef.current = null;
+              inertiaActiveRef.current = false;
+              return;
+            }
+            
+            // Initialiser le temps si première frame
+            if (lastInertiaTimeRef.current === null) {
+              lastInertiaTimeRef.current = timestamp;
+            }
+            
+            const deltaTime = timestamp - lastInertiaTimeRef.current;
+            lastInertiaTimeRef.current = timestamp;
+            
+            // Normaliser la friction en fonction du temps réel (indépendant de la fréquence)
+            const frictionFactor = Math.pow(friction, deltaTime / 16); // Normaliser à 16ms
+            
             if (Math.abs(inertiaVelocity) < 0.02) {
-              if (inertiaInterval) {
-                clearInterval(inertiaInterval);
-                inertiaInterval = null;
+              if (inertiaFrameId) {
+                cancelAnimationFrame(inertiaFrameId);
+                inertiaFrameId = null;
+                inertiaFrameRef.current = null;
               }
               inertiaActiveRef.current = false; // Marquer l'inertie comme terminée
               // Synchroniser avec le state seulement à la fin
@@ -462,22 +635,26 @@ const BooksDomeGallery = ({
               const currentSphereEl = sphereRef.current;
               if (currentSphereEl) {
                 currentSphereEl.style.transition = 'transform 120ms ease-out';
+                currentSphereEl.style.willChange = 'auto';
               }
               return;
             }
             
-            rotationYRef.current += inertiaVelocity;
-            const currentSphereEl = sphereRef.current;
-            if (currentSphereEl) {
-              // Pas de transition pendant l'inertie pour fluidité maximale
-              currentSphereEl.style.transition = 'none';
-              currentSphereEl.style.transform = `translateZ(calc(var(--radius) * -1)) rotateX(0deg) rotateY(${rotationYRef.current}deg)`;
-            }
+            // Appliquer l'inertie normalisée par le temps
+            rotationYRef.current += inertiaVelocity * (deltaTime / 16); // Normaliser à 16ms
+            applyTransformBatched(rotationYRef.current);
             
-            inertiaVelocity *= friction;
+            // Appliquer la friction normalisée
+            inertiaVelocity *= frictionFactor;
+            
+            // Continuer avec RAF
+            inertiaFrameId = requestAnimationFrame(applyInertia);
+            inertiaFrameRef.current = inertiaFrameId;
           };
           
-          inertiaInterval = setInterval(applyInertia, 16); // 60fps
+          // Démarrer l'inertie avec RAF
+          inertiaFrameId = requestAnimationFrame(applyInertia);
+          inertiaFrameRef.current = inertiaFrameId;
         } else {
           setRotationY(rotationYRef.current);
         }
@@ -502,9 +679,19 @@ const BooksDomeGallery = ({
         mainEl.removeEventListener('touchmove', handleTouchMove);
         mainEl.removeEventListener('touchend', handleTouchEnd);
 
-        if (inertiaInterval) {
-          clearInterval(inertiaInterval);
-          inertiaInterval = null;
+        // Nettoyer tous les RAF
+        if (inertiaFrameId) {
+          cancelAnimationFrame(inertiaFrameId);
+          inertiaFrameId = null;
+          inertiaFrameRef.current = null;
+        }
+        if (moveRafIdRef.current) {
+          cancelAnimationFrame(moveRafIdRef.current);
+          moveRafIdRef.current = null;
+        }
+        if (transformRafIdRef.current) {
+          cancelAnimationFrame(transformRafIdRef.current);
+          transformRafIdRef.current = null;
         }
       };
     };
@@ -521,7 +708,59 @@ const BooksDomeGallery = ({
         cleanupFn();
       }
     };
-  }, [items.length, rotationY]); // Réexécuter quand les items changent ou la rotation change
+  }, [items.length]); // Réexécuter seulement quand les items changent (rotationY retiré pour éviter les re-attachements)
+
+  // Solution 4: Intersection Observer pour virtualisation des items du dôme
+  useEffect(() => {
+    if (!sphereRef.current || items.length === 0 || !mounted) return;
+
+    const observers = [];
+    const visibleSet = new Set();
+    let rafId = null;
+
+    // Fonction pour mettre à jour l'état de manière batchée via RAF
+    const updateVisibleItems = () => {
+      setVisibleItems(new Set(visibleSet));
+      rafId = null;
+    };
+
+    // Observer tous les items pour détecter leur visibilité
+    items.forEach((item, index) => {
+      const itemElement = itemRefs.current.get(index);
+      if (!itemElement) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              visibleSet.add(index);
+            } else {
+              visibleSet.delete(index);
+            }
+            // Mettre à jour l'état avec un batch via RAF pour éviter les re-renders excessifs
+            if (!rafId) {
+              rafId = requestAnimationFrame(updateVisibleItems);
+            }
+          });
+        },
+        {
+          root: sphereRef.current,
+          rootMargin: '50%', // Pré-rendre les items proches
+          threshold: 0.01, // Même 1% de visibilité compte
+        }
+      );
+
+      observer.observe(itemElement);
+      observers.push(observer);
+    });
+
+    return () => {
+      observers.forEach((obs) => obs.disconnect());
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, [items.length, mounted]);
 
   // Fermeture overlay par Échap
   useEffect(() => {
@@ -576,24 +815,67 @@ const BooksDomeGallery = ({
               ref={sphereRef}
               className="books-dome-sphere"
             >
-              {items.map((item, index) => (
-                <button
-                  key={`${item.bookId}-${index}`}
-                  type="button"
-                  className="books-dome-item"
-                  style={{
-                    '--offset-x': item.x,
-                    '--offset-y': item.y,
-                    '--item-size-x': item.sizeX,
-                    '--item-size-y': item.sizeY,
-                  }}
-                  onClick={() => handleItemClick(item)}
-                >
-                  <div className="books-dome-item__image">
-                    <img src={item.src} alt={item.alt} loading="lazy" />
-                  </div>
-                </button>
-              ))}
+              {items.map((item, index) => {
+                // Solution 4: Ne rendre que les items visibles ou proches (virtualisation)
+                // Toujours rendre les 20 premiers items pour l'initialisation
+                const isVisible = index < 20 || 
+                                 visibleItems.has(index) || 
+                                 visibleItems.has(index - 1) || 
+                                 visibleItems.has(index + 1) ||
+                                 visibleItems.has(index - 2) ||
+                                 visibleItems.has(index + 2);
+                
+                // Pour les items non visibles, créer un placeholder minimal pour l'Intersection Observer
+                if (!isVisible && visibleItems.size > 0) {
+                  return (
+                    <div
+                      key={`${item.bookId}-${index}`}
+                      className="books-dome-item"
+                      style={{
+                        '--offset-x': item.x,
+                        '--offset-y': item.y,
+                        '--item-size-x': item.sizeX,
+                        '--item-size-y': item.sizeY,
+                        visibility: 'hidden',
+                        pointerEvents: 'none',
+                        position: 'absolute',
+                      }}
+                      ref={(el) => {
+                        if (el) itemRefs.current.set(index, el);
+                      }}
+                      aria-hidden="true"
+                    />
+                  );
+                }
+
+                return (
+                  <button
+                    key={`${item.bookId}-${index}`}
+                    type="button"
+                    className="books-dome-item"
+                    style={{
+                      '--offset-x': item.x,
+                      '--offset-y': item.y,
+                      '--item-size-x': item.sizeX,
+                      '--item-size-y': item.sizeY,
+                    }}
+                    onClick={() => handleItemClick(item)}
+                    ref={(el) => {
+                      if (el) itemRefs.current.set(index, el);
+                    }}
+                  >
+                    <div className="books-dome-item__image">
+                      <img 
+                        src={item.src} 
+                        alt={item.alt} 
+                        loading={index < 20 ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchpriority={index < 20 ? "high" : "low"}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
           {/* Edge fades / overlay de fond */}

@@ -80,8 +80,9 @@
 }
 
 .books-dome-sphere {
-  transform: translateZ(calc(var(--radius) * -1));
-  will-change: transform;
+  transform: translate3d(0, 0, calc(var(--radius) * -1));
+  /* OPTIMISATION: will-change appliqué dynamiquement via JavaScript uniquement pendant le drag */
+  /* will-change sera appliqué via sphere.style.willChange = 'transform' pendant le drag */
   transition: transform 120ms ease-out;
   /* Optimisations pour fluidité */
   backface-visibility: hidden;
@@ -105,11 +106,12 @@
   padding: 0;
   background: transparent;
   cursor: pointer;
-  transition: transform 300ms;
+  /* OPTIMISATION: transition retirée - gérée uniquement via JavaScript avec RAF pour éviter les conflits */
   pointer-events: auto;
   z-index: 2;
-  /* Optimisations pour fluidité */
-  will-change: transform;
+  /* OPTIMISATION: will-change retiré - les items ne bougent pas indépendamment, seule la sphère tourne */
+  /* Utiliser translate3d pour forcer l'accélération GPU sans will-change */
+  transform: translate3d(0, 0, 0);
   transform-style: preserve-3d;
   transform:
     rotateY(
@@ -135,13 +137,15 @@
   background: transparent;
   overflow: hidden;
   backface-visibility: hidden;
-  transition: transform 300ms, box-shadow 300ms;
+  /* OPTIMISATION: transition retirée - gérée uniquement via JavaScript avec RAF pour éviter les conflits */
+  /* La transition de box-shadow peut rester car elle n'interfère pas avec les transformations */
+  transition: box-shadow 300ms;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   pointer-events: auto;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 

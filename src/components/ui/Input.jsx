@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { buildInputClasses, buildLabelClasses, errorStyles, helpStyles } from '../../styles/input';
+import { buildInputClasses, buildLabelClasses, errorStyles, helpStyles, inputStyles, labelStyles } from '../../styles/input';
 
 const Input = forwardRef(({
   label,
@@ -15,20 +15,24 @@ const Input = forwardRef(({
   labelClassName = '',
   ...props
 }, ref) => {
-  const inputClasses = buildInputClasses({
-    variant,
-    size,
-    disabled: props.disabled,
-    readonly: props.readOnly,
-    error: !!error,
-    className
-  });
+  const inputClasses = variant === 'glass'
+    ? `books-glass-input ${inputStyles.sizes[size]} ${props.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${error ? 'border-red-500' : ''} ${className}`
+    : buildInputClasses({
+        variant,
+        size,
+        disabled: props.disabled,
+        readonly: props.readOnly,
+        error: !!error,
+        className
+      });
 
-  const labelClasses = buildLabelClasses({
-    required,
-    optional,
-    className: labelClassName
-  });
+  const labelClasses = variant === 'glass'
+    ? `books-glass-label ${labelStyles.base} ${required ? labelStyles.required : ''} ${optional ? labelStyles.optional : ''} ${labelClassName}`
+    : buildLabelClasses({
+        required,
+        optional,
+        className: labelClassName
+      });
 
   return (
     <div className={`space-y-2 ${containerClassName}`}>
@@ -77,14 +81,16 @@ const TextArea = forwardRef(({
   labelClassName = '',
   ...props
 }, ref) => {
-  const inputClasses = buildInputClasses({
-    variant,
-    size,
-    disabled: props.disabled,
-    readonly: props.readOnly,
-    error: !!error,
-    className: `resize-none ${className}`
-  });
+  const inputClasses = variant === 'glass' 
+    ? `books-glass-textarea w-full px-4 py-3 ${inputStyles.sizes[size]} ${props.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${error ? 'border-red-500' : ''} ${className}`
+    : buildInputClasses({
+        variant,
+        size,
+        disabled: props.disabled,
+        readonly: props.readOnly,
+        error: !!error,
+        className: `resize-none ${className}`
+      });
 
   const labelClasses = buildLabelClasses({
     required,
@@ -140,13 +146,15 @@ const Select = forwardRef(({
   labelClassName = '',
   ...props
 }, ref) => {
-  const inputClasses = buildInputClasses({
-    variant,
-    size,
-    disabled: props.disabled,
-    error: !!error,
-    className
-  });
+  const inputClasses = variant === 'glass'
+    ? `books-glass-select w-full px-4 py-3 ${inputStyles.sizes[size]} ${props.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${error ? 'border-red-500' : ''} ${className}`
+    : buildInputClasses({
+        variant,
+        size,
+        disabled: props.disabled,
+        error: !!error,
+        className
+      });
 
   const labelClasses = buildLabelClasses({
     required,

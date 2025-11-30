@@ -9,6 +9,7 @@ const Card = ({
   border = true,
   hover = false,
   gradient = false,
+  variant = 'default', // 'default' | 'glass'
   ...props 
 }) => {
   const paddings = {
@@ -38,12 +39,19 @@ const Card = ({
     '2xl': 'rounded-2xl'
   };
 
-  const baseClasses = gradient 
-    ? 'bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl text-white'
-    : 'bg-slate-800/90 backdrop-blur-xl text-white';
+  // Style "liquid glass" iOS 2025 - utilise les classes CSS personnalisées
+  const glassClasses = 'books-glass-card';
+  
+  const baseClasses = variant === 'glass'
+    ? glassClasses
+    : gradient 
+      ? 'bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl text-white'
+      : 'bg-slate-800/90 backdrop-blur-xl text-white';
     
-  const borderClasses = border ? 'border border-slate-700/50' : '';
-  const hoverClasses = hover ? 'hover:bg-slate-800/95 hover:shadow-2xl hover:backdrop-blur-2xl transition-all duration-300 cursor-pointer' : '';
+  const borderClasses = variant === 'glass' ? '' : (border ? 'border border-slate-700/50' : '');
+  const hoverClasses = variant === 'glass' 
+    ? '' 
+    : (hover ? 'hover:bg-slate-800/95 hover:shadow-2xl hover:backdrop-blur-2xl transition-all duration-300 cursor-pointer' : '');
 
   const classes = `
     ${baseClasses} 
@@ -63,11 +71,15 @@ const Card = ({
 };
 
 // Sous-composants pour une meilleure structure
-const CardHeader = ({ children, className = '', ...props }) => (
-  <div className={`border-b border-slate-700/50 pb-4 mb-4 ${className}`} {...props}>
-    {children}
-  </div>
-);
+const CardHeader = ({ children, className = '', ...props }) => {
+  // Détecter si le parent Card a variant="glass" via le contexte visuel
+  // Pour simplifier, on utilise une classe CSS qui s'adapte automatiquement
+  return (
+    <div className={`border-b border-white/10 dark:border-slate-700/50 pb-4 mb-4 ${className}`} {...props}>
+      {children}
+    </div>
+  );
+};
 
 const CardTitle = ({ children, className = '', size = 'lg', ...props }) => {
   const sizes = {
@@ -90,11 +102,13 @@ const CardContent = ({ children, className = '', ...props }) => (
   </div>
 );
 
-const CardFooter = ({ children, className = '', ...props }) => (
-  <div className={`border-t border-slate-700/50 pt-4 mt-4 ${className}`} {...props}>
-    {children}
-  </div>
-);
+const CardFooter = ({ children, className = '', ...props }) => {
+  return (
+    <div className={`border-t border-white/10 dark:border-slate-700/50 pt-4 mt-4 ${className}`} {...props}>
+      {children}
+    </div>
+  );
+};
 
 Card.Header = CardHeader;
 Card.Title = CardTitle;

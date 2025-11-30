@@ -20,7 +20,8 @@ const Button = ({
     danger: 'bg-red-600/90 backdrop-blur-sm hover:bg-red-700/90 text-white focus:ring-red-500 shadow-red-500/25 border border-red-500/20',
     warning: 'bg-yellow-600/90 backdrop-blur-sm hover:bg-yellow-700/90 text-white focus:ring-yellow-500 shadow-yellow-500/25 border border-yellow-500/20',
     outline: 'border-2 border-purple-600/60 backdrop-blur-sm text-purple-400 hover:bg-purple-600/20 hover:text-white focus:ring-purple-500 bg-transparent',
-    ghost: 'text-slate-300 hover:bg-slate-700/50 hover:text-white focus:ring-slate-500 bg-transparent shadow-none hover:shadow-sm backdrop-blur-sm'
+    ghost: 'text-slate-300 hover:bg-slate-700/50 hover:text-white focus:ring-slate-500 bg-transparent shadow-none hover:shadow-sm backdrop-blur-sm',
+    glass: 'books-glass-button'
   };
   
   const sizes = {

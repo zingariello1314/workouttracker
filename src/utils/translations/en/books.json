@@ -25,13 +25,15 @@
     "paused": "Paused"
   },
   "actions": {
+    "title": "Actions",
     "addBook": "Add book",
     "updateBook": "Update book",
     "cancelEdit": "Cancel edit",
     "export": "Export JSON",
     "import": "Import JSON",
     "editBook": "Edit",
-    "deleteBook": "Delete"
+    "deleteBook": "Delete",
+    "addSession": "Add session"
   },
   "assets": {
     "pdfAttached": "PDF attached",

@@ -13,7 +13,8 @@ export const inputStyles = {
     secondary: 'bg-slate-700/50 border-slate-500 focus:ring-purple-500 focus:border-purple-500',
     success: 'bg-green-900/20 border-green-600 focus:ring-green-500 focus:border-green-500',
     warning: 'bg-yellow-900/20 border-yellow-600 focus:ring-yellow-500 focus:border-yellow-500',
-    danger: 'bg-red-900/20 border-red-600 focus:ring-red-500 focus:border-red-500'
+    danger: 'bg-red-900/20 border-red-600 focus:ring-red-500 focus:border-red-500',
+    glass: 'books-glass-input w-full px-4 py-3'
   },
   
   // Tailles

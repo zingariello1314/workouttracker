@@ -3,8 +3,8 @@ import { loadBooks, saveBooks } from '../utils/booksStorage';
 import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../utils/booksIndexedDB';
 
 // Hook centralisant le chargement et la persistance des livres
-// - lecture prioritaire depuis IndexedDB (si disponible), sinon localStorage
-// - sauvegarde débouncée vers IndexedDB + localStorage
+// - lecture prioritaire depuis IndexedDB (si disponible), sinon localStorage (fallback lecture uniquement)
+// - sauvegarde UNIQUEMENT vers IndexedDB (localStorage saturé, utilisé uniquement en fallback de lecture)
 // - API simple pour BooksTab : { books, setBooks, isLoading }
 
 const HASH_EMPTY = 'EMPTY';
@@ -106,13 +106,12 @@ export const useBooksStorage = () => {
       debounceTimerRef.current = setTimeout(async () => {
         try {
           await saveBooksToIndexedDB(nextBooks);
-        } catch {
-          // Ne pas casser la sauvegarde locale en cas d'erreur IndexedDB
-        }
-        try {
-          saveBooks(nextBooks);
-        } catch {
-          // Si localStorage échoue (quota), on reste silencieux pour ne pas bloquer l'UI
+          console.log('[useBooksStorage] ✅ Sauvegarde IndexedDB réussie');
+        } catch (error) {
+          // Ne pas casser l'app en cas d'erreur IndexedDB, mais logger l'erreur
+          console.error('[useBooksStorage] ❌ Erreur sauvegarde IndexedDB:', error);
+          // NE PLUS sauvegarder dans localStorage (saturé)
+          // localStorage est utilisé uniquement comme fallback de LECTURE
         }
       }, 800);
     },

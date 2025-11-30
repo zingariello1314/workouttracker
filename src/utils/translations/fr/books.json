@@ -25,13 +25,15 @@
     "paused": "En pause"
   },
   "actions": {
+    "title": "Actions",
     "addBook": "Ajouter le livre",
     "updateBook": "Mettre à jour le livre",
     "cancelEdit": "Annuler la modification",
     "export": "Exporter JSON",
     "import": "Importer JSON",
     "editBook": "Éditer",
-    "deleteBook": "Supprimer"
+    "deleteBook": "Supprimer",
+    "addSession": "Ajouter session"
   },
   "assets": {
     "pdfAttached": "PDF associé",
