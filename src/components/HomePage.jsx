@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
+import { useAuth } from '../context/AuthContext';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import { preloadAdjacentImages, preloadImage } from '../utils/imageLazyLoader';
 import logger from '../utils/logger';
@@ -11,6 +12,7 @@ const log = logger.component('HomePage');
 
 const HomePage = () => {
   const { setActiveTab } = useWorkout();
+  const { isAuthenticated } = useAuth();
   const t = useTranslation();
   const { language } = useLanguage();
   const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
@@ -620,11 +622,11 @@ const HomePage = () => {
           {/* Bouton CTA - Texte non coupé */}
           <div className="relative flex-shrink-0">
             <button 
-              onClick={() => navigateToTab('today')}
+              onClick={() => navigateToTab(isAuthenticated ? 'today' : 'auth')}
               className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-8 py-4 rounded-2xl text-base md:text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl whitespace-nowrap overflow-visible"
               style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
             >
-              {t('home.cta')}
+              {isAuthenticated ? 'Accéder à l’onglet Aujourd’hui' : t('home.cta')}
             </button>
             
           </div>

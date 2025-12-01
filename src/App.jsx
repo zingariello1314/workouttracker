@@ -1,10 +1,12 @@
 import React from 'react';
 import { WorkoutProvider } from './context/WorkoutContext';
+import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ToastProvider } from './components/ui/Toast';
 import Header from './components/layout/Header';
 import Navigation from './components/layout/Navigation';
 import HomePage from './components/HomePage';
+import AuthPage from './components/AuthPage';
 import TodayTab from './components/tabs/TodayTab';
 import DataEntryTab from './components/tabs/DataEntryTab';
 import ProgressTab from './components/tabs/ProgressTab';
@@ -32,9 +34,11 @@ const WorkoutTrackerApp = () => {
   return (
     <LanguageProvider>
       <ToastProvider>
-        <WorkoutProvider>
-          <WorkoutTrackerContent />
-        </WorkoutProvider>
+        <AuthProvider>
+          <WorkoutProvider>
+            <WorkoutTrackerContent />
+          </WorkoutProvider>
+        </AuthProvider>
       </ToastProvider>
     </LanguageProvider>
   );
@@ -73,6 +77,8 @@ const WorkoutTrackerContent = () => {
     switch (activeTab) {
       case 'home':
         return <HomePage />;
+      case 'auth':
+        return <AuthPage />;
       case 'today':
         return <TodayTab />;
       case 'data-entry':
@@ -115,12 +121,14 @@ const WorkoutTrackerContent = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="flex flex-col min-h-screen">
-        {activeTab !== 'home' && <Header />}
-        {activeTab !== 'home' && <Navigation />}
+        {activeTab !== 'home' && activeTab !== 'auth' && <Header />}
+        {activeTab !== 'home' && activeTab !== 'auth' && <Navigation />}
         
         <main className={`flex-1 ${activeTab === 'home' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           {activeTab === 'home' ? (
             <HomePage />
+          ) : activeTab === 'auth' ? (
+            <AuthPage />
           ) : (
             <div className="container mx-auto px-4 py-6">
               {renderTabContent()}
