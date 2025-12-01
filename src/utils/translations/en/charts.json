@@ -35,6 +35,10 @@
     "volumeRegularity": "Swimming volume & regularity",
     "stretchesByZone": "Stretches by body zone"
   },
+  "empty": {
+    "title": "No data available",
+    "message": "Start recording your workouts to see your charts here."
+  },
   "noData": {
     "garmin": "No Garmin data available. Sync your data from the Garmin tab.",
     "garminSync": "No Garmin data available. Sync your Garmin data.",

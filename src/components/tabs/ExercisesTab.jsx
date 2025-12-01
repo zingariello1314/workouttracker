@@ -16,12 +16,15 @@ import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Activity, Target, Dumbbell, Clock, Filter, RefreshCw, Zap, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 
 const ExercisesTab = () => {
   const { state } = useWorkout();
   const { programs, activeProgram } = useContext(WorkoutContext);
   const t = useTranslation();
   const { language } = useLanguage();
+  const { currentUser, isAuthenticated } = useAuth();
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
   const [filters, setFilters] = useState({});
   const [dataSource, setDataSource] = useState('default'); // 'default', 'active_program', 'all_programs'
   const [syncData, setSyncData] = useState(null);
@@ -29,6 +32,12 @@ const ExercisesTab = () => {
   const [autoSync, setAutoSync] = useState(true);
   const [selectedProgram, setSelectedProgram] = useState(null); // Pour la navigation dans les programmes
   const [viewMode, setViewMode] = useState('exercises'); // 'exercises' ou 'programs'
+
+  // ✅ Visibilité des programmes selon l'authentification
+  // - invité (déconnecté) : aucun programme visible, aucun programme actif
+  // - utilisateur connecté : ses propres programmes (gérés ailleurs via userId)
+  const visiblePrograms = isAuthenticated ? programs : [];
+  const visibleActiveProgram = isAuthenticated ? activeProgram : null;
 
   // Synchronisation automatique des exercices depuis les programmes
   useEffect(() => {
@@ -56,10 +65,10 @@ const ExercisesTab = () => {
     
     switch (dataSource) {
       case 'active_program':
-        if (activeProgram && activeProgram.schedule) {
+        if (visibleActiveProgram && visibleActiveProgram.schedule) {
           // Convertir le programme actif au format legacy pour la compatibilité
           sourceProgram = {};
-          Object.entries(activeProgram.schedule).forEach(([day, dayData]) => {
+          Object.entries(visibleActiveProgram.schedule).forEach(([day, dayData]) => {
             sourceProgram[day] = {
               name: dayData.name,
               focus: dayData.focus,
@@ -114,7 +123,7 @@ const ExercisesTab = () => {
         } else if (!selectedProgram) {
           // Fusionner tous les programmes disponibles (mode programmes)
           sourceProgram = {};
-          programs.forEach(program => {
+          visiblePrograms.forEach(program => {
             if (program.schedule) {
               Object.entries(program.schedule).forEach(([day, dayData]) => {
                 const dayKey = `${program.name}_${day}`;
@@ -145,30 +154,41 @@ const ExercisesTab = () => {
         }
         break;
       default:
-        // Utiliser le programme par défaut (workoutProgram) avec activités complémentaires
-        sourceProgram = {};
-        Object.entries(workoutProgram).forEach(([day, dayData]) => {
-          sourceProgram[day] = {
-            ...dayData,
-            exercices: [
-              // Exercices classiques
-              ...(dayData.exercices || []),
-              // Activités complémentaires
-              ...(dayData.complementaryActivity ? [{
-                id: `complementary_${dayData.complementaryActivity.name.toLowerCase()}`,
-                name: dayData.complementaryActivity.name,
-                series: `1×${dayData.complementaryActivity.duration}min`,
-                type: dayData.complementaryActivity.type,
-                materiel: dayData.complementaryActivity.name === "Boxe" ? t('exercisesTab.equipment.boxingGloves') : t('exercisesTab.equipment.pool'),
-                notes: `${dayData.complementaryActivity.timeSlot} - ${dayData.complementaryActivity.benefits.join(', ')}`
-              }] : [])
-            ]
-          };
-        });
+        // Utiliser le programme par défaut (workoutProgram) AVEC activités complémentaires
+        // ✅ Mais uniquement pour l'admin : les autres comptes ne doivent PAS voir ton programme codé en dur
+        if (isAdmin) {
+          sourceProgram = {};
+          Object.entries(workoutProgram).forEach(([day, dayData]) => {
+            sourceProgram[day] = {
+              ...dayData,
+              exercices: [
+                // Exercices classiques
+                ...(dayData.exercices || []),
+                // Activités complémentaires
+                ...(dayData.complementaryActivity ? [{
+                  id: `complementary_${dayData.complementaryActivity.name.toLowerCase()}`,
+                  name: dayData.complementaryActivity.name,
+                  series: `1×${dayData.complementaryActivity.duration}min`,
+                  type: dayData.complementaryActivity.type,
+                  materiel: dayData.complementaryActivity.name === "Boxe" ? t('exercisesTab.equipment.boxingGloves') : t('exercisesTab.equipment.pool'),
+                  notes: `${dayData.complementaryActivity.timeSlot} - ${dayData.complementaryActivity.benefits.join(', ')}`
+                }] : [])
+              ]
+            };
+          });
+        } else {
+          // Pour les autres utilisateurs (et invités) : programme par défaut masqué
+          // On renvoie une structure vide, ils pourront utiliser leurs propres programmes via les autres sources
+          sourceProgram = {};
+        }
     }
     
-    return sourceProgram || workoutProgram;
-  }, [dataSource, activeProgram, programs, selectedProgram]);
+    if (isAdmin) {
+      return sourceProgram || workoutProgram;
+    }
+    // Invités et non-admin : ne jamais retomber sur workoutProgram
+    return sourceProgram || {};
+  }, [dataSource, visibleActiveProgram, visiblePrograms, selectedProgram, isAdmin, t]);
 
   // Convertir le programme en format enrichi
   const enhancedProgram = useMemo(() => {
@@ -404,16 +424,16 @@ const ExercisesTab = () => {
                 setViewMode('exercises');
                 setSelectedProgram(null);
               }}
-              disabled={!activeProgram}
+              disabled={!visibleActiveProgram}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 dataSource === 'active_program'
                   ? 'bg-blue-500 text-white shadow-md'
-                  : activeProgram
+                  : visibleActiveProgram
                   ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   : 'bg-slate-800 text-slate-500 cursor-not-allowed'
               }`}
             >
-              {t('exercisesTab.source.activeProgram')} {activeProgram ? `(${activeProgram.name})` : t('exercisesTab.source.activeProgramNone')}
+              {t('exercisesTab.source.activeProgram')} {visibleActiveProgram ? `(${visibleActiveProgram.name})` : t('exercisesTab.source.activeProgramNone')}
             </button>
             <button
               onClick={() => {
@@ -421,24 +441,24 @@ const ExercisesTab = () => {
                 setViewMode('programs');
                 setSelectedProgram(null);
               }}
-              disabled={programs.length === 0}
+              disabled={visiblePrograms.length === 0}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 dataSource === 'all_programs'
                   ? 'bg-blue-500 text-white shadow-md'
-                  : programs.length > 0
+                  : visiblePrograms.length > 0
                   ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   : 'bg-slate-800 text-slate-500 cursor-not-allowed'
               }`}
             >
-              {t('exercisesTab.source.allPrograms', { count: programs.length })}
+              {t('exercisesTab.source.allPrograms', { count: visiblePrograms.length })}
             </button>
           </div>
           <div className="mt-3 text-sm text-slate-400">
             {dataSource === 'default' && t('exercisesTab.source.description.default')}
-            {dataSource === 'active_program' && activeProgram && t('exercisesTab.source.description.activeProgram', { programName: activeProgram.name })}
-            {dataSource === 'active_program' && !activeProgram && t('exercisesTab.source.description.activeProgramNone')}
-            {dataSource === 'all_programs' && viewMode === 'programs' && t('exercisesTab.source.description.allProgramsSelect', { count: programs.length })}
-            {dataSource === 'all_programs' && viewMode === 'exercises' && selectedProgram && t('exercisesTab.source.description.allProgramsView', { programName: selectedProgram.name })}
+            {dataSource === 'active_program' && visibleActiveProgram && t('exercisesTab.source.description.activeProgram', { programName: visibleActiveProgram.name })}
+            {dataSource === 'active_program' && !visibleActiveProgram && t('exercisesTab.source.description.activeProgramNone')}
+            {dataSource === 'all_programs' && viewMode === 'programs' && t('exercisesTab.source.description.allProgramsSelect', { count: visiblePrograms.length })}
+              {dataSource === 'all_programs' && viewMode === 'exercises' && selectedProgram && t('exercisesTab.source.description.allProgramsView', { programName: selectedProgram.name })}
           </div>
         </CardContent>
       </Card>
@@ -509,7 +529,7 @@ const ExercisesTab = () => {
       {/* Filtres - Affichés seulement en mode exercices */}
       {viewMode === 'exercises' && (
         <Card>
-          <CardHeader>
+            <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
               {t('exercisesTab.filters.title')}
@@ -549,11 +569,11 @@ const ExercisesTab = () => {
         <Card>
           <CardHeader>
             <CardTitle>
-              {t('exercisesTab.programs.title', { count: programs.length })}
+              {t('exercisesTab.programs.title', { count: visiblePrograms.length })}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {programs.length === 0 ? (
+            {visiblePrograms.length === 0 ? (
               <div className="text-center py-12">
                 <Target className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <p className="text-slate-400 text-lg mb-2">{t('exercisesTab.programs.none')}</p>
@@ -563,7 +583,7 @@ const ExercisesTab = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {programs.map((program) => (
+                {visiblePrograms.map((program) => (
                   <ProgramCard
                     key={program.id}
                     program={program}

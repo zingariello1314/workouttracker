@@ -9,9 +9,11 @@ import ProgramDetailView from '../ProgramDetailView';
 import { useTranslation } from '../../utils/translations';
 import { useFormatters } from '../../utils/translations/formatters-hook';
 import { useToast } from '../ui/Toast';
+import { useAuth } from '../../context/AuthContext';
 
 const ProgramTab = () => {
   const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram } = useContext(WorkoutContext);
+  const { currentUser } = useAuth();
   const t = useTranslation();
   const { formatDate: formatLocaleDate } = useFormatters();
   const { showSuccess } = useToast();
@@ -40,6 +42,12 @@ const ProgramTab = () => {
       return t('program.duration.months', { count: months });
     }
   };
+
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+
+  // Pour les utilisateurs non admin, on ne doit jamais exposer les programmes existants.
+  const visiblePrograms = isAdmin ? programs : [];
+  const visibleActiveProgram = isAdmin ? activeProgram : null;
 
   const handleCreateProgram = () => {
     if (newProgram.name.trim()) {
@@ -72,6 +80,9 @@ const ProgramTab = () => {
 
   // Fonction pour importer automatiquement le programme actuel
   const importCurrentProgram = () => {
+    if (!isAdmin) {
+      return;
+    }
     // Conversion du programme actuel au format de l'application
     const convertedSchedule = {};
     
@@ -192,34 +203,42 @@ const ProgramTab = () => {
                 </h1>
                 <p className="text-slate-300">{t('program.subtitle')}</p>
               </div>
-              <div className="flex gap-3">
-                <Button
-                  onClick={importCurrentProgram}
-                  className="bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 flex items-center gap-2"
-                >
-                  <Download size={20} />
-                  {t('program.buttons.import')}
-                </Button>
-                <Button
-                  onClick={() => setShowCreateForm(true)}
-                  className="btn-primary flex items-center gap-2"
-                >
-                  <Plus size={20} />
-                  {t('program.buttons.new')}
-                </Button>
-              </div>
+              {isAdmin ? (
+                <div className="flex gap-3">
+                  <Button
+                    onClick={importCurrentProgram}
+                    className="bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 flex items-center gap-2"
+                  >
+                    <Download size={20} />
+                    {t('program.buttons.import')}
+                  </Button>
+                  <Button
+                    onClick={() => setShowCreateForm(true)}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    <Plus size={20} />
+                    {t('program.buttons.new')}
+                  </Button>
+                </div>
+              ) : (
+                <div className="px-4 py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-200 max-w-md">
+                  Ce programme intégré est réservé à ton compte administrateur.  
+                  Connecte-toi avec ton compte principal pour y accéder ou crée un
+                  programme personnalisé ici.
+                </div>
+              )}
             </div>
 
         {/* Programme Actuel */}
-        {activeProgram && (
+        {visibleActiveProgram && (
           <Card className="mb-8 gradient-primary border-0">
             <CardContent>
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h2 className={`${typography.presets.h3} mb-2`}>{t('program.currentProgram.title')}</h2>
-                  <h3 className={`${typography.presets.h2} font-bold`}>{activeProgram.name}</h3>
-                  {activeProgram.description && (
-                    <p className="text-white/90 mt-2">{activeProgram.description}</p>
+                  <h3 className={`${typography.presets.h2} font-bold`}>{visibleActiveProgram.name}</h3>
+                  {visibleActiveProgram.description && (
+                    <p className="text-white/90 mt-2">{visibleActiveProgram.description}</p>
                   )}
                 </div>
                 <Button
@@ -234,7 +253,7 @@ const ProgramTab = () => {
               <div className="flex flex-wrap items-center gap-6 text-sm text-white/80 mb-4">
                 <div className="flex items-center gap-2">
                   <Clock size={16} />
-                  <span>{t('program.currentProgram.activeSince', { duration: formatDuration(activeProgram.startDate) })}</span>
+                  <span>{t('program.currentProgram.activeSince', { duration: formatDuration(visibleActiveProgram.startDate) })}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar size={16} />
@@ -334,9 +353,9 @@ const ProgramTab = () => {
             <CardTitle className={typography.presets.h3}>{t('program.list.title')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {programs && programs.length > 0 ? (
+            {visiblePrograms && visiblePrograms.length > 0 ? (
               <div className="space-y-4">
-                {programs.map((program) => (
+                {visiblePrograms.map((program) => (
                   <div
                     key={program.id}
                     className={`p-4 rounded-lg border transition-all ${

@@ -45,8 +45,8 @@ const Card = ({
   const baseClasses = variant === 'glass'
     ? glassClasses
     : gradient 
-      ? 'bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl text-white'
-      : 'bg-slate-800/90 backdrop-blur-xl text-white';
+    ? 'bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl text-white'
+    : 'bg-slate-800/90 backdrop-blur-xl text-white';
     
   const borderClasses = variant === 'glass' ? '' : (border ? 'border border-slate-700/50' : '');
   const hoverClasses = variant === 'glass' 
@@ -76,9 +76,9 @@ const CardHeader = ({ children, className = '', ...props }) => {
   // Pour simplifier, on utilise une classe CSS qui s'adapte automatiquement
   return (
     <div className={`border-b border-white/10 dark:border-slate-700/50 pb-4 mb-4 ${className}`} {...props}>
-      {children}
-    </div>
-  );
+    {children}
+  </div>
+);
 };
 
 const CardTitle = ({ children, className = '', size = 'lg', ...props }) => {
@@ -105,9 +105,9 @@ const CardContent = ({ children, className = '', ...props }) => (
 const CardFooter = ({ children, className = '', ...props }) => {
   return (
     <div className={`border-t border-white/10 dark:border-slate-700/50 pt-4 mt-4 ${className}`} {...props}>
-      {children}
-    </div>
-  );
+    {children}
+  </div>
+);
 };
 
 Card.Header = CardHeader;

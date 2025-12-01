@@ -96,26 +96,38 @@ const generateTestWorkoutData = () => {
   return testData;
 };
 
-export const useWorkoutData = () => {
-  const [data, setData] = useState({
-    checkedExercises: {},
-    reps: {},
-    checkedStretches: {},
-    startDate: null,
-    weekVariant: 'A',
-    progressPhotos: [],
-    progressEntries: [],
-    bodyTrackingReminders: [],
-    bodyTrackingLastUpdated: null,
-    sessionFeedbacks: {}, // Stockage des feedbacks de session par date
-    // ✅ NOUVEAU : Système de variations journalières pour l'onglet "Aujourd'hui"
-    dailyVariations: {}, // Format: { "YYYY-MM-DD": DailyVariation }
-    dailyVariationsVersion: '1.0', // Version du schéma pour migrations futures
-    // ✅ NOUVEAU : Système de justification des jours sans activité
-    dayJustifications: {}, // Format: { "YYYY-MM-DD": { reason, note?, createdAt, updatedAt } }
-    dayJustificationsVersion: '1.0' // Version du schéma pour migrations futures
-    // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
-  });
+// État initial partagé (utile pour créer un jeu vide par utilisateur)
+const INITIAL_WORKOUT_DATA = {
+  checkedExercises: {},
+  reps: {},
+  checkedStretches: {},
+  startDate: null,
+  weekVariant: 'A',
+  progressPhotos: [],
+  progressEntries: [],
+  bodyTrackingReminders: [],
+  bodyTrackingLastUpdated: null,
+  sessionFeedbacks: {}, // Stockage des feedbacks de session par date
+  // ✅ NOUVEAU : Système de variations journalières pour l'onglet "Aujourd'hui"
+  dailyVariations: {}, // Format: { "YYYY-MM-DD": DailyVariation }
+  dailyVariationsVersion: '1.0', // Version du schéma pour migrations futures
+  // ✅ NOUVEAU : Système de justification des jours sans activité
+  dayJustifications: {}, // Format: { "YYYY-MM-DD": { reason, note?, createdAt, updatedAt } }
+  dayJustificationsVersion: '1.0' // Version du schéma pour migrations futures
+  // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
+};
+
+export const useWorkoutData = (options = {}) => {
+  const {
+    // Clé de stockage pour séparer les données par utilisateur
+    storageKey = 'main',
+    // Générer (ou non) des données de test lorsqu'aucune donnée n'existe
+    generateTestData = true,
+    // Mode éphémère : aucune lecture / écriture persistance (ex: utilisateur déconnecté)
+    ephemeral = false
+  } = options;
+
+  const [data, setData] = useState(INITIAL_WORKOUT_DATA);
 
   // Tous les useRef doivent être déclarés avant les useCallback et useEffect
   const debounceTimerRef = useRef(null);
@@ -320,6 +332,11 @@ export const useWorkoutData = () => {
         newData.weekVariant = 'A';
       }
       
+      // En mode éphémère (déconnecté), on ne persiste rien
+      if (ephemeral) {
+        return;
+      }
+
       const db = await openDB();
       
       // Si IndexedDB n'est pas disponible, utiliser localStorage uniquement
@@ -338,7 +355,8 @@ export const useWorkoutData = () => {
       
       // Créer un objet avec la nouvelle structure et validation finale
       const dataToSave = {
-        id: 'main',
+        // ✅ Clé de stockage dépendante de l'utilisateur
+        id: storageKey,
         checkedExercises: newData && newData.checkedExercises ? { ...newData.checkedExercises } : {},
         reps: newData && newData.reps ? { ...newData.reps } : {},
         checkedStretches: newData && newData.checkedStretches ? { ...newData.checkedStretches } : {},
@@ -381,8 +399,9 @@ export const useWorkoutData = () => {
         request.onsuccess = () => {
           // Sauvegarder aussi en localStorage comme backup
           try {
-            localStorage.setItem('workoutData_backup', JSON.stringify(newData));
-            localStorage.setItem('workoutData_lastSaved', new Date().toISOString());
+            // ✅ Inclure storageKey dans la clé de backup pour éviter les fuites cross-utilisateurs
+            localStorage.setItem(`workoutData_backup_${storageKey}`, JSON.stringify(newData));
+            localStorage.setItem(`workoutData_lastSaved_${storageKey}`, new Date().toISOString());
           } catch (e) {
             console.warn('⚠️ Impossible de sauvegarder en localStorage:', e);
           }
@@ -393,8 +412,8 @@ export const useWorkoutData = () => {
           console.error('❌ Erreur lors de la sauvegarde IndexedDB:', request.error);
           // Fallback vers localStorage
           try {
-            localStorage.setItem('workoutData_backup', JSON.stringify(newData));
-            localStorage.setItem('workoutData_lastSaved', new Date().toISOString());
+            localStorage.setItem(`workoutData_backup_${storageKey}`, JSON.stringify(newData));
+            localStorage.setItem(`workoutData_lastSaved_${storageKey}`, new Date().toISOString());
             resolve();
           } catch (localStorageError) {
             console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
@@ -411,8 +430,8 @@ export const useWorkoutData = () => {
         // Nettoyer d'abord pour libérer de l'espace
         cleanupLocalStorage();
         
-        localStorage.setItem('workoutData_backup', JSON.stringify(newData));
-        localStorage.setItem('workoutData_lastSaved', new Date().toISOString());
+        localStorage.setItem(`workoutData_backup_${storageKey}`, JSON.stringify(newData));
+        localStorage.setItem(`workoutData_lastSaved_${storageKey}`, new Date().toISOString());
         console.log('✅ Sauvegarde de secours réussie dans localStorage');
       } catch (localStorageError) {
         console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
@@ -438,7 +457,7 @@ export const useWorkoutData = () => {
             dataVersion: '1.0'
           };
           
-          localStorage.setItem('workoutData_essential', JSON.stringify(essentialData));
+          localStorage.setItem(`workoutData_essential_${storageKey}`, JSON.stringify(essentialData));
           console.log('✅ Sauvegarde des données essentielles réussie');
         } catch (essentialError) {
           console.error('❌ Échec de la sauvegarde des données essentielles:', essentialError);
@@ -536,7 +555,7 @@ export const useWorkoutData = () => {
       // Si IndexedDB n'est pas disponible, utiliser localStorage uniquement
       if (!db) {
         try {
-          const backupData = localStorage.getItem('workoutData_backup');
+          const backupData = localStorage.getItem(`workoutData_backup_${storageKey}`);
           if (backupData) {
             const parsedBackup = JSON.parse(backupData);
             return parsedBackup;
@@ -547,9 +566,15 @@ export const useWorkoutData = () => {
         return null;
       }
       
+      // En mode éphémère, ignorer complètement la persistance
+      if (ephemeral) {
+        return null;
+      }
+
       const transaction = db.transaction(['workouts'], 'readonly');
       const store = transaction.objectStore('workouts');
-      const request = store.get('main');
+          // ✅ Charger l'enregistrement associé à la storageKey de l'utilisateur
+          const request = store.get(storageKey);
       
       return new Promise((resolve, reject) => {
         request.onsuccess = () => {
@@ -596,7 +621,7 @@ export const useWorkoutData = () => {
           } else {
             // Pas de données en IndexedDB, essayer de récupérer depuis localStorage
             try {
-              const backupData = localStorage.getItem('workoutData_backup');
+              const backupData = localStorage.getItem(`workoutData_backup_${storageKey}`);
               if (backupData) {
                 const parsedBackup = JSON.parse(backupData);
                 // ✅ Migration automatique des données localStorage
@@ -617,7 +642,7 @@ export const useWorkoutData = () => {
           
           // En cas d'erreur, essayer de récupérer depuis localStorage
           try {
-            const backupData = localStorage.getItem('workoutData_backup');
+            const backupData = localStorage.getItem(`workoutData_backup_${storageKey}`);
             if (backupData) {
               const parsedBackup = JSON.parse(backupData);
               // ✅ Migration automatique des données localStorage
@@ -637,7 +662,7 @@ export const useWorkoutData = () => {
       
       // Fallback vers localStorage en cas d'erreur critique
       try {
-        const backupData = localStorage.getItem('workoutData_backup');
+        const backupData = localStorage.getItem(`workoutData_backup_${storageKey}`);
         if (backupData) {
           const parsedBackup = JSON.parse(backupData);
           // ✅ Migration automatique des données localStorage
@@ -656,14 +681,22 @@ export const useWorkoutData = () => {
     if (savedData) {
       setData(savedData);
     } else {
-      // Si aucune donnée n'existe, charger les données de test
-      console.log('🎯 Aucune donnée trouvée, chargement des données de test...');
-      const testData = generateTestWorkoutData();
-      setData(testData);
-      // Sauvegarder les données de test
-      await saveToDB(testData);
+      // Si aucune donnée n'existe
+      if (generateTestData) {
+        // Mode démo / pré-authentification : charger les données de test
+        console.log('🎯 Aucune donnée trouvée, chargement des données de test...');
+        const testData = generateTestWorkoutData();
+        setData(testData);
+        // Sauvegarder les données de test
+        await saveToDB(testData);
+      } else {
+        // Mode multi-utilisateur : démarrer avec un jeu vide pour cet utilisateur
+        console.log(`🎯 Aucune donnée trouvée pour ${storageKey}, initialisation d'un jeu vide`);
+        setData(INITIAL_WORKOUT_DATA);
+        await saveToDB(INITIAL_WORKOUT_DATA);
+      }
     }
-    // Marquer que le chargement initial est terminé
+    // Marquer que le chargement initial est terminé pour ce storageKey
     isInitialLoadRef.current = false;
   };
 
@@ -692,27 +725,15 @@ export const useWorkoutData = () => {
     }
   };
 
-  // ✅ Protection contre les doubles appels (React StrictMode)
-  const initializedRef = useRef(false);
-  
   // Effet pour le chargement initial des données
   useEffect(() => {
-    // Éviter les doubles appels en développement (React StrictMode)
-    if (initializedRef.current) {
-      return;
-    }
-    initializedRef.current = true;
-    
+    // À chaque changement de storageKey (changement d'utilisateur), recharger les données correspondant à cette clé
+    isInitialLoadRef.current = true;
     loadData();
     
-    // Nettoyage automatique au démarrage (une seule fois)
-    cleanupLocalStorage();
-    
-    return () => {
-      // Réinitialiser le flag si le composant est démonté (pour remontage propre)
-      initializedRef.current = false;
-    };
-  }, []);
+      // Nettoyage automatique au démarrage (une seule fois)
+      cleanupLocalStorage();
+  }, [storageKey]);
 
   // Effet pour la sauvegarde automatique à chaque changement de données
   useEffect(() => {

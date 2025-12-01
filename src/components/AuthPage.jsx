@@ -138,6 +138,7 @@ const AuthPage = () => {
               required
               variant="glass"
               minLength={8}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               help="Au moins 8 caractères. Idéalement une combinaison de lettres, chiffres et symboles."
             />
 

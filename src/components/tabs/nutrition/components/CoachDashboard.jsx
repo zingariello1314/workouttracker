@@ -111,6 +111,24 @@ const CoachDashboard = () => {
   
   // ✅ PHASE 5 : Supprimé chartsReady - remplacé par lazy loading avec IntersectionObserver
 
+  // Déterminer onglets disponibles selon scope (déplacé AVANT handleTabKeyDown)
+  const availableTabs = useMemo(() => {
+    if (!shareData || !scope) return [];
+
+    const tabs = [];
+    if (scope === shareScopes.all || scope === shareScopes.stats) {
+      tabs.push({ id: 'stats', label: 'Statistiques', icon: BarChart3 });
+    }
+    if (scope === shareScopes.all || scope === shareScopes.charts) {
+      tabs.push({ id: 'charts', label: 'Graphiques', icon: TrendingUp });
+    }
+    if (scope === shareScopes.all || scope === shareScopes.progress) {
+      tabs.push({ id: 'progress', label: 'Progression', icon: Trophy });
+    }
+
+    return tabs;
+  }, [shareData, scope, shareScopes]);
+
   // ✅ PHASE 6 : Gérer drag & drop avec feedback accessibilité
   const handleDrag = useCallback((e) => {
     e.preventDefault();
@@ -275,23 +293,6 @@ const CoachDashboard = () => {
     [shareData, activeTab]
   );
 
-  // Déterminer onglets disponibles selon scope
-  const availableTabs = useMemo(() => {
-    if (!shareData || !scope) return [];
-
-    const tabs = [];
-    if (scope === shareScopes.all || scope === shareScopes.stats) {
-      tabs.push({ id: 'stats', label: 'Statistiques', icon: BarChart3 });
-    }
-    if (scope === shareScopes.all || scope === shareScopes.charts) {
-      tabs.push({ id: 'charts', label: 'Graphiques', icon: TrendingUp });
-    }
-    if (scope === shareScopes.all || scope === shareScopes.progress) {
-      tabs.push({ id: 'progress', label: 'Progression', icon: Trophy });
-    }
-
-    return tabs;
-  }, [shareData, scope, shareScopes]);
 
   // Définir onglet actif par défaut
   React.useEffect(() => {

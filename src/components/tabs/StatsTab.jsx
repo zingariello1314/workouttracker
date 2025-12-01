@@ -12,6 +12,7 @@ import {
   JUSTIFICATION_ICONS
 } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
+import { useAuth } from '../../context/AuthContext';
 
 const StatsTab = () => {
   const {
@@ -21,13 +22,20 @@ const StatsTab = () => {
     setShowAdvancedStats,
     data
   } = useWorkout();
+  const { isAuthenticated } = useAuth();
   const t = useTranslation();
 
-  // PHASE 5.2 : Charger données Garmin
+  // PHASE 5.2 : Charger données Garmin (uniquement si connecté)
   const { loadAllData, dbReady } = useGarminData();
   const [garminData, setGarminData] = useState(null);
   
   useEffect(() => {
+    // ✅ Ne charger les données Garmin que si l'utilisateur est connecté
+    if (!isAuthenticated) {
+      setGarminData(null);
+      return;
+    }
+    
     if (dbReady) {
       loadAllData()
         .then(setGarminData)
@@ -36,7 +44,10 @@ const StatsTab = () => {
           setGarminData(null);
         });
     }
-  }, [dbReady, loadAllData]);
+  }, [dbReady, loadAllData, isAuthenticated]);
+  
+  // ✅ Si déconnecté, forcer garminData à null pour afficher l'état vide
+  const effectiveGarminData = isAuthenticated ? garminData : null;
 
   // Utiliser les vraies données de l'historique des entraînements
   const workoutHistory = getWorkoutHistory();
@@ -242,7 +253,7 @@ const StatsTab = () => {
     }
 
     // Filtrer dailyMetrics par période
-    const filteredMetrics = Object.entries(garminData.dailyMetrics)
+    const filteredMetrics = Object.entries(effectiveGarminData.dailyMetrics)
       .filter(([date]) => {
         const dateObj = new Date(date);
         return dateObj >= startDate && dateObj <= now;

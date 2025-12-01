@@ -22,6 +22,7 @@ import { openNutritionDB, isNutritionDBReady } from './nutritionDataUtils';
 import { useDebouncedSave } from './useDebouncedSave';
 // ✅ OPTIMISATION : Configuration centralisée (valeurs par défaut pour debounce)
 import { NutritionConfig } from '../config/nutrition.config';
+import { useAuth } from '../context/AuthContext';
 import {
   // DailyMeals
   getDailyMeal,
@@ -140,6 +141,15 @@ const ensureGlobalDBReady = async () => {
 export const useNutritionData = () => {
   const [dbReady, setDbReady] = useState(false);
   const initializedRef = useRef(false); // ✅ Garde-fou React StrictMode
+  const { currentUser, isAuthenticated } = useAuth();
+
+  // ✅ Calculer le userId pour le filtrage et l'ajout automatique
+  // Admin : userId = null (pour récupérer toutes les données, y compris sans userId)
+  // Autre user : userId = currentUser.id
+  // Déconnecté : userId = null → retourne [] (pas de données)
+  const userId = isAuthenticated && currentUser 
+    ? (currentUser.role === 'admin' || currentUser.username === 'zingariello1314' ? null : currentUser.id)
+    : null;
 
   // ✅ OPTIMISATION : Debouncing pour toutes les sauvegardes (économise 50-70% transactions si sauvegarde rapide)
   // ✅ OPTIMISATION : Utiliser valeurs depuis configuration centralisée
@@ -152,6 +162,10 @@ export const useNutritionData = () => {
   const { save: saveDailyMealDebounced, flush: flushDailyMeal } = useDebouncedSave(
     async (dailyMeal) => {
       if (!dbReady) return false;
+      // ✅ Ajouter userId automatiquement si absent et utilisateur connecté
+      if (userId && !dailyMeal.userId) {
+        dailyMeal.userId = userId;
+      }
       return await saveDailyMeal(dailyMeal);
     },
     debounceConfig
@@ -160,6 +174,10 @@ export const useNutritionData = () => {
   const { save: saveProgramDebounced, flush: flushProgram } = useDebouncedSave(
     async (program) => {
       if (!dbReady) return false;
+      // ✅ Ajouter userId automatiquement si absent et utilisateur connecté
+      if (userId && !program.userId) {
+        program.userId = userId;
+      }
       return await saveProgram(program);
     },
     debounceConfig
@@ -168,6 +186,10 @@ export const useNutritionData = () => {
   const { save: saveFavoriteFoodDebounced, flush: flushFavoriteFood } = useDebouncedSave(
     async (favoriteFood) => {
       if (!dbReady) return false;
+      // ✅ Ajouter userId automatiquement si absent et utilisateur connecté
+      if (userId && !favoriteFood.userId) {
+        favoriteFood.userId = userId;
+      }
       return await saveFavoriteFood(favoriteFood);
     },
     debounceConfig
@@ -176,6 +198,10 @@ export const useNutritionData = () => {
   const { save: saveHydrationLogDebounced, flush: flushHydrationLog } = useDebouncedSave(
     async (hydrationLog) => {
       if (!dbReady) return false;
+      // ✅ Ajouter userId automatiquement si absent et utilisateur connecté
+      if (userId && !hydrationLog.userId) {
+        hydrationLog.userId = userId;
+      }
       return await saveHydrationLog(hydrationLog);
     },
     debounceConfig
@@ -239,6 +265,14 @@ export const useNutritionData = () => {
       // Récupérer dailyMeal
       let dailyMeal = await getDailyMeal(date);
       
+      // ✅ Filtrer par userId si nécessaire
+      if (userId && dailyMeal && dailyMeal.userId !== userId) {
+        dailyMeal = null;
+      } else if (userId === null && dailyMeal && dailyMeal.userId) {
+        // Si on est déconnecté, ne pas afficher les données avec userId
+        dailyMeal = null;
+      }
+      
       // Si recalcul demandé ou dailyMeal inexistant, calculer depuis meals
       if (options.recalculateTotals || !dailyMeal) {
         const [meals, activeProgram, hydrationLog] = await Promise.all([
@@ -247,8 +281,15 @@ export const useNutritionData = () => {
           getHydrationLog(date).catch(() => null) // Ne pas bloquer si erreur
         ]);
         
-        // Calculer totaux depuis meals
-        const dailyTotals = calculateDailyTotals(meals, activeProgram);
+        // ✅ Filtrer meals par userId
+        const filteredMeals = userId === null 
+          ? meals.filter(m => !m.userId) // Admin : seulement données sans userId
+          : userId 
+            ? meals.filter(m => m.userId === userId) // User : seulement ses données
+            : []; // Déconnecté : aucune donnée
+        
+        // Calculer totaux depuis meals filtrés
+        const dailyTotals = calculateDailyTotals(filteredMeals, activeProgram);
         
         // Intégrer hydratation depuis hydrationLog (si disponible)
         if (hydrationLog && hydrationLog.waterIntake) {
@@ -269,13 +310,17 @@ export const useNutritionData = () => {
             programId: activeProgram?.id || null,
             isComplete: false,
             isCatchup: false,
-            mealIds: meals.map(m => m.id),
-            dailyTotals
+            mealIds: filteredMeals.map(m => m.id),
+            dailyTotals,
+            ...(userId ? { userId } : {}) // Ajouter userId si connecté
           };
         } else {
           dailyMeal.dailyTotals = dailyTotals;
-          dailyMeal.mealIds = meals.map(m => m.id);
+          dailyMeal.mealIds = filteredMeals.map(m => m.id);
           dailyMeal.lastModified = new Date().toISOString();
+          if (userId && !dailyMeal.userId) {
+            dailyMeal.userId = userId;
+          }
         }
         
         // Sauvegarder si modifié
@@ -285,12 +330,19 @@ export const useNutritionData = () => {
       } else if (dailyMeal && dailyMeal.dailyTotals) {
         // Même si pas de recalcul, intégrer hydratation si disponible
         const hydrationLog = await getHydrationLog(date).catch(() => null);
-        if (hydrationLog && hydrationLog.waterIntake) {
-          dailyMeal.dailyTotals.waterIntake = hydrationLog.waterIntake;
-          if (hydrationLog.targetWater) {
-            dailyMeal.dailyTotals.targetWater = hydrationLog.targetWater;
+        // ✅ Filtrer hydrationLog par userId
+        if (hydrationLog) {
+          if (userId && hydrationLog.userId !== userId) {
+            // Ne pas utiliser cette hydrationLog
+          } else if (userId === null && hydrationLog.userId) {
+            // Admin : ne pas utiliser les données avec userId
+          } else if (hydrationLog.waterIntake) {
+            dailyMeal.dailyTotals.waterIntake = hydrationLog.waterIntake;
+            if (hydrationLog.targetWater) {
+              dailyMeal.dailyTotals.targetWater = hydrationLog.targetWater;
+            }
+            dailyMeal.dailyTotals.complianceWater = dailyMeal.dailyTotals.waterIntake - dailyMeal.dailyTotals.targetWater;
           }
-          dailyMeal.dailyTotals.complianceWater = dailyMeal.dailyTotals.waterIntake - dailyMeal.dailyTotals.targetWater;
         }
       }
       
@@ -299,7 +351,7 @@ export const useNutritionData = () => {
       console.error('[useNutritionData] Erreur getDailyMealWithTotals:', error);
       return null;
     }
-  }, [dbReady]);
+  }, [dbReady, userId]);
 
   /**
    * Sauvegarde un dailyMeal avec debounce (300ms)
@@ -350,6 +402,11 @@ export const useNutritionData = () => {
         meal.dailyMealId = meal.date;
       }
 
+      // ✅ Ajouter userId automatiquement si absent et utilisateur connecté
+      if (userId && !meal.userId) {
+        meal.userId = userId;
+      }
+
       // ✅ OPTIMISATION : Utiliser opération atomique (transaction avec rollback automatique)
       const saved = await saveMealAtomically(meal, { updateDailyTotals });
       
@@ -371,7 +428,7 @@ export const useNutritionData = () => {
       console.error('[useNutritionData] Erreur saveMealAndUpdateTotals:', error);
       return false;
     }
-  }, [dbReady]);
+  }, [dbReady, userId]);
 
   /**
    * Supprime un repas et met à jour les totaux du jour dans une transaction atomique
@@ -468,6 +525,70 @@ export const useNutritionData = () => {
     }
   }, [dbReady]);
 
+  // ==================== HELPERS FILTRAGE PAR USERID ====================
+
+  /**
+   * Filtre un tableau par userId
+   */
+  const filterByUserId = useCallback((items) => {
+    if (!Array.isArray(items)) return [];
+    if (userId === null) {
+      // Admin : retourner toutes les données (avec ou sans userId)
+      return items;
+    }
+    if (userId) {
+      // User : seulement ses données
+      return items.filter(item => item && item.userId === userId);
+    }
+    // Déconnecté : aucune donnée
+    return [];
+  }, [userId]);
+
+  /**
+   * Wrapper pour getAllMeals avec filtrage par userId
+   */
+  const getAllMealsFiltered = useCallback(async () => {
+    if (!dbReady) return [];
+    const allMeals = await getAllMeals();
+    return filterByUserId(allMeals);
+  }, [dbReady, userId, filterByUserId]);
+
+  /**
+   * Wrapper pour getAllPrograms avec filtrage par userId
+   */
+  const getAllProgramsFiltered = useCallback(async () => {
+    if (!dbReady) return [];
+    const allPrograms = await getAllPrograms();
+    return filterByUserId(allPrograms);
+  }, [dbReady, userId, filterByUserId]);
+
+  /**
+   * Wrapper pour getFavoriteFoods avec filtrage par userId
+   */
+  const getFavoriteFoodsFiltered = useCallback(async (options = {}) => {
+    if (!dbReady) return [];
+    const allFavorites = await getFavoriteFoods(options);
+    return filterByUserId(allFavorites);
+  }, [dbReady, userId, filterByUserId]);
+
+  /**
+   * Wrapper pour getDailyMealsByRange avec filtrage par userId
+   */
+  const getDailyMealsByRangeFiltered = useCallback(async (startDate, endDate) => {
+    if (!dbReady) return [];
+    const allDailyMeals = await getDailyMealsByRange(startDate, endDate);
+    return filterByUserId(allDailyMeals);
+  }, [dbReady, userId, filterByUserId]);
+
+  /**
+   * Wrapper pour getHydrationLogByRange avec filtrage par userId
+   */
+  const getHydrationLogByRangeFiltered = useCallback(async (startDate, endDate) => {
+    if (!dbReady) return [];
+    const allHydration = await getHydrationLogByRange(startDate, endDate);
+    return filterByUserId(allHydration);
+  }, [dbReady, userId, filterByUserId]);
+
   // ==================== EXPORT/IMPORT ====================
 
   /**
@@ -492,21 +613,21 @@ export const useNutritionData = () => {
     }
 
     try {
-      // Charger toutes les données en parallèle
+      // Charger toutes les données en parallèle (avec filtrage par userId)
       const [dailyMeals, allMeals, programs, favoriteFoods, gamification, hydrationLogs, progressPhotos, mlModels] = await Promise.all([
-        // Récupérer tous les dailyMeals (plage large)
-        getDailyMealsByRange('2020-01-01', '2099-12-31'),
-        // Récupérer tous les meals directement
-        getAllMeals(),
-        getAllPrograms(),
-        getFavoriteFoods({}),
+        // Récupérer tous les dailyMeals (plage large) avec filtrage
+        getDailyMealsByRangeFiltered('2020-01-01', '2099-12-31'),
+        // Récupérer tous les meals directement avec filtrage
+        getAllMealsFiltered(),
+        getAllProgramsFiltered(),
+        getFavoriteFoodsFiltered({}),
         // Récupérer données gamification
         getGamificationData().catch(err => {
           console.warn('[useNutritionData] Erreur récupération gamification:', err);
           return { achievements: [], experience: { currentXP: 0, level: 1 }, streaks: {} };
         }),
-        // Récupérer données hydratation (plage large)
-        getHydrationLogByRange('2020-01-01', '2099-12-31').catch(err => {
+        // Récupérer données hydratation (plage large) avec filtrage
+        getHydrationLogByRangeFiltered('2020-01-01', '2099-12-31').catch(err => {
           console.warn('[useNutritionData] Erreur récupération hydratation:', err);
           return [];
         }),
@@ -566,7 +687,7 @@ export const useNutritionData = () => {
         error: error.message
       };
     }
-  }, [dbReady]);
+  }, [dbReady, getDailyMealsByRangeFiltered, getAllMealsFiltered, getAllProgramsFiltered, getFavoriteFoodsFiltered, getHydrationLogByRangeFiltered]);
 
   // ==================== RETURN ====================
 
@@ -587,12 +708,12 @@ export const useNutritionData = () => {
     getMealsByDateAndType,
     getMealsByDailyMealId,
     getMealsByDateRange,
-    getAllMeals,
+    getAllMeals: getAllMealsFiltered, // ✅ Filtré par userId
     deleteMeal: deleteMealAndUpdateTotals,
     saveMeals,
 
     // Programs
-    getAllPrograms,
+    getAllPrograms: getAllProgramsFiltered, // ✅ Filtré par userId
     getActiveProgram,
     getAllProgramsWithActive,
     saveProgram: saveProgramDebounced, // ✅ OPTIMISATION : Version debouncée (300ms)
@@ -601,7 +722,7 @@ export const useNutritionData = () => {
     deactivateProgram,
 
     // FavoriteFoods
-    getFavoriteFoods,
+    getFavoriteFoods: getFavoriteFoodsFiltered, // ✅ Filtré par userId
     getFavoriteFood,
     saveFavoriteFood: saveFavoriteFoodDebounced, // ✅ OPTIMISATION : Version debouncée (300ms)
     deleteFavoriteFood,

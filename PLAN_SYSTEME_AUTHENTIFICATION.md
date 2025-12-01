@@ -285,11 +285,12 @@ Mettre en place un **système complet de création de compte / connexion** pour 
 
 ### Étape 5 – Paramètres & avatar
 
-9. Dans l’onglet Paramètres :
-   - Ajouter une section « Profil » :
-     - Affichage / modification du nom (si autorisé).
-     - Upload / changement d’avatar (avec prévisualisation).
-10. Propager l’avatar mis à jour dans le header (via `AuthContext`).
+9. ✅ Dans l’onglet Paramètres :
+   - Section « Profil » :
+     - Affichage du nom d’utilisateur courant.
+     - Upload / changement d’avatar (avec prévisualisation locale).
+10. ✅ Propager l’avatar mis à jour dans le header :
+   - Header charge l’avatar depuis IndexedDB (`getAvatarByUserId`) et l’affiche dans le rond au lieu de l’initiale si disponible.
 
 ### Étape 6 – Tests & robustesse
 
@@ -305,14 +306,14 @@ Mettre en place un **système complet de création de compte / connexion** pour 
 ### 6.1. Tests unitaires et d’intégration à prévoir
 
 - **Tests unitaires purs (logique)** :
-  - `hashPassword / verifyPassword` :
+  - ✅ `hashPassword / verifyPassword` (`src/utils/authCrypto.test.js`) :
     - Même mot de passe + même salt → même hash.
     - Mot de passe différent OU salt différent → hash différent.
-    - Gestion des erreurs si l’API WebCrypto n’est pas disponible (fallback / message d’erreur clair).
-  - `linkAnonymousDataToUser` :
-    - Données sans `userId` → reçoivent `userId = X`.
+    - Vérifie que `verifyPassword` retourne `true` pour les bons identifiants et `false` sinon.
+  - ✅ `linkAnonymousDataToUser` (via `migrateDataToUser` testé dans `src/utils/authMigration.test.js`) :
+    - Données (livres) sans `userId` → reçoivent `userId = X`.
     - Données avec `userId` déjà défini → restent inchangées.
-    - Vérifier que la fonction travaille par batch (pas de blocage long du main thread).
+    - Le résultat retourne `migratedBooks` pour refléter le nombre d’éléments migrés et un `success` cohérent même en cas d’échec de sauvegarde.
 
 - **Tests d’intégration (avec IndexedDB mocké ou environnement de test)** :
   - Scénario « rememberMe + redémarrage → auto‑login » :
@@ -323,9 +324,9 @@ Mettre en place un **système complet de création de compte / connexion** pour 
   - Scénario « rememberMe décoché » :
     - Après redémarrage, `currentUser` doit être `null` et la clé `momentum:rememberedUserId` absente.
   - Scénario de migration :
-    - Créer un jeu de données avec et sans `userId`.
+    - Créer un jeu de données Livres avec et sans `userId`.
     - Lancer `linkAnonymousDataToUser`.
-    - Vérifier que seules les entrées sans `userId` ont été mises à jour.
+    - Vérifier que seules les entrées sans `userId` ont été mises à jour et que `migratedBooks` reflète bien le nombre d’éléments migrés.
 
 ---
 
@@ -480,5 +481,109 @@ Dans l’onglet Paramètres, section « Profil / Données » :
 - Un **compte personnel** qui regroupe toutes tes données actuelles.
 - Un **site explorables par d’autres** sans exposer tes infos (mode visiteur).
 - Une base parfaitement prête pour un futur backend multi‑appareils.
+
+---
+
+### 8.8. Couverture complète par onglet et gestion du contenu « en dur »
+
+Pour garantir une migration **vraiment complète**, il faut lister, onglet par onglet, tout ce qui peut contenir des données saisies ou personnalisées, puis décider :
+- si ces données doivent être **propres à un utilisateur** (donc migrées / filtrées par `userId`),
+- ou si ce sont des **données système « en dur »** qui ne doivent être visibles que pour l’admin.
+
+#### 8.8.1. Aujourd’hui / Saisie / Historique / Endurance / Statistiques
+
+- Source principale : `WorkoutContext` (`data`, `updateData`, `useWorkoutData`).
+- Contenu à migrer :
+  - Exercices cochés, répétitions, étirements.
+  - Historique complet (`historyReps`, historique programmes, etc.).
+  - Données d’endurance (`enduranceData`, sessions, challenges).
+  - Justifications de jours (`dayJustifications`).
+- Stratégie :
+  - Ajouter un champ `userId` au niveau racine des données stockées en DB (ou, plus simplement, une clé par utilisateur dans le store existant).
+  - Lors du chargement via `useWorkoutData`, charger :
+    - soit le « profil admin » (tes données actuelles),
+    - soit un profil neutre / vide pour les autres comptes.
+  - Lors de la migration, passer sur la structure persistée et taguer tout l’historique avec `userId = adminId`.
+
+#### 8.8.2. Suivi corporel / BodyTracking
+
+- Données : `progressPhotos`, `progressEntries`, `bodyTrackingReminders`, etc. (déjà centralisées dans la partie BodyTracking).
+- Stratégie :
+  - Introduire `userId` dans les structures stockées (photos + entrées).
+  - Migration :
+    - Toutes les photos / entrées actuelles → `userId = adminId`.
+  - Filtrage :
+    - Si connecté en admin → tu vois tout.
+    - Autres comptes → listes filtrées sur leur propre `userId` (probablement vides au début).
+
+#### 8.8.3. Livres (Books)
+
+- Déjà partiellement traité dans `authMigration.js` (migration des livres sans `userId` vers `userId = adminId`).
+- À étendre :
+  - Associer aussi les **sessions de lecture** et les statistiques au `userId` si ce n’est pas déjà le cas dans les structures.
+  - Vérifier que tous les chargements (`useBooksStorage`, `BooksTab`, `BooksDomeGallery`) filtrent bien les livres sur le `userId` courant.
+
+#### 8.8.4. Nutrition
+
+- Données gérées dans les hooks de nutrition (`useNutritionData*`, etc.) et stockées dans IndexedDB.
+- Stratégie :
+  - Identifier les stores principaux (meals, dailyMeals, programs, favorites…).
+  - Ajouter un `userId` ou une clé de partition par utilisateur.
+  - Migration :
+    - Toutes les entrées actuelles → `userId = adminId`.
+  - Filtrage au chargement : ne retourner que les données de l’utilisateur connecté.
+
+#### 8.8.5. Garmin / Données de montres connectées
+
+- Données très personnelles (calories, fréquence cardiaque, historique Garmin).
+- Stratégie similaire :
+  - Ajouter `userId` dans les stores Garmin.
+  - Migrer tout l’historique actuel → `userId = adminId`.
+  - Pour d’autres comptes, soit :
+    - ne rien charger (par défaut),
+    - soit permettre plus tard une connexion Garmin séparée par compte.
+
+#### 8.8.6. Programmes (contenu « en dur »)
+
+- Le fichier `workoutProgram.js` contient un programme « en dur » (structure par défaut).
+- Ton besoin : **ce programme doit être visible uniquement pour ton compte admin**.
+- Stratégie :
+  - Ne pas modifier le fichier de définition (il reste une ressource système), mais contrôler **où** il est injecté :
+    - Dans les composants/contexts qui utilisent `workoutProgram`, vérifier `currentUser.role`.
+    - Si `role === 'admin'` → utiliser `workoutProgram` complet.
+    - Sinon → soit ne rien afficher, soit afficher une version ultra‑réduite / démo.
+  - Pour toute personnalisation de programme enregistrée (programHistory, customPrograms) :
+    - Ajouter `userId`.
+    - Migrer toutes les entrées existantes → `userId = adminId`.
+
+#### 8.8.7. Autres onglets (Prédictions, Balancing, BestDayEver, etc.)
+
+- La plupart de ces onglets consomment des **données dérivées** (analyses, corrélations, prédictions) calculées à partir des données brutes déjà listées plus haut.
+- Une fois les données brutes filtrées par `userId`, ces onglets afficheront naturellement **les résultats propres au compte connecté**.
+- À vérifier ponctuellement :
+  - Qu’aucune structure de cache ou de mémoization globale (ex. `localStorage` brut) ne mélange les données de plusieurs comptes.
+
+#### 8.8.8. Résumé de la migration « parfaite »
+
+- **Objectif** : après migration et connexion avec ton compte admin :
+  - Toutes les données que tu as saisies dans le passé (workouts, body tracking, nutrition, Garmin, livres, programmes, etc.) sont rattachées à ton `userId`.
+  - Les autres comptes voient un site **vierge ou de démo**, sans rien de tes données.
+- **Étapes techniques** :
+  1. Ajouter un champ `userId` (ou clé de partition) dans chaque store / structure listée ci‑dessus.
+  2. Mettre à jour tous les hooks de chargement/sauvegarde pour filtrer/écrire en fonction de `currentUser.id`.
+  3. Étendre `migrateDataToUser` pour couvrir :
+     - données workouts (via `useWorkoutData` / DB associée),
+     - BodyTracking,
+     - Nutrition,
+     - Garmin,
+     - programmes et historiques,
+     - en plus des livres déjà migrés.
+  4. Protéger l’affichage de certains contenus « en dur » (comme `workoutProgram`) par `role === 'admin'`.
+  5. Tester, onglet par onglet, que :
+     - admin retrouve bien tout son historique,
+     - un nouveau compte voit un site vide / neutre,
+     - le mode visiteur / démo n’affiche aucune de tes vraies données.
+
+Ce sous‑plan 8.8 sert de checklist détaillée pour garantir que **rien n’est oublié** dans la migration vers ton compte admin. Il pourra être implémenté progressivement, en commençant par les zones les plus critiques pour toi (workouts, livres, programmes), puis en étendant aux autres onglets.
 
 

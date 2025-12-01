@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useAuth } from '../../context/AuthContext';
 import { workoutProgram } from '../../data/workoutProgram';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Button from '../ui/Button';
@@ -15,9 +16,13 @@ import { useToast } from '../ui/Toast';
 
 const DataEntryTab = () => {
   const { data, updateReps, toggleCheck, getDateStr, getDayName, getCurrentData } = useWorkout();
+  const { currentUser, isAuthenticated } = useAuth();
   const t = useTranslation();
   const { formatDate: formatLocaleDate } = useFormatters();
   const { showSuccess, showError } = useToast();
+  
+  // ✅ Vérifier si l'utilisateur est admin
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
   
   // Utiliser getCurrentData() pour obtenir les données actuelles (incluant tempData)
   const currentData = getCurrentData();
@@ -29,7 +34,8 @@ const DataEntryTab = () => {
 
   const dateStr = getDateStr(selectedDate);
   const dayName = getDayName(selectedDate);
-  const workout = workoutProgram[dayName];
+  // ✅ Utiliser workoutProgram seulement si admin, sinon workout vide
+  const workout = isAdmin && isAuthenticated ? workoutProgram[dayName] : null;
 
   // Ordre chronologique des jours (traduits)
   const daysOrder = [
@@ -92,7 +98,7 @@ const DataEntryTab = () => {
 
   // Initialiser les données de répétitions pour la date sélectionnée
   useEffect(() => {
-    if (workout) {
+    if (workout && isAdmin && isAuthenticated) {
       const initialReps = {};
       
       // Exercices normaux
@@ -115,8 +121,10 @@ const DataEntryTab = () => {
       }
       
       setRepsData(initialReps);
+    } else {
+      setRepsData({});
     }
-  }, [selectedDate, workout, currentData.reps, dateStr]);
+  }, [selectedDate, workout, currentData.reps, dateStr, isAdmin, isAuthenticated]);
 
   // Sauvegarder les répétitions avec vérification d'intégrité
   const handleSaveReps = () => {
@@ -246,6 +254,40 @@ const DataEntryTab = () => {
             {t('dataEntry.restDay.message', { dayName: dayName.toLowerCase() })}
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // ✅ Afficher un état vide si l'utilisateur n'est pas connecté ou n'est pas admin
+  if (!isAuthenticated || !isAdmin || !workout) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className={`${typography.presets.h1} text-white mb-2`}>
+              {t('dataEntry.title')}
+            </h1>
+            <p className={`${typography.presets.bodyLarge} text-slate-400`}>
+              {t('dataEntry.subtitle', { dayName: dayName.toLowerCase(), date: formatLocaleDate(selectedDate) })}
+            </p>
+          </div>
+        </div>
+        
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="p-8 text-center">
+            <Target size={48} className="text-slate-500 mx-auto mb-4" />
+            <h3 className={`${typography.presets.h3} text-white mb-2`}>
+              {!isAuthenticated 
+                ? t('dataEntry.empty.notConnected') || 'Connecte-toi pour accéder à la saisie de données'
+                : t('dataEntry.empty.noProgram') || 'Aucun programme disponible'}
+            </h3>
+            <p className={`${typography.presets.bodyLarge} text-slate-400`}>
+              {!isAuthenticated
+                ? t('dataEntry.empty.notConnectedMessage') || 'Connecte-toi pour commencer à enregistrer tes entraînements.'
+                : t('dataEntry.empty.noProgramMessage') || 'Crée ou importe un programme pour commencer.'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -388,7 +430,7 @@ const DataEntryTab = () => {
                         </div>
                       </td>
                       {lastSevenDays.map((day) => {
-                        const dayWorkout = workoutProgram[day.dayName];
+                        const dayWorkout = isAdmin && isAuthenticated ? workoutProgram[day.dayName] : null;
                         const dayExercise = dayWorkout?.exercices.find(ex => ex.name === exercise.name);
                         const key = `${day.dateStr}_${exercise.id}`;
                         const currentData = getCurrentData();

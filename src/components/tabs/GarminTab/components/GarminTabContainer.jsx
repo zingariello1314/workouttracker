@@ -16,6 +16,7 @@ import { KEYBOARD_SHORTCUTS, KEYBOARD_OPTIONS, createKeyboardShortcut } from '..
 import { isBrowser } from '../../../../utils/isBrowser';
 import { getActivitiesStabilityKey, getDailyMetricsStabilityKey } from '../utils/dataStability';
 import { useTranslation } from '../../../../utils/translations';
+import { useAuth } from '../../../../context/AuthContext';
 
 // Constante locale (était dans GarminTab.jsx)
 const FORCED_HISTORY_DISPLAY_LIMIT = 200;
@@ -88,6 +89,10 @@ export function useGarminTabContainer(options = {}) {
   const {
     onForcedRangeRecorded: externalOnForcedRangeRecorded = null
   } = options;
+
+  // Authentification : utilisé uniquement pour adapter le rendu selon l'état de connexion
+  const { currentUser, isAuthenticated } = useAuth();
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
 
   // ==================== ÉTAT LOCAL ====================
   const [status, setStatus] = React.useState(null);
@@ -702,8 +707,12 @@ export function useGarminTabContainer(options = {}) {
   const previousMetricsKeyRef = React.useRef(null);
 
   const activitiesStabilityKey = React.useMemo(
-    () => getActivitiesStabilityKey(garminData?.activities),
-    [garminData?.activities]
+    () => getActivitiesStabilityKey(
+      isAuthenticated
+        ? (garminData?.activities || { swimming: [], jumpRope: [], cardio: [] })
+        : { swimming: [], jumpRope: [], cardio: [] }
+    ),
+    [isAuthenticated, garminData?.activities]
   );
 
   const memoizedActivities = React.useMemo(() => {
@@ -713,15 +722,19 @@ export function useGarminTabContainer(options = {}) {
       return previousActivitiesRef.current;
     }
     // Clé changée ou première fois : calculer et stocker
-    const newValue = garminData?.activities || { swimming: [], jumpRope: [], cardio: [] };
+    const newValue = isAuthenticated
+      ? (garminData?.activities || { swimming: [], jumpRope: [], cardio: [] })
+      : { swimming: [], jumpRope: [], cardio: [] };
     previousActivitiesKeyRef.current = currentKey;
     previousActivitiesRef.current = newValue;
     return newValue;
   }, [activitiesStabilityKey, garminData?.activities]);
 
   const metricsStabilityKey = React.useMemo(
-    () => getDailyMetricsStabilityKey(garminData?.dailyMetrics),
-    [garminData?.dailyMetrics]
+    () => getDailyMetricsStabilityKey(
+      isAuthenticated ? (garminData?.dailyMetrics || {}) : {}
+    ),
+    [isAuthenticated, garminData?.dailyMetrics]
   );
 
   const memoizedDailyMetrics = React.useMemo(() => {
@@ -731,7 +744,7 @@ export function useGarminTabContainer(options = {}) {
       return previousMetricsRef.current;
     }
     // Clé changée ou première fois : calculer et stocker
-    const newValue = garminData?.dailyMetrics || {};
+    const newValue = isAuthenticated ? (garminData?.dailyMetrics || {}) : {};
     previousMetricsKeyRef.current = currentKey;
     previousMetricsRef.current = newValue;
     return newValue;
@@ -743,10 +756,26 @@ export function useGarminTabContainer(options = {}) {
   );
 
   // ==================== RETOUR ====================
+
+  // ✅ Vue "zéro partout" lorsqu'aucun utilisateur n'est connecté :
+  // on masque complètement d'éventuelles données historiques et on fournit des structures vides.
+  const effectiveGarminData = React.useMemo(() => {
+    if (!isAuthenticated) {
+      return {
+        activities: {
+          swimming: [],
+          jumpRope: [],
+          cardio: []
+        },
+        dailyMetrics: {}
+      };
+    }
+    return garminData;
+  }, [isAuthenticated, garminData]);
   return {
     // État
     status,
-    garminData,
+    garminData: effectiveGarminData,
     showRaw,
     setShowRaw,
     startDate,

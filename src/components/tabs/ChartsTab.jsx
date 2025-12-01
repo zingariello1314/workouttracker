@@ -6,6 +6,7 @@ import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useTranslation } from '../../utils/translations';
+import { useAuth } from '../../context/AuthContext';
 
 // Composants modulaires pour les graphiques - NOUVEAUX GRAPHIQUES
 import VolumeRepetitionsChart from './charts/VolumeRepetitionsChart';
@@ -38,14 +39,21 @@ import { createGarminChartWrapper, createGarminTimeSeriesChartWrapper, createGar
 
 const ChartsTab = () => {
   const { data, getWorkoutHistory, activeProgram } = useWorkout();
+  const { isAuthenticated } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
   const t = useTranslation();
   
-  // PHASE 5.1 : Charger données Garmin
+  // PHASE 5.1 : Charger données Garmin (uniquement si connecté)
   const { loadAllData, dbReady } = useGarminData();
   const [garminData, setGarminData] = useState(null);
   
   useEffect(() => {
+    // ✅ Ne charger les données Garmin que si l'utilisateur est connecté
+    if (!isAuthenticated) {
+      setGarminData(null);
+      return;
+    }
+    
     if (dbReady) {
       loadAllData()
         .then(setGarminData)
@@ -54,7 +62,7 @@ const ChartsTab = () => {
           setGarminData(null);
         });
     }
-  }, [dbReady, loadAllData]);
+  }, [dbReady, loadAllData, isAuthenticated]);
 
   // Périodes disponibles
   const periods = useMemo(() => [
@@ -111,6 +119,9 @@ const ChartsTab = () => {
     };
   }, [getWorkoutHistory, selectedPeriod, data, activeProgram]);
 
+  // ✅ Si déconnecté, forcer garminData à null pour afficher l'état vide (défini AVANT chartConfigs)
+  const effectiveGarminData = isAuthenticated ? garminData : null;
+
   // PHASE 5.1 : Wrappers pour graphiques Garmin (adaptation selectedPeriod → periodFilter)
   const GarminHeartRateChartWrapped = React.useMemo(() => 
     createGarminChartWrapper(GarminHeartRateChart), []
@@ -154,8 +165,8 @@ const ChartsTab = () => {
       bgColor: 'bg-red-500/20',
       textColor: 'text-red-400',
       component: GarminHeartRateChartWrapped,
-      props: { garminData, selectedPeriod, colors: themeColors },
-      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+      props: { garminData: effectiveGarminData, selectedPeriod, colors: themeColors },
+      condition: effectiveGarminData?.dailyMetrics && Object.keys(effectiveGarminData.dailyMetrics).length > 0
     },
     {
       id: 'garmin-heart-rate-timeseries',
@@ -165,8 +176,8 @@ const ChartsTab = () => {
       bgColor: 'bg-red-500/20',
       textColor: 'text-red-400',
       component: GarminHeartRateTimeSeriesChartWrapped,
-      props: { garminData, selectedPeriod, colors: themeColors },
-      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+      props: { garminData: effectiveGarminData, selectedPeriod, colors: themeColors },
+      condition: effectiveGarminData?.dailyMetrics && Object.keys(effectiveGarminData.dailyMetrics).length > 0
     },
     {
       id: 'garmin-body-battery',
@@ -176,8 +187,8 @@ const ChartsTab = () => {
       bgColor: 'bg-green-500/20',
       textColor: 'text-green-400',
       component: GarminBodyBatteryChartWrapped,
-      props: { garminData, selectedPeriod, colors: themeColors },
-      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+      props: { garminData: effectiveGarminData, selectedPeriod, colors: themeColors },
+      condition: effectiveGarminData?.dailyMetrics && Object.keys(effectiveGarminData.dailyMetrics).length > 0
     },
     {
       id: 'garmin-stress',
@@ -187,8 +198,8 @@ const ChartsTab = () => {
       bgColor: 'bg-purple-500/20',
       textColor: 'text-purple-400',
       component: GarminStressChartWrapped,
-      props: { garminData, selectedPeriod, colors: themeColors },
-      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+      props: { garminData: effectiveGarminData, selectedPeriod, colors: themeColors },
+      condition: effectiveGarminData?.dailyMetrics && Object.keys(effectiveGarminData.dailyMetrics).length > 0
     },
     {
       id: 'garmin-sleep',
@@ -198,8 +209,8 @@ const ChartsTab = () => {
       bgColor: 'bg-indigo-500/20',
       textColor: 'text-indigo-400',
       component: GarminSleepChartWrapped,
-      props: { garminData, selectedPeriod, colors: themeColors },
-      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+      props: { garminData: effectiveGarminData, selectedPeriod, colors: themeColors },
+      condition: effectiveGarminData?.dailyMetrics && Object.keys(effectiveGarminData.dailyMetrics).length > 0
     },
     {
       id: 'garmin-respiration',
@@ -209,8 +220,8 @@ const ChartsTab = () => {
       bgColor: 'bg-cyan-500/20',
       textColor: 'text-cyan-400',
       component: GarminRespirationChartWrapped,
-      props: { garminData, selectedPeriod, colors: themeColors },
-      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+      props: { garminData: effectiveGarminData, selectedPeriod, colors: themeColors },
+      condition: effectiveGarminData?.dailyMetrics && Object.keys(effectiveGarminData.dailyMetrics).length > 0
     },
     {
       id: 'garmin-activities-heatmap',
@@ -220,8 +231,8 @@ const ChartsTab = () => {
       bgColor: 'bg-teal-500/20',
       textColor: 'text-teal-400',
       component: GarminActivityHeatmapWrapped,
-      props: { garminData, selectedPeriod, colors: themeColors },
-      condition: garminData?.activities && (garminData.activities.swimming?.length > 0 || garminData.activities.jumpRope?.length > 0 || garminData.activities.cardio?.length > 0)
+      props: { garminData: effectiveGarminData, selectedPeriod, colors: themeColors },
+      condition: effectiveGarminData?.activities && (effectiveGarminData.activities.swimming?.length > 0 || effectiveGarminData.activities.jumpRope?.length > 0 || effectiveGarminData.activities.cardio?.length > 0)
     },
     {
       id: 'garmin-correlations',
@@ -231,8 +242,8 @@ const ChartsTab = () => {
       bgColor: 'bg-pink-500/20',
       textColor: 'text-pink-400',
       component: GarminCorrelationChartsWrapped,
-      props: { garminData, selectedPeriod, colors: themeColors },
-      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+      props: { garminData: effectiveGarminData, selectedPeriod, colors: themeColors },
+      condition: effectiveGarminData?.dailyMetrics && Object.keys(effectiveGarminData.dailyMetrics).length > 0
     },
     
     // ==========================================
@@ -392,7 +403,7 @@ const ChartsTab = () => {
       component: EtirementsZoneChart,
       props: { data: chartData, colors: themeColors }
     }
-  ], [t, garminData, selectedPeriod, themeColors, chartData, GarminHeartRateChartWrapped, GarminHeartRateTimeSeriesChartWrapped, GarminBodyBatteryChartWrapped, GarminStressChartWrapped, GarminSleepChartWrapped, GarminRespirationChartWrapped, GarminActivityHeatmapWrapped, GarminCorrelationChartsWrapped]);
+  ], [t, effectiveGarminData, selectedPeriod, themeColors, chartData, GarminHeartRateChartWrapped, GarminHeartRateTimeSeriesChartWrapped, GarminBodyBatteryChartWrapped, GarminStressChartWrapped, GarminSleepChartWrapped, GarminRespirationChartWrapped, GarminActivityHeatmapWrapped, GarminCorrelationChartsWrapped]);
 
   // Mémorisation des configurations pour éviter les re-rendus (avec filtrage conditionnel)
   const memoizedChartConfigs = useMemo(() => {
@@ -403,7 +414,7 @@ const ChartsTab = () => {
       }
       return true;
     });
-  }, [chartData, themeColors, selectedPeriod, garminData]);
+  }, [chartData, themeColors, selectedPeriod, effectiveGarminData]);
 
   // Séparer les graphiques spéciaux (FC 24h en pleine largeur, puis ligne de 3)
   const fc24hConfig = memoizedChartConfigs.find(c => c.id === 'garmin-heart-rate-timeseries');
@@ -418,8 +429,8 @@ const ChartsTab = () => {
       bgColor: 'bg-blue-500/20',
       textColor: 'text-blue-400',
       component: GarminDailyActivityChartWrapped,
-      props: { garminData, selectedPeriod, colors: themeColors },
-      condition: garminData?.dailyMetrics && Object.keys(garminData.dailyMetrics).length > 0
+      props: { garminData: effectiveGarminData, selectedPeriod, colors: themeColors },
+      condition: effectiveGarminData?.dailyMetrics && Object.keys(effectiveGarminData.dailyMetrics).length > 0
     }
   ].filter(config => {
     // Filtrer les configs null ET vérifier les conditions
@@ -434,6 +445,39 @@ const ChartsTab = () => {
     c.id !== 'garmin-heart-rate' && 
     c.id !== 'garmin-body-battery'
   );
+
+  // ✅ Vérifier si l'historique est vide (état déconnecté ou aucune donnée)
+  const workoutHistory = getWorkoutHistory();
+  const hasNoData = (!workoutHistory || workoutHistory.length === 0) && 
+                    (!effectiveGarminData || !effectiveGarminData.dailyMetrics || Object.keys(effectiveGarminData.dailyMetrics).length === 0);
+
+  if (hasNoData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-6">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+              {t('charts.title')}
+            </h1>
+            <p className="text-slate-400 mt-1">{t('charts.subtitle')}</p>
+          </div>
+        </div>
+        <Card className="p-12 text-center">
+          <div className="space-y-4">
+            <BarChart3 className="w-16 h-16 mx-auto text-slate-400" />
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {t('charts.empty.title', 'Aucune donnée disponible')}
+              </h3>
+              <p className="text-slate-400">
+                {t('charts.empty.message', 'Commencez à enregistrer vos entraînements pour voir vos graphiques ici.')}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-6">

@@ -1,10 +1,14 @@
 import { workoutProgram } from '../data/workoutProgram';
 import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 import { calculateAutoReps } from '../utils/exerciseCalculations';
+import { useAuth } from '../context/AuthContext';
 
 export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData) => {
   // Utiliser getCurrentData si disponible, sinon data
   const currentData = getCurrentData ? getCurrentData() : data;
+
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
 
   const getDayName = (date) => {
     const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -12,6 +16,19 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
   };
 
   const getTodayWorkout = (currentDate, isGymMode = false) => {
+    // Pour tous les comptes qui ne sont pas ton admin, on ne doit pas exposer le programme intégré.
+    if (!isAdmin) {
+      const currentWeekVariant = getAutoWeekVariant(currentDate);
+      return {
+        name: null,
+        focus: null,
+        exercices: [],
+        etirements: [],
+        isGymMode: false,
+        weekVariant: currentWeekVariant
+      };
+    }
+
     const dayName = getDayName(currentDate);
     const baseWorkout = workoutProgram[dayName] || { exercices: [], etirements: [] };
     

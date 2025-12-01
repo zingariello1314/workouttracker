@@ -115,7 +115,9 @@ export function useMultiSourceCorrelations({
     // Pattern 3 : Déficit calorique important + baisse de poids / masse musculaire
     if (
       nutritionCorrelations?.deficitWorkout?.intensityDifference !== null &&
-      bodyTrackingAnalysis?.weight?.variation &&
+      bodyTrackingAnalysis &&
+      bodyTrackingAnalysis.weight &&
+      bodyTrackingAnalysis.weight.variation &&
       bodyTrackingAnalysis.weight.variation.percentChange < -2
     ) {
       riskPatterns.push({
@@ -126,7 +128,7 @@ export function useMultiSourceCorrelations({
         description:
           'Un déficit calorique fréquent combiné à une perte de poids significative peut indiquer un risque de sous‑alimentation.',
         recommendation:
-          'Réduire légèrement le déficit calorique, surveiller l’évolution du poids et de la masse musculaire, et adapter l’entraînement si nécessaire.',
+          'Réduire légèrement le déficit calorique, surveiller l\'évolution du poids et de la masse musculaire, et adapter l\'entraînement si nécessaire.',
         data: {
           intensityDifference: nutritionCorrelations.deficitWorkout.intensityDifference,
           weightVariation: bodyTrackingAnalysis.weight.variation,
@@ -144,7 +146,10 @@ export function useMultiSourceCorrelations({
 
     // Pattern 4 : Masse grasse élevée + faible conformité nutrition
     if (
-      bodyTrackingAnalysis?.composition?.bodyFat?.avg !== null &&
+      bodyTrackingAnalysis &&
+      bodyTrackingAnalysis.composition &&
+      bodyTrackingAnalysis.composition.bodyFat &&
+      bodyTrackingAnalysis.composition.bodyFat.avg !== null &&
       bodyTrackingAnalysis.composition.bodyFat.avg > 25 &&
       nutritionComplianceSafe !== null &&
       nutritionComplianceSafe < 60

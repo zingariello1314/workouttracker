@@ -122,9 +122,9 @@ export const AuthProvider = ({ children }) => {
   );
 
   const handleLinkAnonymousData = useCallback(
-    async () => {
+    async (onProgress) => {
       if (!currentUser) return { success: false, error: 'NO_USER' };
-      return linkAnonymousDataToUser(currentUser.id);
+      return linkAnonymousDataToUser(currentUser.id, onProgress);
     },
     [currentUser, linkAnonymousDataToUser],
   );

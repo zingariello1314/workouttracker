@@ -29,15 +29,16 @@ import AdvancedStats from './components/AdvancedStats';
 import SessionFeedback from './components/SessionFeedback';
 import { useWorkout } from './context/WorkoutContext';
 import { useGarminData } from './hooks/useGarminData';
+import { useAuth } from './context/AuthContext';
 
 const WorkoutTrackerApp = () => {
   return (
     <LanguageProvider>
       <ToastProvider>
         <AuthProvider>
-          <WorkoutProvider>
-            <WorkoutTrackerContent />
-          </WorkoutProvider>
+        <WorkoutProvider>
+          <WorkoutTrackerContent />
+        </WorkoutProvider>
         </AuthProvider>
       </ToastProvider>
     </LanguageProvider>
@@ -57,12 +58,30 @@ const WorkoutTrackerContent = () => {
     sessionData,
     getWorkoutHistory
   } = useWorkout();
+  const { currentUser, isAuthenticated } = useAuth();
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
 
   // ✅ Charger les données Garmin pour les calories
+  // - admin connecté : charge les vraies données
+  // - non authentifié : pas de chargement, garminData reste null (vue "0 partout")
+  // - autre utilisateur : on ne charge pas encore de données Garmin (sera géré dans une phase suivante)
   const { loadAllData, dbReady } = useGarminData();
   const [garminData, setGarminData] = React.useState(null);
   
   React.useEffect(() => {
+    // Si personne n'est connecté, ne rien charger (Garmin affichera une vue vide)
+    if (!isAuthenticated) {
+      setGarminData(null);
+      return;
+    }
+
+    // Pour les comptes non-admin (utilisateurs classiques), on évite pour l'instant tout chargement
+    // des données historiques tant que la séparation par utilisateur n'est pas en place.
+    if (!isAdmin) {
+      setGarminData(null);
+      return;
+    }
+
     if (dbReady) {
       loadAllData()
         .then(setGarminData)
@@ -71,7 +90,7 @@ const WorkoutTrackerContent = () => {
           setGarminData(null);
         });
     }
-  }, [dbReady, loadAllData]);
+  }, [dbReady, loadAllData, isAdmin, isAuthenticated]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -106,7 +125,26 @@ const WorkoutTrackerContent = () => {
       case 'smart-balancing':
         return <SmartBalancingTab />;
       case 'garmin':
+        // ✅ Comportement Garmin :
+        // - Déconnecté : on affiche GarminTab avec des données vides (0 partout, aucune synchro encore faite)
+        // - Admin connecté : GarminTab complet avec données historiques
+        // - Autre utilisateur connecté : pour l'instant, on bloque l'accès pour préserver tes données admin
+        if (!isAuthenticated) {
+          return <GarminTab />;
+        }
+        if (isAdmin) {
         return <GarminTab />;
+        }
+        return (
+          <div className="max-w-3xl mx-auto p-6 text-center text-slate-200">
+            <p className="text-lg font-semibold mb-2">
+              Cette section Garmin est réservée à ton compte administrateur.
+            </p>
+            <p className="text-sm text-slate-400">
+              Connecte-toi avec ton compte admin pour consulter l&apos;historique Garmin et les analyses détaillées.
+            </p>
+          </div>
+        );
       case 'coach':
         return <CoachDashboard />;
       case 'books':

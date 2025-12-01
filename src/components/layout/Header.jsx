@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
 import { useTranslation } from '../../utils/translations';
 import { useFormatters } from '../../utils/translations/formatters-hook';
+import { getAvatarByUserId } from '../../utils/authIndexedDB';
 
 const Header = () => {
   const { setActiveTab } = useWorkout();
   const { currentUser, isAuthenticated, logout } = useAuth();
   const t = useTranslation();
   const { formatDate } = useFormatters();
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   const handleGoToToday = () => {
     setActiveTab('today');
@@ -25,6 +27,32 @@ const Header = () => {
   };
 
   const avatarInitial = currentUser?.username ? currentUser.username.charAt(0).toUpperCase() : 'M';
+
+  useEffect(() => {
+    let revokedUrl = null;
+    const loadAvatar = async () => {
+      if (!currentUser?.id) {
+        setAvatarUrl(null);
+        return;
+      }
+      const record = await getAvatarByUserId(currentUser.id);
+      if (record && record.blob) {
+        const url = URL.createObjectURL(record.blob);
+        revokedUrl = url;
+        setAvatarUrl(url);
+      } else {
+        setAvatarUrl(null);
+      }
+    };
+    loadAvatar().catch(() => {
+      setAvatarUrl(null);
+    });
+    return () => {
+      if (revokedUrl) {
+        URL.revokeObjectURL(revokedUrl);
+      }
+    };
+  }, [currentUser?.id]);
 
   return (
     <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/50 shadow-lg">
@@ -69,9 +97,17 @@ const Header = () => {
                   onClick={handleGoToToday}
                   className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-600/70 shadow-sm hover:bg-slate-700/90 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-sm font-semibold text-white shadow-md">
-                    {avatarInitial}
-                  </div>
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={currentUser?.username || 'Avatar'}
+                      className="w-8 h-8 rounded-full object-cover shadow-md border border-white/10"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-sm font-semibold text-white shadow-md">
+                      {avatarInitial}
+                    </div>
+                  )}
                   <span className="text-sm text-slate-100 font-medium">
                     {currentUser?.username || 'Profil'}
                   </span>

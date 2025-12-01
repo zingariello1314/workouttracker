@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import logger from '../utils/logger';
 import { generateSalt, hashPassword, verifyPassword } from '../utils/authCrypto';
+import { migrateDataToUser } from '../utils/authMigration';
 import {
   createUser,
   getUserByUsername,
@@ -15,6 +16,11 @@ import {
 const log = logger.hook('useAuthStorage');
 
 const REMEMBERED_KEY = 'momentum:rememberedUserId';
+
+// Compte admin pré-configuré pour ton usage personnel.
+// Ce compte pourra ensuite servir de "profil maître" auquel on migrera les données existantes.
+const ADMIN_USERNAME = 'zingariello1314';
+const ADMIN_PASSWORD = 'MdpMdp123';
 
 export const useAuthStorage = () => {
   // Chargement initial : tente d'auto‑connecter un utilisateur si rememberMe est actif
@@ -95,7 +101,37 @@ export const useAuthStorage = () => {
   }, []);
 
   const login = useCallback(async ({ username, password, rememberMe }) => {
-    const user = await getUserByUsername(username);
+    let user = await getUserByUsername(username);
+
+    // Création automatique du compte admin si inexistant et identifiants exacts
+    if (!user && username === ADMIN_USERNAME) {
+      if (password !== ADMIN_PASSWORD) {
+        return { success: false, error: 'INVALID_CREDENTIALS' };
+      }
+      const salt = generateSalt(16);
+      const passwordHash = await hashPassword(password, salt);
+      const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `admin_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      const now = new Date().toISOString();
+      user = {
+        id,
+        username: ADMIN_USERNAME,
+        email: null,
+        passwordSalt: salt,
+        passwordHash,
+        avatarId: null,
+        role: 'admin',
+        createdAt: now,
+        updatedAt: now,
+      };
+      const createResult = await createUser(user);
+      if (!createResult.success) {
+        return { success: false, error: 'CREATE_FAILED' };
+      }
+      log.debug('Compte admin créé automatiquement', { id: user.id });
+    }
+
     if (!user || !user.passwordSalt || !user.passwordHash) {
       return { success: false, error: 'INVALID_CREDENTIALS' };
     }
@@ -162,11 +198,11 @@ export const useAuthStorage = () => {
     return profileResult;
   }, [updateProfile]);
 
-  // Stub : sera complété pour migrer les données workouts/livres vers un userId
-  const linkAnonymousDataToUser = useCallback(async (userId) => {
+  // Migration des données existantes (actuellement: livres)
+  const linkAnonymousDataToUser = useCallback(async (userId, onProgress) => {
     log.debug('Migration des données anonymes vers userId', { userId });
-    // TODO: implémenter la logique réelle (workouts, livres, nutrition...)
-    return { success: true };
+    const result = await migrateDataToUser(userId, onProgress);
+    return result;
   }, []);
 
   return {

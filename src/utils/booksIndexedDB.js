@@ -31,6 +31,24 @@ export const openBooksDB = () => {
         } catch {
           // Index non critique : ignorer en cas d'erreur
         }
+        // ✅ Index sur userId pour filtrage par utilisateur
+        try {
+          store.createIndex('userId', 'userId', { unique: false });
+        } catch {
+          // Index non critique : ignorer en cas d'erreur
+        }
+      } else {
+        // ✅ Ajouter index userId si absent (pour migrations)
+        const store = event.target.transaction.objectStore(BOOKS_STORE);
+        const indexNames = Array.from(store.indexNames);
+        if (!indexNames.includes('userId')) {
+          try {
+            store.createIndex('userId', 'userId', { unique: false });
+            console.log('[booksIndexedDB] Index userId créé');
+          } catch {
+            // Index non critique
+          }
+        }
       }
     };
 
@@ -52,6 +70,24 @@ export const openBooksDB = () => {
               store.createIndex('status', 'status', { unique: false });
             } catch {
               // Index optionnel
+            }
+            // ✅ Index sur userId
+            try {
+              store.createIndex('userId', 'userId', { unique: false });
+            } catch {
+              // Index optionnel
+            }
+          } else {
+            // ✅ Ajouter index userId si absent
+            const store = e.target.transaction.objectStore(BOOKS_STORE);
+            const indexNames = Array.from(store.indexNames);
+            if (!indexNames.includes('userId')) {
+              try {
+                store.createIndex('userId', 'userId', { unique: false });
+                console.log('[booksIndexedDB] Index userId créé (upgrade)');
+              } catch {
+                // Index optionnel
+              }
             }
           }
         };
@@ -84,6 +120,12 @@ export const openBooksDB = () => {
                 const store = db.createObjectStore(BOOKS_STORE, { keyPath: 'id' });
                 try {
                   store.createIndex('status', 'status', { unique: false });
+                } catch {
+                  // Index optionnel
+                }
+                // ✅ Index sur userId
+                try {
+                  store.createIndex('userId', 'userId', { unique: false });
                 } catch {
                   // Index optionnel
                 }
@@ -135,7 +177,8 @@ export const getAllBooksFromIndexedDB = async () => {
 
 /**
  * Remplace le contenu du store "books" par la liste fournie.
- * Stratégie full-replace cohérente avec la sauvegarde du contexte global.
+ * ✅ NOUVEAU : Merge intelligent (ne supprime pas les livres d'autres utilisateurs)
+ * Stratégie : Récupérer tous les livres existants, remplacer uniquement ceux de la liste fournie
  * Ne jette pas d'erreur vers l'appelant : en cas d'échec, l'appelant peut
  * se reposer sur localStorage comme c'est déjà le cas aujourd'hui.
  */
@@ -149,25 +192,44 @@ export const saveBooksToIndexedDB = async (books) => {
   const safeBooks = Array.isArray(books) ? books : [];
   console.log('[booksIndexedDB] Sauvegarde de', safeBooks.length, 'livres');
 
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     try {
+      // ✅ Récupérer tous les livres existants pour merge intelligent
+      const allExistingBooks = await getAllBooksFromIndexedDB();
+      
+      // ✅ Extraire les userIds des livres à sauvegarder
+      const userIdsToUpdate = new Set(safeBooks.map(b => b.userId).filter(Boolean));
+      
+      // ✅ Filtrer les livres existants : garder ceux qui ne sont PAS dans la liste à sauvegarder
+      const booksToKeep = allExistingBooks.filter(existing => {
+        // Garder les livres d'autres utilisateurs
+        if (existing.userId && !userIdsToUpdate.has(existing.userId)) {
+          return true;
+        }
+        // Garder les livres sans userId (anciennes données, seront migrées par authMigration)
+        if (!existing.userId) {
+          return true;
+        }
+        // Exclure les livres qui seront remplacés par la liste fournie
+        return !safeBooks.some(newBook => newBook.id === existing.id);
+      });
+      
+      console.log('[booksIndexedDB] Merge :', booksToKeep.length, 'livres conservés (autres utilisateurs),', safeBooks.length, 'livres à sauvegarder');
+
       const transaction = db.transaction([BOOKS_STORE], 'readwrite');
       const store = transaction.objectStore(BOOKS_STORE);
 
+      // ✅ Clear uniquement si on veut vraiment tout remplacer (pour compatibilité)
+      // Sinon, on fait un merge : on garde les autres utilisateurs
       const clearRequest = store.clear();
 
       clearRequest.onsuccess = () => {
-        if (safeBooks.length === 0) {
-          console.log('[booksIndexedDB] ✅ Base vidée (0 livres)');
-          resolve(true);
-          return;
-        }
-
-        let remaining = safeBooks.length;
+        // ✅ Sauvegarder d'abord les livres à conserver (autres utilisateurs)
+        let remaining = booksToKeep.length + safeBooks.length;
         let failed = false;
         let savedCount = 0;
 
-        safeBooks.forEach((book) => {
+        const saveBook = (book) => {
           // Préserver TOUS les champs du livre, en normalisant seulement ceux qui sont manquants
           const normalized = {
             ...book, // Préserver TOUS les champs existants (y compris ceux non listés)
@@ -203,13 +265,15 @@ export const saveBooksToIndexedDB = async (books) => {
           if (normalized.createdAt === undefined || normalized.createdAt === null) normalized.createdAt = null;
           if (normalized.updatedAt === undefined || normalized.updatedAt === null) normalized.updatedAt = null;
           if (normalized.version === undefined || normalized.version === null) normalized.version = '1.1';
+          // ✅ Préserver userId s'il existe, sinon ne pas l'ajouter (sera ajouté par useBooksStorage.scheduleSave)
+          // (userId est déjà dans book si fourni par useBooksStorage)
 
           const putRequest = store.put(normalized);
           putRequest.onerror = (error) => {
             console.error(`[booksIndexedDB] ❌ Erreur sauvegarde livre ${book.id || 'sans-id'}:`, error);
             failed = true;
             if (--remaining === 0) {
-              console.error('[booksIndexedDB] ❌ Échec sauvegarde:', savedCount, '/', safeBooks.length, 'livres sauvegardés');
+              console.error('[booksIndexedDB] ❌ Échec sauvegarde:', savedCount, '/', (booksToKeep.length + safeBooks.length), 'livres sauvegardés');
               resolve(false);
             }
           };
@@ -217,12 +281,18 @@ export const saveBooksToIndexedDB = async (books) => {
             savedCount++;
             if (--remaining === 0) {
               if (!failed) {
-                console.log('[booksIndexedDB] ✅', savedCount, 'livres sauvegardés avec succès');
+                console.log('[booksIndexedDB] ✅', savedCount, 'livres sauvegardés avec succès (merge intelligent)');
               }
               resolve(!failed);
             }
           };
-        });
+        };
+
+        // ✅ Sauvegarder d'abord les livres à conserver
+        booksToKeep.forEach(saveBook);
+        
+        // ✅ Puis sauvegarder les nouveaux/modifiés
+        safeBooks.forEach(saveBook);
       };
 
       clearRequest.onerror = (error) => {

@@ -252,7 +252,11 @@ export const translations = {
     'books.filters.sort.title': 'Titre (A → Z)',
     'books.filters.sort.author': 'Auteur (A → Z)',
     'books.filters.sort.pages': 'Nombre de pages (décroissant)',
-    'books.filters.sort.score': 'Note perso (décroissante)'
+    'books.filters.sort.score': 'Note perso (décroissante)',
+    
+    // Charts
+    'charts.empty.title': 'Aucune donnée disponible',
+    'charts.empty.message': 'Commencez à enregistrer vos entraînements pour voir vos graphiques ici.'
   },
   
   [LANGUAGES.EN]: {
@@ -406,7 +410,11 @@ export const translations = {
     'books.filters.sort.title': 'Title (A → Z)',
     'books.filters.sort.author': 'Author (A → Z)',
     'books.filters.sort.pages': 'Number of pages (descending)',
-    'books.filters.sort.score': 'Personal rating (descending)'
+    'books.filters.sort.score': 'Personal rating (descending)',
+    
+    // Charts
+    'charts.empty.title': 'No data available',
+    'charts.empty.message': 'Start recording your workouts to see your charts here.'
   }
 };
 

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadBooks, saveBooks } from '../utils/booksStorage';
 import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../utils/booksIndexedDB';
+import { useAuth } from '../context/AuthContext';
 
 // Hook centralisant le chargement et la persistance des livres
 // - lecture prioritaire depuis IndexedDB (si disponible), sinon localStorage (fallback lecture uniquement)
 // - sauvegarde UNIQUEMENT vers IndexedDB (localStorage saturé, utilisé uniquement en fallback de lecture)
 // - API simple pour BooksTab : { books, setBooks, isLoading }
+// - ✅ NOUVEAU : Filtre par userId (isolation par utilisateur)
 
 const HASH_EMPTY = 'EMPTY';
 
@@ -25,47 +27,108 @@ const computeHash = (value) => {
 };
 
 export const useBooksStorage = () => {
+  const { currentUser, isAuthenticated } = useAuth();
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const debounceTimerRef = useRef(null);
   const lastSavedHashRef = useRef(HASH_EMPTY);
   const isInitialLoadRef = useRef(true);
 
+  // ✅ Calculer le userId pour le filtrage
+  // Admin : userId = null (ou "main") pour récupérer les livres sans userId ou avec userId = adminId
+  // Autre user : userId = currentUser.id
+  // Déconnecté : userId = null → retourne [] (pas de livres)
+  const userId = isAuthenticated && currentUser 
+    ? (currentUser.role === 'admin' || currentUser.username === 'zingariello1314' ? null : currentUser.id)
+    : null;
+
   // Chargement initial
   useEffect(() => {
     let isMounted = true;
 
     const loadInitialBooks = async () => {
+      // ✅ Si déconnecté, ne rien charger (état vide)
+      if (!isAuthenticated) {
+        if (isMounted) {
+          setBooks([]);
+          lastSavedHashRef.current = computeHash([]);
+          setIsLoading(false);
+          isInitialLoadRef.current = false;
+          console.log('[useBooksStorage] ⚠️ Utilisateur déconnecté : aucun livre chargé');
+        }
+        return;
+      }
+
       try {
         // 1) Essayer IndexedDB
-        const indexedBooks = await getAllBooksFromIndexedDB();
-        console.log('[useBooksStorage] Chargement IndexedDB:', indexedBooks.length, 'livres trouvés');
-        if (isMounted && Array.isArray(indexedBooks) && indexedBooks.length > 0) {
-          console.log('[useBooksStorage] ✅ Utilisation des livres depuis IndexedDB');
-          setBooks(indexedBooks);
-          lastSavedHashRef.current = computeHash(indexedBooks);
+        const allIndexedBooks = await getAllBooksFromIndexedDB();
+        console.log('[useBooksStorage] Chargement IndexedDB:', allIndexedBooks.length, 'livres trouvés (tous utilisateurs)');
+        
+        // ✅ Filtrer par userId
+        // Admin : récupère les livres sans userId (anciennes données) OU avec userId = adminId
+        // Autre user : récupère uniquement les livres avec userId = currentUser.id
+        const adminId = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314' 
+          ? currentUser.id 
+          : null;
+        
+        const filteredBooks = allIndexedBooks.filter(book => {
+          if (!book) return false;
+          // Admin : récupère les livres sans userId (anciennes données) OU avec userId = adminId
+          if (adminId) {
+            return !book.userId || book.userId === adminId;
+          }
+          // Autre user : uniquement ses propres livres
+          return book.userId === userId;
+        });
+        
+        console.log('[useBooksStorage] Livres filtrés pour userId:', userId || adminId || 'déconnecté', ':', filteredBooks.length, 'livres');
+        
+        if (isMounted && Array.isArray(filteredBooks) && filteredBooks.length > 0) {
+          console.log('[useBooksStorage] ✅ Utilisation des livres depuis IndexedDB (filtrés)');
+          setBooks(filteredBooks);
+          lastSavedHashRef.current = computeHash(filteredBooks);
           return;
         }
 
-        // 2) Sinon, fallback vers localStorage
+        // 2) Sinon, fallback vers localStorage (seulement si connecté)
         const localBooks = loadBooks();
-        console.log('[useBooksStorage] Chargement localStorage:', localBooks.length, 'livres trouvés');
-        if (isMounted) {
-          if (localBooks.length > 0) {
-            console.log('[useBooksStorage] ✅ Utilisation des livres depuis localStorage');
-          } else {
-            console.log('[useBooksStorage] ⚠️ Aucun livre trouvé (IndexedDB et localStorage vides)');
+        // ✅ Filtrer aussi localStorage par userId
+        const filteredLocalBooks = localBooks.filter(book => {
+          if (!book) return false;
+          if (adminId) {
+            return !book.userId || book.userId === adminId;
           }
-          setBooks(localBooks);
-          lastSavedHashRef.current = computeHash(localBooks);
+          return book.userId === userId;
+        });
+        
+        console.log('[useBooksStorage] Chargement localStorage:', filteredLocalBooks.length, 'livres trouvés (filtrés)');
+        if (isMounted) {
+          if (filteredLocalBooks.length > 0) {
+            console.log('[useBooksStorage] ✅ Utilisation des livres depuis localStorage (filtrés)');
+          } else {
+            console.log('[useBooksStorage] ⚠️ Aucun livre trouvé (IndexedDB et localStorage vides pour cet utilisateur)');
+          }
+          setBooks(filteredLocalBooks);
+          lastSavedHashRef.current = computeHash(filteredLocalBooks);
         }
       } catch (error) {
         console.error('[useBooksStorage] ❌ Erreur lors du chargement:', error);
         if (isMounted) {
           const fallback = loadBooks();
-          console.log('[useBooksStorage] Fallback localStorage:', fallback.length, 'livres');
-          setBooks(fallback);
-          lastSavedHashRef.current = computeHash(fallback);
+          // ✅ Filtrer aussi le fallback
+          const filteredFallback = fallback.filter(book => {
+            if (!book) return false;
+            const adminId = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314' 
+              ? currentUser.id 
+              : null;
+            if (adminId) {
+              return !book.userId || book.userId === adminId;
+            }
+            return book.userId === userId;
+          });
+          console.log('[useBooksStorage] Fallback localStorage:', filteredFallback.length, 'livres (filtrés)');
+          setBooks(filteredFallback);
+          lastSavedHashRef.current = computeHash(filteredFallback);
         }
       } finally {
         if (isMounted) {
@@ -84,7 +147,7 @@ export const useBooksStorage = () => {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, []);
+  }, [isAuthenticated, currentUser, userId]);
 
   const scheduleSave = useCallback(
     (nextBooks) => {
@@ -92,7 +155,25 @@ export const useBooksStorage = () => {
         return;
       }
 
-      const nextHash = computeHash(nextBooks);
+      // ✅ Si déconnecté, ne rien sauvegarder
+      if (!isAuthenticated || !currentUser) {
+        console.log('[useBooksStorage] ⚠️ Utilisateur déconnecté : sauvegarde ignorée');
+        return;
+      }
+
+      // ✅ Ajouter userId à chaque livre avant sauvegarde
+      const userIdToAssign = currentUser.role === 'admin' || currentUser.username === 'zingariello1314'
+        ? currentUser.id
+        : currentUser.id;
+      
+      const booksWithUserId = Array.isArray(nextBooks) 
+        ? nextBooks.map(book => ({
+            ...book,
+            userId: book.userId || userIdToAssign // Préserver userId existant ou assigner
+          }))
+        : [];
+
+      const nextHash = computeHash(booksWithUserId);
       if (nextHash === lastSavedHashRef.current) {
         return;
       }
@@ -105,8 +186,9 @@ export const useBooksStorage = () => {
 
       debounceTimerRef.current = setTimeout(async () => {
         try {
-          await saveBooksToIndexedDB(nextBooks);
-          console.log('[useBooksStorage] ✅ Sauvegarde IndexedDB réussie');
+          // ✅ Sauvegarder avec userId (merge avec les autres livres dans IndexedDB)
+          await saveBooksToIndexedDB(booksWithUserId);
+          console.log('[useBooksStorage] ✅ Sauvegarde IndexedDB réussie (avec userId:', userIdToAssign, ')');
         } catch (error) {
           // Ne pas casser l'app en cas d'erreur IndexedDB, mais logger l'erreur
           console.error('[useBooksStorage] ❌ Erreur sauvegarde IndexedDB:', error);
@@ -115,7 +197,7 @@ export const useBooksStorage = () => {
         }
       }, 800);
     },
-    []
+    [isAuthenticated, currentUser]
   );
 
   const updateBooks = useCallback(

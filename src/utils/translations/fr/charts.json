@@ -35,6 +35,10 @@
     "volumeRegularity": "Volume & régularité natation",
     "stretchesByZone": "Étirements par zone"
   },
+  "empty": {
+    "title": "Aucune donnée disponible",
+    "message": "Commencez à enregistrer vos entraînements pour voir vos graphiques ici."
+  },
   "noData": {
     "garmin": "Aucune donnée Garmin disponible. Synchronisez vos données depuis l'onglet Garmin.",
     "garminSync": "Aucune donnée Garmin disponible. Synchronisez vos données Garmin.",

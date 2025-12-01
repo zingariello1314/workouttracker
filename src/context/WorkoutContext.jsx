@@ -13,6 +13,7 @@ import {
   isValidJustificationNote,
   getDayJustification as getDayJustificationUtil
 } from '../utils/dayJustificationUtils';
+import { useAuth } from './AuthContext';
 
 const WorkoutContext = createContext();
 
@@ -73,8 +74,24 @@ const WorkoutProvider = ({ children }) => {
   const debounceTimerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
 
-  // Hooks personnalisés
-  const { data, updateData, loadFromDB, saveToDB, saveSessionFeedback } = useWorkoutData();
+  // Authentification : déterminer l'utilisateur courant et l'admin
+  const { currentUser, isAuthenticated } = useAuth();
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const storageKey = useMemo(() => {
+    if (isAdmin) return 'main'; // ✅ Les anciennes données "globales" deviennent les données admin
+    if (currentUser?.id) return `user-${currentUser.id}`;
+    return 'anonymous';
+  }, [isAdmin, currentUser?.id]);
+
+  // Hooks personnalisés (données d'entraînement, scindées par utilisateur)
+  // 🔒 Important :
+  // - plus aucune donnée mockée / de test.
+  // - lorsque l'utilisateur est déconnecté, les données sont éphémères (pas de lecture/écriture IndexedDB).
+  const { data, updateData, loadFromDB, saveToDB, saveSessionFeedback } = useWorkoutData({
+    storageKey,
+    generateTestData: false,
+    ephemeral: !isAuthenticated
+  });
   
   // État pour l'historique des programmes
   const [programHistory, setProgramHistory] = useState([]);

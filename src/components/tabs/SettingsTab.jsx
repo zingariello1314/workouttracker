@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image, Languages, BookOpen } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import LanguageSelector from '../ui/LanguageSelector';
 import { useTranslation } from '../../utils/translations';
 import { useGarminData } from '../../hooks/useGarminData';
@@ -31,6 +32,7 @@ import { loadBooks as loadBooksFromLocalStorage, saveBooks as saveBooksToLocalSt
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
+  const { currentUser, updateAvatar, linkAnonymousDataToUser } = useAuth();
   const t = useTranslation();
   const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
   const { exportAll: exportNutritionData } = useNutritionData();
@@ -50,6 +52,78 @@ const SettingsTab = () => {
   const [allDataPreviewData, setAllDataPreviewData] = useState(null);
   const [cleanupStatus, setCleanupStatus] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Profil / avatar
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
+  const [avatarStatus, setAvatarStatus] = useState(null); // 'success' | 'error' | 'loading' | null
+  const avatarFileRef = useRef(null);
+  const [migrationStatus, setMigrationStatus] = useState(null); // 'idle' | 'loading' | 'success' | 'error'
+  const [migrationProgress, setMigrationProgress] = useState({ current: 0, total: 0, message: '' });
+
+  const usernameInitial = currentUser?.username?.charAt(0).toUpperCase() || 'M';
+
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file || !currentUser) return;
+
+    setAvatarStatus('loading');
+    try {
+      const result = await updateAvatar(file);
+      if (result.success) {
+        if (avatarPreviewUrl) {
+          URL.revokeObjectURL(avatarPreviewUrl);
+        }
+        const url = URL.createObjectURL(file);
+        setAvatarPreviewUrl(url);
+        setAvatarStatus('success');
+      } else {
+        setAvatarStatus('error');
+      }
+    } catch (error) {
+      console.error('[SettingsTab] Erreur lors de la mise à jour de l’avatar:', error);
+      setAvatarStatus('error');
+    }
+  };
+
+  const handleMigrateData = async () => {
+    if (!currentUser) return;
+    setMigrationStatus('loading');
+    setMigrationProgress({ current: 0, total: 5, message: 'Démarrage de la migration...' });
+    
+    const onProgress = (current, total, message) => {
+      setMigrationProgress({ current, total, message });
+    };
+    
+    try {
+      const result = await linkAnonymousDataToUser(onProgress);
+      if (result.success) {
+        setMigrationStatus('success');
+        const totalMigrated = 
+          (result.migratedBooks || 0) + 
+          (result.migratedNutrition || 0) + 
+          (result.migratedBodyTracking || 0) + 
+          (result.migratedGarmin || 0) + 
+          (result.migratedPrograms || 0);
+        setMigrationProgress({ 
+          current: 5, 
+          total: 5, 
+          message: `Migration terminée : ${totalMigrated} entrées migrées au total` 
+        });
+      } else {
+        setMigrationStatus('error');
+        setMigrationProgress({ current: 0, total: 0, message: 'Erreur lors de la migration' });
+      }
+    } catch (error) {
+      console.error('[SettingsTab] Erreur lors de la migration des données:', error);
+      setMigrationStatus('error');
+      setMigrationProgress({ current: 0, total: 0, message: 'Erreur lors de la migration' });
+    } finally {
+      setTimeout(() => {
+        setMigrationStatus(null);
+        setMigrationProgress({ current: 0, total: 0, message: '' });
+      }, 5000);
+    }
+  };
 
   const buildEnduranceExportStats = (enduranceData = {}) => {
     const sessions = enduranceData.sessions || {};
@@ -1542,6 +1616,117 @@ const SettingsTab = () => {
           ⚙️ Paramètres & Sauvegarde
         </h2>
       </div>
+
+      {/* Section Profil / Compte */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <Image className="mr-2" size={20} />
+            Profil du compte
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {currentUser ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg border border-white/20 flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600">
+                  {avatarPreviewUrl ? (
+                    <img
+                      src={avatarPreviewUrl}
+                      alt={currentUser.username}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xl font-semibold text-white">{usernameInitial}</span>
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm text-slate-200">
+                    Nom d’utilisateur :{' '}
+                    <span className="font-semibold">
+                      {currentUser.username}
+                    </span>
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Téléverse une image pour personnaliser ton avatar dans le header.
+                  </p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <input
+                      ref={avatarFileRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="text-xs text-slate-300 file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer"
+                    />
+                    {avatarStatus === 'loading' && (
+                      <span className="text-xs text-slate-300">Mise à jour…</span>
+                    )}
+                    {avatarStatus === 'success' && (
+                      <span className="text-xs text-emerald-400">Avatar mis à jour avec succès.</span>
+                    )}
+                    {avatarStatus === 'error' && (
+                      <span className="text-xs text-red-400">Erreur lors de la mise à jour de l’avatar.</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-700 mt-4">
+                <p className="text-xs text-slate-400 mb-3">
+                  Tu peux associer toutes tes données locales actuelles (notamment les livres) à ce compte.
+                </p>
+                <Button
+                  onClick={handleMigrateData}
+                  disabled={migrationStatus === 'loading'}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Associer mes données locales à ce compte
+                </Button>
+                
+                {migrationStatus === 'loading' && (
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-slate-300 mb-1">
+                      <span>{migrationProgress.message || 'Migration en cours...'}</span>
+                      <span>{migrationProgress.current} / {migrationProgress.total}</span>
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
+                        style={{ 
+                          width: `${migrationProgress.total > 0 ? (migrationProgress.current / migrationProgress.total) * 100 : 0}%` 
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {migrationStatus === 'success' && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs text-emerald-400">
+                      ✅ Migration terminée avec succès !
+                    </p>
+                    {migrationProgress.message && (
+                      <p className="text-xs text-slate-300">
+                        {migrationProgress.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {migrationStatus === 'error' && (
+                  <p className="text-xs text-red-400 mt-2">
+                    ❌ Erreur lors de la migration. Réessaie plus tard.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-300">
+              Connecte-toi pour configurer ton profil et ton avatar.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Section Page d'Accueil */}
       <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
