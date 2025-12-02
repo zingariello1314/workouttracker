@@ -19,6 +19,7 @@ import ExercisesTab from './components/tabs/ExercisesTab';
 import HistoryTab from './components/tabs/HistoryTab';
 import SettingsTab from './components/tabs/SettingsTab';
 import PredictionsTab from './components/PredictionsTab';
+import QuestsTab from './components/tabs/QuestsTab';
 import SmartBalancingTab from './components/SmartBalancingTab';
 import GarminTab from './components/tabs/GarminTab';
 import NutritionTab from './components/tabs/NutritionTab';
@@ -100,6 +101,9 @@ const WorkoutTrackerContent = () => {
         return <AuthPage />;
       case 'today':
         return <TodayTab />;
+      case 'quests':
+        // Onglet QuietQuest – contenu en cours de développement
+        return <QuestsTab />;
       case 'data-entry':
         return <DataEntryTab />;
       case 'progress':

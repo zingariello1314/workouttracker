@@ -506,99 +506,31 @@ const HomePage = () => {
           />
         </div>
 
-        {/* Navigation en une seule ligne */}
+        {/* Navigation en une seule ligne – version simplifiée */}
         <nav className="flex items-center space-x-8">
           <div className="flex space-x-2 text-white text-base font-medium">
+            {/* Sport regroupe tous les onglets d'entraînement (Today, Saisie, Programme, etc.) */}
             <button 
               onClick={() => navigateToTab('today')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              {t('nav.today')}
+              {t('nav.sport')}
             </button>
+            {/* QuietQuest – Quêtes */}
             <button 
-              onClick={() => navigateToTab('data-entry')}
+              onClick={() => navigateToTab('quests')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
-              {t('nav.dataEntry')}
+              {t('nav.quests')}
             </button>
-            <button 
-              onClick={() => navigateToTab('program')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.program')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('nutrition')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.nutrition')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('exercises')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.exercises')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('progress')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.progress')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('endurance')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.endurance')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('calendar')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.calendar')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('history')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.history')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('charts')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.charts')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('stats')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.stats')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('predictions')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.predictions')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('smart-balancing')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.smartBalancing')}
-            </button>
-            <button 
-              onClick={() => navigateToTab('garmin')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-            >
-              {t('nav.garmin')}
-            </button>
+            {/* Livres */}
             <button 
               onClick={() => navigateToTab('books')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               {t('nav.books')}
             </button>
+            {/* Paramètres */}
             <button 
               onClick={() => navigateToTab('settings')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"

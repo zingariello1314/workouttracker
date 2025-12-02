@@ -1,6 +1,8 @@
 {
   "home": "Home",
+  "sport": "Sport",
   "today": "Today",
+  "quests": "Quests",
   "dataEntry": "Data Entry",
   "progress": "Body Tracking",
   "endurance": "Endurance",
