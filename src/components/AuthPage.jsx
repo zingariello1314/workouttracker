@@ -5,6 +5,19 @@ import Card from './ui/Card';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import { useTranslation } from '../utils/translations';
+import Hyperspeed from './ui/Hyperspeed/Hyperspeed';
+import { hyperspeedPresets } from './ui/Hyperspeed/hyperspeedPresets';
+
+// Fonction de détection WebGL
+const checkWebGLSupport = () => {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    return !!gl;
+  } catch (e) {
+    return false;
+  }
+};
 
 const AuthPage = () => {
   const { currentUser, isAuthenticated, loading, error, register, login, setError } = useAuth();
@@ -17,6 +30,21 @@ const AuthPage = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [webglSupported, setWebglSupported] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Détection WebGL et mobile
+  useEffect(() => {
+    setWebglSupported(checkWebGLSupport());
+    setIsMobile(window.innerWidth < 768);
+    
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Si déjà connecté, rediriger immédiatement vers Aujourd'hui
   useEffect(() => {
@@ -56,9 +84,29 @@ const AuthPage = () => {
           ? 'Erreur lors de la connexion.'
           : null;
 
+  // Options optimisées selon le device
+  const optimizedOptions = isMobile
+    ? {
+        ...hyperspeedPresets.one,
+        totalSideLightSticks: 15,
+        lightPairsPerRoadWay: 30,
+        lanesPerRoad: 2,
+      }
+    : hyperspeedPresets.one;
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
-      <div className="max-w-3xl w-full grid gap-8 md:grid-cols-2 items-stretch">
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-10 overflow-hidden">
+      {/* Fond animé Hyperspeed ou fallback */}
+      <div className="fixed inset-0 z-0 w-full h-full">
+        {webglSupported ? (
+          <Hyperspeed effectOptions={optimizedOptions} />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900" />
+        )}
+      </div>
+
+      {/* Contenu de connexion (au-dessus) */}
+      <div className="relative z-10 max-w-3xl w-full grid gap-8 md:grid-cols-2 items-stretch">
         <Card variant="glass" padding="lg" className="h-full flex flex-col justify-between">
           <div>
             <h2 className="text-3xl font-bold mb-4 text-white">

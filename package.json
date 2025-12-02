@@ -32,13 +32,15 @@
     "jspdf": "^3.0.3",
     "lucide-react": "^0.263.1",
     "pako": "^2.1.0",
+    "postprocessing": "^6.38.0",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
     "react-webcam": "^7.1.1",
     "react-window": "^1.8.10",
-    "recharts": "^3.3.0"
+    "recharts": "^3.3.0",
+    "three": "^0.181.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
