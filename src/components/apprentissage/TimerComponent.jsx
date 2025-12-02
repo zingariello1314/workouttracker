@@ -1,0 +1,155 @@
+/**
+ * Composant TimerComponent - Timer principal pour les sessions d'étude
+ * Affiche le timer circulaire, les contrôles et les statistiques du jour
+ */
+
+import React from 'react';
+import { TIMER_DEFAULTS, TIMER_COLORS } from '../../utils/apprentissageConstants';
+
+// Formatage temps (secondes → MM:SS)
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+const TimerComponent = React.memo(({
+  timer,
+  timerColor,
+  todayStats,
+  onTogglePause,
+  onStop,
+  onAdjustTime,
+  onToggleSilentMode,
+}) => {
+  return (
+    <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-6 shadow-xl shadow-emerald-500/10">
+      <div className="flex flex-col items-center">
+        {/* Cercle Timer */}
+        <div
+          className={`relative w-48 h-48 md:w-72 md:h-72 rounded-full border-4 md:border-8 flex flex-col items-center justify-center mb-6 transition-all duration-300 ${
+            timer.isRunning && !timer.isPaused ? 'animate-pulse' : ''
+          }`}
+          style={{
+            borderColor: `${timerColor}33`,
+            background: `radial-gradient(circle, ${timerColor}08 0%, transparent 70%)`,
+            willChange: timer.isRunning ? 'transform, opacity' : 'auto',
+            transform: 'translateZ(0)', // Force GPU acceleration
+          }}
+        >
+          {/* SVG Progression */}
+          <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+            <circle
+              cx="50"
+              cy="50"
+              r="45"
+              fill="none"
+              stroke="rgba(0, 255, 148, 0.1)"
+              strokeWidth="2"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r="45"
+              fill="none"
+              stroke={timerColor}
+              strokeWidth="3"
+              strokeDasharray={283}
+              strokeDashoffset={283 - (timer.progress * 283) / 100}
+              strokeLinecap="round"
+            />
+          </svg>
+
+          {/* Affichage temps */}
+          <div className="relative z-10 text-center">
+            <div
+              className="text-5xl font-black mb-2"
+              style={{
+                color: timerColor,
+                textShadow: `0 0 20px ${timerColor}80`,
+              }}
+            >
+              {formatTime(timer.remainingTime)}
+            </div>
+            <div className="text-lg text-emerald-400 font-semibold uppercase tracking-wider">
+              {timer.isPaused ? '🍫 PAUSE' : '📚 FOCUS'}
+            </div>
+            {timer.currentSubject && (
+              <div className="text-sm text-slate-400 mt-2">
+                {timer.currentSubject.name}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Contrôles */}
+        <div className="flex gap-2 md:gap-3 flex-wrap justify-center" role="toolbar" aria-label="Contrôles du timer">
+          <button
+            onClick={onTogglePause}
+            aria-label={timer.isPaused ? 'Reprendre la session' : 'Mettre en pause'}
+            className="px-4 py-2 md:px-6 md:py-3 min-w-[44px] min-h-[44px] bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-emerald-500 rounded-lg text-emerald-400 font-semibold uppercase tracking-wide text-sm md:text-base hover:from-emerald-500/20 hover:to-cyan-500/20 hover:text-cyan-300 hover:border-cyan-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+          >
+            {timer.isPaused ? '▶️ Reprendre' : '⏸️ Pause'}
+          </button>
+          <button
+            onClick={onStop}
+            aria-label="Arrêter la session"
+            className="px-4 py-2 md:px-6 md:py-3 min-w-[44px] min-h-[44px] bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-red-500 rounded-lg text-red-400 font-semibold uppercase tracking-wide text-sm md:text-base hover:from-red-500/20 hover:to-red-600/20 hover:text-red-300 hover:border-red-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/40 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+            style={{ willChange: 'transform' }}
+          >
+            ⏹️ Arrêter
+          </button>
+          <button
+            onClick={() => onAdjustTime(10)}
+            aria-label="Ajouter 10 minutes"
+            className="px-4 py-2 md:px-6 md:py-3 min-w-[44px] min-h-[44px] bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-cyan-500 rounded-lg text-cyan-400 font-semibold uppercase tracking-wide text-sm md:text-base hover:from-cyan-500/20 hover:to-blue-500/20 hover:text-cyan-300 hover:border-cyan-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-500/40 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+            style={{ willChange: 'transform' }}
+          >
+            +10 min
+          </button>
+          <button
+            onClick={onToggleSilentMode}
+            aria-label={timer.silentMode ? 'Activer le son' : 'Désactiver le son'}
+            className={`px-4 py-2 md:px-6 md:py-3 min-w-[44px] min-h-[44px] bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-slate-500 rounded-lg font-semibold uppercase tracking-wide text-sm md:text-base hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+              timer.silentMode ? 'text-slate-500' : 'text-slate-300'
+            }`}
+          >
+            {timer.silentMode ? '🔇' : '🔊'}
+          </button>
+        </div>
+
+        {/* Statistiques du jour */}
+        <div className="mt-6 flex gap-6 flex-wrap justify-center" role="group" aria-label="Statistiques du jour">
+            <div className="text-center" role="status" aria-live="polite">
+              <div className="text-2xl mb-1" aria-hidden="true" role="img" aria-label="Icône sessions">🎯</div>
+              <div className="text-xl font-bold text-cyan-400" aria-label={`${todayStats.sessionsCount} sessions aujourd'hui`}>
+                {todayStats.sessionsCount}
+              </div>
+              <div className="text-xs text-slate-500">Sessions</div>
+            </div>
+            <div className="text-center" role="status" aria-live="polite">
+              <div className="text-2xl mb-1" aria-hidden="true" role="img" aria-label="Icône temps actif">⏱️</div>
+              <div className="text-xl font-bold text-emerald-400" aria-label={`${Math.floor(todayStats.totalWorkTime / 60)} heures ${todayStats.totalWorkTime % 60} minutes de travail actif`}>
+                {Math.floor(todayStats.totalWorkTime / 60)}h
+                {todayStats.totalWorkTime % 60}
+              </div>
+              <div className="text-xs text-slate-500">Active</div>
+            </div>
+            <div className="text-center" role="status" aria-live="polite">
+              <div className="text-2xl mb-1" aria-hidden="true" role="img" aria-label="Icône pause">☕</div>
+              <div className="text-xl font-bold text-amber-400" aria-label={`${Math.floor(todayStats.totalBreakTime / 60)} heures ${todayStats.totalBreakTime % 60} minutes de pause`}>
+                {Math.floor(todayStats.totalBreakTime / 60)}h
+                {todayStats.totalBreakTime % 60}
+              </div>
+              <div className="text-xs text-slate-500">Break</div>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+TimerComponent.displayName = 'TimerComponent';
+
+export default TimerComponent;
+

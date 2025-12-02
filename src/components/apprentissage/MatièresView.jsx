@@ -3,9 +3,18 @@
  * Gestion des matières avec formulaire d'ajout et liste des matières
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useApprentissageEngine } from '../../hooks/useApprentissageEngine';
 import { useToast } from '../ui/Toast';
+import { recommendationsCache } from '../../utils/apprentissageCache';
+import EmptyState from '../ui/EmptyState';
+import SkeletonLoader from '../ui/SkeletonLoader';
+import Modal from '../ui/Modal';
+import Card from '../ui/Card';
+import Badge from '../ui/Badge';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
+import LazyFile from '../ui/LazyFile';
 
 const MatièresView = () => {
   const {
@@ -18,9 +27,72 @@ const MatièresView = () => {
     getSubjectBadge,
     getXPForNextLevel,
     getCurrentLevelXP,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useApprentissageEngine();
 
   const { showSuccess, showError } = useToast();
+
+  // Raccourcis clavier pour undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignorer si on est dans un input/textarea
+      if (
+        e.target.tagName === 'INPUT' ||
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Ctrl+Z ou Cmd+Z pour undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo) {
+          undo();
+          showSuccess('Action annulée');
+        }
+      }
+      // Ctrl+Y ou Ctrl+Shift+Z pour redo
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        if (canRedo) {
+          redo();
+          showSuccess('Action refaite');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, undo, redo, showSuccess]);
+
+  // Raccourcis clavier pour undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl+Z ou Cmd+Z pour undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo) {
+          undo();
+          showSuccess('Action annulée');
+        }
+      }
+      // Ctrl+Y ou Ctrl+Shift+Z pour redo
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        if (canRedo) {
+          redo();
+          showSuccess('Action refaite');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canUndo, canRedo, undo, redo, showSuccess]);
 
   // État formulaire
   const [newSubject, setNewSubject] = useState({
@@ -28,6 +100,11 @@ const MatièresView = () => {
     files: [],
     summary: '',
   });
+
+  // État recherche et filtres
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterLevel, setFilterLevel] = useState('all'); // 'all', 'novice', 'apprenti', 'etudiant', etc.
+  const [sortBy, setSortBy] = useState('name'); // 'name', 'level', 'xp', 'recent'
 
   // Gestion upload fichiers
   const handleFileUpload = useCallback((event) => {
@@ -69,16 +146,28 @@ const MatièresView = () => {
     [newSubject, subjects, addSubject, showSuccess, showError]
   );
 
+  // État modale suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [subjectToDelete, setSubjectToDelete] = useState(null);
+
   // Supprimer une matière
   const handleDeleteSubject = useCallback(
     (subjectId) => {
-      if (window.confirm('Êtes-vous sûr de vouloir supprimer cette matière ?')) {
-        deleteSubject(subjectId);
-        showSuccess('Matière supprimée');
-      }
+      const subject = subjects.find((s) => s.id === subjectId);
+      setSubjectToDelete(subject);
+      setShowDeleteModal(true);
     },
-    [deleteSubject, showSuccess]
+    [subjects]
   );
+
+  const confirmDeleteSubject = useCallback(() => {
+    if (subjectToDelete) {
+      deleteSubject(subjectToDelete.id);
+      showSuccess('Matière supprimée');
+      setShowDeleteModal(false);
+      setSubjectToDelete(null);
+    }
+  }, [subjectToDelete, deleteSubject, showSuccess]);
 
   // Gestion fichiers supplémentaires
   const handleAdditionalFiles = useCallback((event, subjectId) => {
@@ -87,9 +176,76 @@ const MatièresView = () => {
     console.log('Ajout fichiers supplémentaires pour matière:', subjectId, files);
   }, []);
 
-  // Calculer recommandations d'étude
+  // Filtrer et trier les matières
+  const filteredAndSortedSubjects = useMemo(() => {
+    let filtered = [...subjects];
+
+    // Filtre par recherche
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (subject) =>
+          subject.name.toLowerCase().includes(query) ||
+          subject.summary?.toLowerCase().includes(query)
+      );
+    }
+
+    // Filtre par niveau
+    if (filterLevel !== 'all') {
+      filtered = filtered.filter((subject) => {
+        const progression = getSubjectProgression(subject.name);
+        const level = progression.level;
+        
+        switch (filterLevel) {
+          case 'novice':
+            return level < 3;
+          case 'apprenti':
+            return level >= 3 && level < 5;
+          case 'etudiant':
+            return level >= 5 && level < 8;
+          case 'erudit':
+            return level >= 8 && level < 12;
+          case 'expert':
+            return level >= 12 && level < 20;
+          case 'maitre':
+            return level >= 20;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Trier
+    filtered.sort((a, b) => {
+      const progA = getSubjectProgression(a.name);
+      const progB = getSubjectProgression(b.name);
+
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'level':
+          return progB.level - progA.level;
+        case 'xp':
+          return progB.xp - progA.xp;
+        case 'recent':
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [subjects, searchQuery, filterLevel, sortBy, getSubjectProgression]);
+
+  // Calculer recommandations d'étude (avec cache)
   const recommendations = useMemo(() => {
     if (subjects.length === 0) return { behind: [], urgent: [] };
+
+    // Vérifier le cache d'abord
+    const cached = recommendationsCache.get(subjects);
+    if (cached !== null) {
+      return cached;
+    }
 
     // Calculer niveau moyen
     const levels = subjects.map((s) => {
@@ -113,7 +269,12 @@ const MatièresView = () => {
       return daysSince > 7;
     });
 
-    return { behind, urgent };
+    const result = { behind, urgent };
+    
+    // Mettre en cache
+    recommendationsCache.set(subjects, result);
+    
+    return result;
   }, [subjects, progressionData, getSubjectProgression]);
 
   if (isLoading) {
@@ -138,8 +299,38 @@ const MatièresView = () => {
         </div>
       )}
 
+      {/* Barre d'outils Undo/Redo */}
+      {(canUndo || canRedo) && (
+        <div className="flex items-center justify-end gap-2 mb-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon="↶"
+            iconPosition="left"
+            onClick={undo}
+            disabled={!canUndo}
+            title="Annuler (Ctrl+Z)"
+            aria-label="Annuler la dernière action"
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon="↷"
+            iconPosition="left"
+            onClick={redo}
+            disabled={!canRedo}
+            title="Refaire (Ctrl+Y)"
+            aria-label="Refaire la dernière action annulée"
+          >
+            Refaire
+          </Button>
+        </div>
+      )}
+
       {/* Formulaire d'ajout */}
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-6 shadow-xl shadow-emerald-500/10">
+      <Card variant="highlighted">
         <div className="text-center mb-6">
           <div className="text-3xl mb-2" style={{ filter: 'drop-shadow(0 0 8px rgba(50, 255, 159, 0.5))' }}>
             📚
@@ -201,17 +392,82 @@ const MatièresView = () => {
           <button
             type="submit"
             disabled={!newSubject.name || !newSubject.name.trim()}
-            className="w-full py-3 px-6 bg-gradient-to-r from-slate-900 to-slate-800 border-2 border-emerald-500 rounded-lg text-emerald-400 font-bold uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gradient-to-r hover:from-emerald-500/20 hover:to-cyan-500/20 hover:text-cyan-300 hover:border-cyan-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 transition-all duration-200"
+            aria-label="Initialiser un nouveau protocole d'apprentissage"
+            aria-describedby={!newSubject.name || !newSubject.name.trim() ? 'name-required' : undefined}
+            className="w-full py-3 px-6 bg-gradient-to-r from-slate-900 to-slate-800 border-2 border-emerald-500 rounded-lg text-emerald-400 font-bold uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gradient-to-r hover:from-emerald-500/20 hover:to-cyan-500/20 hover:text-cyan-300 hover:border-cyan-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900"
           >
             ➕ INITIALISER LE PROTOCOLE
           </button>
+          {(!newSubject.name || !newSubject.name.trim()) && (
+            <p id="name-required" className="sr-only">Le nom du protocole est requis</p>
+          )}
         </form>
-      </div>
+      </Card>
+
+      {/* Barre de recherche et filtres */}
+      {subjects.length > 0 && (
+        <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-4 shadow-xl shadow-emerald-500/10">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Recherche */}
+            <div className="flex-1">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="🔍 Rechercher une matière..."
+                className="w-full px-4 py-2 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 placeholder-slate-500 focus:border-cyan-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm"
+                aria-label="Rechercher une matière"
+              />
+            </div>
+
+            {/* Filtre par niveau */}
+            <div className="md:w-48">
+              <select
+                value={filterLevel}
+                onChange={(e) => setFilterLevel(e.target.value)}
+                className="w-full px-4 py-2 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 focus:border-cyan-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm"
+                aria-label="Filtrer par niveau"
+              >
+                <option value="all">Tous les niveaux</option>
+                <option value="novice">🔰 Novice (&lt; 3)</option>
+                <option value="apprenti">📖 Apprenti (3-4)</option>
+                <option value="etudiant">🎒 Étudiant (5-7)</option>
+                <option value="erudit">📜 Érudit (8-11)</option>
+                <option value="expert">🎓 Expert (12-19)</option>
+                <option value="maitre">👑 Maître (20+)</option>
+              </select>
+            </div>
+
+            {/* Tri */}
+            <div className="md:w-48">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-4 py-2 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 focus:border-cyan-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm"
+                aria-label="Trier par"
+              >
+                <option value="name">Nom (A-Z)</option>
+                <option value="level">Niveau (↓)</option>
+                <option value="xp">XP (↓)</option>
+                <option value="recent">Récent</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Compteur résultats */}
+          {filteredAndSortedSubjects.length !== subjects.length && (
+            <div className="mt-3 text-sm text-slate-400">
+              {filteredAndSortedSubjects.length} matière{filteredAndSortedSubjects.length > 1 ? 's' : ''} trouvée{filteredAndSortedSubjects.length > 1 ? 's' : ''} sur {subjects.length}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Liste des matières */}
-      {subjects.length > 0 && (
+      {subjects.length > 0 ? (
         <div className="space-y-4">
-          {subjects.map((subject) => {
+          {filteredAndSortedSubjects.length > 0 ? (
+            filteredAndSortedSubjects.map((subject) => {
             const progression = getSubjectProgression(subject.name);
             const badge = getSubjectBadge(progression.level);
             const nextLevelXP = getXPForNextLevel(progression.level);
@@ -226,8 +482,12 @@ const MatièresView = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3
-                      className="text-xl font-bold uppercase mb-2"
-                      style={{ color: '#32ff9f' }}
+                      className="text-2xl md:text-3xl font-black uppercase mb-3 tracking-tight"
+                      style={{ 
+                        color: '#32ff9f',
+                        textShadow: '0 0 20px rgba(50, 255, 159, 0.5)',
+                        lineHeight: '1.2'
+                      }}
                     >
                       {subject.name || 'PROTOCOLE SANS NOM'}
                     </h3>
@@ -285,7 +545,8 @@ const MatièresView = () => {
                     {/* Bouton supprimer */}
                     <button
                       onClick={() => handleDeleteSubject(subject.id)}
-                      className="px-4 py-2 bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500 rounded-lg text-red-400 hover:bg-red-500/20 hover:border-red-400 hover:scale-105 hover:shadow-lg hover:shadow-red-500/50 transition-all duration-200 font-semibold uppercase text-xs tracking-wide"
+                      className="px-4 py-2 bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500 rounded-lg text-red-400 hover:bg-red-500/20 hover:border-red-400 hover:scale-105 hover:shadow-lg hover:shadow-red-500/50 transition-transform duration-200 font-semibold uppercase text-xs tracking-wide"
+                      style={{ willChange: 'transform' }}
                     >
                       🗑️ SUPPRIMER LE PROTOCOLE
                     </button>
@@ -316,60 +577,20 @@ const MatièresView = () => {
                       ➕ FICHIERS TÉLÉVERSÉS :
                     </div>
                     <div className="space-y-2">
-                      {subject.files.map((file, index) => {
-                        const fileName = file.name || file.fileName || 'UNNAMED ASSET';
-                        const fileExt = fileName.split('.').pop()?.toLowerCase();
-                        const getFileIcon = (ext) => {
-                          if (['odt', 'docx', 'txt', 'md'].includes(ext)) return '📝';
-                          if (['ods', 'xlsx'].includes(ext)) return '📊';
-                          if (ext === 'pdf') return '📄';
-                          return '📎';
-                        };
-
-                        return (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700/50 hover:border-emerald-500/30 transition-all duration-200"
-                          >
-                            <div className="flex items-center gap-3 flex-1">
-                              <span className="text-lg">{getFileIcon(fileExt)}</span>
-                              <div className="flex-1">
-                                <div className="text-sm font-semibold text-slate-200 uppercase">
-                                  {fileName.toUpperCase()}
-                                </div>
-                                {file.size && (
-                                  <div className="text-xs text-slate-500 mt-0.5">
-                                    {(file.size / 1024).toFixed(1)} KB
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {file.url ? (
-                                <a
-                                  href={file.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  download
-                                  className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/50 rounded text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all duration-200 text-xs font-semibold uppercase"
-                                >
-                                  🔍 ACCÉDER
-                                </a>
-                              ) : (
-                                <span className="px-3 py-1.5 text-slate-500 text-xs">
-                                  ⏳ CHARGEMENT...
-                                </span>
-                              )}
-                              <button
-                                className="px-2 py-1.5 bg-red-900/30 border border-red-500/50 rounded text-red-400 hover:bg-red-500/20 hover:border-red-400 transition-all duration-200"
-                                title="SUPPRIMER LE FICHIER"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {subject.files.map((file, index) => (
+                        <LazyFile
+                          key={index}
+                          file={file}
+                          index={index}
+                          onDelete={(fileIndex) => {
+                            // TODO: Implémenter la suppression de fichier
+                            console.log('Supprimer fichier:', fileIndex);
+                          }}
+                          onAccess={() => {
+                            // Tracking d'accès si nécessaire
+                          }}
+                        />
+                      ))}
                     </div>
                   </div>
                 )}
@@ -389,8 +610,27 @@ const MatièresView = () => {
                 </div>
               </div>
             );
-          })}
+            })
+          ) : (
+            <EmptyState
+              icon="🔍"
+              title="Aucun résultat"
+              message={`Aucune matière ne correspond à votre recherche "${searchQuery}" ou au filtre sélectionné.`}
+              actionLabel="Réinitialiser les filtres"
+              onAction={() => {
+                setSearchQuery('');
+                setFilterLevel('all');
+                setSortBy('name');
+              }}
+            />
+          )}
         </div>
+      ) : (
+        <EmptyState
+          icon="📚"
+          title="Aucune matière créée"
+          message="Créez votre première matière pour commencer à suivre votre progression d'apprentissage."
+        />
       )}
 
       {/* Module Recommandations d'Étude */}
@@ -450,17 +690,14 @@ const MatièresView = () => {
                     : 'Jamais';
 
                   return (
-                    <div
-                      key={subject.id}
-                      className="p-3 bg-slate-900/50 rounded-lg border border-red-500/30"
-                    >
-                      <div className="font-semibold text-slate-200">
+                    <Card key={subject.id} variant="danger" className="p-3">
+                      <div className="font-semibold text-slate-200 mb-1">
                         {subject.name}
                       </div>
-                      <div className="text-xs text-slate-400">
+                      <Badge variant="danger" size="sm">
                         Dernière étude: {daysSince === 'Jamais' ? 'Jamais' : `Il y a ${daysSince} jour(s)`}
-                      </div>
-                    </div>
+                      </Badge>
+                    </Card>
                   );
                 })}
               </div>
@@ -468,6 +705,31 @@ const MatièresView = () => {
           )}
         </div>
       )}
+
+      {/* Modale confirmation suppression */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSubjectToDelete(null);
+        }}
+        title="Supprimer la matière ?"
+        variant="danger"
+        onConfirm={confirmDeleteSubject}
+        onCancel={() => {
+          setShowDeleteModal(false);
+          setSubjectToDelete(null);
+        }}
+        confirmLabel="Oui, supprimer"
+        cancelLabel="Annuler"
+      >
+        <p className="text-slate-300 mb-2">
+          Êtes-vous sûr de vouloir supprimer la matière <strong className="text-emerald-400">{subjectToDelete?.name}</strong> ?
+        </p>
+        <p className="text-slate-400 text-sm">
+          Cette action est irréversible. Toutes les données associées (progression, sessions) seront également supprimées.
+        </p>
+      </Modal>
     </div>
   );
 };

@@ -17,6 +17,27 @@ import {
   saveTimerToIndexedDB,
   savePlannerToIndexedDB,
 } from '../utils/apprentissageIndexedDB';
+import {
+  XP_CONFIG,
+  SUBJECT_BADGES,
+  CONTEXTUAL_BADGES,
+  TROPHIES_CONFIG,
+  SESSION_DURATION_THRESHOLDS,
+  TIME_BONUSES,
+} from '../utils/apprentissageConstants';
+import {
+  levelCalculationCache,
+  progressionCache,
+  badgeCache,
+  invalidateSubjectCache,
+  clearAllCaches,
+} from '../utils/apprentissageCache';
+import { handleStorageError, handleValidationError, ERROR_TYPES, ERROR_SEVERITY } from '../utils/apprentissageErrorHandler';
+import { DEBOUNCE_DELAYS } from '../utils/apprentissageConstants';
+import { validateAndParse, SubjectSchema, validateFile } from '../utils/apprentissageValidation';
+import { sanitizeSubject } from '../utils/apprentissageSanitization';
+import { useApprentissageWorker } from './useApprentissageWorker';
+import { useUndoRedo } from './useUndoRedo';
 
 // Clés de stockage
 const STORAGE_KEYS = {
@@ -26,67 +47,6 @@ const STORAGE_KEYS = {
   SESSIONS_HISTORY: 'apprentissage_sessions_history',
   PLANNER: 'apprentissage_planner',
 };
-
-// Configuration XP
-const XP_CONFIG = {
-  session_completed: 30,
-  session_perfect: 45,
-  base_xp_per_minute: 1.2,
-  long_session_bonus: 1.4, // 45min+
-  very_long_session_bonus: 1.8, // 90min+
-  short_session_penalty: 0.8, // <15min
-  early_morning_bonus: 1.2, // 5h-8h
-  late_evening_bonus: 1.1, // 20h-23h
-  weekend_bonus: 1.15,
-  level_formula: (level) => Math.floor(Math.pow(level, 1.8) * 150),
-  streak_multipliers: {
-    3: 1.1,
-    7: 1.2,
-    14: 1.3,
-    30: 1.5,
-  },
-};
-
-// Badges par niveau
-const SUBJECT_BADGES = {
-  1: { icon: '🔰', name: 'Novice', color: '#6b7280' },
-  3: { icon: '📖', name: 'Apprenti', color: '#3b82f6' },
-  5: { icon: '🎒', name: 'Étudiant', color: '#10b981' },
-  8: { icon: '📜', name: 'Érudit', color: '#8b5cf6' },
-  12: { icon: '🎓', name: 'Expert', color: '#f59e0b' },
-  20: { icon: '👑', name: 'Maître', color: '#ef4444' },
-  30: { icon: '⚡', name: 'Légende', color: '#ffd700' },
-  50: { icon: '🌟', name: 'Immortel', color: '#ff1493' },
-};
-
-// Badges contextuels
-const CONTEXTUAL_BADGES = [
-  { id: 'early_study', icon: '🐦', name: 'Lève-tôt', description: '10 sessions avant 7h', condition: 'early_study', threshold: 10 },
-  { id: 'late_study', icon: '🦉', name: 'Hibou de Nuit', description: '10 sessions après 22h', condition: 'late_study', threshold: 10 },
-  { id: 'weekend_study', icon: '⚔️', name: 'Guerrier du Weekend', description: '8 weekends d\'étude', condition: 'weekend_study', threshold: 8 },
-  { id: 'daily_consistency', icon: '👑', name: 'Roi de la Régularité', description: '30 jours consécutifs', condition: 'daily_consistency', threshold: 30 },
-  { id: 'quick_sessions', icon: '💨', name: 'Démon de Vitesse', description: '20 sessions rapides', condition: 'quick_sessions', threshold: 20 },
-  { id: 'long_sessions', icon: '🏃‍♂️', name: 'Marathonien Mental', description: '5 sessions longues', condition: 'long_sessions', threshold: 5 },
-  { id: 'perfect_sessions', icon: '💎', name: 'Perfectionniste', description: '25 sessions parfaites', condition: 'perfect_sessions', threshold: 25 },
-  { id: 'subject_variety', icon: '🧠', name: 'Polymathe', description: '5 matières différentes', condition: 'subject_variety', threshold: 5 },
-];
-
-// Trophées
-const TROPHIES_CONFIG = [
-  { id: 'first_step', icon: '🌟', name: 'Premier Pas', description: 'Première session', type: 'progression', requirement: { type: 'sessions', value: 1 }, xp: 50 },
-  { id: 'bronze_regularity', icon: '🥉', name: 'Régularité Bronze', description: '3 jours consécutifs', type: 'regularity', requirement: { type: 'streak', value: 3 }, xp: 100 },
-  { id: 'silver_regularity', icon: '🥈', name: 'Régularité Argent', description: '7 jours consécutifs', type: 'regularity', requirement: { type: 'streak', value: 7 }, xp: 200 },
-  { id: 'gold_regularity', icon: '🥇', name: 'Régularité Or', description: '30 jours consécutifs', type: 'regularity', requirement: { type: 'streak', value: 30 }, xp: 500 },
-  { id: 'beginner_student', icon: '📚', name: 'Étudiant Débutant', description: '10 heures totales', type: 'progression', requirement: { type: 'totalTime', value: 36000 }, xp: 150 },
-  { id: 'confirmed_student', icon: '🎓', name: 'Étudiant Confirmé', description: '50 heures totales', type: 'progression', requirement: { type: 'totalTime', value: 180000 }, xp: 300 },
-  { id: 'master_student', icon: '👨‍🎓', name: 'Maître Étudiant', description: '100 heures totales', type: 'progression', requirement: { type: 'totalTime', value: 360000 }, xp: 500 },
-  { id: 'specialist', icon: '⭐', name: 'Spécialiste', description: 'Niveau 10 dans une matière', type: 'specialization', requirement: { type: 'subjectLevel', value: 10 }, xp: 400 },
-  { id: 'polymath', icon: '🧠', name: 'Polymathe', description: '5 matières différentes', type: 'specialization', requirement: { type: 'subjectCount', value: 5 }, xp: 300 },
-  { id: 'night_owl', icon: '🦉', name: 'Hibou de Nuit', description: 'Étudier après 22h', type: 'special', requirement: { type: 'late_study', value: 1 }, xp: 100 },
-  { id: 'early_bird', icon: '🐦', name: 'Lève-tôt', description: 'Étudier avant 7h', type: 'special', requirement: { type: 'early_study', value: 1 }, xp: 100 },
-  { id: 'marathon_runner', icon: '🏃‍♂️', name: 'Marathonien', description: 'Session 3h', type: 'special', requirement: { type: 'long_session', value: 10800 }, xp: 200 },
-  { id: 'perfectionist', icon: '💎', name: 'Perfectionniste', description: '20 sessions sans interruption', type: 'special', requirement: { type: 'perfect_sessions', value: 20 }, xp: 250 },
-];
 
 // Fonctions utilitaires
 const loadFromStorage = (key, defaultValue = null) => {
@@ -107,25 +67,38 @@ const saveToStorage = (key, value) => {
   }
 };
 
+// Ces fonctions sont maintenant dans apprentissageCalculations.js
+// On les garde ici pour compatibilité mais on peut utiliser le worker
+import { calculateLevel as syncCalculateLevel, getSubjectBadge as syncGetSubjectBadge } from '../utils/apprentissageCalculations';
+
 const calculateLevel = (xp) => {
-  let level = 1;
-  while (XP_CONFIG.level_formula(level) <= xp) {
-    level++;
+  // Vérifier le cache d'abord
+  const cached = levelCalculationCache.get(xp);
+  if (cached !== null) {
+    return cached;
   }
-  return level - 1;
+
+  // Utiliser la fonction synchrone (fallback si worker indisponible)
+  const result = syncCalculateLevel(xp);
+
+  // Mettre en cache
+  levelCalculationCache.set(xp, result);
+  return result;
 };
 
 const getSubjectBadge = (level) => {
-  const badgeLevels = Object.keys(SUBJECT_BADGES)
-    .map(Number)
-    .sort((a, b) => b - a);
-  
-  for (const badgeLevel of badgeLevels) {
-    if (level >= badgeLevel) {
-      return SUBJECT_BADGES[badgeLevel];
-    }
+  // Vérifier le cache d'abord
+  const cached = badgeCache.get(level);
+  if (cached !== null) {
+    return cached;
   }
-  return SUBJECT_BADGES[1];
+
+  // Utiliser la fonction synchrone (fallback si worker indisponible)
+  const result = syncGetSubjectBadge(level);
+
+  // Mettre en cache
+  badgeCache.set(level, result);
+  return result;
 };
 
 const getXPForNextLevel = (currentLevel) => {
@@ -157,9 +130,38 @@ export const useApprentissageEngine = () => {
     progressionHistory: [],
   });
 
-  // Ref pour débounce sauvegarde
+  // Refs pour débounce sauvegarde
   const saveDebounceRef = useRef(null);
+  const timerSaveDebounceRef = useRef(null);
+  const plannerSaveDebounceRef = useRef(null);
+  const sessionsHistorySaveDebounceRef = useRef(null);
   const userId = 'main'; // TODO: utiliser currentUser.id si authentifié
+
+  // Système undo/redo pour actions destructives
+  const {
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    pushAction,
+    clearHistory,
+  } = useUndoRedo(
+    // onUndo
+    (action) => {
+      if (action.type === 'DELETE_SUBJECT') {
+        setSubjects((prev) => [...prev, action.data.subject]);
+        saveSubjects([...subjects, action.data.subject]);
+      }
+    },
+    // onRedo
+    (action) => {
+      if (action.type === 'DELETE_SUBJECT') {
+        const updatedSubjects = subjects.filter((s) => s.id !== action.data.subjectId);
+        setSubjects(updatedSubjects);
+        saveSubjects(updatedSubjects);
+      }
+    }
+  );
 
   // Migration automatique depuis localStorage vers IndexedDB
   const migrateFromLocalStorage = useCallback(async () => {
@@ -249,12 +251,15 @@ export const useApprentissageEngine = () => {
           setProgressionData(loadedProgression);
         }
       } catch (error) {
-        console.error('[useApprentissageEngine] Erreur chargement:', error);
-        // Fallback localStorage
-        const loadedSubjects = loadFromStorage(STORAGE_KEYS.SUBJECTS, []);
-        const loadedProgression = loadFromStorage(STORAGE_KEYS.PROGRESSION, progressionData);
-        setSubjects(loadedSubjects);
-        setProgressionData(loadedProgression);
+        handleStorageError(error, { operation: 'loadData' }, {
+          severity: ERROR_SEVERITY.HIGH,
+          fallback: () => {
+            const loadedSubjects = loadFromStorage(STORAGE_KEYS.SUBJECTS, []);
+            const loadedProgression = loadFromStorage(STORAGE_KEYS.PROGRESSION, progressionData);
+            setSubjects(loadedSubjects);
+            setProgressionData(loadedProgression);
+          },
+        });
       } finally {
         setIsLoading(false);
       }
@@ -309,13 +314,31 @@ export const useApprentissageEngine = () => {
 
   // Ajouter une matière
   const addSubject = useCallback((subjectData) => {
-    const newSubject = {
-      id: Date.now().toString(),
-      name: subjectData.name.trim(),
+    // Sanitizer les données d'entrée
+    const sanitizedData = sanitizeSubject({
+      name: subjectData.name,
       files: subjectData.files || [],
-      summary: subjectData.summary?.trim() || '',
+      summary: subjectData.summary || '',
+    });
+
+    // Valider avec Zod
+    const validation = validateAndParse(SubjectSchema, {
+      id: Date.now().toString(),
+      name: sanitizedData.name,
+      files: sanitizedData.files,
+      summary: sanitizedData.summary,
       createdAt: Date.now(),
-    };
+    });
+
+    if (!validation.success) {
+      handleValidationError(
+        new Error(validation.errors.map((e) => e.message).join(', ')),
+        { operation: 'addSubject', data: subjectData }
+      );
+      throw new Error('Données de matière invalides');
+    }
+
+    const newSubject = validation.data;
 
     setSubjects((prev) => {
       const updated = [...prev, newSubject];
@@ -361,8 +384,42 @@ export const useApprentissageEngine = () => {
     return newSubject;
   }, []);
 
-  // Supprimer une matière
+  // Supprimer une matière (avec undo/redo)
   const deleteSubject = useCallback((subjectId) => {
+    const subject = subjects.find((s) => s.id === subjectId);
+    if (!subject) return;
+
+    // Sauvegarder l'action pour undo
+    pushAction({
+      type: 'DELETE_SUBJECT',
+      data: {
+        subjectId,
+        subject: { ...subject }, // Copie pour undo
+      },
+      undoFn: (data) => {
+        setSubjects((prev) => {
+          const restored = [...prev, data.subject];
+          // Sauvegarder dans IndexedDB
+          saveSubjectsToIndexedDB(restored, userId).catch(() => {
+            // Fallback localStorage
+            saveToStorage(STORAGE_KEYS.SUBJECTS, restored);
+          });
+          return restored;
+        });
+      },
+      redoFn: (data) => {
+        setSubjects((prev) => {
+          const updated = prev.filter((s) => s.id !== data.subjectId);
+          // Sauvegarder dans IndexedDB
+          saveSubjectsToIndexedDB(updated, userId).catch(() => {
+            // Fallback localStorage
+            saveToStorage(STORAGE_KEYS.SUBJECTS, updated);
+          });
+          return updated;
+        });
+      },
+    });
+
     setSubjects((prev) => {
       const updated = prev.filter((s) => s.id !== subjectId);
       // Sauvegarder dans IndexedDB
@@ -375,20 +432,16 @@ export const useApprentissageEngine = () => {
 
     // Supprimer progression
     setProgressionData((prev) => {
-      const subject = subjects.find((s) => s.id === subjectId);
-      if (subject) {
-        const { [subject.name]: removed, ...rest } = prev.subjects;
-        const updated = { ...prev, subjects: rest };
-        // Sauvegarder dans IndexedDB
-        saveProgressionToIndexedDB(updated, userId).catch(() => {
-          // Fallback localStorage
-          saveToStorage(STORAGE_KEYS.PROGRESSION, updated);
-        });
-        return updated;
-      }
-      return prev;
+      const { [subject.name]: removed, ...rest } = prev.subjects || {};
+      const updated = { ...prev, subjects: rest };
+      // Sauvegarder dans IndexedDB
+      saveProgressionToIndexedDB(updated, userId).catch(() => {
+        // Fallback localStorage
+        saveToStorage(STORAGE_KEYS.PROGRESSION, updated);
+      });
+      return updated;
     });
-  }, [subjects]);
+  }, [subjects, pushAction]);
 
   // Calculer XP de session
   const calculateSessionXP = useCallback((sessionData) => {
@@ -402,15 +455,15 @@ export const useApprentissageEngine = () => {
 
     // Multiplicateurs durée
     const actualWorkTime = sessionData.actualWorkTime || 0;
-    if (actualWorkTime >= 5400) { // 90min+
+    if (actualWorkTime >= SESSION_DURATION_THRESHOLDS.VERY_LONG_SESSION) {
       xp *= XP_CONFIG.very_long_session_bonus; // ×1.8
-    } else if (actualWorkTime >= 2700) { // 45min+
+    } else if (actualWorkTime >= SESSION_DURATION_THRESHOLDS.LONG_SESSION) {
       xp *= XP_CONFIG.long_session_bonus; // ×1.4
-    } else if (actualWorkTime < 900) { // <15min
+    } else if (actualWorkTime < SESSION_DURATION_THRESHOLDS.SHORT_SESSION) {
       xp *= XP_CONFIG.short_session_penalty; // ×0.8
     }
 
-    return Math.max(xp, 8); // Minimum 8 XP
+    return Math.max(xp, XP_CONFIG.min_xp); // Minimum XP
   }, []);
 
   // Ajouter XP avec multiplicateurs
@@ -453,10 +506,10 @@ export const useApprentissageEngine = () => {
       else if (streak >= 3) multiplier *= XP_CONFIG.streak_multipliers[3];
 
       // Bonus horaires
-      if (hour >= 5 && hour < 8) {
+      if (hour >= TIME_BONUSES.EARLY_MORNING_START && hour < TIME_BONUSES.EARLY_MORNING_END) {
         multiplier *= XP_CONFIG.early_morning_bonus;
         subjectData.earlyMorningSessions = (subjectData.earlyMorningSessions || 0) + 1;
-      } else if (hour >= 20 && hour < 23) {
+      } else if (hour >= TIME_BONUSES.LATE_EVENING_START && hour < TIME_BONUSES.LATE_EVENING_END) {
         multiplier *= XP_CONFIG.late_evening_bonus;
         subjectData.lateEveningSessions = (subjectData.lateEveningSessions || 0) + 1;
       }
@@ -469,9 +522,9 @@ export const useApprentissageEngine = () => {
 
       // Catégoriser session
       const actualWorkTime = sessionData?.actualWorkTime || 0;
-      if (actualWorkTime >= 5400) {
+      if (actualWorkTime >= SESSION_DURATION_THRESHOLDS.VERY_LONG_SESSION) {
         subjectData.longSessions = (subjectData.longSessions || 0) + 1;
-      } else if (actualWorkTime < 900) {
+      } else if (actualWorkTime < SESSION_DURATION_THRESHOLDS.SHORT_SESSION) {
         subjectData.quickSessions = (subjectData.quickSessions || 0) + 1;
       }
 
@@ -622,21 +675,101 @@ export const useApprentissageEngine = () => {
         return { level: 1, xp: 0, progress: 0, currentLevelXP: 0, nextLevelXP: 1000 };
       }
 
+      // Vérifier le cache d'abord
+      const cached = progressionCache.get(subjectName, subjectData.xp);
+      if (cached !== null) {
+        return cached;
+      }
+
+      // Calculer la progression
       const level = calculateLevel(subjectData.xp);
       const nextLevelXP = getXPForNextLevel(level);
       const currentLevelXP = getCurrentLevelXP(subjectData.xp, level);
       const progress = nextLevelXP > 0 ? (currentLevelXP / (nextLevelXP - (level > 1 ? XP_CONFIG.level_formula(level) : 0))) * 100 : 0;
 
-      return {
+      const result = {
         level,
         xp: subjectData.xp,
         progress: Math.min(progress, 100),
         currentLevelXP,
         nextLevelXP,
       };
+
+      // Mettre en cache
+      progressionCache.set(subjectName, subjectData.xp, result);
+      return result;
     },
     [progressionData]
   );
+
+  // Fonction de sauvegarde centralisée pour le timer
+  const saveTimer = useCallback(async (timerData) => {
+    if (timerSaveDebounceRef.current) {
+      clearTimeout(timerSaveDebounceRef.current);
+    }
+
+    timerSaveDebounceRef.current = setTimeout(async () => {
+      try {
+        const db = await openApprentissageDB();
+        if (db) {
+          await saveTimerToIndexedDB(db, timerData, userId);
+        } else {
+          // Fallback localStorage
+          saveToStorage(STORAGE_KEYS.TIMER, timerData);
+        }
+      } catch (error) {
+        handleStorageError(error, { type: 'timer', data: timerData });
+        // Fallback localStorage
+        saveToStorage(STORAGE_KEYS.TIMER, timerData);
+      }
+    }, DEBOUNCE_DELAYS.SAVE);
+  }, [userId]);
+
+  // Fonction de sauvegarde centralisée pour le planificateur
+  const savePlanner = useCallback(async (plannerData) => {
+    if (plannerSaveDebounceRef.current) {
+      clearTimeout(plannerSaveDebounceRef.current);
+    }
+
+    plannerSaveDebounceRef.current = setTimeout(async () => {
+      try {
+        const db = await openApprentissageDB();
+        if (db) {
+          await savePlannerToIndexedDB(db, plannerData, userId);
+        } else {
+          // Fallback localStorage
+          saveToStorage(STORAGE_KEYS.PLANNER, plannerData);
+        }
+      } catch (error) {
+        handleStorageError(error, { type: 'planner', data: plannerData });
+        // Fallback localStorage
+        saveToStorage(STORAGE_KEYS.PLANNER, plannerData);
+      }
+    }, DEBOUNCE_DELAYS.SAVE);
+  }, [userId]);
+
+  // Fonction de sauvegarde centralisée pour l'historique des sessions
+  const saveSessionsHistory = useCallback(async (sessionsData) => {
+    if (sessionsHistorySaveDebounceRef.current) {
+      clearTimeout(sessionsHistorySaveDebounceRef.current);
+    }
+
+    sessionsHistorySaveDebounceRef.current = setTimeout(async () => {
+      try {
+        const db = await openApprentissageDB();
+        if (db) {
+          await saveSessionsHistoryToIndexedDB(db, sessionsData, userId);
+        } else {
+          // Fallback localStorage
+          saveToStorage(STORAGE_KEYS.SESSIONS_HISTORY, sessionsData);
+        }
+      } catch (error) {
+        handleStorageError(error, { type: 'sessions_history', data: sessionsData });
+        // Fallback localStorage
+        saveToStorage(STORAGE_KEYS.SESSIONS_HISTORY, sessionsData);
+      }
+    }, DEBOUNCE_DELAYS.SAVE);
+  }, [userId]);
 
   return {
     // État
@@ -658,10 +791,25 @@ export const useApprentissageEngine = () => {
     calculateLevel,
     getXPForNextLevel,
     getCurrentLevelXP,
+    
+    // Fonctions de sauvegarde centralisées
+    saveTimer,
+    savePlanner,
+    saveSessionsHistory,
+    
+    // Exports des constantes (pour compatibilité)
     XP_CONFIG,
     SUBJECT_BADGES,
     CONTEXTUAL_BADGES,
     TROPHIES_CONFIG,
+    
+    // Undo/Redo
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    pushAction,
+    clearHistory,
   };
 };
 

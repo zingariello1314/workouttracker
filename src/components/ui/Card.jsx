@@ -1,119 +1,93 @@
+/**
+ * Composant Card - Carte réutilisable avec variants
+ * Améliore la cohérence visuelle et la maintenabilité
+ */
+
 import React from 'react';
 
-const Card = ({ 
-  children, 
-  className = '', 
-  padding = 'md',
-  shadow = 'md',
-  rounded = 'lg',
-  border = true,
+const Card = ({
+  children,
+  variant = 'default', // 'default', 'highlighted', 'success', 'warning', 'danger'
   hover = false,
-  gradient = false,
-  variant = 'default', // 'default' | 'glass'
-  ...props 
+  className = '',
+  onClick,
+  ...props
 }) => {
-  const paddings = {
-    none: '',
-    xs: 'p-2',
-    sm: 'p-3',
-    md: 'p-4',
-    lg: 'p-6',
-    xl: 'p-8'
+  const variantStyles = {
+    default: 'bg-slate-800/50 border border-slate-700/50',
+    highlighted: 'bg-slate-800/70 border border-emerald-500/30 shadow-xl shadow-emerald-500/10',
+    success: 'bg-emerald-500/10 border border-emerald-500/30',
+    warning: 'bg-amber-500/10 border border-amber-500/30',
+    danger: 'bg-red-500/10 border border-red-500/30',
   };
 
-  const shadows = {
-    none: '',
-    sm: 'shadow-sm',
-    md: 'shadow-md',
-    lg: 'shadow-lg',
-    xl: 'shadow-xl',
-    '2xl': 'shadow-2xl'
-  };
-
-  const roundeds = {
-    none: '',
-    sm: 'rounded-sm',
-    md: 'rounded-md',
-    lg: 'rounded-lg',
-    xl: 'rounded-xl',
-    '2xl': 'rounded-2xl'
-  };
-
-  // Style "liquid glass" iOS 2025 - utilise les classes CSS personnalisées
-  const glassClasses = 'books-glass-card';
-  
-  const baseClasses = variant === 'glass'
-    ? glassClasses
-    : gradient 
-    ? 'bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl text-white'
-    : 'bg-slate-800/90 backdrop-blur-xl text-white';
-    
-  const borderClasses = variant === 'glass' ? '' : (border ? 'border border-slate-700/50' : '');
-  const hoverClasses = variant === 'glass' 
-    ? '' 
-    : (hover ? 'hover:bg-slate-800/95 hover:shadow-2xl hover:backdrop-blur-2xl transition-all duration-300 cursor-pointer' : '');
-
-  const classes = `
-    ${baseClasses} 
-    ${paddings[padding]} 
-    ${shadows[shadow]} 
-    ${roundeds[rounded]} 
-    ${borderClasses} 
-    ${hoverClasses} 
-    ${className}
-  `.trim().replace(/\s+/g, ' ');
+  const hoverStyles = hover || onClick
+    ? 'hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/20 transition-all duration-200 cursor-pointer'
+    : '';
 
   return (
-    <div className={classes} {...props}>
+    <div
+      className={`backdrop-blur-sm rounded-xl p-4 md:p-6 ${variantStyles[variant]} ${hoverStyles} ${className}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick(e);
+        }
+      } : undefined}
+      {...props}
+    >
       {children}
     </div>
   );
 };
 
-// Sous-composants pour une meilleure structure
+// Composants de structure pour Card
 const CardHeader = ({ children, className = '', ...props }) => {
-  // Détecter si le parent Card a variant="glass" via le contexte visuel
-  // Pour simplifier, on utilise une classe CSS qui s'adapte automatiquement
   return (
-    <div className={`border-b border-white/10 dark:border-slate-700/50 pb-4 mb-4 ${className}`} {...props}>
-    {children}
-  </div>
-);
+    <div
+      className={`px-4 md:px-6 py-4 border-b border-slate-700/50 ${className}`}
+      {...props}
+    >
+      {children}
+    </div>
+  );
 };
 
-const CardTitle = ({ children, className = '', size = 'lg', ...props }) => {
-  const sizes = {
-    sm: 'text-lg',
-    md: 'text-xl',
-    lg: 'text-2xl',
-    xl: 'text-3xl'
-  };
-  
+const CardTitle = ({ children, className = '', ...props }) => {
   return (
-    <h3 className={`font-bold text-white ${sizes[size]} ${className}`} {...props}>
+    <h3
+      className={`text-lg md:text-xl font-bold text-emerald-400 uppercase tracking-wide ${className}`}
+      {...props}
+    >
       {children}
     </h3>
   );
 };
 
-const CardContent = ({ children, className = '', ...props }) => (
-  <div className={`text-slate-300 ${className}`} {...props}>
-    {children}
-  </div>
-);
+const CardContent = ({ children, className = '', ...props }) => {
+  return (
+    <div
+      className={`px-4 md:px-6 py-4 ${className}`}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
 
 const CardFooter = ({ children, className = '', ...props }) => {
   return (
-    <div className={`border-t border-white/10 dark:border-slate-700/50 pt-4 mt-4 ${className}`} {...props}>
-    {children}
-  </div>
-);
+    <div
+      className={`px-4 md:px-6 py-4 border-t border-slate-700/50 ${className}`}
+      {...props}
+    >
+      {children}
+    </div>
+  );
 };
 
-Card.Header = CardHeader;
-Card.Title = CardTitle;
-Card.Content = CardContent;
-Card.Footer = CardFooter;
-
 export default Card;
-export { CardHeader, CardTitle, CardContent, CardFooter };
+export { Card, CardHeader, CardTitle, CardContent, CardFooter };

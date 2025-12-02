@@ -1,244 +1,246 @@
-import React, { forwardRef } from 'react';
-import { AlertCircle } from 'lucide-react';
-import { buildInputClasses, buildLabelClasses, errorStyles, helpStyles, inputStyles, labelStyles } from '../../styles/input';
+/**
+ * Composant Input - Champ de saisie réutilisable
+ * Améliore la cohérence et l'accessibilité
+ */
 
-const Input = forwardRef(({
+import React from 'react';
+
+const Input = ({
   label,
   error,
-  help,
-  required = false,
-  optional = false,
-  variant = 'primary',
-  size = 'md',
+  helperText,
+  icon,
+  iconPosition = 'left',
+  variant = 'default', // 'default', 'search', 'file'
+  size = 'md', // 'sm', 'md', 'lg'
+  fullWidth = true,
   className = '',
-  containerClassName = '',
-  labelClassName = '',
   ...props
-}, ref) => {
-  const inputClasses = variant === 'glass'
-    ? `books-glass-input ${inputStyles.sizes[size]} ${props.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${error ? 'border-red-500' : ''} ${className}`
-    : buildInputClasses({
-        variant,
-        size,
-        disabled: props.disabled,
-        readonly: props.readOnly,
-        error: !!error,
-        className
-      });
+}) => {
+  const sizeStyles = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 md:py-3 text-base',
+    lg: 'px-5 py-3 md:py-4 text-lg',
+  };
 
-  const labelClasses = variant === 'glass'
-    ? `books-glass-label ${labelStyles.base} ${required ? labelStyles.required : ''} ${optional ? labelStyles.optional : ''} ${labelClassName}`
-    : buildLabelClasses({
-        required,
-        optional,
-        className: labelClassName
-      });
+  const baseStyles = 'w-full bg-black/30 border-2 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm';
+
+  const borderStyles = error
+    ? 'border-red-500/50 focus:border-red-400'
+    : 'border-emerald-500/50 focus:border-cyan-400 focus:bg-emerald-500/5';
+
+  const inputId = props.id || `input-${Math.random().toString(36).substring(2, 9)}`;
 
   return (
-    <div className={`space-y-2 ${containerClassName}`}>
+    <div className={fullWidth ? 'w-full' : ''}>
       {label && (
-        <label htmlFor={props.id} className={labelClasses}>
+        <label
+          htmlFor={inputId}
+          className="block text-sm font-semibold text-slate-300 mb-2"
+        >
           {label}
+          {props.required && <span className="text-red-400 ml-1" aria-label="requis">*</span>}
         </label>
       )}
-      
-      <input
-        ref={ref}
-        className={inputClasses}
-        {...props}
-      />
-      
+      <div className="relative">
+        {icon && iconPosition === 'left' && (
+          <span
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            aria-hidden="true"
+          >
+            {icon}
+          </span>
+        )}
+        <input
+          id={inputId}
+          className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${icon && iconPosition === 'left' ? 'pl-10' : ''} ${icon && iconPosition === 'right' ? 'pr-10' : ''} ${className}`}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+          {...props}
+        />
+        {icon && iconPosition === 'right' && (
+          <span
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            aria-hidden="true"
+          >
+            {icon}
+          </span>
+        )}
+      </div>
       {error && (
-        <div className={errorStyles.base}>
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
+        <p id={`${inputId}-error`} className="mt-1 text-sm text-red-400" role="alert">
+          {error}
+        </p>
       )}
-      
-      {help && !error && (
-        <div className={helpStyles.base}>
-          {help}
-        </div>
+      {helperText && !error && (
+        <p id={`${inputId}-helper`} className="mt-1 text-sm text-slate-400">
+          {helperText}
+        </p>
       )}
     </div>
   );
-});
+};
 
-Input.displayName = 'Input';
-
-// Composant TextArea avec les mêmes styles
-const TextArea = forwardRef(({
+// Composant TextArea
+const TextArea = ({
   label,
   error,
-  help,
-  required = false,
-  optional = false,
-  variant = 'primary',
+  helperText,
   size = 'md',
-  rows = 4,
+  fullWidth = true,
   className = '',
-  containerClassName = '',
-  labelClassName = '',
   ...props
-}, ref) => {
-  const inputClasses = variant === 'glass' 
-    ? `books-glass-textarea w-full px-4 py-3 ${inputStyles.sizes[size]} ${props.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${error ? 'border-red-500' : ''} ${className}`
-    : buildInputClasses({
-        variant,
-        size,
-        disabled: props.disabled,
-        readonly: props.readOnly,
-        error: !!error,
-        className: `resize-none ${className}`
-      });
+}) => {
+  const sizeStyles = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 md:py-3 text-base',
+    lg: 'px-5 py-3 md:py-4 text-lg',
+  };
 
-  const labelClasses = buildLabelClasses({
-    required,
-    optional,
-    className: labelClassName
-  });
+  const baseStyles = 'w-full bg-black/30 border-2 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm resize-y';
+
+  const borderStyles = error
+    ? 'border-red-500/50 focus:border-red-400'
+    : 'border-emerald-500/50 focus:border-cyan-400 focus:bg-emerald-500/5';
+
+  const textAreaId = props.id || `textarea-${Math.random().toString(36).substring(2, 9)}`;
 
   return (
-    <div className={`space-y-2 ${containerClassName}`}>
+    <div className={fullWidth ? 'w-full' : ''}>
       {label && (
-        <label htmlFor={props.id} className={labelClasses}>
+        <label
+          htmlFor={textAreaId}
+          className="block text-sm font-semibold text-slate-300 mb-2"
+        >
           {label}
+          {props.required && <span className="text-red-400 ml-1" aria-label="requis">*</span>}
         </label>
       )}
-      
       <textarea
-        ref={ref}
-        rows={rows}
-        className={inputClasses}
+        id={textAreaId}
+        className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${className}`}
+        aria-invalid={error ? 'true' : 'false'}
+        aria-describedby={error ? `${textAreaId}-error` : helperText ? `${textAreaId}-helper` : undefined}
         {...props}
       />
-      
       {error && (
-        <div className={errorStyles.base}>
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
+        <p id={`${textAreaId}-error`} className="mt-1 text-sm text-red-400" role="alert">
+          {error}
+        </p>
       )}
-      
-      {help && !error && (
-        <div className={helpStyles.base}>
-          {help}
-        </div>
+      {helperText && !error && (
+        <p id={`${textAreaId}-helper`} className="mt-1 text-sm text-slate-400">
+          {helperText}
+        </p>
       )}
     </div>
   );
-});
+};
 
-TextArea.displayName = 'TextArea';
-
-// Composant Select avec les mêmes styles
-const Select = forwardRef(({
+// Composant Select
+const Select = ({
   label,
   error,
-  help,
-  required = false,
-  optional = false,
-  variant = 'primary',
+  helperText,
   size = 'md',
-  children,
+  fullWidth = true,
   className = '',
-  containerClassName = '',
-  labelClassName = '',
+  children,
   ...props
-}, ref) => {
-  const inputClasses = variant === 'glass'
-    ? `books-glass-select w-full px-4 py-3 ${inputStyles.sizes[size]} ${props.disabled ? 'opacity-50 cursor-not-allowed' : ''} ${error ? 'border-red-500' : ''} ${className}`
-    : buildInputClasses({
-        variant,
-        size,
-        disabled: props.disabled,
-        error: !!error,
-        className
-      });
+}) => {
+  const sizeStyles = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 md:py-3 text-base',
+    lg: 'px-5 py-3 md:py-4 text-lg',
+  };
 
-  const labelClasses = buildLabelClasses({
-    required,
-    optional,
-    className: labelClassName
-  });
+  const baseStyles = 'w-full bg-black/30 border-2 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm';
+
+  const borderStyles = error
+    ? 'border-red-500/50 focus:border-red-400'
+    : 'border-emerald-500/50 focus:border-cyan-400 focus:bg-emerald-500/5';
+
+  const selectId = props.id || `select-${Math.random().toString(36).substring(2, 9)}`;
 
   return (
-    <div className={`space-y-2 ${containerClassName}`}>
+    <div className={fullWidth ? 'w-full' : ''}>
       {label && (
-        <label htmlFor={props.id} className={labelClasses}>
+        <label
+          htmlFor={selectId}
+          className="block text-sm font-semibold text-slate-300 mb-2"
+        >
           {label}
+          {props.required && <span className="text-red-400 ml-1" aria-label="requis">*</span>}
         </label>
       )}
-      
       <select
-        ref={ref}
-        className={inputClasses}
+        id={selectId}
+        className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${className}`}
+        aria-invalid={error ? 'true' : 'false'}
+        aria-describedby={error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined}
         {...props}
       >
         {children}
       </select>
-      
       {error && (
-        <div className={errorStyles.base}>
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
+        <p id={`${selectId}-error`} className="mt-1 text-sm text-red-400" role="alert">
+          {error}
+        </p>
       )}
-      
-      {help && !error && (
-        <div className={helpStyles.base}>
-          {help}
-        </div>
+      {helperText && !error && (
+        <p id={`${selectId}-helper`} className="mt-1 text-sm text-slate-400">
+          {helperText}
+        </p>
       )}
     </div>
   );
-});
+};
 
-Select.displayName = 'Select';
-
-// Composant Checkbox avec les mêmes styles
-const Checkbox = forwardRef(({
+// Composant Checkbox
+const Checkbox = ({
   label,
   error,
-  help,
+  helperText,
+  fullWidth = false,
   className = '',
-  containerClassName = '',
-  labelClassName = '',
   ...props
-}, ref) => {
+}) => {
+  const checkboxId = props.id || `checkbox-${Math.random().toString(36).substring(2, 9)}`;
+
   return (
-    <div className={`space-y-2 ${containerClassName}`}>
-      <div className="flex items-center space-x-3">
+    <div className={fullWidth ? 'w-full' : ''}>
+      <div className="flex items-center gap-2">
         <input
-          ref={ref}
           type="checkbox"
-          className={`w-5 h-5 text-blue-600 bg-slate-700 border-slate-500 rounded focus:ring-blue-500 focus:ring-2 transition-all duration-200 ${className}`}
+          id={checkboxId}
+          className={`w-4 h-4 bg-black/30 border-2 border-emerald-500/50 rounded text-emerald-400 focus:ring-2 focus:ring-emerald-500/50 focus:outline-none transition-all duration-200 ${error ? 'border-red-500/50' : ''} ${className}`}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={error ? `${checkboxId}-error` : helperText ? `${checkboxId}-helper` : undefined}
           {...props}
         />
         {label && (
-          <label htmlFor={props.id} className={`text-sm font-medium text-slate-300 cursor-pointer ${labelClassName}`}>
+          <label
+            htmlFor={checkboxId}
+            className="text-sm font-semibold text-slate-300 cursor-pointer"
+          >
             {label}
+            {props.required && <span className="text-red-400 ml-1" aria-label="requis">*</span>}
           </label>
         )}
       </div>
-      
       {error && (
-        <div className={errorStyles.base}>
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
+        <p id={`${checkboxId}-error`} className="mt-1 text-sm text-red-400" role="alert">
+          {error}
+        </p>
       )}
-      
-      {help && !error && (
-        <div className={helpStyles.base}>
-          {help}
-        </div>
+      {helperText && !error && (
+        <p id={`${checkboxId}-helper`} className="mt-1 text-sm text-slate-400">
+          {helperText}
+        </p>
       )}
     </div>
   );
-});
+};
 
-Checkbox.displayName = 'Checkbox';
-
-export { Input, TextArea, Select, Checkbox };
 export default Input;
+export { Input, TextArea, Select, Checkbox };

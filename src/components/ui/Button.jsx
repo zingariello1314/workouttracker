@@ -1,63 +1,68 @@
+/**
+ * Composant Button - Bouton réutilisable avec variants
+ * Améliore la cohérence et la maintenabilité
+ */
+
 import React from 'react';
 
-const Button = ({ 
-  children, 
-  onClick, 
-  variant = 'primary', 
-  size = 'md', 
-  disabled = false, 
-  className = '',
-  icon: Icon,
+const Button = ({
+  children,
+  variant = 'primary', // 'primary', 'secondary', 'danger', 'success', 'ghost'
+  size = 'md', // 'sm', 'md', 'lg'
+  disabled = false,
   loading = false,
-  ...props 
+  icon,
+  iconPosition = 'left', // 'left', 'right'
+  fullWidth = false,
+  className = '',
+  onClick,
+  type = 'button',
+  as,
+  ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-sm hover:shadow-md active:scale-95';
-  
-  const variants = {
-    primary: 'bg-purple-600/90 backdrop-blur-sm hover:bg-purple-700/90 text-white focus:ring-purple-500 shadow-purple-500/25 border border-purple-500/20',
-    secondary: 'bg-blue-600/90 backdrop-blur-sm hover:bg-blue-700/90 text-white focus:ring-blue-500 shadow-blue-500/25 border border-blue-500/20',
-    success: 'bg-green-600/90 backdrop-blur-sm hover:bg-green-700/90 text-white focus:ring-green-500 shadow-green-500/25 border border-green-500/20',
-    danger: 'bg-red-600/90 backdrop-blur-sm hover:bg-red-700/90 text-white focus:ring-red-500 shadow-red-500/25 border border-red-500/20',
-    warning: 'bg-yellow-600/90 backdrop-blur-sm hover:bg-yellow-700/90 text-white focus:ring-yellow-500 shadow-yellow-500/25 border border-yellow-500/20',
-    outline: 'border-2 border-purple-600/60 backdrop-blur-sm text-purple-400 hover:bg-purple-600/20 hover:text-white focus:ring-purple-500 bg-transparent',
-    ghost: 'text-slate-300 hover:bg-slate-700/50 hover:text-white focus:ring-slate-500 bg-transparent shadow-none hover:shadow-sm backdrop-blur-sm',
-    glass: 'books-glass-button'
+  const Component = as || 'button';
+  const variantStyles = {
+    primary: 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-emerald-500 text-emerald-400 hover:from-emerald-500/30 hover:to-cyan-500/30 hover:border-cyan-400 hover:shadow-lg hover:shadow-emerald-500/40',
+    secondary: 'bg-slate-800/50 border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500',
+    danger: 'bg-red-900/30 border-red-500 text-red-400 hover:bg-red-500/20 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/40',
+    success: 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/40',
+    ghost: 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30',
   };
-  
-  const sizes = {
-    xs: 'px-2 py-1 text-xs',
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
-    xl: 'px-8 py-4 text-lg'
+
+  const sizeStyles = {
+    sm: 'px-3 py-1.5 text-xs min-h-[32px]',
+    md: 'px-4 py-2 md:px-6 md:py-3 text-sm md:text-base min-h-[44px]',
+    lg: 'px-6 py-3 md:px-8 md:py-4 text-base md:text-lg min-h-[52px]',
   };
-  
-  const iconSizes = {
-    xs: 'w-3 h-3',
-    sm: 'w-4 h-4',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5',
-    xl: 'w-6 h-6'
-  };
-  
-  const disabledClasses = disabled || loading ? 'opacity-50 cursor-not-allowed hover:scale-100 active:scale-100' : '';
-  
-  const classes = `${baseClasses} ${variants[variant]} ${sizes[size]} ${disabledClasses} ${className}`;
-  
+
+  const baseStyles = 'inline-flex items-center justify-center gap-2 border-2 rounded-lg font-semibold uppercase tracking-wide transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed';
+
+  const hoverStyles = !disabled && !loading
+    ? 'hover:-translate-y-0.5 active:translate-y-0'
+    : '';
+
   return (
-    <button
-      className={classes}
-      onClick={onClick}
+    <Component
+      type={as ? undefined : type}
       disabled={disabled || loading}
+      onClick={onClick}
+      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${fullWidth ? 'w-full' : ''} ${hoverStyles} ${className}`}
+      style={{ willChange: 'transform' }}
       {...props}
     >
       {loading ? (
-        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+        <>
+          <span className="animate-spin" aria-hidden="true">⏳</span>
+          <span>Chargement...</span>
+        </>
       ) : (
-        Icon && <Icon className={`${iconSizes[size]} ${children ? 'mr-2' : ''}`} />
+        <>
+          {icon && iconPosition === 'left' && <span aria-hidden="true">{icon}</span>}
+          {children}
+          {icon && iconPosition === 'right' && <span aria-hidden="true">{icon}</span>}
+        </>
       )}
-      {children}
-    </button>
+    </Component>
   );
 };
 

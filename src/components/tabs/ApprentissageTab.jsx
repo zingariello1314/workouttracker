@@ -3,11 +3,23 @@
  * Système de gestion de l'apprentissage avec 3 sous-onglets : Matières, Sessions, Trophées
  */
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useTranslation } from '../../utils/translations';
-import MatièresView from '../apprentissage/MatièresView';
-import SessionsView from '../apprentissage/SessionsView';
-import TrophéesView from '../apprentissage/TrophéesView';
+
+// Code splitting : Lazy load des vues pour améliorer les performances initiales
+const MatièresView = lazy(() => import('../apprentissage/MatièresView'));
+const SessionsView = lazy(() => import('../apprentissage/SessionsView'));
+const TrophéesView = lazy(() => import('../apprentissage/TrophéesView'));
+
+// Composant de chargement
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <div className="text-4xl mb-4 animate-spin">⚡</div>
+      <div className="text-slate-400 font-semibold uppercase tracking-wide">CHARGEMENT...</div>
+    </div>
+  </div>
+);
 
 const ApprentissageTab = () => {
   const t = useTranslation();
@@ -69,7 +81,9 @@ const ApprentissageTab = () => {
 
       {/* Contenu du sous-onglet */}
       <div className="py-6">
-        {renderSubView()}
+        <Suspense fallback={<LoadingFallback />}>
+          {renderSubView()}
+        </Suspense>
       </div>
     </div>
   );

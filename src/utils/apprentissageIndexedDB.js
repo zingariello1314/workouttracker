@@ -2,7 +2,10 @@
  * Stockage avancé Apprentissage dans IndexedDB (WorkoutTrackerDB)
  * Implémentation alignée sur quietQuestIndexedDB.js et useWorkoutData.openDB
  * Fallback automatique vers localStorage si IndexedDB indisponible
+ * Avec retry automatique et transactions atomiques
  */
+
+import { retryIndexedDB } from './apprentissageRetry';
 
 const DB_NAME = 'WorkoutTrackerDB';
 
@@ -31,39 +34,113 @@ export const openApprentissageDB = () => {
 
       // Store subjects
       if (!db.objectStoreNames.contains(STORE_SUBJECTS)) {
+        console.log('[apprentissageIndexedDB] Création du store "apprentissage_subjects"');
         const store = db.createObjectStore(STORE_SUBJECTS, { keyPath: 'id' });
-        store.createIndex('name', 'name', { unique: false });
-        store.createIndex('createdAt', 'createdAt', { unique: false });
+        try {
+          store.createIndex('name', 'name', { unique: false });
+          store.createIndex('createdAt', 'createdAt', { unique: false });
+        } catch (e) {
+          // Index non critique
+        }
       }
 
       // Store progression
       if (!db.objectStoreNames.contains(STORE_PROGRESSION)) {
-        const store = db.createObjectStore(STORE_PROGRESSION, { keyPath: 'userId' });
-        // Pas d'index nécessaire (store unique par utilisateur)
+        console.log('[apprentissageIndexedDB] Création du store "apprentissage_progression"');
+        db.createObjectStore(STORE_PROGRESSION, { keyPath: 'userId' });
       }
 
       // Store sessions history
       if (!db.objectStoreNames.contains(STORE_SESSIONS_HISTORY)) {
+        console.log('[apprentissageIndexedDB] Création du store "apprentissage_sessions_history"');
         const store = db.createObjectStore(STORE_SESSIONS_HISTORY, { keyPath: 'id', autoIncrement: true });
-        store.createIndex('subject', 'subject', { unique: false });
-        store.createIndex('startTime', 'startTime', { unique: false });
-        store.createIndex('type', 'type', { unique: false });
-        store.createIndex('userId', 'userId', { unique: false });
+        try {
+          store.createIndex('subject', 'subject', { unique: false });
+          store.createIndex('startTime', 'startTime', { unique: false });
+          store.createIndex('type', 'type', { unique: false });
+          store.createIndex('userId', 'userId', { unique: false });
+        } catch (e) {
+          // Index non critique
+        }
       }
 
       // Store planner
       if (!db.objectStoreNames.contains(STORE_PLANNER)) {
-        const store = db.createObjectStore(STORE_PLANNER, { keyPath: 'userId' });
+        console.log('[apprentissageIndexedDB] Création du store "apprentissage_planner"');
+        db.createObjectStore(STORE_PLANNER, { keyPath: 'userId' });
       }
 
       // Store timer
       if (!db.objectStoreNames.contains(STORE_TIMER)) {
-        const store = db.createObjectStore(STORE_TIMER, { keyPath: 'userId' });
+        console.log('[apprentissageIndexedDB] Création du store "apprentissage_timer"');
+        db.createObjectStore(STORE_TIMER, { keyPath: 'userId' });
       }
     };
 
     request.onsuccess = (event) => {
-      resolve(event.target.result);
+      const db = event.target.result;
+      
+      // Vérifier que tous les stores existent
+      const requiredStores = [
+        STORE_SUBJECTS,
+        STORE_PROGRESSION,
+        STORE_SESSIONS_HISTORY,
+        STORE_PLANNER,
+        STORE_TIMER,
+      ];
+      const missingStores = requiredStores.filter(
+        (name) => !db.objectStoreNames.contains(name)
+      );
+
+      if (missingStores.length > 0) {
+        console.warn(
+          `[apprentissageIndexedDB] ⚠️ Stores manquants: ${missingStores.join(', ')}. Forcer upgrade...`
+        );
+        const currentVersion = db.version;
+        db.close();
+        const upgradeRequest = indexedDB.open(DB_NAME, currentVersion + 1);
+        
+        upgradeRequest.onupgradeneeded = (e) => {
+          const upgradeDb = e.target.result;
+          // Recréer les stores manquants
+          missingStores.forEach((storeName) => {
+            if (!upgradeDb.objectStoreNames.contains(storeName)) {
+              if (storeName === STORE_SUBJECTS) {
+                const store = upgradeDb.createObjectStore(STORE_SUBJECTS, { keyPath: 'id' });
+                try {
+                  store.createIndex('name', 'name', { unique: false });
+                  store.createIndex('createdAt', 'createdAt', { unique: false });
+                } catch {}
+              } else if (storeName === STORE_PROGRESSION) {
+                upgradeDb.createObjectStore(STORE_PROGRESSION, { keyPath: 'userId' });
+              } else if (storeName === STORE_SESSIONS_HISTORY) {
+                const store = upgradeDb.createObjectStore(STORE_SESSIONS_HISTORY, { keyPath: 'id', autoIncrement: true });
+                try {
+                  store.createIndex('subject', 'subject', { unique: false });
+                  store.createIndex('startTime', 'startTime', { unique: false });
+                  store.createIndex('type', 'type', { unique: false });
+                  store.createIndex('userId', 'userId', { unique: false });
+                } catch {}
+              } else if (storeName === STORE_PLANNER) {
+                upgradeDb.createObjectStore(STORE_PLANNER, { keyPath: 'userId' });
+              } else if (storeName === STORE_TIMER) {
+                upgradeDb.createObjectStore(STORE_TIMER, { keyPath: 'userId' });
+              }
+            }
+          });
+        };
+        
+        upgradeRequest.onsuccess = (e) => {
+          resolve(e.target.result);
+        };
+        
+        upgradeRequest.onerror = () => {
+          console.warn('[apprentissageIndexedDB] Erreur lors de l\'upgrade, fallback localStorage');
+          resolve(null);
+        };
+      } else {
+        resolve(db);
+      }
     };
 
     request.onerror = () => {
@@ -95,38 +172,53 @@ export const loadSubjectsFromIndexedDB = async (db, userId = 'main') => {
 };
 
 /**
- * Sauvegarde les matières dans IndexedDB
+ * Sauvegarde les matières dans IndexedDB (avec retry et transaction atomique)
  */
 export const saveSubjectsToIndexedDB = async (db, subjects, userId = 'main') => {
   if (!db) return;
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_SUBJECTS], 'readwrite');
-    const store = transaction.objectStore(STORE_SUBJECTS);
+  return retryIndexedDB(async () => {
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_SUBJECTS], 'readwrite');
+      const store = transaction.objectStore(STORE_SUBJECTS);
 
-    // Vider le store puis ajouter toutes les matières
-    store.clear().onsuccess = () => {
-      let completed = 0;
-      const total = subjects.length;
+      // Gérer les erreurs de transaction
+      transaction.onerror = () => {
+        reject(new Error('Erreur transaction IndexedDB'));
+      };
 
-      if (total === 0) {
+      transaction.oncomplete = () => {
         resolve();
-        return;
-      }
+      };
 
-      subjects.forEach((subject) => {
-        const request = store.add(subject);
-        request.onsuccess = () => {
-          completed++;
-          if (completed === total) {
-            resolve();
-          }
-        };
-        request.onerror = () => {
-          reject(new Error(`Erreur lors de la sauvegarde de la matière ${subject.id}`));
-        };
-      });
-    };
+      // Vider le store puis ajouter toutes les matières
+      store.clear().onsuccess = () => {
+        let completed = 0;
+        const total = subjects.length;
+
+        if (total === 0) {
+          resolve();
+          return;
+        }
+
+        subjects.forEach((subject) => {
+          const request = store.add(subject);
+          request.onsuccess = () => {
+            completed++;
+            if (completed === total) {
+              resolve();
+            }
+          };
+          request.onerror = () => {
+            reject(new Error(`Erreur lors de la sauvegarde de la matière ${subject.id}`));
+          };
+        });
+      };
+
+      store.clear().onerror = () => {
+        reject(new Error('Erreur lors du vidage du store'));
+      };
+    });
   });
 };
 

@@ -29,6 +29,7 @@
     "@mediapipe/pose": "^0.5.1635988167",
     "@tensorflow-models/body-pix": "^2.2.1",
     "@tensorflow/tfjs": "^4.11.0",
+    "dompurify": "^3.3.0",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.263.1",
     "pako": "^2.1.0",
@@ -40,7 +41,8 @@
     "react-webcam": "^7.1.1",
     "react-window": "^1.8.10",
     "recharts": "^3.3.0",
-    "three": "^0.181.2"
+    "three": "^0.181.2",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

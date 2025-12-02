@@ -2308,98 +2308,98 @@ const SettingsTab = () => {
                   Sport
                 </h4>
                 <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
-                  <div className="space-y-1">
-                    <h5 className="text-sm font-medium text-blue-300">🏋️ Entraînement</h5>
-                    <ul className="text-sm text-gray-300 space-y-1">
-                      <li>• Exercices cochés : {Object.keys(data.checkedExercises || {}).length} entrées</li>
-                      <li>• Répétitions : {Object.keys(data.reps || {}).length} entrées</li>
-                      <li>• Étirements : {Object.keys(data.checkedStretches || {}).length} entrées</li>
-                      <li>• Historique répétitions : {Object.keys(data.historyReps || {}).length} entrées</li>
-                    </ul>
-                  </div>
+                <div className="space-y-1">
+                  <h5 className="text-sm font-medium text-blue-300">🏋️ Entraînement</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Exercices cochés : {Object.keys(data.checkedExercises || {}).length} entrées</li>
+                    <li>• Répétitions : {Object.keys(data.reps || {}).length} entrées</li>
+                    <li>• Étirements : {Object.keys(data.checkedStretches || {}).length} entrées</li>
+                    <li>• Historique répétitions : {Object.keys(data.historyReps || {}).length} entrées</li>
+                  </ul>
+                </div>
                   <div className="space-y-1 pt-2 border-t border-slate-600">
-                    <h5 className="text-sm font-medium text-green-300">📊 Suivi Corporel</h5>
-                    <ul className="text-sm text-gray-300 space-y-1">
-                      <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
-                      <li>• Entrées de progression : {(data.progressEntries || []).length} entrées</li>
-                      <li>• Rappels configurés : {(data.bodyTrackingReminders || []).length} rappels</li>
-                      <li>• Photos avec poids : {(data.progressPhotos || []).filter(p => p.weight).length}</li>
-                      <li>• Photos avec notes : {(data.progressPhotos || []).filter(p => p.notes).length}</li>
-                      <li>• Photos avec mesures : {(data.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length}</li>
-                      <li>• Dernière mise à jour : {data.bodyTrackingLastUpdated ? new Date(data.bodyTrackingLastUpdated).toLocaleDateString('fr-FR') : 'Jamais'}</li>
-                    </ul>
-                  </div>
+                  <h5 className="text-sm font-medium text-green-300">📊 Suivi Corporel</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
+                    <li>• Entrées de progression : {(data.progressEntries || []).length} entrées</li>
+                    <li>• Rappels configurés : {(data.bodyTrackingReminders || []).length} rappels</li>
+                    <li>• Photos avec poids : {(data.progressPhotos || []).filter(p => p.weight).length}</li>
+                    <li>• Photos avec notes : {(data.progressPhotos || []).filter(p => p.notes).length}</li>
+                    <li>• Photos avec mesures : {(data.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length}</li>
+                    <li>• Dernière mise à jour : {data.bodyTrackingLastUpdated ? new Date(data.bodyTrackingLastUpdated).toLocaleDateString('fr-FR') : 'Jamais'}</li>
+                  </ul>
+                </div>
                   <div className="space-y-1 pt-2 border-t border-slate-600">
-                    <h5 className="text-sm font-medium text-orange-300">🏃 Endurance</h5>
-                    <ul className="text-sm text-gray-300 space-y-1">
-                      <li>• Sessions boxe : {(data.enduranceData?.sessions?.boxing || data.enduranceData?.boxingSessions || []).length} sessions</li>
-                      <li>• Sessions pompes : {(data.enduranceData?.sessions?.pushups || data.enduranceData?.pushupSessions || []).length} sessions</li>
-                      <li>• Sessions natation : {(data.enduranceData?.sessions?.swimming || data.enduranceData?.swimmingSessions || []).length} sessions</li>
-                      <li>• Sessions corde à sauter : {(data.enduranceData?.sessions?.jumprope || data.enduranceData?.jumpropeSessions || []).length} sessions</li>
-                      <li>• Sessions course : {(data.enduranceData?.sessions?.running || data.enduranceData?.runningSessions || []).length} sessions</li>
-                      <li>• Défis actifs : {(data.enduranceData?.challenges || []).length} défis</li>
-                    </ul>
-                  </div>
+                  <h5 className="text-sm font-medium text-orange-300">🏃 Endurance</h5>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    <li>• Sessions boxe : {(data.enduranceData?.sessions?.boxing || data.enduranceData?.boxingSessions || []).length} sessions</li>
+                    <li>• Sessions pompes : {(data.enduranceData?.sessions?.pushups || data.enduranceData?.pushupSessions || []).length} sessions</li>
+                    <li>• Sessions natation : {(data.enduranceData?.sessions?.swimming || data.enduranceData?.swimmingSessions || []).length} sessions</li>
+                    <li>• Sessions corde à sauter : {(data.enduranceData?.sessions?.jumprope || data.enduranceData?.jumpropeSessions || []).length} sessions</li>
+                    <li>• Sessions course : {(data.enduranceData?.sessions?.running || data.enduranceData?.runningSessions || []).length} sessions</li>
+                    <li>• Défis actifs : {(data.enduranceData?.challenges || []).length} défis</li>
+                  </ul>
+                </div>
                   <div className="space-y-1 pt-2 border-t border-slate-600">
                     <h5 className="text-sm font-medium text-purple-300">⌚ Garmin</h5>
-                    <ul className="text-sm text-gray-300 space-y-1">
+                  <ul className="text-sm text-gray-300 space-y-1">
                       <li>• Données synchronisées Garmin</li>
                       <li>• Activités et statistiques</li>
-                    </ul>
-                  </div>
+                  </ul>
+                </div>
                   <div className="space-y-1 pt-2 border-t border-slate-600">
                     <h5 className="text-sm font-medium text-orange-300">🍎 Nutrition</h5>
-                    <ul className="text-sm text-gray-300 space-y-1">
+                  <ul className="text-sm text-gray-300 space-y-1">
                       <li>• Repas et calories</li>
                       <li>• Suivi nutritionnel complet</li>
-                    </ul>
-                  </div>
+                  </ul>
+                </div>
                   <div className="space-y-1 pt-2 border-t border-slate-600">
                     <h5 className="text-sm font-medium text-purple-300">⚙️ Configuration</h5>
-                    <ul className="text-sm text-gray-300 space-y-1">
+                  <ul className="text-sm text-gray-300 space-y-1">
                       <li>• Date de début : {data.startDate ? new Date(data.startDate).toLocaleDateString('fr-FR') : 'Non définie'}</li>
                       <li>• Variante de semaine : {data.weekVariant || 'A'}</li>
                       <li>• Historique programmes : {(data.programHistory || []).length} entrées</li>
-                    </ul>
-                  </div>
-                </div>
-                
+                  </ul>
+              </div>
+            </div>
+
                 <div className="grid grid-cols-1 gap-3">
-                  <Button
-                    onClick={exportAllData}
-                    disabled={exportStatus === 'loading'}
-                    icon={Download}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
+              <Button
+                onClick={exportAllData}
+                disabled={exportStatus === 'loading'}
+                icon={Download}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
                     {exportStatus === 'loading' ? 'Export en cours...' : 'Export Complet Sport'}
-                  </Button>
-                  
-                  <Button
-                    onClick={exportBodyTrackingData}
-                    disabled={exportStatus === 'loading'}
-                    icon={FileText}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    {exportStatus === 'loading' ? 'Export en cours...' : 'Export Suivi Corporel'}
-                  </Button>
-                  
-                  <Button
-                    onClick={handleExportGarminData}
-                    disabled={garminExportStatus === 'loading'}
-                    icon={Download}
-                    className="w-full bg-purple-600 hover:bg-purple-700"
-                  >
-                    {garminExportStatus === 'loading' ? 'Export en cours...' : 'Export Garmin'}
-                  </Button>
-                  
-                  <Button
-                    onClick={handleExportNutritionData}
-                    disabled={nutritionExportStatus === 'loading'}
-                    icon={Download}
-                    className="w-full bg-orange-600 hover:bg-orange-700"
-                  >
-                    {nutritionExportStatus === 'loading' ? 'Export en cours...' : 'Export Nutrition'}
-                  </Button>
+              </Button>
+              
+              <Button
+                onClick={exportBodyTrackingData}
+                disabled={exportStatus === 'loading'}
+                icon={FileText}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {exportStatus === 'loading' ? 'Export en cours...' : 'Export Suivi Corporel'}
+              </Button>
+              
+              <Button
+                onClick={handleExportGarminData}
+                disabled={garminExportStatus === 'loading'}
+                icon={Download}
+                className="w-full bg-purple-600 hover:bg-purple-700"
+              >
+                {garminExportStatus === 'loading' ? 'Export en cours...' : 'Export Garmin'}
+              </Button>
+              
+              <Button
+                onClick={handleExportNutritionData}
+                disabled={nutritionExportStatus === 'loading'}
+                icon={Download}
+                className="w-full bg-orange-600 hover:bg-orange-700"
+              >
+                {nutritionExportStatus === 'loading' ? 'Export en cours...' : 'Export Nutrition'}
+              </Button>
                 </div>
               </div>
 
@@ -2459,16 +2459,16 @@ const SettingsTab = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 gap-3">
-                    <Button
-                      onClick={handleExportBooksData}
-                      disabled={booksExportStatus === 'loading'}
+              <Button
+                onClick={handleExportBooksData}
+                disabled={booksExportStatus === 'loading'}
                       icon={Download}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      {booksExportStatus === 'loading' ? 'Export en cours...' : 'Export Livres'}
-                    </Button>
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
+              >
+                {booksExportStatus === 'loading' ? 'Export en cours...' : 'Export Livres'}
+              </Button>
                   </div>
-                </div>
+            </div>
 
                 {/* Section Apprentissage */}
                 <div className="space-y-4 pt-4 border-t border-slate-600">
@@ -2516,47 +2516,47 @@ const SettingsTab = () => {
 
             {/* Messages de statut */}
             <div className="space-y-2">
-              {exportStatus === 'success' && (
-                <div className="flex items-center text-green-400 text-sm">
-                  <CheckCircle className="mr-2" size={16} />
-                  Export réussi ! Le fichier a été téléchargé.
-                </div>
-              )}
+            {exportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Export réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
 
-              {exportStatus === 'error' && (
-                <div className="flex items-center text-red-400 text-sm">
-                  <AlertTriangle className="mr-2" size={16} />
-                  {t('messages.importExport.exportError')}
-                </div>
-              )}
+            {exportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                {t('messages.importExport.exportError')}
+              </div>
+            )}
 
-              {garminExportStatus === 'success' && (
-                <div className="flex items-center text-green-400 text-sm">
-                  <CheckCircle className="mr-2" size={16} />
-                  {t('messages.importExport.garminExportSuccess')}
-                </div>
-              )}
+            {garminExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                {t('messages.importExport.garminExportSuccess')}
+              </div>
+            )}
 
-              {garminExportStatus === 'error' && (
-                <div className="flex items-center text-red-400 text-sm">
-                  <AlertTriangle className="mr-2" size={16} />
-                  {t('messages.importExport.garminExportError')}
-                </div>
-              )}
+            {garminExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                {t('messages.importExport.garminExportError')}
+              </div>
+            )}
 
-              {nutritionExportStatus === 'success' && (
-                <div className="flex items-center text-green-400 text-sm">
-                  <CheckCircle className="mr-2" size={16} />
-                  {t('messages.importExport.nutritionExportSuccess')}
-                </div>
-              )}
+            {nutritionExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                {t('messages.importExport.nutritionExportSuccess')}
+              </div>
+            )}
 
-              {nutritionExportStatus === 'error' && (
-                <div className="flex items-center text-red-400 text-sm">
-                  <AlertTriangle className="mr-2" size={16} />
-                  {t('messages.importExport.nutritionExportError')}
-                </div>
-              )}
+            {nutritionExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                {t('messages.importExport.nutritionExportError')}
+              </div>
+            )}
 
               {quietQuestExportStatus === 'success' && (
                 <div className="flex items-center text-green-400 text-sm">
@@ -2572,19 +2572,19 @@ const SettingsTab = () => {
                 </div>
               )}
 
-              {booksExportStatus === 'success' && (
-                <div className="flex items-center text-green-400 text-sm">
-                  <CheckCircle className="mr-2" size={16} />
-                  Export Livres réussi ! Le fichier a été téléchargé.
-                </div>
-              )}
+            {booksExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Export Livres réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
 
-              {booksExportStatus === 'error' && (
-                <div className="flex items-center text-red-400 text-sm">
-                  <AlertTriangle className="mr-2" size={16} />
-                  Erreur lors de l'export des Livres
-                </div>
-              )}
+            {booksExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'export des Livres
+              </div>
+            )}
             </div>
           </div>
         </CardContent>

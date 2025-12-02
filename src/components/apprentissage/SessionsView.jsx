@@ -10,22 +10,23 @@ import sounds from '../../utils/apprentissageAudio';
 import {
   openApprentissageDB,
   loadSessionsHistoryFromIndexedDB,
-  saveSessionsHistoryToIndexedDB,
   loadTimerFromIndexedDB,
-  saveTimerToIndexedDB,
   loadPlannerFromIndexedDB,
-  savePlannerToIndexedDB,
 } from '../../utils/apprentissageIndexedDB';
+import { TIMER_DEFAULTS, TIMER_COLORS, WEEK_DAYS } from '../../utils/apprentissageConstants';
+import { handleStorageError, ERROR_SEVERITY } from '../../utils/apprentissageErrorHandler';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import TimerComponent from './TimerComponent';
+import SubjectSelector from './SubjectSelector';
+import WeeklyPlanner from './WeeklyPlanner';
+import SessionsHistory from './SessionsHistory';
+import BreakPopup from './BreakPopup';
+import EndSessionPopup from './EndSessionPopup';
+import Modal from '../ui/Modal';
 
-// Formatage temps (secondes → MM:SS)
-const formatTime = (seconds) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
 
 const SessionsView = () => {
-  const { subjects, progressionData, addXP, calculateSessionXP } = useApprentissageEngine();
+  const { subjects, progressionData, addXP, calculateSessionXP, saveTimer, savePlanner, saveSessionsHistory, undo, redo, canUndo, canRedo, pushAction } = useApprentissageEngine();
   const { showSuccess, showError } = useToast();
 
   // Refs pour drag & drop
@@ -36,9 +37,9 @@ const SessionsView = () => {
     isRunning: false,
     isPaused: false,
     currentSubject: null,
-    remainingTime: 25 * 60,
-    plannedDuration: 25 * 60,
-    breakDuration: 5 * 60,
+    remainingTime: TIMER_DEFAULTS.DEFAULT_SESSION_DURATION,
+    plannedDuration: TIMER_DEFAULTS.DEFAULT_SESSION_DURATION,
+    breakDuration: TIMER_DEFAULTS.DEFAULT_BREAK_DURATION,
     isBreakTime: false,
     progress: 0,
     pulseAnimation: false,
@@ -174,88 +175,37 @@ const SessionsView = () => {
     loadData();
   }, []);
 
-  // Sauvegarder état timer (avec debounce)
-  const timerSaveDebounceRef = useRef(null);
+  // Sauvegarder état timer (via fonction centralisée)
   useEffect(() => {
     if (!timerLoaded) return;
     
-    if (timerSaveDebounceRef.current) {
-      clearTimeout(timerSaveDebounceRef.current);
-    }
+    const toSave = {
+      remainingTime: timer.remainingTime,
+      plannedDuration: timer.plannedDuration,
+      silentMode: timer.silentMode,
+    };
     
-    timerSaveDebounceRef.current = setTimeout(async () => {
-      const toSave = {
-        remainingTime: timer.remainingTime,
-        plannedDuration: timer.plannedDuration,
-        silentMode: timer.silentMode,
-      };
-      
-      try {
-        const db = await openApprentissageDB();
-        if (db) {
-          await saveTimerToIndexedDB(db, toSave, userId);
-        } else {
-          localStorage.setItem('apprentissage_timer', JSON.stringify(toSave));
-        }
-      } catch (error) {
-        console.error('[SessionsView] Error saving timer:', error);
-        localStorage.setItem('apprentissage_timer', JSON.stringify(toSave));
-      }
-    }, 300);
-  }, [timer.remainingTime, timer.plannedDuration, timer.silentMode, timerLoaded]);
+    saveTimer(toSave);
+  }, [timer.remainingTime, timer.plannedDuration, timer.silentMode, timerLoaded, saveTimer]);
 
-  // Sauvegarder planificateur (avec debounce)
-  const plannerSaveDebounceRef = useRef(null);
+  // Sauvegarder planificateur (via fonction centralisée)
   useEffect(() => {
     if (!plannerLoaded) return;
     
-    if (plannerSaveDebounceRef.current) {
-      clearTimeout(plannerSaveDebounceRef.current);
-    }
+    const toSave = {
+      compactMode: planner.compactMode,
+      subjectOrder: planner.subjectOrder,
+    };
     
-    plannerSaveDebounceRef.current = setTimeout(async () => {
-      const toSave = {
-        compactMode: planner.compactMode,
-        subjectOrder: planner.subjectOrder,
-      };
-      
-      try {
-        const db = await openApprentissageDB();
-        if (db) {
-          await savePlannerToIndexedDB(db, toSave, userId);
-        } else {
-          localStorage.setItem('apprentissage_planner', JSON.stringify(toSave));
-        }
-      } catch (error) {
-        console.error('[SessionsView] Error saving planner:', error);
-        localStorage.setItem('apprentissage_planner', JSON.stringify(toSave));
-      }
-    }, 300);
-  }, [planner.compactMode, planner.subjectOrder, plannerLoaded]);
+    savePlanner(toSave);
+  }, [planner.compactMode, planner.subjectOrder, plannerLoaded, savePlanner]);
 
-  // Sauvegarder historique (avec debounce)
-  const historySaveDebounceRef = useRef(null);
+  // Sauvegarder historique (via fonction centralisée)
   useEffect(() => {
     if (!historyLoaded) return;
     
-    if (historySaveDebounceRef.current) {
-      clearTimeout(historySaveDebounceRef.current);
-    }
-    
-    historySaveDebounceRef.current = setTimeout(async () => {
-      try {
-        const db = await openApprentissageDB();
-        if (db) {
-          await saveSessionsHistoryToIndexedDB(db, sessionsHistory, userId);
-        } else {
-          localStorage.setItem('apprentissage_sessions_history', JSON.stringify(sessionsHistory));
-        }
-      } catch (error) {
-        console.error('[SessionsView] Error saving history:', error);
-        localStorage.setItem('apprentissage_sessions_history', JSON.stringify(sessionsHistory));
-      }
-    }, 300);
-  }, [sessionsHistory, historyLoaded]);
+    saveSessionsHistory(sessionsHistory);
+  }, [sessionsHistory, historyLoaded, saveSessionsHistory]);
 
   // Intervalle timer
   useEffect(() => {
@@ -274,7 +224,7 @@ const SessionsView = () => {
         const progress = ((total - newRemaining) / total) * 100;
 
         // Avertissement 5 dernières minutes
-        if (newRemaining === 5 * 60 && !prev.silentMode) {
+        if (newRemaining === TIMER_DEFAULTS.WARNING_TIME && !prev.silentMode) {
           sounds.warning();
         }
 
@@ -320,9 +270,9 @@ const SessionsView = () => {
         isRunning: true,
         isPaused: false,
         currentSubject: subject,
-        remainingTime: 25 * 60, // 25 minutes par défaut
-        plannedDuration: 25 * 60,
-        breakDuration: 5 * 60,
+        remainingTime: TIMER_DEFAULTS.DEFAULT_SESSION_DURATION,
+        plannedDuration: TIMER_DEFAULTS.DEFAULT_SESSION_DURATION,
+        breakDuration: TIMER_DEFAULTS.DEFAULT_BREAK_DURATION,
         isBreakTime: false,
         progress: 0,
         pulseAnimation: true,
@@ -342,20 +292,28 @@ const SessionsView = () => {
     }));
   }, []);
 
+  // État modales confirmation
+  const [showStopModal, setShowStopModal] = useState(false);
+  const [showDeleteSessionModal, setShowDeleteSessionModal] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState(null);
+
   // Arrêter session
   const stopSession = useCallback(() => {
-    if (window.confirm('Êtes-vous sûr de vouloir arrêter la session ?')) {
-      setTimer((prev) => ({
-        ...prev,
-        isRunning: false,
-        isPaused: false,
-        currentSubject: null,
-        remainingTime: 0,
-        progress: 0,
-        pulseAnimation: false,
-      }));
-      showSuccess('Session arrêtée');
-    }
+    setShowStopModal(true);
+  }, []);
+
+  const confirmStopSession = useCallback(() => {
+    setTimer((prev) => ({
+      ...prev,
+      isRunning: false,
+      isPaused: false,
+      currentSubject: null,
+      remainingTime: 0,
+      progress: 0,
+      pulseAnimation: false,
+    }));
+    setShowStopModal(false);
+    showSuccess('Session arrêtée');
   }, [showSuccess]);
 
   // Ajuster temps (+10 min)
@@ -431,9 +389,9 @@ const SessionsView = () => {
 
   // Couleur timer dynamique
   const timerColor = useMemo(() => {
-    if (timer.isPaused) return '#ff8c42'; // Orange
-    if (timer.remainingTime <= 5 * 60) return '#ff4757'; // Rouge (5 dernières minutes)
-    return '#2ed573'; // Vert
+    if (timer.isPaused) return TIMER_COLORS.PAUSED;
+    if (timer.remainingTime <= TIMER_DEFAULTS.WARNING_TIME) return TIMER_COLORS.WARNING;
+    return TIMER_COLORS.RUNNING;
   }, [timer.isPaused, timer.remainingTime]);
 
   // Obtenir jour assigné
@@ -638,14 +596,44 @@ const SessionsView = () => {
   }, []);
 
   const deleteSession = useCallback((index) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette session ?')) {
-      setSessionsHistory((prev) => prev.filter((_, i) => i !== index));
+    setSessionToDelete(index);
+    setShowDeleteSessionModal(true);
+  }, []);
+
+  const confirmDeleteSession = useCallback(() => {
+    if (sessionToDelete !== null) {
+      const session = sessionsHistory[sessionToDelete];
+      
+      // Sauvegarder l'action pour undo
+      if (pushAction) {
+        pushAction({
+          type: 'DELETE_SESSION',
+          data: {
+            sessionIndex: sessionToDelete,
+            session: { ...session }, // Copie pour undo
+          },
+          undoFn: (data) => {
+            setSessionsHistory((prev) => {
+              const restored = [...prev];
+              restored.splice(data.sessionIndex, 0, data.session);
+              return restored.sort((a, b) => b.startTime - a.startTime);
+            });
+          },
+          redoFn: (data) => {
+            setSessionsHistory((prev) => prev.filter((_, i) => i !== data.sessionIndex));
+          },
+        });
+      }
+
+      setSessionsHistory((prev) => prev.filter((_, i) => i !== sessionToDelete));
       showSuccess('Session supprimée');
-      if (editingSession === index) {
+      if (editingSession === sessionToDelete) {
         setEditingSession(null);
       }
+      setShowDeleteSessionModal(false);
+      setSessionToDelete(null);
     }
-  }, [editingSession, showSuccess]);
+  }, [sessionToDelete, editingSession, sessionsHistory, showSuccess, pushAction]);
 
   // Navigation semaine
   const navigateWeek = useCallback((direction) => {
@@ -673,11 +661,34 @@ const SessionsView = () => {
     return monday;
   }, [planner.currentWeekOffset]);
 
+  // Raccourcis clavier
+  useKeyboardShortcuts(
+    {
+      onPauseResume: timer.isRunning ? togglePause : null,
+      onStop: timer.isRunning ? stopSession : null,
+      onStart: !timer.isRunning && subjects.length > 0 ? () => {
+        // Démarrer avec la première matière disponible
+        if (subjects.length > 0) {
+          startSession(subjects[0]);
+        }
+      } : null,
+      onCancel: () => {
+        // Annuler les popups
+        if (timer.showBreakPopup) {
+          skipBreak();
+        }
+        if (timer.showEndSessionOptions) {
+          finishStudying();
+        }
+      },
+    },
+    true
+  );
+
   // Générer jours de la semaine
   const weekDays = useMemo(() => {
     const monday = getCurrentDisplayWeek();
     const days = [];
-    const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
     for (let i = 0; i < 7; i++) {
       const date = new Date(monday);
@@ -685,7 +696,7 @@ const SessionsView = () => {
       const isToday = date.toDateString() === new Date().toDateString();
 
       days.push({
-        name: dayNames[i],
+        name: WEEK_DAYS[i],
         date: date.getDate(),
         fullDate: date,
         isToday,
@@ -698,605 +709,154 @@ const SessionsView = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
+      {/* Barre d'outils Undo/Redo */}
+      {(canUndo || canRedo) && (
+        <div className="flex items-center justify-end gap-2 mb-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon="↶"
+            iconPosition="left"
+            onClick={() => {
+              undo();
+              showSuccess('Action annulée');
+            }}
+            disabled={!canUndo}
+            title="Annuler (Ctrl+Z)"
+            aria-label="Annuler la dernière action"
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon="↷"
+            iconPosition="left"
+            onClick={() => {
+              redo();
+              showSuccess('Action refaite');
+            }}
+            disabled={!canRedo}
+            title="Refaire (Ctrl+Y)"
+            aria-label="Refaire la dernière action annulée"
+          >
+            Refaire
+          </Button>
+        </div>
+      )}
+      
       {/* Timer Principal */}
       {timer.isRunning && (
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-6 shadow-xl shadow-emerald-500/10">
-          <div className="flex flex-col items-center">
-            {/* Cercle Timer */}
-            <div
-              className={`relative w-72 h-72 rounded-full border-8 flex flex-col items-center justify-center mb-6 transition-all duration-300 ${
-                timer.isRunning && !timer.isPaused ? 'animate-pulse' : ''
-              }`}
-              style={{
-                borderColor: `${timerColor}33`,
-                background: `radial-gradient(circle, ${timerColor}08 0%, transparent 70%)`,
-              }}
-            >
-              {/* SVG Progression */}
-              <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="rgba(0, 255, 148, 0.1)"
-                  strokeWidth="2"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke={timerColor}
-                  strokeWidth="3"
-                  strokeDasharray={283}
-                  strokeDashoffset={283 - (timer.progress * 283) / 100}
-                  strokeLinecap="round"
-                />
-              </svg>
-
-              {/* Affichage temps */}
-              <div className="relative z-10 text-center">
-                <div
-                  className="text-5xl font-black mb-2"
-                  style={{
-                    color: timerColor,
-                    textShadow: `0 0 20px ${timerColor}80`,
-                  }}
-                >
-                  {formatTime(timer.remainingTime)}
-                </div>
-                <div className="text-lg text-emerald-400 font-semibold uppercase tracking-wider">
-                  {timer.isPaused ? '🍫 PAUSE' : '📚 FOCUS'}
-                </div>
-                {timer.currentSubject && (
-                  <div className="text-sm text-slate-400 mt-2">
-                    {timer.currentSubject.name}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Contrôles */}
-            <div className="flex gap-3 flex-wrap justify-center">
-              <button
-                onClick={togglePause}
-                className="px-6 py-3 bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-emerald-500 rounded-lg text-emerald-400 font-semibold uppercase tracking-wide hover:from-emerald-500/20 hover:to-cyan-500/20 hover:text-cyan-300 hover:border-cyan-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 transition-all duration-200"
-              >
-                {timer.isPaused ? '▶️ Reprendre' : '⏸️ Pause'}
-              </button>
-              <button
-                onClick={stopSession}
-                className="px-6 py-3 bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-red-500 rounded-lg text-red-400 font-semibold uppercase tracking-wide hover:from-red-500/20 hover:to-red-600/20 hover:text-red-300 hover:border-red-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/40 transition-all duration-200"
-              >
-                ⏹️ Arrêter
-              </button>
-              <button
-                onClick={() => adjustSessionTime(10)}
-                className="px-6 py-3 bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-cyan-500 rounded-lg text-cyan-400 font-semibold uppercase tracking-wide hover:from-cyan-500/20 hover:to-blue-500/20 hover:text-cyan-300 hover:border-cyan-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-500/40 transition-all duration-200"
-              >
-                +10 min
-              </button>
-              <button
-                onClick={() => setTimer((prev) => ({ ...prev, silentMode: !prev.silentMode }))}
-                className={`px-6 py-3 bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-slate-500 rounded-lg font-semibold uppercase tracking-wide hover:-translate-y-0.5 transition-all duration-200 ${
-                  timer.silentMode ? 'text-slate-500' : 'text-slate-300'
-                }`}
-              >
-                {timer.silentMode ? '🔇' : '🔊'}
-              </button>
-            </div>
-
-            {/* Statistiques du jour */}
-            <div className="mt-6 flex gap-6 flex-wrap justify-center">
-              <div className="text-center">
-                <div className="text-2xl mb-1">🎯</div>
-                <div className="text-xl font-bold text-cyan-400">{todayStats.sessionsCount}</div>
-                <div className="text-xs text-slate-400">Sessions</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl mb-1">⏱️</div>
-                <div className="text-xl font-bold text-emerald-400">
-                  {Math.floor(todayStats.totalWorkTime / 60)}h
-                  {todayStats.totalWorkTime % 60}
-                </div>
-                <div className="text-xs text-slate-400">Active</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl mb-1">☕</div>
-                <div className="text-xl font-bold text-amber-400">
-                  {Math.floor(todayStats.totalBreakTime / 60)}h
-                  {todayStats.totalBreakTime % 60}
-                </div>
-                <div className="text-xs text-slate-400">Break</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TimerComponent
+          timer={timer}
+          timerColor={timerColor}
+          todayStats={todayStats}
+          onTogglePause={togglePause}
+          onStop={stopSession}
+          onAdjustTime={adjustSessionTime}
+          onToggleSilentMode={() => setTimer((prev) => ({ ...prev, silentMode: !prev.silentMode }))}
+        />
       )}
 
       {/* Sélecteur Matière (si timer non démarré) */}
-      {!timer.isRunning && subjects.length > 0 && (
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-6 shadow-xl shadow-emerald-500/10">
-          <h3 className="text-xl font-bold text-emerald-400 mb-4">🎯 Commencer une session</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {subjects.map((subject) => (
-              <button
-                key={subject.id}
-                onClick={() => startSession(subject)}
-                className="p-4 bg-slate-900/50 border border-slate-700/50 rounded-lg hover:border-emerald-500/50 hover:bg-slate-800/70 transition-all duration-200 text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📚</span>
-                  <div className="flex-1">
-                    <div className="font-semibold text-slate-200">{subject.name}</div>
-                    <div className="text-xs text-slate-400">
-                      📁 {subject.files?.length || 0} fichier(s)
-                    </div>
-                    {getAssignedDay(subject.name) && (
-                      <div className="text-xs text-emerald-400 mt-1">
-                        {['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][getAssignedDay(subject.name)]}
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-xl">▶️</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <SubjectSelector
+        subjects={subjects}
+        timer={timer}
+        getAssignedDay={getAssignedDay}
+        onStartSession={startSession}
+      />
 
       {/* Planificateur Hebdomadaire */}
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-6 shadow-xl shadow-emerald-500/10">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-emerald-400">📅 Planificateur Hebdomadaire</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigateWeek(-1)}
-              className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 transition-all"
-            >
-              ⬅️
-            </button>
-            <button
-              onClick={goToCurrentWeek}
-              className="px-4 py-1 bg-emerald-500/20 border border-emerald-500/50 rounded text-emerald-400 hover:bg-emerald-500/30 transition-all text-sm"
-            >
-              {planner.currentWeekOffset === 0 ? 'Cette semaine' : 'Aller à aujourd\'hui'}
-            </button>
-            <button
-              onClick={() => navigateWeek(1)}
-              className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 transition-all"
-            >
-              ➡️
-            </button>
-            <button
-              onClick={() => setPlanner((prev) => ({ ...prev, compactMode: !prev.compactMode }))}
-              className="px-4 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 transition-all text-sm"
-            >
-              {planner.compactMode ? '📈 Vue étendue' : '📊 Vue compacte'}
-            </button>
-          </div>
-        </div>
-
-        {/* Grille jours */}
-        <div className="grid grid-cols-7 gap-3">
-              {weekDays.map((day, index) => (
-            <div
-              key={index}
-              className={`p-3 rounded-lg border ${
-                day.isToday
-                  ? 'border-emerald-500/50 bg-emerald-500/10'
-                  : 'border-slate-700/50 bg-slate-900/30'
-              }`}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, index + 1)}
-            >
-              <div className="text-center mb-2">
-                <div className="text-sm font-semibold text-slate-300">{day.name}</div>
-                <div className="text-lg font-bold text-emerald-400">{day.date}</div>
-              </div>
-              <div className="space-y-2 min-h-[100px]">
-                {day.subjects.length > 0 ? (
-                  day.subjects.map((subject) => (
-                    <div
-                      key={subject.id}
-                      className="p-2 bg-slate-800/50 border border-emerald-500/30 rounded text-xs flex items-center justify-between group"
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, subject)}
-                    >
-                      <div className="font-semibold text-slate-200 truncate flex-1">{subject.name}</div>
-                      {!timer.isRunning && (
-                        <button
-                          onClick={() => startSession(subject)}
-                          className="ml-2 text-emerald-400 hover:text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Démarrer session"
-                        >
-                          ▶️
-                        </button>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-xs text-slate-500 text-center py-4">
-                    Glissez une matière ici
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Matières non assignées */}
-        {(() => {
-          const unassigned = subjects.filter((s) => !planner.subjectOrder[s.name]);
-          if (unassigned.length === 0) return null;
-
-          return (
-            <div className="mt-6">
-              <h4 className="text-sm font-semibold text-slate-400 mb-3">📋 Matières à programmer</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {unassigned.map((subject) => (
-                  <div
-                    key={subject.id}
-                    className="p-3 bg-slate-900/50 border border-slate-700/50 rounded-lg flex items-center justify-between group"
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, subject)}
-                  >
-                    <div className="flex-1">
-                      <div className="text-xs font-semibold text-slate-300 mb-1">❓</div>
-                      <div className="text-sm font-semibold text-slate-200 truncate">{subject.name}</div>
-                      <div className="text-xs text-slate-500">Non programmé</div>
-                    </div>
-                    <select
-                      className="ml-2 px-2 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-slate-300"
-                      value=""
-                      onChange={(e) => {
-                        const day = e.target.value ? parseInt(e.target.value) : null;
-                        changeSubjectDay(subject.name, day);
-                      }}
-                    >
-                      <option value="">Choisir un jour</option>
-                      <option value="1">Lundi</option>
-                      <option value="2">Mardi</option>
-                      <option value="3">Mercredi</option>
-                      <option value="4">Jeudi</option>
-                      <option value="5">Vendredi</option>
-                      <option value="6">Samedi</option>
-                      <option value="7">Dimanche</option>
-                    </select>
-                    {!timer.isRunning && (
-                      <button
-                        onClick={() => startSession(subject)}
-                        className="ml-2 text-emerald-400 hover:text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Démarrer session"
-                      >
-                        ▶️
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-      </div>
+      <WeeklyPlanner
+        subjects={subjects}
+        planner={planner}
+        timer={timer}
+        weekDays={weekDays}
+        onNavigateWeek={navigateWeek}
+        onGoToCurrentWeek={goToCurrentWeek}
+        onToggleCompactMode={() => setPlanner((prev) => ({ ...prev, compactMode: !prev.compactMode }))}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onChangeSubjectDay={changeSubjectDay}
+        onStartSession={startSession}
+      />
 
       {/* Popup Pause */}
       {timer.showBreakPopup && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-md animate-[overlayFadeIn_0.3s_ease-out]">
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-3 border-orange-500 rounded-[25px] p-12 max-w-md w-full mx-4 backdrop-blur-xl shadow-2xl animate-[popupSlideIn_0.4s_cubic-bezier(0.16,1,0.3,1)]">
-            <div className="text-center">
-              <div className="text-5xl mb-4">🍫</div>
-              <h3 className="text-2xl font-bold text-orange-400 uppercase tracking-wide mb-2">
-                TEMPS DE PAUSE
-              </h3>
-              <div className="text-xl font-semibold text-slate-300 mb-4">
-                {timer.breakDuration / 60} MIN
-              </div>
-              <p className="text-slate-400 mb-6">Repose-toi bien !</p>
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={startBreak}
-                  className="px-6 py-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 border-2 border-orange-500 rounded-lg text-orange-400 font-bold uppercase tracking-wide hover:from-orange-500/30 hover:to-amber-500/30 hover:scale-105 transition-all duration-200"
-                >
-                  DÉMARRER PAUSE
-                </button>
-                <button
-                  onClick={skipBreak}
-                  className="px-6 py-3 bg-slate-800/50 border-2 border-slate-600 rounded-lg text-slate-300 font-bold uppercase tracking-wide hover:bg-slate-700/50 hover:scale-105 transition-all duration-200"
-                >
-                  PASSER
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <BreakPopup
+          timer={timer}
+          onStartBreak={startBreak}
+          onSkipBreak={skipBreak}
+        />
       )}
 
       {/* Popup Fin Session */}
       {timer.showEndSessionOptions && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-md" style={{ animation: 'overlayFadeIn 0.3s ease-out' }}>
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-3 border-emerald-500 rounded-[25px] p-12 max-w-md w-full mx-4 backdrop-blur-xl shadow-2xl" style={{ animation: 'popupSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-            <div className="text-center">
-              <div className="text-5xl mb-4">🎉</div>
-              <h3 className="text-2xl font-bold text-emerald-400 uppercase tracking-wide mb-2">
-                SESSION TERMINÉE
-              </h3>
-              {timer.currentSubject && (
-                <div className="text-lg font-semibold text-slate-300 mb-6">
-                  {timer.currentSubject.name}
-                </div>
-              )}
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={continueSession}
-                  className="px-6 py-3 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-2 border-emerald-500 rounded-lg text-emerald-400 font-bold uppercase tracking-wide hover:from-emerald-500/30 hover:to-cyan-500/30 hover:scale-105 transition-all duration-200"
-                >
-                  CONTINUER
-                </button>
-                <button
-                  onClick={finishStudying}
-                  className="px-6 py-3 bg-slate-800/50 border-2 border-slate-600 rounded-lg text-slate-300 font-bold uppercase tracking-wide hover:bg-slate-700/50 hover:scale-105 transition-all duration-200"
-                >
-                  TERMINER
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <EndSessionPopup
+          timer={timer}
+          onContinue={continueSession}
+          onFinish={finishStudying}
+        />
       )}
 
+      {/* Modale confirmation arrêt */}
+      <Modal
+        isOpen={showStopModal}
+        onClose={() => setShowStopModal(false)}
+        title="Arrêter la session ?"
+        variant="warning"
+        onConfirm={confirmStopSession}
+        onCancel={() => setShowStopModal(false)}
+        confirmLabel="Oui, arrêter"
+        cancelLabel="Annuler"
+      >
+        <p className="text-slate-300">
+          Êtes-vous sûr de vouloir arrêter la session en cours ? 
+          Votre progression ne sera pas sauvegardée.
+        </p>
+      </Modal>
+
+      {/* Modale confirmation suppression session */}
+      <Modal
+        isOpen={showDeleteSessionModal}
+        onClose={() => {
+          setShowDeleteSessionModal(false);
+          setSessionToDelete(null);
+        }}
+        title="Supprimer la session ?"
+        variant="danger"
+        onConfirm={confirmDeleteSession}
+        onCancel={() => {
+          setShowDeleteSessionModal(false);
+          setSessionToDelete(null);
+        }}
+        confirmLabel="Oui, supprimer"
+        cancelLabel="Annuler"
+      >
+        <p className="text-slate-300">
+          Êtes-vous sûr de vouloir supprimer cette session de l'historique ?
+          Cette action est irréversible.
+        </p>
+      </Modal>
+
       {/* Historique Sessions */}
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-6 shadow-xl shadow-emerald-500/10">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-emerald-400 uppercase tracking-wide">📊 SESSION ARCHIVE</h3>
-          <button
-            onClick={() => setShowManualForm(!showManualForm)}
-            className={`px-4 py-2 rounded-lg font-semibold text-xs uppercase tracking-wide transition-all duration-200 ${
-              showManualForm
-                ? 'bg-red-900/30 border border-red-500/50 text-red-400 hover:bg-red-500/20'
-                : 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30'
-            }`}
-          >
-            {showManualForm ? '❌ CANCEL' : '➕ MANUAL DATA ENTRY'}
-          </button>
-        </div>
-
-        {/* Formulaire ajout manuel */}
-        {showManualForm && (
-          <div className="mb-6 p-4 bg-slate-900/50 border border-emerald-500/30 rounded-lg">
-            <h4 className="text-sm font-bold text-emerald-400 mb-4 uppercase">✏️ DATA ENTRY PROTOCOL</h4>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">PROTOCOL:</label>
-                <select
-                  value={manualSession.subjectName}
-                  onChange={(e) => setManualSession((prev) => ({ ...prev, subjectName: e.target.value }))}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
-                >
-                  <option value="">SELECT PROTOCOL</option>
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.name}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">TYPE:</label>
-                <select
-                  value={manualSession.type}
-                  onChange={(e) => setManualSession((prev) => ({ ...prev, type: e.target.value }))}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
-                >
-                  <option value="work">📚 WORK</option>
-                  <option value="break">☕ BREAK</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">DURATION (MIN):</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="480"
-                  value={manualSession.duration}
-                  onChange={(e) => setManualSession((prev) => ({ ...prev, duration: parseInt(e.target.value) || 25 }))}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">DATE:</label>
-                <input
-                  type="date"
-                  value={manualSession.date}
-                  onChange={(e) => setManualSession((prev) => ({ ...prev, date: e.target.value }))}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">TIME:</label>
-                <input
-                  type="time"
-                  value={manualSession.time}
-                  onChange={(e) => setManualSession((prev) => ({ ...prev, time: e.target.value }))}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
-                />
-              </div>
-            </div>
-            <button
-              onClick={addManualSession}
-              disabled={!manualSession.subjectName}
-              className="mt-4 px-6 py-2 bg-emerald-500/20 border border-emerald-500 rounded-lg text-emerald-400 font-semibold uppercase text-xs tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-500/30 transition-all duration-200"
-            >
-              ✅ COMMIT DATA
-            </button>
-          </div>
-        )}
-
-        {/* Statistiques */}
-        {sessionsHistory.length > 0 && (
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-4 bg-slate-900/50 rounded-lg border border-slate-700/50">
-              <div className="text-2xl font-bold text-cyan-400">
-                {sessionsHistory.filter((s) => s.type === 'work').length}
-              </div>
-              <div className="text-xs text-slate-400 uppercase mt-1">Total Sessions</div>
-            </div>
-            <div className="text-center p-4 bg-slate-900/50 rounded-lg border border-slate-700/50">
-              <div className="text-2xl font-bold text-emerald-400">
-                {Math.floor(sessionsHistory.reduce((sum, s) => sum + (s.actualWorkTime || 0), 0) / 3600)}H
-              </div>
-              <div className="text-xs text-slate-400 uppercase mt-1">Total Time</div>
-            </div>
-            <div className="text-center p-4 bg-slate-900/50 rounded-lg border border-slate-700/50">
-              <div className="text-2xl font-bold text-purple-400">
-                {[...new Set(sessionsHistory.filter((s) => s.type === 'work').map((s) => s.subject))].length}
-              </div>
-              <div className="text-xs text-slate-400 uppercase mt-1">Protocols</div>
-            </div>
-          </div>
-        )}
-
-        {/* Liste sessions */}
-        {sessionsHistory.length > 0 ? (
-          <div className="space-y-2">
-            <div className="text-sm font-semibold text-slate-400 mb-3">RECENT ACTIVITY:</div>
-            {sessionsHistory.slice(0, 10).map((session, index) => {
-              const isEditing = editingSession === index;
-              return (
-                <div
-                  key={index}
-                  className={`p-3 bg-slate-900/50 border rounded-lg ${
-                    isEditing ? 'border-cyan-500/50' : 'border-slate-700/50'
-                  }`}
-                >
-                  {!isEditing ? (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        <span className="text-xl">{session.type === 'work' ? '📚' : '☕'}</span>
-                        <div className="flex-1">
-                          <div className="font-semibold text-slate-200">{session.subject}</div>
-                          <div className="text-xs text-slate-400">
-                            {new Date(session.startTime).toLocaleDateString('fr-FR', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long',
-                            })}{' '}
-                            - {new Date(session.startTime).toLocaleTimeString('fr-FR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </div>
-                          <div className="text-xs text-slate-500 mt-1">
-                            {Math.floor(session.actualWorkTime / 60)}MIN
-                            {session.isManual && ' • ✏️ MANUAL'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => startEditSession(index)}
-                          className="px-2 py-1 bg-slate-800/50 border border-slate-600 rounded text-slate-400 hover:bg-slate-700/50 transition-all"
-                          title="MODIFY ENTRY"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => deleteSession(index)}
-                          className="px-2 py-1 bg-red-900/30 border border-red-500/50 rounded text-red-400 hover:bg-red-500/20 transition-all"
-                          title="DELETE ENTRY"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <div>
-                          <label className="text-xs text-slate-400 mb-1 block">PROTOCOL:</label>
-                          <select
-                            value={editSession.subjectName}
-                            onChange={(e) => setEditSession((prev) => ({ ...prev, subjectName: e.target.value }))}
-                            className="w-full px-2 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-slate-200"
-                          >
-                            {subjects.map((s) => (
-                              <option key={s.id} value={s.name}>
-                                {s.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs text-slate-400 mb-1 block">TYPE:</label>
-                          <select
-                            value={editSession.type}
-                            onChange={(e) => setEditSession((prev) => ({ ...prev, type: e.target.value }))}
-                            className="w-full px-2 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-slate-200"
-                          >
-                            <option value="work">📚 WORK</option>
-                            <option value="break">☕ BREAK</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs text-slate-400 mb-1 block">DURATION:</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="480"
-                            value={editSession.duration}
-                            onChange={(e) => setEditSession((prev) => ({ ...prev, duration: parseInt(e.target.value) || 25 }))}
-                            className="w-full px-2 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-slate-200"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-slate-400 mb-1 block">DATE:</label>
-                          <input
-                            type="date"
-                            value={editSession.date}
-                            onChange={(e) => setEditSession((prev) => ({ ...prev, date: e.target.value }))}
-                            className="w-full px-2 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-slate-200"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-slate-400 mb-1 block">TIME:</label>
-                          <input
-                            type="time"
-                            value={editSession.time}
-                            onChange={(e) => setEditSession((prev) => ({ ...prev, time: e.target.value }))}
-                            className="w-full px-2 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-slate-200"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={saveEditSession}
-                          disabled={!editSession.subjectName}
-                          className="px-4 py-1.5 bg-emerald-500/20 border border-emerald-500 rounded text-emerald-400 font-semibold text-xs uppercase disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-500/30 transition-all"
-                        >
-                          ✅ SAVE
-                        </button>
-                        <button
-                          onClick={cancelEditSession}
-                          className="px-4 py-1.5 bg-slate-800/50 border border-slate-600 rounded text-slate-300 font-semibold text-xs uppercase hover:bg-slate-700/50 transition-all"
-                        >
-                          ❌ CANCEL
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-slate-300 text-lg font-semibold mb-2">🕘 NO SESSION DATA AVAILABLE</div>
-            <div className="text-slate-400">Initialize first protocol or add manual entry!</div>
-          </div>
-        )}
-      </div>
+      <SessionsHistory
+        sessionsHistory={sessionsHistory}
+        subjects={subjects}
+        showManualForm={showManualForm}
+        onToggleManualForm={() => setShowManualForm(!showManualForm)}
+        manualSession={manualSession}
+        onManualSessionChange={setManualSession}
+        onAddManualSession={addManualSession}
+        editingSession={editingSession}
+        editSession={editSession}
+        onEditSessionChange={setEditSession}
+        onStartEditSession={startEditSession}
+        onSaveEditSession={saveEditSession}
+        onCancelEditSession={cancelEditSession}
+        onDeleteSession={deleteSession}
+      />
     </div>
   );
 };
