@@ -544,6 +544,13 @@ const HomePage = () => {
             >
               {t('nav.books')}
             </button>
+            {/* Finance */}
+            <button 
+              onClick={() => navigateToTab('finance')}
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+            >
+              {t('nav.finance')}
+            </button>
             {/* Paramètres */}
             <button 
               onClick={() => navigateToTab('settings')}

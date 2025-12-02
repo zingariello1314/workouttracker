@@ -1,0 +1,426 @@
+/**
+ * Service Yahoo Finance avec fallback multi-APIs
+ * Supporte Alpha Vantage, Finnhub, Polygon avec normalisation
+ */
+
+import { getApiKey, hasApiKey } from '../../config/apiKeys';
+import { financeStorage } from './financeStorage';
+import logger from '../../utils/logger';
+
+const log = logger.module('yahooFinanceService');
+
+class YahooFinanceService {
+  constructor() {
+    this.cache = new Map();
+    this.cacheTTL = {
+      quote: 15 * 60 * 1000,      // 15 min pour données live
+      historical: 60 * 60 * 1000, // 1h pour historique
+      chart: 5 * 60 * 1000        // 5 min pour graphiques
+    };
+    this.retryConfig = {
+      maxRetries: 3,
+      backoffBase: 1000,
+      backoffMultiplier: 2
+    };
+    this.circuitBreaker = {
+      failures: 0,
+      threshold: 5,
+      timeout: 60000,
+      state: 'CLOSED' // CLOSED, OPEN, HALF_OPEN
+    };
+  }
+
+  async getQuoteData(ticker, options = {}) {
+    const { useCache = true, forceRefresh = false } = options;
+    
+    // 1. Vérifier cache IndexedDB
+    if (useCache && !forceRefresh) {
+      const cached = await financeStorage.getYahooCache(ticker);
+      if (cached) {
+        log.debug(`Cache hit for ${ticker}`);
+        return cached;
+      }
+    }
+
+    // 2. Vérifier circuit breaker
+    if (this.circuitBreaker.state === 'OPEN') {
+      if (Date.now() < this.circuitBreaker.nextAttempt) {
+        log.warn('Circuit breaker OPEN, using cache');
+        const cached = await financeStorage.getYahooCache(ticker);
+        if (cached) return cached;
+        throw new Error('Circuit breaker is OPEN and no cache available');
+      }
+      this.circuitBreaker.state = 'HALF_OPEN';
+    }
+
+    // 3. Essayer Alpha Vantage (priorité)
+    if (hasApiKey('ALPHA_VANTAGE')) {
+      try {
+        const data = await this.fetchAlphaVantage(ticker);
+        await financeStorage.setYahooCache(ticker, data);
+        this.onSuccess();
+        return this.normalizeQuoteData(data, 'alphaVantage');
+      } catch (error) {
+        log.warn(`Alpha Vantage failed for ${ticker}:`, error.message);
+        this.onFailure();
+      }
+    }
+
+    // 4. Fallback Finnhub
+    if (hasApiKey('FINNHUB')) {
+      try {
+        const data = await this.fetchFinnhub(ticker);
+        await financeStorage.setYahooCache(ticker, data);
+        this.onSuccess();
+        return this.normalizeQuoteData(data, 'finnhub');
+      } catch (error) {
+        log.warn(`Finnhub failed for ${ticker}:`, error.message);
+        this.onFailure();
+      }
+    }
+
+    // 5. Fallback Polygon
+    if (hasApiKey('POLYGON')) {
+      try {
+        const data = await this.fetchPolygon(ticker);
+        await financeStorage.setYahooCache(ticker, data);
+        this.onSuccess();
+        return this.normalizeQuoteData(data, 'polygon');
+      } catch (error) {
+        log.warn(`Polygon failed for ${ticker}:`, error.message);
+        this.onFailure();
+      }
+    }
+
+    // 6. Dernier recours : données locales
+    const cached = await financeStorage.getYahooCache(ticker);
+    if (cached) {
+      log.warn(`Using stale cache for ${ticker}`);
+      return cached;
+    }
+
+    throw new Error(`Unable to fetch data for ${ticker} from any source`);
+  }
+
+  async fetchAlphaVantage(ticker) {
+    const apiKey = getApiKey('ALPHA_VANTAGE');
+    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${apiKey}`;
+    
+    const response = await this.fetchWithRetry(url);
+    
+    if (response['Error Message']) {
+      throw new Error(response['Error Message']);
+    }
+    
+    if (response['Note']) {
+      throw new Error('API rate limit exceeded');
+    }
+    
+    const quote = response['Global Quote'];
+    if (!quote || !quote['05. price']) {
+      throw new Error('Invalid response from Alpha Vantage');
+    }
+    
+    return quote;
+  }
+
+  async fetchFinnhub(ticker) {
+    const apiKey = getApiKey('FINNHUB');
+    const url = `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`;
+    
+    const response = await this.fetchWithRetry(url);
+    
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    
+    return response;
+  }
+
+  async fetchPolygon(ticker) {
+    const apiKey = getApiKey('POLYGON');
+    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apikey=${apiKey}`;
+    
+    const response = await this.fetchWithRetry(url);
+    
+    if (response.status !== 'OK') {
+      throw new Error(response.status);
+    }
+    
+    return response;
+  }
+
+  normalizeQuoteData(data, source) {
+    const normalizers = {
+      alphaVantage: (d) => ({
+        prixActuel: parseFloat(d['05. price'] || 0),
+        variationJour: parseFloat((d['10. change percent'] || '0%').replace('%', '')),
+        volume: parseInt(d['06. volume'] || 0),
+        capitalisation: parseFloat(d['07. market cap'] || 0),
+        previousClose: parseFloat(d['08. previous close'] || 0),
+        open: parseFloat(d['02. open'] || 0),
+        high: parseFloat(d['03. high'] || 0),
+        low: parseFloat(d['04. low'] || 0)
+      }),
+      finnhub: (d) => ({
+        prixActuel: d.c || 0,
+        variationJour: d.dp || 0,
+        volume: d.v || 0,
+        capitalisation: 0, // Non disponible dans quote
+        previousClose: d.pc || 0,
+        open: d.o || 0,
+        high: d.h || 0,
+        low: d.l || 0
+      }),
+      polygon: (d) => {
+        const result = d.results?.[0];
+        if (!result) throw new Error('No data in Polygon response');
+        return {
+          prixActuel: result.c || 0,
+          variationJour: result.c && result.o ? ((result.c - result.o) / result.o) * 100 : 0,
+          volume: result.v || 0,
+          capitalisation: 0,
+          previousClose: result.o || 0,
+          open: result.o || 0,
+          high: result.h || 0,
+          low: result.l || 0
+        };
+      }
+    };
+    
+    return normalizers[source](data);
+  }
+
+  async fetchWithRetry(url, options = {}) {
+    const { maxRetries = 3, backoffBase = 1000, jitter = true } = { ...this.retryConfig, ...options };
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        if (attempt === maxRetries - 1) throw error;
+        
+        // Backoff exponentiel avec jitter
+        const baseDelay = backoffBase * Math.pow(2, attempt);
+        const jitterValue = jitter ? Math.random() * 0.3 * baseDelay : 0;
+        const delay = baseDelay + jitterValue;
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  onSuccess() {
+    this.circuitBreaker.failures = 0;
+    this.circuitBreaker.state = 'CLOSED';
+  }
+
+  onFailure() {
+    this.circuitBreaker.failures++;
+    if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
+      this.circuitBreaker.state = 'OPEN';
+      this.circuitBreaker.nextAttempt = Date.now() + this.circuitBreaker.timeout;
+      log.warn('Circuit breaker OPEN');
+    }
+  }
+
+  async getHistoricalData(ticker, period = '1mo', options = {}) {
+    const { useCache = true, forceRefresh = false } = options;
+    
+    // Vérifier cache
+    const cacheKey = `historical_${ticker}_${period}`;
+    if (useCache && !forceRefresh) {
+      const cached = await financeStorage.getYahooCache(cacheKey);
+      if (cached && Date.now() - cached.timestamp < 60 * 60 * 1000) { // 1h cache
+        return cached.data;
+      }
+    }
+
+    try {
+      // Essayer Alpha Vantage TIME_SERIES_DAILY
+      if (hasApiKey('ALPHA_VANTAGE')) {
+        const data = await this.fetchAlphaVantageHistorical(ticker, period);
+        await financeStorage.setYahooCache(cacheKey, data);
+        this.onSuccess();
+        return this.normalizeHistoricalData(data, 'alphaVantage');
+      }
+
+      // Fallback Finnhub
+      if (hasApiKey('FINNHUB')) {
+        const data = await this.fetchFinnhubHistorical(ticker, period);
+        await financeStorage.setYahooCache(cacheKey, data);
+        this.onSuccess();
+        return this.normalizeHistoricalData(data, 'finnhub');
+      }
+
+      // Fallback Polygon
+      if (hasApiKey('POLYGON')) {
+        const data = await this.fetchPolygonHistorical(ticker, period);
+        await financeStorage.setYahooCache(cacheKey, data);
+        this.onSuccess();
+        return this.normalizeHistoricalData(data, 'polygon');
+      }
+
+      return [];
+    } catch (error) {
+      log.error(`Error fetching historical data for ${ticker}:`, error);
+      this.onFailure();
+      
+      // Fallback cache
+      const cached = await financeStorage.getYahooCache(cacheKey);
+      if (cached) return cached.data;
+      
+      return [];
+    }
+  }
+
+  async fetchAlphaVantageHistorical(ticker, period) {
+    const apiKey = getApiKey('ALPHA_VANTAGE');
+    const outputsize = period === 'Max' ? 'full' : 'compact';
+    const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${ticker}&outputsize=${outputsize}&apikey=${apiKey}`;
+    
+    const response = await this.fetchWithRetry(url);
+    
+    if (response['Error Message']) {
+      throw new Error(response['Error Message']);
+    }
+    
+    if (response['Note']) {
+      throw new Error('API rate limit exceeded');
+    }
+    
+    const timeSeries = response['Time Series (Daily)'];
+    if (!timeSeries) {
+      throw new Error('No time series data in response');
+    }
+    
+    return timeSeries;
+  }
+
+  async fetchFinnhubHistorical(ticker, period) {
+    const apiKey = getApiKey('FINNHUB');
+    const endDate = Math.floor(Date.now() / 1000);
+    const startDate = this.getStartDateForPeriod(period);
+    
+    const url = `https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=D&from=${startDate}&to=${endDate}&token=${apiKey}`;
+    
+    const response = await this.fetchWithRetry(url);
+    
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    
+    return response;
+  }
+
+  async fetchPolygonHistorical(ticker, period) {
+    const apiKey = getApiKey('POLYGON');
+    const startDate = this.getStartDateForPeriod(period);
+    const endDate = new Date().toISOString().split('T')[0];
+    
+    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${apiKey}`;
+    
+    const response = await this.fetchWithRetry(url);
+    
+    if (response.status !== 'OK') {
+      throw new Error(response.status);
+    }
+    
+    return response;
+  }
+
+  getStartDateForPeriod(period) {
+    const now = new Date();
+    let daysBack = 30;
+    
+    switch (period) {
+      case '1j':
+        daysBack = 1;
+        break;
+      case '5j':
+        daysBack = 5;
+        break;
+      case '1m':
+        daysBack = 30;
+        break;
+      case '3m':
+        daysBack = 90;
+        break;
+      case '6m':
+        daysBack = 180;
+        break;
+      case '1a':
+        daysBack = 365;
+        break;
+      case 'Max':
+        daysBack = 365 * 5; // 5 ans max
+        break;
+    }
+    
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - daysBack);
+    
+    // Retourner timestamp Unix pour Finnhub, date ISO pour Polygon
+    return {
+      unix: Math.floor(startDate.getTime() / 1000),
+      iso: startDate.toISOString().split('T')[0]
+    };
+  }
+
+  normalizeHistoricalData(data, source) {
+    const normalizers = {
+      alphaVantage: (d) => {
+        return Object.entries(d).map(([date, values]) => ({
+          date,
+          open: parseFloat(values['1. open']),
+          high: parseFloat(values['2. high']),
+          low: parseFloat(values['3. low']),
+          close: parseFloat(values['4. close']),
+          volume: parseInt(values['5. volume'])
+        })).sort((a, b) => new Date(a.date) - new Date(b.date));
+      },
+      finnhub: (d) => {
+        if (!d.c || d.c.length === 0) return [];
+        return d.c.map((close, i) => ({
+          date: new Date(d.t[i] * 1000).toISOString().split('T')[0],
+          open: d.o[i],
+          high: d.h[i],
+          low: d.l[i],
+          close: close,
+          volume: d.v[i]
+        }));
+      },
+      polygon: (d) => {
+        if (!d.results || d.results.length === 0) return [];
+        return d.results.map(result => ({
+          date: new Date(result.t).toISOString().split('T')[0],
+          open: result.o,
+          high: result.h,
+          low: result.l,
+          close: result.c,
+          volume: result.v
+        }));
+      }
+    };
+    
+    return normalizers[source](data);
+  }
+}
+
+export const yahooFinanceService = new YahooFinanceService();
+

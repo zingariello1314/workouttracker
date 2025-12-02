@@ -106,6 +106,26 @@ export const translations = {
     'nav.exercises': 'Exercices',
     'nav.history': 'Historique',
     'nav.settings': 'Paramètres',
+    'nav.finance': 'Finance',
+    
+    // Finance
+    'finance.title': 'Finance',
+    'finance.subtitle': 'Gestion complète de vos finances personnelles',
+    'finance.inDevelopment': 'En cours de développement',
+    'finance.underDevelopment': 'En cours de développement',
+    'finance.comingSoon': 'Bientôt disponible',
+    'finance.subTabs.bourse': 'Bourse',
+    'finance.subTabs.budget': 'Budget Personnel',
+    'finance.subTabs.investissements': 'Investissements Divers',
+    'finance.subTabs.smartShopping': 'Smart Shopping',
+    'finance.subTabs.planificateur': 'Planificateur',
+    'finance.subTabs.synthese': 'Synthèse',
+    'finance.subTabs.theorieRealite': 'Théorie vs Réalité',
+    
+    // Budget Personnel - Sous-onglets
+    'budget.subTabs.dashboard': 'Dashboard',
+    'budget.subTabs.categories': 'Catégories',
+    'budget.subTabs.calendrier': 'Calendrier',
     
     // HomePage
     'home.title.line1': 'Où',
@@ -269,6 +289,26 @@ export const translations = {
     'nav.exercises': 'Exercises',
     'nav.history': 'History',
     'nav.settings': 'Settings',
+    'nav.finance': 'Finance',
+    
+    // Finance
+    'finance.title': 'Finance',
+    'finance.subtitle': 'Complete personal finance management',
+    'finance.inDevelopment': 'Under development',
+    'finance.underDevelopment': 'Under development',
+    'finance.comingSoon': 'Coming soon',
+    'finance.subTabs.bourse': 'Stock Market',
+    'finance.subTabs.budget': 'Personal Budget',
+    'finance.subTabs.investissements': 'Diversified Investments',
+    'finance.subTabs.smartShopping': 'Smart Shopping',
+    'finance.subTabs.planificateur': 'Planner',
+    'finance.subTabs.synthese': 'Summary',
+    'finance.subTabs.theorieRealite': 'Theory vs Reality',
+    
+    // Budget Personnel - Sous-onglets
+    'budget.subTabs.dashboard': 'Dashboard',
+    'budget.subTabs.categories': 'Categories',
+    'budget.subTabs.calendrier': 'Calendar',
     
     // HomePage
     'home.title.line1': 'Where',

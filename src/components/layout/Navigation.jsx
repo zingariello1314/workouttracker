@@ -32,7 +32,7 @@ const Navigation = () => {
     [sportTabs]
   );
 
-  // ✅ Navigation principale : Accueil / Sport / Quêtes / Apprentissage / Livres / Paramètres
+  // ✅ Navigation principale : Accueil / Sport / Quêtes / Apprentissage / Livres / Finance / Paramètres
   const tabs = useMemo(
     () => [
     { id: 'home', labelKey: 'nav.home', icon: '🏠' },
@@ -40,6 +40,7 @@ const Navigation = () => {
       { id: 'quests', labelKey: 'nav.quests', icon: '⚡' },
       { id: 'apprentissage', labelKey: 'nav.apprentissage', icon: '📖' },
     { id: 'books', labelKey: 'nav.books', icon: '📚' },
+    { id: 'finance', labelKey: 'nav.finance', icon: '💰' },
     { id: 'settings', labelKey: 'nav.settings', icon: '⚙️' }
     ],
     []

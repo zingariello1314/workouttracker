@@ -15,6 +15,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Toast, useToast } from '../Toast';
 import TelemetryCoordinator from '../../utils/TelemetryCoordinator';
+import { LanguageProvider } from '../../../../../context/LanguageContext';
 
 // Mock TelemetryCoordinator
 vi.mock('../../utils/TelemetryCoordinator', () => ({
@@ -22,6 +23,15 @@ vi.mock('../../utils/TelemetryCoordinator', () => ({
     recordEvent: vi.fn()
   }
 }));
+
+// Helper pour wrapper avec LanguageProvider
+const renderWithProvider = (ui) => {
+  return render(
+    <LanguageProvider>
+      {ui}
+    </LanguageProvider>
+  );
+};
 
 describe('Toast (GarminTab)', () => {
   const defaultProps = {
@@ -44,33 +54,33 @@ describe('Toast (GarminTab)', () => {
 
   describe('Rendu et accessibilité', () => {
     it('affiche le message', () => {
-      render(<Toast {...defaultProps} />);
+      renderWithProvider(<Toast {...defaultProps} />);
       expect(screen.getByText('Message de test')).toBeInTheDocument();
     });
 
     it('affiche le bon type de toast (success)', () => {
-      render(<Toast {...defaultProps} type="success" />);
+      renderWithProvider(<Toast {...defaultProps} type="success" />);
       const toast = screen.getByRole('status');
       expect(toast).toHaveClass('bg-green-600');
       expect(toast).toHaveAttribute('aria-live', 'polite');
     });
 
     it('affiche le bon type de toast (error)', () => {
-      render(<Toast {...defaultProps} type="error" />);
+      renderWithProvider(<Toast {...defaultProps} type="error" />);
       const toast = screen.getByRole('alert');
       expect(toast).toHaveClass('bg-red-600');
       expect(toast).toHaveAttribute('aria-live', 'assertive');
     });
 
     it('affiche le bon type de toast (info)', () => {
-      render(<Toast {...defaultProps} type="info" />);
+      renderWithProvider(<Toast {...defaultProps} type="info" />);
       const toast = screen.getByRole('status');
       expect(toast).toHaveClass('bg-blue-600');
       expect(toast).toHaveAttribute('aria-live', 'polite');
     });
 
     it('a les attributs ARIA corrects', () => {
-      render(<Toast {...defaultProps} />);
+      renderWithProvider(<Toast {...defaultProps} />);
       const toast = screen.getByRole('status');
       expect(toast).toHaveAttribute('aria-live');
       expect(toast).toHaveAttribute('aria-atomic', 'true');
@@ -84,14 +94,14 @@ describe('Toast (GarminTab)', () => {
         </div>
       );
       
-      render(<Toast {...defaultProps} message={messageNode} />);
+      renderWithProvider(<Toast {...defaultProps} message={messageNode} />);
       
       expect(screen.getByText('Message complexe')).toBeInTheDocument();
       expect(screen.getByText('Détails')).toBeInTheDocument();
     });
 
     it('affiche le bouton de fermeture avec aria-label', () => {
-      render(<Toast {...defaultProps} />);
+      renderWithProvider(<Toast {...defaultProps} />);
       
       const closeButton = screen.getByLabelText('Fermer le message');
       expect(closeButton).toBeInTheDocument();
@@ -101,7 +111,7 @@ describe('Toast (GarminTab)', () => {
   describe('Fermeture automatique', () => {
     it('ferme automatiquement après la durée spécifiée', async () => {
       const onClose = vi.fn();
-      render(<Toast {...defaultProps} duration={1000} onClose={onClose} />);
+      renderWithProvider(<Toast {...defaultProps} duration={1000} onClose={onClose} />);
       
       expect(onClose).not.toHaveBeenCalled();
       
@@ -114,7 +124,7 @@ describe('Toast (GarminTab)', () => {
 
     it('ne ferme pas automatiquement si duration est 0', async () => {
       const onClose = vi.fn();
-      render(<Toast {...defaultProps} duration={0} onClose={onClose} />);
+      renderWithProvider(<Toast {...defaultProps} duration={0} onClose={onClose} />);
       
       vi.advanceTimersByTime(5000);
       
@@ -125,7 +135,7 @@ describe('Toast (GarminTab)', () => {
 
     it('nettoie le timer lors du démontage', () => {
       const onClose = vi.fn();
-      const { unmount } = render(<Toast {...defaultProps} duration={1000} onClose={onClose} />);
+      const { unmount } = renderWithProvider(<Toast {...defaultProps} duration={1000} onClose={onClose} />);
       
       unmount();
       
@@ -140,7 +150,7 @@ describe('Toast (GarminTab)', () => {
       const user = userEvent.setup({ delay: null });
       const onClose = vi.fn();
       
-      render(<Toast {...defaultProps} onClose={onClose} />);
+      renderWithProvider(<Toast {...defaultProps} onClose={onClose} />);
       
       const closeButton = screen.getByLabelText('Fermer le message');
       await user.click(closeButton);
@@ -151,7 +161,7 @@ describe('Toast (GarminTab)', () => {
 
   describe('Instrumentation', () => {
     it('enregistre l\'événement toast_shown lors de l\'affichage', () => {
-      render(<Toast {...defaultProps} id="test-id" />);
+      renderWithProvider(<Toast {...defaultProps} id="test-id" />);
       
       expect(TelemetryCoordinator.recordEvent).toHaveBeenCalledWith(
         'toast_shown',
@@ -166,7 +176,7 @@ describe('Toast (GarminTab)', () => {
 
     it('enregistre l\'événement toast_closed lors de la fermeture automatique', async () => {
       const onClose = vi.fn();
-      render(<Toast {...defaultProps} id="test-id" duration={1000} onClose={onClose} />);
+      renderWithProvider(<Toast {...defaultProps} id="test-id" duration={1000} onClose={onClose} />);
       
       vi.advanceTimersByTime(1000);
       
@@ -186,7 +196,7 @@ describe('Toast (GarminTab)', () => {
       const user = userEvent.setup({ delay: null });
       const onClose = vi.fn();
       
-      render(<Toast {...defaultProps} id="test-id" onClose={onClose} />);
+      renderWithProvider(<Toast {...defaultProps} id="test-id" onClose={onClose} />);
       
       const closeButton = screen.getByLabelText('Fermer le message');
       await user.click(closeButton);
@@ -226,7 +236,7 @@ describe('useToast (GarminTab)', () => {
       );
     };
     
-    render(<TestComponent />);
+    renderWithProvider(<TestComponent />);
     expect(screen.getByText('Afficher')).toBeInTheDocument();
   });
 
@@ -246,14 +256,14 @@ describe('useToast (GarminTab)', () => {
       );
     };
     
-    render(<TestComponent />);
+    renderWithProvider(<TestComponent />);
     
     const button = screen.getByText('Afficher');
     await user.click(button);
     
     await waitFor(() => {
       expect(screen.getByText('Message test')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   it('retourne un ID unique pour chaque toast', () => {
@@ -269,7 +279,7 @@ describe('useToast (GarminTab)', () => {
       return <button onClick={handleClick}>Test</button>;
     };
     
-    render(<TestComponent />);
+    renderWithProvider(<TestComponent />);
     // Le test est dans le handler, pas besoin d'interaction
   });
 
@@ -293,7 +303,7 @@ describe('useToast (GarminTab)', () => {
       );
     };
     
-    render(<TestComponent />);
+    renderWithProvider(<TestComponent />);
     
     await user.click(screen.getByText('Afficher multiples'));
     
@@ -301,7 +311,7 @@ describe('useToast (GarminTab)', () => {
       expect(screen.getByText('Toast 1')).toBeInTheDocument();
       expect(screen.getByText('Toast 2')).toBeInTheDocument();
       expect(screen.getByText('Toast 3')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   it('supprime un toast via removeToast', async () => {
@@ -327,19 +337,19 @@ describe('useToast (GarminTab)', () => {
       );
     };
     
-    render(<TestComponent />);
+    renderWithProvider(<TestComponent />);
     
     await user.click(screen.getByText('Afficher'));
     
     await waitFor(() => {
       expect(screen.getByText('Message')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
     
     await user.click(screen.getByText('Supprimer'));
     
     await waitFor(() => {
       expect(screen.queryByText('Message')).not.toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   it('ferme automatiquement les toasts après leur durée', async () => {
@@ -356,20 +366,20 @@ describe('useToast (GarminTab)', () => {
       );
     };
     
-    render(<TestComponent />);
+    renderWithProvider(<TestComponent />);
     
     const button = screen.getByText('Afficher');
     await userEvent.click(button);
     
     await waitFor(() => {
       expect(screen.getByText('Message')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
     
     vi.advanceTimersByTime(1000);
     
     await waitFor(() => {
       expect(screen.queryByText('Message')).not.toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 });
 

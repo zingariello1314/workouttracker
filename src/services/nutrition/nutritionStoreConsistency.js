@@ -223,7 +223,7 @@ async function fixInconsistencies(db, result, options = {}) {
             const removedCount = dailyMeal.mealIds.length - validMealIds.length;
             dailyMeal.mealIds = validMealIds;
             
-            await repository.put('dailyMeals', dailyMeal.date, dailyMeal, { 
+            await repository.save('dailyMeals', dailyMeal, { 
               operationName: 'consistency:fixDailyMealMealIds' 
             });
             
@@ -253,7 +253,7 @@ async function fixInconsistencies(db, result, options = {}) {
           // Essayer de corriger en utilisant la date du meal
           if (meal.date && dailyMealsMap.has(meal.date)) {
             meal.dailyMealId = meal.date;
-            await repository.put('meals', meal.id, meal, { 
+            await repository.save('meals', meal, { 
               operationName: 'consistency:fixMealDailyMealId' 
             });
             
@@ -265,7 +265,7 @@ async function fixInconsistencies(db, result, options = {}) {
           } else {
             // Supprimer dailyMealId invalide
             delete meal.dailyMealId;
-            await repository.put('meals', meal.id, meal, { 
+            await repository.save('meals', meal, { 
               operationName: 'consistency:removeInvalidDailyMealId' 
             });
             
@@ -301,7 +301,7 @@ async function fixInconsistencies(db, result, options = {}) {
         
         for (const program of toDeactivate) {
           program.isActive = false;
-          await repository.put('programs', program.id, program, { 
+          await repository.save('programs', program, { 
             operationName: 'consistency:deactivateProgram' 
           });
           

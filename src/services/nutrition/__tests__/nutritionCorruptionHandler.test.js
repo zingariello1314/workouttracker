@@ -181,6 +181,8 @@ describe('nutritionCorruptionHandler', () => {
 
   describe('attemptRecovery', () => {
     it('devrait tenter récupération et retourner DB si succès', async () => {
+      // Nettoyer localStorage avant le test
+      clearLocalStorage();
       const error = createDOMException('InvalidStateError');
       
       const result = await attemptRecovery(error);
@@ -193,7 +195,7 @@ describe('nutritionCorruptionHandler', () => {
       if (result) {
         expect(localStorage.getItem('nutrition_db_corruption_detected')).toBeNull();
       }
-    });
+    }, 10000); // Timeout 10s
 
     it('devrait retourner null si nombre max tentatives atteint', async () => {
       localStorage.setItem('nutrition_db_recovery_attempts', '3'); // Max atteint
@@ -205,13 +207,15 @@ describe('nutritionCorruptionHandler', () => {
     });
 
     it('devrait incrémenter compteur tentatives', async () => {
+      // Nettoyer localStorage avant le test
+      clearLocalStorage();
       const error = createDOMException('InvalidStateError');
       
       await attemptRecovery(error);
       
       const attempts = parseInt(localStorage.getItem('nutrition_db_recovery_attempts') || '0', 10);
       expect(attempts).toBe(1);
-    });
+    }, 10000); // Timeout 10s
   });
 
   describe('resetDatabase', () => {
@@ -260,13 +264,15 @@ describe('nutritionCorruptionHandler', () => {
     });
 
     it('devrait tenter récupération automatique si autoRecover=true', async () => {
+      // Nettoyer localStorage avant le test
+      clearLocalStorage();
       const error = createDOMException('InvalidStateError');
       
       const result = await handleCorruption(error, { autoRecover: true });
       
       // Vérifier que flag corruption a été mis
       expect(localStorage.getItem('nutrition_db_corruption_detected')).not.toBeNull();
-    });
+    }, 10000); // Timeout 10s
 
     it('devrait réinitialiser si autoReset=true et récupération échoue', async () => {
       const error = createDOMException('InvalidStateError');

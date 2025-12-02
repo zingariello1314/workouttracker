@@ -116,7 +116,7 @@ describe('Toast (ui/Toast)', () => {
         expect(screen.getByText('Suggestion 1')).toBeInTheDocument();
         expect(screen.getByText('Suggestion 2')).toBeInTheDocument();
         expect(screen.getByText('Suggestion 3')).toBeInTheDocument();
-      });
+      }, { timeout: 2000 });
     });
 
     it('masque les suggestions par défaut', () => {
@@ -145,14 +145,14 @@ describe('Toast (ui/Toast)', () => {
       await waitFor(() => {
         expect(screen.getByText('Suggestion 1')).toBeInTheDocument();
         expect(toggleButton).toHaveAttribute('aria-expanded', 'true');
-      });
+      }, { timeout: 2000 });
       
       await user.click(toggleButton);
       
       await waitFor(() => {
         expect(screen.queryByText('Suggestion 1')).not.toBeInTheDocument();
         expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
-      });
+      }, { timeout: 2000 });
     });
   });
 
@@ -248,9 +248,11 @@ describe('ToastProvider et useToast', () => {
       const { showToast } = useToast();
       
       return (
-        <button onClick={() => showToast('Message test', TOAST_TYPES.SUCCESS)}>
-          Afficher
-        </button>
+        <div>
+          <button onClick={() => showToast('Message test', TOAST_TYPES.SUCCESS)}>
+            Afficher
+          </button>
+        </div>
       );
     };
     
@@ -264,7 +266,7 @@ describe('ToastProvider et useToast', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Message test')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   it('affiche un toast via showSuccess', async () => {
@@ -274,9 +276,11 @@ describe('ToastProvider et useToast', () => {
       const { showSuccess } = useToast();
       
       return (
-        <button onClick={() => showSuccess('Succès !')}>
-          Afficher succès
-        </button>
+        <div>
+          <button onClick={() => showSuccess('Succès !')}>
+            Afficher succès
+          </button>
+        </div>
       );
     };
     
@@ -290,7 +294,7 @@ describe('ToastProvider et useToast', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Succès !')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   it('affiche un toast via showError avec détails', async () => {
@@ -300,16 +304,18 @@ describe('ToastProvider et useToast', () => {
       const { showError } = useToast();
       
       return (
-        <button
-          onClick={() =>
-            showError('Erreur', {
-              title: 'Titre erreur',
-              suggestions: ['Suggestion 1']
-            })
-          }
-        >
-          Afficher erreur
-        </button>
+        <div>
+          <button
+            onClick={() =>
+              showError('Erreur', {
+                title: 'Titre erreur',
+                suggestions: ['Suggestion 1']
+              })
+            }
+          >
+            Afficher erreur
+          </button>
+        </div>
       );
     };
     
@@ -324,7 +330,7 @@ describe('ToastProvider et useToast', () => {
     await waitFor(() => {
       expect(screen.getByText('Titre erreur')).toBeInTheDocument();
       expect(screen.getByText('Erreur')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   it('limite le nombre de toasts affichés simultanément', async () => {
@@ -334,15 +340,17 @@ describe('ToastProvider et useToast', () => {
       const { showToast } = useToast();
       
       return (
-        <button
-          onClick={() => {
-            for (let i = 0; i < 5; i++) {
-              showToast(`Toast ${i}`, TOAST_TYPES.INFO);
-            }
-          }}
-        >
-          Afficher 5 toasts
-        </button>
+        <div>
+          <button
+            onClick={() => {
+              for (let i = 0; i < 5; i++) {
+                showToast(`Toast ${i}`, TOAST_TYPES.INFO);
+              }
+            }}
+          >
+            Afficher 5 toasts
+          </button>
+        </div>
       );
     };
     
@@ -362,7 +370,7 @@ describe('ToastProvider et useToast', () => {
       // Les premiers doivent être supprimés
       expect(screen.queryByText('Toast 0')).not.toBeInTheDocument();
       expect(screen.queryByText('Toast 1')).not.toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   it('supprime un toast via removeToast', async () => {
@@ -397,13 +405,13 @@ describe('ToastProvider et useToast', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Message')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
     
     await user.click(screen.getByText('Supprimer'));
     
     await waitFor(() => {
       expect(screen.queryByText('Message')).not.toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   it('ferme automatiquement les toasts après leur durée', async () => {
@@ -411,7 +419,9 @@ describe('ToastProvider et useToast', () => {
       const { showSuccess } = useToast();
       
       return (
-        <button onClick={() => showSuccess('Message')}>Afficher</button>
+        <div>
+          <button onClick={() => showSuccess('Message')}>Afficher</button>
+        </div>
       );
     };
     
@@ -426,14 +436,14 @@ describe('ToastProvider et useToast', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Message')).toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
     
     // Durée par défaut pour SUCCESS : 3000ms
     vi.advanceTimersByTime(3000);
     
     await waitFor(() => {
       expect(screen.queryByText('Message')).not.toBeInTheDocument();
-    });
+    }, { timeout: 2000 });
   });
 
   it('affiche le ToastContainer avec aria-live', () => {

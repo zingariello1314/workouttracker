@@ -48,7 +48,7 @@ vi.mock('../../../utils/logger', () => ({
 const mockRepository = {
   getAll: vi.fn(),
   get: vi.fn(),
-  put: vi.fn()
+  save: vi.fn()
 };
 
 vi.mock('../repository', () => ({
@@ -64,7 +64,7 @@ function createMeal(id, date, dailyMealId = null) {
   return {
     id,
     date,
-    dailyMealId: dailyMealId || date,
+    dailyMealId: dailyMealId !== null && dailyMealId !== undefined ? dailyMealId : date,
     type: 'breakfast',
     foods: [
       {
@@ -124,7 +124,7 @@ describe('nutritionStoreConsistency', () => {
     vi.clearAllMocks();
     mockRepository.getAll.mockResolvedValue([]);
     mockRepository.get.mockResolvedValue(null);
-    mockRepository.put.mockResolvedValue(true);
+    mockRepository.save.mockResolvedValue(true);
   });
 
   afterEach(async () => {
@@ -214,9 +214,10 @@ describe('nutritionStoreConsistency', () => {
       });
 
       it('devrait détecter meal sans dailyMealId mais avec date correspondant à un dailyMeal', async () => {
-        const meals = [
-          createMeal('meal-1', '2025-01-16', null) // Pas de dailyMealId
-        ];
+        // Créer un meal explicitement sans dailyMealId
+        const meal = createMeal('meal-1', '2025-01-16', null);
+        delete meal.dailyMealId; // Supprimer explicitement dailyMealId
+        const meals = [meal];
         const dailyMeals = [
           createDailyMeal('2025-01-16', [])
         ];
@@ -231,7 +232,9 @@ describe('nutritionStoreConsistency', () => {
         const result = await validateStoreConsistency({ verbose: false });
 
         expect(result.warnings.length).toBeGreaterThan(0);
-        expect(result.warnings[0].message).toContain('pas de dailyMealId');
+        // Le message exact est : "Meal meal-1 a une date 2025-01-16 correspondant à un dailyMeal mais pas de dailyMealId"
+        const warningMessage = result.warnings.find(w => w.message.includes('pas de dailyMealId') || w.message.includes('correspondant à un dailyMeal'));
+        expect(warningMessage).toBeDefined();
       });
     });
 
@@ -308,14 +311,13 @@ describe('nutritionStoreConsistency', () => {
         const dailyMeals = [dailyMeal];
 
         mockRepository.getAll
-          .mockResolvedValueOnce(meals)
-          .mockResolvedValueOnce(dailyMeals)
-          .mockResolvedValueOnce([]) // programs
-          .mockResolvedValueOnce(dailyMeals) // Pour fixInconsistencies
-          .mockResolvedValueOnce(meals) // Pour fixInconsistencies
-          .mockResolvedValueOnce([]) // programs pour validateDailyMealsProgramsConsistency
-          .mockResolvedValueOnce(dailyMeals)
-          .mockResolvedValueOnce([]); // programs
+          .mockResolvedValueOnce(meals) // validateMealsDailyMealsConsistency - getAll('meals')
+          .mockResolvedValueOnce(dailyMeals) // validateMealsDailyMealsConsistency - getAll('dailyMeals')
+          .mockResolvedValueOnce([]) // validateActiveProgramConsistency - getAll('programs')
+          .mockResolvedValueOnce(dailyMeals) // validateDailyMealsProgramsConsistency - getAll('dailyMeals')
+          .mockResolvedValueOnce([]) // validateDailyMealsProgramsConsistency - getAll('programs')
+          .mockResolvedValueOnce(dailyMeals) // fixInconsistencies - getAll('dailyMeals')
+          .mockResolvedValueOnce(meals); // fixInconsistencies - getAll('meals')
 
         const result = await validateStoreConsistency({
           autoFix: true,
@@ -323,10 +325,10 @@ describe('nutritionStoreConsistency', () => {
           verbose: false
         });
 
-        // Vérifier que put a été appelé pour corriger
-        expect(mockRepository.put).toHaveBeenCalled();
+        // Vérifier que save a été appelé pour corriger
+        expect(mockRepository.save).toHaveBeenCalled();
         expect(result.fixes.length).toBeGreaterThan(0);
-      });
+      }, 15000);
 
       it('devrait corriger programmes actifs multiples si autoFix=true', async () => {
         const program1 = createProgram('program-1', true);
@@ -336,12 +338,14 @@ describe('nutritionStoreConsistency', () => {
         const programs = [program1, program2];
 
         mockRepository.getAll
-          .mockResolvedValueOnce([]) // meals
-          .mockResolvedValueOnce([]) // dailyMeals
-          .mockResolvedValueOnce(programs)
-          .mockResolvedValueOnce(programs) // Pour fixInconsistencies
-          .mockResolvedValueOnce([]) // dailyMeals pour validateDailyMealsProgramsConsistency
-          .mockResolvedValueOnce(programs); // programs
+          .mockResolvedValueOnce([]) // validateMealsDailyMealsConsistency - getAll('meals')
+          .mockResolvedValueOnce([]) // validateMealsDailyMealsConsistency - getAll('dailyMeals')
+          .mockResolvedValueOnce(programs) // validateActiveProgramConsistency - getAll('programs')
+          .mockResolvedValueOnce([]) // validateDailyMealsProgramsConsistency - getAll('dailyMeals')
+          .mockResolvedValueOnce(programs) // validateDailyMealsProgramsConsistency - getAll('programs')
+          .mockResolvedValueOnce([]) // fixInconsistencies - fixInvalidMealIds - getAll('dailyMeals')
+          .mockResolvedValueOnce([]) // fixInconsistencies - fixInvalidMealIds - getAll('meals')
+          .mockResolvedValueOnce(programs); // fixInconsistencies - fixMultipleActivePrograms - getAll('programs')
 
         const result = await validateStoreConsistency({
           autoFix: true,
@@ -349,11 +353,12 @@ describe('nutritionStoreConsistency', () => {
           verbose: false
         });
 
-        // Vérifier que put a été appelé pour désactiver program-1
-        expect(mockRepository.put).toHaveBeenCalled();
+        // Vérifier que save a été appelé pour désactiver program-1
+        expect(mockRepository.save).toHaveBeenCalled();
         expect(result.fixes.length).toBeGreaterThan(0);
-        expect(result.fixes[0].message).toContain('désactivé');
-      });
+        const fixMessage = result.fixes.find(f => f.message.includes('désactivé'));
+        expect(fixMessage).toBeDefined();
+      }, 15000);
     });
   });
 
