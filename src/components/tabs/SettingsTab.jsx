@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image, Languages, BookOpen } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Download, Upload, Settings, Database, FileText, AlertTriangle, CheckCircle, X, Save, RotateCcw, Image, Languages, BookOpen, Mail, Lock, User } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
+import { getAvatarByUserId } from '../../utils/authIndexedDB';
 import LanguageSelector from '../ui/LanguageSelector';
 import { useTranslation } from '../../utils/translations';
 import { useGarminData } from '../../hooks/useGarminData';
@@ -32,7 +33,7 @@ import { loadBooks as loadBooksFromLocalStorage, saveBooks as saveBooksToLocalSt
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
-  const { currentUser, updateAvatar, linkAnonymousDataToUser } = useAuth();
+  const { currentUser, updateAvatar, updateProfile, updatePassword, linkAnonymousDataToUser } = useAuth();
   const t = useTranslation();
   const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
   const { exportAll: exportNutritionData } = useNutritionData();
@@ -60,7 +61,57 @@ const SettingsTab = () => {
   const [migrationStatus, setMigrationStatus] = useState(null); // 'idle' | 'loading' | 'success' | 'error'
   const [migrationProgress, setMigrationProgress] = useState({ current: 0, total: 0, message: '' });
 
+  // Mon profil
+  const [email, setEmail] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
+  const [emailStatus, setEmailStatus] = useState(null); // 'success' | 'error' | 'loading' | null
+  const [emailError, setEmailError] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordStatus, setPasswordStatus] = useState(null); // 'success' | 'error' | 'loading' | null
+  const [passwordError, setPasswordError] = useState('');
+
   const usernameInitial = currentUser?.username?.charAt(0).toUpperCase() || 'M';
+
+  // Charger l'avatar et l'email au chargement
+  useEffect(() => {
+    if (!currentUser?.id) {
+      setAvatarPreviewUrl(null);
+      setEmail('');
+      return;
+    }
+
+    // Charger l'avatar
+    let revokedUrl = null;
+    const loadAvatar = async () => {
+      const record = await getAvatarByUserId(currentUser.id);
+      if (record && record.blob) {
+        const url = URL.createObjectURL(record.blob);
+        revokedUrl = url;
+        setAvatarPreviewUrl(url);
+      } else {
+        setAvatarPreviewUrl(null);
+      }
+    };
+    loadAvatar().catch(() => {
+      setAvatarPreviewUrl(null);
+    });
+
+    // Charger l'email
+    setEmail(currentUser.email || '');
+    setConfirmEmail('');
+    // Réinitialiser les mots de passe
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+
+    return () => {
+      if (revokedUrl) {
+        URL.revokeObjectURL(revokedUrl);
+      }
+    };
+  }, [currentUser?.id, currentUser?.email]);
 
   const handleAvatarChange = async (event) => {
     const file = event.target.files && event.target.files[0];
@@ -76,12 +127,145 @@ const SettingsTab = () => {
         const url = URL.createObjectURL(file);
         setAvatarPreviewUrl(url);
         setAvatarStatus('success');
+        setTimeout(() => setAvatarStatus(null), 3000);
       } else {
         setAvatarStatus('error');
+        setTimeout(() => setAvatarStatus(null), 3000);
       }
     } catch (error) {
-      console.error('[SettingsTab] Erreur lors de la mise à jour de l’avatar:', error);
+      console.error('[SettingsTab] Erreur lors de la mise à jour de l\'avatar:', error);
       setAvatarStatus('error');
+      setTimeout(() => setAvatarStatus(null), 3000);
+    }
+  };
+
+  const handleEmailUpdate = async () => {
+    if (!currentUser || !email || !confirmEmail) {
+      setEmailError('Tous les champs sont requis');
+      setEmailStatus('error');
+      return;
+    }
+
+    if (email !== confirmEmail) {
+      setEmailError('Les adresses email ne correspondent pas');
+      setEmailStatus('error');
+      return;
+    }
+
+    if (!email.includes('@') || !email.includes('.')) {
+      setEmailError('Adresse email invalide');
+      setEmailStatus('error');
+      return;
+    }
+
+    setEmailError('');
+    setEmailStatus('loading');
+    try {
+      const result = await updateProfile({ email });
+      if (result.success) {
+        setEmailStatus('success');
+        setConfirmEmail('');
+        setTimeout(() => {
+          setEmailStatus(null);
+        }, 3000);
+      } else {
+        setEmailError('Erreur lors de la mise à jour de l\'email');
+        setEmailStatus('error');
+        setTimeout(() => {
+          setEmailStatus(null);
+          setEmailError('');
+        }, 5000);
+      }
+    } catch (error) {
+      console.error('[SettingsTab] Erreur lors de la mise à jour de l\'email:', error);
+      setEmailError('Erreur lors de la mise à jour de l\'email');
+      setEmailStatus('error');
+      setTimeout(() => {
+        setEmailStatus(null);
+        setEmailError('');
+      }, 5000);
+    }
+  };
+
+  const handlePasswordUpdate = async () => {
+    // Validation stricte : tous les champs doivent être remplis
+    if (!currentUser) {
+      setPasswordError('Vous devez être connecté');
+      setPasswordStatus('error');
+      return;
+    }
+
+    if (!oldPassword || oldPassword.trim() === '') {
+      setPasswordError('L\'ancien mot de passe est requis');
+      setPasswordStatus('error');
+      return;
+    }
+
+    if (!newPassword || newPassword.trim() === '') {
+      setPasswordError('Le nouveau mot de passe est requis');
+      setPasswordStatus('error');
+      return;
+    }
+
+    if (!confirmPassword || confirmPassword.trim() === '') {
+      setPasswordError('La confirmation du mot de passe est requise');
+      setPasswordStatus('error');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('Le mot de passe doit contenir au moins 6 caractères');
+      setPasswordStatus('error');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Les mots de passe ne correspondent pas');
+      setPasswordStatus('error');
+      return;
+    }
+
+    // Vider les erreurs précédentes
+    setPasswordError('');
+    setPasswordStatus('loading');
+    
+    try {
+      // La fonction updatePassword vérifie l'ancien mot de passe
+      // Si incorrect, elle retourne { success: false, error: 'INVALID_OLD_PASSWORD' }
+      const result = await updatePassword(oldPassword, newPassword);
+      
+      if (result.success) {
+        // Succès : vider tous les champs
+        setPasswordStatus('success');
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordError('');
+        setTimeout(() => {
+          setPasswordStatus(null);
+        }, 3000);
+      } else {
+        // Erreur : bloquer et afficher le message
+        if (result.error === 'INVALID_OLD_PASSWORD') {
+          setPasswordError('❌ Ancien mot de passe incorrect. Impossible de changer le mot de passe.');
+          // Ne pas vider l'ancien mot de passe pour que l'utilisateur puisse réessayer
+        } else {
+          setPasswordError('Erreur lors de la mise à jour du mot de passe');
+        }
+        setPasswordStatus('error');
+        setTimeout(() => {
+          setPasswordStatus(null);
+          // Garder l'erreur visible plus longtemps
+        }, 7000);
+      }
+    } catch (error) {
+      console.error('[SettingsTab] Erreur lors de la mise à jour du mot de passe:', error);
+      setPasswordError('Erreur lors de la mise à jour du mot de passe');
+      setPasswordStatus('error');
+      setTimeout(() => {
+        setPasswordStatus(null);
+        setPasswordError('');
+      }, 5000);
     }
   };
 
@@ -1610,6 +1794,23 @@ const SettingsTab = () => {
 
   return (
     <div className="p-6 space-y-6">
+      <style>{`
+        .profile-input-dark input[type="email"],
+        .profile-input-dark input[type="password"],
+        .profile-input-dark input[type="text"] {
+          background-color: rgb(51 65 85) !important;
+          color: #e2e8f0 !important;
+          border-color: #475569 !important;
+        }
+        .profile-input-dark input[type="email"]:disabled,
+        .profile-input-dark input[type="password"]:disabled,
+        .profile-input-dark input[type="text"]:disabled {
+          background-color: rgb(51 65 85) !important;
+          color: #cbd5e1 !important;
+          border-color: #475569 !important;
+          opacity: 0.7 !important;
+        }
+      `}</style>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white flex items-center">
           <Settings className="mr-3" size={28} />
@@ -1617,40 +1818,36 @@ const SettingsTab = () => {
         </h2>
       </div>
 
-      {/* Section Profil / Compte */}
-      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-        <CardHeader>
-          <CardTitle className="flex items-center text-white">
-            <Image className="mr-2" size={20} />
-            Profil du compte
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {currentUser ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-full overflow-hidden shadow-lg border border-white/20 flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600">
-                  {avatarPreviewUrl ? (
-                    <img
-                      src={avatarPreviewUrl}
-                      alt={currentUser.username}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xl font-semibold text-white">{usernameInitial}</span>
-                  )}
-                </div>
-                <div className="flex-1 space-y-2">
-                  <p className="text-sm text-slate-200">
-                    Nom d’utilisateur :{' '}
-                    <span className="font-semibold">
-                      {currentUser.username}
-                    </span>
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Téléverse une image pour personnaliser ton avatar dans le header.
-                  </p>
-                  <div className="flex items-center gap-3 mt-2">
+      {/* Section Mon Profil */}
+      {currentUser && (
+        <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700 profile-input-dark">
+          <CardHeader>
+            <CardTitle className="flex items-center text-white">
+              <User className="mr-2" size={20} />
+              Mon profil
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Photo de profil */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-slate-200 flex items-center">
+                  <Image className="mr-2" size={16} />
+                  Photo de profil
+                </label>
+                <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg border border-white/20 flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600">
+                    {avatarPreviewUrl ? (
+                      <img
+                        src={avatarPreviewUrl}
+                        alt={currentUser.username}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-semibold text-white">{usernameInitial}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
                     <input
                       ref={avatarFileRef}
                       type="file"
@@ -1662,15 +1859,120 @@ const SettingsTab = () => {
                       <span className="text-xs text-slate-300">Mise à jour…</span>
                     )}
                     {avatarStatus === 'success' && (
-                      <span className="text-xs text-emerald-400">Avatar mis à jour avec succès.</span>
+                      <span className="text-xs text-emerald-400">✅ Avatar mis à jour avec succès</span>
                     )}
                     {avatarStatus === 'error' && (
-                      <span className="text-xs text-red-400">Erreur lors de la mise à jour de l’avatar.</span>
+                      <span className="text-xs text-red-400">❌ Erreur lors de la mise à jour</span>
                     )}
                   </div>
                 </div>
               </div>
 
+              {/* Nom d'utilisateur (non modifiable) */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-200 flex items-center">
+                  <User className="mr-2" size={16} />
+                  Nom d'utilisateur
+                </label>
+                <Input
+                  type="text"
+                  value={currentUser.username}
+                  disabled
+                  className="!bg-slate-700/50 !text-slate-300 cursor-not-allowed"
+                />
+                <p className="text-xs text-slate-400">Le nom d'utilisateur ne peut pas être modifié</p>
+              </div>
+
+              {/* Email */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-slate-200 flex items-center">
+                  <Mail className="mr-2" size={16} />
+                  Adresse email
+                </label>
+                <div className="space-y-3">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Nouvelle adresse email"
+                    style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
+                    className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                  />
+                  <input
+                    type="email"
+                    value={confirmEmail}
+                    onChange={(e) => setConfirmEmail(e.target.value)}
+                    placeholder="Confirmer votre adresse email"
+                    style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
+                    className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                  />
+                  <Button
+                    onClick={handleEmailUpdate}
+                    disabled={emailStatus === 'loading' || !email || !confirmEmail || (email === (currentUser.email || '') && confirmEmail === (currentUser.email || ''))}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    {emailStatus === 'loading' ? 'Mise à jour...' : 'Enregistrer l\'email'}
+                  </Button>
+                  {emailError && (
+                    <span className="text-xs text-red-400 block">{emailError}</span>
+                  )}
+                  {emailStatus === 'success' && (
+                    <span className="text-xs text-emerald-400">✅ Email mis à jour avec succès</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Mot de passe */}
+              <div className="space-y-3 pt-4 border-t border-slate-700">
+                <label className="text-sm font-medium text-slate-200 flex items-center">
+                  <Lock className="mr-2" size={16} />
+                  Changer le mot de passe
+                </label>
+                <div className="space-y-3">
+                  <input
+                    type="password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="Renseignez votre mot de passe actuel"
+                    autoComplete="off"
+                    style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
+                    className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                  />
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Nouveau mot de passe (min. 6 caractères)"
+                    autoComplete="new-password"
+                    style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
+                    className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                  />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirmer votre mot de passe"
+                    autoComplete="new-password"
+                    style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
+                    className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                  />
+                  <Button
+                    onClick={handlePasswordUpdate}
+                    disabled={passwordStatus === 'loading' || !oldPassword || !newPassword || !confirmPassword}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                  >
+                    {passwordStatus === 'loading' ? 'Mise à jour...' : 'Changer le mot de passe'}
+                  </Button>
+                  {passwordError && (
+                    <span className="text-xs text-red-400 block">{passwordError}</span>
+                  )}
+                  {passwordStatus === 'success' && (
+                    <span className="text-xs text-emerald-400">✅ Mot de passe mis à jour avec succès</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Migration des données */}
               <div className="pt-4 border-t border-slate-700 mt-4">
                 <p className="text-xs text-slate-400 mb-3">
                   Tu peux associer toutes tes données locales actuelles (notamment les livres) à ce compte.
@@ -1720,13 +2022,9 @@ const SettingsTab = () => {
                 )}
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-slate-300">
-              Connecte-toi pour configurer ton profil et ton avatar.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Section Page d'Accueil */}
       <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">

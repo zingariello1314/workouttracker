@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     updateAvatar,
+    updatePassword,
     linkAnonymousDataToUser,
   } = useAuthStorage();
 
@@ -121,6 +122,18 @@ export const AuthProvider = ({ children }) => {
     [currentUser, updateAvatar],
   );
 
+  const handleUpdatePassword = useCallback(
+    async (oldPassword, newPassword) => {
+      if (!currentUser) return { success: false, error: 'NO_USER' };
+      const result = await updatePassword(currentUser.id, oldPassword, newPassword);
+      if (!result.success) {
+        setError(result.error || 'PASSWORD_UPDATE_FAILED');
+      }
+      return result;
+    },
+    [currentUser, updatePassword],
+  );
+
   const handleLinkAnonymousData = useCallback(
     async (onProgress) => {
       if (!currentUser) return { success: false, error: 'NO_USER' };
@@ -141,6 +154,7 @@ export const AuthProvider = ({ children }) => {
       logout: handleLogout,
       updateProfile: handleUpdateProfile,
       updateAvatar: handleUpdateAvatar,
+      updatePassword: handleUpdatePassword,
       linkAnonymousDataToUser: handleLinkAnonymousData,
       setError,
     }),
@@ -154,6 +168,7 @@ export const AuthProvider = ({ children }) => {
       handleLogout,
       handleUpdateProfile,
       handleUpdateAvatar,
+      handleUpdatePassword,
       handleLinkAnonymousData,
     ],
   );

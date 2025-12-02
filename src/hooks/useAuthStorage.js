@@ -198,6 +198,40 @@ export const useAuthStorage = () => {
     return profileResult;
   }, [updateProfile]);
 
+  const updatePassword = useCallback(async (userId, oldPassword, newPassword) => {
+    if (!oldPassword || !newPassword) {
+      return { success: false, error: 'MISSING_PASSWORD' };
+    }
+
+    if (newPassword.length < 6) {
+      return { success: false, error: 'PASSWORD_TOO_SHORT' };
+    }
+
+    const current = await getUserById(userId);
+    if (!current) return { success: false, error: 'NOT_FOUND' };
+
+    // Vérifier l'ancien mot de passe
+    const isValid = await verifyPassword(oldPassword, current.passwordSalt, current.passwordHash);
+    if (!isValid) {
+      return { success: false, error: 'INVALID_OLD_PASSWORD' };
+    }
+
+    // Générer un nouveau salt et hasher le nouveau mot de passe
+    const newSalt = generateSalt();
+    const newHash = await hashPassword(newPassword, newSalt);
+
+    // Mettre à jour l'utilisateur
+    const updated = {
+      ...current,
+      passwordHash: newHash,
+      passwordSalt: newSalt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const ok = await updateUser(updated);
+    return ok ? { success: true, user: updated } : { success: false, error: 'UPDATE_FAILED' };
+  }, []);
+
   // Migration des données existantes (actuellement: livres)
   const linkAnonymousDataToUser = useCallback(async (userId, onProgress) => {
     log.debug('Migration des données anonymes vers userId', { userId });
@@ -212,6 +246,7 @@ export const useAuthStorage = () => {
     logout,
     updateProfile,
     updateAvatar,
+    updatePassword,
     linkAnonymousDataToUser,
   };
 };

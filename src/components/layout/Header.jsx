@@ -13,8 +13,8 @@ const Header = () => {
   const { formatDate } = useFormatters();
   const [avatarUrl, setAvatarUrl] = useState(null);
 
-  const handleGoToToday = () => {
-    setActiveTab('today');
+  const handleGoToSettings = () => {
+    setActiveTab('settings');
   };
 
   const handleLoginClick = () => {
@@ -94,7 +94,7 @@ const Header = () => {
               <div className="flex items-center space-x-3">
                 <button
                   type="button"
-                  onClick={handleGoToToday}
+                  onClick={handleGoToSettings}
                   className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-600/70 shadow-sm hover:bg-slate-700/90 transition-colors"
                 >
                   {avatarUrl ? (
