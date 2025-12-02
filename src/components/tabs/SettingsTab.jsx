@@ -30,6 +30,9 @@ import { ENDURANCE_SCHEMA_VERSION } from '../../services/endurance/enduranceData
 import { prepareBooksExportData, processBooksImportData, downloadBooksExportFile } from '../../utils/booksExportImport';
 import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../../utils/booksIndexedDB';
 import { loadBooks as loadBooksFromLocalStorage, saveBooks as saveBooksToLocalStorage } from '../../utils/booksStorage';
+import { exportQuietQuestData, importQuietQuestData, validateQuietQuestExport } from '../../utils/quietQuestExportImport';
+import { openQuietQuestDB, loadQuestsFromIndexedDB, loadValidationsFromIndexedDB, loadUserDataFromIndexedDB } from '../../utils/quietQuestIndexedDB';
+import { STORAGE_KEYS, loadFromStorage, defaultUserData } from '../../hooks/useQuietQuestEngine';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
@@ -48,6 +51,19 @@ const SettingsTab = () => {
   const [nutritionExportStatus, setNutritionExportStatus] = useState(null);
   const [booksExportStatus, setBooksExportStatus] = useState(null);
   const [booksImportStatus, setBooksImportStatus] = useState(null);
+  const [quietQuestExportStatus, setQuietQuestExportStatus] = useState(null);
+  const [quietQuestImportStatus, setQuietQuestImportStatus] = useState(null);
+  const [quietQuestStats, setQuietQuestStats] = useState({
+    questsCount: 0,
+    validationsCount: 0,
+    userLevel: 1,
+  });
+  const [booksStats, setBooksStats] = useState({
+    totalBooks: 0,
+    totalSessions: 0,
+    inProgress: 0,
+    completed: 0,
+  });
   const [allDataImportStatus, setAllDataImportStatus] = useState(null);
   const [showAllDataImportPreview, setShowAllDataImportPreview] = useState(false);
   const [allDataPreviewData, setAllDataPreviewData] = useState(null);
@@ -112,6 +128,69 @@ const SettingsTab = () => {
       }
     };
   }, [currentUser?.id, currentUser?.email]);
+
+  // Charger les stats QuietQuest et Livres au montage
+  useEffect(() => {
+    const loadQuietQuestStats = async () => {
+      try {
+        const db = await openQuietQuestDB();
+        if (db) {
+          const quests = await loadQuestsFromIndexedDB(db, 'main');
+          const validations = await loadValidationsFromIndexedDB(db, 'main');
+          const userData = await loadUserDataFromIndexedDB(db, 'main');
+          setQuietQuestStats({
+            questsCount: quests.length,
+            validationsCount: validations.length,
+            userLevel: userData?.level || 1,
+          });
+        } else {
+          // Fallback localStorage
+          const quests = loadFromStorage(STORAGE_KEYS.quests, []);
+          const validations = loadFromStorage(STORAGE_KEYS.validations, []);
+          const userData = loadFromStorage(STORAGE_KEYS.userData, defaultUserData);
+          setQuietQuestStats({
+            questsCount: quests.length,
+            validationsCount: validations.length,
+            userLevel: userData?.level || 1,
+          });
+        }
+      } catch (error) {
+        console.error('[SettingsTab] Erreur chargement stats QuietQuest:', error);
+      }
+    };
+
+    const loadBooksStats = async () => {
+      try {
+        let books = [];
+        try {
+          const indexedBooks = await getAllBooksFromIndexedDB();
+          if (Array.isArray(indexedBooks) && indexedBooks.length > 0) {
+            books = indexedBooks;
+          } else {
+            books = loadBooksFromLocalStorage();
+          }
+        } catch {
+          books = loadBooksFromLocalStorage();
+        }
+
+        const totalSessions = books.reduce((sum, book) => sum + (book.sessions?.length || 0), 0);
+        const inProgress = books.filter(b => b.status === 'in-progress').length;
+        const completed = books.filter(b => b.status === 'completed').length;
+
+        setBooksStats({
+          totalBooks: books.length,
+          totalSessions,
+          inProgress,
+          completed,
+        });
+      } catch (error) {
+        console.error('[SettingsTab] Erreur chargement stats Livres:', error);
+      }
+    };
+
+    loadQuietQuestStats();
+    loadBooksStats();
+  }, []);
 
   const handleAvatarChange = async (event) => {
     const file = event.target.files && event.target.files[0];
@@ -783,6 +862,67 @@ const SettingsTab = () => {
       alert(`Erreur lors de l'import des Livres : ${error.message}`);
       setTimeout(() => setBooksImportStatus(null), 3000);
     }
+  };
+
+  // Fonction pour exporter les données QuietQuest
+  const handleExportQuietQuest = async () => {
+    try {
+      setQuietQuestExportStatus('loading');
+      const exportData = await exportQuietQuestData({ includeMetadata: true });
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `quietquest-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setQuietQuestExportStatus('success');
+      setTimeout(() => setQuietQuestExportStatus(null), 3000);
+    } catch (error) {
+      console.error('❌ Erreur export QuietQuest:', error);
+      setQuietQuestExportStatus('error');
+      setTimeout(() => setQuietQuestExportStatus(null), 3000);
+    }
+  };
+
+  // Fonction pour importer les données QuietQuest
+  const handleImportQuietQuest = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        setQuietQuestImportStatus('loading');
+        const text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target?.result);
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+        const jsonData = JSON.parse(text);
+        if (!validateQuietQuestExport(jsonData)) {
+          throw new Error('Format d\'export invalide');
+        }
+        await importQuietQuestData(jsonData, { mode: 'replace', createBackup: true });
+        setQuietQuestImportStatus('success');
+        setTimeout(() => {
+          setQuietQuestImportStatus(null);
+          if (window.confirm('Import réussi ! Voulez-vous recharger la page pour voir les changements ?')) {
+            window.location.reload();
+          }
+        }, 2000);
+      } catch (error) {
+        console.error('❌ Erreur import QuietQuest:', error);
+        setQuietQuestImportStatus('error');
+        alert(`Erreur lors de l'import : ${error.message}`);
+        setTimeout(() => setQuietQuestImportStatus(null), 3000);
+      }
+    };
+    input.click();
   };
 
   // Fonction pour exporter les données Garmin
@@ -2081,177 +2221,250 @@ const SettingsTab = () => {
               Exportez toutes vos données d'entraînement au format JSON pour créer une sauvegarde complète.
             </p>
             
-            <div className="bg-slate-700/50 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-2">Données incluses :</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <h5 className="text-sm font-medium text-blue-300">🏋️ Entraînement</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    <li>• Exercices cochés : {Object.keys(data.checkedExercises || {}).length} entrées</li>
-                    <li>• Répétitions : {Object.keys(data.reps || {}).length} entrées</li>
-                    <li>• Étirements : {Object.keys(data.checkedStretches || {}).length} entrées</li>
-                    <li>• Historique répétitions : {Object.keys(data.historyReps || {}).length} entrées</li>
-                  </ul>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Colonne Sport */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-white text-lg flex items-center">
+                  <span className="mr-2">🏋️</span>
+                  Sport
+                </h4>
+                <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+                  <div className="space-y-1">
+                    <h5 className="text-sm font-medium text-blue-300">🏋️ Entraînement</h5>
+                    <ul className="text-sm text-gray-300 space-y-1">
+                      <li>• Exercices cochés : {Object.keys(data.checkedExercises || {}).length} entrées</li>
+                      <li>• Répétitions : {Object.keys(data.reps || {}).length} entrées</li>
+                      <li>• Étirements : {Object.keys(data.checkedStretches || {}).length} entrées</li>
+                      <li>• Historique répétitions : {Object.keys(data.historyReps || {}).length} entrées</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-1 pt-2 border-t border-slate-600">
+                    <h5 className="text-sm font-medium text-green-300">📊 Suivi Corporel</h5>
+                    <ul className="text-sm text-gray-300 space-y-1">
+                      <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
+                      <li>• Entrées de progression : {(data.progressEntries || []).length} entrées</li>
+                      <li>• Rappels configurés : {(data.bodyTrackingReminders || []).length} rappels</li>
+                      <li>• Photos avec poids : {(data.progressPhotos || []).filter(p => p.weight).length}</li>
+                      <li>• Photos avec notes : {(data.progressPhotos || []).filter(p => p.notes).length}</li>
+                      <li>• Photos avec mesures : {(data.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length}</li>
+                      <li>• Dernière mise à jour : {data.bodyTrackingLastUpdated ? new Date(data.bodyTrackingLastUpdated).toLocaleDateString('fr-FR') : 'Jamais'}</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-1 pt-2 border-t border-slate-600">
+                    <h5 className="text-sm font-medium text-orange-300">🏃 Endurance</h5>
+                    <ul className="text-sm text-gray-300 space-y-1">
+                      <li>• Sessions boxe : {(data.enduranceData?.sessions?.boxing || data.enduranceData?.boxingSessions || []).length} sessions</li>
+                      <li>• Sessions pompes : {(data.enduranceData?.sessions?.pushups || data.enduranceData?.pushupSessions || []).length} sessions</li>
+                      <li>• Sessions natation : {(data.enduranceData?.sessions?.swimming || data.enduranceData?.swimmingSessions || []).length} sessions</li>
+                      <li>• Sessions corde à sauter : {(data.enduranceData?.sessions?.jumprope || data.enduranceData?.jumpropeSessions || []).length} sessions</li>
+                      <li>• Sessions course : {(data.enduranceData?.sessions?.running || data.enduranceData?.runningSessions || []).length} sessions</li>
+                      <li>• Défis actifs : {(data.enduranceData?.challenges || []).length} défis</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-1 pt-2 border-t border-slate-600">
+                    <h5 className="text-sm font-medium text-purple-300">⌚ Garmin</h5>
+                    <ul className="text-sm text-gray-300 space-y-1">
+                      <li>• Données synchronisées Garmin</li>
+                      <li>• Activités et statistiques</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-1 pt-2 border-t border-slate-600">
+                    <h5 className="text-sm font-medium text-orange-300">🍎 Nutrition</h5>
+                    <ul className="text-sm text-gray-300 space-y-1">
+                      <li>• Repas et calories</li>
+                      <li>• Suivi nutritionnel complet</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-1 pt-2 border-t border-slate-600">
+                    <h5 className="text-sm font-medium text-purple-300">⚙️ Configuration</h5>
+                    <ul className="text-sm text-gray-300 space-y-1">
+                      <li>• Date de début : {data.startDate ? new Date(data.startDate).toLocaleDateString('fr-FR') : 'Non définie'}</li>
+                      <li>• Variante de semaine : {data.weekVariant || 'A'}</li>
+                      <li>• Historique programmes : {(data.programHistory || []).length} entrées</li>
+                    </ul>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h5 className="text-sm font-medium text-green-300">📊 Suivi Corporel</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
-                    <li>• Entrées de progression : {(data.progressEntries || []).length} entrées</li>
-                    <li>• Rappels configurés : {(data.bodyTrackingReminders || []).length} rappels</li>
-                    <li>• Photos avec poids : {(data.progressPhotos || []).filter(p => p.weight).length}</li>
-                    <li>• Photos avec notes : {(data.progressPhotos || []).filter(p => p.notes).length}</li>
-                    <li>• Photos avec mesures : {(data.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length}</li>
-                    <li>• Dernière mise à jour : {data.bodyTrackingLastUpdated ? new Date(data.bodyTrackingLastUpdated).toLocaleDateString('fr-FR') : 'Jamais'}</li>
-                  </ul>
+                
+                <div className="grid grid-cols-1 gap-3">
+                  <Button
+                    onClick={exportAllData}
+                    disabled={exportStatus === 'loading'}
+                    icon={Download}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    {exportStatus === 'loading' ? 'Export en cours...' : 'Export Complet Sport'}
+                  </Button>
+                  
+                  <Button
+                    onClick={exportBodyTrackingData}
+                    disabled={exportStatus === 'loading'}
+                    icon={FileText}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    {exportStatus === 'loading' ? 'Export en cours...' : 'Export Suivi Corporel'}
+                  </Button>
+                  
+                  <Button
+                    onClick={handleExportGarminData}
+                    disabled={garminExportStatus === 'loading'}
+                    icon={Download}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                  >
+                    {garminExportStatus === 'loading' ? 'Export en cours...' : 'Export Garmin'}
+                  </Button>
+                  
+                  <Button
+                    onClick={handleExportNutritionData}
+                    disabled={nutritionExportStatus === 'loading'}
+                    icon={Download}
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                  >
+                    {nutritionExportStatus === 'loading' ? 'Export en cours...' : 'Export Nutrition'}
+                  </Button>
                 </div>
-                <div className="space-y-1">
-                  <h5 className="text-sm font-medium text-purple-300">🏠 Page d'Accueil</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    <li>• Images de fond : Système indépendant</li>
-                    <li>• Bannières : Système indépendant</li>
-                    <li>• Dernière mise à jour : Système indépendant</li>
-                  </ul>
+              </div>
+
+              {/* Colonne Quêtes et Livres */}
+              <div className="space-y-4">
+                {/* Section Quêtes */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-white text-lg flex items-center">
+                    <span className="mr-2">⚡</span>
+                    Quêtes
+                  </h4>
+                  <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+                    <div className="space-y-1">
+                      <h5 className="text-sm font-medium text-emerald-300">⚡ QuietQuest</h5>
+                      <ul className="text-sm text-gray-300 space-y-1">
+                        <li>• Quêtes : {quietQuestStats.questsCount} quête{quietQuestStats.questsCount !== 1 ? 's' : ''}</li>
+                        <li>• Validations : {quietQuestStats.validationsCount} validation{quietQuestStats.validationsCount !== 1 ? 's' : ''}</li>
+                        <li>• Niveau utilisateur : {quietQuestStats.userLevel}</li>
+                        <li>• Performances quotidiennes</li>
+                        <li>• XP et progression</li>
+                        <li>• Métadonnées complètes</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button
+                      onClick={handleExportQuietQuest}
+                      disabled={quietQuestExportStatus === 'loading'}
+                      icon={Download}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      {quietQuestExportStatus === 'loading' ? 'Export en cours...' : 'Export QuietQuest'}
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h5 className="text-sm font-medium text-orange-300">🏃 Endurance</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    <li>• Sessions boxe : {(data.enduranceData?.sessions?.boxing || data.enduranceData?.boxingSessions || []).length} sessions</li>
-                    <li>• Sessions pompes : {(data.enduranceData?.sessions?.pushups || data.enduranceData?.pushupSessions || []).length} sessions</li>
-                    <li>• Sessions natation : {(data.enduranceData?.sessions?.swimming || data.enduranceData?.swimmingSessions || []).length} sessions</li>
-                    <li>• Sessions corde à sauter : {(data.enduranceData?.sessions?.jumprope || data.enduranceData?.jumpropeSessions || []).length} sessions</li>
-                    <li>• Sessions course : {(data.enduranceData?.sessions?.running || data.enduranceData?.runningSessions || []).length} sessions</li>
-                    <li>• Défis actifs : {(data.enduranceData?.challenges || []).length} défis</li>
-                  </ul>
-                </div>
-                <div className="space-y-1">
-                  <h5 className="text-sm font-medium text-purple-300">⚙️ Configuration</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    <li>• Date de début : {data.startDate ? new Date(data.startDate).toLocaleDateString('fr-FR') : 'Non définie'}</li>
-                    <li>• Variante de semaine : {data.weekVariant || 'A'}</li>
-                    <li>• Historique programmes : {(data.programHistory || []).length} entrées</li>
-                  </ul>
-                </div>
-                <div className="space-y-1">
-                  <h5 className="text-sm font-medium text-yellow-300">📈 Statistiques</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    <li>• Total propriétés : {Object.keys(data).length} champs</li>
-                    <li>• Taille données : {(JSON.stringify(data).length / 1024).toFixed(1)} KB</li>
-                  </ul>
-                </div>
-                <div className="space-y-1">
-                  <h5 className="text-sm font-medium text-indigo-300">📚 Livres</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    <li>• Livres inclus dans l'export global</li>
-                    <li>• Sessions de lecture incluses</li>
-                    <li>• Métadonnées complètes</li>
-                  </ul>
+
+                {/* Section Livres */}
+                <div className="space-y-4 pt-4 border-t border-slate-600">
+                  <h4 className="font-semibold text-white text-lg flex items-center">
+                    <BookOpen className="mr-2" size={20} />
+                    Livres
+                  </h4>
+                  <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+                    <div className="space-y-1">
+                      <h5 className="text-sm font-medium text-indigo-300">📚 Bibliothèque</h5>
+                      <ul className="text-sm text-gray-300 space-y-1">
+                        <li>• Livres : {booksStats.totalBooks} livre{booksStats.totalBooks !== 1 ? 's' : ''}</li>
+                        <li>• Sessions de lecture : {booksStats.totalSessions} session{booksStats.totalSessions !== 1 ? 's' : ''}</li>
+                        <li>• En cours : {booksStats.inProgress} livre{booksStats.inProgress !== 1 ? 's' : ''}</li>
+                        <li>• Terminés : {booksStats.completed} livre{booksStats.completed !== 1 ? 's' : ''}</li>
+                        <li>• Couvertures et PDFs</li>
+                        <li>• Métadonnées complètes</li>
+                        <li>• Historique de lecture</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button
+                      onClick={handleExportBooksData}
+                      disabled={booksExportStatus === 'loading'}
+                      icon={Download}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      {booksExportStatus === 'loading' ? 'Export en cours...' : 'Export Livres'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button
-                onClick={exportAllData}
-                disabled={exportStatus === 'loading'}
-                icon={Download}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                {exportStatus === 'loading' ? 'Export en cours...' : 'Export Complet'}
-              </Button>
-              
-              <Button
-                onClick={exportBodyTrackingData}
-                disabled={exportStatus === 'loading'}
-                icon={FileText}
-                className="w-full bg-green-600 hover:bg-green-700"
-              >
-                {exportStatus === 'loading' ? 'Export en cours...' : 'Export Suivi Corporel'}
-              </Button>
-              
-              <Button
-                onClick={handleExportGarminData}
-                disabled={garminExportStatus === 'loading'}
-                icon={Download}
-                className="w-full bg-purple-600 hover:bg-purple-700"
-              >
-                {garminExportStatus === 'loading' ? 'Export en cours...' : 'Export Garmin'}
-              </Button>
-              
-              <Button
-                onClick={handleExportNutritionData}
-                disabled={nutritionExportStatus === 'loading'}
-                icon={Download}
-                className="w-full bg-orange-600 hover:bg-orange-700"
-              >
-                {nutritionExportStatus === 'loading' ? 'Export en cours...' : 'Export Nutrition'}
-              </Button>
-              
-              <Button
-                onClick={handleExportBooksData}
-                disabled={booksExportStatus === 'loading'}
-                icon={BookOpen}
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
-              >
-                {booksExportStatus === 'loading' ? 'Export en cours...' : 'Export Livres'}
-              </Button>
+            {/* Messages de statut */}
+            <div className="space-y-2">
+              {exportStatus === 'success' && (
+                <div className="flex items-center text-green-400 text-sm">
+                  <CheckCircle className="mr-2" size={16} />
+                  Export réussi ! Le fichier a été téléchargé.
+                </div>
+              )}
+
+              {exportStatus === 'error' && (
+                <div className="flex items-center text-red-400 text-sm">
+                  <AlertTriangle className="mr-2" size={16} />
+                  {t('messages.importExport.exportError')}
+                </div>
+              )}
+
+              {garminExportStatus === 'success' && (
+                <div className="flex items-center text-green-400 text-sm">
+                  <CheckCircle className="mr-2" size={16} />
+                  {t('messages.importExport.garminExportSuccess')}
+                </div>
+              )}
+
+              {garminExportStatus === 'error' && (
+                <div className="flex items-center text-red-400 text-sm">
+                  <AlertTriangle className="mr-2" size={16} />
+                  {t('messages.importExport.garminExportError')}
+                </div>
+              )}
+
+              {nutritionExportStatus === 'success' && (
+                <div className="flex items-center text-green-400 text-sm">
+                  <CheckCircle className="mr-2" size={16} />
+                  {t('messages.importExport.nutritionExportSuccess')}
+                </div>
+              )}
+
+              {nutritionExportStatus === 'error' && (
+                <div className="flex items-center text-red-400 text-sm">
+                  <AlertTriangle className="mr-2" size={16} />
+                  {t('messages.importExport.nutritionExportError')}
+                </div>
+              )}
+
+              {quietQuestExportStatus === 'success' && (
+                <div className="flex items-center text-green-400 text-sm">
+                  <CheckCircle className="mr-2" size={16} />
+                  Export QuietQuest réussi ! Le fichier a été téléchargé.
+                </div>
+              )}
+
+              {quietQuestExportStatus === 'error' && (
+                <div className="flex items-center text-red-400 text-sm">
+                  <AlertTriangle className="mr-2" size={16} />
+                  Erreur lors de l'export QuietQuest
+                </div>
+              )}
+
+              {booksExportStatus === 'success' && (
+                <div className="flex items-center text-green-400 text-sm">
+                  <CheckCircle className="mr-2" size={16} />
+                  Export Livres réussi ! Le fichier a été téléchargé.
+                </div>
+              )}
+
+              {booksExportStatus === 'error' && (
+                <div className="flex items-center text-red-400 text-sm">
+                  <AlertTriangle className="mr-2" size={16} />
+                  Erreur lors de l'export des Livres
+                </div>
+              )}
             </div>
-
-            {exportStatus === 'success' && (
-              <div className="flex items-center text-green-400 text-sm">
-                <CheckCircle className="mr-2" size={16} />
-                Export réussi ! Le fichier a été téléchargé.
-              </div>
-            )}
-
-            {exportStatus === 'error' && (
-              <div className="flex items-center text-red-400 text-sm">
-                <AlertTriangle className="mr-2" size={16} />
-                {t('messages.importExport.exportError')}
-              </div>
-            )}
-
-            {garminExportStatus === 'success' && (
-              <div className="flex items-center text-green-400 text-sm">
-                <CheckCircle className="mr-2" size={16} />
-                {t('messages.importExport.garminExportSuccess')}
-              </div>
-            )}
-
-            {garminExportStatus === 'error' && (
-              <div className="flex items-center text-red-400 text-sm">
-                <AlertTriangle className="mr-2" size={16} />
-                {t('messages.importExport.garminExportError')}
-              </div>
-            )}
-
-            {nutritionExportStatus === 'success' && (
-              <div className="flex items-center text-green-400 text-sm">
-                <CheckCircle className="mr-2" size={16} />
-                {t('messages.importExport.nutritionExportSuccess')}
-              </div>
-            )}
-
-            {nutritionExportStatus === 'error' && (
-              <div className="flex items-center text-red-400 text-sm">
-                <AlertTriangle className="mr-2" size={16} />
-                {t('messages.importExport.nutritionExportError')}
-              </div>
-            )}
-
-            {booksExportStatus === 'success' && (
-              <div className="flex items-center text-green-400 text-sm">
-                <CheckCircle className="mr-2" size={16} />
-                Export Livres réussi ! Le fichier a été téléchargé.
-              </div>
-            )}
-
-            {booksExportStatus === 'error' && (
-              <div className="flex items-center text-red-400 text-sm">
-                <AlertTriangle className="mr-2" size={16} />
-                Erreur lors de l'export des Livres
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -2337,6 +2550,98 @@ const SettingsTab = () => {
             )}
 
             {booksImportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'import
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section QuietQuest - Export/Import dédié */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <span className="mr-2">⚡</span>
+            QuietQuest - Quêtes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-gray-300 text-sm">
+              Gérez vos quêtes, validations, XP et performances quotidiennes. Exportez et importez vos données de quêtes.
+            </p>
+            
+            {/* Stats rapides */}
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="bg-slate-700/50 rounded-lg p-2 text-center">
+                <div className="text-slate-400 text-xs">Quêtes</div>
+                <div className="text-emerald-300 font-semibold">{quietQuestStats.questsCount}</div>
+              </div>
+              <div className="bg-slate-700/50 rounded-lg p-2 text-center">
+                <div className="text-slate-400 text-xs">Validations</div>
+                <div className="text-emerald-300 font-semibold">{quietQuestStats.validationsCount}</div>
+              </div>
+              <div className="bg-slate-700/50 rounded-lg p-2 text-center">
+                <div className="text-slate-400 text-xs">Niveau</div>
+                <div className="text-emerald-300 font-semibold">{quietQuestStats.userLevel}</div>
+              </div>
+            </div>
+
+            <div className="bg-slate-700/50 rounded-lg p-4">
+              <h4 className="font-medium text-white mb-2">Fonctionnalités :</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>• Gestion complète de vos quêtes (récurrentes et exceptionnelles)</li>
+                <li>• Suivi des validations et calcul automatique de l'XP</li>
+                <li>• Stockage dans IndexedDB (performance optimale)</li>
+                <li>• Export/Import au format JSON versionné avec métadonnées</li>
+                <li>• Backup automatique avant import</li>
+              </ul>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button
+                onClick={handleExportQuietQuest}
+                disabled={quietQuestExportStatus === 'loading'}
+                icon={Download}
+                className="w-full bg-emerald-600 hover:bg-emerald-700"
+              >
+                {quietQuestExportStatus === 'loading' ? 'Export en cours...' : 'Exporter QuietQuest'}
+              </Button>
+              
+              <Button
+                onClick={handleImportQuietQuest}
+                disabled={quietQuestImportStatus === 'loading'}
+                icon={Upload}
+                className="w-full bg-emerald-500 hover:bg-emerald-600"
+              >
+                {quietQuestImportStatus === 'loading' ? 'Import en cours...' : 'Importer QuietQuest'}
+              </Button>
+            </div>
+
+            {quietQuestExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Export réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
+
+            {quietQuestExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'export
+              </div>
+            )}
+
+            {quietQuestImportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Import réussi ! Les données ont été restaurées.
+              </div>
+            )}
+
+            {quietQuestImportStatus === 'error' && (
               <div className="flex items-center text-red-400 text-sm">
                 <AlertTriangle className="mr-2" size={16} />
                 Erreur lors de l'import

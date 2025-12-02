@@ -1,15 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from 'recharts';
-import LazyChart from './nutrition/components/LazyChart';
+import { useToast } from '../ui/Toast';
 import {
   useQuietQuestEngine,
   STORAGE_KEYS,
@@ -19,10 +9,16 @@ import {
   saveToStorage,
   calculateQuestXP,
   getTodayDateStr,
-  getDayOfWeekFromDateStr,
-  addDays,
-  getQuestsForDate,
 } from '../../hooks/useQuietQuestEngine';
+import {
+  exportQuietQuestData,
+  importQuietQuestData,
+  validateQuietQuestExport,
+} from '../../utils/quietQuestExportImport';
+import { openQuietQuestDB, clearQuietQuestStores } from '../../utils/quietQuestIndexedDB';
+import QuestsTodayView from '../quests/QuestsTodayView';
+import QuestsWeekView from '../quests/QuestsWeekView';
+import QuestsStatsView from '../quests/stats/QuestsStatsView';
 
 // Formatage durée (ex : 90 → "1h30")
 function formatDuration(minutes) {
@@ -65,7 +61,10 @@ const durationOptions = Array.from({ length: (420 - 5) / 10 + 1 }, (_, i) => 5 +
 
 const QuestsTab = () => {
   // Onglet interne QuietQuest (today / week / quests / stats / security)
-  const [currentSubTab, setCurrentSubTab] = useState('quests');
+  const [currentSubTab, setCurrentSubTab] = useState('today');
+
+  // Toast notifications
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   // Moteur QuietQuest centralisé
   const {
@@ -78,6 +77,7 @@ const QuestsTab = () => {
     validationsByDate,
     isQuestCompletedOnDate,
     toggleQuestValidation,
+    getQuestsForDate: getQuestsForDateMemoized,
   } = useQuietQuestEngine();
 
   // État de filtres / recherche / tri
@@ -93,6 +93,8 @@ const QuestsTab = () => {
     column: null,
     direction: 'asc',
   });
+
+  const [selectedPeriod, setSelectedPeriod] = useState('30d'); // '7d' | '30d' | '90d' | '180d' | '365d' | 'all'
 
   // Sélection multiple
   const [selectedQuests, setSelectedQuests] = useState(new Set());
@@ -120,6 +122,7 @@ const QuestsTab = () => {
     const appState = loadFromStorage(STORAGE_KEYS.appState, {});
     saveToStorage(STORAGE_KEYS.appState, {
       ...appState,
+      version: 1,
       questFilters,
       questSortConfig: sortConfig,
     });
@@ -306,20 +309,21 @@ const QuestsTab = () => {
   const saveQuestFromForm = () => {
     // Validation minimale (nom + cohérence type)
     if (!questForm.nom.trim()) {
-      alert('Le nom de la quête est obligatoire.');
+      showError('Le nom de la quête est obligatoire.');
       return;
     }
     if (questForm.type === 'recurrente' && (!questForm.jours || questForm.jours.length === 0)) {
-      alert('Sélectionne au moins un jour pour une quête récurrente.');
+      showError('Sélectionne au moins un jour pour une quête récurrente.');
       return;
     }
     if (questForm.type === 'exceptionnelle' && !questForm.date) {
-      alert('Choisis une date pour une quête exceptionnelle.');
+      showError('Choisis une date pour une quête exceptionnelle.');
       return;
     }
 
+    const isEditing = editingQuestId != null;
     setAllQuests((prev) => {
-      if (editingQuestId != null) {
+      if (isEditing) {
         // Edition
         return prev.map((q) =>
           q.id === editingQuestId
@@ -347,6 +351,7 @@ const QuestsTab = () => {
       return [...prev, newQuest];
     });
 
+    showSuccess(isEditing ? 'Quête modifiée avec succès' : 'Quête créée avec succès');
     setShowQuestPopup(false);
   };
 
@@ -357,13 +362,21 @@ const QuestsTab = () => {
   };
 
   const deleteQuest = (id) => {
-    if (!window.confirm('Supprimer définitivement cette quête ?')) return;
+    const quest = allQuests.find((q) => q.id === id);
+    const questName = quest?.nom || 'cette quête';
+    if (
+      !window.confirm(
+        `Supprimer définitivement "${questName}" ?\n\nCette action est irréversible. Toutes les validations associées seront également supprimées.`
+      )
+    )
+      return;
     setAllQuests((prev) => prev.filter((q) => q.id !== id));
     setSelectedQuests((prev) => {
       const next = new Set(prev);
       next.delete(id);
       return next;
     });
+    showSuccess(`Quête "${questName}" supprimée`);
   };
 
   const duplicateQuest = (id) => {
@@ -381,12 +394,14 @@ const QuestsTab = () => {
       };
       return [...prev, copy];
     });
+    showSuccess(`Quête "${original.nom}" dupliquée`);
   };
 
   // --- Actions en lot ------------------------------------------------------
 
   const bulkActivate = () => {
     if (!hasSelectedQuests) return;
+    const count = selectedQuests.size;
     setAllQuests((prev) =>
       prev.map((q) =>
         selectedQuests.has(q.id)
@@ -398,10 +413,12 @@ const QuestsTab = () => {
       )
     );
     setSelectedQuests(new Set());
+    showSuccess(`${count} quête${count > 1 ? 's' : ''} activée${count > 1 ? 's' : ''}`);
   };
 
   const bulkDeactivate = () => {
     if (!hasSelectedQuests) return;
+    const count = selectedQuests.size;
     setAllQuests((prev) =>
       prev.map((q) =>
         selectedQuests.has(q.id)
@@ -413,13 +430,21 @@ const QuestsTab = () => {
       )
     );
     setSelectedQuests(new Set());
+    showInfo(`${count} quête${count > 1 ? 's' : ''} désactivée${count > 1 ? 's' : ''}`);
   };
 
   const bulkDelete = () => {
     if (!hasSelectedQuests) return;
-    if (!window.confirm('Supprimer toutes les quêtes sélectionnées ?')) return;
+    const count = selectedQuests.size;
+    if (
+      !window.confirm(
+        `Supprimer définitivement ${count} quête${count > 1 ? 's' : ''} ?\n\nCette action est irréversible. Toutes les validations associées seront également supprimées.`
+      )
+    )
+      return;
     setAllQuests((prev) => prev.filter((q) => !selectedQuests.has(q.id)));
     setSelectedQuests(new Set());
+    showSuccess(`${count} quête${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''}`);
   };
 
   // --- Drag & drop ---------------------------------------------------------
@@ -746,258 +771,23 @@ const QuestsTab = () => {
     </div>
   );
 
-  const renderTodayView = () => {
-    const today = getTodayDateStr();
-    const questsToday = getQuestsForDate(allQuests, today);
-    const completedCount = questsToday.filter((q) =>
-      isQuestCompletedOnDate(q.id, today)
-    ).length;
-    const totalXPTheorique = questsToday.reduce(
-      (sum, q) => sum + (q.xp ?? calculateQuestXP(q)),
-      0
-    );
-    const successRate =
-      questsToday.length > 0
-        ? Math.round((completedCount / questsToday.length) * 100)
-        : 0;
+  const renderTodayView = () => (
+    <QuestsTodayView
+      allQuests={allQuests}
+      isQuestCompletedOnDate={isQuestCompletedOnDate}
+      toggleQuestValidation={toggleQuestValidation}
+      getQuestsForDate={getQuestsForDateMemoized}
+    />
+  );
 
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
-              Missions du <span className="text-emerald-400">jour</span>
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">
-              Vue rapide de toutes les quêtes actives prévues pour aujourd&apos;hui.
-            </p>
-          </div>
-
-          <div className="bg-slate-900/80 border border-slate-700 rounded-2xl px-4 py-3 text-xs text-slate-100 flex flex-col gap-1 min-w-[220px]">
-            <div className="flex justify-between">
-              <span className="text-slate-400">Quêtes</span>
-              <span>
-                {completedCount}/{questsToday.length}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">XP théorique</span>
-              <span className="text-emerald-300 font-semibold">
-                {totalXPTheorique} XP
-              </span>
-            </div>
-            <div className="flex justify-between items-center gap-2 mt-1">
-              <span className="text-slate-400">Taux de réussite</span>
-              <div className="flex items-center gap-2">
-                <div className="w-20 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all"
-                    style={{ width: `${Math.min(successRate, 100)}%` }}
-                  />
-                </div>
-                <span className="font-semibold">{successRate}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {questsToday.length === 0 ? (
-          <div className="mt-8 text-center text-sm text-slate-400">
-            Aucune quête prévue pour aujourd&apos;hui. Crée une nouvelle mission dans l&apos;onglet
-            &quot;Mes quêtes&quot;.
-          </div>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {questsToday.map((quest) => {
-              const completed = isQuestCompletedOnDate(quest.id, today);
-              const xp = quest.xp ?? calculateQuestXP(quest);
-              return (
-                <div
-                  key={quest.id}
-                  className={`relative rounded-2xl border px-4 py-3 text-xs bg-slate-900/70 border-slate-700/80 hover:border-emerald-400/70 hover:bg-slate-900 transition-all ${
-                    completed ? 'ring-1 ring-emerald-400/60' : ''
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <button
-                      onClick={() => toggleQuestValidation(quest.id, today)}
-                      className={`mt-1 w-5 h-5 rounded-full border flex items-center justify-center text-[10px] ${
-                        completed
-                          ? 'bg-emerald-400 border-emerald-300 text-slate-900'
-                          : 'bg-slate-900 border-slate-600 text-slate-400'
-                      }`}
-                    >
-                      {completed ? '✓' : ''}
-                    </button>
-
-                    <div className="flex-1 space-y-1">
-                      <div className="flex justify-between gap-2">
-                        <div className="font-semibold text-slate-100 line-clamp-2">
-                          {quest.nom}
-                        </div>
-                        <span className="text-[10px] text-slate-400">
-                          {quest.categorie}
-                        </span>
-                      </div>
-
-                      {quest.description && (
-                        <div className="text-[11px] text-slate-400 line-clamp-2">
-                          {quest.description}
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-center text-[11px] text-slate-300 mt-1">
-                        <div className="flex items-center gap-2">
-                          <span>{formatDuration(quest.duree || 0)}</span>
-                          <span className="text-slate-500">•</span>
-                          <span>
-                            {'★'.repeat(quest.difficulte || 1)}
-                            <span className="text-slate-500 text-[10px] ml-1">
-                              ({quest.difficulte || 1})
-                            </span>
-                          </span>
-                        </div>
-                        <span className="text-emerald-300 font-semibold">{xp} XP</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderWeekView = () => {
-    const today = getTodayDateStr();
-    const todayDayOfWeek = getDayOfWeekFromDateStr(today);
-
-    // Construire une semaine centrée sur aujourd'hui (Lundi → Dimanche)
-    const mondayOffset = 1 - todayDayOfWeek; // combien de jours pour revenir au lundi
-    const weekDays = Array.from({ length: 7 }, (_, i) => {
-      const offset = mondayOffset + i;
-      const date = addDays(today, offset);
-      const dayOfWeek = getDayOfWeekFromDateStr(date);
-      const isToday = date === today;
-      const quests = getQuestsForDate(allQuests, date);
-      const completedIds = new Set(
-        validations
-          .filter((v) => v.date === date)
-          .map((v) => v.queteId)
-      );
-      const completedCount = quests.filter((q) => completedIds.has(q.id)).length;
-      const successRate =
-        quests.length > 0
-          ? Math.round((completedCount / quests.length) * 100)
-          : 0;
-
-      return {
-        date,
-        dayOfWeek,
-        isToday,
-        quests,
-        completedIds,
-        successRate,
-      };
-    });
-
-    const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
-              Vue <span className="text-emerald-400">hebdomadaire</span>
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">
-              Survole ta semaine : quêtes prévues, validations et progression jour par jour.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-7">
-          {weekDays.map((day, index) => (
-            <div
-              key={day.date}
-              className={`flex flex-col rounded-2xl border bg-slate-900/70 border-slate-700/80 px-3 py-2 min-h-[140px] ${
-                day.isToday ? 'ring-1 ring-emerald-400/60' : ''
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1.5 text-[11px] text-slate-300">
-                <div className="flex flex-col">
-                  <span className="font-semibold">
-                    {dayNames[index]}
-                    {day.isToday && ' (aujourd’hui)'}
-                  </span>
-                  <span className="text-slate-500 text-[10px]">{day.date}</span>
-                </div>
-                <span className="text-[11px] text-slate-400">
-                  {day.quests.length} quêtes
-                </span>
-              </div>
-
-              <div className="mb-1.5">
-                <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all"
-                    style={{ width: `${Math.min(day.successRate, 100)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
-                  <span>{day.successRate}%</span>
-                  <span>
-                    {day.completedIds.size}/{day.quests.length} complétées
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-auto space-y-0.5 pr-1">
-                {day.quests.length === 0 ? (
-                  <div className="text-[10px] text-slate-500 italic mt-1">
-                    Aucune quête.
-                  </div>
-                ) : (
-                  day.quests.slice(0, 6).map((quest) => {
-                    const completed = day.completedIds.has(quest.id);
-                    return (
-                      <button
-                        key={quest.id}
-                        type="button"
-                        onClick={() => toggleQuestValidation(quest.id, day.date)}
-                        className={`w-full flex items-center justify-between text-[10px] rounded-lg px-2 py-1 mb-0.5 border ${
-                          completed
-                            ? 'bg-emerald-500/15 border-emerald-400/60 text-slate-100'
-                            : 'bg-slate-900/60 border-slate-700/80 text-slate-300 hover:bg-slate-800'
-                        }`}
-                      >
-                        <span className="line-clamp-1 mr-1 text-left">
-                          {quest.nom}
-                        </span>
-                        <span className="flex items-center gap-1 flex-shrink-0">
-                          <span
-                            className={`w-3 h-3 rounded-full border flex items-center justify-center ${
-                              completed
-                                ? 'bg-emerald-400 border-emerald-300 text-slate-900'
-                                : 'bg-slate-900 border-slate-600 text-slate-500'
-                            }`}
-                          >
-                            {completed ? '✓' : ''}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
+  const renderWeekView = () => (
+    <QuestsWeekView
+      allQuests={allQuests}
+      validations={validations}
+      toggleQuestValidation={toggleQuestValidation}
+      getQuestsForDate={getQuestsForDateMemoized}
+    />
+  );
 
   const renderPlaceholder = (title, description) => (
     <div className="max-w-xl mx-auto text-center mt-10 space-y-3">
@@ -1017,13 +807,43 @@ const QuestsTab = () => {
       );
     }
 
-    const totalXP = dailyPerformances.reduce(
+    // Filtrage par période
+    const today = getTodayDateStr();
+    const daysForPeriod = {
+      '7d': 7,
+      '30d': 30,
+      '90d': 90,
+      '180d': 180,
+      '365d': 365,
+    };
+
+    let periodStartDateStr = null;
+    if (selectedPeriod !== 'all') {
+      const days = daysForPeriod[selectedPeriod] || 30;
+      const base = new Date(today);
+      base.setDate(base.getDate() - days + 1);
+      periodStartDateStr = base.toISOString().slice(0, 10);
+    }
+
+    const filteredPerfs =
+      selectedPeriod === 'all'
+        ? dailyPerformances
+        : dailyPerformances.filter((d) => d.date >= periodStartDateStr);
+
+    if (!filteredPerfs.length) {
+      return renderPlaceholder(
+        'Statistiques QuietQuest',
+        "Aucune donnée dans la période sélectionnée. Essaie une période plus large ou coche de nouvelles quêtes."
+      );
+    }
+
+    const totalXP = filteredPerfs.reduce(
       (sum, d) => sum + (d.xpTotal || 0),
       0
     );
 
     // Streak actuel et meilleur streak (jours consécutifs avec successRate > 0)
-    const sorted = [...dailyPerformances].sort((a, b) =>
+    const sorted = [...filteredPerfs].sort((a, b) =>
       a.date < b.date ? -1 : 1
     );
 
@@ -1068,6 +888,63 @@ const QuestsTab = () => {
       successRate: d.successRate || 0,
     }));
 
+    // Répartition par catégorie (dans la période)
+    const periodValidations =
+      selectedPeriod === 'all'
+        ? validations
+        : validations.filter((v) => v.date >= periodStartDateStr);
+
+    const xpByCategoryMap = new Map();
+    for (const v of periodValidations) {
+      const quest = allQuests.find((q) => q.id === v.queteId);
+      if (!quest || !quest.categorie) continue;
+      const prev = xpByCategoryMap.get(quest.categorie) || 0;
+      xpByCategoryMap.set(quest.categorie, prev + (v.xpGagne || 0));
+    }
+    const categoryData = Array.from(xpByCategoryMap.entries()).map(
+      ([categorie, xpTotal]) => ({
+        categorie,
+        xpTotal,
+      })
+    );
+
+    // Insights automatiques
+    const insights = [];
+    if (categoryData.length > 0) {
+      const topCategory = categoryData.reduce((a, b) => (a.xpTotal > b.xpTotal ? a : b));
+      const categoryTotalXP = categoryData.reduce((sum, c) => sum + c.xpTotal, 0);
+      const categoryPercentage = Math.round((topCategory.xpTotal / categoryTotalXP) * 100);
+      insights.push(
+        `Ta catégorie la plus productive est **${topCategory.categorie}** avec ${topCategory.xpTotal.toLocaleString('fr-FR')} XP (${categoryPercentage}% du total).`
+      );
+    }
+
+    const activeDays = filteredPerfs.filter((d) => d.successRate > 0).length;
+    if (activeDays > 0) {
+      const avgXPPerActiveDay = Math.round(totalXP / activeDays);
+      insights.push(
+        `Tu gagnes en moyenne **${avgXPPerActiveDay.toLocaleString('fr-FR')} XP** par jour où tu valides au moins une quête.`
+      );
+    }
+
+    // Jour le plus régulier (basé sur le nombre de jours avec activité)
+    const dayOfWeekCounts = new Map();
+    for (const perf of filteredPerfs) {
+      if (perf.successRate > 0) {
+        const dayOfWeek = getDayOfWeekFromDateStr(perf.date);
+        dayOfWeekCounts.set(dayOfWeek, (dayOfWeekCounts.get(dayOfWeek) || 0) + 1);
+      }
+    }
+    if (dayOfWeekCounts.size > 0) {
+      const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+      const mostRegularDay = Array.from(dayOfWeekCounts.entries()).reduce((a, b) =>
+        a[1] > b[1] ? a : b
+      );
+      insights.push(
+        `Ton jour le plus régulier est le **${dayNames[mostRegularDay[0]]}** avec ${mostRegularDay[1]} jour${mostRegularDay[1] > 1 ? 's' : ''} d'activité.`
+      );
+    }
+
     return (
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -1078,6 +955,34 @@ const QuestsTab = () => {
             <p className="text-slate-400 text-sm mt-1">
               Résumé de ton XP gagné, de tes streaks et de ta constance au fil du temps.
             </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-200">
+            <span className="text-slate-400 mr-1">Période :</span>
+            {['7d', '30d', '90d', '180d', '365d', 'all'].map((p) => {
+              const labelMap = {
+                '7d': '7 jours',
+                '30d': '30 jours',
+                '90d': '90 jours',
+                '180d': '6 mois',
+                '365d': '12 mois',
+                all: 'Tout',
+              };
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setSelectedPeriod(p)}
+                  className={`px-2 py-1 rounded-full border text-xs transition-all ${
+                    selectedPeriod === p
+                      ? 'bg-emerald-400 text-slate-900 border-emerald-300'
+                      : 'bg-slate-900/50 text-slate-200 border-slate-700 hover:bg-slate-800'
+                  }`}
+                >
+                  {labelMap[p]}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -1162,78 +1067,210 @@ const QuestsTab = () => {
             </LazyChart>
           </div>
         )}
+
+        {categoryData.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3">
+            <div className="text-xs text-slate-400 mb-2">
+              Répartition de l’XP par catégorie
+            </div>
+            <LazyChart height={260}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={categoryData}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 40 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis
+                    dataKey="categorie"
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF', fontSize: 11 }}
+                    angle={-30}
+                    textAnchor="end"
+                    height={50}
+                  />
+                  <YAxis
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF', fontSize: 11 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#020617',
+                      borderColor: '#1e293b',
+                      borderRadius: '0.5rem',
+                      padding: '0.5rem 0.75rem',
+                    }}
+                    labelStyle={{ color: '#e5e7eb', fontSize: 12 }}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="xpTotal"
+                    name="XP total"
+                    fill="#22c55e"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </LazyChart>
+          </div>
+        )}
+
+        {/* Insights textuels */}
+        {insights.length > 0 && (
+          <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3">
+            <div className="text-xs text-slate-400 mb-2 font-semibold">💡 Insights automatiques</div>
+            <div className="space-y-2">
+              {insights.map((insight, idx) => (
+                <div
+                  key={idx}
+                  className="text-sm text-slate-200 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: insight.replace(/\*\*(.*?)\*\*/g, '<strong class="text-emerald-300">$1</strong>'),
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   const renderSecurityView = () => {
-    const handleExport = () => {
-      const payload = {
-        quests: allQuests,
-        validations,
-        userData,
-        dailyPerformances,
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `quietquest-export-${getTodayDateStr()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+    const handleExport = async () => {
+      try {
+        showInfo('Export en cours...');
+        
+        const exportData = await exportQuietQuestData({
+          includeMetadata: true,
+          compress: false,
+        });
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+          type: 'application/json',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `quietquest-export-${getTodayDateStr()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        const metadata = exportData.metadata || {};
+        showSuccess(
+          `Export réussi ! ${metadata.totalQuests || 0} quête${metadata.totalQuests !== 1 ? 's' : ''}, ` +
+          `${metadata.totalValidations || 0} validation${metadata.totalValidations !== 1 ? 's' : ''}.`
+        );
+      } catch (error) {
+        console.error('Erreur export:', error);
+        showError('Erreur lors de l\'export. Vérifie la console.');
+      }
     };
 
-    const handleImport = (event) => {
+    const handleImport = async (event) => {
       const file = event.target.files?.[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const text = e.target?.result;
-          if (typeof text !== 'string') return;
-          const data = JSON.parse(text);
-          if (!window.confirm('Remplacer entièrement les données QuietQuest ?')) {
-            return;
-          }
-          setAllQuests(Array.isArray(data.quests) ? data.quests : []);
-          setValidations(Array.isArray(data.validations) ? data.validations : []);
-          setUserData({ ...defaultUserData, ...(data.userData || {}) });
-          setDailyPerformances(
-            Array.isArray(data.dailyPerformances) ? data.dailyPerformances : []
-          );
-        } catch (err) {
-          console.error('Erreur import QuietQuest:', err);
-          alert('Fichier invalide ou corrompu.');
-        } finally {
-          event.target.value = '';
+      try {
+        const text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result);
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+
+        const jsonData = JSON.parse(text);
+
+        // Validation
+        if (!validateQuietQuestExport(jsonData)) {
+          showError('Format d\'export invalide. Vérifie que le fichier est un export QuietQuest valide.');
+          return;
         }
-      };
-      reader.readAsText(file);
+
+        // Prévisualisation améliorée (utiliser métadonnées si disponibles)
+        const metadata = jsonData.metadata || {};
+        const preview = {
+          quests: metadata.totalQuests || jsonData.data?.quests?.length || 0,
+          validations: metadata.totalValidations || jsonData.data?.validations?.length || 0,
+          dateRange: metadata.dateRange
+            ? `${metadata.dateRange.earliest} → ${metadata.dateRange.latest}`
+            : 'N/A',
+          userLevel: metadata.userLevel || jsonData.data?.userData?.level || 'N/A',
+          estimatedSizeKB: metadata.estimatedSizeKB || 'N/A',
+        };
+
+        const confirmMessage = `Remplacer entièrement les données QuietQuest ?\n\n` +
+          `Résumé du fichier :\n` +
+          `- ${preview.quests} quête${preview.quests > 1 ? 's' : ''}\n` +
+          `- ${preview.validations} validation${preview.validations > 1 ? 's' : ''}\n` +
+          `- Période : ${preview.dateRange}\n` +
+          `- Niveau utilisateur : ${preview.userLevel}\n` +
+          `- Taille estimée : ${preview.estimatedSizeKB} KB\n\n` +
+          `⚠️ Cette action remplacera TOUTES tes données actuelles. Cette action est irréversible.`;
+
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+
+        // Import avec backup automatique
+        await importQuietQuestData(jsonData, {
+          mode: 'replace',
+          createBackup: true,
+          validate: false, // Déjà validé
+        });
+
+        // Recharger les données (le hook devrait détecter le changement)
+        // Forcer rechargement en réinitialisant les états
+        window.location.reload(); // Solution simple pour recharger depuis IndexedDB
+
+        showSuccess(
+          `Import réussi ! ${preview.quests} quête${preview.quests > 1 ? 's' : ''} et ` +
+          `${preview.validations} validation${preview.validations > 1 ? 's' : ''} chargée${preview.validations > 1 ? 's' : ''}.`
+        );
+      } catch (error) {
+        console.error('Erreur import:', error);
+        showError('Fichier invalide ou corrompu. Vérifie que le fichier est un export QuietQuest valide.');
+      } finally {
+        event.target.value = '';
+      }
     };
 
-    const handleReset = () => {
-      if (
-        !window.confirm(
-          'Réinitialiser complètement toutes les données QuietQuest (quêtes, validations, XP, statistiques) ?'
-        )
-      ) {
+    const handleReset = async () => {
+      const questsCount = allQuests.length;
+      const validationsCount = validations.length;
+      const confirmMessage = `Réinitialiser complètement toutes les données QuietQuest ?\n\n⚠️ Cette action supprimera définitivement :\n- ${questsCount} quête${questsCount > 1 ? 's' : ''}\n- ${validationsCount} validation${validationsCount > 1 ? 's' : ''}\n- Toutes tes statistiques et ton XP\n- Toutes tes performances quotidiennes\n\nCette action est irréversible et ne peut pas être annulée.`;
+
+      if (!window.confirm(confirmMessage)) {
         return;
       }
-      setAllQuests([]);
-      setValidations([]);
-      setDailyPerformances([]);
-      setUserData(defaultUserData);
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem(STORAGE_KEYS.quests);
-        window.localStorage.removeItem(STORAGE_KEYS.validations);
-        window.localStorage.removeItem(STORAGE_KEYS.userData);
-        window.localStorage.removeItem(STORAGE_KEYS.dailyPerformances);
-        window.localStorage.removeItem(STORAGE_KEYS.appState);
-        window.localStorage.removeItem(META_KEYS.lastVisit);
-        window.localStorage.removeItem(META_KEYS.lastCleanup);
+
+      try {
+        // Vider IndexedDB si disponible
+        const db = await openQuietQuestDB();
+        if (db) {
+          await clearQuietQuestStores(db, 'main');
+        }
+
+        // Vider localStorage (fallback)
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem(STORAGE_KEYS.quests);
+          window.localStorage.removeItem(STORAGE_KEYS.validations);
+          window.localStorage.removeItem(STORAGE_KEYS.userData);
+          window.localStorage.removeItem(STORAGE_KEYS.dailyPerformances);
+          window.localStorage.removeItem(STORAGE_KEYS.appState);
+          window.localStorage.removeItem(META_KEYS.lastVisit);
+          window.localStorage.removeItem(META_KEYS.lastCleanup);
+        }
+
+        // Réinitialiser les états
+        setAllQuests([]);
+        setValidations([]);
+        setDailyPerformances([]);
+        setUserData(defaultUserData);
+
+        showWarning('Toutes les données QuietQuest ont été réinitialisées.');
+      } catch (error) {
+        console.error('Erreur reset:', error);
+        showError('Erreur lors de la réinitialisation. Vérifie la console.');
       }
     };
 
@@ -1316,7 +1353,7 @@ const QuestsTab = () => {
       case 'week':
         return renderWeekView();
       case 'stats':
-        return renderStatsView();
+        return <QuestsStatsView />;
       case 'security':
         return renderSecurityView();
       default:
