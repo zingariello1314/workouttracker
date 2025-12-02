@@ -509,6 +509,13 @@ const HomePage = () => {
         {/* Navigation en une seule ligne – version simplifiée */}
         <nav className="flex items-center space-x-8">
           <div className="flex space-x-2 text-white text-base font-medium">
+            {/* Accueil */}
+            <button 
+              onClick={() => navigateToTab('home')}
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+            >
+              {t('nav.home')}
+            </button>
             {/* Sport regroupe tous les onglets d'entraînement (Today, Saisie, Programme, etc.) */}
             <button 
               onClick={() => navigateToTab('today')}
@@ -522,6 +529,13 @@ const HomePage = () => {
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
             >
               {t('nav.quests')}
+            </button>
+            {/* Apprentissage */}
+            <button 
+              onClick={() => navigateToTab('apprentissage')}
+              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+            >
+              {t('nav.apprentissage')}
             </button>
             {/* Livres */}
             <button 

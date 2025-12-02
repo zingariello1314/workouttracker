@@ -32,11 +32,13 @@ const Navigation = () => {
     [sportTabs]
   );
 
-  // ✅ Navigation principale simplifiée : Sport / Quêtes / Livres / Paramètres
+  // ✅ Navigation principale : Accueil / Sport / Quêtes / Apprentissage / Livres / Paramètres
   const tabs = useMemo(
     () => [
+      { id: 'home', labelKey: 'nav.home', icon: '🏠' },
       { id: 'sport', labelKey: 'nav.sport', icon: '🏋️' },
       { id: 'quests', labelKey: 'nav.quests', icon: '⚡' },
+      { id: 'apprentissage', labelKey: 'nav.apprentissage', icon: '📖' },
       { id: 'books', labelKey: 'nav.books', icon: '📚' },
       { id: 'settings', labelKey: 'nav.settings', icon: '⚙️' }
     ],
@@ -49,10 +51,17 @@ const Navigation = () => {
       setActiveTab('today');
       return;
     }
+    if (tabId === 'home') {
+      setActiveTab('home');
+      return;
+    }
     setActiveTab(tabId);
   };
 
   const isTabActive = (tabId) => {
+    if (tabId === 'home') {
+      return activeTab === 'home';
+    }
     if (tabId === 'sport') {
       return sportSubTabs.includes(activeTab);
     }

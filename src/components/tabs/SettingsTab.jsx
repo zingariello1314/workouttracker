@@ -33,6 +33,7 @@ import { loadBooks as loadBooksFromLocalStorage, saveBooks as saveBooksToLocalSt
 import { exportQuietQuestData, importQuietQuestData, validateQuietQuestExport } from '../../utils/quietQuestExportImport';
 import { openQuietQuestDB, loadQuestsFromIndexedDB, loadValidationsFromIndexedDB, loadUserDataFromIndexedDB } from '../../utils/quietQuestIndexedDB';
 import { STORAGE_KEYS, loadFromStorage, defaultUserData } from '../../hooks/useQuietQuestEngine';
+import { exportApprentissageData, importApprentissageData, previewApprentissageImport, prepareApprentissageExportData } from '../../utils/apprentissageExportImport';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
@@ -57,6 +58,15 @@ const SettingsTab = () => {
     questsCount: 0,
     validationsCount: 0,
     userLevel: 1,
+  });
+  const [apprentissageExportStatus, setApprentissageExportStatus] = useState(null);
+  const [apprentissageImportStatus, setApprentissageImportStatus] = useState(null);
+  const [apprentissageStats, setApprentissageStats] = useState({
+    subjectsCount: 0,
+    sessionsCount: 0,
+    globalLevel: 1,
+    globalXP: 0,
+    totalStudyTime: 0,
   });
   const [booksStats, setBooksStats] = useState({
     totalBooks: 0,
@@ -188,8 +198,24 @@ const SettingsTab = () => {
       }
     };
 
+    const loadApprentissageStats = async () => {
+      try {
+        const exportData = await prepareApprentissageExportData('main');
+        setApprentissageStats({
+          subjectsCount: exportData.subjects?.length || 0,
+          sessionsCount: exportData.sessionsHistory?.length || 0,
+          globalLevel: exportData.progression?.globalLevel || 1,
+          globalXP: exportData.progression?.globalXP || 0,
+          totalStudyTime: exportData.progression?.totalStudyTime || 0,
+        });
+      } catch (error) {
+        console.error('[SettingsTab] Erreur chargement stats Apprentissage:', error);
+      }
+    };
+
     loadQuietQuestStats();
     loadBooksStats();
+    loadApprentissageStats();
   }, []);
 
   const handleAvatarChange = async (event) => {
@@ -920,6 +946,59 @@ const SettingsTab = () => {
         setQuietQuestImportStatus('error');
         alert(`Erreur lors de l'import : ${error.message}`);
         setTimeout(() => setQuietQuestImportStatus(null), 3000);
+      }
+    };
+    input.click();
+  };
+
+  // Fonction pour exporter les données Apprentissage
+  const handleExportApprentissage = async () => {
+    try {
+      setApprentissageExportStatus('loading');
+      await exportApprentissageData();
+      setApprentissageExportStatus('success');
+      setTimeout(() => setApprentissageExportStatus(null), 3000);
+    } catch (error) {
+      console.error('❌ Erreur export Apprentissage:', error);
+      setApprentissageExportStatus('error');
+      setTimeout(() => setApprentissageExportStatus(null), 3000);
+    }
+  };
+
+  // Fonction pour importer les données Apprentissage
+  const handleImportApprentissage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        setApprentissageImportStatus('loading');
+        const text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target?.result);
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+        const jsonData = JSON.parse(text);
+        const preview = previewApprentissageImport(jsonData);
+        if (!preview.valid) {
+          throw new Error(`Format d'export invalide: ${preview.errors?.join(', ')}`);
+        }
+        await importApprentissageData(jsonData, { mode: 'replace', createBackup: true });
+        setApprentissageImportStatus('success');
+        setTimeout(() => {
+          setApprentissageImportStatus(null);
+          if (window.confirm('Import réussi ! Voulez-vous recharger la page pour voir les changements ?')) {
+            window.location.reload();
+          }
+        }, 2000);
+      } catch (error) {
+        console.error('❌ Erreur import Apprentissage:', error);
+        setApprentissageImportStatus('error');
+        alert(`Erreur lors de l'import : ${error.message}`);
+        setTimeout(() => setApprentissageImportStatus(null), 3000);
       }
     };
     input.click();
@@ -2387,6 +2466,48 @@ const SettingsTab = () => {
                       className="w-full bg-indigo-600 hover:bg-indigo-700"
                     >
                       {booksExportStatus === 'loading' ? 'Export en cours...' : 'Export Livres'}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Section Apprentissage */}
+                <div className="space-y-4 pt-4 border-t border-slate-600">
+                  <h4 className="font-semibold text-white text-lg flex items-center">
+                    <span className="mr-2">📖</span>
+                    Apprentissage
+                  </h4>
+                  <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+                    <div className="space-y-1">
+                      <h5 className="text-sm font-medium text-cyan-300">📖 Apprentissage</h5>
+                      <ul className="text-sm text-gray-300 space-y-1">
+                        <li>• Matières : {apprentissageStats.subjectsCount} matière{apprentissageStats.subjectsCount !== 1 ? 's' : ''}</li>
+                        <li>• Sessions : {apprentissageStats.sessionsCount} session{apprentissageStats.sessionsCount !== 1 ? 's' : ''}</li>
+                        <li>• Niveau global : {apprentissageStats.globalLevel}</li>
+                        <li>• XP total : {apprentissageStats.globalXP}</li>
+                        <li>• Temps d'étude : {Math.floor(apprentissageStats.totalStudyTime / 3600)}h</li>
+                        <li>• Progression et badges</li>
+                        <li>• Historique complet</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button
+                      onClick={handleExportApprentissage}
+                      disabled={apprentissageExportStatus === 'loading'}
+                      icon={Download}
+                      className="w-full bg-cyan-600 hover:bg-cyan-700"
+                    >
+                      {apprentissageExportStatus === 'loading' ? 'Export en cours...' : 'Export Apprentissage'}
+                    </Button>
+                    <Button
+                      onClick={handleImportApprentissage}
+                      disabled={apprentissageImportStatus === 'loading'}
+                      icon={Upload}
+                      variant="outline"
+                      className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10"
+                    >
+                      {apprentissageImportStatus === 'loading' ? 'Import en cours...' : 'Import Apprentissage'}
                     </Button>
                   </div>
                 </div>
