@@ -1,72 +1,109 @@
-/**
- * Composant CategoryRules - Affichage des règles et alertes d'une catégorie
- */
+import React, { useState } from 'react';
+import { useBudget } from '../../../hooks/useBudget';
+import { useToast } from '../../ui/Toast';
 
-import React, { useMemo } from 'react';
+const CategoryRules = ({ category }) => {
+  const { updateCategory } = useBudget();
+  const { showToast } = useToast();
+  const [rules, setRules] = useState(category.regles || {
+    alerte80: true,
+    alerte100: true,
+    alerte120: true,
+    action80: 'NOTIFICATION',
+    action100: 'BLOCK',
+    action120: 'BLOCK_STRICT'
+  });
 
-const CategoryRules = ({ category, depenses }) => {
-  const alerts = useMemo(() => {
-    if (!category || !depenses) return [];
-
-    const rules = category.regles || {};
-    const depenseActuelle = depenses.reduce((sum, d) => sum + (d.montant || 0), 0);
-    const budgetCat = category.budgetMensuel || 0;
-    
-    if (budgetCat === 0) return [];
-
-    const pourcentUtilise = (depenseActuelle / budgetCat) * 100;
-    const alerts = [];
-
-    // Alerte 80%
-    if (rules.alerte80 && pourcentUtilise >= 80 && pourcentUtilise < 100) {
-      alerts.push({
-        type: 'WARNING_80',
-        message: `80% du budget utilisé`,
-        priority: 'medium',
-        color: 'bg-yellow-900/20 border-yellow-500/50 text-yellow-300'
-      });
+  const handleSave = async () => {
+    try {
+      await updateCategory(category.id, { regles: rules });
+      showToast('Règles sauvegardées', 'success');
+    } catch (error) {
+      showToast('Erreur lors de la sauvegarde', 'error');
     }
-
-    // Alerte 100%
-    if (rules.alerte100 && pourcentUtilise >= 100) {
-      alerts.push({
-        type: 'CRITICAL_100',
-        message: `Budget épuisé (${pourcentUtilise.toFixed(0)}%)`,
-        priority: 'high',
-        color: 'bg-red-900/20 border-red-500/50 text-red-300'
-      });
-    }
-
-    // Alerte 120%
-    if (rules.alerte120 && pourcentUtilise >= 120) {
-      alerts.push({
-        type: 'CRITICAL_120',
-        message: `Budget dépassé de ${(pourcentUtilise - 100).toFixed(1)}%`,
-        priority: 'critical',
-        color: 'bg-red-900/30 border-red-500 text-red-200'
-      });
-    }
-
-    return alerts;
-  }, [category, depenses]);
-
-  if (alerts.length === 0) return null;
+  };
 
   return (
-    <div className="mt-3 space-y-2">
-      {alerts.map((alert, index) => (
-        <div
-          key={index}
-          className={`p-2 rounded-lg border text-xs ${alert.color}`}
-        >
-          <div className="flex items-center gap-2">
-            <span>
-              {alert.type === 'CRITICAL_120' || alert.type === 'CRITICAL_100' ? '🔴' : '⚠️'}
-            </span>
-            <span className="font-medium">{alert.message}</span>
-          </div>
+    <div className="category-rules space-y-3">
+      <h5 className="text-sm font-semibold text-white mb-3">Règles Automatiques</h5>
+
+      {/* Alerte 80% */}
+      <div className="flex items-center justify-between p-2 bg-slate-700/30 rounded">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={rules.alerte80 !== false}
+            onChange={(e) => setRules({ ...rules, alerte80: e.target.checked })}
+            className="w-4 h-4 text-yellow-600 bg-slate-700 border-slate-600 rounded"
+          />
+          <label className="text-sm text-slate-300">Alerte à 80%</label>
         </div>
-      ))}
+        {rules.alerte80 !== false && (
+          <select
+            value={rules.action80 || 'NOTIFICATION'}
+            onChange={(e) => setRules({ ...rules, action80: e.target.value })}
+            className="text-xs bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white"
+          >
+            <option value="NOTIFICATION">Notification</option>
+            <option value="SUGGEST">Suggérer</option>
+          </select>
+        )}
+      </div>
+
+      {/* Alerte 100% */}
+      <div className="flex items-center justify-between p-2 bg-slate-700/30 rounded">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={rules.alerte100 !== false}
+            onChange={(e) => setRules({ ...rules, alerte100: e.target.checked })}
+            className="w-4 h-4 text-orange-600 bg-slate-700 border-slate-600 rounded"
+          />
+          <label className="text-sm text-slate-300">Alerte à 100%</label>
+        </div>
+        {rules.alerte100 !== false && (
+          <select
+            value={rules.action100 || 'BLOCK'}
+            onChange={(e) => setRules({ ...rules, action100: e.target.value })}
+            className="text-xs bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white"
+          >
+            <option value="NOTIFICATION">Notification</option>
+            <option value="BLOCK">Bloquer</option>
+            <option value="SUGGEST">Suggérer</option>
+          </select>
+        )}
+      </div>
+
+      {/* Alerte 120% */}
+      <div className="flex items-center justify-between p-2 bg-slate-700/30 rounded">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={rules.alerte120 !== false}
+            onChange={(e) => setRules({ ...rules, alerte120: e.target.checked })}
+            className="w-4 h-4 text-red-600 bg-slate-700 border-slate-600 rounded"
+          />
+          <label className="text-sm text-slate-300">Alerte à 120%</label>
+        </div>
+        {rules.alerte120 !== false && (
+          <select
+            value={rules.action120 || 'BLOCK_STRICT'}
+            onChange={(e) => setRules({ ...rules, action120: e.target.value })}
+            className="text-xs bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white"
+          >
+            <option value="NOTIFICATION">Notification</option>
+            <option value="BLOCK">Bloquer</option>
+            <option value="BLOCK_STRICT">Bloquer strict</option>
+          </select>
+        )}
+      </div>
+
+      <button
+        onClick={handleSave}
+        className="w-full mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+      >
+        Sauvegarder règles
+      </button>
     </div>
   );
 };

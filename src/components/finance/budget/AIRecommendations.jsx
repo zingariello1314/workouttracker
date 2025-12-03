@@ -1,150 +1,161 @@
-/**
- * Composant AIRecommendations - Recommandations contextuelles basées sur l'IA
- */
-
 import React, { useMemo } from 'react';
 import { useBudget } from '../../../hooks/useBudget';
 import { budgetAI } from '../../../services/finance/budgetAI';
+import { useTranslation } from '../../../utils/translations';
 
 const AIRecommendations = () => {
-  const { budget, categories, depenses, depensesMoisActuel } = useBudget();
+  const { budget, depenses, depensesMoisActuel } = useBudget();
+  const t = useTranslation();
 
   const recommendations = useMemo(() => {
-    if (!budget || !depenses || depenses.length === 0) return [];
+    if (!budget || !depenses) return [];
+    return budgetAI.generateRecommendations(budget, depenses, depensesMoisActuel);
+  }, [budget, depenses, depensesMoisActuel]);
 
-    const recs = [];
+  const patterns = useMemo(() => {
+    if (!depenses) return null;
+    return budgetAI.detectTemporalPatterns(depenses);
+  }, [depenses]);
 
-    // Analyse des patterns temporels
-    const patterns = budgetAI.detectTemporalPatterns(depenses);
-    
-    // Recommandation basée sur pattern hebdomadaire
-    if (patterns.weekly && patterns.weekly.length > 0) {
-      const maxDay = patterns.weekly.reduce((max, day) => 
-        day.average > max.average ? day : max, patterns.weekly[0]
-      );
-      const avgWeekly = patterns.weekly.reduce((sum, d) => sum + d.average, 0) / patterns.weekly.length;
-      
-      if (maxDay.average > avgWeekly * 1.2) {
-        recs.push({
-          type: 'MICRO_ADJUSTMENT',
-          message: `Reporter les achats du ${maxDay.dayName} au lendemain = économie estimée ${Math.round((maxDay.average - avgWeekly) * 0.3)}€/mois`,
-          impact: 'low',
-          priority: 'medium'
-        });
-      }
-    }
-
-    // Recommandations de substitution
-    const depensesLoisirs = depensesMoisActuel.filter(d => {
-      const cat = categories.find(c => c.id === d.categorie);
-      return cat && (cat.nom.toLowerCase().includes('loisir') || cat.nom.toLowerCase().includes('sortie'));
-    });
-    
-    if (depensesLoisirs.length > 0) {
-      const totalLoisirs = depensesLoisirs.reduce((sum, d) => sum + (d.montant || 0), 0);
-      if (totalLoisirs > 100) {
-        recs.push({
-          type: 'SUBSTITUTION',
-          message: `Ciné 12€ → Streaming 3€ = économie ${(depensesLoisirs.length * 9)}€/mois`,
-          impact: 'medium',
-          priority: 'low'
-        });
-      }
-    }
-
-    // Optimisations groupées
-    const categoriesAvecMarge = categories.filter(cat => {
-      const depensesCat = depensesMoisActuel.filter(d => d.categorie === cat.id);
-      const totalDepenses = depensesCat.reduce((sum, d) => sum + (d.montant || 0), 0);
-      return (cat.budgetMensuel || 0) - totalDepenses > 50;
-    });
-
-    if (categoriesAvecMarge.length >= 3) {
-      const totalMarge = categoriesAvecMarge.reduce((sum, cat) => {
-        const depensesCat = depensesMoisActuel.filter(d => d.categorie === cat.id);
-        const totalDepenses = depensesCat.reduce((s, d) => s + (d.montant || 0), 0);
-        return sum + ((cat.budgetMensuel || 0) - totalDepenses);
-      }, 0);
-
-      recs.push({
-        type: 'GROUPED_OPTIMIZATION',
-        message: `3 ajustements = économie ${Math.round(totalMarge * 0.2)}€/mois`,
-        impact: 'high',
-        priority: 'high'
-      });
-    }
-
-    // Objectifs adaptatifs
-    const depensesTotal = depensesMoisActuel.reduce((sum, d) => sum + (d.montant || 0), 0);
-    const revenus = budget.revenus || 0;
-    
-    if (revenus > 0) {
-      const pourcentUtilise = (depensesTotal / revenus) * 100;
-      
-      if (pourcentUtilise > 95) {
-        recs.push({
-          type: 'ADAPTIVE_GOAL',
-          message: `Budget serré (${pourcentUtilise.toFixed(0)}%). Réduire objectif épargne de 10% = +${Math.round((budget.epargne?.objectif || 0) * 0.1)}€ disponible`,
-          impact: 'medium',
-          priority: 'high'
-        });
-      }
-    }
-
-    return recs;
-  }, [budget, categories, depenses, depensesMoisActuel]);
-
-  const getRecommendationColor = (type) => {
-    switch (type) {
-      case 'MICRO_ADJUSTMENT':
-        return 'bg-blue-900/20 border-blue-500/50 text-blue-300';
-      case 'SUBSTITUTION':
-        return 'bg-green-900/20 border-green-500/50 text-green-300';
-      case 'GROUPED_OPTIMIZATION':
-        return 'bg-yellow-900/20 border-yellow-500/50 text-yellow-300';
-      case 'ADAPTIVE_GOAL':
-        return 'bg-purple-900/20 border-purple-500/50 text-purple-300';
-      default:
-        return 'bg-slate-700/50 border-slate-600/50 text-slate-300';
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high': return 'bg-red-900/30 border-red-500/50 text-red-300';
+      case 'medium': return 'bg-yellow-900/30 border-yellow-500/50 text-yellow-300';
+      case 'low': return 'bg-blue-900/30 border-blue-500/50 text-blue-300';
+      default: return 'bg-slate-800/50 border-slate-700/50 text-slate-300';
     }
   };
 
-  if (recommendations.length === 0) {
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case 'micro_adjustment': return '⚡';
+      case 'substitution': return '🔄';
+      case 'grouped_optimization': return '✨';
+      case 'adaptive_goal': return '🎯';
+      default: return '💡';
+    }
+  };
+
+  if (recommendations.length === 0 && (!patterns || !patterns.insights)) {
     return (
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Recommandations IA</h3>
-        <div className="text-center text-slate-400 py-8">
-          <p className="text-lg mb-2">🤖</p>
-          <p>Aucune recommandation pour le moment</p>
-          <p className="text-sm mt-2">Continuez à utiliser l'application pour recevoir des suggestions personnalisées</p>
+      <div className="ai-recommendations bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <h4 className="text-lg font-semibold text-white mb-4">💡 Recommandations IA</h4>
+        <div className="text-center py-8 text-slate-400">
+          Aucune recommandation pour le moment
         </div>
       </div>
     );
   }
 
   return (
-    <div className="ai-recommendations bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Recommandations IA</h3>
-      <div className="space-y-3">
-        {recommendations.map((rec, index) => (
-          <div
-            key={index}
-            className={`p-4 rounded-lg border ${getRecommendationColor(rec.type)}`}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1">
-                <div className="font-semibold mb-1">{rec.message}</div>
-                <div className="text-xs opacity-80">Impact : {rec.impact}</div>
+    <div className="ai-recommendations space-y-6">
+      <h4 className="text-lg font-semibold text-white">💡 Recommandations IA</h4>
+
+      {/* Recommandations */}
+      {recommendations.length > 0 && (
+        <div className="space-y-4">
+          {recommendations.map((rec, index) => (
+            <div
+              key={index}
+              className={`border rounded-lg p-4 ${getPriorityColor(rec.priority)}`}
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">{getTypeIcon(rec.type)}</span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-semibold">{rec.message}</div>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      rec.priority === 'high' ? 'bg-red-600/30' :
+                      rec.priority === 'medium' ? 'bg-yellow-600/30' :
+                      'bg-blue-600/30'
+                    }`}>
+                      {rec.priority === 'high' ? 'Haute' : rec.priority === 'medium' ? 'Moyenne' : 'Basse'}
+                    </span>
+                  </div>
+                  <p className="text-sm opacity-90 mb-2">{rec.suggestion}</p>
+                  {rec.impact && (
+                    <div className="text-xs font-semibold opacity-80">
+                      Impact : {rec.impact}
+                    </div>
+                  )}
+                </div>
               </div>
-              {rec.priority === 'high' && (
-                <span className="text-xs px-2 py-1 bg-red-500/20 text-red-300 rounded">
-                  Priorité
-                </span>
-              )}
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {/* Patterns détectés */}
+      {patterns && (
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-4">
+          <h5 className="text-md font-semibold text-white">📊 Patterns Détectés</h5>
+
+          {/* Insights hebdomadaires */}
+          {patterns.weekly?.insights && patterns.weekly.insights.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-slate-300">Patterns Hebdomadaires</div>
+              {patterns.weekly.insights.map((insight, index) => (
+                <div key={index} className="text-sm text-slate-400 bg-slate-700/30 p-3 rounded">
+                  {insight.message}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Insights mensuels */}
+          {patterns.monthly?.insights && patterns.monthly.insights.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-slate-300">Tendances Mensuelles</div>
+              {patterns.monthly.insights.map((insight, index) => (
+                <div key={index} className={`text-sm p-3 rounded ${
+                  insight.impact === 'positive' ? 'bg-green-900/30 text-green-300' :
+                  insight.impact === 'high' ? 'bg-red-900/30 text-red-300' :
+                  'bg-slate-700/30 text-slate-400'
+                }`}>
+                  {insight.message}
+                  {insight.suggestion && (
+                    <div className="text-xs mt-1 opacity-80">{insight.suggestion}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Insights saisonniers */}
+          {patterns.seasonal?.insights && patterns.seasonal.insights.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-slate-300">Patterns Saisonniers</div>
+              {patterns.seasonal.insights.map((insight, index) => (
+                <div key={index} className="text-sm text-slate-400 bg-slate-700/30 p-3 rounded">
+                  {insight.message}
+                  {insight.suggestion && (
+                    <div className="text-xs mt-1 opacity-80">{insight.suggestion}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Tendances */}
+          {patterns.trends && patterns.trends.direction !== 'stable' && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-slate-300">Tendance Générale</div>
+              <div className={`text-sm p-3 rounded ${
+                patterns.trends.direction === 'increasing' 
+                  ? 'bg-red-900/30 text-red-300' 
+                  : 'bg-green-900/30 text-green-300'
+              }`}>
+                Dépenses en {patterns.trends.direction === 'increasing' ? 'hausse' : 'baisse'}
+                {patterns.trends.strength && (
+                  <span className="text-xs ml-2 opacity-80">
+                    (force: {(patterns.trends.strength * 100).toFixed(0)}%)
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 /**
  * Service de stockage pour le module Budget Personnel
- * Utilise IndexedDB pour stocker budget, catégories, dépenses et historique
+ * Utilise IndexedDB pour persistance locale
  */
 
 import { openDB } from 'idb';
@@ -9,33 +9,41 @@ import logger from '../../utils/logger';
 const log = logger.module('budgetStorage');
 
 const DB_NAME = 'BudgetDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Augmenté pour forcer migration
 const STORES = {
   BUDGET: 'budget',
   CATEGORIES: 'categories',
   DEPENSES: 'depenses',
-  HISTORIQUE: 'historique'
+  DEPENSES_PLANIFIEES: 'depensesPlanifiees',
+  HISTORIQUE: 'historique',
+  CHARGES_FIXES: 'chargesFixes'
 };
 
 class BudgetStorage {
   constructor() {
     this.db = null;
-    this.initPromise = this.initDB();
   }
 
   async initDB() {
+    if (this.db) return this.db;
+
     try {
       this.db = await openDB(DB_NAME, DB_VERSION, {
-        upgrade(db) {
+        upgrade(db, oldVersion, newVersion, transaction) {
+          log.debug(`Upgrading BudgetDB from version ${oldVersion} to ${newVersion}`);
+
           // Store Budget
           if (!db.objectStoreNames.contains(STORES.BUDGET)) {
             db.createObjectStore(STORES.BUDGET, { keyPath: 'id' });
+            log.debug(`Created store: ${STORES.BUDGET}`);
           }
 
           // Store Categories avec index
           if (!db.objectStoreNames.contains(STORES.CATEGORIES)) {
             const catStore = db.createObjectStore(STORES.CATEGORIES, { keyPath: 'id' });
             catStore.createIndex('nom', 'nom', { unique: false });
+            catStore.createIndex('ordre', 'ordre', { unique: false });
+            log.debug(`Created store: ${STORES.CATEGORIES}`);
           }
 
           // Store Depenses avec index temporel
@@ -44,6 +52,24 @@ class BudgetStorage {
             depStore.createIndex('date', 'date', { unique: false });
             depStore.createIndex('categorie', 'categorie', { unique: false });
             depStore.createIndex('statut', 'statut', { unique: false });
+            log.debug(`Created store: ${STORES.DEPENSES}`);
+          }
+
+          // Store Depenses Planifiées
+          if (!db.objectStoreNames.contains(STORES.DEPENSES_PLANIFIEES)) {
+            const planStore = db.createObjectStore(STORES.DEPENSES_PLANIFIEES, { keyPath: 'id' });
+            planStore.createIndex('date', 'date', { unique: false });
+            planStore.createIndex('statut', 'statut', { unique: false });
+            planStore.createIndex('categorie', 'categorie', { unique: false });
+            log.debug(`Created store: ${STORES.DEPENSES_PLANIFIEES}`);
+          }
+
+          // Store Charges Fixes
+          if (!db.objectStoreNames.contains(STORES.CHARGES_FIXES)) {
+            const chargesStore = db.createObjectStore(STORES.CHARGES_FIXES, { keyPath: 'id' });
+            chargesStore.createIndex('type', 'type', { unique: false });
+            chargesStore.createIndex('frequence', 'frequence', { unique: false });
+            log.debug(`Created store: ${STORES.CHARGES_FIXES}`);
           }
 
           // Store Historique (audit trail)
@@ -54,325 +80,384 @@ class BudgetStorage {
             });
             histStore.createIndex('timestamp', 'timestamp', { unique: false });
             histStore.createIndex('action', 'action', { unique: false });
+            log.debug(`Created store: ${STORES.HISTORIQUE}`);
+          }
+
+          // Vérifier que tous les stores existent
+          const missingStores = Object.values(STORES).filter(
+            storeName => !db.objectStoreNames.contains(storeName)
+          );
+          if (missingStores.length > 0) {
+            log.warn(`Missing stores after upgrade: ${missingStores.join(', ')}`);
           }
         }
       });
-      log.info('BudgetDB initialized');
+
+      // Vérifier que tous les stores existent après initialisation
+      const allStoresExist = Object.values(STORES).every(
+        storeName => this.db.objectStoreNames.contains(storeName)
+      );
+      
+      if (!allStoresExist) {
+        log.error('Some stores are missing after initialization. Recreating database...');
+        // Supprimer et recréer la base
+        this.db.close();
+        indexedDB.deleteDatabase(DB_NAME);
+        // Réessayer
+        return this.initDB();
+      }
+
+      log.debug('BudgetDB initialized successfully');
       return this.db;
     } catch (error) {
       log.error('Error initializing BudgetDB:', error);
-      throw error;
+      // En cas d'erreur, supprimer et recréer
+      try {
+        this.db?.close();
+        await indexedDB.deleteDatabase(DB_NAME);
+        log.info('Deleted corrupted database, retrying...');
+        return this.initDB();
+      } catch (retryError) {
+        log.error('Failed to recover from error:', retryError);
+        throw error;
+      }
     }
   }
 
-  // ==================== BUDGET ====================
-
+  // ========== BUDGET ==========
   async saveBudget(budget) {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.BUDGET, 'readwrite');
-      await tx.objectStore(STORES.BUDGET).put({ id: 'main', ...budget });
-      await this.logHistory('BUDGET_UPDATE', budget);
-      
-      // Backup LocalStorage
-      try {
-        localStorage.setItem('budget_backup', JSON.stringify(budget));
-      } catch (e) {
-        log.warn('Could not save budget backup to localStorage:', e);
-      }
-      
-      log.info('Budget saved');
-      return true;
-    } catch (error) {
-      log.error('Error saving budget:', error);
-      throw error;
-    }
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.BUDGET, 'readwrite');
+    const budgetWithId = { ...budget, id: budget.id || 'main' };
+    await tx.objectStore(STORES.BUDGET).put(budgetWithId);
+    await this.logHistory('BUDGET_UPDATE', budgetWithId);
+    await tx.done;
+    return budgetWithId;
   }
 
   async loadBudget() {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.BUDGET, 'readonly');
-      const budget = await tx.objectStore(STORES.BUDGET).get('main');
-      
-      if (budget) {
-        const { id, ...budgetData } = budget;
-        log.info('Budget loaded from IndexedDB');
-        return budgetData;
-      }
-      
-      // Fallback LocalStorage
-      try {
-        const backup = localStorage.getItem('budget_backup');
-        if (backup) {
-          const budgetData = JSON.parse(backup);
-          log.info('Budget loaded from localStorage backup');
-          return budgetData;
-        }
-      } catch (e) {
-        log.warn('Could not load budget from localStorage:', e);
-      }
-      
-      return null;
-    } catch (error) {
-      log.error('Error loading budget:', error);
-      // Fallback LocalStorage
-      try {
-        const backup = localStorage.getItem('budget_backup');
-        return backup ? JSON.parse(backup) : null;
-      } catch (e) {
-        return null;
-      }
+    const db = await this.initDB();
+    
+    // Vérifier que le store existe
+    if (!db.objectStoreNames.contains(STORES.BUDGET)) {
+      log.warn(`Store ${STORES.BUDGET} does not exist, returning default budget`);
+      return this.getDefaultBudget();
     }
+    
+    const tx = db.transaction(STORES.BUDGET, 'readonly');
+    const budget = await tx.objectStore(STORES.BUDGET).get('main');
+    await tx.done;
+    return budget || this.getDefaultBudget();
   }
 
-  // ==================== CATEGORIES ====================
+  getDefaultBudget() {
+    return {
+      id: 'main',
+      revenus: 0,
+      depenses: {
+        categories: []
+      },
+      epargne: {
+        objectif: 0,
+        actuelle: 0
+      }
+    };
+  }
 
-  async getAllCategories() {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.CATEGORIES, 'readonly');
-      const categories = await tx.objectStore(STORES.CATEGORIES).getAll();
-      log.info(`Loaded ${categories.length} categories`);
-      return categories;
-    } catch (error) {
-      log.error('Error loading categories:', error);
+  // ========== CATEGORIES ==========
+  async saveCategory(category) {
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.CATEGORIES, 'readwrite');
+    const categoryWithId = {
+      ...category,
+      id: category.id || `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: category.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await tx.objectStore(STORES.CATEGORIES).put(categoryWithId);
+    await this.logHistory('CATEGORY_SAVE', categoryWithId);
+    await tx.done;
+    return categoryWithId;
+  }
+
+  async loadCategories() {
+    const db = await this.initDB();
+    
+    // Vérifier que le store existe
+    if (!db.objectStoreNames.contains(STORES.CATEGORIES)) {
+      log.warn(`Store ${STORES.CATEGORIES} does not exist, returning empty array`);
       return [];
     }
-  }
-
-  async saveCategory(category) {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.CATEGORIES, 'readwrite');
-      await tx.objectStore(STORES.CATEGORIES).put(category);
-      await this.logHistory('CATEGORY_SAVE', { categoryId: category.id, nom: category.nom });
-      log.info(`Category ${category.id} saved`);
-      return true;
-    } catch (error) {
-      log.error('Error saving category:', error);
-      throw error;
-    }
+    
+    const tx = db.transaction(STORES.CATEGORIES, 'readonly');
+    const categories = await tx.objectStore(STORES.CATEGORIES).getAll();
+    await tx.done;
+    return categories.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
   }
 
   async deleteCategory(categoryId) {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.CATEGORIES, 'readwrite');
-      await tx.objectStore(STORES.CATEGORIES).delete(categoryId);
-      await this.logHistory('CATEGORY_DELETE', { categoryId });
-      log.info(`Category ${categoryId} deleted`);
-      return true;
-    } catch (error) {
-      log.error('Error deleting category:', error);
-      throw error;
-    }
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.CATEGORIES, 'readwrite');
+    await tx.objectStore(STORES.CATEGORIES).delete(categoryId);
+    await this.logHistory('CATEGORY_DELETE', { id: categoryId });
+    await tx.done;
   }
 
   async reorderCategories(categories) {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.CATEGORIES, 'readwrite');
-      const store = tx.objectStore(STORES.CATEGORIES);
-      
-      // Clear and re-add with new order
-      await store.clear();
-      for (const category of categories) {
-        await store.put(category);
-      }
-      
-      await this.logHistory('CATEGORIES_REORDER', { count: categories.length });
-      log.info(`Categories reordered (${categories.length} items)`);
-      return true;
-    } catch (error) {
-      log.error('Error reordering categories:', error);
-      throw error;
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.CATEGORIES, 'readwrite');
+    const store = tx.objectStore(STORES.CATEGORIES);
+    
+    for (let i = 0; i < categories.length; i++) {
+      const category = { ...categories[i], ordre: i };
+      await store.put(category);
     }
+    
+    await this.logHistory('CATEGORIES_REORDER', { count: categories.length });
+    await tx.done;
   }
 
-  // ==================== DEPENSES ====================
-
-  async getAllDepenses() {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.DEPENSES, 'readonly');
-      const depenses = await tx.objectStore(STORES.DEPENSES).getAll();
-      log.info(`Loaded ${depenses.length} depenses`);
-      return depenses;
-    } catch (error) {
-      log.error('Error loading depenses:', error);
-      return [];
-    }
-  }
-
-  async getDepensesByMonth(year, month) {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.DEPENSES, 'readonly');
-      const index = tx.objectStore(STORES.DEPENSES).index('date');
-      
-      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-      const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
-      const range = IDBKeyRange.bound(startDate, endDate);
-      
-      const depenses = await index.getAll(range);
-      log.info(`Loaded ${depenses.length} depenses for ${year}-${month}`);
-      return depenses;
-    } catch (error) {
-      log.error('Error loading depenses by month:', error);
-      return [];
-    }
-  }
-
-  async getDepensesByCategory(categoryId) {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.DEPENSES, 'readonly');
-      const index = tx.objectStore(STORES.DEPENSES).index('categorie');
-      const depenses = await index.getAll(categoryId);
-      log.info(`Loaded ${depenses.length} depenses for category ${categoryId}`);
-      return depenses;
-    } catch (error) {
-      log.error('Error loading depenses by category:', error);
-      return [];
-    }
-  }
-
+  // ========== DEPENSES ==========
   async saveDepense(depense) {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.DEPENSES, 'readwrite');
-      await tx.objectStore(STORES.DEPENSES).put(depense);
-      await this.logHistory('DEPENSE_SAVE', { depenseId: depense.id, montant: depense.montant });
-      log.info(`Depense ${depense.id} saved`);
-      return true;
-    } catch (error) {
-      log.error('Error saving depense:', error);
-      throw error;
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.DEPENSES, 'readwrite');
+    const depenseWithId = {
+      ...depense,
+      id: depense.id || `dep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: depense.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await tx.objectStore(STORES.DEPENSES).put(depenseWithId);
+    await this.logHistory('DEPENSE_SAVE', depenseWithId);
+    await tx.done;
+    return depenseWithId;
+  }
+
+  async loadDepenses(filters = {}) {
+    const db = await this.initDB();
+    
+    // Vérifier que le store existe
+    if (!db.objectStoreNames.contains(STORES.DEPENSES)) {
+      log.warn(`Store ${STORES.DEPENSES} does not exist, returning empty array`);
+      return [];
     }
+    
+    const tx = db.transaction(STORES.DEPENSES, 'readonly');
+    const store = tx.objectStore(STORES.DEPENSES);
+    
+    let depenses = await store.getAll();
+    
+    // Filtres
+    if (filters.mois) {
+      const [year, month] = filters.mois.split('-');
+      depenses = depenses.filter(d => {
+        const dDate = new Date(d.date);
+        return dDate.getFullYear() === parseInt(year) && 
+               dDate.getMonth() === parseInt(month) - 1;
+      });
+    }
+    
+    if (filters.categorie) {
+      depenses = depenses.filter(d => d.categorie === filters.categorie);
+    }
+    
+    await tx.done;
+    return depenses.sort((a, b) => new Date(b.date) - new Date(a.date));
   }
 
   async deleteDepense(depenseId) {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.DEPENSES, 'readwrite');
-      await tx.objectStore(STORES.DEPENSES).delete(depenseId);
-      await this.logHistory('DEPENSE_DELETE', { depenseId });
-      log.info(`Depense ${depenseId} deleted`);
-      return true;
-    } catch (error) {
-      log.error('Error deleting depense:', error);
-      throw error;
-    }
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.DEPENSES, 'readwrite');
+    await tx.objectStore(STORES.DEPENSES).delete(depenseId);
+    await this.logHistory('DEPENSE_DELETE', { id: depenseId });
+    await tx.done;
   }
 
-  // ==================== HISTORIQUE ====================
+  // ========== DEPENSES PLANIFIEES ==========
+  async saveDepensePlanifiee(depensePlanifiee) {
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.DEPENSES_PLANIFIEES, 'readwrite');
+    const depenseWithId = {
+      ...depensePlanifiee,
+      id: depensePlanifiee.id || `plan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      statut: depensePlanifiee.statut || 'planifie',
+      createdAt: depensePlanifiee.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await tx.objectStore(STORES.DEPENSES_PLANIFIEES).put(depenseWithId);
+    await this.logHistory('DEPENSE_PLANIFIEE_SAVE', depenseWithId);
+    await tx.done;
+    return depenseWithId;
+  }
 
-  async logHistory(action, data = {}) {
+  async loadDepensesPlanifiees(filters = {}) {
+    const db = await this.initDB();
+    
+    // Vérifier que le store existe
+    if (!db.objectStoreNames.contains(STORES.DEPENSES_PLANIFIEES)) {
+      log.warn(`Store ${STORES.DEPENSES_PLANIFIEES} does not exist, returning empty array`);
+      return [];
+    }
+    
+    const tx = db.transaction(STORES.DEPENSES_PLANIFIEES, 'readonly');
+    const store = tx.objectStore(STORES.DEPENSES_PLANIFIEES);
+    
+    let depenses = await store.getAll();
+    
+    if (filters.statut) {
+      depenses = depenses.filter(d => d.statut === filters.statut);
+    }
+    
+    if (filters.mois) {
+      const [year, month] = filters.mois.split('-');
+      depenses = depenses.filter(d => {
+        const dDate = new Date(d.date);
+        return dDate.getFullYear() === parseInt(year) && 
+               dDate.getMonth() === parseInt(month) - 1;
+      });
+    }
+    
+    await tx.done;
+    return depenses.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+
+  async deleteDepensePlanifiee(depenseId) {
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.DEPENSES_PLANIFIEES, 'readwrite');
+    await tx.objectStore(STORES.DEPENSES_PLANIFIEES).delete(depenseId);
+    await this.logHistory('DEPENSE_PLANIFIEE_DELETE', { id: depenseId });
+    await tx.done;
+  }
+
+  // ========== CHARGES FIXES ==========
+  async saveChargeFixe(charge) {
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.CHARGES_FIXES, 'readwrite');
+    const chargeWithId = {
+      ...charge,
+      id: charge.id || `charge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: charge.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await tx.objectStore(STORES.CHARGES_FIXES).put(chargeWithId);
+    await this.logHistory('CHARGE_FIXE_SAVE', chargeWithId);
+    await tx.done;
+    return chargeWithId;
+  }
+
+  async loadChargesFixes() {
+    const db = await this.initDB();
+    
+    // Vérifier que le store existe
+    if (!db.objectStoreNames.contains(STORES.CHARGES_FIXES)) {
+      log.warn(`Store ${STORES.CHARGES_FIXES} does not exist, returning empty array`);
+      return [];
+    }
+    
+    const tx = db.transaction(STORES.CHARGES_FIXES, 'readonly');
+    const charges = await tx.objectStore(STORES.CHARGES_FIXES).getAll();
+    await tx.done;
+    return charges;
+  }
+
+  async deleteChargeFixe(chargeId) {
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.CHARGES_FIXES, 'readwrite');
+    await tx.objectStore(STORES.CHARGES_FIXES).delete(chargeId);
+    await this.logHistory('CHARGE_FIXE_DELETE', { id: chargeId });
+    await tx.done;
+  }
+
+  // ========== HISTORIQUE ==========
+  async logHistory(action, data) {
     try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.HISTORIQUE, 'readwrite');
+      const db = await this.initDB();
+      const tx = db.transaction(STORES.HISTORIQUE, 'readwrite');
       await tx.objectStore(STORES.HISTORIQUE).add({
         action,
         data,
         timestamp: Date.now()
       });
+      await tx.done;
     } catch (error) {
-      log.warn('Error logging history:', error);
-      // Non-blocking
+      log.warn('Failed to log history:', error);
     }
   }
 
-  async getHistory(limit = 100) {
-    try {
-      await this.initPromise;
-      const tx = this.db.transaction(STORES.HISTORIQUE, 'readonly');
-      const index = tx.objectStore(STORES.HISTORIQUE).index('timestamp');
-      const history = await index.getAll();
-      
-      // Sort by timestamp descending and limit
-      const sorted = history.sort((a, b) => b.timestamp - a.timestamp);
-      return sorted.slice(0, limit);
-    } catch (error) {
-      log.error('Error loading history:', error);
-      return [];
-    }
+  async loadHistory(limit = 100) {
+    const db = await this.initDB();
+    const tx = db.transaction(STORES.HISTORIQUE, 'readonly');
+    const index = tx.objectStore(STORES.HISTORIQUE).index('timestamp');
+    const history = await index.getAll();
+    await tx.done;
+    return history
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, limit);
   }
 
-  // ==================== BACKUP & RESTORE ====================
-
+  // ========== BACKUP & RESTORE ==========
   async createBackup() {
+    const db = await this.initDB();
+    const backup = {
+      budget: await this.loadBudget(),
+      categories: await this.loadCategories(),
+      depenses: await this.loadDepenses(),
+      depensesPlanifiees: await this.loadDepensesPlanifiees(),
+      chargesFixes: await this.loadChargesFixes(),
+      timestamp: Date.now()
+    };
+    
+    // Sauvegarder aussi dans LocalStorage
     try {
-      const [budget, categories, depenses, history] = await Promise.all([
-        this.loadBudget(),
-        this.getAllCategories(),
-        this.getAllDepenses(),
-        this.getHistory(1000)
-      ]);
-
-      const backup = {
-        version: DB_VERSION,
-        timestamp: Date.now(),
-        budget,
-        categories,
-        depenses,
-        history
-      };
-
-      // Save to localStorage as backup
-      try {
-        localStorage.setItem('budget_full_backup', JSON.stringify(backup));
-        log.info('Full backup created');
-      } catch (e) {
-        log.warn('Could not save full backup to localStorage:', e);
-      }
-
-      return backup;
+      localStorage.setItem('budget_backup', JSON.stringify(backup));
     } catch (error) {
-      log.error('Error creating backup:', error);
-      throw error;
+      log.warn('Failed to save backup to localStorage:', error);
     }
+    
+    return backup;
   }
 
   async restoreBackup(backup) {
-    try {
-      await this.initPromise;
-
-      // Restore budget
-      if (backup.budget) {
-        await this.saveBudget(backup.budget);
-      }
-
-      // Restore categories
-      if (backup.categories && Array.isArray(backup.categories)) {
-        const tx = this.db.transaction(STORES.CATEGORIES, 'readwrite');
-        const store = tx.objectStore(STORES.CATEGORIES);
-        await store.clear();
-        for (const category of backup.categories) {
-          await store.put(category);
-        }
-      }
-
-      // Restore depenses
-      if (backup.depenses && Array.isArray(backup.depenses)) {
-        const tx = this.db.transaction(STORES.DEPENSES, 'readwrite');
-        const store = tx.objectStore(STORES.DEPENSES);
-        await store.clear();
-        for (const depense of backup.depenses) {
-          await store.put(depense);
-        }
-      }
-
-      await this.logHistory('BACKUP_RESTORE', { timestamp: backup.timestamp });
-      log.info('Backup restored');
-      return true;
-    } catch (error) {
-      log.error('Error restoring backup:', error);
-      throw error;
+    const db = await this.initDB();
+    
+    // Restaurer budget
+    if (backup.budget) {
+      await this.saveBudget(backup.budget);
     }
+    
+    // Restaurer catégories
+    if (backup.categories) {
+      const tx = db.transaction(STORES.CATEGORIES, 'readwrite');
+      await tx.objectStore(STORES.CATEGORIES).clear();
+      for (const category of backup.categories) {
+        await tx.objectStore(STORES.CATEGORIES).put(category);
+      }
+      await tx.done;
+    }
+    
+    // Restaurer dépenses
+    if (backup.depenses) {
+      const tx = db.transaction(STORES.DEPENSES, 'readwrite');
+      await tx.objectStore(STORES.DEPENSES).clear();
+      for (const depense of backup.depenses) {
+        await tx.objectStore(STORES.DEPENSES).put(depense);
+      }
+      await tx.done;
+    }
+    
+    // Restaurer dépenses planifiées
+    if (backup.depensesPlanifiees) {
+      const tx = db.transaction(STORES.DEPENSES_PLANIFIEES, 'readwrite');
+      await tx.objectStore(STORES.DEPENSES_PLANIFIEES).clear();
+      for (const depense of backup.depensesPlanifiees) {
+        await tx.objectStore(STORES.DEPENSES_PLANIFIEES).put(depense);
+      }
+      await tx.done;
+    }
+    
+    await this.logHistory('BACKUP_RESTORE', { timestamp: backup.timestamp });
   }
 }
 
 export const budgetStorage = new BudgetStorage();
-export default budgetStorage;
 

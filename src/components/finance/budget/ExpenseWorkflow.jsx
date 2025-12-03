@@ -1,225 +1,180 @@
-/**
- * Composant ExpenseWorkflow - Workflow des dépenses avec états et notifications
- * Gère les transitions d'état : planifié → confirmé → imminent → réalisé
- */
-
 import React, { useState, useEffect } from 'react';
+import moment from 'moment';
 import { useBudget } from '../../../hooks/useBudget';
 import { useToast } from '../../ui/Toast';
-import ExpenseForm from './ExpenseForm';
+import { notificationService } from '../../../utils/notifications';
 
-const ExpenseWorkflow = ({ expense, onUpdate, onDelete, onClose }) => {
-  const { categories } = useBudget();
+const ExpenseWorkflow = ({ depense }) => {
+  const { updateDepensePlanifiee } = useBudget();
   const { showToast } = useToast();
-  const [editing, setEditing] = useState(false);
-  const [daysUntil, setDaysUntil] = useState(0);
+  const [currentStatut, setCurrentStatut] = useState(depense.statut || 'planifie');
 
   useEffect(() => {
-    if (expense && expense.datePlanifiee) {
-      const expenseDate = new Date(expense.datePlanifiee);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      expenseDate.setHours(0, 0, 0, 0);
-      const diff = Math.ceil((expenseDate - today) / (1000 * 60 * 60 * 24));
-      setDaysUntil(diff);
+    setCurrentStatut(depense.statut || 'planifie');
+  }, [depense]);
+
+  useEffect(() => {
+    // Notifications automatiques selon statut et date
+    const daysUntil = moment(depense.date).diff(moment(), 'days');
+
+    // Si confirmé et J-7
+    if (currentStatut === 'confirme' && daysUntil === 7) {
+      notificationService.showFinanceAlert(
+        depense.titre,
+        `Rappel : ${depense.titre} dans 7 jours`,
+        'high'
+      );
+      handleStatusChange('imminent');
     }
-  }, [expense]);
 
-  const category = categories.find(c => c.id === expense.categorie);
+    // Si imminent et J-1
+    if (currentStatut === 'imminent' && daysUntil === 1) {
+      notificationService.showFinanceAlert(
+        depense.titre,
+        `Demain : ${depense.titre} - ${formatCurrency(depense.montant)}`,
+        'high'
+      );
+    }
 
-  const formatCurrency = (amount) => {
+    // Si imminent et J+0
+    if (currentStatut === 'imminent' && daysUntil === 0) {
+      notificationService.showFinanceAlert(
+        depense.titre,
+        `Aujourd'hui : ${depense.titre}`,
+        'critical'
+      );
+    }
+  }, [depense, currentStatut]);
+
+  const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
-      minimumFractionDigits: 0
-    }).format(amount);
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
   };
 
-  const getStatusInfo = (statut) => {
-    const statuses = {
-      planifie: { label: '📌 Planifié', color: 'bg-blue-900/20 border-blue-500/50 text-blue-300', icon: '📌' },
-      confirme: { label: '🎯 Confirmé', color: 'bg-green-900/20 border-green-500/50 text-green-300', icon: '🎯' },
-      imminent: { label: '⏰ Imminent', color: 'bg-orange-900/20 border-orange-500/50 text-orange-300', icon: '⏰' },
-      realise: { label: '✅ Réalisé', color: 'bg-slate-700/50 border-slate-600/50 text-slate-300', icon: '✅' },
-      depassement: { label: '🔴 Dépassement', color: 'bg-red-900/20 border-red-500/50 text-red-300', icon: '🔴' }
-    };
-    return statuses[statut] || statuses.planifie;
-  };
-
-  const handleStatusChange = async (newStatus) => {
+  const handleStatusChange = async (newStatut) => {
     try {
-      await onUpdate({ statut: newStatus });
-      showToast(`Statut changé : ${getStatusInfo(newStatus).label}`, 'success');
+      await updateDepensePlanifiee(depense.id, { statut: newStatut });
+      setCurrentStatut(newStatut);
+      showToast(`Statut changé : ${newStatut}`, 'success');
     } catch (error) {
       showToast('Erreur lors du changement de statut', 'error');
     }
   };
 
-  const handleSave = async (expenseData) => {
-    try {
-      await onUpdate(expenseData);
-      showToast('Dépense mise à jour', 'success');
-      setEditing(false);
-    } catch (error) {
-      showToast('Erreur lors de la mise à jour', 'error');
-    }
+  const getStatusIcon = (statut) => {
+    const icons = {
+      planifie: '📌',
+      confirme: '🎯',
+      imminent: '⏰',
+      realise: '✅',
+      analyse: '📊',
+      depassement: '🔴',
+      annule: '❌'
+    };
+    return icons[statut] || '📌';
   };
 
-  const handleDelete = async () => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette dépense ?')) {
-      try {
-        await onDelete();
-        showToast('Dépense supprimée', 'success');
-      } catch (error) {
-        showToast('Erreur lors de la suppression', 'error');
-      }
-    }
+  const getStatusColor = (statut) => {
+    const colors = {
+      planifie: 'bg-blue-600/20 border-blue-500/50 text-blue-300',
+      confirme: 'bg-green-600/20 border-green-500/50 text-green-300',
+      imminent: 'bg-yellow-600/20 border-yellow-500/50 text-yellow-300',
+      realise: 'bg-slate-600/20 border-slate-500/50 text-slate-300',
+      analyse: 'bg-purple-600/20 border-purple-500/50 text-purple-300',
+      depassement: 'bg-red-600/20 border-red-500/50 text-red-300',
+      annule: 'bg-red-900/20 border-red-700/50 text-red-400'
+    };
+    return colors[statut] || colors.planifie;
   };
 
-  // Notifications automatiques (désactivées pour éviter les boucles - à implémenter avec un système de notifications externe)
-  // useEffect(() => {
-  //   if (expense && expense.statut === 'confirme' && daysUntil === 7) {
-  //     showToast(`Rappel : ${expense.titre} dans 7 jours`, 'info');
-  //   } else if (expense && expense.statut === 'imminent' && daysUntil === 1) {
-  //     showToast(`Demain : ${expense.titre} - ${formatCurrency(expense.montant)}`, 'warning');
-  //   } else if (expense && expense.statut === 'imminent' && daysUntil === 0) {
-  //     showToast(`Aujourd'hui : ${expense.titre}`, 'warning');
-  //   }
-  // }, [daysUntil, expense]);
+  const getAvailableActions = (statut) => {
+    const actions = {
+      planifie: ['confirme', 'annule'],
+      confirme: ['imminent', 'annule'],
+      imminent: ['realise', 'annule'],
+      realise: ['analyse'],
+      analyse: [],
+      annule: []
+    };
+    return actions[statut] || [];
+  };
 
-  if (editing) {
-    return (
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-md font-semibold text-white">Modifier la dépense</h4>
-          <button
-            onClick={() => setEditing(false)}
-            className="text-slate-400 hover:text-white"
-          >
-            ✕
-          </button>
-        </div>
-        <ExpenseForm
-          expense={expense}
-          date={new Date(expense.datePlanifiee || expense.date)}
-          onSave={handleSave}
-          onCancel={() => setEditing(false)}
-        />
-      </div>
-    );
-  }
-
-  const statusInfo = getStatusInfo(expense.statut);
+  const availableActions = getAvailableActions(currentStatut);
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h4 className="text-lg font-semibold text-white mb-1">{expense.titre}</h4>
-          <div className="flex items-center gap-2">
-            <span className={`px-2 py-1 rounded border text-xs ${statusInfo.color}`}>
-              {statusInfo.label}
-            </span>
-            {expense.priorite === 'urgent' && (
-              <span className="px-2 py-1 rounded bg-red-900/20 border border-red-500/50 text-red-300 text-xs">
-                🔴 Urgent
-              </span>
-            )}
-          </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="text-slate-400 hover:text-white transition-colors"
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* Informations */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <div className="text-xs text-slate-400 mb-1">Montant</div>
-          <div className="text-xl font-bold text-white">{formatCurrency(expense.montant)}</div>
-        </div>
-        <div>
-          <div className="text-xs text-slate-400 mb-1">Catégorie</div>
-          <div className="text-lg font-semibold text-white">
-            {category ? `${category.icone} ${category.nom}` : 'Non catégorisé'}
-          </div>
-        </div>
-        <div>
-          <div className="text-xs text-slate-400 mb-1">Date planifiée</div>
-          <div className="text-lg text-slate-300">
-            {new Date(expense.datePlanifiee || expense.date).toLocaleDateString('fr-FR')}
-          </div>
-        </div>
-        <div>
-          <div className="text-xs text-slate-400 mb-1">Jours restants</div>
-          <div className={`text-lg font-semibold ${
-            daysUntil < 0 ? 'text-red-400' : daysUntil <= 7 ? 'text-orange-400' : 'text-green-400'
-          }`}>
-            {daysUntil < 0 ? `Dépassé de ${Math.abs(daysUntil)} jour${Math.abs(daysUntil) > 1 ? 's' : ''}` : 
-             daysUntil === 0 ? 'Aujourd\'hui' :
-             daysUntil === 1 ? 'Demain' :
-             `${daysUntil} jours`}
+    <div className="expense-workflow space-y-4">
+      {/* Statut actuel */}
+      <div className={`border rounded-lg p-4 ${getStatusColor(currentStatut)}`}>
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-2xl">{getStatusIcon(currentStatut)}</span>
+          <div>
+            <div className="font-semibold">Statut: {currentStatut}</div>
+            <div className="text-sm opacity-80">
+              {moment(depense.date).format('DD/MM/YYYY')} - {formatCurrency(depense.montant)}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Actions workflow */}
-      <div className="border-t border-slate-700/50 pt-4">
-        <div className="text-sm font-semibold text-slate-300 mb-3">Changer le statut</div>
-        <div className="flex flex-wrap gap-2">
-          {expense.statut !== 'planifie' && (
-            <button
-              onClick={() => handleStatusChange('planifie')}
-              className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 text-blue-300 rounded text-sm transition-colors"
-            >
-              📌 Planifié
-            </button>
-          )}
-          {expense.statut !== 'confirme' && (
-            <button
-              onClick={() => handleStatusChange('confirme')}
-              className="px-3 py-1 bg-green-600/20 hover:bg-green-600/30 border border-green-500/50 text-green-300 rounded text-sm transition-colors"
-            >
-              🎯 Confirmé
-            </button>
-          )}
-          {expense.statut !== 'imminent' && (
-            <button
-              onClick={() => handleStatusChange('imminent')}
-              className="px-3 py-1 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/50 text-orange-300 rounded text-sm transition-colors"
-            >
-              ⏰ Imminent
-            </button>
-          )}
-          {expense.statut !== 'realise' && (
-            <button
-              onClick={() => handleStatusChange('realise')}
-              className="px-3 py-1 bg-slate-600/20 hover:bg-slate-600/30 border border-slate-500/50 text-slate-300 rounded text-sm transition-colors"
-            >
-              ✅ Réalisé
-            </button>
-          )}
+      {/* Actions disponibles */}
+      {availableActions.length > 0 && (
+        <div>
+          <div className="text-sm font-medium text-slate-300 mb-2">Actions disponibles</div>
+          <div className="flex gap-2 flex-wrap">
+            {availableActions.map(action => (
+              <button
+                key={action}
+                onClick={() => handleStatusChange(action)}
+                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                  action === 'annule'
+                    ? 'bg-red-600/30 hover:bg-red-600/50 text-red-300'
+                    : 'bg-blue-600/30 hover:bg-blue-600/50 text-blue-300'
+                }`}
+              >
+                {action === 'confirme' && '✓ Confirmer'}
+                {action === 'imminent' && '⏰ Marquer imminent'}
+                {action === 'realise' && '✅ Marquer réalisé'}
+                {action === 'analyse' && '📊 Analyser'}
+                {action === 'annule' && '❌ Annuler'}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Actions */}
-      <div className="flex gap-2 justify-end border-t border-slate-700/50 pt-4">
-        <button
-          onClick={() => setEditing(true)}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors"
-        >
-          ✏️ Modifier
-        </button>
-        <button
-          onClick={handleDelete}
-          className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 rounded-lg transition-colors"
-        >
-          🗑️ Supprimer
-        </button>
+      {/* Timeline workflow */}
+      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4">
+        <div className="text-sm font-medium text-slate-300 mb-3">Workflow</div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          {['planifie', 'confirme', 'imminent', 'realise', 'analyse'].map((statut, index) => {
+            const isActive = currentStatut === statut;
+            const isPast = ['planifie', 'confirme', 'imminent', 'realise', 'analyse'].indexOf(currentStatut) > index;
+            
+            return (
+              <React.Fragment key={statut}>
+                <div className={`flex flex-col items-center min-w-[80px] ${
+                  isActive ? 'text-white' : isPast ? 'text-green-400' : 'text-slate-500'
+                }`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${
+                    isActive ? 'bg-blue-600' : isPast ? 'bg-green-600' : 'bg-slate-700'
+                  }`}>
+                    {getStatusIcon(statut)}
+                  </div>
+                  <div className="text-xs mt-1 text-center capitalize">{statut}</div>
+                </div>
+                {index < 4 && (
+                  <div className={`h-1 w-8 ${
+                    isPast ? 'bg-green-600' : 'bg-slate-700'
+                  }`} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

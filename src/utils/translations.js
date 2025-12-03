@@ -122,10 +122,34 @@ export const translations = {
     'finance.subTabs.synthese': 'Synthèse',
     'finance.subTabs.theorieRealite': 'Théorie vs Réalité',
     
-    // Budget Personnel - Sous-onglets
-    'budget.subTabs.dashboard': 'Dashboard',
-    'budget.subTabs.categories': 'Catégories',
-    'budget.subTabs.calendrier': 'Calendrier',
+    // Investissements Divers
+    'finance.investissements.subTabs.dashboard': 'Dashboard Unifié',
+    'finance.investissements.subTabs.or': 'Or Physique',
+    'finance.investissements.subTabs.liquidites': 'Liquidités',
+    'finance.investissements.subTabs.bourseCrypto': 'Bourse & Crypto',
+    
+    // Planificateur Financier
+    'finance.planificateur.sections.repartition': 'Répartition Salaire',
+    'finance.planificateur.sections.loisirs': 'Planification Loisirs',
+    'finance.planificateur.sections.3ans': 'Planification 3 Ans',
+    'finance.planificateur.sections.sync': 'Synchronisation',
+    'finance.planificateur.repartition.title': 'Répartition Salaire',
+    'finance.planificateur.loisirs.title': 'Planification Loisirs',
+    'finance.planificateur.3ans.title': 'Planification 3 Ans',
+    'finance.planificateur.sync.title': 'Synchronisation Cross-Modules',
+    
+    // Budget Personnel
+    'finance.budget.subTabs.dashboard': 'Dashboard',
+    'finance.budget.subTabs.categories': 'Catégories',
+    'finance.budget.subTabs.calendar': 'Calendrier',
+    'finance.budget.revenus': 'Revenus',
+    'finance.budget.depenses': 'Dépenses',
+    'finance.budget.epargne': 'Épargne',
+    'finance.budget.restant': 'Restant',
+    'finance.budget.statut.maitrise': 'Maîtrisé',
+    'finance.budget.statut.attention': 'Attention',
+    'finance.budget.statut.depassement': 'Dépassement',
+    'finance.budget.statut.critique': 'Critique',
     
     // HomePage
     'home.title.line1': 'Où',
@@ -302,13 +326,37 @@ export const translations = {
     'finance.subTabs.investissements': 'Diversified Investments',
     'finance.subTabs.smartShopping': 'Smart Shopping',
     'finance.subTabs.planificateur': 'Planner',
+    
+    // Planificateur Financier
+    'finance.planificateur.sections.repartition': 'Salary Distribution',
+    'finance.planificateur.sections.loisirs': 'Leisure Planning',
+    'finance.planificateur.sections.3ans': '3-Year Planning',
+    'finance.planificateur.sections.sync': 'Synchronization',
+    'finance.planificateur.repartition.title': 'Salary Distribution',
+    'finance.planificateur.loisirs.title': 'Leisure Planning',
+    'finance.planificateur.3ans.title': '3-Year Planning',
+    'finance.planificateur.sync.title': 'Cross-Module Synchronization',
     'finance.subTabs.synthese': 'Summary',
     'finance.subTabs.theorieRealite': 'Theory vs Reality',
     
-    // Budget Personnel - Sous-onglets
-    'budget.subTabs.dashboard': 'Dashboard',
-    'budget.subTabs.categories': 'Categories',
-    'budget.subTabs.calendrier': 'Calendar',
+    // Diversified Investments
+    'finance.investissements.subTabs.dashboard': 'Unified Dashboard',
+    'finance.investissements.subTabs.or': 'Physical Gold',
+    'finance.investissements.subTabs.liquidites': 'Liquidity',
+    'finance.investissements.subTabs.bourseCrypto': 'Stock & Crypto',
+    
+    // Budget Personnel
+    'finance.budget.subTabs.dashboard': 'Dashboard',
+    'finance.budget.subTabs.categories': 'Categories',
+    'finance.budget.subTabs.calendar': 'Calendar',
+    'finance.budget.revenus': 'Income',
+    'finance.budget.depenses': 'Expenses',
+    'finance.budget.epargne': 'Savings',
+    'finance.budget.restant': 'Remaining',
+    'finance.budget.statut.maitrise': 'Under Control',
+    'finance.budget.statut.attention': 'Attention',
+    'finance.budget.statut.depassement': 'Over Budget',
+    'finance.budget.statut.critique': 'Critical',
     
     // HomePage
     'home.title.line1': 'Where',

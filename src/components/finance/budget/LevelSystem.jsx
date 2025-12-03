@@ -1,7 +1,3 @@
-/**
- * Composant LevelSystem - Système de niveaux avec progression
- */
-
 import React from 'react';
 
 const LEVELS = [
@@ -12,7 +8,7 @@ const LEVELS = [
   { id: 5, name: 'Légende', xp: 5000, icon: '👑', color: '#f59e0b' }
 ];
 
-const LevelSystem = ({ totalXP = 0 }) => {
+const LevelSystem = ({ totalXP }) => {
   const currentLevel = LEVELS
     .slice()
     .reverse()
@@ -25,65 +21,84 @@ const LevelSystem = ({ totalXP = 0 }) => {
 
   return (
     <div className="level-system bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Système de Niveaux</h3>
+      <h5 className="text-md font-semibold text-white mb-4">Système de Niveaux</h5>
       
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-4">
         <div className="text-5xl">{currentLevel.icon}</div>
         <div className="flex-1">
           <div className="text-xl font-bold text-white mb-1">{currentLevel.name}</div>
-          <div className="text-sm text-slate-400">{totalXP} XP</div>
+          <div className="text-sm text-slate-400">
+            {totalXP.toLocaleString('fr-FR')} XP
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-400">Progression vers {nextLevel.name}</span>
-          <span className="text-slate-300">
-            {nextLevel.xp - totalXP} XP restants
+      {/* Barre de progression */}
+      <div className="mb-2">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs text-slate-400">Progression</span>
+          <span className="text-xs text-slate-400">
+            {progress.toFixed(0)}%
           </span>
         </div>
-        <div className="w-full bg-slate-700/50 rounded-full h-3">
+        <div className="w-full bg-slate-700 rounded-full h-3">
           <div
             className="h-3 rounded-full transition-all"
             style={{
-              width: `${Math.min(progress, 100)}%`,
+              width: `${progress}%`,
               backgroundColor: currentLevel.color
             }}
           />
         </div>
-        <div className="text-xs text-slate-500 text-center">
-          {nextLevel.xp} XP pour atteindre {nextLevel.name} {nextLevel.icon}
-        </div>
       </div>
 
-      {/* Liste des niveaux */}
-      <div className="mt-6 space-y-2">
-        <div className="text-sm font-semibold text-slate-300 mb-2">Tous les niveaux</div>
-        {LEVELS.map(level => {
-          const isUnlocked = totalXP >= level.xp;
-          const isCurrent = level.id === currentLevel.id;
-          
-          return (
-            <div
-              key={level.id}
-              className={`flex items-center justify-between p-2 rounded ${
-                isCurrent
-                  ? 'bg-blue-900/20 border border-blue-500/50'
-                  : isUnlocked
-                  ? 'bg-slate-700/30'
-                  : 'bg-slate-800/30 opacity-50'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-xl">{level.icon}</span>
-                <span className={`text-sm ${isUnlocked ? 'text-white' : 'text-slate-500'}`}>
-                  {level.name}
-                </span>
+      {/* Prochain niveau */}
+      {nextLevel.xp > totalXP && (
+        <div className="text-center mt-4">
+          <div className="text-sm text-slate-400">
+            Prochain niveau : <span className="text-white font-semibold">{nextLevel.name}</span>
+          </div>
+          <div className="text-xs text-slate-500 mt-1">
+            {nextLevel.xp - totalXP} XP restants
+          </div>
+        </div>
+      )}
+
+      {/* Liste tous les niveaux */}
+      <div className="mt-6 pt-4 border-t border-slate-700">
+        <div className="text-xs text-slate-400 mb-2">Tous les niveaux</div>
+        <div className="space-y-2">
+          {LEVELS.map(level => {
+            const isUnlocked = totalXP >= level.xp;
+            const isCurrent = level.id === currentLevel.id;
+            
+            return (
+              <div
+                key={level.id}
+                className={`flex items-center gap-3 p-2 rounded ${
+                  isCurrent ? 'bg-blue-600/20 border border-blue-500/50' :
+                  isUnlocked ? 'bg-green-600/10' : 'bg-slate-700/30 opacity-50'
+                }`}
+              >
+                <span className="text-2xl">{level.icon}</span>
+                <div className="flex-1">
+                  <div className={`text-sm font-semibold ${
+                    isCurrent ? 'text-blue-300' :
+                    isUnlocked ? 'text-green-300' : 'text-slate-500'
+                  }`}>
+                    {level.name}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {level.xp.toLocaleString('fr-FR')} XP
+                  </div>
+                </div>
+                {isUnlocked && (
+                  <span className="text-green-400 text-lg">✓</span>
+                )}
               </div>
-              <span className="text-xs text-slate-400">{level.xp} XP</span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

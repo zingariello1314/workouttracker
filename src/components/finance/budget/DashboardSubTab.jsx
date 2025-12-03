@@ -1,8 +1,4 @@
-/**
- * Sous-onglet Dashboard - Vue d'ensemble du budget
- */
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useBudget } from '../../../hooks/useBudget';
 import DashboardMetrics from './DashboardMetrics';
@@ -10,89 +6,55 @@ import BudgetCharts from './BudgetCharts';
 import PredictiveAnalysis from './PredictiveAnalysis';
 import DisciplineScore from './DisciplineScore';
 import GamificationScore from './GamificationScore';
-import LevelSystem from './LevelSystem';
-import Achievements from './Achievements';
 import AIRecommendations from './AIRecommendations';
-import BehavioralMetrics from './BehavioralMetrics';
 
 const DashboardSubTab = () => {
   const t = useTranslation();
-  const { budget, categories, depensesMoisActuel } = useBudget();
-  const [activeSection, setActiveSection] = useState('overview'); // 'overview', 'gamification', 'ai', 'behavioral'
+  const { loading, error } = useBudget();
 
-  // Calcul XP basé sur le score de discipline (simulation)
-  const totalXP = 750; // À calculer réellement basé sur l'historique
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-slate-400">Chargement du budget...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center bg-red-900/20 border border-red-500/50 rounded-lg p-6">
+          <p className="text-red-400 font-semibold mb-2">Erreur de chargement</p>
+          <p className="text-slate-400 text-sm">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-sub-tab space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            {t('budget.subTabs.dashboard')}
-          </h2>
-          <p className="text-slate-400">
-            Vue d'ensemble de votre budget personnel
-          </p>
-        </div>
-        
-        {/* Navigation sections */}
-        <div className="flex gap-2">
-          {[
-            { id: 'overview', label: 'Vue d\'ensemble', icon: '📊' },
-            { id: 'gamification', label: 'Gamification', icon: '🎮' },
-            { id: 'ai', label: 'IA', icon: '🤖' },
-            { id: 'behavioral', label: 'Comportement', icon: '🧠' }
-          ].map(section => (
-            <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id)}
-              className={`px-3 py-1 rounded text-sm transition-all ${
-                activeSection === section.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              <span className="mr-1">{section.icon}</span>
-              {section.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Vue d'ensemble */}
-      {activeSection === 'overview' && (
-        <>
-          <DashboardMetrics />
-          <BudgetCharts />
-          <PredictiveAnalysis />
-          <DisciplineScore />
-        </>
-      )}
-
+      <h3 className="text-xl font-bold text-white mb-4">Dashboard Global</h3>
+      
+      {/* Métriques clés */}
+      <DashboardMetrics />
+      
+      {/* Graphiques */}
+      <BudgetCharts />
+      
+      {/* Analyse prédictive */}
+      <PredictiveAnalysis />
+      
+      {/* Score discipline */}
+      <DisciplineScore />
+      
       {/* Gamification */}
-      {activeSection === 'gamification' && (
-        <>
-          <GamificationScore />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <LevelSystem totalXP={totalXP} />
-            <Achievements />
-          </div>
-        </>
-      )}
+      <GamificationScore />
 
-      {/* IA */}
-      {activeSection === 'ai' && (
-        <>
-          <AIRecommendations />
-        </>
-      )}
-
-      {/* Comportemental */}
-      {activeSection === 'behavioral' && (
-        <>
-          <BehavioralMetrics />
-        </>
-      )}
+      {/* Recommandations IA */}
+      <AIRecommendations />
     </div>
   );
 };

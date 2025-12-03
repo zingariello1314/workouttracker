@@ -196,7 +196,7 @@ describe('IndexedDBRepository', () => {
     it('devrait retourner true si IndexedDB disponible', async () => {
       const result = await repository.isAvailable();
       expect(result).toBe(true);
-    }, 10000); // Timeout 10s
+    });
 
     it('devrait retourner false si base fermée', async () => {
       // ✅ CORRECTION : Fermer la base et créer un nouveau repository
@@ -238,8 +238,7 @@ describe('IndexedDBRepository', () => {
 
       // ✅ CORRECTION : Attendre que la sauvegarde soit complète
       await repository.save(STORE_DAILY_MEALS, dailyMeal, { quiet: true });
-      // Attendre que la transaction soit complètement terminée
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 50)); // Attendre transaction complète
       
       const result = await repository.get(STORE_DAILY_MEALS, '2025-01-16', {
         quiet: true
@@ -248,7 +247,7 @@ describe('IndexedDBRepository', () => {
       expect(result).not.toBeNull();
       expect(result.date).toBe('2025-01-16');
       expect(result.totalCalories).toBe(2000);
-    }, 15000); // ✅ CORRECTION : Timeout augmenté à 15s
+    }, 10000); // ✅ CORRECTION : Timeout augmenté
 
     it('devrait utiliser le cache après première récupération', async () => {
       const dailyMeal = {
@@ -257,7 +256,7 @@ describe('IndexedDBRepository', () => {
       };
 
       await repository.save(STORE_DAILY_MEALS, dailyMeal, { quiet: true });
-      await new Promise(resolve => setTimeout(resolve, 100)); // Attendre transaction
+      await new Promise(resolve => setTimeout(resolve, 50)); // Attendre transaction
       
       // ✅ Première récupération (cache miss)
       const result1 = await repository.get(STORE_DAILY_MEALS, '2025-01-16', {
@@ -272,7 +271,7 @@ describe('IndexedDBRepository', () => {
       expect(result1).not.toBeNull();
       expect(result2).not.toBeNull();
       expect(result1.date).toBe(result2.date);
-    }, 15000); // ✅ CORRECTION : Timeout augmenté à 15s
+    }, 10000); // ✅ CORRECTION : Timeout augmenté
 
     it('devrait bypasser le cache si skipCache = true', async () => {
       const dailyMeal = {
@@ -281,7 +280,7 @@ describe('IndexedDBRepository', () => {
       };
 
       await repository.save(STORE_DAILY_MEALS, dailyMeal, { quiet: true });
-      await new Promise(resolve => setTimeout(resolve, 100)); // Attendre transaction
+      await new Promise(resolve => setTimeout(resolve, 50)); // Attendre transaction
       
       // ✅ Première récupération (cache miss)
       await repository.get(STORE_DAILY_MEALS, '2025-01-16', { quiet: true });
@@ -294,7 +293,7 @@ describe('IndexedDBRepository', () => {
 
       expect(result).not.toBeNull();
       expect(result.date).toBe('2025-01-16');
-    }, 15000); // ✅ CORRECTION : Timeout augmenté à 15s
+    }, 10000); // ✅ CORRECTION : Timeout augmenté
   });
 
   describe('getAll(store)', () => {
@@ -313,9 +312,6 @@ describe('IndexedDBRepository', () => {
       await repository.save(STORE_DAILY_MEALS, dailyMeal1, { quiet: true });
       await repository.save(STORE_DAILY_MEALS, dailyMeal2, { quiet: true });
       await repository.save(STORE_DAILY_MEALS, dailyMeal3, { quiet: true });
-      
-      // Attendre que toutes les transactions soient complètes
-      await new Promise(resolve => setTimeout(resolve, 150));
 
       const result = await repository.getAll(STORE_DAILY_MEALS, {
         quiet: true
@@ -325,7 +321,7 @@ describe('IndexedDBRepository', () => {
       expect(result.map(r => r.date)).toContain('2025-01-16');
       expect(result.map(r => r.date)).toContain('2025-01-17');
       expect(result.map(r => r.date)).toContain('2025-01-18');
-    }, 15000);
+    });
 
     it('devrait retourner seulement les entrées du store spécifié', async () => {
       const dailyMeal = { date: '2025-01-16', totalCalories: 2000 };
@@ -333,9 +329,6 @@ describe('IndexedDBRepository', () => {
 
       await repository.save(STORE_DAILY_MEALS, dailyMeal, { quiet: true });
       await repository.save(STORE_MEALS, meal, { quiet: true });
-      
-      // Attendre que les transactions soient complètes
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       const dailyMeals = await repository.getAll(STORE_DAILY_MEALS, {
         quiet: true
@@ -348,7 +341,7 @@ describe('IndexedDBRepository', () => {
       expect(meals).toHaveLength(1);
       expect(dailyMeals[0].date).toBe('2025-01-16');
       expect(meals[0].id).toBe('meal-123');
-    }, 15000);
+    });
   });
 
   describe('save(store, data)', () => {
@@ -361,10 +354,6 @@ describe('IndexedDBRepository', () => {
       const result = await repository.save(STORE_DAILY_MEALS, dailyMeal, {
         quiet: true
       });
-      
-      // Attendre que la transaction soit complète
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       const retrieved = await repository.get(STORE_DAILY_MEALS, '2025-01-16', {
         quiet: true
       });
@@ -372,7 +361,7 @@ describe('IndexedDBRepository', () => {
       expect(result).toBe(true);
       expect(retrieved).not.toBeNull();
       expect(retrieved.date).toBe('2025-01-16');
-    }, 15000);
+    });
 
     it('devrait mettre à jour une entrée existante', async () => {
       const dailyMeal1 = { date: '2025-01-16', totalCalories: 2000 };
@@ -380,16 +369,13 @@ describe('IndexedDBRepository', () => {
 
       await repository.save(STORE_DAILY_MEALS, dailyMeal1, { quiet: true });
       await repository.save(STORE_DAILY_MEALS, dailyMeal2, { quiet: true });
-      
-      // Attendre que les transactions soient complètes
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       const result = await repository.get(STORE_DAILY_MEALS, '2025-01-16', {
         quiet: true
       });
 
       expect(result.totalCalories).toBe(2500); // Mise à jour
-    }, 15000);
+    });
 
     it('devrait valider les données avec Zod avant sauvegarde', async () => {
       const invalidDailyMeal = {
@@ -418,17 +404,16 @@ describe('IndexedDBRepository', () => {
       await repository.save(STORE_DAILY_MEALS, dailyMeal, { quiet: true });
 
       // ✅ Attendre un peu pour laisser l'observer se déclencher
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       expect(notifications.length).toBeGreaterThan(0);
       expect(notifications[0].date).toBe(key);
-    }, 15000);
+    });
 
     it('devrait invalider le cache après sauvegarde', async () => {
       const dailyMeal1 = { date: '2025-01-16', totalCalories: 2000 };
       
       await repository.save(STORE_DAILY_MEALS, dailyMeal1, { quiet: true });
-      await new Promise(resolve => setTimeout(resolve, 50));
       
       // ✅ Récupérer (cache miss puis cache hit)
       await repository.get(STORE_DAILY_MEALS, '2025-01-16', { quiet: true });
@@ -436,7 +421,6 @@ describe('IndexedDBRepository', () => {
       // ✅ Mettre à jour
       const dailyMeal2 = { date: '2025-01-16', totalCalories: 2500 };
       await repository.save(STORE_DAILY_MEALS, dailyMeal2, { quiet: true });
-      await new Promise(resolve => setTimeout(resolve, 50));
       
       // ✅ Récupérer après mise à jour (cache invalidé, doit récupérer depuis IndexedDB)
       const result = await repository.get(STORE_DAILY_MEALS, '2025-01-16', {
@@ -444,7 +428,7 @@ describe('IndexedDBRepository', () => {
       });
 
       expect(result.totalCalories).toBe(2500); // ✅ Valeur mise à jour
-    }, 15000);
+    });
   });
 
   describe('delete(store, key)', () => {
@@ -452,8 +436,6 @@ describe('IndexedDBRepository', () => {
       const dailyMeal = { date: '2025-01-16', totalCalories: 2000 };
 
       await repository.save(STORE_DAILY_MEALS, dailyMeal, { quiet: true });
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
       const beforeDelete = await repository.get(STORE_DAILY_MEALS, '2025-01-16', {
         quiet: true
       });
@@ -462,16 +444,13 @@ describe('IndexedDBRepository', () => {
       const result = await repository.delete(STORE_DAILY_MEALS, '2025-01-16', {
         quiet: true
       });
-      
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
       const afterDelete = await repository.get(STORE_DAILY_MEALS, '2025-01-16', {
         quiet: true
       });
 
       expect(result).toBe(true);
       expect(afterDelete).toBeNull();
-    }, 15000);
+    });
 
     it('ne devrait pas lever d\'erreur si entrée inexistante', async () => {
       const result = await repository.delete(STORE_DAILY_MEALS, '2025-01-16', {
@@ -487,7 +466,6 @@ describe('IndexedDBRepository', () => {
 
       const dailyMeal = { date: key, totalCalories: 2000 };
       await repository.save(STORE_DAILY_MEALS, dailyMeal, { quiet: true });
-      await new Promise(resolve => setTimeout(resolve, 50));
 
       observer.subscribe(`${storeName}:${key}`, (data) => {
         notifications.push(data);
@@ -496,7 +474,7 @@ describe('IndexedDBRepository', () => {
       await repository.delete(STORE_DAILY_MEALS, key, { quiet: true });
 
       // ✅ Attendre un peu pour laisser l'observer se déclencher
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       expect(notifications.length).toBeGreaterThan(0);
       expect(notifications[0]).toBeNull(); // Suppression = null
@@ -506,14 +484,12 @@ describe('IndexedDBRepository', () => {
       const dailyMeal = { date: '2025-01-16', totalCalories: 2000 };
       
       await repository.save(STORE_DAILY_MEALS, dailyMeal, { quiet: true });
-      await new Promise(resolve => setTimeout(resolve, 50));
       
       // ✅ Récupérer (cache miss puis cache hit)
       await repository.get(STORE_DAILY_MEALS, '2025-01-16', { quiet: true });
       
       // ✅ Supprimer
       await repository.delete(STORE_DAILY_MEALS, '2025-01-16', { quiet: true });
-      await new Promise(resolve => setTimeout(resolve, 50));
       
       // ✅ Récupérer après suppression (cache invalidé, doit retourner null)
       const result = await repository.get(STORE_DAILY_MEALS, '2025-01-16', {
@@ -544,9 +520,6 @@ describe('IndexedDBRepository', () => {
       await repository.save(STORE_MEALS, meal1, { quiet: true });
       await repository.save(STORE_MEALS, meal2, { quiet: true });
       await repository.save(STORE_MEALS, meal3, { quiet: true });
-      
-      // Attendre que les transactions soient complètes
-      await new Promise(resolve => setTimeout(resolve, 150));
 
       const result = await repository.query(
         STORE_MEALS,
@@ -567,9 +540,6 @@ describe('IndexedDBRepository', () => {
       await repository.save(STORE_MEALS, meal1, { quiet: true });
       await repository.save(STORE_MEALS, meal2, { quiet: true });
       await repository.save(STORE_MEALS, meal3, { quiet: true });
-      
-      // Attendre que les transactions soient complètes
-      await new Promise(resolve => setTimeout(resolve, 150));
 
       const result = await repository.query(
         STORE_MEALS,
@@ -592,9 +562,6 @@ describe('IndexedDBRepository', () => {
       await repository.save(STORE_MEALS, meal2, { quiet: true });
       await repository.save(STORE_MEALS, meal3, { quiet: true });
       await repository.save(STORE_MEALS, meal4, { quiet: true });
-      
-      // Attendre que les transactions soient complètes
-      await new Promise(resolve => setTimeout(resolve, 200));
 
       const result = await repository.query(
         STORE_MEALS,
@@ -618,9 +585,6 @@ describe('IndexedDBRepository', () => {
       await repository.save(STORE_MEALS, meal1, { quiet: true });
       await repository.save(STORE_MEALS, meal2, { quiet: true });
       await repository.save(STORE_MEALS, meal3, { quiet: true });
-      
-      // Attendre que les transactions soient complètes
-      await new Promise(resolve => setTimeout(resolve, 150));
 
       // ✅ Query avec index composé (date + type)
       const result = await repository.query(
@@ -675,9 +639,6 @@ describe('IndexedDBRepository', () => {
       ];
 
       const result = await repository.batch(operations, { quiet: true });
-      
-      // Attendre que la transaction soit complète
-      await new Promise(resolve => setTimeout(resolve, 150));
 
       expect(result.success).toBe(true);
       expect(result.results).toHaveLength(3);
@@ -690,7 +651,7 @@ describe('IndexedDBRepository', () => {
       expect(dailyMeal1).not.toBeNull();
       expect(dailyMeal2).not.toBeNull();
       expect(meal).not.toBeNull();
-    }, 15000);
+    });
 
     it('devrait retourner success: true avec results vide si batch vide', async () => {
       const result = await repository.batch([], { quiet: true });
@@ -713,9 +674,6 @@ describe('IndexedDBRepository', () => {
       // ✅ Sauvegarder d'abord
       await repository.save(STORE_DAILY_MEALS, { date: '2025-01-16', totalCalories: 2000 }, { quiet: true });
       await repository.save(STORE_DAILY_MEALS, { date: '2025-01-17', totalCalories: 2200 }, { quiet: true });
-      
-      // Attendre que les sauvegardes soient complètes
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       const operations = [
         { type: 'get', store: STORE_DAILY_MEALS, key: '2025-01-16' },
@@ -724,9 +682,6 @@ describe('IndexedDBRepository', () => {
       ];
 
       const result = await repository.batch(operations, { quiet: true });
-      
-      // Attendre que la transaction soit complète
-      await new Promise(resolve => setTimeout(resolve, 150));
 
       expect(result.success).toBe(true);
       expect(result.results).toHaveLength(3);
@@ -744,7 +699,7 @@ describe('IndexedDBRepository', () => {
       expect(dailyMeal16).not.toBeNull();
       expect(dailyMeal17).toBeNull(); // Supprimé
       expect(dailyMeal18).not.toBeNull();
-    }, 15000);
+    });
 
     it('devrait rejeter batch trop volumineux (> 1000 opérations)', async () => {
       const operations = Array.from({ length: 1001 }, (_, i) => ({
@@ -774,10 +729,10 @@ describe('IndexedDBRepository', () => {
       await repository.batch(operations, { quiet: true });
 
       // ✅ Attendre notifications
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       expect(notifications.length).toBeGreaterThanOrEqual(2);
-    }, 15000);
+    });
   });
 
   describe('getStats()', () => {

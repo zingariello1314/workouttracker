@@ -1,94 +1,62 @@
-/**
- * Composant BudgetCharts - Graphiques multi-temporels
- * Affiche : courbes théorie vs réalité, répartition par catégorie, évolution temporelle
- */
-
-import React, { useMemo, useState } from 'react';
-import { LineChart, Line, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useMemo, memo } from 'react';
+import {
+  LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 import { useBudget } from '../../../hooks/useBudget';
 
-const BudgetCharts = () => {
-  const { budget, categories, depenses, depensesMoisActuel } = useBudget();
-  const [selectedPeriod, setSelectedPeriod] = useState('3'); // 3, 6, 12 mois
+const BudgetCharts = memo(() => {
+  const { budget, categories, depensesMoisActuel, depenses } = useBudget();
 
-  // Données pour courbe théorie vs réalité (3/6/12 mois)
-  const theoryVsRealityData = useMemo(() => {
-    if (!budget || !depenses || depenses.length === 0) return [];
-
-    const months = parseInt(selectedPeriod);
+  // Données pour graphique évolution (3 derniers mois)
+  const evolutionData = useMemo(() => {
+    const mois = [];
     const now = new Date();
-    const data = [];
-
-    for (let i = months - 1; i >= 0; i--) {
+    
+    for (let i = 2; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const moisKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
-      // Dépenses réelles du mois
       const depensesMois = depenses.filter(d => {
-        const depenseDate = new Date(d.date);
-        return depenseDate.getFullYear() === date.getFullYear() && 
-               depenseDate.getMonth() === date.getMonth();
+        const dDate = new Date(d.date);
+        const dMois = `${dDate.getFullYear()}-${String(dDate.getMonth() + 1).padStart(2, '0')}`;
+        return dMois === moisKey;
       });
-      const depensesReelles = depensesMois.reduce((sum, d) => sum + (d.montant || 0), 0);
-
-      // Budget théorique (revenus - épargne)
-      const budgetTheorique = (budget.revenus || 0) - (budget.epargne?.objectif || 0);
-
-      data.push({
-        mois: date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }),
-        theorie: budgetTheorique,
-        realite: depensesReelles,
-        ecart: depensesReelles - budgetTheorique
+      
+      const totalDepenses = depensesMois.reduce((sum, d) => sum + d.montant, 0);
+      const revenus = budget?.revenus || 0;
+      
+      mois.push({
+        mois: date.toLocaleString('fr-FR', { month: 'short', year: 'numeric' }),
+        depenses: totalDepenses,
+        revenus: revenus,
+        restant: revenus - totalDepenses
       });
     }
+    
+    return mois;
+  }, [depenses, budget]);
 
-    return data;
-  }, [budget, depenses, selectedPeriod]);
-
-  // Données pour répartition par catégorie (pie chart)
-  const categoryDistributionData = useMemo(() => {
+  // Données pour pie chart répartition par catégorie
+  const repartitionData = useMemo(() => {
     if (!categories || categories.length === 0) return [];
-
-    return categories.map(cat => {
-      const depensesCat = depensesMoisActuel.filter(d => d.categorie === cat.id);
-      const total = depensesCat.reduce((sum, d) => sum + (d.montant || 0), 0);
+    
+    const data = categories.map(categorie => {
+      const depensesCategorie = depensesMoisActuel.filter(d => d.categorie === categorie.id);
+      const total = depensesCategorie.reduce((sum, d) => sum + d.montant, 0);
       
       return {
-        name: cat.nom,
+        name: categorie.nom || 'Autre',
         value: total,
-        budget: cat.budgetMensuel || 0,
-        pourcent: cat.budgetMensuel > 0 ? (total / cat.budgetMensuel) * 100 : 0
+        budget: categorie.budgetMensuel || 0,
+        pourcent: categorie.budgetMensuel > 0 
+          ? (total / categorie.budgetMensuel) * 100 
+          : 0
       };
     }).filter(item => item.value > 0);
-  }, [categories, depensesMoisActuel]);
-
-  // Données pour évolution temporelle (line chart)
-  const evolutionData = useMemo(() => {
-    if (!depenses || depenses.length === 0) return [];
-
-    const months = parseInt(selectedPeriod);
-    const now = new Date();
-    const data = [];
-
-    for (let i = months - 1; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      
-      const depensesMois = depenses.filter(d => {
-        const depenseDate = new Date(d.date);
-        return depenseDate.getFullYear() === date.getFullYear() && 
-               depenseDate.getMonth() === date.getMonth();
-      });
-      const total = depensesMois.reduce((sum, d) => sum + (d.montant || 0), 0);
-
-      data.push({
-        mois: date.toLocaleDateString('fr-FR', { month: 'short' }),
-        depenses: total,
-        revenus: budget?.revenus || 0
-      });
-    }
-
+    
     return data;
-  }, [depenses, budget, selectedPeriod]);
+  }, [categories, depensesMoisActuel]);
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
@@ -96,128 +64,161 @@ const BudgetCharts = () => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(value);
   };
 
-  if (!budget || categories.length === 0) {
+  if (depensesMoisActuel.length === 0 && evolutionData.every(d => d.depenses === 0)) {
     return (
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-        <p className="text-slate-400 text-center py-8">
-          Aucune donnée disponible. Ajoutez des catégories et des dépenses pour voir les graphiques.
-        </p>
+      <div className="budget-charts bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+        <h4 className="text-lg font-semibold text-white mb-4">Graphiques</h4>
+        <div className="text-center py-8 text-slate-400">
+          Aucune donnée disponible pour afficher les graphiques
+        </div>
       </div>
     );
   }
 
   return (
     <div className="budget-charts space-y-6">
-      {/* Sélecteur de période */}
-      <div className="flex items-center gap-2">
-        <span className="text-slate-400 text-sm">Période :</span>
-        {['3', '6', '12'].map(period => (
-          <button
-            key={period}
-            onClick={() => setSelectedPeriod(period)}
-            className={`px-3 py-1 rounded text-sm transition-all ${
-              selectedPeriod === period
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            {period} mois
-          </button>
-        ))}
-      </div>
-
-      {/* Graphique 1 : Théorie vs Réalité */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          Théorie vs Réalité ({selectedPeriod} mois)
-        </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={theoryVsRealityData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="mois" stroke="#9ca3af" />
-            <YAxis stroke="#9ca3af" tickFormatter={formatCurrency} />
-            <Tooltip 
-              formatter={(value) => formatCurrency(value)}
-              contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-            />
-            <Legend />
-            <Line 
-              type="monotone" 
-              dataKey="theorie" 
-              stroke="#10b981" 
-              strokeWidth={2}
-              name="Budget théorique"
-              dot={{ fill: '#10b981', r: 4 }}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="realite" 
-              stroke="#ef4444" 
-              strokeWidth={2}
-              name="Dépenses réelles"
-              dot={{ fill: '#ef4444', r: 4 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Graphique 2 : Répartition par catégorie (Pie Chart) */}
-      {categoryDistributionData.length > 0 && (
+      <h4 className="text-lg font-semibold text-white">Graphiques Multi-Temporels</h4>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Graphique évolution 3 mois */}
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Répartition par Catégorie (Mois actuel)
-          </h3>
+          <h5 className="text-md font-semibold text-white mb-4">Évolution (3 mois)</h5>
           <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={categoryDistributionData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, pourcent }) => `${name}: ${pourcent.toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {categoryDistributionData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
+            <LineChart data={evolutionData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey="mois" 
+                stroke="#9ca3af"
+                style={{ fontSize: '12px' }}
+              />
+              <YAxis 
+                stroke="#9ca3af"
+                style={{ fontSize: '12px' }}
+                tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+              />
               <Tooltip 
                 formatter={(value) => formatCurrency(value)}
-                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
               />
-            </PieChart>
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="revenus" 
+                stroke="#10b981" 
+                strokeWidth={2}
+                name="Revenus"
+                dot={{ fill: '#10b981', r: 4 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="depenses" 
+                stroke="#ef4444" 
+                strokeWidth={2}
+                name="Dépenses"
+                dot={{ fill: '#ef4444', r: 4 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="restant" 
+                stroke="#3b82f6" 
+                strokeWidth={2}
+                name="Restant"
+                dot={{ fill: '#3b82f6', r: 4 }}
+              />
+            </LineChart>
           </ResponsiveContainer>
         </div>
-      )}
 
-      {/* Graphique 3 : Évolution temporelle */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
-          Évolution Dépenses vs Revenus ({selectedPeriod} mois)
-        </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={evolutionData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="mois" stroke="#9ca3af" />
-            <YAxis stroke="#9ca3af" tickFormatter={formatCurrency} />
-            <Tooltip 
-              formatter={(value) => formatCurrency(value)}
-              contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-            />
-            <Legend />
-            <Bar dataKey="revenus" fill="#10b981" name="Revenus" />
-            <Bar dataKey="depenses" fill="#ef4444" name="Dépenses" />
-          </BarChart>
-        </ResponsiveContainer>
+        {/* Pie chart répartition par catégorie */}
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+          <h5 className="text-md font-semibold text-white mb-4">Répartition par Catégorie</h5>
+          {repartitionData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={repartitionData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, pourcent }) => `${name}: ${pourcent.toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {repartitionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value) => formatCurrency(value)}
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-center py-8 text-slate-400">
+              Aucune dépense catégorisée ce mois
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Détails répartition */}
+      {repartitionData.length > 0 && (
+        <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+          <h5 className="text-md font-semibold text-white mb-4">Détails par Catégorie</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {repartitionData.map((item, index) => {
+              const color = COLORS[index % COLORS.length];
+              const isOverBudget = item.pourcent > 100;
+              
+              return (
+                <div 
+                  key={item.name}
+                  className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-white">{item.name}</span>
+                    <div 
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                  </div>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {formatCurrency(item.value)}
+                  </div>
+                  <div className="text-sm text-slate-400 mb-2">
+                    Budget: {formatCurrency(item.budget)}
+                  </div>
+                  <div className="w-full bg-slate-700 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full transition-all ${
+                        isOverBudget ? 'bg-red-500' : 'bg-blue-500'
+                      }`}
+                      style={{ 
+                        width: `${Math.min(item.pourcent, 150)}%`,
+                        backgroundColor: isOverBudget ? '#ef4444' : color
+                      }}
+                    />
+                  </div>
+                  <div className={`text-xs mt-1 ${isOverBudget ? 'text-red-400' : 'text-slate-400'}`}>
+                    {item.pourcent.toFixed(1)}% utilisé
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+});
+
+BudgetCharts.displayName = 'BudgetCharts';
 
 export default BudgetCharts;

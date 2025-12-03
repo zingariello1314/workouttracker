@@ -16,5 +16,9 @@ export default defineConfig({
     }
   },
   // S'assurer que le Service Worker est servi correctement
-  publicDir: 'public'
+  publicDir: 'public',
+  optimizeDeps: {
+    include: ['@hello-pangea/dnd'],
+    force: true
+  }
 })

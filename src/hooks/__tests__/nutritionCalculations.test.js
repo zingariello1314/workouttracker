@@ -638,8 +638,8 @@ describe('getMacroDistribution', () => {
 describe('generateMealId', () => {
   it('devrait générer ID unique', async () => {
     const id1 = generateMealId();
-    // Attendre au moins 2ms pour garantir timestamp différent (Date.now() a une résolution de ~1ms)
-    await new Promise(resolve => setTimeout(resolve, 2));
+    // Attendre 1ms pour garantir timestamp différent
+    await new Promise(resolve => setTimeout(resolve, 1));
     const id2 = generateMealId();
 
     expect(id1).toBeTruthy();
@@ -652,8 +652,8 @@ describe('generateMealId', () => {
 describe('generateProgramId', () => {
   it('devrait générer ID unique', async () => {
     const id1 = generateProgramId();
-    // Attendre au moins 2ms pour garantir timestamp différent (Date.now() a une résolution de ~1ms)
-    await new Promise(resolve => setTimeout(resolve, 2));
+    // Attendre 1ms pour garantir timestamp différent
+    await new Promise(resolve => setTimeout(resolve, 1));
     const id2 = generateProgramId();
 
     expect(id1).toBeTruthy();

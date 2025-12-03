@@ -1,6 +1,5 @@
 /**
  * Hook principal pour la gestion du budget personnel
- * Centralise la logique de gestion du budget, catégories et dépenses
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -13,295 +12,251 @@ export const useBudget = () => {
   const [budget, setBudget] = useState(null);
   const [categories, setCategories] = useState([]);
   const [depenses, setDepenses] = useState([]);
+  const [depensesPlanifiees, setDepensesPlanifiees] = useState([]);
+  const [chargesFixes, setChargesFixes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ==================== INITIALISATION ====================
-
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
+  // Charger toutes les données
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const [budgetData, categoriesData, depensesData] = await Promise.all([
+      const [budgetData, categoriesData, depensesData, planifieesData, chargesData] = await Promise.all([
         budgetStorage.loadBudget(),
-        budgetStorage.getAllCategories(),
-        budgetStorage.getAllDepenses()
+        budgetStorage.loadCategories(),
+        budgetStorage.loadDepenses(),
+        budgetStorage.loadDepensesPlanifiees(),
+        budgetStorage.loadChargesFixes()
       ]);
 
-      setBudget(budgetData || {
-        revenus: 0,
-        depenses: { categories: [] },
-        epargne: { objectif: 0, actuelle: 0 }
-      });
-      setCategories(categoriesData || []);
-      setDepenses(depensesData || []);
-
-      log.info('Budget data loaded');
+      setBudget(budgetData);
+      setCategories(categoriesData);
+      setDepenses(depensesData);
+      setDepensesPlanifiees(planifieesData);
+      setChargesFixes(chargesData);
     } catch (err) {
       log.error('Error loading budget data:', err);
-      setError(err.message);
+      setError(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // ==================== BUDGET ====================
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
+  // ========== BUDGET ==========
   const updateBudget = useCallback(async (updates) => {
     try {
-      setError(null);
       const updatedBudget = { ...budget, ...updates };
-      await budgetStorage.saveBudget(updatedBudget);
-      setBudget(updatedBudget);
-      log.info('Budget updated');
-      return true;
+      const saved = await budgetStorage.saveBudget(updatedBudget);
+      setBudget(saved);
+      return saved;
     } catch (err) {
       log.error('Error updating budget:', err);
-      setError(err.message);
+      setError(err);
       throw err;
     }
   }, [budget]);
 
-  const updateRevenus = useCallback(async (revenus) => {
-    return updateBudget({ revenus });
-  }, [updateBudget]);
-
-  const updateEpargne = useCallback(async (epargne) => {
-    return updateBudget({ epargne: { ...budget?.epargne, ...epargne } });
-  }, [updateBudget, budget]);
-
-  // ==================== CATEGORIES ====================
-
-  const addCategorie = useCallback(async (categorieData) => {
+  // ========== CATEGORIES ==========
+  const addCategory = useCallback(async (category) => {
     try {
-      setError(null);
-      const newCategorie = {
-        id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        nom: categorieData.nom,
-        budgetMensuel: categorieData.budgetMensuel || 0,
-        depenseActuelle: 0,
-        sousCategories: categorieData.sousCategories || [],
-        regles: {
-          alerte80: categorieData.regles?.alerte80 ?? true,
-          alerte100: categorieData.regles?.alerte100 ?? true,
-          alerte120: categorieData.regles?.alerte120 ?? true
-        },
-        icone: categorieData.icone || '💰',
-        couleur: categorieData.couleur || '#3b82f6',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-
-      await budgetStorage.saveCategory(newCategorie);
-      setCategories(prev => [...prev, newCategorie]);
-      log.info(`Category ${newCategorie.id} added`);
-      return newCategorie;
+      const saved = await budgetStorage.saveCategory(category);
+      setCategories(prev => [...prev, saved].sort((a, b) => (a.ordre || 0) - (b.ordre || 0)));
+      return saved;
     } catch (err) {
       log.error('Error adding category:', err);
-      setError(err.message);
+      setError(err);
       throw err;
     }
   }, []);
 
-  const updateCategorie = useCallback(async (categoryId, updates) => {
+  const updateCategory = useCallback(async (categoryId, updates) => {
     try {
-      setError(null);
       const category = categories.find(c => c.id === categoryId);
-      if (!category) {
-        throw new Error(`Category ${categoryId} not found`);
-      }
-
-      const updatedCategory = {
-        ...category,
-        ...updates,
-        updatedAt: Date.now()
-      };
-
-      await budgetStorage.saveCategory(updatedCategory);
-      setCategories(prev =>
-        prev.map(c => c.id === categoryId ? updatedCategory : c)
-      );
-      log.info(`Category ${categoryId} updated`);
-      return updatedCategory;
+      if (!category) throw new Error('Category not found');
+      
+      const updated = { ...category, ...updates };
+      const saved = await budgetStorage.saveCategory(updated);
+      setCategories(prev => prev.map(c => c.id === categoryId ? saved : c));
+      return saved;
     } catch (err) {
       log.error('Error updating category:', err);
-      setError(err.message);
+      setError(err);
       throw err;
     }
   }, [categories]);
 
-  const deleteCategorie = useCallback(async (categoryId) => {
+  const deleteCategory = useCallback(async (categoryId) => {
     try {
-      setError(null);
       await budgetStorage.deleteCategory(categoryId);
       setCategories(prev => prev.filter(c => c.id !== categoryId));
-      
-      // Supprimer aussi les dépenses associées
-      const depensesToDelete = depenses.filter(d => d.categorie === categoryId);
-      for (const depense of depensesToDelete) {
-        await budgetStorage.deleteDepense(depense.id);
-      }
-      setDepenses(prev => prev.filter(d => d.categorie !== categoryId));
-      
-      log.info(`Category ${categoryId} deleted`);
-      return true;
     } catch (err) {
       log.error('Error deleting category:', err);
-      setError(err.message);
-      throw err;
-    }
-  }, [depenses]);
-
-  const reorderCategories = useCallback(async (newOrder) => {
-    try {
-      setError(null);
-      await budgetStorage.reorderCategories(newOrder);
-      setCategories(newOrder);
-      log.info('Categories reordered');
-      return true;
-    } catch (err) {
-      log.error('Error reordering categories:', err);
-      setError(err.message);
+      setError(err);
       throw err;
     }
   }, []);
 
-  // ==================== DEPENSES ====================
-
-  const addDepensePlanifiee = useCallback(async (depenseData) => {
+  const reorderCategories = useCallback(async (newOrder) => {
     try {
-      setError(null);
-      const newDepense = {
-        id: `dep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        titre: depenseData.titre,
-        montant: depenseData.montant,
-        date: depenseData.date,
-        categorie: depenseData.categorie,
-        statut: depenseData.statut || 'planifie',
-        priorite: depenseData.priorite || 'normal',
-        datePlanifiee: depenseData.datePlanifiee || depenseData.date,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-
-      await budgetStorage.saveDepense(newDepense);
-      setDepenses(prev => [...prev, newDepense]);
-      
-      // Mettre à jour la dépense actuelle de la catégorie
-      if (depenseData.categorie) {
-        const category = categories.find(c => c.id === depenseData.categorie);
-        if (category) {
-          await updateCategorie(depenseData.categorie, {
-            depenseActuelle: (category.depenseActuelle || 0) + depenseData.montant
-          });
-        }
-      }
-      
-      log.info(`Depense ${newDepense.id} added`);
-      return newDepense;
+      await budgetStorage.reorderCategories(newOrder);
+      setCategories(newOrder);
     } catch (err) {
-      log.error('Error adding depense:', err);
-      setError(err.message);
+      log.error('Error reordering categories:', err);
+      setError(err);
       throw err;
     }
-  }, [categories, updateCategorie]);
+  }, []);
+
+  // ========== DEPENSES ==========
+  const addDepense = useCallback(async (depense) => {
+    try {
+      const saved = await budgetStorage.saveDepense(depense);
+      setDepenses(prev => [saved, ...prev]);
+      return saved;
+    } catch (err) {
+      log.error('Error adding depense:', err);
+      setError(err);
+      throw err;
+    }
+  }, []);
+
+  const updateDepense = useCallback(async (depenseId, updates) => {
+    try {
+      const depense = depenses.find(d => d.id === depenseId);
+      if (!depense) throw new Error('Depense not found');
+      
+      const updated = { ...depense, ...updates };
+      const saved = await budgetStorage.saveDepense(updated);
+      setDepenses(prev => prev.map(d => d.id === depenseId ? saved : d));
+      return saved;
+    } catch (err) {
+      log.error('Error updating depense:', err);
+      setError(err);
+      throw err;
+    }
+  }, [depenses]);
+
+  const deleteDepense = useCallback(async (depenseId) => {
+    try {
+      await budgetStorage.deleteDepense(depenseId);
+      setDepenses(prev => prev.filter(d => d.id !== depenseId));
+    } catch (err) {
+      log.error('Error deleting depense:', err);
+      setError(err);
+      throw err;
+    }
+  }, []);
+
+  // ========== DEPENSES PLANIFIEES ==========
+  const addDepensePlanifiee = useCallback(async (depensePlanifiee) => {
+    try {
+      const saved = await budgetStorage.saveDepensePlanifiee(depensePlanifiee);
+      setDepensesPlanifiees(prev => [...prev, saved].sort((a, b) => new Date(a.date) - new Date(b.date)));
+      return saved;
+    } catch (err) {
+      log.error('Error adding depense planifiee:', err);
+      setError(err);
+      throw err;
+    }
+  }, []);
 
   const updateDepensePlanifiee = useCallback(async (depenseId, updates) => {
     try {
-      setError(null);
-      const depense = depenses.find(d => d.id === depenseId);
-      if (!depense) {
-        throw new Error(`Depense ${depenseId} not found`);
-      }
-
-      const oldMontant = depense.montant;
-      const updatedDepense = {
-        ...depense,
-        ...updates,
-        updatedAt: Date.now()
-      };
-
-      await budgetStorage.saveDepense(updatedDepense);
-      setDepenses(prev =>
-        prev.map(d => d.id === depenseId ? updatedDepense : d)
-      );
-
-      // Mettre à jour la dépense actuelle de la catégorie si le montant a changé
-      if (updates.montant !== undefined && updates.montant !== oldMontant && depense.categorie) {
-        const category = categories.find(c => c.id === depense.categorie);
-        if (category) {
-          const diff = updates.montant - oldMontant;
-          await updateCategorie(depense.categorie, {
-            depenseActuelle: (category.depenseActuelle || 0) + diff
-          });
-        }
-      }
-
-      log.info(`Depense ${depenseId} updated`);
-      return updatedDepense;
+      const depense = depensesPlanifiees.find(d => d.id === depenseId);
+      if (!depense) throw new Error('Depense planifiee not found');
+      
+      const updated = { ...depense, ...updates };
+      const saved = await budgetStorage.saveDepensePlanifiee(updated);
+      setDepensesPlanifiees(prev => prev.map(d => d.id === depenseId ? saved : d));
+      return saved;
     } catch (err) {
-      log.error('Error updating depense:', err);
-      setError(err.message);
+      log.error('Error updating depense planifiee:', err);
+      setError(err);
       throw err;
     }
-  }, [depenses, categories, updateCategorie]);
+  }, [depensesPlanifiees]);
 
   const deleteDepensePlanifiee = useCallback(async (depenseId) => {
     try {
-      setError(null);
-      const depense = depenses.find(d => d.id === depenseId);
-      if (!depense) {
-        throw new Error(`Depense ${depenseId} not found`);
-      }
-
-      await budgetStorage.deleteDepense(depenseId);
-      setDepenses(prev => prev.filter(d => d.id !== depenseId));
-
-      // Mettre à jour la dépense actuelle de la catégorie
-      if (depense.categorie) {
-        const category = categories.find(c => c.id === depense.categorie);
-        if (category) {
-          await updateCategorie(depense.categorie, {
-            depenseActuelle: Math.max(0, (category.depenseActuelle || 0) - depense.montant)
-          });
-        }
-      }
-
-      log.info(`Depense ${depenseId} deleted`);
-      return true;
+      await budgetStorage.deleteDepensePlanifiee(depenseId);
+      setDepensesPlanifiees(prev => prev.filter(d => d.id !== depenseId));
     } catch (err) {
-      log.error('Error deleting depense:', err);
-      setError(err.message);
+      log.error('Error deleting depense planifiee:', err);
+      setError(err);
       throw err;
     }
-  }, [depenses, categories, updateCategorie]);
+  }, []);
 
-  // ==================== CALCULS ====================
-
-  const calculateMetrics = useCallback(() => {
-    if (!budget || categories.length === 0) {
-      return null;
+  // ========== CHARGES FIXES ==========
+  const addChargeFixe = useCallback(async (charge) => {
+    try {
+      const saved = await budgetStorage.saveChargeFixe(charge);
+      setChargesFixes(prev => [...prev, saved]);
+      return saved;
+    } catch (err) {
+      log.error('Error adding charge fixe:', err);
+      setError(err);
+      throw err;
     }
+  }, []);
+
+  const updateChargeFixe = useCallback(async (chargeId, updates) => {
+    try {
+      const charge = chargesFixes.find(c => c.id === chargeId);
+      if (!charge) throw new Error('Charge fixe not found');
+      
+      const updated = { ...charge, ...updates };
+      const saved = await budgetStorage.saveChargeFixe(updated);
+      setChargesFixes(prev => prev.map(c => c.id === chargeId ? saved : c));
+      return saved;
+    } catch (err) {
+      log.error('Error updating charge fixe:', err);
+      setError(err);
+      throw err;
+    }
+  }, [chargesFixes]);
+
+  const deleteChargeFixe = useCallback(async (chargeId) => {
+    try {
+      await budgetStorage.deleteChargeFixe(chargeId);
+      setChargesFixes(prev => prev.filter(c => c.id !== chargeId));
+    } catch (err) {
+      log.error('Error deleting charge fixe:', err);
+      setError(err);
+      throw err;
+    }
+  }, []);
+
+  // ========== CALCULS ==========
+  const calculateMetrics = useCallback((mois = null) => {
+    if (!budget) return null;
+
+    const moisActuel = mois || new Date().toISOString().slice(0, 7);
+    const depensesMois = depenses.filter(d => {
+      const dDate = new Date(d.date);
+      const dMois = `${dDate.getFullYear()}-${String(dDate.getMonth() + 1).padStart(2, '0')}`;
+      return dMois === moisActuel;
+    });
 
     const revenus = budget.revenus || 0;
-    const depensesTotal = depenses.reduce((sum, d) => sum + (d.montant || 0), 0);
+    const depensesTotal = depensesMois.reduce((sum, d) => sum + d.montant, 0);
     const epargne = budget.epargne?.actuelle || 0;
     const restant = revenus - depensesTotal - epargne;
     const pourcentUtilise = revenus > 0 ? (depensesTotal / revenus) * 100 : 0;
 
     // Projection fin de mois
-    const now = new Date();
-    const joursEcoules = now.getDate();
-    const joursTotal = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const joursEcoules = new Date().getDate();
+    const joursTotal = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
     const rythmeActuel = joursEcoules > 0 ? depensesTotal / joursEcoules : 0;
     const projection = rythmeActuel * joursTotal;
 
-    // Statut intelligent
+    // Statut
     let statut = 'MAITRISE';
     if (pourcentUtilise > 100) statut = 'CRITIQUE';
     else if (pourcentUtilise > 90) statut = 'DEPASSEMENT';
@@ -314,58 +269,59 @@ export const useBudget = () => {
       restant,
       pourcentUtilise: Math.round(pourcentUtilise * 10) / 10,
       projection,
-      statut
+      statut,
+      depensesMois
     };
-  }, [budget, categories, depenses]);
+  }, [budget, depenses]);
 
+  // Dépenses du mois actuel
   const depensesMoisActuel = useMemo(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
+    const moisActuel = new Date().toISOString().slice(0, 7);
     return depenses.filter(d => {
-      const depenseDate = new Date(d.date);
-      return depenseDate.getFullYear() === year && depenseDate.getMonth() + 1 === month;
+      const dDate = new Date(d.date);
+      const dMois = `${dDate.getFullYear()}-${String(dDate.getMonth() + 1).padStart(2, '0')}`;
+      return dMois === moisActuel;
     });
   }, [depenses]);
 
-  // ==================== REFRESH ====================
-
-  const refreshData = useCallback(() => {
-    return loadAllData();
-  }, []);
-
   return {
-    // State
+    // Data
     budget,
     categories,
     depenses,
     depensesMoisActuel,
+    depensesPlanifiees,
+    chargesFixes,
     loading,
     error,
 
-    // Budget actions
+    // Actions Budget
     updateBudget,
-    updateRevenus,
-    updateEpargne,
 
-    // Category actions
-    addCategorie,
-    updateCategorie,
-    deleteCategorie,
+    // Actions Categories
+    addCategory,
+    updateCategory,
+    deleteCategory,
     reorderCategories,
 
-    // Depense actions
+    // Actions Depenses
+    addDepense,
+    updateDepense,
+    deleteDepense,
+
+    // Actions Depenses Planifiées
     addDepensePlanifiee,
     updateDepensePlanifiee,
     deleteDepensePlanifiee,
 
+    // Actions Charges Fixes
+    addChargeFixe,
+    updateChargeFixe,
+    deleteChargeFixe,
+
     // Calculs
     calculateMetrics,
-
-    // Utils
-    refreshData
+    refreshData: loadData
   };
 };
-
-export default useBudget;
 

@@ -1,0 +1,241 @@
+/**
+ * Hook centralisé pour gérer le module Planificateur Financier Personnel
+ */
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { planificateurStorage } from '../services/finance/planificateurStorage';
+import logger from '../utils/logger';
+
+const log = logger.module('usePlanificateur');
+
+export const usePlanificateur = () => {
+  const [salaire, setSalaire] = useState(null);
+  const [repartition, setRepartition] = useState(null);
+  const [achatsLoisirs, setAchatsLoisirs] = useState([]);
+  const [objectifs, setObjectifs] = useState([]);
+  const [chargesFixes, setChargesFixes] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Charger toutes les données
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const results = await Promise.allSettled([
+        planificateurStorage.getSalaire(),
+        planificateurStorage.getRepartition(),
+        planificateurStorage.getAchatsLoisirs(),
+        planificateurStorage.getObjectifs(),
+        planificateurStorage.getChargesFixes()
+      ]);
+
+      const [salaireResult, repartitionResult, achatsResult, objectifsResult, chargesResult] = results;
+
+      setSalaire(salaireResult.status === 'fulfilled' ? salaireResult.value : planificateurStorage.getDefaultSalaire());
+      setRepartition(repartitionResult.status === 'fulfilled' ? repartitionResult.value : planificateurStorage.getDefaultRepartition());
+      setAchatsLoisirs(achatsResult.status === 'fulfilled' ? achatsResult.value : []);
+      setObjectifs(objectifsResult.status === 'fulfilled' ? objectifsResult.value : []);
+      setChargesFixes(chargesResult.status === 'fulfilled' ? chargesResult.value : planificateurStorage.getDefaultChargesFixes());
+
+      if (results.some(r => r.status === 'rejected')) {
+        const rejectedErrors = results.filter(r => r.status === 'rejected').map(r => r.reason);
+        log.error('[usePlanificateur] Some data failed to load:', rejectedErrors);
+        setError(new Error('Failed to load some planificateur data. See console for details.'));
+      }
+
+    } catch (err) {
+      log.error('[usePlanificateur] Error loading planificateur data:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // ========== SALAIRE ==========
+
+  const updateSalaire = useCallback(async (salaireData) => {
+    try {
+      const updated = await planificateurStorage.saveSalaire(salaireData);
+      setSalaire(updated);
+      return updated;
+    } catch (err) {
+      log.error('[usePlanificateur] Error updating salaire:', err);
+      throw err;
+    }
+  }, []);
+
+  // ========== REPARTITION ==========
+
+  const updateRepartition = useCallback(async (repartitionData) => {
+    try {
+      const updated = await planificateurStorage.saveRepartition(repartitionData);
+      setRepartition(updated);
+      return updated;
+    } catch (err) {
+      log.error('[usePlanificateur] Error updating repartition:', err);
+      throw err;
+    }
+  }, []);
+
+  // ========== ACHATS LOISIRS ==========
+
+  const addAchatLoisir = useCallback(async (achatData) => {
+    try {
+      const saved = await planificateurStorage.saveAchatLoisir(achatData);
+      await loadData(); // Recharger pour avoir la liste à jour
+      return saved;
+    } catch (err) {
+      log.error('[usePlanificateur] Error adding achat loisir:', err);
+      throw err;
+    }
+  }, [loadData]);
+
+  const updateAchatLoisir = useCallback(async (achatData) => {
+    try {
+      const updated = await planificateurStorage.saveAchatLoisir(achatData);
+      await loadData();
+      return updated;
+    } catch (err) {
+      log.error('[usePlanificateur] Error updating achat loisir:', err);
+      throw err;
+    }
+  }, [loadData]);
+
+  const deleteAchatLoisir = useCallback(async (id) => {
+    try {
+      await planificateurStorage.deleteAchatLoisir(id);
+      await loadData();
+    } catch (err) {
+      log.error('[usePlanificateur] Error deleting achat loisir:', err);
+      throw err;
+    }
+  }, [loadData]);
+
+  // ========== OBJECTIFS ==========
+
+  const addObjectif = useCallback(async (objectifData) => {
+    try {
+      const saved = await planificateurStorage.saveObjectif(objectifData);
+      await loadData();
+      return saved;
+    } catch (err) {
+      log.error('[usePlanificateur] Error adding objectif:', err);
+      throw err;
+    }
+  }, [loadData]);
+
+  const updateObjectif = useCallback(async (objectifData) => {
+    try {
+      const updated = await planificateurStorage.saveObjectif(objectifData);
+      await loadData();
+      return updated;
+    } catch (err) {
+      log.error('[usePlanificateur] Error updating objectif:', err);
+      throw err;
+    }
+  }, [loadData]);
+
+  const deleteObjectif = useCallback(async (id) => {
+    try {
+      await planificateurStorage.deleteObjectif(id);
+      await loadData();
+    } catch (err) {
+      log.error('[usePlanificateur] Error deleting objectif:', err);
+      throw err;
+    }
+  }, [loadData]);
+
+  // ========== CHARGES FIXES ==========
+
+  const updateChargesFixes = useCallback(async (chargesData) => {
+    try {
+      const updated = await planificateurStorage.saveChargesFixes(chargesData);
+      setChargesFixes(updated);
+      return updated;
+    } catch (err) {
+      log.error('[usePlanificateur] Error updating charges fixes:', err);
+      throw err;
+    }
+  }, []);
+
+  // ========== CALCULS ==========
+
+  const calculateFaisabilite = useCallback((achat, moisCible) => {
+    if (!repartition) return null;
+
+    const budgetLoisirs = repartition.loisirs || 0;
+    if (budgetLoisirs === 0) {
+      return {
+        possible: false,
+        budgetDisponible: 0,
+        manque: achat.prix || 0,
+        suggestions: ['Définir un budget loisirs dans la répartition salaire']
+      };
+    }
+
+    const moisActuel = new Date();
+    const moisCibleDate = new Date(moisCible + '-01');
+    const moisDiff = (moisCibleDate.getFullYear() - moisActuel.getFullYear()) * 12 + 
+                     (moisCibleDate.getMonth() - moisActuel.getMonth());
+    
+    // Si mois dans le passé, considérer comme mois actuel
+    const moisEffectifs = Math.max(1, moisDiff);
+    const budgetDisponible = budgetLoisirs * moisEffectifs;
+    const prix = typeof achat === 'object' ? (achat.prix || 0) : achat;
+    const manque = Math.max(0, prix - budgetDisponible);
+
+    return {
+      possible: manque === 0,
+      budgetDisponible,
+      manque,
+      suggestions: manque > 0 ? [
+        `Reporter de ${Math.ceil(manque / budgetLoisirs)} mois pour avoir le budget suffisant`,
+        moisEffectifs > 1 ? `Réduire budget loisirs de ${Math.ceil(manque / moisEffectifs)}€/mois` : 'Augmenter le budget loisirs',
+        `Utiliser surplus des mois précédents si disponible`
+      ] : []
+    };
+  }, [repartition]);
+
+  return {
+    // Data
+    salaire,
+    repartition,
+    achatsLoisirs,
+    objectifs,
+    chargesFixes,
+    loading,
+    error,
+    
+    // Actions Salaire
+    updateSalaire,
+    
+    // Actions Répartition
+    updateRepartition,
+    
+    // Actions Achats Loisirs
+    addAchatLoisir,
+    updateAchatLoisir,
+    deleteAchatLoisir,
+    
+    // Actions Objectifs
+    addObjectif,
+    updateObjectif,
+    deleteObjectif,
+    
+    // Actions Charges Fixes
+    updateChargesFixes,
+    
+    // Calculs
+    calculateFaisabilite,
+    
+    // Utilitaires
+    reload: loadData
+  };
+};
+
