@@ -1,0 +1,34 @@
+/* Patch pour corriger le graphique RÉPARTITION ACTIVITÉS */
+
+/* Augmenter la hauteur du conteneur pour voir tout le graphique */
+.pm-activities-chart-compact {
+  min-height: 480px !important;
+  padding: 16px !important;
+}
+
+/* Augmenter la hauteur du graphique et ajouter du padding en haut */
+.pm-activities-chart-compact .pm-chart-container {
+  height: 320px !important;
+  padding-top: 60px !important;
+  padding-bottom: 10px !important;
+}
+
+/* Augmenter la largeur des colonnes pour les labels */
+.pm-bar-column {
+  max-width: 70px !important;
+  min-width: 50px !important;
+}
+
+/* Labels sans retour à la ligne, taille réduite */
+.pm-bar-label {
+  font-size: 8px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Assurer que les valeurs au-dessus des barres sont visibles */
+.pm-bar-value {
+  top: -45px !important;
+  font-size: 12px !important;
+}

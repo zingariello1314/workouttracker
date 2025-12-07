@@ -163,3 +163,5 @@ const VirtualizedTable = ({ portfolio, onDelete, onSort, sortConfig, searchTerm 
 
 export default VirtualizedTable;
 
+
+

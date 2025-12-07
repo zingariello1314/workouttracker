@@ -162,3 +162,5 @@ const AIRecommendations = () => {
 
 export default AIRecommendations;
 
+
+

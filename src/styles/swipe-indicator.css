@@ -1,0 +1,175 @@
+/* SwipeIndicator Styles */
+
+.swipe-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  pointer-events: none;
+  
+  /* Smooth transitions for all properties */
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  
+  /* GPU acceleration for better performance */
+  will-change: opacity, transform;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Arrow icon styling */
+.swipe-indicator__arrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  
+  /* Smooth color transition */
+  transition: color 0.3s ease-in-out, transform 0.2s ease-out;
+}
+
+/* Progress ring background */
+.swipe-indicator__ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.swipe-indicator__ring-bg {
+  stroke: rgba(255, 255, 255, 0.2);
+  transition: stroke 0.3s ease-in-out;
+}
+
+.swipe-indicator__ring-progress {
+  stroke: currentColor;
+  transform-origin: center;
+  transform: rotate(-90deg);
+  
+  /* Smooth progress animation */
+  transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease-in-out;
+}
+
+/* Progress state - blue/gray color */
+.swipe-indicator--progress {
+  color: rgba(59, 130, 246, 0.8); /* Blue-500 with opacity */
+}
+
+.swipe-indicator--progress .swipe-indicator__arrow {
+  color: rgba(59, 130, 246, 0.9);
+}
+
+/* Valid state - green color when threshold reached */
+.swipe-indicator--valid {
+  color: rgba(34, 197, 94, 0.9); /* Green-500 with opacity */
+}
+
+.swipe-indicator--valid .swipe-indicator__arrow {
+  color: rgba(34, 197, 94, 1);
+}
+
+.swipe-indicator--valid .swipe-indicator__ring-bg {
+  stroke: rgba(34, 197, 94, 0.3);
+}
+
+/* Pulse animation when threshold is reached */
+.swipe-indicator--pulse {
+  animation: swipe-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes swipe-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+/* Arrow bounce animation for valid state */
+.swipe-indicator--valid .swipe-indicator__arrow {
+  animation: arrow-bounce 0.6s ease-in-out infinite;
+}
+
+@keyframes arrow-bounce {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(4px);
+  }
+}
+
+/* Fade in animation when indicator appears */
+.swipe-indicator {
+  animation: swipe-fade-in 0.2s ease-out;
+}
+
+@keyframes swipe-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .swipe-indicator__arrow {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .swipe-indicator__ring {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .swipe-indicator--progress {
+    color: rgba(59, 130, 246, 1);
+  }
+  
+  .swipe-indicator--valid {
+    color: rgba(34, 197, 94, 1);
+  }
+  
+  .swipe-indicator__ring-bg {
+    stroke: rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .swipe-indicator,
+  .swipe-indicator__arrow,
+  .swipe-indicator__ring-progress {
+    animation: none;
+    transition: none;
+  }
+  
+  .swipe-indicator--pulse {
+    animation: none;
+  }
+  
+  .swipe-indicator--valid .swipe-indicator__arrow {
+    animation: none;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .swipe-indicator__ring-bg {
+    stroke: rgba(255, 255, 255, 0.15);
+  }
+}

@@ -41,6 +41,20 @@ const Button = ({
     ? 'hover:-translate-y-0.5 active:translate-y-0'
     : '';
 
+  // Gérer l'icône : si c'est un composant React, l'invoquer
+  const IconComponent = icon;
+  const renderIcon = () => {
+    if (!icon) return null;
+    
+    // Si c'est un composant React (fonction ou classe)
+    if (typeof icon === 'function' || (icon && icon.$$typeof)) {
+      return <IconComponent size={size === 'sm' ? 16 : size === 'lg' ? 24 : 20} />;
+    }
+    
+    // Si c'est déjà un élément React ou une string
+    return icon;
+  };
+
   return (
     <Component
       type={as ? undefined : type}
@@ -57,9 +71,9 @@ const Button = ({
         </>
       ) : (
         <>
-          {icon && iconPosition === 'left' && <span aria-hidden="true">{icon}</span>}
+          {iconPosition === 'left' && renderIcon()}
           {children}
-          {icon && iconPosition === 'right' && <span aria-hidden="true">{icon}</span>}
+          {iconPosition === 'right' && renderIcon()}
         </>
       )}
     </Component>

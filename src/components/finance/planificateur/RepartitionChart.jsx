@@ -65,3 +65,5 @@ const RepartitionChart = ({ repartition, salaire, formatCurrency }) => {
 
 export default RepartitionChart;
 
+
+

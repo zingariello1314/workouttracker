@@ -110,3 +110,5 @@ const CategoryRules = ({ category }) => {
 
 export default CategoryRules;
 
+
+

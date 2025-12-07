@@ -6,7 +6,6 @@ import InvestissementsSubTab from '../finance/investissements/InvestissementsSub
 import SmartShoppingSubTab from '../finance/smartShopping/SmartShoppingSubTab';
 import PlanificateurSubTab from '../finance/planificateur/PlanificateurSubTab';
 import SyntheseSubTab from '../finance/synthese/SyntheseSubTab';
-import TheorieRealiteSubTab from '../finance/theorieRealite/TheorieRealiteSubTab';
 
 const FinanceTab = () => {
   const t = useTranslation();
@@ -18,8 +17,7 @@ const FinanceTab = () => {
     { id: 'investissements', labelKey: 'finance.subTabs.investissements', icon: '🥇' },
     { id: 'smart-shopping', labelKey: 'finance.subTabs.smartShopping', icon: '🛒' },
     { id: 'planificateur', labelKey: 'finance.subTabs.planificateur', icon: '📅' },
-    { id: 'synthese', labelKey: 'finance.subTabs.synthese', icon: '📊' },
-    { id: 'theorie-realite', labelKey: 'finance.subTabs.theorieRealite', icon: '📈' }
+    { id: 'synthese', labelKey: 'finance.subTabs.synthese', icon: '📊' }
   ];
 
   const renderSubTabContent = () => {
@@ -36,8 +34,6 @@ const FinanceTab = () => {
         return <PlanificateurSubTab />;
       case 'synthese':
         return <SyntheseSubTab />;
-      case 'theorie-realite':
-        return <TheorieRealiteSubTab />;
       default:
         return <BourseSubTab />;
     }

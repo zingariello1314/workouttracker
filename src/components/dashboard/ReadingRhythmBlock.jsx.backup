@@ -1,0 +1,44 @@
+/**
+ * ReadingRhythmBlock Component - Version complète ultra-détaillée
+ * Bloc Rythme de Lecture - PRIORITY-MODERATE
+ * Basé sur le code parfait fourni
+ */
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Clock, TrendingUp, Award, Target, Zap, Calendar, BookOpen, Brain, Sparkles } from 'lucide-react';
+
+const ReadingRhythmBlock = ({ rhythmData, onStartTimer, onStopTimer }) => {
+  // États
+  const [isReading, setIsReading] = useState(false);
+  const [sessionTime, setSessionTime] = useState(102); // 1:42 en secondes
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // État de la session émotionnelle
+  const [currentSession, setCurrentSession] = useState({
+    id: null,
+    startTime: null,
+    preEmotionsRecorded: false,
+    postEmotionsRecorded: false,
+    canSave: false
+  });
+  
+  // Historique des sessions émotionnelles
+  const [emotionalSessions, setEmotionalSessions] = useState([]);
+  
+  // Données pour le bloc Pré/Post Lecture
+  const [preReadingEmotions, setPreReadingEmotions] = useState([
+    { id: 'motivated', icon: '🔥', label: 'Motivé', selected: false },
+    { id: 'not_motivated', icon: '😐', label: 'Pas motivé', selected: false },
+    { id: 'energetic', icon: '⚡', label: 'En forme', selected: false },
+    { id: 'tired', icon: '😴', label: 'Fatigué', selected: false },
+    { id: 'curious', icon: '🤔', label: 'Curieux', selected: false },
+    { id: 'not_interested', icon: '😑', label: 'Pas envie', selected: false },
+    { id: 'relaxed', icon: '😌', label: 'Détendu', selected: false },
+    { id: 'stressed', icon: '😰', label: 'Stressé', selected: false },
+    { id: 'focused', icon: '🎯', label: 'Concentré', selected: false },
+    { id: 'rushed', icon: '⏰', label: 'Pressé', selected: false }
+  ]);
+  
+  const [postReadingEmotions, setPostReadingEmotions] = useState([
+    { id: 'satisfied', icon: '😊', label: 'Satisfait', selected: false },
+    { id: 'frustrated', icon: '😤', label: 'Frustré', selected: false },

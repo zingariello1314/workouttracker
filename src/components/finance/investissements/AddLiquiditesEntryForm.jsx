@@ -115,3 +115,5 @@ const AddLiquiditesEntryForm = ({ onSave, onCancel }) => {
 
 export default AddLiquiditesEntryForm;
 
+
+

@@ -32,10 +32,11 @@ const Navigation = () => {
     [sportTabs]
   );
 
-  // ✅ Navigation principale : Accueil / Sport / Quêtes / Apprentissage / Livres / Finance / Paramètres
+  // ✅ Navigation principale : Accueil / Dashboard / Sport / Quêtes / Apprentissage / Livres / Finance / Paramètres
   const tabs = useMemo(
     () => [
     { id: 'home', labelKey: 'nav.home', icon: '🏠' },
+    { id: 'dashboard', labelKey: 'nav.dashboard', icon: '📊' },
       { id: 'sport', labelKey: 'nav.sport', icon: '🏋️' },
       { id: 'quests', labelKey: 'nav.quests', icon: '⚡' },
       { id: 'apprentissage', labelKey: 'nav.apprentissage', icon: '📖' },

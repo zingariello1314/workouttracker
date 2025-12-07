@@ -259,3 +259,5 @@ const AchatLoisirForm = ({ achat, budgetMensuel, onSave, onCancel }) => {
 
 export default AchatLoisirForm;
 
+
+

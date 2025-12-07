@@ -486,3 +486,5 @@ class BudgetAI {
 
 export const budgetAI = new BudgetAI();
 
+
+

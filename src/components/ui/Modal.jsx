@@ -124,7 +124,7 @@ const Modal = ({
       {/* Modal */}
       <div
         ref={modalRef}
-        className={`relative bg-slate-800/95 backdrop-blur-md border-2 ${styles.border} rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto ${className}`}
+        className={`relative bg-slate-800/95 backdrop-blur-md border-2 ${styles.border} rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

@@ -7,6 +7,9 @@ import logger from '../utils/logger';
 import LanguageSelector from './ui/LanguageSelector';
 import { useTranslation } from '../utils/translations';
 import { useLanguage } from '../context/LanguageContext';
+import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
+import SwipeIndicator from './ui/SwipeIndicator';
+import { getSettings } from '../services/swipeNavigationSettings';
 
 const log = logger.component('HomePage');
 
@@ -18,6 +21,42 @@ const HomePage = () => {
   const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [userLocation, setUserLocation] = useState('');
+  
+  // ✅ Load swipe navigation settings from localStorage
+  const [swipeSettings, setSwipeSettings] = useState(() => getSettings());
+  
+  // ✅ Listen for settings changes from SettingsTab
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'swipeNavigationSettings') {
+        setSwipeSettings(getSettings());
+      }
+    };
+    
+    // Listen for storage events (changes from other tabs/windows)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Listen for custom event (changes from same tab)
+    const handleSettingsUpdate = () => {
+      setSwipeSettings(getSettings());
+    };
+    window.addEventListener('swipeSettingsUpdated', handleSettingsUpdate);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('swipeSettingsUpdated', handleSettingsUpdate);
+    };
+  }, []);
+  
+  // ✅ Swipe navigation configuration with settings from localStorage
+  const { swipeState, swipeProgress, isSwipeValid } = useSwipeNavigation({
+    threshold: swipeSettings.threshold,
+    velocityThreshold: swipeSettings.velocityThreshold,
+    enabled: swipeSettings.enabled,
+    onSwipeDown: () => {
+      setActiveTab('dashboard');
+    }
+  });
   
   // Initialiser userLocation avec la traduction
   useEffect(() => {
@@ -397,15 +436,74 @@ const HomePage = () => {
     };
   }, []);
 
+  // ✅ Keyboard navigation support - Press 'D' to navigate to Dashboard
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      // Check if 'D' key is pressed (case-insensitive)
+      if (event.key === 'd' || event.key === 'D') {
+        // Prevent default behavior
+        event.preventDefault();
+        // Navigate to Dashboard
+        setActiveTab('dashboard');
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('keydown', handleKeyPress);
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [setActiveTab]);
+
   // ✅ Chargement initial : Déterminer si on doit afficher l'écran de chargement
   const shouldShowLoading = isLoading || showLoadingScreen;
+
+  // ✅ Screen reader announcement state
+  const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState('');
+
+  // ✅ Announce navigation to screen readers when swipe is detected
+  useEffect(() => {
+    if (swipeState.isSwipping && swipeState.direction === 'down') {
+      if (isSwipeValid) {
+        setScreenReaderAnnouncement('Swipe threshold reached. Release to navigate to Dashboard.');
+      } else {
+        setScreenReaderAnnouncement(`Swipe in progress. ${Math.round(swipeProgress * 100)}% complete.`);
+      }
+    } else {
+      setScreenReaderAnnouncement('');
+    }
+  }, [swipeState.isSwipping, swipeState.direction, isSwipeValid, swipeProgress]);
 
   return (
     <div 
       className="relative h-screen overflow-hidden bg-gradient-to-br from-slate-900/20 via-slate-800/10 to-slate-900/20 flex flex-col"
       onClick={handleInteraction}
       style={{ minHeight: '100vh', maxHeight: '100vh' }}
+      role="main"
+      aria-label="Home page"
     >
+      {/* ✅ Screen reader announcements - aria-live region */}
+      <div 
+        role="status" 
+        aria-live="polite" 
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {screenReaderAnnouncement}
+      </div>
+
+      {/* ✅ Screen reader instructions - visible alternative text */}
+      <div className="sr-only">
+        <h1>Momentum - Home Page</h1>
+        <p>
+          Welcome to Momentum. You can navigate to the Dashboard by swiping down on this page, 
+          or by pressing the 'D' key on your keyboard. Alternatively, use the navigation buttons 
+          at the top of the page to access different sections of the application.
+        </p>
+      </div>
+
       {/* ✅ Chargement initial : Écran de chargement élégant et professionnel */}
       {shouldShowLoading && (
         <div 
@@ -494,67 +592,89 @@ const HomePage = () => {
       {/* ✅ Chargement initial : Masquer le contenu principal pendant le chargement */}
       {!shouldShowLoading && (
         <>
+      {/* ✅ Swipe Indicator - Visual feedback for swipe gestures */}
+      <SwipeIndicator 
+        progress={swipeProgress}
+        isValid={isSwipeValid}
+        visible={swipeState.isSwipping && swipeState.direction === 'down'}
+      />
+      
       {/* Header */}
       <header className="relative z-10 flex justify-between items-center p-8 flex-shrink-0">
         {/* Logo et informations */}
-        <div className="flex flex-col items-center space-y-0.5 -ml-8 mr-8 -mt-24">
+        <div className="flex flex-col items-center space-y-0.5 -ml-8 mr-8 -mt-24" data-swipe-ignore role="banner">
           <img 
             src="/logo.png" 
-            alt="Momentum Logo" 
+            alt="Momentum application logo" 
             className="w-24 h-24 rounded-2xl opacity-95 drop-shadow-2xl"
             style={{ transform: 'translateY(55px)' }}
+            role="img"
           />
         </div>
 
         {/* Navigation en une seule ligne – version simplifiée */}
-        <nav className="flex items-center space-x-8">
+        <nav className="flex items-center space-x-8" role="navigation" aria-label="Main navigation">
           <div className="flex space-x-2 text-white text-base font-medium">
             {/* Accueil */}
             <button 
+              data-swipe-ignore
               onClick={() => navigateToTab('home')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              aria-label="Navigate to Home page"
             >
               {t('nav.home')}
             </button>
             {/* Sport regroupe tous les onglets d'entraînement (Today, Saisie, Programme, etc.) */}
             <button 
+              data-swipe-ignore
               onClick={() => navigateToTab('today')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              aria-label="Navigate to Sport section"
             >
               {t('nav.sport')}
             </button>
             {/* QuietQuest – Quêtes */}
             <button 
+              data-swipe-ignore
               onClick={() => navigateToTab('quests')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              aria-label="Navigate to Quests section"
             >
               {t('nav.quests')}
             </button>
             {/* Apprentissage */}
             <button 
+              data-swipe-ignore
               onClick={() => navigateToTab('apprentissage')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              aria-label="Navigate to Learning section"
             >
               {t('nav.apprentissage')}
             </button>
             {/* Livres */}
             <button 
+              data-swipe-ignore
               onClick={() => navigateToTab('books')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              aria-label="Navigate to Books section"
             >
               {t('nav.books')}
             </button>
             {/* Finance */}
             <button 
+              data-swipe-ignore
               onClick={() => navigateToTab('finance')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              aria-label="Navigate to Finance section"
             >
               {t('nav.finance')}
             </button>
             {/* Paramètres */}
             <button 
+              data-swipe-ignore
               onClick={() => navigateToTab('settings')}
               className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+              aria-label="Navigate to Settings"
             >
               {t('nav.settings')}
             </button>
@@ -575,9 +695,11 @@ const HomePage = () => {
           {/* Bouton CTA - Texte non coupé */}
           <div className="relative flex-shrink-0">
             <button 
+              data-swipe-ignore
               onClick={() => navigateToTab(isAuthenticated ? 'today' : 'auth')}
               className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-8 py-4 rounded-2xl text-base md:text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl whitespace-nowrap overflow-visible"
               style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
+              aria-label={isAuthenticated ? 'Navigate to Today section' : 'Get started with Momentum'}
             >
               {isAuthenticated ? 'Accéder à l’onglet Aujourd’hui' : t('home.cta')}
             </button>
@@ -633,7 +755,7 @@ const HomePage = () => {
           </div>
           
           {/* Sélecteur de langue en dessous de Localisation - Dimensions fixes pour éviter les décalages */}
-          <div className="mt-2 w-[44px] h-[44px] flex items-center justify-end flex-shrink-0">
+          <div className="mt-2 w-[44px] h-[44px] flex items-center justify-end flex-shrink-0" data-swipe-ignore>
             <LanguageSelector variant="compact" />
           </div>
         </div>

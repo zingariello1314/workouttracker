@@ -251,3 +251,5 @@ const LiquiditesAnalytics = ({ liquidites }) => {
 
 export default LiquiditesAnalytics;
 
+
+

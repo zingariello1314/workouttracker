@@ -89,5 +89,11 @@ const CardFooter = ({ children, className = '', ...props }) => {
   );
 };
 
+// Attacher les sous-composants à Card pour permettre Card.Header, Card.Title, etc.
+Card.Header = CardHeader;
+Card.Title = CardTitle;
+Card.Content = CardContent;
+Card.Footer = CardFooter;
+
 export default Card;
 export { Card, CardHeader, CardTitle, CardContent, CardFooter };

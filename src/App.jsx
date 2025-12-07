@@ -26,6 +26,7 @@ import GarminTab from './components/tabs/GarminTab';
 import NutritionTab from './components/tabs/NutritionTab';
 import BooksTab from './components/tabs/BooksTab';
 import FinanceTab from './components/tabs/FinanceTab';
+import DashboardTab from './components/tabs/DashboardTab';
 import CoachDashboard from './components/tabs/nutrition/components/CoachDashboard';
 import ExerciseVariations from './components/ExerciseVariations/ExerciseVariations';
 import AdvancedStats from './components/AdvancedStats';
@@ -157,6 +158,8 @@ const WorkoutTrackerContent = () => {
         return <CoachDashboard />;
       case 'books':
         return <BooksTab />;
+      case 'dashboard':
+        return <DashboardTab />;
       case 'finance':
         return <FinanceTab />;
       case 'settings':

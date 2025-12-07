@@ -2,6 +2,7 @@ import React, { useState, useMemo, Suspense, lazy } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { usePlanificateur } from '../../../hooks/usePlanificateur';
 import SkeletonLoader from '../bourse/SkeletonLoader';
+import PlanificateurErrorBoundary from './PlanificateurErrorBoundary';
 
 // Lazy loading pour performance
 const RepartitionSalaireSubTab = lazy(() => import('./RepartitionSalaireSubTab'));
@@ -69,32 +70,36 @@ const PlanificateurSubTab = () => {
   }
 
   return (
-    <div className="planificateur-sub-tab-container flex flex-col h-full">
-      {/* Navigation sections */}
-      <nav className="sub-sections-navigation flex gap-4 p-4 bg-slate-800/50 rounded-t-lg border-b border-slate-700/50 mb-4">
-        {sections.map(section => (
-          <button
-            key={section.id}
-            onClick={() => setActiveSection(section.id)}
-            className={`sub-section-button flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200
-              ${activeSection === section.id
-                ? 'bg-blue-600/30 text-blue-300 border border-blue-500/50'
-                : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
-              }`}
-          >
-            <span className="text-lg">{section.icon}</span>
-            <span className="text-sm font-medium">{t(section.labelKey)}</span>
-          </button>
-        ))}
-      </nav>
+    <PlanificateurErrorBoundary>
+      <div className="planificateur-sub-tab-container flex flex-col h-full">
+        {/* Navigation sections */}
+        <nav className="sub-sections-navigation flex gap-4 p-4 bg-slate-800/50 rounded-t-lg border-b border-slate-700/50 mb-4">
+          {sections.map(section => (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`sub-section-button flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200
+                ${activeSection === section.id
+                  ? 'bg-blue-600/30 text-blue-300 border border-blue-500/50'
+                  : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                }`}
+              aria-label={`Naviguer vers ${t(section.labelKey)}`}
+              aria-current={activeSection === section.id ? 'page' : undefined}
+            >
+              <span className="text-lg" aria-hidden="true">{section.icon}</span>
+              <span className="text-sm font-medium">{t(section.labelKey)}</span>
+            </button>
+          ))}
+        </nav>
 
-      {/* Main content area */}
-      <main className="planificateur-main-content flex-1 p-6 bg-slate-800/50 rounded-b-lg">
-        <Suspense fallback={<SkeletonLoader />}>
-          {ActiveComponent && <ActiveComponent />}
-        </Suspense>
-      </main>
-    </div>
+        {/* Main content area */}
+        <main className="planificateur-main-content flex-1 p-6 bg-slate-800/50 rounded-b-lg" role="main">
+          <Suspense fallback={<SkeletonLoader />}>
+            {ActiveComponent && <ActiveComponent />}
+          </Suspense>
+        </main>
+      </div>
+    </PlanificateurErrorBoundary>
   );
 };
 

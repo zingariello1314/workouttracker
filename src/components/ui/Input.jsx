@@ -15,6 +15,7 @@ const Input = ({
   size = 'md', // 'sm', 'md', 'lg'
   fullWidth = true,
   className = '',
+  containerClassName = '',
   ...props
 }) => {
   const sizeStyles = {
@@ -31,8 +32,22 @@ const Input = ({
 
   const inputId = props.id || `input-${Math.random().toString(36).substring(2, 9)}`;
 
+  // Gérer l'icône : si c'est un composant React, l'invoquer
+  const IconComponent = icon;
+  const renderIcon = () => {
+    if (!icon) return null;
+    
+    // Si c'est un composant React (fonction ou classe)
+    if (typeof icon === 'function' || (icon && icon.$$typeof)) {
+      return <IconComponent size={18} />;
+    }
+    
+    // Si c'est déjà un élément React ou une string
+    return icon;
+  };
+
   return (
-    <div className={fullWidth ? 'w-full' : ''}>
+    <div className={`${fullWidth ? 'w-full' : ''} ${containerClassName}`}>
       {label && (
         <label
           htmlFor={inputId}
@@ -48,7 +63,7 @@ const Input = ({
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
             aria-hidden="true"
           >
-            {icon}
+            {renderIcon()}
           </span>
         )}
         <input
@@ -63,7 +78,7 @@ const Input = ({
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
             aria-hidden="true"
           >
-            {icon}
+            {renderIcon()}
           </span>
         )}
       </div>

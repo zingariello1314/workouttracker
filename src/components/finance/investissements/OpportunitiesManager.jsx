@@ -112,3 +112,5 @@ const OpportunitiesManager = ({ positions, cashAttente }) => {
 
 export default OpportunitiesManager;
 
+
+

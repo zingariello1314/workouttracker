@@ -45,3 +45,5 @@ const LoisirsBudget = ({ budgetMensuel }) => {
 
 export default LoisirsBudget;
 
+
+

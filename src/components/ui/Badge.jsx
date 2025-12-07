@@ -29,12 +29,26 @@ const Badge = ({
     lg: 'px-4 py-1.5 text-sm',
   };
 
+  // Gérer l'icône : si c'est un composant React, l'invoquer
+  const IconComponent = icon;
+  const renderIcon = () => {
+    if (!icon) return null;
+    
+    // Si c'est un composant React (fonction ou classe)
+    if (typeof icon === 'function' || (icon && icon.$$typeof)) {
+      return <IconComponent size={size === 'sm' ? 12 : size === 'lg' ? 16 : 14} />;
+    }
+    
+    // Si c'est déjà un élément React ou une string
+    return icon;
+  };
+
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border font-semibold uppercase tracking-wide ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       {...props}
     >
-      {icon && <span aria-hidden="true">{icon}</span>}
+      {icon && <span aria-hidden="true">{renderIcon()}</span>}
       {children}
     </span>
   );

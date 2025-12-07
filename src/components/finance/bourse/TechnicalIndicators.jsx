@@ -142,3 +142,5 @@ const TechnicalIndicators = ({ ticker }) => {
 
 export default TechnicalIndicators;
 
+
+

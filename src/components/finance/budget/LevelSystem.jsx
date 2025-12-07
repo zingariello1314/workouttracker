@@ -106,3 +106,5 @@ const LevelSystem = ({ totalXP }) => {
 
 export default LevelSystem;
 
+
+

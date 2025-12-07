@@ -83,3 +83,5 @@ const InvestissementsModes = ({ children, onModeChange, currentMode }) => {
 export default InvestissementsModes;
 export { MODES };
 
+
+

@@ -171,3 +171,5 @@ const AddOrAcquisitionForm = ({ onSave, onCancel, prixOrActuel }) => {
 
 export default AddOrAcquisitionForm;
 
+
+

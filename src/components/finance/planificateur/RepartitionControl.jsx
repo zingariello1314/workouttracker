@@ -100,3 +100,5 @@ const RepartitionControl = ({ salaire, repartition, ecart, onRepartitionChange, 
 
 export default RepartitionControl;
 
+
+

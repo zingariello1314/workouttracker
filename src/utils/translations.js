@@ -99,6 +99,7 @@ export const translations = {
   [LANGUAGES.FR]: {
     // Navigation
     'nav.home': 'Accueil',
+    'nav.dashboard': 'Dashboard',
     'nav.today': "Aujourd'hui",
     'nav.calendar': 'Calendrier',
     'nav.stats': 'Statistiques',
@@ -114,6 +115,7 @@ export const translations = {
     'finance.inDevelopment': 'En cours de développement',
     'finance.underDevelopment': 'En cours de développement',
     'finance.comingSoon': 'Bientôt disponible',
+    'finance.subTabs.dashboard': 'Dashboard',
     'finance.subTabs.bourse': 'Bourse',
     'finance.subTabs.budget': 'Budget Personnel',
     'finance.subTabs.investissements': 'Investissements Divers',
@@ -134,8 +136,15 @@ export const translations = {
     'finance.planificateur.sections.3ans': 'Planification 3 Ans',
     'finance.planificateur.sections.sync': 'Synchronisation',
     'finance.planificateur.repartition.title': 'Répartition Salaire',
+    'finance.planificateur.repartition.loyer': 'Loyer',
+    'finance.planificateur.repartition.or': 'Investissement Or',
+    'finance.planificateur.repartition.bourse': 'Investissement Bourse',
+    'finance.planificateur.repartition.cash': 'Cash Accumulation',
     'finance.planificateur.loisirs.title': 'Planification Loisirs',
     'finance.planificateur.3ans.title': 'Planification 3 Ans',
+    'finance.planificateur.3ans.timeline': 'Timeline Interactive',
+    'finance.planificateur.3ans.chargesFixes': 'Charges Fixes Mensuelles',
+    'finance.planificateur.3ans.epargne': 'Épargne Loisirs Intelligente',
     'finance.planificateur.sync.title': 'Synchronisation Cross-Modules',
     
     // Budget Personnel
@@ -306,6 +315,7 @@ export const translations = {
   [LANGUAGES.EN]: {
     // Navigation
     'nav.home': 'Home',
+    'nav.dashboard': 'Dashboard',
     'nav.today': 'Today',
     'nav.calendar': 'Calendar',
     'nav.stats': 'Statistics',
@@ -321,6 +331,7 @@ export const translations = {
     'finance.inDevelopment': 'Under development',
     'finance.underDevelopment': 'Under development',
     'finance.comingSoon': 'Coming soon',
+    'finance.subTabs.dashboard': 'Dashboard',
     'finance.subTabs.bourse': 'Stock Market',
     'finance.subTabs.budget': 'Personal Budget',
     'finance.subTabs.investissements': 'Diversified Investments',
@@ -333,8 +344,15 @@ export const translations = {
     'finance.planificateur.sections.3ans': '3-Year Planning',
     'finance.planificateur.sections.sync': 'Synchronization',
     'finance.planificateur.repartition.title': 'Salary Distribution',
+    'finance.planificateur.repartition.loyer': 'Rent',
+    'finance.planificateur.repartition.or': 'Gold Investment',
+    'finance.planificateur.repartition.bourse': 'Stock Investment',
+    'finance.planificateur.repartition.cash': 'Cash Accumulation',
     'finance.planificateur.loisirs.title': 'Leisure Planning',
     'finance.planificateur.3ans.title': '3-Year Planning',
+    'finance.planificateur.3ans.timeline': 'Interactive Timeline',
+    'finance.planificateur.3ans.chargesFixes': 'Monthly Fixed Charges',
+    'finance.planificateur.3ans.epargne': 'Smart Leisure Savings',
     'finance.planificateur.sync.title': 'Cross-Module Synchronization',
     'finance.subTabs.synthese': 'Summary',
     'finance.subTabs.theorieRealite': 'Theory vs Reality',

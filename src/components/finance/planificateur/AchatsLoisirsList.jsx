@@ -258,3 +258,5 @@ const AchatsLoisirsList = ({ achats, budgetMensuel, onEdit }) => {
 
 export default AchatsLoisirsList;
 
+
+

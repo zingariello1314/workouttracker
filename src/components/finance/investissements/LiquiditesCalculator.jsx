@@ -137,3 +137,5 @@ const LiquiditesCalculator = ({ stockTotal, objectifMensuel, progression }) => {
 
 export default LiquiditesCalculator;
 
+
+

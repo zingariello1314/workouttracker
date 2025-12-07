@@ -13,10 +13,24 @@ const EmptyState = ({
   onAction,
   className = ''
 }) => {
+  // Gérer l'icône : si c'est un composant React, l'invoquer
+  const IconComponent = icon;
+  const renderIcon = () => {
+    if (!icon) return null;
+    
+    // Si c'est un composant React (fonction ou classe)
+    if (typeof icon === 'function' || (icon && icon.$$typeof)) {
+      return <IconComponent size={64} />;
+    }
+    
+    // Si c'est déjà un élément React ou une string
+    return icon;
+  };
+
   return (
     <div className={`flex flex-col items-center justify-center py-12 px-6 text-center ${className}`} role="status" aria-live="polite">
       <div className="text-6xl mb-4" aria-hidden="true">
-        {icon}
+        {renderIcon()}
       </div>
       {title && (
         <h3 className="text-xl font-bold text-slate-200 mb-2">

@@ -100,3 +100,5 @@ const OrStockage = ({ repartition, stockActuel }) => {
 
 export default OrStockage;
 
+
+

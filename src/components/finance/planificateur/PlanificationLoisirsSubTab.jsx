@@ -1,15 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { usePlanificateur } from '../../../hooks/usePlanificateur';
 import { useToast } from '../../ui/Toast/ToastProvider';
+import { formatCurrency } from '../../../utils/planificateurUtils';
 import LoisirsBudget from './LoisirsBudget';
 import AchatLoisirForm from './AchatLoisirForm';
-import AchatsLoisirsList from './AchatsLoisirsList';
+import LoisirsInterface from './LoisirsInterface';
 import SkeletonLoader from '../bourse/SkeletonLoader';
 
 const PlanificationLoisirsSubTab = () => {
   const t = useTranslation();
-  const { repartition, achatsLoisirs, loading } = usePlanificateur();
+  const { repartition, achatsLoisirs, updateAchatLoisir, deleteAchatLoisir, loading } = usePlanificateur();
   const { showToast } = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAchat, setEditingAchat] = useState(null);
@@ -17,6 +18,27 @@ const PlanificationLoisirsSubTab = () => {
   const budgetLoisirs = useMemo(() => {
     return repartition?.loisirs || 0;
   }, [repartition]);
+
+  const handleReorder = async (newOrder) => {
+    // Mettre à jour l'ordre des achats
+    try {
+      for (let i = 0; i < newOrder.length; i++) {
+        await updateAchatLoisir({ ...newOrder[i], ordre: i });
+      }
+      showToast('Ordre mis à jour', 'success');
+    } catch (error) {
+      showToast('Erreur lors de la mise à jour', 'error');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteAchatLoisir(id);
+      showToast('Achat supprimé', 'success');
+    } catch (error) {
+      showToast('Erreur lors de la suppression', 'error');
+    }
+  };
 
   if (loading) {
     return <SkeletonLoader />;
@@ -62,14 +84,17 @@ const PlanificationLoisirsSubTab = () => {
         </div>
       )}
 
-      {/* Liste Achats */}
-      <AchatsLoisirsList
+      {/* Interface Avancée */}
+      <LoisirsInterface
         achats={achatsLoisirs}
         budgetMensuel={budgetLoisirs}
+        onReorder={handleReorder}
         onEdit={(achat) => {
           setEditingAchat(achat);
           setShowAddForm(true);
         }}
+        onDelete={handleDelete}
+        formatCurrency={formatCurrency}
       />
     </div>
   );
