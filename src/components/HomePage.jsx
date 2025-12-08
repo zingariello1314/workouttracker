@@ -5,11 +5,13 @@ import { useHomepageImages } from '../hooks/useHomepageImages';
 import { preloadAdjacentImages, preloadImage } from '../utils/imageLazyLoader';
 import logger from '../utils/logger';
 import LanguageSelector from './ui/LanguageSelector';
+import NavigationHeader from './ui/NavigationHeader';
 import { useTranslation } from '../utils/translations';
 import { useLanguage } from '../context/LanguageContext';
 import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
 import SwipeIndicator from './ui/SwipeIndicator';
 import { getSettings } from '../services/swipeNavigationSettings';
+import { useQuoteDisplay } from '../hooks/useQuoteDisplay';
 
 const log = logger.component('HomePage');
 
@@ -19,6 +21,7 @@ const HomePage = () => {
   const t = useTranslation();
   const { language } = useLanguage();
   const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
+  const { displayQuote, loading: quoteLoading, handleInteraction: handleQuoteInteraction } = useQuoteDisplay();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [userLocation, setUserLocation] = useState('');
   
@@ -412,9 +415,10 @@ const HomePage = () => {
     return () => clearInterval(rotationInterval);
   }, [backgroundImages.length]);
 
-  // Fonction pour changer l'image de fond lors des interactions
+  // Fonction pour changer l'image de fond ET la citation lors des interactions
   const handleInteraction = () => {
     changeBackgroundImage();
+    handleQuoteInteraction(); // Change aussi la citation
   };
 
   // Fonction pour naviguer vers un autre onglet avec transition
@@ -456,6 +460,10 @@ const HomePage = () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
   }, [setActiveTab]);
+
+  // ✅ Mouse wheel navigation support - Désactivé, géré par HomePageScrollTransition
+  // La navigation par scroll est maintenant gérée par le composant HomePageScrollTransition
+  // qui offre une transition fluide et animée entre HomePage et Dashboard
 
   // ✅ Chargement initial : Déterminer si on doit afficher l'écran de chargement
   const shouldShowLoading = isLoading || showLoadingScreen;
@@ -499,10 +507,14 @@ const HomePage = () => {
         <h1>Momentum - Home Page</h1>
         <p>
           Welcome to Momentum. You can navigate to the Dashboard by swiping down on this page, 
-          or by pressing the 'D' key on your keyboard. Alternatively, use the navigation buttons 
-          at the top of the page to access different sections of the application.
+          scrolling down with your mouse wheel, or by pressing the 'D' key on your keyboard. 
+          Alternatively, use the navigation buttons at the top of the page to access different 
+          sections of the application.
         </p>
       </div>
+
+      {/* ✅ Navigation Header - Logo et boutons de navigation */}
+      {!shouldShowLoading && <NavigationHeader />}
 
       {/* ✅ Chargement initial : Écran de chargement élégant et professionnel */}
       {shouldShowLoading && (
@@ -598,102 +610,44 @@ const HomePage = () => {
         isValid={isSwipeValid}
         visible={swipeState.isSwipping && swipeState.direction === 'down'}
       />
-      
-      {/* Header */}
-      <header className="relative z-10 flex justify-between items-center p-8 flex-shrink-0">
-        {/* Logo et informations */}
-        <div className="flex flex-col items-center space-y-0.5 -ml-8 mr-8 -mt-24" data-swipe-ignore role="banner">
-          <img 
-            src="/logo.png" 
-            alt="Momentum application logo" 
-            className="w-24 h-24 rounded-2xl opacity-95 drop-shadow-2xl"
-            style={{ transform: 'translateY(55px)' }}
-            role="img"
-          />
-        </div>
-
-        {/* Navigation en une seule ligne – version simplifiée */}
-        <nav className="flex items-center space-x-8" role="navigation" aria-label="Main navigation">
-          <div className="flex space-x-2 text-white text-base font-medium">
-            {/* Accueil */}
-            <button 
-              data-swipe-ignore
-              onClick={() => navigateToTab('home')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-              aria-label="Navigate to Home page"
-            >
-              {t('nav.home')}
-            </button>
-            {/* Sport regroupe tous les onglets d'entraînement (Today, Saisie, Programme, etc.) */}
-            <button 
-              data-swipe-ignore
-              onClick={() => navigateToTab('today')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-              aria-label="Navigate to Sport section"
-            >
-              {t('nav.sport')}
-            </button>
-            {/* QuietQuest – Quêtes */}
-            <button 
-              data-swipe-ignore
-              onClick={() => navigateToTab('quests')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-              aria-label="Navigate to Quests section"
-            >
-              {t('nav.quests')}
-            </button>
-            {/* Apprentissage */}
-            <button 
-              data-swipe-ignore
-              onClick={() => navigateToTab('apprentissage')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-              aria-label="Navigate to Learning section"
-            >
-              {t('nav.apprentissage')}
-            </button>
-            {/* Livres */}
-            <button 
-              data-swipe-ignore
-              onClick={() => navigateToTab('books')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-              aria-label="Navigate to Books section"
-            >
-              {t('nav.books')}
-            </button>
-            {/* Finance */}
-            <button 
-              data-swipe-ignore
-              onClick={() => navigateToTab('finance')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-              aria-label="Navigate to Finance section"
-            >
-              {t('nav.finance')}
-            </button>
-            {/* Paramètres */}
-            <button 
-              data-swipe-ignore
-              onClick={() => navigateToTab('settings')}
-              className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
-              aria-label="Navigate to Settings"
-            >
-              {t('nav.settings')}
-            </button>
-          </div>
-        </nav>
-      </header>
 
       {/* Contenu principal */}
-      <main className="relative z-10 flex-1 flex items-center justify-start px-8 pt-20 min-h-0 overflow-hidden">
-        <div className="max-w-2xl flex-shrink-0">
-          {/* Titre principal - Proportions ajustées */}
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-light leading-[1.1] mb-8" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)', minHeight: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: '0.25rem' }}>
-            <span className="text-white">{t('home.title.line1')}</span>
-            <span className="text-white font-bold">{t('home.title.line2')}</span>
-            <span className="text-white">{t('home.title.line3')}</span>
+      <main className="relative z-10 flex-1 flex items-center justify-start px-8 pt-12 pb-12 min-h-0 overflow-hidden">
+        <div className="max-w-2xl flex-shrink-0 w-full">
+          {/* Titre principal - Citations dynamiques */}
+          <h1 
+            key={displayQuote ? `${displayQuote.line1}-${displayQuote.line2}-${displayQuote.line3}` : 'default'}
+            className="text-5xl md:text-6xl lg:text-7xl font-light leading-[1.1] mb-10 animate-quote-fade-in" 
+            style={{ 
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'flex-start', 
+              gap: '0.25rem',
+              animation: 'quoteFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+            }}
+          >
+            {quoteLoading ? (
+              <>
+                <span className="text-white opacity-50">Chargement...</span>
+              </>
+            ) : displayQuote ? (
+              <>
+                <span className="text-white">{displayQuote.line1}</span>
+                <span className="text-white font-bold">{displayQuote.line2}</span>
+                <span className="text-white">{displayQuote.line3}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-white">{t('home.title.line1')}</span>
+                <span className="text-white font-bold">{t('home.title.line2')}</span>
+                <span className="text-white">{t('home.title.line3')}</span>
+              </>
+            )}
           </h1>
 
           {/* Bouton CTA - Texte non coupé */}
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 mb-8">
             <button 
               data-swipe-ignore
               onClick={() => navigateToTab(isAuthenticated ? 'today' : 'auth')}

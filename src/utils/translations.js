@@ -101,6 +101,10 @@ export const translations = {
     'nav.home': 'Accueil',
     'nav.dashboard': 'Dashboard',
     'nav.today': "Aujourd'hui",
+    'nav.sport': 'Sport',
+    'nav.quests': 'Quêtes',
+    'nav.apprentissage': 'Apprentissage',
+    'nav.books': 'Livres',
     'nav.calendar': 'Calendrier',
     'nav.stats': 'Statistiques',
     'nav.program': 'Programme',
@@ -161,9 +165,9 @@ export const translations = {
     'finance.budget.statut.critique': 'Critique',
     
     // HomePage
-    'home.title.line1': 'Où',
-    'home.title.line2': 'Imagination',
-    'home.title.line3': 'Rencontre l\'Intelligence',
+    'home.title.line1': 'N\'attends rien,',
+    'home.title.line2': 'apprécie',
+    'home.title.line3': 'tout.',
     'home.cta': 'COMMENCER L\'ENTRAÎNEMENT',
     
     // Settings
@@ -317,6 +321,10 @@ export const translations = {
     'nav.home': 'Home',
     'nav.dashboard': 'Dashboard',
     'nav.today': 'Today',
+    'nav.sport': 'Sport',
+    'nav.quests': 'Quests',
+    'nav.apprentissage': 'Learning',
+    'nav.books': 'Books',
     'nav.calendar': 'Calendar',
     'nav.stats': 'Statistics',
     'nav.program': 'Program',
@@ -377,9 +385,9 @@ export const translations = {
     'finance.budget.statut.critique': 'Critical',
     
     // HomePage
-    'home.title.line1': 'Where',
-    'home.title.line2': 'Imagination',
-    'home.title.line3': 'Meets Intelligence',
+    'home.title.line1': 'Expect nothing,',
+    'home.title.line2': 'appreciate',
+    'home.title.line3': 'everything.',
     'home.cta': 'START TRAINING',
     
     // Settings

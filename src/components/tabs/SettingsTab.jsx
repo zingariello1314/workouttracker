@@ -35,6 +35,8 @@ import { openQuietQuestDB, loadQuestsFromIndexedDB, loadValidationsFromIndexedDB
 import { STORAGE_KEYS, loadFromStorage, defaultUserData } from '../../hooks/useQuietQuestEngine';
 import { exportApprentissageData, importApprentissageData, previewApprentissageImport, prepareApprentissageExportData } from '../../utils/apprentissageExportImport';
 import { getSettings as getSwipeSettings, saveSettings as saveSwipeSettings } from '../../services/swipeNavigationSettings';
+import { QuoteManager } from '../quotes/QuoteManager';
+import { QuotesErrorBoundary } from '../quotes/QuotesErrorBoundary';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
@@ -3297,6 +3299,11 @@ const SettingsTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Section Citations Page d'Accueil */}
+      <QuotesErrorBoundary>
+        <QuoteManager />
+      </QuotesErrorBoundary>
 
       {/* Section Navigation */}
       <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">

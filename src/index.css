@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Sidebar Premium QuietQuest */
+@import './styles/sidebar-premium.css';
+
 /* Variables CSS pour thème dynamique (valeurs par défaut) */
 :root {
   --theme-primary: #8b5cf6;      /* Purple-500 par défaut */
@@ -140,23 +143,14 @@ html, body {
   background: linear-gradient(90deg, #ec4899 0%, #8b5cf6 100%);
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+/* Custom scrollbar - Transparente partout (y compris HomePage et Dashboard) */
+* {
+  scrollbar-width: none; /* Firefox - masquer scrollbar */
+  scrollbar-color: transparent transparent; /* Firefox - transparente */
 }
 
-::-webkit-scrollbar-track {
-  background: #1e293b;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge - masquer scrollbar */
 }
 
 /* ✅ OPTIMISATION: Animation shimmer pour skeleton loaders */
@@ -194,4 +188,20 @@ html, body {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+/* ✨ Animation fluide pour les citations dynamiques */
+@keyframes quoteFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-quote-fade-in {
+  animation: quoteFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }

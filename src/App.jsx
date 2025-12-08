@@ -6,6 +6,7 @@ import { ToastProvider } from './components/ui/Toast';
 import Header from './components/layout/Header';
 import Navigation from './components/layout/Navigation';
 import HomePage from './components/HomePage';
+import HomePageScrollTransition from './components/HomePageScrollTransition';
 import AuthPage from './components/AuthPage';
 import TodayTab from './components/tabs/TodayTab';
 import DataEntryTab from './components/tabs/DataEntryTab';
@@ -31,6 +32,7 @@ import CoachDashboard from './components/tabs/nutrition/components/CoachDashboar
 import ExerciseVariations from './components/ExerciseVariations/ExerciseVariations';
 import AdvancedStats from './components/AdvancedStats';
 import SessionFeedback from './components/SessionFeedback';
+import SidebarPremium from './components/sidebar/SidebarPremium';
 import { useWorkout } from './context/WorkoutContext';
 import { useGarminData } from './hooks/useGarminData';
 import { useAuth } from './context/AuthContext';
@@ -64,6 +66,18 @@ const WorkoutTrackerContent = () => {
   } = useWorkout();
   const { currentUser, isAuthenticated } = useAuth();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+
+  // Masquer la scrollbar du body quand on est sur home/dashboard
+  React.useEffect(() => {
+    if (activeTab === 'home' || activeTab === 'dashboard') {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeTab]);
 
   // ✅ Charger les données Garmin pour les calories
   // - admin connecté : charge les vraies données
@@ -169,23 +183,47 @@ const WorkoutTrackerContent = () => {
     }
   };
 
+  // Déterminer si la sidebar doit être affichée
+  // Visible partout SAUF sur home, auth et settings
+  const shouldShowSidebar = activeTab !== 'home' && 
+                            activeTab !== 'auth' && 
+                            activeTab !== 'settings';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="flex flex-col min-h-screen">
-        {activeTab !== 'home' && activeTab !== 'auth' && <Header />}
-        {activeTab !== 'home' && activeTab !== 'auth' && <Navigation />}
+        {/* Header et Navigation - Masqués sur home, auth, dashboard et settings */}
+        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'settings' && <Header />}
+        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'settings' && <Navigation />}
         
-        <main className={`flex-1 ${activeTab === 'home' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-          {activeTab === 'home' ? (
-            <HomePage />
-          ) : activeTab === 'auth' ? (
-            <AuthPage />
-          ) : (
-            <div className="container mx-auto px-4 py-6">
-              {renderTabContent()}
-            </div>
-          )}
-        </main>
+        {/* HomePage avec transition fluide vers Dashboard */}
+        {(activeTab === 'home' || activeTab === 'dashboard') && <HomePageScrollTransition />}
+
+        {/* Layout avec sidebar */}
+        <div className="flex-1 relative">
+          {/* Sidebar Premium - Visible sur toutes les pages sauf home, auth et settings */}
+          {shouldShowSidebar && <SidebarPremium />}
+          
+          <main 
+            className={`${(activeTab === 'home' || activeTab === 'dashboard') ? 'overflow-hidden' : ''}`}
+            style={{
+              marginLeft: shouldShowSidebar ? '300px' : '0',
+              marginTop: (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'settings') ? '-642px' : '0',
+              transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              minHeight: '100vh',
+              position: 'relative',
+              zIndex: 1
+            }}
+          >
+            {activeTab === 'auth' ? (
+              <AuthPage />
+            ) : (activeTab !== 'home' && activeTab !== 'dashboard') ? (
+              <div className="container mx-auto px-4">
+                {renderTabContent()}
+              </div>
+            ) : null}
+          </main>
+        </div>
 
         {/* Modales */}
         {showExerciseVariations && (

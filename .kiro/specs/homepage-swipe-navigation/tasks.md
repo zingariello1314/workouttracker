@@ -187,7 +187,15 @@
   - Tester avec navigation clavier uniquement
   - _Requirements: 10.2_
 
-- [ ] 9. Ajouter le support lecteur d'écran
+- [x] 9. Ajouter le support lecteur d'écran
+
+
+
+
+
+
+
+
 
 
 
