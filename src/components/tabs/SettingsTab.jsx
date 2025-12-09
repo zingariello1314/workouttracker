@@ -37,6 +37,7 @@ import { exportApprentissageData, importApprentissageData, previewApprentissageI
 import { getSettings as getSwipeSettings, saveSettings as saveSwipeSettings } from '../../services/swipeNavigationSettings';
 import { QuoteManager } from '../quotes/QuoteManager';
 import { QuotesErrorBoundary } from '../quotes/QuotesErrorBoundary';
+import ProfileCardSettings from '../sidebar/ProfileCardSettings';
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
@@ -48,6 +49,7 @@ const SettingsTab = () => {
   const [importStatus, setImportStatus] = useState(null);
   const [importData, setImportData] = useState('');
   const [showImportPreview, setShowImportPreview] = useState(false);
+  const [showProfileCardSettings, setShowProfileCardSettings] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [showHomePageSettings, setShowHomePageSettings] = useState(false);
   const [garminExportStatus, setGarminExportStatus] = useState(null);
@@ -2300,6 +2302,76 @@ const SettingsTab = () => {
         </Card>
       )}
 
+      {/* Section Carte de Profil - Image Centrale */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <Image className="mr-2" size={20} />
+            Image de la Carte de Profil
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-gray-300 text-sm">
+              Personnalisez l'image centrale qui apparaît sur votre carte de profil dans la sidebar.
+            </p>
+            
+            <div className="bg-slate-700/50 rounded-lg p-4">
+              <h4 className="font-medium text-white mb-2">À propos :</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>• Cette image remplace le logo par défaut au centre de votre carte</li>
+                <li>• Formats acceptés : JPG, PNG, GIF, SVG</li>
+                <li>• Taille maximale : 5 MB</li>
+                <li>• L'image est stockée localement dans votre navigateur</li>
+              </ul>
+            </div>
+
+            <Button
+              onClick={() => setShowProfileCardSettings(true)}
+              icon={Image}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
+              Gérer l'Image de la Carte
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section Carte de Profil - Handle */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <User className="mr-2" size={20} />
+            Handle de la Carte (@username)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-gray-300 text-sm">
+              Personnalisez le @handle qui apparaît dans le rectangle au bas de votre carte de profil.
+            </p>
+            
+            <div className="bg-slate-700/50 rounded-lg p-4">
+              <h4 className="font-medium text-white mb-2">À propos :</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>• Ce handle apparaît dans le petit rectangle en bas de la carte</li>
+                <li>• Il est affiché avec le symbole @ automatiquement</li>
+                <li>• Vous pouvez le personnaliser indépendamment de votre nom d'utilisateur</li>
+                <li>• Les modifications sont sauvegardées automatiquement</li>
+              </ul>
+            </div>
+
+            <Button
+              onClick={() => setShowProfileCardSettings(true)}
+              icon={User}
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+            >
+              Gérer le Handle de la Carte
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Section Page d'Accueil */}
       <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
         <CardHeader>
@@ -3466,6 +3538,13 @@ const SettingsTab = () => {
       {showHomePageSettings && (
         <HomePageImageSettings onClose={() => setShowHomePageSettings(false)} />
       )}
+
+      {/* Modal des paramètres de la carte de profil */}
+      <ProfileCardSettings
+        username={currentUser?.username || 'guest'}
+        isOpen={showProfileCardSettings}
+        onClose={() => setShowProfileCardSettings(false)}
+      />
     </div>
   );
 };

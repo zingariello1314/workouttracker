@@ -71,29 +71,19 @@ export const useSidebar = () => {
   }, []);
 
   /**
-   * Met à jour l'heure actuelle chaque minute
+   * Met à jour l'heure actuelle chaque seconde
    */
   useEffect(() => {
     // Mettre à jour immédiatement
     setCurrentTime(new Date());
     
-    // Calculer le délai jusqu'à la prochaine minute
-    const now = new Date();
-    const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
-    
-    // Attendre jusqu'à la prochaine minute, puis mettre à jour chaque minute
-    const initialTimeout = setTimeout(() => {
+    // Mettre à jour chaque seconde
+    clockIntervalRef.current = setInterval(() => {
       setCurrentTime(new Date());
-      
-      // Démarrer l'intervalle pour les mises à jour suivantes
-      clockIntervalRef.current = setInterval(() => {
-        setCurrentTime(new Date());
-      }, 60000); // 60 secondes
-    }, msUntilNextMinute);
+    }, 1000); // 1 seconde
     
     // Nettoyage
     return () => {
-      clearTimeout(initialTimeout);
       if (clockIntervalRef.current) {
         clearInterval(clockIntervalRef.current);
       }
@@ -227,13 +217,14 @@ export const useSidebar = () => {
   }, []);
 
   /**
-   * Formate l'heure au format HH:MM
+   * Formate l'heure au format HH:MM:SS
    * @returns {string} Heure formatée
    */
   const getFormattedTime = useCallback(() => {
     const hours = currentTime.getHours().toString().padStart(2, '0');
     const minutes = currentTime.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    const seconds = currentTime.getSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
   }, [currentTime]);
 
   /**
@@ -242,6 +233,44 @@ export const useSidebar = () => {
    * @returns {string} Date formatée
    */
   const getFormattedDate = useCallback((locale = 'fr') => {
+    const options = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    };
+    
+    const localeStr = locale === 'fr' ? 'fr-FR' : 'en-US';
+    return currentTime.toLocaleDateString(localeStr, options);
+  }, [currentTime]);
+
+  /**
+   * Formate la date sans l'année (jour + mois uniquement)
+   * @returns {string} Date formatée sans année
+   */
+  const getFormattedDayMonth = useCallback(() => {
+    const options = {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    };
+    return currentTime.toLocaleDateString('fr-FR', options);
+  }, [currentTime]);
+
+  /**
+   * Retourne l'année uniquement
+   * @returns {string} Année
+   */
+  const getFormattedYear = useCallback(() => {
+    return currentTime.getFullYear().toString();
+  }, [currentTime]);
+
+  /**
+   * DEPRECATED - Utiliser getFormattedDate à la place
+   * @param {string} locale - Locale (fr, en, etc.)
+   * @returns {string} Date formatée
+   */
+  const getFormattedDateOld = useCallback((locale = 'fr') => {
     const options = {
       weekday: 'long',
       year: 'numeric',
@@ -278,6 +307,8 @@ export const useSidebar = () => {
     // Fonctions de formatage
     getFormattedTime,
     getFormattedDate,
+    getFormattedDayMonth,
+    getFormattedYear,
   };
 };
 

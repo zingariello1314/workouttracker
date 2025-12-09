@@ -1,0 +1,39 @@
+/**
+ * SIDEBAR DASHBOARD OFFSET
+ * Remonte la sidebar de 3cm (30px) uniquement sur l'onglet Dashboard
+ * Sans affecter les autres onglets
+ * 
+ * IMPORTANT: La sidebar sur le Dashboard est positionnée via inline styles
+ * dans HomePageScrollTransition.jsx avec top: '116px'
+ * On doit donc cibler le conteneur parent de la sidebar
+ */
+
+/* Cibler le conteneur de la sidebar dans le Dashboard */
+body.dashboard-active div[style*="position: fixed"][style*="top: 116px"] {
+  /* Remonter de 30px (3cm) */
+  top: 86px !important; /* 116px - 30px = 86px */
+}
+
+/* Alternative: Cibler directement la sidebar si elle a un style inline */
+body.dashboard-active aside.sidebar-premium[style*="position"] {
+  /* Si la sidebar a un style inline, on l'ajuste */
+  margin-top: -30px !important;
+}
+
+/* Assurer que la sidebar ne déborde pas en haut */
+body.dashboard-active aside.sidebar-premium {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Responsive: Maintenir le comportement sur mobile */
+@media (max-width: 1024px) {
+  body.dashboard-active div[style*="position: fixed"][style*="top: 116px"] {
+    /* Sur mobile, garder le comportement normal */
+    top: 116px !important;
+  }
+  
+  body.dashboard-active aside.sidebar-premium[style*="position"] {
+    margin-top: 0 !important;
+  }
+}

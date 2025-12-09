@@ -157,7 +157,12 @@
   - Conserver les préférences après déconnexion
   - _Requirements: 14.1-14.5_
 
-- [ ] 16. Optimiser les performances
+- [x] 16. Optimiser les performances
+
+
+
+
+
   - Vérifier l'utilisation mémoire (< 50MB)
   - Optimiser les animations pour maintenir 60 FPS
   - Réduire le temps de réponse aux interactions (< 100ms)
@@ -167,7 +172,12 @@
 
 ## Phase 7: Accessibilité et Responsive
 
-- [ ] 17. Implémenter l'accessibilité WCAG 2.1 AA
+- [x] 17. Implémenter l'accessibilité WCAG 2.1 AA
+
+
+
+
+
   - Ajouter la navigation clavier complète
   - Implémenter les indicateurs de focus visibles
   - Vérifier les ratios de contraste (min 4.5:1)
@@ -175,7 +185,12 @@
   - Ajouter les attributs ARIA appropriés
   - _Requirements: 12.1-12.5_
 
-- [ ] 18. Finaliser le responsive design
+- [x] 18. Finaliser le responsive design
+
+
+
+
+
   - Implémenter le bouton toggle pour mobile
   - Créer l'overlay mobile pour la sidebar
   - Ajouter l'animation de fermeture vers la gauche
@@ -185,7 +200,9 @@
 
 ## Phase 8: Intégration et Tests
 
-- [ ] 19. Intégrer la sidebar dans l'application
+- [x] 19. Intégrer la sidebar dans l'application
+
+
   - Importer et intégrer dans App.jsx
   - Connecter aux contexts existants (Auth, Workout, etc.)
   - Vérifier la compatibilité avec les autres composants
@@ -193,7 +210,25 @@
   - Valider le comportement sur home et settings
   - _Requirements: 1.1-1.5_
 
+- [x] 19.5. Nettoyer toutes les données factices et ajouter la navigation
+
+
+  - Remplacer toutes les données factices par des zéros ou "En attente"
+  - Ajouter des messages d'avertissement pour les modules en développement
+  - Ajouter la navigation vers les modules appropriés pour les sections fonctionnelles
+  - Appliquer un feedback visuel (opacity: 0.6) aux sections non fonctionnelles
+  - Mettre à jour tous les badges pour refléter l'état réel
+  - _Status: COMPLETE - 13 sections nettoyées, 6 sections avec données réelles_
+  - _Documentation: CLEANUP_COMPLETE.md_
+
 - [ ] 20. Tests finaux et polish
+
+
+
+
+
+
+
   - Tester toutes les interactions utilisateur
   - Vérifier les animations et transitions
   - Valider la persistance des données

@@ -68,14 +68,24 @@ const WorkoutTrackerContent = () => {
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
 
   // Masquer la scrollbar du body quand on est sur home/dashboard
+  // + Ajouter classe dashboard-active pour le CSS de la sidebar
   React.useEffect(() => {
     if (activeTab === 'home' || activeTab === 'dashboard') {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
+    
+    // Ajouter/retirer la classe dashboard-active pour le positionnement de la sidebar
+    if (activeTab === 'dashboard') {
+      document.body.classList.add('dashboard-active');
+    } else {
+      document.body.classList.remove('dashboard-active');
+    }
+    
     return () => {
       document.body.style.overflow = '';
+      document.body.classList.remove('dashboard-active');
     };
   }, [activeTab]);
 
@@ -208,7 +218,7 @@ const WorkoutTrackerContent = () => {
             className={`${(activeTab === 'home' || activeTab === 'dashboard') ? 'overflow-hidden' : ''}`}
             style={{
               marginLeft: shouldShowSidebar ? '300px' : '0',
-              marginTop: (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'settings') ? '-642px' : '0',
+              marginTop: activeTab === 'finance' ? '-710px' : (activeTab === 'quests' || activeTab === 'apprentissage' || activeTab === 'books') ? '-690px' : (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'settings') ? '-642px' : '0',
               transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               minHeight: '100vh',
               position: 'relative',

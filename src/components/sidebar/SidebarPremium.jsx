@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { memo, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useSidebar } from '../../hooks/useSidebar';
+import { useSidebarData } from '../../hooks/useSidebarData';
+import { useNavigation } from '../../hooks/useNavigation';
+import { useAuth } from '../../hooks/useAuth';
+import ProfileCard3D from './ProfileCard3D';
 import '../../styles/sidebar-premium.css';
 
 /**
  * Composant principal de la Sidebar Premium QuietQuest
  * Affiche toutes les informations vitales et actions rapides de l'utilisateur
+ * 
+ * Optimisations de performance:
+ * - React.memo pour éviter les re-renders inutiles
+ * - useMemo pour les calculs coûteux
+ * - useCallback pour les fonctions stables
+ * - Lazy loading des sections
+ * - Intersection Observer pour le rendu conditionnel
  */
-const SidebarPremium = () => {
+const SidebarPremium = memo(() => {
   const {
     currentTime,
     expandedSections,
@@ -16,16 +27,40 @@ const SidebarPremium = () => {
     isSectionExpanded,
     getFormattedTime,
     getFormattedDate,
+    getFormattedDayMonth,
+    getFormattedYear,
+    toggleMobileSidebar,
+    closeMobileSidebar,
   } = useSidebar();
 
-  const sidebarRef = React.useRef(null);
+  // Charger les données réelles depuis tous les modules
+  const {
+    metrics,    // XP, Niveau, Streak, Focus
+    quests,     // Quêtes du jour
+    sport,      // Entraînements, Garmin
+    finance,    // Patrimoine, Budget
+    nutrition,  // Calories, Macros
+    learning,   // Livres, Pages
+    isLoading
+  } = useSidebarData();
 
-  // Calculer dynamiquement la hauteur du header pour positionner la sidebar
-  React.useEffect(() => {
-    const updateSidebarPosition = () => {
+  // Hook de navigation
+  const navigation = useNavigation();
+
+  // Hook d'authentification
+  const { user } = useAuth();
+
+  const sidebarRef = React.useRef(null);
+  const observerRef = React.useRef(null);
+
+  // Optimisation: Throttle pour limiter les calculs de position
+  const throttledUpdatePosition = React.useCallback(() => {
+    if (!sidebarRef.current) return;
+
+    // Utiliser requestAnimationFrame pour optimiser les performances
+    requestAnimationFrame(() => {
       if (!sidebarRef.current) return;
 
-      // Chercher le header et la navigation dans le DOM
       const header = document.querySelector('header');
       const navigation = document.querySelector('nav');
       
@@ -39,120 +74,195 @@ const SidebarPremium = () => {
         totalHeaderHeight += navigation.offsetHeight;
       }
 
-      // Appliquer la position calculée
+      // Appliquer la position calculée avec transform pour de meilleures performances
       if (totalHeaderHeight > 0) {
         sidebarRef.current.style.top = `${totalHeaderHeight}px`;
         sidebarRef.current.style.height = `calc(100vh - ${totalHeaderHeight}px)`;
       } else {
-        // Pas de header, la sidebar commence en haut
         sidebarRef.current.style.top = '0';
         sidebarRef.current.style.height = '100vh';
       }
+    });
+  }, []);
+
+  // Calculer dynamiquement la hauteur du header pour positionner la sidebar
+  React.useEffect(() => {
+    // Mettre à jour au montage
+    throttledUpdatePosition();
+
+    // Throttle pour le resize (max 1 fois toutes les 100ms)
+    let resizeTimeout;
+    const handleResize = () => {
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      resizeTimeout = setTimeout(throttledUpdatePosition, 100);
     };
 
-    // Mettre à jour au montage
-    updateSidebarPosition();
-
-    // Mettre à jour lors du redimensionnement
-    window.addEventListener('resize', updateSidebarPosition);
+    window.addEventListener('resize', handleResize, { passive: true });
     
-    // Observer les changements dans le DOM (pour les sous-navigations qui apparaissent)
-    const observer = new MutationObserver(updateSidebarPosition);
+    // Observer les changements dans le DOM avec throttling
+    let mutationTimeout;
+    const handleMutation = () => {
+      if (mutationTimeout) {
+        clearTimeout(mutationTimeout);
+      }
+      mutationTimeout = setTimeout(throttledUpdatePosition, 50);
+    };
+
+    const observer = new MutationObserver(handleMutation);
     observer.observe(document.body, { 
       childList: true, 
-      subtree: true,
+      subtree: false, // Optimisation: ne pas observer tout le subtree
       attributes: true,
       attributeFilter: ['class', 'style']
     });
 
     return () => {
-      window.removeEventListener('resize', updateSidebarPosition);
+      window.removeEventListener('resize', handleResize);
       observer.disconnect();
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      if (mutationTimeout) clearTimeout(mutationTimeout);
     };
-  }, []);
+  }, [throttledUpdatePosition]);
+
+  // Mémoriser les props pour éviter les re-renders
+  const sectionProps = useMemo(() => ({
+    sport: { isExpanded: isSectionExpanded('sport'), onToggle: () => toggleSection('sport'), data: sport, navigation },
+    learning: { isExpanded: isSectionExpanded('learning'), onToggle: () => toggleSection('learning'), data: learning, navigation },
+    books: { isExpanded: isSectionExpanded('books'), onToggle: () => toggleSection('books'), data: learning, navigation },
+    finance: { isExpanded: isSectionExpanded('finance'), onToggle: () => toggleSection('finance'), data: finance, navigation },
+    journal: { isExpanded: isSectionExpanded('journal'), onToggle: () => toggleSection('journal'), navigation },
+    focusSession: { isExpanded: isSectionExpanded('focusSession'), onToggle: () => toggleSection('focusSession'), navigation },
+    achievements: { isExpanded: isSectionExpanded('achievements'), onToggle: () => toggleSection('achievements'), navigation },
+    focusRPG: { isExpanded: isSectionExpanded('focusRPG'), onToggle: () => toggleSection('focusRPG'), navigation },
+    dailyGoals: { isExpanded: isSectionExpanded('dailyGoals'), onToggle: () => toggleSection('dailyGoals'), navigation },
+    notifications: { isExpanded: isSectionExpanded('notifications'), onToggle: () => toggleSection('notifications'), navigation },
+    weather: { isExpanded: isSectionExpanded('weather'), onToggle: () => toggleSection('weather'), navigation },
+    motivation: { isExpanded: isSectionExpanded('motivation'), onToggle: () => toggleSection('motivation'), navigation },
+    rewards: { isExpanded: isSectionExpanded('rewards'), onToggle: () => toggleSection('rewards'), navigation },
+    history: { isExpanded: isSectionExpanded('history'), onToggle: () => toggleSection('history'), navigation },
+    quickSettings: { isExpanded: isSectionExpanded('quickSettings'), onToggle: () => toggleSection('quickSettings'), navigation },
+    aiPredictions: { isExpanded: isSectionExpanded('aiPredictions'), onToggle: () => toggleSection('aiPredictions'), navigation },
+    globalStats: { isExpanded: isSectionExpanded('globalStats'), onToggle: () => toggleSection('globalStats'), navigation },
+  }), [isSectionExpanded, toggleSection, sport, learning, finance, navigation]);
 
   return (
-    <aside 
-      ref={sidebarRef}
-      className={`sidebar-premium ${isMobileOpen ? 'mobile-open' : ''}`}
-      role="complementary"
-      aria-label="Sidebar Premium QuietQuest"
-    >
+    <>
+      {/* Bouton toggle mobile - Requirement 13.3 */}
+      <button
+        className={`sidebar-mobile-toggle ${isMobileOpen ? 'open' : ''}`}
+        onClick={toggleMobileSidebar}
+        aria-label={isMobileOpen ? 'Fermer la sidebar' : 'Ouvrir la sidebar'}
+        aria-expanded={isMobileOpen}
+        type="button"
+      >
+        <span className="sidebar-mobile-toggle-icon" aria-hidden="true">
+          {isMobileOpen ? '✕' : '☰'}
+        </span>
+      </button>
+
+      {/* Overlay mobile - Requirement 13.4 */}
+      <div
+        className={`sidebar-mobile-overlay ${isMobileOpen ? 'visible' : ''}`}
+        onClick={closeMobileSidebar}
+        aria-hidden="true"
+      />
+
+      <aside 
+        ref={sidebarRef}
+        className={`sidebar-premium ${isMobileOpen ? 'mobile-open' : ''}`}
+        role="complementary"
+        aria-label="Sidebar Premium QuietQuest"
+      >
+        {/* Skip link pour navigation rapide - Requirement 12.2 */}
+        <a href="#sidebar-main-content" className="sidebar-skip-link">
+          Aller au contenu principal
+        </a>
+      
       {/* Zone Fixe - Horloge et Profil */}
-      <div className="sidebar-clock-section">
-        {/* Horloge */}
-        <div className="sidebar-time-display" role="timer" aria-live="off">
-          {getFormattedTime()}
-        </div>
-        
-        {/* Date */}
-        <div className="sidebar-date-display">
-          {getFormattedDate('fr')}
-        </div>
-        
-        {/* Carte Développeur 3D */}
-        <div 
-          className="sidebar-profile-card"
-          onMouseMove={(e) => {
-            const card = e.currentTarget;
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            const rotateX = (y - centerY) / 10;
-            const rotateY = (centerX - x) / 10;
+      <div className="sidebar-clock-section" id="sidebar-clock-section">
+        {/* Bloc Encadré Heure/Date avec 3 couches d'effets */}
+        <div className="time-date-block">
+          {/* AFFICHAGE DE L'HEURE */}
+          <div className="time-display">
+            <div className="time-main">{getFormattedTime()}</div>
+            <div className="time-shadow" aria-hidden="true">{getFormattedTime()}</div>
+            <div className="time-glow" aria-hidden="true">{getFormattedTime()}</div>
+          </div>
+          
+          {/* AFFICHAGE DE LA DATE */}
+          <div className="date-display">
+            {/* Ligne 1: Jour + Mois */}
+            <div className="date-day-month">
+              <div className="date-main">{getFormattedDayMonth().toUpperCase()}</div>
+              <div className="date-shadow" aria-hidden="true">{getFormattedDayMonth().toUpperCase()}</div>
+              <div className="date-glow" aria-hidden="true">{getFormattedDayMonth().toUpperCase()}</div>
+            </div>
             
-            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-          }}
-          onMouseLeave={(e) => {
-            const card = e.currentTarget;
-            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-          }}
-        >
-          <img 
-            src="/logo.png" 
-            alt="Avatar utilisateur" 
-            className="sidebar-profile-avatar"
-          />
-          <div className="sidebar-profile-name">QuietQuest</div>
-          <div className="sidebar-profile-title">Développeur Premium</div>
+            {/* Ligne 2: Année */}
+            <div className="date-year">
+              <div className="year-main">{getFormattedYear()}</div>
+              <div className="year-shadow" aria-hidden="true">{getFormattedYear()}</div>
+              <div className="year-glow" aria-hidden="true">{getFormattedYear()}</div>
+            </div>
+          </div>
         </div>
+        
+        {/* Carte Développeur 3D Holographique */}
+        <ProfileCard3D
+          username={user?.username || 'guest'}
+          showUserInfo={true}
+          enableTilt={true}
+          enableMobileTilt={false}
+        />
         
         {/* Statuts Système (Grille 2x2) */}
-        <div className="sidebar-system-status">
+        <div className="sidebar-system-status" role="group" aria-label="Statuts système">
           {/* Statut Actif */}
-          <div className="sidebar-status-item">
-            <div className="sidebar-status-pulse" aria-label="Système actif"></div>
-            <div className="sidebar-status-label">Système</div>
-            <div className="sidebar-status-value">Actif</div>
+          <div className="sidebar-status-item" role="status" aria-label="Système actif">
+            <div className="sidebar-status-pulse" aria-hidden="true"></div>
+            <div className="sidebar-status-label" aria-hidden="true">Système</div>
+            <div className="sidebar-status-value" aria-hidden="true">Actif</div>
           </div>
           
           {/* Mode Nuit */}
-          <div className="sidebar-status-item">
+          <div 
+            className="sidebar-status-item" 
+            role="status" 
+            aria-label={`Mode ${systemStatus.nightMode ? 'Nuit' : 'Jour'} activé`}
+          >
             <div className="sidebar-status-icon" aria-hidden="true">
               {systemStatus.nightMode ? '🌙' : '☀️'}
             </div>
-            <div className="sidebar-status-label">Mode</div>
-            <div className="sidebar-status-value">
+            <div className="sidebar-status-label" aria-hidden="true">Mode</div>
+            <div className="sidebar-status-value" aria-hidden="true">
               {systemStatus.nightMode ? 'Nuit' : 'Jour'}
             </div>
           </div>
           
           {/* Connexion */}
-          <div className="sidebar-status-item">
+          <div 
+            className="sidebar-status-item" 
+            role="status" 
+            aria-label={`Connexion: ${systemStatus.connected ? 'En ligne' : 'Hors ligne'}`}
+          >
             <div className="sidebar-status-icon" aria-hidden="true">📡</div>
-            <div className="sidebar-status-label">Connexion</div>
-            <div className="sidebar-status-value">
+            <div className="sidebar-status-label" aria-hidden="true">Connexion</div>
+            <div className="sidebar-status-value" aria-hidden="true">
               {systemStatus.connected ? 'En ligne' : 'Hors ligne'}
             </div>
           </div>
           
           {/* Focus */}
-          <div className="sidebar-status-item">
+          <div 
+            className="sidebar-status-item" 
+            role="status" 
+            aria-label={`Focus: ${systemStatus.focusPercentage} pourcent`}
+          >
             <div className="sidebar-status-icon" aria-hidden="true">🔋</div>
-            <div className="sidebar-status-label">Focus</div>
-            <div className="sidebar-status-value">
+            <div className="sidebar-status-label" aria-hidden="true">Focus</div>
+            <div className="sidebar-status-value" aria-hidden="true">
               {systemStatus.focusPercentage}%
             </div>
           </div>
@@ -160,7 +270,7 @@ const SidebarPremium = () => {
       </div>
 
       {/* Zone Scrollable - Sections */}
-      <div className="sidebar-content">
+      <div className="sidebar-content" id="sidebar-main-content">
         {/* Section Actions Rapides */}
         <section className="sidebar-section">
           <header 
@@ -191,46 +301,78 @@ const SidebarPremium = () => {
           {isSectionExpanded('actions') && (
             <div className="sidebar-section-content">
               {/* Grille 2x2 - Boutons principaux */}
-              <div className="sidebar-actions-grid">
-                <button className="sidebar-action-button" aria-label="Démarrer une session focus">
+              <div className="sidebar-actions-grid" role="group" aria-label="Actions principales">
+                <button 
+                  className="sidebar-action-button" 
+                  aria-label="Démarrer une session focus"
+                  type="button"
+                >
                   <span className="sidebar-action-icon" aria-hidden="true">🎯</span>
                   <span className="sidebar-action-label">Focus</span>
                 </button>
                 
-                <button className="sidebar-action-button" aria-label="Commencer une session de lecture">
+                <button 
+                  className="sidebar-action-button" 
+                  aria-label="Commencer une session de lecture"
+                  type="button"
+                >
                   <span className="sidebar-action-icon" aria-hidden="true">📚</span>
                   <span className="sidebar-action-label">Lire</span>
                 </button>
                 
-                <button className="sidebar-action-button" aria-label="Démarrer une session sport">
+                <button 
+                  className="sidebar-action-button" 
+                  aria-label="Démarrer une session sport"
+                  type="button"
+                >
                   <span className="sidebar-action-icon" aria-hidden="true">💪</span>
                   <span className="sidebar-action-label">Sport</span>
                 </button>
                 
-                <button className="sidebar-action-button" aria-label="Voir les quêtes">
+                <button 
+                  className="sidebar-action-button" 
+                  aria-label="Voir les quêtes"
+                  type="button"
+                >
                   <span className="sidebar-action-icon" aria-hidden="true">🏆</span>
                   <span className="sidebar-action-label">Quêtes</span>
                 </button>
               </div>
               
               {/* Ligne de 4 boutons secondaires */}
-              <div className="sidebar-actions-secondary">
-                <button className="sidebar-action-button-small" aria-label="Gérer les revenus">
+              <div className="sidebar-actions-secondary" role="group" aria-label="Actions secondaires">
+                <button 
+                  className="sidebar-action-button-small" 
+                  aria-label="Gérer les revenus"
+                  type="button"
+                >
                   <span className="sidebar-action-icon" aria-hidden="true">💰</span>
                   <span className="sidebar-action-label">Revenus</span>
                 </button>
                 
-                <button className="sidebar-action-button-small" aria-label="Ajouter un film">
+                <button 
+                  className="sidebar-action-button-small" 
+                  aria-label="Ajouter un film"
+                  type="button"
+                >
                   <span className="sidebar-action-icon" aria-hidden="true">🎬</span>
                   <span className="sidebar-action-label">Film</span>
                 </button>
                 
-                <button className="sidebar-action-button-small" aria-label="Écrire dans le journal">
+                <button 
+                  className="sidebar-action-button-small" 
+                  aria-label="Écrire dans le journal"
+                  type="button"
+                >
                   <span className="sidebar-action-icon" aria-hidden="true">📝</span>
                   <span className="sidebar-action-label">Journal</span>
                 </button>
                 
-                <button className="sidebar-action-button-small" aria-label="Méditer">
+                <button 
+                  className="sidebar-action-button-small" 
+                  aria-label="Méditer"
+                  type="button"
+                >
                   <span className="sidebar-action-icon" aria-hidden="true">🧘</span>
                   <span className="sidebar-action-label">Méditer</span>
                 </button>
@@ -268,33 +410,87 @@ const SidebarPremium = () => {
           
           {isSectionExpanded('metrics') && (
             <div className="sidebar-section-content">
-              <div className="sidebar-metrics-grid">
+              <div className="sidebar-metrics-grid" role="group" aria-label="Métriques vitales">
                 {/* XP */}
-                <div className="sidebar-metric-card xp">
+                <div 
+                  className="sidebar-metric-card xp" 
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`XP Total: ${metrics.xp.toLocaleString()} points`}
+                  onClick={() => navigation.toQuests()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigation.toQuests();
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span className="sidebar-metric-icon" aria-hidden="true">⭐</span>
-                  <div className="sidebar-metric-value">12,450</div>
-                  <div className="sidebar-metric-label">XP Total</div>
+                  <div className="sidebar-metric-value" aria-hidden="true">
+                    {metrics.xp.toLocaleString()}
+                  </div>
+                  <div className="sidebar-metric-label" aria-hidden="true">XP Total</div>
                 </div>
                 
                 {/* Niveau */}
-                <div className="sidebar-metric-card level">
+                <div 
+                  className="sidebar-metric-card level"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Niveau: ${metrics.level}`}
+                  onClick={() => navigation.toQuests()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigation.toQuests();
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span className="sidebar-metric-icon" aria-hidden="true">🎖️</span>
-                  <div className="sidebar-metric-value">42</div>
-                  <div className="sidebar-metric-label">Niveau</div>
+                  <div className="sidebar-metric-value" aria-hidden="true">{metrics.level}</div>
+                  <div className="sidebar-metric-label" aria-hidden="true">Niveau</div>
                 </div>
                 
                 {/* Streak */}
-                <div className="sidebar-metric-card streak">
+                <div 
+                  className="sidebar-metric-card streak"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Streak: ${metrics.streak} jours consécutifs`}
+                  onClick={() => navigation.toQuests()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigation.toQuests();
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span className="sidebar-metric-icon" aria-hidden="true">🔥</span>
-                  <div className="sidebar-metric-value">28</div>
-                  <div className="sidebar-metric-label">Jours</div>
+                  <div className="sidebar-metric-value" aria-hidden="true">{metrics.streak}</div>
+                  <div className="sidebar-metric-label" aria-hidden="true">Jours</div>
                 </div>
                 
                 {/* Focus */}
-                <div className="sidebar-metric-card focus">
+                <div 
+                  className="sidebar-metric-card focus"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Focus: ${metrics.focus} pourcent`}
+                  onClick={() => navigation.toQuests()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigation.toQuests();
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span className="sidebar-metric-icon" aria-hidden="true">⚡</span>
-                  <div className="sidebar-metric-value">87%</div>
-                  <div className="sidebar-metric-label">Focus</div>
+                  <div className="sidebar-metric-value" aria-hidden="true">{metrics.focus}%</div>
+                  <div className="sidebar-metric-label" aria-hidden="true">Focus</div>
                 </div>
               </div>
             </div>
@@ -319,7 +515,7 @@ const SidebarPremium = () => {
             <h2 className="sidebar-section-title">
               <span className="sidebar-section-icon" aria-hidden="true">🎯</span>
               Quêtes Actives
-              <span className="sidebar-section-badge">3</span>
+              <span className="sidebar-section-badge">{quests.length}</span>
             </h2>
             <span 
               className={`sidebar-section-toggle ${isSectionExpanded('quests') ? 'expanded' : ''}`}
@@ -331,174 +527,110 @@ const SidebarPremium = () => {
           
           {isSectionExpanded('quests') && (
             <div className="sidebar-section-content">
-              {/* Quête 1 */}
-              <div className="sidebar-quest-item">
-                <div className="sidebar-quest-header">
-                  <span className="sidebar-quest-icon" aria-hidden="true">📚</span>
-                  <div className="sidebar-quest-title">Lire 30 minutes</div>
-                  <div className="sidebar-quest-percentage">75%</div>
+              {quests.length === 0 ? (
+                <div className="sidebar-info-box">
+                  <span className="sidebar-info-icon" aria-hidden="true">✨</span>
+                  <span>Aucune quête active aujourd'hui</span>
                 </div>
-                <div className="sidebar-quest-progress">
+              ) : (
+                quests.map(quest => (
                   <div 
-                    className="sidebar-quest-progress-bar" 
-                    style={{ width: '75%' }}
-                    role="progressbar"
-                    aria-valuenow={75}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  ></div>
-                </div>
-              </div>
-              
-              {/* Quête 2 */}
-              <div className="sidebar-quest-item">
-                <div className="sidebar-quest-header">
-                  <span className="sidebar-quest-icon" aria-hidden="true">💪</span>
-                  <div className="sidebar-quest-title">Entraînement quotidien</div>
-                  <div className="sidebar-quest-percentage">100%</div>
-                </div>
-                <div className="sidebar-quest-progress">
-                  <div 
-                    className="sidebar-quest-progress-bar" 
-                    style={{ width: '100%' }}
-                    role="progressbar"
-                    aria-valuenow={100}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  ></div>
-                </div>
-              </div>
-              
-              {/* Quête 3 */}
-              <div className="sidebar-quest-item">
-                <div className="sidebar-quest-header">
-                  <span className="sidebar-quest-icon" aria-hidden="true">🎯</span>
-                  <div className="sidebar-quest-title">Session focus 2h</div>
-                  <div className="sidebar-quest-percentage">45%</div>
-                </div>
-                <div className="sidebar-quest-progress">
-                  <div 
-                    className="sidebar-quest-progress-bar" 
-                    style={{ width: '45%' }}
-                    role="progressbar"
-                    aria-valuenow={45}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  ></div>
-                </div>
-              </div>
+                    key={quest.id}
+                    className="sidebar-quest-item"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Quête: ${quest.title}, progression ${quest.progress} pourcent${quest.completed ? ', complétée' : ''}`}
+                    onClick={() => navigation.toQuests()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigation.toQuests();
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="sidebar-quest-header">
+                      <span className="sidebar-quest-icon" aria-hidden="true">{quest.icon}</span>
+                      <div className="sidebar-quest-title" aria-hidden="true">{quest.title}</div>
+                      <div className="sidebar-quest-percentage" aria-hidden="true">{quest.progress}%</div>
+                    </div>
+                    <div className="sidebar-quest-progress">
+                      <div 
+                        className="sidebar-quest-progress-bar" 
+                        style={{ width: `${quest.progress}%` }}
+                        role="progressbar"
+                        aria-valuenow={quest.progress}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`Progression: ${quest.progress} pourcent${quest.completed ? ', complétée' : ''}`}
+                      ></div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </section>
 
         {/* Section Sport & Santé */}
-        <SportSection 
-          isExpanded={isSectionExpanded('sport')}
-          onToggle={() => toggleSection('sport')}
-        />
+        <SportSection {...sectionProps.sport} />
 
         {/* Section Apprentissage */}
-        <LearningSection 
-          isExpanded={isSectionExpanded('learning')}
-          onToggle={() => toggleSection('learning')}
-        />
+        <LearningSection {...sectionProps.learning} />
 
         {/* Section Livres */}
-        <BooksSection 
-          isExpanded={isSectionExpanded('books')}
-          onToggle={() => toggleSection('books')}
-        />
+        <BooksSection {...sectionProps.books} />
 
         {/* Section Finances */}
-        <FinanceSection 
-          isExpanded={isSectionExpanded('finance')}
-          onToggle={() => toggleSection('finance')}
-        />
+        <FinanceSection {...sectionProps.finance} />
 
         {/* Section Journal & Films */}
-        <JournalSection 
-          isExpanded={isSectionExpanded('journal')}
-          onToggle={() => toggleSection('journal')}
-        />
+        <JournalSection {...sectionProps.journal} />
 
         {/* Section Session Focus */}
-        <FocusSessionSection 
-          isExpanded={isSectionExpanded('focusSession')}
-          onToggle={() => toggleSection('focusSession')}
-        />
+        <FocusSessionSection {...sectionProps.focusSession} />
 
         {/* Section Achievements */}
-        <AchievementsSection 
-          isExpanded={isSectionExpanded('achievements')}
-          onToggle={() => toggleSection('achievements')}
-        />
+        <AchievementsSection {...sectionProps.achievements} />
 
         {/* Section Focus RPG */}
-        <FocusRPGSection 
-          isExpanded={isSectionExpanded('focusRPG')}
-          onToggle={() => toggleSection('focusRPG')}
-        />
+        <FocusRPGSection {...sectionProps.focusRPG} />
 
         {/* Section Objectifs du Jour */}
-        <DailyGoalsSection 
-          isExpanded={isSectionExpanded('dailyGoals')}
-          onToggle={() => toggleSection('dailyGoals')}
-        />
+        <DailyGoalsSection {...sectionProps.dailyGoals} />
 
         {/* Section Notifications */}
-        <NotificationsSection 
-          isExpanded={isSectionExpanded('notifications')}
-          onToggle={() => toggleSection('notifications')}
-        />
+        <NotificationsSection {...sectionProps.notifications} />
 
         {/* Section Météo */}
-        <WeatherSection 
-          isExpanded={isSectionExpanded('weather')}
-          onToggle={() => toggleSection('weather')}
-        />
+        <WeatherSection {...sectionProps.weather} />
 
         {/* Section Motivation */}
-        <MotivationSection 
-          isExpanded={isSectionExpanded('motivation')}
-          onToggle={() => toggleSection('motivation')}
-        />
+        <MotivationSection {...sectionProps.motivation} />
 
         {/* Section Récompenses */}
-        <RewardsSection 
-          isExpanded={isSectionExpanded('rewards')}
-          onToggle={() => toggleSection('rewards')}
-        />
+        <RewardsSection {...sectionProps.rewards} />
 
         {/* Section Historique */}
-        <HistorySection 
-          isExpanded={isSectionExpanded('history')}
-          onToggle={() => toggleSection('history')}
-        />
+        <HistorySection {...sectionProps.history} />
 
         {/* Section Paramètres Rapides */}
-        <QuickSettingsSection 
-          isExpanded={isSectionExpanded('quickSettings')}
-          onToggle={() => toggleSection('quickSettings')}
-        />
+        <QuickSettingsSection {...sectionProps.quickSettings} />
 
         {/* Section Prédictions IA */}
-        <AIPredictionsSection 
-          isExpanded={isSectionExpanded('aiPredictions')}
-          onToggle={() => toggleSection('aiPredictions')}
-        />
+        <AIPredictionsSection {...sectionProps.aiPredictions} />
 
         {/* Section Statistiques Globales */}
-        <GlobalStatsSection 
-          isExpanded={isSectionExpanded('globalStats')}
-          onToggle={() => toggleSection('globalStats')}
-        />
+        <GlobalStatsSection {...sectionProps.globalStats} />
       </div>
     </aside>
+    </>
   );
-};
+});
 
+// Optimisation: Mémoriser les sections pour éviter les re-renders
 // Section Sport & Santé
-const SportSection = ({ isExpanded, onToggle }) => {
+const SportSection = memo(({ isExpanded, onToggle, data, navigation }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -530,50 +662,77 @@ const SportSection = ({ isExpanded, onToggle }) => {
         <div className="sidebar-section-content">
           <div className="sidebar-data-grid">
             {/* Entraînements cette semaine */}
-            <div className="sidebar-data-card">
+            <div 
+              className="sidebar-data-card"
+              onClick={() => navigation.toSportHistory()}
+              style={{ cursor: 'pointer' }}
+              role="button"
+              tabIndex={0}
+            >
               <span className="sidebar-data-icon" aria-hidden="true">🏋️</span>
-              <div className="sidebar-data-value">5</div>
+              <div className="sidebar-data-value">{data.weeklyWorkouts}</div>
               <div className="sidebar-data-label">Entraînements</div>
             </div>
             
             {/* Calories brûlées */}
-            <div className="sidebar-data-card">
+            <div 
+              className="sidebar-data-card"
+              onClick={() => navigation.toGarmin()}
+              style={{ cursor: 'pointer' }}
+              role="button"
+              tabIndex={0}
+            >
               <span className="sidebar-data-icon" aria-hidden="true">🔥</span>
-              <div className="sidebar-data-value">2,450</div>
+              <div className="sidebar-data-value">
+                {data.todayCalories > 0 ? data.todayCalories.toLocaleString() : '0'}
+              </div>
               <div className="sidebar-data-label">Calories</div>
             </div>
             
             {/* Pas aujourd'hui */}
-            <div className="sidebar-data-card">
+            <div 
+              className="sidebar-data-card"
+              onClick={() => navigation.toGarmin()}
+              style={{ cursor: 'pointer' }}
+              role="button"
+              tabIndex={0}
+            >
               <span className="sidebar-data-icon" aria-hidden="true">👟</span>
-              <div className="sidebar-data-value">8,234</div>
+              <div className="sidebar-data-value">
+                {data.todaySteps > 0 ? data.todaySteps.toLocaleString() : '0'}
+              </div>
               <div className="sidebar-data-label">Pas</div>
             </div>
             
             {/* Fréquence cardiaque */}
-            <div className="sidebar-data-card">
+            <div 
+              className="sidebar-data-card"
+              onClick={() => navigation.toGarmin()}
+              style={{ cursor: 'pointer' }}
+              role="button"
+              tabIndex={0}
+            >
               <span className="sidebar-data-icon" aria-hidden="true">❤️</span>
-              <div className="sidebar-data-value">72</div>
+              <div className="sidebar-data-value">{data.avgHeartRate}</div>
               <div className="sidebar-data-label">BPM</div>
             </div>
           </div>
           
-          {/* Prochain entraînement */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Prochain entraînement</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">🎯</span>
-              <span>Jambes - Demain 18h00</span>
+          {/* Indicateur Garmin */}
+          {!data.hasGarminData && (
+            <div className="sidebar-info-box warning">
+              <span className="sidebar-info-icon" aria-hidden="true">⚠️</span>
+              <span>Données Garmin non disponibles</span>
             </div>
-          </div>
+          )}
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Apprentissage
-const LearningSection = ({ isExpanded, onToggle }) => {
+const LearningSection = memo(({ isExpanded, onToggle, navigation }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -603,52 +762,55 @@ const LearningSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          <div className="sidebar-data-grid">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
+          </div>
+          <div 
+            className="sidebar-data-grid"
+            onClick={() => navigation.toLearning()}
+            style={{ cursor: 'pointer', opacity: 0.6 }}
+          >
             {/* Matières actives */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">📚</span>
-              <div className="sidebar-data-value">3</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Matières</div>
             </div>
             
             {/* Sessions cette semaine */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⏱️</span>
-              <div className="sidebar-data-value">12</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Sessions</div>
             </div>
             
             {/* Temps total */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🕐</span>
-              <div className="sidebar-data-value">8.5h</div>
+              <div className="sidebar-data-value">0h</div>
               <div className="sidebar-data-label">Temps</div>
             </div>
             
             {/* Niveau global */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🏆</span>
-              <div className="sidebar-data-value">15</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Niveau</div>
-            </div>
-          </div>
-          
-          {/* Prochaine session */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Session en cours</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">📖</span>
-              <span>Mathématiques - 45 min</span>
             </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Livres
-const BooksSection = ({ isExpanded, onToggle }) => {
+const BooksSection = memo(({ isExpanded, onToggle, data, navigation }) => {
+  const progressPercentage = data.dailyGoal > 0 
+    ? Math.round((data.todayMinutes / data.dailyGoal) * 100) 
+    : 0;
+
   return (
     <section className="sidebar-section">
       <header 
@@ -678,62 +840,95 @@ const BooksSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          <div className="sidebar-data-grid">
+          <div 
+            className="sidebar-data-grid"
+            onClick={() => navigation.toBooks()}
+            style={{ cursor: 'pointer' }}
+          >
             {/* Livres en cours */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">📚</span>
-              <div className="sidebar-data-value">2</div>
+              <div className="sidebar-data-value">{data.currentBooks}</div>
               <div className="sidebar-data-label">En cours</div>
-            </div>
-            
-            {/* Livres terminés */}
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon" aria-hidden="true">✅</span>
-              <div className="sidebar-data-value">24</div>
-              <div className="sidebar-data-label">Terminés</div>
             </div>
             
             {/* Pages lues aujourd'hui */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">📄</span>
-              <div className="sidebar-data-value">45</div>
+              <div className="sidebar-data-value">{data.todayPages}</div>
               <div className="sidebar-data-label">Pages</div>
             </div>
             
             {/* Temps de lecture */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⏰</span>
-              <div className="sidebar-data-value">1.5h</div>
+              <div className="sidebar-data-value">{data.todayMinutes}min</div>
               <div className="sidebar-data-label">Lecture</div>
+            </div>
+            
+            {/* Objectif quotidien */}
+            <div className="sidebar-data-card">
+              <span className="sidebar-data-icon" aria-hidden="true">🎯</span>
+              <div className="sidebar-data-value">{data.dailyGoal}min</div>
+              <div className="sidebar-data-label">Objectif</div>
             </div>
           </div>
           
-          {/* Livre actuel */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Livre actuel</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">📕</span>
-              <span>Atomic Habits - 67%</span>
+          {/* Progression du jour */}
+          {data.dailyGoal > 0 && (
+            <div className="sidebar-info-box">
+              <div className="sidebar-info-title">Progression du jour</div>
+              <div className="sidebar-info-content">
+                <span className="sidebar-info-icon" aria-hidden="true">📊</span>
+                <span>{data.todayMinutes} / {data.dailyGoal} min ({progressPercentage}%)</span>
+              </div>
+              <div className="sidebar-progress-mini">
+                <div 
+                  className="sidebar-progress-mini-bar" 
+                  style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+                  role="progressbar"
+                  aria-valuenow={progressPercentage}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                ></div>
+              </div>
             </div>
-            <div className="sidebar-progress-mini">
-              <div 
-                className="sidebar-progress-mini-bar" 
-                style={{ width: '67%' }}
-                role="progressbar"
-                aria-valuenow={67}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              ></div>
+          )}
+          
+          {/* Indicateur données manquantes */}
+          {!data.hasData && (
+            <div className="sidebar-info-box warning">
+              <span className="sidebar-info-icon" aria-hidden="true">⚠️</span>
+              <span>Données de lecture non disponibles</span>
             </div>
-          </div>
+          )}
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Finances
-const FinanceSection = ({ isExpanded, onToggle }) => {
+const FinanceSection = memo(({ isExpanded, onToggle, data, navigation }) => {
+  const formatCurrency = (value) => {
+    // Convertir en nombre et gérer les valeurs invalides
+    const numValue = Number(value);
+    if (isNaN(numValue) || numValue === null || numValue === undefined) {
+      return '0€';
+    }
+    
+    if (numValue >= 1000000) {
+      return `${(numValue / 1000000).toFixed(1)}M€`;
+    } else if (numValue >= 1000) {
+      return `${(numValue / 1000).toFixed(1)}K€`;
+    }
+    return `${numValue.toFixed(0)}€`;
+  };
+
+  const savingsRate = data.monthlyBudget > 0 
+    ? Math.round((data.monthlySavings / data.monthlyBudget) * 100)
+    : 0;
+
   return (
     <section className="sidebar-section">
       <header 
@@ -763,52 +958,66 @@ const FinanceSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          <div className="sidebar-data-grid">
+          <div 
+            className="sidebar-data-grid"
+            onClick={() => navigation.toFinance()}
+            style={{ cursor: 'pointer' }}
+          >
             {/* Patrimoine */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">💎</span>
-              <div className="sidebar-data-value">45.2K</div>
+              <div className="sidebar-data-value">{formatCurrency(data.netWorth)}</div>
               <div className="sidebar-data-label">Patrimoine</div>
             </div>
             
-            {/* Performance */}
-            <div className="sidebar-data-card positive">
+            {/* Investissements */}
+            <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">📈</span>
-              <div className="sidebar-data-value">+12.5%</div>
-              <div className="sidebar-data-label">Performance</div>
+              <div className="sidebar-data-value">{formatCurrency(data.investments)}</div>
+              <div className="sidebar-data-label">Investissements</div>
             </div>
             
             {/* Budget mensuel */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">💳</span>
-              <div className="sidebar-data-value">2,450€</div>
+              <div className="sidebar-data-value">{formatCurrency(data.monthlyBudget)}</div>
               <div className="sidebar-data-label">Budget</div>
             </div>
             
             {/* Épargne */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🏦</span>
-              <div className="sidebar-data-value">850€</div>
+              <div className="sidebar-data-value">{formatCurrency(data.monthlySavings)}</div>
               <div className="sidebar-data-label">Épargne</div>
             </div>
           </div>
           
-          {/* Alerte budget */}
-          <div className="sidebar-info-box warning">
-            <div className="sidebar-info-title">Alerte Budget</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">⚠️</span>
-              <span>85% du budget utilisé</span>
+          {/* Taux d'épargne */}
+          {data.monthlyBudget > 0 && (
+            <div className="sidebar-info-box">
+              <div className="sidebar-info-title">Taux d'épargne</div>
+              <div className="sidebar-info-content">
+                <span className="sidebar-info-icon" aria-hidden="true">📊</span>
+                <span>{savingsRate}% du budget mensuel</span>
+              </div>
             </div>
-          </div>
+          )}
+          
+          {/* Indicateur données manquantes */}
+          {!data.hasData && (
+            <div className="sidebar-info-box warning">
+              <span className="sidebar-info-icon" aria-hidden="true">⚠️</span>
+              <span>Données financières non disponibles</span>
+            </div>
+          )}
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Journal & Films
-const JournalSection = ({ isExpanded, onToggle }) => {
+const JournalSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -838,61 +1047,47 @@ const JournalSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          <div className="sidebar-data-grid">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
+          </div>
+          <div className="sidebar-data-grid" style={{ opacity: 0.6 }}>
             {/* Entrées journal */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">📝</span>
-              <div className="sidebar-data-value">156</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Entrées</div>
             </div>
             
             {/* Films vus */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🎥</span>
-              <div className="sidebar-data-value">42</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Films</div>
             </div>
             
             {/* Streak journal */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🔥</span>
-              <div className="sidebar-data-value">14</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Jours</div>
             </div>
             
             {/* Note moyenne */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⭐</span>
-              <div className="sidebar-data-value">4.2</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Note moy.</div>
-            </div>
-          </div>
-          
-          {/* Dernier film */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Dernier film</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">🎬</span>
-              <span>Inception - ⭐ 5/5</span>
-            </div>
-          </div>
-          
-          {/* Rappel journal */}
-          <div className="sidebar-info-box reminder">
-            <div className="sidebar-info-title">Rappel</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">✍️</span>
-              <span>Écrire dans le journal</span>
             </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Session Focus
-const FocusSessionSection = ({ isExpanded, onToggle }) => {
+const FocusSessionSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -922,71 +1117,47 @@ const FocusSessionSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          <div className="sidebar-data-grid">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
+          </div>
+          <div className="sidebar-data-grid" style={{ opacity: 0.6 }}>
             {/* Session actuelle */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⏱️</span>
-              <div className="sidebar-data-value">45m</div>
+              <div className="sidebar-data-value">0m</div>
               <div className="sidebar-data-label">En cours</div>
             </div>
             
             {/* Sessions aujourd'hui */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">📊</span>
-              <div className="sidebar-data-value">3</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Aujourd'hui</div>
             </div>
             
             {/* Temps total */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🕐</span>
-              <div className="sidebar-data-value">2.5h</div>
+              <div className="sidebar-data-value">0h</div>
               <div className="sidebar-data-label">Total</div>
             </div>
             
             {/* Productivité */}
-            <div className="sidebar-data-card positive">
+            <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⚡</span>
-              <div className="sidebar-data-value">92%</div>
+              <div className="sidebar-data-value">0%</div>
               <div className="sidebar-data-label">Productivité</div>
-            </div>
-          </div>
-          
-          {/* Session en cours */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Session en cours</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">💻</span>
-              <span>Développement - 45/60 min</span>
-            </div>
-            <div className="sidebar-progress-mini">
-              <div 
-                className="sidebar-progress-mini-bar" 
-                style={{ width: '75%' }}
-                role="progressbar"
-                aria-valuenow={75}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              ></div>
-            </div>
-          </div>
-          
-          {/* Statistiques de la semaine */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Cette semaine</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">📈</span>
-              <span>18 sessions - 12.5h total</span>
             </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Achievements
-const AchievementsSection = ({ isExpanded, onToggle }) => {
+const AchievementsSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -1005,7 +1176,7 @@ const AchievementsSection = ({ isExpanded, onToggle }) => {
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon" aria-hidden="true">🏆</span>
           Achievements
-          <span className="sidebar-section-badge">2</span>
+          <span className="sidebar-section-badge">0</span>
         </h2>
         <span 
           className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
@@ -1017,81 +1188,47 @@ const AchievementsSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          <div className="sidebar-data-grid">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
+          </div>
+          <div className="sidebar-data-grid" style={{ opacity: 0.6 }}>
             {/* Total achievements */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🎖️</span>
-              <div className="sidebar-data-value">47</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Débloqués</div>
             </div>
             
             {/* Achievements rares */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">💎</span>
-              <div className="sidebar-data-value">8</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Rares</div>
             </div>
             
             {/* Points achievement */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⭐</span>
-              <div className="sidebar-data-value">2,450</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Points</div>
             </div>
             
             {/* Progression */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">📊</span>
-              <div className="sidebar-data-value">68%</div>
+              <div className="sidebar-data-value">0%</div>
               <div className="sidebar-data-label">Complétion</div>
-            </div>
-          </div>
-          
-          {/* Achievements récents */}
-          <div className="sidebar-achievement-list">
-            <div className="sidebar-achievement-item">
-              <span className="sidebar-achievement-icon" aria-hidden="true">🔥</span>
-              <div className="sidebar-achievement-info">
-                <div className="sidebar-achievement-name">Streak Master</div>
-                <div className="sidebar-achievement-desc">30 jours consécutifs</div>
-              </div>
-            </div>
-            
-            <div className="sidebar-achievement-item">
-              <span className="sidebar-achievement-icon" aria-hidden="true">📚</span>
-              <div className="sidebar-achievement-info">
-                <div className="sidebar-achievement-name">Bookworm</div>
-                <div className="sidebar-achievement-desc">25 livres terminés</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Prochain achievement */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Prochain objectif</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">🎯</span>
-              <span>Focus Legend - 100h focus</span>
-            </div>
-            <div className="sidebar-progress-mini">
-              <div 
-                className="sidebar-progress-mini-bar" 
-                style={{ width: '87%' }}
-                role="progressbar"
-                aria-valuenow={87}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              ></div>
             </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Focus RPG
-const FocusRPGSection = ({ isExpanded, onToggle }) => {
+const FocusRPGSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -1121,101 +1258,61 @@ const FocusRPGSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          {/* Personnage */}
-          <div className="sidebar-rpg-character">
-            <div className="sidebar-rpg-avatar">
-              <span className="sidebar-rpg-avatar-icon" aria-hidden="true">🧙</span>
-            </div>
-            <div className="sidebar-rpg-info">
-              <div className="sidebar-rpg-name">Focus Mage</div>
-              <div className="sidebar-rpg-level">Niveau 42</div>
-            </div>
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
           </div>
-          
-          {/* Statistiques RPG */}
-          <div className="sidebar-data-grid">
-            {/* HP */}
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon" aria-hidden="true">❤️</span>
-              <div className="sidebar-data-value">850</div>
-              <div className="sidebar-data-label">HP</div>
-            </div>
-            
-            {/* MP */}
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon" aria-hidden="true">💙</span>
-              <div className="sidebar-data-value">620</div>
-              <div className="sidebar-data-label">MP</div>
-            </div>
-            
-            {/* ATK */}
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon" aria-hidden="true">⚔️</span>
-              <div className="sidebar-data-value">145</div>
-              <div className="sidebar-data-label">ATK</div>
-            </div>
-            
-            {/* DEF */}
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon" aria-hidden="true">🛡️</span>
-              <div className="sidebar-data-value">98</div>
-              <div className="sidebar-data-label">DEF</div>
-            </div>
-          </div>
-          
-          {/* Barres de progression */}
-          <div className="sidebar-rpg-bars">
-            <div className="sidebar-rpg-bar-container">
-              <div className="sidebar-rpg-bar-label">
-                <span>XP</span>
-                <span>12,450 / 15,000</span>
+          <div style={{ opacity: 0.6 }}>
+            {/* Personnage */}
+            <div className="sidebar-rpg-character">
+              <div className="sidebar-rpg-avatar">
+                <span className="sidebar-rpg-avatar-icon" aria-hidden="true">🧙</span>
               </div>
-              <div className="sidebar-rpg-bar xp">
-                <div 
-                  className="sidebar-rpg-bar-fill" 
-                  style={{ width: '83%' }}
-                  role="progressbar"
-                  aria-valuenow={83}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                ></div>
+              <div className="sidebar-rpg-info">
+                <div className="sidebar-rpg-name">En attente</div>
+                <div className="sidebar-rpg-level">Niveau 0</div>
               </div>
             </div>
             
-            <div className="sidebar-rpg-bar-container">
-              <div className="sidebar-rpg-bar-label">
-                <span>Énergie</span>
-                <span>87%</span>
+            {/* Statistiques RPG */}
+            <div className="sidebar-data-grid">
+              {/* HP */}
+              <div className="sidebar-data-card">
+                <span className="sidebar-data-icon" aria-hidden="true">❤️</span>
+                <div className="sidebar-data-value">0</div>
+                <div className="sidebar-data-label">HP</div>
               </div>
-              <div className="sidebar-rpg-bar energy">
-                <div 
-                  className="sidebar-rpg-bar-fill" 
-                  style={{ width: '87%' }}
-                  role="progressbar"
-                  aria-valuenow={87}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                ></div>
+              
+              {/* MP */}
+              <div className="sidebar-data-card">
+                <span className="sidebar-data-icon" aria-hidden="true">💙</span>
+                <div className="sidebar-data-value">0</div>
+                <div className="sidebar-data-label">MP</div>
               </div>
-            </div>
-          </div>
-          
-          {/* Équipement actif */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Équipement actif</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">⚔️</span>
-              <span>Épée du Focus Éternel +5</span>
+              
+              {/* ATK */}
+              <div className="sidebar-data-card">
+                <span className="sidebar-data-icon" aria-hidden="true">⚔️</span>
+                <div className="sidebar-data-value">0</div>
+                <div className="sidebar-data-label">ATK</div>
+              </div>
+              
+              {/* DEF */}
+              <div className="sidebar-data-card">
+                <span className="sidebar-data-icon" aria-hidden="true">🛡️</span>
+                <div className="sidebar-data-value">0</div>
+                <div className="sidebar-data-label">DEF</div>
+              </div>
             </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Objectifs du Jour
-const DailyGoalsSection = ({ isExpanded, onToggle }) => {
+const DailyGoalsSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -1234,7 +1331,7 @@ const DailyGoalsSection = ({ isExpanded, onToggle }) => {
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon" aria-hidden="true">📋</span>
           Objectifs du Jour
-          <span className="sidebar-section-badge">5</span>
+          <span className="sidebar-section-badge">0</span>
         </h2>
         <span 
           className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
@@ -1246,131 +1343,44 @@ const DailyGoalsSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          {/* Progression globale */}
-          <div className="sidebar-goals-progress">
-            <div className="sidebar-goals-progress-header">
-              <span className="sidebar-goals-progress-label">Progression du jour</span>
-              <span className="sidebar-goals-progress-value">3/5 complétés</span>
-            </div>
-            <div className="sidebar-goals-progress-bar">
-              <div 
-                className="sidebar-goals-progress-fill" 
-                style={{ width: '60%' }}
-                role="progressbar"
-                aria-valuenow={60}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              ></div>
-            </div>
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
           </div>
-          
-          {/* Liste des objectifs */}
-          <div className="sidebar-goals-list">
-            {/* Objectif 1 - Complété */}
-            <div className="sidebar-goal-item completed">
-              <input 
-                type="checkbox" 
-                className="sidebar-goal-checkbox" 
-                checked 
-                readOnly
-                aria-label="Session focus 1h - Complété"
-              />
-              <div className="sidebar-goal-content">
-                <div className="sidebar-goal-title">Session focus 1h</div>
-                <div className="sidebar-goal-category">
-                  <span className="sidebar-goal-icon" aria-hidden="true">🎯</span>
-                  <span>Focus</span>
-                </div>
+          <div style={{ opacity: 0.6 }}>
+            {/* Progression globale */}
+            <div className="sidebar-goals-progress">
+              <div className="sidebar-goals-progress-header">
+                <span className="sidebar-goals-progress-label">Progression du jour</span>
+                <span className="sidebar-goals-progress-value">0/0 complétés</span>
+              </div>
+              <div className="sidebar-goals-progress-bar">
+                <div 
+                  className="sidebar-goals-progress-fill" 
+                  style={{ width: '0%' }}
+                  role="progressbar"
+                  aria-valuenow={0}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                ></div>
               </div>
             </div>
             
-            {/* Objectif 2 - Complété */}
-            <div className="sidebar-goal-item completed">
-              <input 
-                type="checkbox" 
-                className="sidebar-goal-checkbox" 
-                checked 
-                readOnly
-                aria-label="Lire 30 pages - Complété"
-              />
-              <div className="sidebar-goal-content">
-                <div className="sidebar-goal-title">Lire 30 pages</div>
-                <div className="sidebar-goal-category">
-                  <span className="sidebar-goal-icon" aria-hidden="true">📚</span>
-                  <span>Lecture</span>
-                </div>
+            <div className="sidebar-info-box">
+              <div className="sidebar-info-content">
+                <span className="sidebar-info-icon" aria-hidden="true">📝</span>
+                <span>Aucun objectif défini</span>
               </div>
-            </div>
-            
-            {/* Objectif 3 - Complété */}
-            <div className="sidebar-goal-item completed">
-              <input 
-                type="checkbox" 
-                className="sidebar-goal-checkbox" 
-                checked 
-                readOnly
-                aria-label="Entraînement sport - Complété"
-              />
-              <div className="sidebar-goal-content">
-                <div className="sidebar-goal-title">Entraînement sport</div>
-                <div className="sidebar-goal-category">
-                  <span className="sidebar-goal-icon" aria-hidden="true">💪</span>
-                  <span>Sport</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Objectif 4 - En cours */}
-            <div className="sidebar-goal-item">
-              <input 
-                type="checkbox" 
-                className="sidebar-goal-checkbox" 
-                readOnly
-                aria-label="Apprendre 1h - En cours"
-              />
-              <div className="sidebar-goal-content">
-                <div className="sidebar-goal-title">Apprendre 1h</div>
-                <div className="sidebar-goal-category">
-                  <span className="sidebar-goal-icon" aria-hidden="true">🎓</span>
-                  <span>Apprentissage</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Objectif 5 - En cours */}
-            <div className="sidebar-goal-item">
-              <input 
-                type="checkbox" 
-                className="sidebar-goal-checkbox" 
-                readOnly
-                aria-label="Journal quotidien - En cours"
-              />
-              <div className="sidebar-goal-content">
-                <div className="sidebar-goal-title">Journal quotidien</div>
-                <div className="sidebar-goal-category">
-                  <span className="sidebar-goal-icon" aria-hidden="true">📝</span>
-                  <span>Journal</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Motivation */}
-          <div className="sidebar-info-box positive">
-            <div className="sidebar-info-title">Motivation</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">🌟</span>
-              <span>Excellent travail ! Continue !</span>
             </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Notifications
-const NotificationsSection = ({ isExpanded, onToggle }) => {
+const NotificationsSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -1389,7 +1399,7 @@ const NotificationsSection = ({ isExpanded, onToggle }) => {
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon" aria-hidden="true">🔔</span>
           Notifications
-          <span className="sidebar-section-badge">4</span>
+          <span className="sidebar-section-badge">0</span>
         </h2>
         <span 
           className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
@@ -1401,75 +1411,24 @@ const NotificationsSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          {/* Liste des notifications */}
-          <div className="sidebar-notifications-list">
-            {/* Notification 1 - Non lue */}
-            <div className="sidebar-notification-item unread">
-              <div className="sidebar-notification-icon" aria-hidden="true">🏆</div>
-              <div className="sidebar-notification-content">
-                <div className="sidebar-notification-title">Nouveau Achievement</div>
-                <div className="sidebar-notification-message">
-                  Vous avez débloqué "Streak Master"
-                </div>
-                <div className="sidebar-notification-time">Il y a 5 min</div>
-              </div>
-              <div className="sidebar-notification-unread-dot" aria-label="Non lu"></div>
-            </div>
-            
-            {/* Notification 2 - Non lue */}
-            <div className="sidebar-notification-item unread">
-              <div className="sidebar-notification-icon" aria-hidden="true">📚</div>
-              <div className="sidebar-notification-content">
-                <div className="sidebar-notification-title">Objectif atteint</div>
-                <div className="sidebar-notification-message">
-                  30 pages lues aujourd'hui
-                </div>
-                <div className="sidebar-notification-time">Il y a 1h</div>
-              </div>
-              <div className="sidebar-notification-unread-dot" aria-label="Non lu"></div>
-            </div>
-            
-            {/* Notification 3 - Non lue */}
-            <div className="sidebar-notification-item unread">
-              <div className="sidebar-notification-icon" aria-hidden="true">💰</div>
-              <div className="sidebar-notification-content">
-                <div className="sidebar-notification-title">Alerte Budget</div>
-                <div className="sidebar-notification-message">
-                  85% du budget mensuel utilisé
-                </div>
-                <div className="sidebar-notification-time">Il y a 2h</div>
-              </div>
-              <div className="sidebar-notification-unread-dot" aria-label="Non lu"></div>
-            </div>
-            
-            {/* Notification 4 - Lue */}
-            <div className="sidebar-notification-item">
-              <div className="sidebar-notification-icon" aria-hidden="true">🎯</div>
-              <div className="sidebar-notification-content">
-                <div className="sidebar-notification-title">Quête complétée</div>
-                <div className="sidebar-notification-message">
-                  Entraînement quotidien terminé
-                </div>
-                <div className="sidebar-notification-time">Il y a 3h</div>
-              </div>
-            </div>
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
           </div>
-          
-          {/* Actions */}
-          <div className="sidebar-notifications-actions">
-            <button className="sidebar-notification-action-btn">
-              <span aria-hidden="true">✓</span>
-              <span>Tout marquer comme lu</span>
-            </button>
+          <div className="sidebar-info-box" style={{ opacity: 0.6 }}>
+            <div className="sidebar-info-content">
+              <span className="sidebar-info-icon" aria-hidden="true">🔔</span>
+              <span>Aucune notification</span>
+            </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Météo
-const WeatherSection = ({ isExpanded, onToggle }) => {
+const WeatherSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -1499,14 +1458,19 @@ const WeatherSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
+          </div>
+          <div style={{ opacity: 0.6 }}>
           {/* Météo actuelle */}
           <div className="sidebar-weather-current">
-            <div className="sidebar-weather-icon-large" aria-hidden="true">☀️</div>
-            <div className="sidebar-weather-temp">22°C</div>
-            <div className="sidebar-weather-condition">Ensoleillé</div>
+            <div className="sidebar-weather-icon-large" aria-hidden="true">🌤️</div>
+            <div className="sidebar-weather-temp">--°C</div>
+            <div className="sidebar-weather-condition">En attente</div>
             <div className="sidebar-weather-location">
               <span aria-hidden="true">📍</span>
-              <span>Paris, France</span>
+              <span>Non configuré</span>
             </div>
           </div>
           
@@ -1515,84 +1479,40 @@ const WeatherSection = ({ isExpanded, onToggle }) => {
             {/* Ressenti */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🌡️</span>
-              <div className="sidebar-data-value">20°C</div>
+              <div className="sidebar-data-value">--°C</div>
               <div className="sidebar-data-label">Ressenti</div>
             </div>
             
             {/* Humidité */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">💧</span>
-              <div className="sidebar-data-value">65%</div>
+              <div className="sidebar-data-value">--%</div>
               <div className="sidebar-data-label">Humidité</div>
             </div>
             
             {/* Vent */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">💨</span>
-              <div className="sidebar-data-value">12 km/h</div>
+              <div className="sidebar-data-value">-- km/h</div>
               <div className="sidebar-data-label">Vent</div>
             </div>
             
             {/* UV */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">☀️</span>
-              <div className="sidebar-data-value">5</div>
+              <div className="sidebar-data-value">--</div>
               <div className="sidebar-data-label">Indice UV</div>
             </div>
           </div>
-          
-          {/* Prévisions */}
-          <div className="sidebar-weather-forecast">
-            <div className="sidebar-weather-forecast-title">Prévisions 3 jours</div>
-            <div className="sidebar-weather-forecast-list">
-              {/* Demain */}
-              <div className="sidebar-weather-forecast-item">
-                <div className="sidebar-weather-forecast-day">Demain</div>
-                <div className="sidebar-weather-forecast-icon" aria-hidden="true">⛅</div>
-                <div className="sidebar-weather-forecast-temps">
-                  <span className="sidebar-weather-forecast-high">24°</span>
-                  <span className="sidebar-weather-forecast-low">16°</span>
-                </div>
-              </div>
-              
-              {/* Mercredi */}
-              <div className="sidebar-weather-forecast-item">
-                <div className="sidebar-weather-forecast-day">Mercredi</div>
-                <div className="sidebar-weather-forecast-icon" aria-hidden="true">🌧️</div>
-                <div className="sidebar-weather-forecast-temps">
-                  <span className="sidebar-weather-forecast-high">19°</span>
-                  <span className="sidebar-weather-forecast-low">14°</span>
-                </div>
-              </div>
-              
-              {/* Jeudi */}
-              <div className="sidebar-weather-forecast-item">
-                <div className="sidebar-weather-forecast-day">Jeudi</div>
-                <div className="sidebar-weather-forecast-icon" aria-hidden="true">☀️</div>
-                <div className="sidebar-weather-forecast-temps">
-                  <span className="sidebar-weather-forecast-high">23°</span>
-                  <span className="sidebar-weather-forecast-low">15°</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Recommandation */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Recommandation</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">🏃</span>
-              <span>Parfait pour une sortie sport !</span>
-            </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Motivation
-const MotivationSection = ({ isExpanded, onToggle }) => {
+const MotivationSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -1622,77 +1542,55 @@ const MotivationSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          {/* Citation du jour */}
-          <div className="sidebar-motivation-quote">
-            <div className="sidebar-motivation-quote-icon" aria-hidden="true">💭</div>
-            <div className="sidebar-motivation-quote-text">
-              "Le succès n'est pas final, l'échec n'est pas fatal : c'est le courage de continuer qui compte."
-            </div>
-            <div className="sidebar-motivation-quote-author">— Winston Churchill</div>
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
           </div>
-          
-          {/* Statistiques motivantes */}
-          <div className="sidebar-motivation-stats">
-            <div className="sidebar-motivation-stat-item">
-              <div className="sidebar-motivation-stat-icon" aria-hidden="true">🔥</div>
-              <div className="sidebar-motivation-stat-content">
-                <div className="sidebar-motivation-stat-value">28 jours</div>
-                <div className="sidebar-motivation-stat-label">de streak actuel</div>
+          <div style={{ opacity: 0.6 }}>
+            {/* Citation du jour */}
+            <div className="sidebar-motivation-quote">
+              <div className="sidebar-motivation-quote-icon" aria-hidden="true">💭</div>
+              <div className="sidebar-motivation-quote-text">
+                En attente de configuration
               </div>
+              <div className="sidebar-motivation-quote-author">—</div>
             </div>
             
-            <div className="sidebar-motivation-stat-item">
-              <div className="sidebar-motivation-stat-icon" aria-hidden="true">🏆</div>
-              <div className="sidebar-motivation-stat-content">
-                <div className="sidebar-motivation-stat-value">47 achievements</div>
-                <div className="sidebar-motivation-stat-label">débloqués</div>
+            {/* Statistiques motivantes */}
+            <div className="sidebar-motivation-stats">
+              <div className="sidebar-motivation-stat-item">
+                <div className="sidebar-motivation-stat-icon" aria-hidden="true">🔥</div>
+                <div className="sidebar-motivation-stat-content">
+                  <div className="sidebar-motivation-stat-value">0 jours</div>
+                  <div className="sidebar-motivation-stat-label">de streak actuel</div>
+                </div>
               </div>
-            </div>
-            
-            <div className="sidebar-motivation-stat-item">
-              <div className="sidebar-motivation-stat-icon" aria-hidden="true">📈</div>
-              <div className="sidebar-motivation-stat-content">
-                <div className="sidebar-motivation-stat-value">+15%</div>
-                <div className="sidebar-motivation-stat-label">de progression ce mois</div>
+              
+              <div className="sidebar-motivation-stat-item">
+                <div className="sidebar-motivation-stat-icon" aria-hidden="true">🏆</div>
+                <div className="sidebar-motivation-stat-content">
+                  <div className="sidebar-motivation-stat-value">0 achievements</div>
+                  <div className="sidebar-motivation-stat-label">débloqués</div>
+                </div>
               </div>
-            </div>
-          </div>
-          
-          {/* Objectif de la semaine */}
-          <div className="sidebar-info-box positive">
-            <div className="sidebar-info-title">Objectif de la semaine</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">🎯</span>
-              <span>Atteindre 20h de focus</span>
-            </div>
-            <div className="sidebar-progress-mini">
-              <div 
-                className="sidebar-progress-mini-bar" 
-                style={{ width: '65%' }}
-                role="progressbar"
-                aria-valuenow={65}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              ></div>
-            </div>
-            <div className="sidebar-motivation-progress-text">13h / 20h complétées</div>
-          </div>
-          
-          {/* Message motivant */}
-          <div className="sidebar-motivation-message">
-            <div className="sidebar-motivation-message-icon" aria-hidden="true">🌟</div>
-            <div className="sidebar-motivation-message-text">
-              Tu es sur la bonne voie ! Continue comme ça !
+              
+              <div className="sidebar-motivation-stat-item">
+                <div className="sidebar-motivation-stat-icon" aria-hidden="true">📈</div>
+                <div className="sidebar-motivation-stat-content">
+                  <div className="sidebar-motivation-stat-value">0%</div>
+                  <div className="sidebar-motivation-stat-label">de progression ce mois</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Récompenses
-const RewardsSection = ({ isExpanded, onToggle }) => {
+const RewardsSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -1711,7 +1609,7 @@ const RewardsSection = ({ isExpanded, onToggle }) => {
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon" aria-hidden="true">🎁</span>
           Récompenses
-          <span className="sidebar-section-badge">2</span>
+          <span className="sidebar-section-badge">0</span>
         </h2>
         <span 
           className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
@@ -1723,11 +1621,16 @@ const RewardsSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
+          </div>
+          <div style={{ opacity: 0.6 }}>
           {/* Points de récompense */}
           <div className="sidebar-rewards-points">
             <div className="sidebar-rewards-points-icon" aria-hidden="true">💎</div>
             <div className="sidebar-rewards-points-content">
-              <div className="sidebar-rewards-points-value">2,450</div>
+              <div className="sidebar-rewards-points-value">0</div>
               <div className="sidebar-rewards-points-label">Points de récompense</div>
             </div>
           </div>
@@ -1737,94 +1640,40 @@ const RewardsSection = ({ isExpanded, onToggle }) => {
             {/* Récompenses débloquées */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🎁</span>
-              <div className="sidebar-data-value">12</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Débloquées</div>
             </div>
             
             {/* Récompenses disponibles */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">✨</span>
-              <div className="sidebar-data-value">2</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Disponibles</div>
             </div>
             
             {/* Points gagnés ce mois */}
-            <div className="sidebar-data-card positive">
+            <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">📈</span>
-              <div className="sidebar-data-value">+450</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Ce mois</div>
             </div>
             
             {/* Niveau récompense */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⭐</span>
-              <div className="sidebar-data-value">Gold</div>
+              <div className="sidebar-data-value">--</div>
               <div className="sidebar-data-label">Niveau</div>
             </div>
           </div>
-          
-          {/* Récompenses disponibles */}
-          <div className="sidebar-rewards-available">
-            <div className="sidebar-rewards-available-title">Récompenses disponibles</div>
-            
-            {/* Récompense 1 */}
-            <div className="sidebar-reward-item">
-              <div className="sidebar-reward-icon" aria-hidden="true">🎨</div>
-              <div className="sidebar-reward-content">
-                <div className="sidebar-reward-name">Thème Premium</div>
-                <div className="sidebar-reward-cost">
-                  <span className="sidebar-reward-cost-icon" aria-hidden="true">💎</span>
-                  <span>500 points</span>
-                </div>
-              </div>
-              <button className="sidebar-reward-claim-btn" aria-label="Réclamer Thème Premium">
-                Réclamer
-              </button>
-            </div>
-            
-            {/* Récompense 2 */}
-            <div className="sidebar-reward-item">
-              <div className="sidebar-reward-icon" aria-hidden="true">🏆</div>
-              <div className="sidebar-reward-content">
-                <div className="sidebar-reward-name">Badge Exclusif</div>
-                <div className="sidebar-reward-cost">
-                  <span className="sidebar-reward-cost-icon" aria-hidden="true">💎</span>
-                  <span>300 points</span>
-                </div>
-              </div>
-              <button className="sidebar-reward-claim-btn" aria-label="Réclamer Badge Exclusif">
-                Réclamer
-              </button>
-            </div>
-          </div>
-          
-          {/* Prochaine récompense */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Prochaine récompense</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">🎯</span>
-              <span>Avatar Légendaire - 3,000 points</span>
-            </div>
-            <div className="sidebar-progress-mini">
-              <div 
-                className="sidebar-progress-mini-bar" 
-                style={{ width: '82%' }}
-                role="progressbar"
-                aria-valuenow={82}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              ></div>
-            </div>
-            <div className="sidebar-motivation-progress-text">2,450 / 3,000 points</div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Historique
-const HistorySection = ({ isExpanded, onToggle }) => {
+const HistorySection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -1854,94 +1703,50 @@ const HistorySection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
+          </div>
+          <div style={{ opacity: 0.6 }}>
           {/* Statistiques d'historique */}
           <div className="sidebar-data-grid">
             {/* Jours actifs */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">📅</span>
-              <div className="sidebar-data-value">245</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Jours actifs</div>
             </div>
             
             {/* Total activités */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">✅</span>
-              <div className="sidebar-data-value">1,234</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Activités</div>
             </div>
             
             {/* Temps total */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⏱️</span>
-              <div className="sidebar-data-value">487h</div>
+              <div className="sidebar-data-value">0h</div>
               <div className="sidebar-data-label">Temps total</div>
             </div>
             
             {/* Meilleur streak */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🔥</span>
-              <div className="sidebar-data-value">45</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Record</div>
             </div>
           </div>
-          
-          {/* Activités récentes */}
-          <div className="sidebar-history-recent">
-            <div className="sidebar-history-recent-title">Activités récentes</div>
-            
-            {/* Activité 1 */}
-            <div className="sidebar-history-item">
-              <div className="sidebar-history-icon" aria-hidden="true">🎯</div>
-              <div className="sidebar-history-content">
-                <div className="sidebar-history-title">Session focus</div>
-                <div className="sidebar-history-details">
-                  <span>1h 30min</span>
-                  <span className="sidebar-history-time">Il y a 2h</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Activité 2 */}
-            <div className="sidebar-history-item">
-              <div className="sidebar-history-icon" aria-hidden="true">📚</div>
-              <div className="sidebar-history-content">
-                <div className="sidebar-history-title">Lecture</div>
-                <div className="sidebar-history-details">
-                  <span>45 pages</span>
-                  <span className="sidebar-history-time">Il y a 4h</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Activité 3 */}
-            <div className="sidebar-history-item">
-              <div className="sidebar-history-icon" aria-hidden="true">💪</div>
-              <div className="sidebar-history-content">
-                <div className="sidebar-history-title">Entraînement</div>
-                <div className="sidebar-history-details">
-                  <span>Jambes</span>
-                  <span className="sidebar-history-time">Hier</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Tendance */}
-          <div className="sidebar-info-box positive">
-            <div className="sidebar-info-title">Tendance</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">📈</span>
-              <span>+25% d'activité ce mois</span>
-            </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Paramètres Rapides
-const QuickSettingsSection = ({ isExpanded, onToggle }) => {
+const QuickSettingsSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -1971,6 +1776,11 @@ const QuickSettingsSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Paramètres non fonctionnels - En développement</span>
+          </div>
+          <div style={{ opacity: 0.6 }}>
           {/* Paramètres d'affichage */}
           <div className="sidebar-settings-group">
             <div className="sidebar-settings-group-title">Affichage</div>
@@ -2063,28 +1873,33 @@ const QuickSettingsSection = ({ isExpanded, onToggle }) => {
                 <span className="sidebar-setting-icon" aria-hidden="true">⏱️</span>
                 <span>Durée session</span>
               </div>
-              <select className="sidebar-setting-select" aria-label="Sélectionner la durée de session">
+              <select 
+                className="sidebar-setting-select" 
+                aria-label="Sélectionner la durée de session"
+                defaultValue="60"
+              >
                 <option value="25">25 min</option>
                 <option value="45">45 min</option>
-                <option value="60" selected>60 min</option>
+                <option value="60">60 min</option>
                 <option value="90">90 min</option>
               </select>
             </div>
           </div>
           
           {/* Bouton paramètres complets */}
-          <button className="sidebar-settings-full-btn">
+          <button className="sidebar-settings-full-btn" disabled>
             <span className="sidebar-settings-full-icon" aria-hidden="true">⚙️</span>
             <span>Tous les paramètres</span>
           </button>
+          </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Prédictions IA
-const AIPredictionsSection = ({ isExpanded, onToggle }) => {
+const AIPredictionsSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -2114,101 +1929,28 @@ const AIPredictionsSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
+          </div>
+          <div style={{ opacity: 0.6 }}>
           {/* Score de prédiction */}
           <div className="sidebar-ai-score">
             <div className="sidebar-ai-score-icon" aria-hidden="true">🎯</div>
             <div className="sidebar-ai-score-content">
-              <div className="sidebar-ai-score-value">92%</div>
+              <div className="sidebar-ai-score-value">0%</div>
               <div className="sidebar-ai-score-label">Précision des prédictions</div>
             </div>
           </div>
-          
-          {/* Prédictions */}
-          <div className="sidebar-ai-predictions">
-            <div className="sidebar-ai-predictions-title">Prédictions du jour</div>
-            
-            {/* Prédiction 1 - Positive */}
-            <div className="sidebar-ai-prediction-item positive">
-              <div className="sidebar-ai-prediction-header">
-                <span className="sidebar-ai-prediction-icon" aria-hidden="true">📈</span>
-                <div className="sidebar-ai-prediction-title">Productivité élevée</div>
-                <div className="sidebar-ai-prediction-confidence">95%</div>
-              </div>
-              <div className="sidebar-ai-prediction-message">
-                Conditions optimales pour une session focus entre 14h et 17h
-              </div>
-            </div>
-            
-            {/* Prédiction 2 - Neutre */}
-            <div className="sidebar-ai-prediction-item">
-              <div className="sidebar-ai-prediction-header">
-                <span className="sidebar-ai-prediction-icon" aria-hidden="true">💪</span>
-                <div className="sidebar-ai-prediction-title">Énergie modérée</div>
-                <div className="sidebar-ai-prediction-confidence">87%</div>
-              </div>
-              <div className="sidebar-ai-prediction-message">
-                Entraînement recommandé en fin d'après-midi
-              </div>
-            </div>
-            
-            {/* Prédiction 3 - Attention */}
-            <div className="sidebar-ai-prediction-item warning">
-              <div className="sidebar-ai-prediction-header">
-                <span className="sidebar-ai-prediction-icon" aria-hidden="true">⚠️</span>
-                <div className="sidebar-ai-prediction-title">Risque de fatigue</div>
-                <div className="sidebar-ai-prediction-confidence">78%</div>
-              </div>
-              <div className="sidebar-ai-prediction-message">
-                Prévoir une pause de 15 min toutes les heures
-              </div>
-            </div>
-          </div>
-          
-          {/* Recommandations IA */}
-          <div className="sidebar-ai-recommendations">
-            <div className="sidebar-ai-recommendations-title">Recommandations</div>
-            
-            {/* Recommandation 1 */}
-            <div className="sidebar-ai-recommendation-item">
-              <span className="sidebar-ai-recommendation-icon" aria-hidden="true">🎯</span>
-              <div className="sidebar-ai-recommendation-text">
-                Commencer par les tâches complexes ce matin
-              </div>
-            </div>
-            
-            {/* Recommandation 2 */}
-            <div className="sidebar-ai-recommendation-item">
-              <span className="sidebar-ai-recommendation-icon" aria-hidden="true">📚</span>
-              <div className="sidebar-ai-recommendation-text">
-                Session de lecture optimale vers 20h
-              </div>
-            </div>
-            
-            {/* Recommandation 3 */}
-            <div className="sidebar-ai-recommendation-item">
-              <span className="sidebar-ai-recommendation-icon" aria-hidden="true">🧘</span>
-              <div className="sidebar-ai-recommendation-text">
-                Méditation recommandée avant le coucher
-              </div>
-            </div>
-          </div>
-          
-          {/* Analyse basée sur */}
-          <div className="sidebar-info-box">
-            <div className="sidebar-info-title">Analyse basée sur</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">📊</span>
-              <span>245 jours d'historique</span>
-            </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 // Section Statistiques Globales
-const GlobalStatsSection = ({ isExpanded, onToggle }) => {
+const GlobalStatsSection = memo(({ isExpanded, onToggle }) => {
   return (
     <section className="sidebar-section">
       <header 
@@ -2238,6 +1980,11 @@ const GlobalStatsSection = ({ isExpanded, onToggle }) => {
       
       {isExpanded && (
         <div className="sidebar-section-content">
+          <div className="sidebar-info-box warning">
+            <span className="sidebar-info-icon" aria-hidden="true">⏳</span>
+            <span>Module en développement</span>
+          </div>
+          <div style={{ opacity: 0.6 }}>
           {/* Vue d'ensemble */}
           <div className="sidebar-stats-overview">
             <div className="sidebar-stats-overview-title">Vue d'ensemble</div>
@@ -2249,157 +1996,36 @@ const GlobalStatsSection = ({ isExpanded, onToggle }) => {
             {/* XP Total */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⭐</span>
-              <div className="sidebar-data-value">125K</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">XP Total</div>
             </div>
             
             {/* Heures totales */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">⏱️</span>
-              <div className="sidebar-data-value">1,247h</div>
+              <div className="sidebar-data-value">0h</div>
               <div className="sidebar-data-label">Temps total</div>
             </div>
             
             {/* Activités */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">✅</span>
-              <div className="sidebar-data-value">3,456</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Activités</div>
             </div>
             
             {/* Achievements */}
             <div className="sidebar-data-card">
               <span className="sidebar-data-icon" aria-hidden="true">🏆</span>
-              <div className="sidebar-data-value">47</div>
+              <div className="sidebar-data-value">0</div>
               <div className="sidebar-data-label">Achievements</div>
             </div>
           </div>
-          
-          {/* Répartition par catégorie */}
-          <div className="sidebar-stats-breakdown">
-            <div className="sidebar-stats-breakdown-title">Répartition du temps</div>
-            
-            {/* Focus */}
-            <div className="sidebar-stats-breakdown-item">
-              <div className="sidebar-stats-breakdown-header">
-                <span className="sidebar-stats-breakdown-icon" aria-hidden="true">🎯</span>
-                <span className="sidebar-stats-breakdown-label">Focus</span>
-                <span className="sidebar-stats-breakdown-value">487h</span>
-              </div>
-              <div className="sidebar-stats-breakdown-bar">
-                <div 
-                  className="sidebar-stats-breakdown-fill focus" 
-                  style={{ width: '39%' }}
-                  role="progressbar"
-                  aria-valuenow={39}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                ></div>
-              </div>
-            </div>
-            
-            {/* Sport */}
-            <div className="sidebar-stats-breakdown-item">
-              <div className="sidebar-stats-breakdown-header">
-                <span className="sidebar-stats-breakdown-icon" aria-hidden="true">💪</span>
-                <span className="sidebar-stats-breakdown-label">Sport</span>
-                <span className="sidebar-stats-breakdown-value">312h</span>
-              </div>
-              <div className="sidebar-stats-breakdown-bar">
-                <div 
-                  className="sidebar-stats-breakdown-fill sport" 
-                  style={{ width: '25%' }}
-                  role="progressbar"
-                  aria-valuenow={25}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                ></div>
-              </div>
-            </div>
-            
-            {/* Lecture */}
-            <div className="sidebar-stats-breakdown-item">
-              <div className="sidebar-stats-breakdown-header">
-                <span className="sidebar-stats-breakdown-icon" aria-hidden="true">📚</span>
-                <span className="sidebar-stats-breakdown-label">Lecture</span>
-                <span className="sidebar-stats-breakdown-value">268h</span>
-              </div>
-              <div className="sidebar-stats-breakdown-bar">
-                <div 
-                  className="sidebar-stats-breakdown-fill reading" 
-                  style={{ width: '21%' }}
-                  role="progressbar"
-                  aria-valuenow={21}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                ></div>
-              </div>
-            </div>
-            
-            {/* Apprentissage */}
-            <div className="sidebar-stats-breakdown-item">
-              <div className="sidebar-stats-breakdown-header">
-                <span className="sidebar-stats-breakdown-icon" aria-hidden="true">🎓</span>
-                <span className="sidebar-stats-breakdown-label">Apprentissage</span>
-                <span className="sidebar-stats-breakdown-value">180h</span>
-              </div>
-              <div className="sidebar-stats-breakdown-bar">
-                <div 
-                  className="sidebar-stats-breakdown-fill learning" 
-                  style={{ width: '15%' }}
-                  role="progressbar"
-                  aria-valuenow={15}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                ></div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Records personnels */}
-          <div className="sidebar-stats-records">
-            <div className="sidebar-stats-records-title">Records personnels</div>
-            
-            {/* Record 1 */}
-            <div className="sidebar-stats-record-item">
-              <span className="sidebar-stats-record-icon" aria-hidden="true">🔥</span>
-              <div className="sidebar-stats-record-content">
-                <div className="sidebar-stats-record-label">Plus long streak</div>
-                <div className="sidebar-stats-record-value">45 jours</div>
-              </div>
-            </div>
-            
-            {/* Record 2 */}
-            <div className="sidebar-stats-record-item">
-              <span className="sidebar-stats-record-icon" aria-hidden="true">⚡</span>
-              <div className="sidebar-stats-record-content">
-                <div className="sidebar-stats-record-label">Plus longue session</div>
-                <div className="sidebar-stats-record-value">4h 30min</div>
-              </div>
-            </div>
-            
-            {/* Record 3 */}
-            <div className="sidebar-stats-record-item">
-              <span className="sidebar-stats-record-icon" aria-hidden="true">📈</span>
-              <div className="sidebar-stats-record-content">
-                <div className="sidebar-stats-record-label">Meilleure semaine</div>
-                <div className="sidebar-stats-record-value">42h focus</div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Comparaison */}
-          <div className="sidebar-info-box positive">
-            <div className="sidebar-info-title">Comparaison</div>
-            <div className="sidebar-info-content">
-              <span className="sidebar-info-icon" aria-hidden="true">🏆</span>
-              <span>Top 5% des utilisateurs</span>
-            </div>
           </div>
         </div>
       )}
     </section>
   );
-};
+});
 
 export default SidebarPremium;

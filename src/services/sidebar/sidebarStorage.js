@@ -74,47 +74,66 @@ export const getPreferences = async () => {
   try {
     const db = await initDB();
     
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(PREFERENCES_KEY);
+    // Vérifier que le store existe
+    if (!db.objectStoreNames.contains(STORE_NAME)) {
+      console.warn('[SidebarStorage] Store manquant, utilisation des valeurs par défaut');
+      db.close();
+      return { ...DEFAULT_PREFERENCES };
+    }
+    
+    return new Promise((resolve) => {
+      try {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(PREFERENCES_KEY);
 
-      request.onsuccess = () => {
-        const stored = request.result;
-        
-        if (!stored) {
+        request.onsuccess = () => {
+          const stored = request.result;
+          
+          if (!stored) {
+            resolve({ ...DEFAULT_PREFERENCES });
+            return;
+          }
+
+          // Valider la structure des données
+          if (!stored || typeof stored !== 'object') {
+            console.warn('[SidebarStorage] Données corrompues, utilisation des valeurs par défaut');
+            resolve({ ...DEFAULT_PREFERENCES });
+            return;
+          }
+
+          // Fusionner avec les valeurs par défaut pour gérer les nouvelles sections
+          const merged = {
+            ...DEFAULT_PREFERENCES,
+            ...stored,
+            expandedSections: {
+              ...DEFAULT_PREFERENCES.expandedSections,
+              ...(stored.expandedSections || {}),
+            },
+          };
+          
+          resolve(merged);
+        };
+
+        request.onerror = () => {
+          console.error('[SidebarStorage] Erreur lors de la lecture des préférences:', request.error);
           resolve({ ...DEFAULT_PREFERENCES });
-          return;
-        }
+        };
 
-        // Valider la structure des données
-        if (!stored || typeof stored !== 'object') {
-          console.warn('[SidebarStorage] Données corrompues, utilisation des valeurs par défaut');
-          resolve({ ...DEFAULT_PREFERENCES });
-          return;
-        }
-
-        // Fusionner avec les valeurs par défaut pour gérer les nouvelles sections
-        const merged = {
-          ...DEFAULT_PREFERENCES,
-          ...stored,
-          expandedSections: {
-            ...DEFAULT_PREFERENCES.expandedSections,
-            ...(stored.expandedSections || {}),
-          },
+        transaction.oncomplete = () => {
+          db.close();
         };
         
-        resolve(merged);
-      };
-
-      request.onerror = () => {
-        console.error('[SidebarStorage] Erreur lors de la lecture des préférences:', request.error);
-        resolve({ ...DEFAULT_PREFERENCES });
-      };
-
-      transaction.oncomplete = () => {
+        transaction.onerror = () => {
+          console.error('[SidebarStorage] Erreur de transaction:', transaction.error);
+          db.close();
+          resolve({ ...DEFAULT_PREFERENCES });
+        };
+      } catch (txError) {
+        console.error('[SidebarStorage] Erreur lors de la création de la transaction:', txError);
         db.close();
-      };
+        resolve({ ...DEFAULT_PREFERENCES });
+      }
     });
   } catch (error) {
     console.error('[SidebarStorage] Erreur lors de l\'initialisation de la base de données:', error);
@@ -131,28 +150,47 @@ export const savePreferences = async (preferences) => {
   try {
     const db = await initDB();
     
+    // Vérifier que le store existe
+    if (!db.objectStoreNames.contains(STORE_NAME)) {
+      console.error('[SidebarStorage] Store manquant, impossible de sauvegarder');
+      db.close();
+      return false;
+    }
+    
     const toSave = {
       ...preferences,
       lastUpdated: new Date().toISOString(),
     };
     
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.put(toSave, PREFERENCES_KEY);
+    return new Promise((resolve) => {
+      try {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.put(toSave, PREFERENCES_KEY);
 
-      request.onsuccess = () => {
-        resolve(true);
-      };
+        request.onsuccess = () => {
+          resolve(true);
+        };
 
-      request.onerror = () => {
-        console.error('[SidebarStorage] Erreur lors de la sauvegarde des préférences:', request.error);
-        resolve(false);
-      };
+        request.onerror = () => {
+          console.error('[SidebarStorage] Erreur lors de la sauvegarde des préférences:', request.error);
+          resolve(false);
+        };
 
-      transaction.oncomplete = () => {
+        transaction.oncomplete = () => {
+          db.close();
+        };
+        
+        transaction.onerror = () => {
+          console.error('[SidebarStorage] Erreur de transaction:', transaction.error);
+          db.close();
+          resolve(false);
+        };
+      } catch (txError) {
+        console.error('[SidebarStorage] Erreur lors de la création de la transaction:', txError);
         db.close();
-      };
+        resolve(false);
+      }
     });
   } catch (error) {
     console.error('[SidebarStorage] Erreur lors de la sauvegarde des préférences:', error);
@@ -249,23 +287,39 @@ export const hasStoredPreferences = async () => {
   try {
     const db = await initDB();
     
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(PREFERENCES_KEY);
+    // Vérifier que le store existe
+    if (!db.objectStoreNames.contains(STORE_NAME)) {
+      db.close();
+      return false;
+    }
+    
+    return new Promise((resolve) => {
+      try {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(PREFERENCES_KEY);
 
-      request.onsuccess = () => {
-        resolve(request.result !== undefined);
-      };
+        request.onsuccess = () => {
+          resolve(request.result !== undefined);
+        };
 
-      request.onerror = () => {
-        console.error('[SidebarStorage] Erreur lors de la vérification des préférences:', request.error);
-        resolve(false);
-      };
+        request.onerror = () => {
+          console.error('[SidebarStorage] Erreur lors de la vérification des préférences:', request.error);
+          resolve(false);
+        };
 
-      transaction.oncomplete = () => {
+        transaction.oncomplete = () => {
+          db.close();
+        };
+        
+        transaction.onerror = () => {
+          db.close();
+          resolve(false);
+        };
+      } catch (txError) {
         db.close();
-      };
+        resolve(false);
+      }
     });
   } catch (error) {
     console.error('[SidebarStorage] Erreur lors de la vérification des préférences:', error);

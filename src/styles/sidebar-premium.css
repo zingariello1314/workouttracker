@@ -2,6 +2,9 @@
    SIDEBAR PREMIUM QUIETQUEST - DESIGN SYSTEM
    ============================================ */
 
+/* Import de la police Bangers depuis Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
+
 :root {
   /* ===== COULEURS PRIMAIRES ===== */
   --sidebar-magenta: #ff1493;
@@ -108,40 +111,268 @@
 }
 
 /* ============================================
-   HORLOGE ET DATE
+   HORLOGE ET DATE - SYSTÈME 3 COUCHES
    ============================================ */
 
-.sidebar-time-display {
-  font-size: var(--sidebar-text-4xl);
-  font-weight: 700;
-  font-family: 'Tanker', 'Rajdhani', sans-serif;
-  background: var(--sidebar-gradient-signature);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-align: center;
-  margin-bottom: var(--sidebar-spacing-sm);
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+/* ===== BLOC ENCADRÉ HEURE/DATE ===== */
+.time-date-block {
+  /* Positionnement */
+  position: relative;
+  margin: 0 0 45px 0;
+  
+  /* Dimensions */
+  padding: 12px 15px;
+  border-radius: 15px;
+  
+  /* Bordure dorée */
+  border: 2px solid #ffd700;
+  
+  /* Background dégradé triple */
+  background: linear-gradient(135deg, 
+    rgba(255, 20, 147, 0.15) 0%,
+    rgba(255, 140, 0, 0.1) 50%,
+    rgba(255, 215, 0, 0.15) 100%
+  );
+  
+  /* Effets visuels */
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 0 40px rgba(255, 215, 0, 0.6),
+    0 0 80px rgba(255, 215, 0, 0.4),
+    0 4px 15px rgba(255, 215, 0, 0.2),
+    inset 0 0 20px rgba(255, 215, 0, 0.1);
+  
+  /* Layout */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.sidebar-date-display {
-  font-size: var(--sidebar-text-md);
-  font-weight: 500;
-  font-family: 'Rajdhani', sans-serif;
-  background: var(--sidebar-gradient-signature);
+/* ===== AFFICHAGE HEURE ===== */
+.time-display {
+  position: relative;
+  margin-bottom: 0.5rem;
+  padding: 0 0.625rem;
+  min-width: 12.5rem;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.time-main {
+  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  background: linear-gradient(180deg,
+    #ff1493 0%,
+    #ff8c00 50%,
+    #ffd700 100%
+  );
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
+  text-shadow: 0 0 1.25rem rgba(255, 20, 147, 0.4);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: visible;
+  margin: 0 auto;
+  position: relative;
+  z-index: 0;
   text-align: center;
-  margin-bottom: var(--sidebar-spacing-lg);
-  letter-spacing: 0.03em;
+  width: 100%;
+}
+
+.time-shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  background: linear-gradient(180deg,
+    #ff1493 0%,
+    #ff8c00 50%,
+    #ffd700 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.2;
+  filter: blur(0.125rem);
+  z-index: -1;
+  text-align: center;
+  width: 100%;
+}
+
+.time-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  background: linear-gradient(180deg,
+    #ff1493 0%,
+    #ff8c00 50%,
+    #ffd700 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.4;
+  filter: blur(0.25rem);
+  z-index: -2;
+  text-align: center;
+  width: 100%;
+}
+
+/* ===== AFFICHAGE DATE ===== */
+.time-date-block .date-display {
+  position: relative;
+  margin-bottom: 0;
+  margin-top: 0;
+  padding: 0 0.625rem;
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Jour + Mois (Magenta/Rose) */
+.date-day-month {
+  position: relative;
+}
+
+.date-main {
+  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg,
+    #ff1493 0%,
+    #ff8c00 50%,
+    #ffd700 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 0.8rem rgba(255, 20, 147, 0.3);
+  position: relative;
+  z-index: 0;
+}
+
+.date-shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.1);
+  filter: blur(0.0625rem);
+  z-index: -1;
+}
+
+.date-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg,
+    #ff1493 0%,
+    #ff8c00 50%,
+    #ffd700 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.3;
+  filter: blur(0.2rem);
+  z-index: -2;
+}
+
+/* Année (Orange/Or) */
+.date-year {
+  position: relative;
+}
+
+.year-main {
+  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  background: linear-gradient(180deg,
+    #ff1493 0%,
+    #ff8c00 50%,
+    #ffd700 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 0.8rem rgba(255, 20, 147, 0.3);
+  position: relative;
+  z-index: 0;
+}
+
+.year-shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.1);
+  filter: blur(0.0625rem);
+  z-index: -1;
+}
+
+.year-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  background: linear-gradient(180deg,
+    #ff1493 0%,
+    #ff8c00 50%,
+    #ffd700 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.3;
+  filter: blur(0.2rem);
+  z-index: -2;
 }
 
 /* ============================================
-   CARTE DÉVELOPPEUR 3D
+   CARTE DÉVELOPPEUR 3D - ANCIENS STYLES (DÉSACTIVÉS)
+   Les nouveaux styles sont dans ProfileCard3D.css
    ============================================ */
 
+/* Anciens styles commentés - remplacés par ProfileCard3D
 .sidebar-profile-card {
   position: relative;
   background: linear-gradient(135deg, 
@@ -158,6 +389,8 @@
   transform-style: preserve-3d;
   cursor: pointer;
   will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
   overflow: hidden;
 }
 
@@ -213,6 +446,7 @@
   background-clip: text;
   text-align: center;
 }
+*/
 
 /* ============================================
    STATUTS SYSTÈME (GRILLE 2x2)
@@ -411,6 +645,9 @@
   transition: all var(--sidebar-transition-normal);
   position: relative;
   overflow: hidden;
+  /* Optimisation: Accélération GPU */
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
 }
 
 .sidebar-action-button::before {
@@ -513,6 +750,9 @@
   gap: var(--sidebar-spacing-xs);
   transition: all var(--sidebar-transition-normal);
   cursor: pointer;
+  /* Optimisation: Accélération GPU */
+  will-change: transform, box-shadow;
+  transform: translateZ(0);
 }
 
 .sidebar-metric-card:hover {
@@ -644,32 +884,221 @@
 }
 
 /* ============================================
-   RESPONSIVE
+   RESPONSIVE - MOBILE
    ============================================ */
 
+/* Bouton toggle mobile - Requirement 13.3 */
+.sidebar-mobile-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 70;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, 
+    rgba(255, 20, 147, 0.9) 0%, 
+    rgba(255, 140, 0, 0.9) 50%, 
+    rgba(255, 215, 0, 0.9) 100%
+  );
+  border: 2px solid rgba(255, 215, 0, 0.6);
+  border-radius: 12px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--sidebar-transition-normal);
+  box-shadow: 0 4px 20px rgba(255, 20, 147, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.sidebar-mobile-toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 30px rgba(255, 20, 147, 0.6);
+}
+
+.sidebar-mobile-toggle:active {
+  transform: scale(0.95);
+}
+
+.sidebar-mobile-toggle-icon {
+  font-size: 24px;
+  color: white;
+  transition: transform var(--sidebar-transition-fast);
+}
+
+.sidebar-mobile-toggle.open .sidebar-mobile-toggle-icon {
+  transform: rotate(90deg);
+}
+
+/* Overlay mobile - Requirement 13.4 */
+.sidebar-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 59;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--sidebar-transition-normal);
+}
+
+.sidebar-mobile-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Responsive breakpoint - Requirement 13.1, 13.2 */
 @media (max-width: 1024px) {
+  /* Masquer la sidebar par défaut sur mobile */
   .sidebar-premium {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
     transform: translateX(-100%);
     transition: transform var(--sidebar-transition-normal);
+    z-index: 60;
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.8);
   }
   
+  /* Animation d'ouverture - Requirement 13.4 */
   .sidebar-premium.mobile-open {
     transform: translateX(0);
+  }
+  
+  /* Afficher le bouton toggle sur mobile */
+  .sidebar-mobile-toggle {
+    display: flex;
+  }
+  
+  /* Ajuster le contenu principal sur mobile */
+  main {
+    margin-left: 0 !important;
+  }
+}
+
+/* Tablette (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sidebar-premium {
+    width: 280px;
+  }
+  
+  .sidebar-mobile-toggle {
+    top: 16px;
+    left: 16px;
+    width: 44px;
+    height: 44px;
+  }
+  
+  .sidebar-mobile-toggle-icon {
+    font-size: 22px;
+  }
+}
+
+/* Mobile petit (< 768px) */
+@media (max-width: 767px) {
+  .sidebar-premium {
+    width: 280px;
+  }
+  
+  .sidebar-mobile-toggle {
+    top: 12px;
+    left: 12px;
+    width: 42px;
+    height: 42px;
+  }
+  
+  .sidebar-mobile-toggle-icon {
+    font-size: 20px;
+  }
+  
+  /* Réduire les espacements sur petit mobile */
+  .sidebar-clock-section {
+    padding: var(--sidebar-spacing-md);
+  }
+  
+  .sidebar-content {
+    padding: var(--sidebar-spacing-sm);
+  }
+  
+  .sidebar-time-display {
+    font-size: var(--sidebar-text-3xl);
+  }
+  
+  .sidebar-profile-avatar {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* Mobile très petit (< 375px) */
+@media (max-width: 374px) {
+  .sidebar-premium {
+    width: 260px;
+  }
+  
+  .sidebar-time-display {
+    font-size: var(--sidebar-text-2xl);
   }
 }
 
 /* ============================================
-   ACCESSIBILITÉ
+   ACCESSIBILITÉ WCAG 2.1 AA
    ============================================ */
 
-/* Focus visible pour navigation clavier */
+/* Focus visible pour navigation clavier - Requirement 12.2, 12.3 */
 .sidebar-premium *:focus-visible {
-  outline: 2px solid var(--sidebar-cyan);
-  outline-offset: 2px;
+  outline: 3px solid var(--sidebar-cyan);
+  outline-offset: 3px;
   border-radius: var(--sidebar-radius-sm);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 245, 255, 0.6);
+  z-index: 1;
+  position: relative;
 }
 
-/* Respect des préférences de mouvement réduit */
+/* Focus spécifique pour les boutons */
+.sidebar-action-button:focus-visible,
+.sidebar-action-button-small:focus-visible {
+  outline: 3px solid var(--sidebar-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 245, 255, 0.8);
+}
+
+/* Focus pour les en-têtes de section */
+.sidebar-section-header:focus-visible {
+  outline: 3px solid var(--sidebar-cyan);
+  outline-offset: -2px;
+  background: rgba(0, 245, 255, 0.1);
+}
+
+/* Focus pour les checkboxes */
+.sidebar-goal-checkbox:focus-visible {
+  outline: 3px solid var(--sidebar-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 245, 255, 0.7);
+}
+
+/* Focus pour les cartes interactives */
+.sidebar-metric-card:focus-visible,
+.sidebar-data-card:focus-visible,
+.sidebar-quest-item:focus-visible,
+.sidebar-achievement-item:focus-visible,
+.sidebar-goal-item:focus-visible,
+.sidebar-notification-item:focus-visible {
+  outline: 3px solid var(--sidebar-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 245, 255, 0.6);
+}
+
+/* Focus pour la carte profil 3D - Désactivé (géré dans ProfileCard3D.css)
+.sidebar-profile-card:focus-visible {
+  outline: 3px solid var(--sidebar-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9), 0 0 15px rgba(0, 245, 255, 0.7);
+}
+*/
+
+/* Respect des préférences de mouvement réduit - Requirement 12.5 */
 @media (prefers-reduced-motion: reduce) {
   .sidebar-premium *,
   .sidebar-premium *::before,
@@ -677,6 +1106,144 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Désactiver les transformations 3D - Désactivé (géré dans ProfileCard3D.css)
+  .sidebar-profile-card {
+    transform: none !important;
+  }
+  */
+  
+  /* Désactiver les animations de pulse */
+  .sidebar-status-pulse,
+  .sidebar-section-badge {
+    animation: none !important;
+  }
+  
+  /* Désactiver les animations de progression */
+  .sidebar-quest-progress-bar,
+  .sidebar-progress-mini-bar,
+  .sidebar-rpg-bar-fill,
+  .sidebar-goals-progress-fill {
+    transition: none !important;
+  }
+}
+
+/* Amélioration du contraste pour les textes - Requirement 12.4 */
+/* Ratio de contraste minimum 4.5:1 pour le texte normal */
+.sidebar-status-label,
+.sidebar-metric-label,
+.sidebar-data-label,
+.sidebar-info-title,
+.sidebar-achievement-desc,
+.sidebar-goal-category,
+.sidebar-notification-time {
+  color: rgba(255, 255, 255, 0.85); /* Amélioration du contraste */
+}
+
+/* Ratio de contraste pour les textes secondaires */
+.sidebar-date-display,
+.sidebar-profile-title,
+.sidebar-quest-percentage,
+.sidebar-rpg-level {
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.9); /* Amélioration du contraste */
+}
+
+/* Amélioration du contraste pour les bordures */
+.sidebar-section,
+.sidebar-data-card,
+.sidebar-info-box,
+.sidebar-quest-item,
+.sidebar-achievement-item,
+.sidebar-goal-item {
+  border-color: rgba(255, 215, 0, 0.25); /* Amélioration du contraste */
+}
+
+/* Skip link pour navigation rapide */
+.sidebar-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--sidebar-cyan);
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: var(--sidebar-radius-sm);
+  z-index: 100;
+  transition: top 0.2s;
+}
+
+.sidebar-skip-link:focus {
+  top: 10px;
+  outline: 3px solid #000;
+  outline-offset: 2px;
+}
+
+/* Indicateur visuel pour les éléments interactifs */
+.sidebar-action-button,
+.sidebar-action-button-small,
+.sidebar-section-header,
+.sidebar-metric-card,
+.sidebar-data-card,
+.sidebar-quest-item,
+.sidebar-achievement-item,
+.sidebar-goal-item,
+.sidebar-notification-item {
+  cursor: pointer;
+}
+
+/* Amélioration de la visibilité des états hover pour l'accessibilité */
+.sidebar-action-button:hover,
+.sidebar-action-button:focus-visible {
+  border-color: rgba(255, 215, 0, 0.8);
+}
+
+.sidebar-section-header:hover,
+.sidebar-section-header:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Indicateur de chargement accessible */
+.sidebar-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sidebar-spacing-lg);
+  color: var(--sidebar-cyan);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.sidebar-loading::after {
+  content: '...';
+  animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
+/* Mode contraste élevé */
+@media (prefers-contrast: high) {
+  .sidebar-premium {
+    border-right-width: 2px;
+    border-right-color: var(--sidebar-gold);
+  }
+  
+  .sidebar-section,
+  .sidebar-data-card,
+  .sidebar-info-box,
+  .sidebar-action-button {
+    border-width: 2px;
+  }
+  
+  .sidebar-premium *:focus-visible {
+    outline-width: 4px;
+    outline-offset: 4px;
   }
 }
 
