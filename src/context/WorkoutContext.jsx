@@ -14,6 +14,7 @@ import {
   getDayJustification as getDayJustificationUtil
 } from '../utils/dayJustificationUtils';
 import { useAuth } from './AuthContext';
+import { sidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 
 const WorkoutContext = createContext();
 
@@ -159,6 +160,12 @@ const WorkoutProvider = ({ children }) => {
         await updateData(tempData);
         setHasUnsavedExercises(false);
         setTempData(null);
+        
+        // Émettre événement pour synchronisation sidebar
+        sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, { 
+          date: getDateStr(new Date()),
+          type: 'exercises'
+        });
       } catch (error) {
         console.error('❌ Erreur lors de la sauvegarde des exercices:', error);
         throw error; // Propager l'erreur pour que l'UI puisse la gérer
@@ -204,6 +211,12 @@ const WorkoutProvider = ({ children }) => {
         await updateData(tempData);
         setHasUnsavedStretches(false);
         setTempData(null);
+        
+        // Émettre événement pour synchronisation sidebar
+        sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, { 
+          date: getDateStr(new Date()),
+          type: 'stretches'
+        });
       } catch (error) {
         console.error('❌ Erreur lors de la sauvegarde des étirements:', error);
         throw error; // Propager l'erreur pour que l'UI puisse la gérer
@@ -511,15 +524,9 @@ const WorkoutProvider = ({ children }) => {
   };
 
   const getWorkoutHistory = () => {
-    console.log('DEBUG: getWorkoutHistory called');
     const currentData = getCurrentData();
-    console.log('DEBUG: currentData:', currentData);
-    console.log('DEBUG: currentData.reps:', currentData?.reps);
-    console.log('DEBUG: currentData.checkedExercises:', currentData?.checkedExercises);
-    console.log('DEBUG: currentData.checkedStretches:', currentData?.checkedStretches);
     
     if (!currentData) {
-      console.log('DEBUG: No data found, returning empty array');
       return [];
     }
 
@@ -552,7 +559,6 @@ const WorkoutProvider = ({ children }) => {
         Object.keys(currentData.reps).forEach(key => {
           // ✅ CORRECTION : Utiliser normalizeRepsValue au lieu de parseInt simple
           const reps = normalizeRepsValue(currentData.reps[key]);
-          console.log(`DEBUG: Processing key: ${key} reps: ${reps} (original: ${currentData.reps[key]}, type: ${typeof currentData.reps[key]})`);
           
           if (reps > 0) {
             // Extraire la date de la clé (format: YYYY-MM-DD_exerciseId_variant)
@@ -758,8 +764,6 @@ const WorkoutProvider = ({ children }) => {
         const date = new Date(dateStr);
         const dayName = getDayName(date);
         
-        console.log(`DEBUG: Processing date: ${dateStr} dayName: ${dayName}`);
-        
         const dateData = dataByDate[dateStr];
         const variation = dateData.variations;
         const exercises = [];
@@ -954,7 +958,6 @@ const WorkoutProvider = ({ children }) => {
             feedback: sessionFeedback || null
           };
           
-          console.log(`DEBUG: Adding session data for ${dateStr}:`, sessionData);
           history.push(sessionData);
         }
       });
@@ -963,7 +966,6 @@ const WorkoutProvider = ({ children }) => {
       // Continuer même en cas d'erreur (fallback gracieux)
     }
 
-    console.log('DEBUG: Final history result:', history);
     return history.sort((a, b) => new Date(b.date) - new Date(a.date));
   };
 
@@ -1691,6 +1693,13 @@ const WorkoutProvider = ({ children }) => {
 
       // ✅ Sauvegarder immédiatement (action critique)
       await updateData(updatedData);
+      
+      // Émettre événement pour synchronisation sidebar
+      sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, { 
+        exerciseId,
+        date: dateStr,
+        action: 'restored'
+      });
 
       console.log(`✅ Exercice ${exerciseId} restauré pour aujourd'hui`);
       return {
@@ -1832,6 +1841,13 @@ const WorkoutProvider = ({ children }) => {
       };
 
       await updateData(updatedData);
+      
+      // Émettre événement pour synchronisation sidebar
+      sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_ADDED, { 
+        exerciseId,
+        date: dateStr,
+        exerciseName: exercise.name
+      });
 
       console.log(`✅ Exercice exceptionnel "${exercise.name}" ajouté avec ID: ${exerciseId}`);
       return {
@@ -1905,6 +1921,12 @@ const WorkoutProvider = ({ children }) => {
 
       // ✅ Sauvegarder immédiatement (action critique)
       await updateData(updatedData);
+      
+      // Émettre événement pour synchronisation sidebar
+      sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_DELETED, { 
+        exerciseId,
+        date: dateStr
+      });
 
       console.log(`✅ Exercice exceptionnel ${exerciseId} supprimé`);
       return {

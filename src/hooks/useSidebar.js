@@ -16,14 +16,20 @@ export const useSidebar = () => {
   // État des sections expandées
   const [expandedSections, setExpandedSections] = useState(() => {
     // Valeurs par défaut en attendant le chargement depuis IndexedDB
+    // TOUTES LES SECTIONS ACTIVES SONT OUVERTES PAR DÉFAUT
     return {
+      // Nouvelles sections de la refonte - OUVERTES
       actions: true,
+      today: true,
       metrics: true,
       quests: true,
-      sport: false,
+      sport: true,
+      books: true,
+      finance: true,
+      nutrition: true,
+      
+      // Anciennes sections supprimées - FERMÉES (compatibilité)
       learning: false,
-      books: false,
-      finance: false,
       journal: false,
       focusSession: false,
       achievements: false,

@@ -233,23 +233,113 @@ export const saveHandle = async (username, handle) => {
 };
 
 /**
- * Sauvegarde l'image centrale (iconUrl) pour un utilisateur
+ * Ajoute une nouvelle image de fond à la galerie
+ * @param {string} username - Nom d'utilisateur
+ * @param {string} cardIconDataUrl - Data URL de l'image
+ * @returns {Promise<number>} Index de la nouvelle image
+ */
+export const addCardIcon = async (username, cardIconDataUrl) => {
+  try {
+    const existingData = await getProfileData(username) || {};
+    const cardIcons = existingData.cardIcons || [];
+    
+    // Ajouter la nouvelle image
+    cardIcons.push({
+      id: Date.now(),
+      dataUrl: cardIconDataUrl,
+      createdAt: new Date().toISOString()
+    });
+    
+    // Si c'est la première image, la définir comme active
+    const activeCardIconIndex = cardIcons.length === 1 ? 0 : (existingData.activeCardIconIndex ?? 0);
+    
+    await saveProfileData(username, {
+      ...existingData,
+      cardIcons,
+      activeCardIconIndex,
+      cardIconUrl: cardIcons[activeCardIconIndex].dataUrl
+    });
+    
+    return cardIcons.length - 1;
+  } catch (error) {
+    console.error('[ProfileCardStorage] Erreur lors de l\'ajout de l\'image de carte:', error);
+    throw error;
+  }
+};
+
+/**
+ * Supprime une image de fond de la galerie
+ * @param {string} username - Nom d'utilisateur
+ * @param {number} index - Index de l'image à supprimer
+ * @returns {Promise<void>}
+ */
+export const deleteCardIcon = async (username, index) => {
+  try {
+    const existingData = await getProfileData(username) || {};
+    const cardIcons = existingData.cardIcons || [];
+    
+    if (index < 0 || index >= cardIcons.length) {
+      throw new Error('Index invalide');
+    }
+    
+    // Supprimer l'image
+    cardIcons.splice(index, 1);
+    
+    // Ajuster l'index actif si nécessaire
+    let activeCardIconIndex = existingData.activeCardIconIndex ?? 0;
+    if (activeCardIconIndex >= cardIcons.length) {
+      activeCardIconIndex = Math.max(0, cardIcons.length - 1);
+    }
+    
+    // Définir l'image active ou null si aucune image
+    const cardIconUrl = cardIcons.length > 0 ? cardIcons[activeCardIconIndex].dataUrl : null;
+    
+    await saveProfileData(username, {
+      ...existingData,
+      cardIcons,
+      activeCardIconIndex,
+      cardIconUrl
+    });
+  } catch (error) {
+    console.error('[ProfileCardStorage] Erreur lors de la suppression de l\'image de carte:', error);
+    throw error;
+  }
+};
+
+/**
+ * Définit l'image de fond active
+ * @param {string} username - Nom d'utilisateur
+ * @param {number} index - Index de l'image à activer
+ * @returns {Promise<void>}
+ */
+export const setActiveCardIcon = async (username, index) => {
+  try {
+    const existingData = await getProfileData(username) || {};
+    const cardIcons = existingData.cardIcons || [];
+    
+    if (index < 0 || index >= cardIcons.length) {
+      throw new Error('Index invalide');
+    }
+    
+    await saveProfileData(username, {
+      ...existingData,
+      activeCardIconIndex: index,
+      cardIconUrl: cardIcons[index].dataUrl
+    });
+  } catch (error) {
+    console.error('[ProfileCardStorage] Erreur lors de la définition de l\'image de carte active:', error);
+    throw error;
+  }
+};
+
+/**
+ * Sauvegarde l'image centrale (iconUrl) pour un utilisateur (legacy - utilise addCardIcon)
  * @param {string} username - Nom d'utilisateur
  * @param {string} iconDataUrl - Data URL de l'image centrale
  * @returns {Promise<void>}
  */
 export const saveCardIcon = async (username, iconDataUrl) => {
-  try {
-    const existingData = await getProfileData(username) || {};
-    
-    await saveProfileData(username, {
-      ...existingData,
-      cardIconUrl: iconDataUrl
-    });
-  } catch (error) {
-    console.error('[ProfileCardStorage] Erreur lors de la sauvegarde de l\'icône de carte:', error);
-    throw error;
-  }
+  await addCardIcon(username, iconDataUrl);
 };
 
 /**
@@ -260,7 +350,14 @@ export const saveCardIcon = async (username, iconDataUrl) => {
 export const getCardIcon = async (username) => {
   try {
     const data = await getProfileData(username);
-    return data?.cardIconUrl || null;
+    const cardIconUrl = data?.cardIconUrl;
+    
+    // Ne jamais retourner le logo - seulement les data URLs valides
+    if (!cardIconUrl || cardIconUrl === '/logo.png' || !cardIconUrl.startsWith('data:image/')) {
+      return null;
+    }
+    
+    return cardIconUrl;
   } catch (error) {
     console.error('[ProfileCardStorage] Erreur lors de la récupération de l\'icône de carte:', error);
     return null;
@@ -275,7 +372,14 @@ export const getCardIcon = async (username) => {
 export const getAvatar = async (username) => {
   try {
     const data = await getProfileData(username);
-    return data?.avatarUrl || null;
+    const avatarUrl = data?.avatarUrl;
+    
+    // Ne jamais retourner le logo - seulement les data URLs valides
+    if (!avatarUrl || avatarUrl === '/logo.png' || !avatarUrl.startsWith('data:image/')) {
+      return null;
+    }
+    
+    return avatarUrl;
   } catch (error) {
     console.error('[ProfileCardStorage] Erreur lors de la récupération de l\'avatar:', error);
     return null;
@@ -336,6 +440,158 @@ export const fileToDataUrl = (file) => {
 };
 
 /**
+ * Optimise et normalise une image avant stockage
+ * Redimensionne l'image et la convertit en JPEG pour garantir la compatibilité
+ * @param {File} file - Fichier image
+ * @param {number} maxWidth - Largeur maximale (défaut: 800px)
+ * @param {number} maxHeight - Hauteur maximale (défaut: 800px)
+ * @param {number} quality - Qualité JPEG (0-1, défaut: 0.9)
+ * @returns {Promise<string>} Data URL optimisée en JPEG
+ */
+export const optimizeImage = (file, maxWidth = 800, maxHeight = 800, quality = 0.9) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculer les nouvelles dimensions en conservant le ratio
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.floor(width * ratio);
+          height = Math.floor(height * ratio);
+        }
+        
+        // Créer un canvas pour redimensionner
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Améliorer la qualité du redimensionnement
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        // Dessiner l'image redimensionnée
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convertir en Data URL JPEG pour garantir la compatibilité
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        
+        console.log(`[optimizeImage] Image optimisée: ${file.name} (${img.width}x${img.height} → ${width}x${height})`);
+        resolve(dataUrl);
+      };
+      
+      img.onerror = () => {
+        console.error('[optimizeImage] Erreur lors du chargement de l\'image');
+        reject(new Error('Erreur lors du chargement de l\'image'));
+      };
+      
+      img.src = e.target.result;
+    };
+    
+    reader.onerror = () => {
+      console.error('[optimizeImage] Erreur lors de la lecture du fichier');
+      reject(reader.error);
+    };
+    
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
+ * Récupère les paramètres de rotation pour un utilisateur
+ * @param {string} username - Nom d'utilisateur
+ * @returns {Promise<Object>} Paramètres de rotation
+ */
+export const getRotationSettings = async (username) => {
+  try {
+    const data = await getProfileData(username);
+    return data?.rotationSettings || {
+      cardIcon: {
+        rotationEnabled: false,
+        rotationMode: 'none', // 'tab-change' | 'timer' | 'both' | 'none'
+        timerInterval: 60, // en secondes
+        changeOnTabSwitch: false,
+        changeOnSubTabSwitch: false
+      },
+      avatar: {
+        rotationEnabled: false,
+        rotationMode: 'none',
+        timerInterval: 120, // en secondes
+        changeOnTabSwitch: false,
+        changeOnSubTabSwitch: false
+      }
+    };
+  } catch (error) {
+    console.error('[ProfileCardStorage] Erreur lors de la récupération des paramètres de rotation:', error);
+    return null;
+  }
+};
+
+/**
+ * Sauvegarde les paramètres de rotation pour un utilisateur
+ * @param {string} username - Nom d'utilisateur
+ * @param {Object} rotationSettings - Paramètres de rotation
+ * @returns {Promise<void>}
+ */
+export const saveRotationSettings = async (username, rotationSettings) => {
+  try {
+    const existingData = await getProfileData(username) || {};
+    
+    await saveProfileData(username, {
+      ...existingData,
+      rotationSettings
+    });
+  } catch (error) {
+    console.error('[ProfileCardStorage] Erreur lors de la sauvegarde des paramètres de rotation:', error);
+    throw error;
+  }
+};
+
+/**
+ * Passe à l'image suivante dans la rotation (cyclique)
+ * @param {string} username - Nom d'utilisateur
+ * @param {string} type - Type d'image ('cardIcon' ou 'avatar')
+ * @returns {Promise<number>} Nouvel index actif
+ */
+export const rotateToNextImage = async (username, type) => {
+  try {
+    const existingData = await getProfileData(username) || {};
+    
+    if (type === 'cardIcon') {
+      const cardIcons = existingData.cardIcons || [];
+      if (cardIcons.length === 0) return 0;
+      
+      const currentIndex = existingData.activeCardIconIndex ?? 0;
+      const nextIndex = (currentIndex + 1) % cardIcons.length;
+      
+      await setActiveCardIcon(username, nextIndex);
+      return nextIndex;
+    } else if (type === 'avatar') {
+      const avatars = existingData.avatars || [];
+      if (avatars.length === 0) return 0;
+      
+      const currentIndex = existingData.activeAvatarIndex ?? 0;
+      const nextIndex = (currentIndex + 1) % avatars.length;
+      
+      await setActiveAvatar(username, nextIndex);
+      return nextIndex;
+    }
+    
+    throw new Error('Type invalide. Utilisez "cardIcon" ou "avatar"');
+  } catch (error) {
+    console.error('[ProfileCardStorage] Erreur lors de la rotation:', error);
+    throw error;
+  }
+};
+
+/**
  * Détermine le titre basé sur le username
  * @param {string} username - Nom d'utilisateur
  * @returns {string}
@@ -358,10 +614,17 @@ export default {
   setActiveAvatar,
   saveHandle,
   saveCardIcon,
+  addCardIcon,
+  deleteCardIcon,
+  setActiveCardIcon,
   getAvatar,
   getHandle,
   getCardIcon,
   deleteProfileData,
   fileToDataUrl,
-  getUserTitle
+  optimizeImage,
+  getUserTitle,
+  getRotationSettings,
+  saveRotationSettings,
+  rotateToNextImage
 };

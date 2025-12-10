@@ -2,6 +2,7 @@ import React from 'react';
 import { WorkoutProvider } from './context/WorkoutContext';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { QuickActionsProvider } from './context/QuickActionsContext';
 import { ToastProvider } from './components/ui/Toast';
 import Header from './components/layout/Header';
 import Navigation from './components/layout/Navigation';
@@ -42,9 +43,11 @@ const WorkoutTrackerApp = () => {
     <LanguageProvider>
       <ToastProvider>
         <AuthProvider>
-        <WorkoutProvider>
-          <WorkoutTrackerContent />
-        </WorkoutProvider>
+          <QuickActionsProvider>
+            <WorkoutProvider>
+              <WorkoutTrackerContent />
+            </WorkoutProvider>
+          </QuickActionsProvider>
         </AuthProvider>
       </ToastProvider>
     </LanguageProvider>
@@ -87,6 +90,13 @@ const WorkoutTrackerContent = () => {
       document.body.style.overflow = '';
       document.body.classList.remove('dashboard-active');
     };
+  }, [activeTab]);
+
+  // Émettre un événement lors du changement d'onglet pour la rotation des images de profil
+  React.useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tab-change', { 
+      detail: { tab: activeTab, isSubTab: false } 
+    }));
   }, [activeTab]);
 
   // ✅ Charger les données Garmin pour les calories
@@ -194,17 +204,16 @@ const WorkoutTrackerContent = () => {
   };
 
   // Déterminer si la sidebar doit être affichée
-  // Visible partout SAUF sur home, auth et settings
+  // Visible partout SAUF sur home et auth
   const shouldShowSidebar = activeTab !== 'home' && 
-                            activeTab !== 'auth' && 
-                            activeTab !== 'settings';
+                            activeTab !== 'auth';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="flex flex-col min-h-screen">
-        {/* Header et Navigation - Masqués sur home, auth, dashboard et settings */}
-        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'settings' && <Header />}
-        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'settings' && <Navigation />}
+        {/* Header et Navigation - Masqués sur home, auth et dashboard */}
+        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && <Header />}
+        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && <Navigation />}
         
         {/* HomePage avec transition fluide vers Dashboard */}
         {(activeTab === 'home' || activeTab === 'dashboard') && <HomePageScrollTransition />}
@@ -218,7 +227,7 @@ const WorkoutTrackerContent = () => {
             className={`${(activeTab === 'home' || activeTab === 'dashboard') ? 'overflow-hidden' : ''}`}
             style={{
               marginLeft: shouldShowSidebar ? '300px' : '0',
-              marginTop: activeTab === 'finance' ? '-710px' : (activeTab === 'quests' || activeTab === 'apprentissage' || activeTab === 'books') ? '-690px' : (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'settings') ? '-642px' : '0',
+              marginTop: activeTab === 'settings' ? '-742px' : activeTab === 'finance' ? '-710px' : (activeTab === 'quests' || activeTab === 'apprentissage' || activeTab === 'books') ? '-690px' : (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard') ? '-642px' : '0',
               transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               minHeight: '100vh',
               position: 'relative',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../utils/translations';
 import BourseSubTab from '../finance/bourse/BourseSubTab';
 import BudgetSubTab from '../finance/budget/BudgetSubTab';
@@ -10,6 +10,13 @@ import SyntheseSubTab from '../finance/synthese/SyntheseSubTab';
 const FinanceTab = () => {
   const t = useTranslation();
   const [activeSubTab, setActiveSubTab] = useState('bourse');
+
+  // Émettre un événement lors du changement de sous-onglet pour la rotation des images de profil
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tab-change', { 
+      detail: { tab: activeSubTab, isSubTab: true } 
+    }));
+  }, [activeSubTab]);
 
   const subTabs = [
     { id: 'bourse', labelKey: 'finance.subTabs.bourse', icon: '📈' },

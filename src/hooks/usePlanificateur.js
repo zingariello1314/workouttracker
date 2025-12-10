@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { differenceInMonths, parseISO } from 'date-fns';
 import { planificateurStorage } from '../services/finance/planificateurStorage';
 import logger from '../utils/logger';
+import { sidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 
 const log = logger.module('usePlanificateur');
 
@@ -71,6 +72,13 @@ export const usePlanificateur = () => {
       const updated = await planificateurStorage.saveSalaire(salaireData);
       setSalaire(updated); // Confirmer avec données serveur
       log.debug('[usePlanificateur] Salaire updated successfully');
+      
+      // Émettre événement pour synchroniser la sidebar
+      sidebarEvents.emit(SIDEBAR_EVENTS.FINANCE_UPDATED, { 
+        type: 'salaire', 
+        data: updated 
+      });
+      
       return updated;
     } catch (err) {
       // Rollback en cas d'erreur
@@ -93,6 +101,13 @@ export const usePlanificateur = () => {
       const updated = await planificateurStorage.saveRepartition(repartitionData);
       setRepartition(updated); // Confirmer avec données serveur
       log.debug('[usePlanificateur] Repartition updated successfully');
+      
+      // Émettre événement pour synchroniser la sidebar
+      sidebarEvents.emit(SIDEBAR_EVENTS.FINANCE_UPDATED, { 
+        type: 'repartition', 
+        data: updated 
+      });
+      
       return updated;
     } catch (err) {
       // Rollback en cas d'erreur

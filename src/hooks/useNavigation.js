@@ -1,11 +1,12 @@
 /**
  * Hook de navigation centralisé pour la Sidebar Premium
- * Gère les redirections vers les différents modules/onglets
+ * Gère les redirections vers les différents modules/onglets avec support des paramètres contextuels
  * 
  * @module hooks/useNavigation
  */
 
 import { useWorkout } from '../context/WorkoutContext';
+import { useCallback } from 'react';
 
 /**
  * Hook pour naviguer entre les différents onglets de l'application
@@ -24,30 +25,112 @@ export const useNavigation = () => {
   };
 
   /**
-   * Navigation vers les différents modules
+   * Navigue vers un onglet avec paramètres contextuels
+   * @param {string} tab - Nom de l'onglet
+   * @param {Object} params - Paramètres de navigation (tab, section, filter, date, scrollTo, questId, action)
+   */
+  const navigateWithParams = useCallback((tab, params = {}) => {
+    // Naviguer vers l'onglet
+    setActiveTab(tab);
+    
+    // Stocker les paramètres dans sessionStorage pour que le composant cible puisse les récupérer
+    if (Object.keys(params).length > 0) {
+      sessionStorage.setItem(`nav_params_${tab}`, JSON.stringify(params));
+      
+      // Nettoyer après un court délai pour éviter la pollution
+      setTimeout(() => {
+        sessionStorage.removeItem(`nav_params_${tab}`);
+      }, 5000);
+    }
+    
+    // Si scrollTo est demandé, attendre le render puis scroller
+    if (params.scrollTo && params.questId) {
+      setTimeout(() => {
+        const element = document.getElementById(`quest-${params.questId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
+  }, [setActiveTab]);
+
+  /**
+   * Navigation vers les différents modules avec support des paramètres
    */
   const navigation = {
-    // QuietQuest
-    toQuests: () => navigateTo('quests'),
-    toQuestsStats: () => navigateTo('quests'), // Même onglet, section stats
+    // QuietQuest - avec paramètres contextuels
+    // params: { section, questId, scrollTo, filter }
+    toQuests: (params = {}) => {
+      if (Object.keys(params).length > 0) {
+        navigateWithParams('quests', params);
+      } else {
+        navigateTo('quests');
+      }
+    },
+    toQuestsStats: () => navigateWithParams('quests', { section: 'stats' }),
     
-    // Sport
-    toSport: () => navigateTo('today'),
-    toSportHistory: () => navigateTo('history'),
+    // Sport - avec paramètres contextuels
+    // params: { tab, filter, date, scrollTo, action }
+    toSport: (params = {}) => {
+      if (Object.keys(params).length > 0) {
+        navigateWithParams('today', params);
+      } else {
+        navigateTo('today');
+      }
+    },
+    toSportHistory: (params = {}) => {
+      if (Object.keys(params).length > 0) {
+        navigateWithParams('history', params);
+      } else {
+        navigateTo('history');
+      }
+    },
     toSportStats: () => navigateTo('stats'),
-    toGarmin: () => navigateTo('garmin'),
+    
+    // Garmin - avec paramètres contextuels
+    // params: { tab, section, date }
+    toGarmin: (params = {}) => {
+      if (Object.keys(params).length > 0) {
+        navigateWithParams('garmin', params);
+      } else {
+        navigateTo('garmin');
+      }
+    },
     
     // Apprentissage
     toLearning: () => navigateTo('apprentissage'),
-    toBooks: () => navigateTo('books'),
     
-    // Finance
-    toFinance: () => navigateTo('finance'),
-    toFinanceSynthese: () => navigateTo('finance'), // Sous-onglet Synthèse
-    toFinancePlanificateur: () => navigateTo('finance'), // Sous-onglet Planificateur
+    // Livres - avec paramètres contextuels
+    // params: { filter, tab, date, action }
+    toBooks: (params = {}) => {
+      if (Object.keys(params).length > 0) {
+        navigateWithParams('books', params);
+      } else {
+        navigateTo('books');
+      }
+    },
     
-    // Nutrition
-    toNutrition: () => navigateTo('nutrition'),
+    // Finance - avec paramètres contextuels
+    // params: { tab, section, action }
+    toFinance: (params = {}) => {
+      if (Object.keys(params).length > 0) {
+        navigateWithParams('finance', params);
+      } else {
+        navigateTo('finance');
+      }
+    },
+    toFinanceSynthese: (params = {}) => navigateWithParams('finance', { tab: 'synthese', ...params }),
+    toFinancePlanificateur: (params = {}) => navigateWithParams('finance', { tab: 'planificateur', ...params }),
+    
+    // Nutrition - avec paramètres contextuels
+    // params: { date, section, action }
+    toNutrition: (params = {}) => {
+      if (Object.keys(params).length > 0) {
+        navigateWithParams('nutrition', params);
+      } else {
+        navigateTo('nutrition');
+      }
+    },
     
     // Dashboard
     toDashboard: () => navigateTo('dashboard'),
@@ -56,10 +139,14 @@ export const useNavigation = () => {
     toSettings: () => navigateTo('settings'),
     toCalendar: () => navigateTo('calendar'),
     toProgress: () => navigateTo('progress'),
+    
+    // Focus (nouveau)
+    toFocus: () => navigateTo('today'),
   };
 
   return {
     navigateTo,
+    navigateWithParams,
     ...navigation
   };
 };

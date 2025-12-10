@@ -43,6 +43,13 @@ const NutritionTab = () => {
   const garminData = useGarminData();
   const t = useTranslation();
 
+  // Émettre un événement lors du changement de section pour la rotation des images de profil
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tab-change', { 
+      detail: { tab: activeSection, isSubTab: true } 
+    }));
+  }, [activeSection]);
+
   // ✅ OPTIMISATION Phase 15.1 : Configuration pour préservation état sections
   const config = useMemo(() => getNutritionConfig(), []);
   const preserveSectionState = config.performance.preserveSectionState ?? true;

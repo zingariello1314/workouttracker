@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useProfileCard } from '../../hooks/useProfileCard';
+import ProfileCardRotationSettings from './ProfileCardRotationSettings';
 import './ProfileCardSettings.css';
 
 /**
@@ -13,11 +14,17 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
     activeAvatarIndex, 
     handle, 
     cardIconUrl,
+    cardIcons,
+    activeCardIconIndex,
+    rotationSettings,
     addNewAvatar, 
     removeAvatar, 
     selectAvatar, 
     updateHandle,
-    updateCardIcon
+    addNewCardIcon,
+    removeCardIcon,
+    selectCardIcon,
+    updateRotationSettings
   } = useProfileCard(username);
   
   const [newHandle, setNewHandle] = useState(handle);
@@ -33,9 +40,12 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Vérifier le type de fichier
-    if (!file.type.startsWith('image/')) {
-      setMessage('❌ Veuillez sélectionner une image');
+    // Validation explicite des formats supportés
+    const validFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const fileType = file.type.toLowerCase();
+    
+    if (!validFormats.includes(fileType)) {
+      setMessage('❌ Format non supporté. Utilisez: JPEG, PNG, GIF ou WebP');
       return;
     }
 
@@ -46,12 +56,12 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
     }
 
     setIsUploading(true);
-    setMessage('⏳ Upload en cours...');
+    setMessage('⏳ Optimisation et upload...');
 
     const result = await addNewAvatar(file);
 
     if (result.success) {
-      setMessage('✅ Avatar ajouté!');
+      setMessage('✅ Avatar ajouté et optimisé!');
       setTimeout(() => setMessage(''), 3000);
     } else {
       setMessage('❌ Erreur lors de l\'upload');
@@ -115,9 +125,12 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Vérifier le type de fichier
-    if (!file.type.startsWith('image/')) {
-      setMessage('❌ Veuillez sélectionner une image');
+    // Validation explicite des formats supportés
+    const validFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const fileType = file.type.toLowerCase();
+    
+    if (!validFormats.includes(fileType)) {
+      setMessage('❌ Format non supporté. Utilisez: JPEG, PNG, GIF ou WebP');
       return;
     }
 
@@ -128,17 +141,15 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
     }
 
     setIsUploadingIcon(true);
-    setMessage('⏳ Upload en cours...');
+    setMessage('⏳ Optimisation et upload...');
 
-    const result = await updateCardIcon(file);
+    const result = await addNewCardIcon(file);
 
     if (result.success) {
-      setMessage('✅ Image de carte mise à jour!');
-      console.log('[ProfileCardSettings] Card icon updated successfully');
+      setMessage('✅ Image de fond ajoutée et optimisée!');
       setTimeout(() => setMessage(''), 3000);
     } else {
       setMessage('❌ Erreur lors de l\'upload');
-      console.error('[ProfileCardSettings] Failed to update card icon:', result.error);
     }
 
     setIsUploadingIcon(false);
@@ -146,6 +157,32 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
     // Reset input
     if (iconInputRef.current) {
       iconInputRef.current.value = '';
+    }
+  };
+
+  const handleCardIconDelete = async (index) => {
+    if (!confirm('Supprimer cette image de fond?')) return;
+
+    setMessage('⏳ Suppression...');
+    const result = await removeCardIcon(index);
+
+    if (result.success) {
+      setMessage('✅ Image de fond supprimée!');
+      setTimeout(() => setMessage(''), 3000);
+    } else {
+      setMessage('❌ Erreur lors de la suppression');
+    }
+  };
+
+  const handleCardIconSelect = async (index) => {
+    setMessage('⏳ Sélection...');
+    const result = await selectCardIcon(index);
+
+    if (result.success) {
+      setMessage('✅ Image de fond sélectionnée!');
+      setTimeout(() => setMessage(''), 3000);
+    } else {
+      setMessage('❌ Erreur lors de la sélection');
     }
   };
 
@@ -160,15 +197,20 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
         </div>
 
         <div className="profile-settings-content">
-          {/* Galerie d'avatars */}
+          {/* Galerie d'avatars - Image de profil (petite ronde en bas) */}
           <div className="profile-settings-section">
-            <h3>Avatars ({avatars.length})</h3>
+            <h3>Image de Profil ({avatars.length})</h3>
+            <p className="profile-settings-description">
+              Cette image apparaît dans le petit cercle en bas de la carte
+            </p>
             
             {/* Avatar actuel */}
-            <div className="profile-settings-avatar-current">
-              <img src={avatarUrl} alt="Avatar actuel" />
-              <p>Avatar actif</p>
-            </div>
+            {avatarUrl && (
+              <div className="profile-settings-avatar-current">
+                <img src={avatarUrl} alt="Avatar actuel" />
+                <p>Image de profil active</p>
+              </div>
+            )}
 
             {/* Galerie */}
             {avatars.length > 0 && (
@@ -207,57 +249,92 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
             >
-              {isUploading ? '⏳ Upload...' : '+ Ajouter un avatar'}
+              {isUploading ? '⏳ Upload...' : '+ Ajouter une image de profil'}
             </button>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
               onChange={handleAvatarAdd}
               style={{ display: 'none' }}
             />
             <p className="profile-settings-hint">
-              Formats: JPG, PNG, GIF (max 5MB) • Cliquez sur un avatar pour l'activer
+              Formats: JPEG, PNG, GIF, WebP (max 5MB) • Images optimisées automatiquement • Cliquez sur une image pour l'activer
             </p>
           </div>
 
-          {/* Image centrale de la carte */}
+          {/* Galerie d'images de fond */}
           <div className="profile-settings-section">
-            <h3>Image de la Carte</h3>
+            <h3>Images de Fond de la Carte ({cardIcons.length})</h3>
+            <p className="profile-settings-description">
+              Ces images apparaissent en plein écran au fond de la carte
+            </p>
             
-            {/* Aperçu de l'image actuelle */}
-            <div className="profile-settings-card-icon-preview">
-              <img 
-                src={cardIconUrl || '/logo.png'} 
-                alt="Image de carte actuelle" 
-                style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'contain' }}
-              />
-              <p>{cardIconUrl ? 'Image personnalisée' : 'Image par défaut'}</p>
-            </div>
+            {/* Image de fond actuelle */}
+            {cardIconUrl && (
+              <div className="profile-settings-avatar-current">
+                <img src={cardIconUrl} alt="Image de fond actuelle" />
+                <p>Image de fond active</p>
+              </div>
+            )}
 
-            {/* Bouton changer */}
+            {/* Galerie d'images de fond */}
+            {cardIcons.length > 0 && (
+              <div className="profile-settings-avatar-gallery">
+                {cardIcons.map((cardIcon, index) => (
+                  <div 
+                    key={cardIcon.id} 
+                    className={`profile-settings-avatar-item ${index === activeCardIconIndex ? 'active' : ''}`}
+                  >
+                    <img 
+                      src={cardIcon.dataUrl} 
+                      alt={`Image de fond ${index + 1}`}
+                      onClick={() => handleCardIconSelect(index)}
+                    />
+                    {index === activeCardIconIndex && (
+                      <div className="profile-settings-avatar-badge">✓</div>
+                    )}
+                    <button
+                      className="profile-settings-avatar-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCardIconDelete(index);
+                      }}
+                      aria-label="Supprimer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Bouton ajouter */}
             <button
               className="profile-settings-button"
               onClick={() => iconInputRef.current?.click()}
               disabled={isUploadingIcon}
             >
-              {isUploadingIcon ? '⏳ Upload...' : '📷 Changer l\'image de la carte'}
+              {isUploadingIcon ? '⏳ Upload...' : '+ Ajouter une image de fond'}
             </button>
             <input
               ref={iconInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
               onChange={handleCardIconAdd}
               style={{ display: 'none' }}
             />
             <p className="profile-settings-hint">
-              Formats: JPG, PNG, GIF, SVG (max 5MB) • Cette image apparaît au centre de votre carte
+              Formats: JPEG, PNG, GIF, WebP (max 5MB) • Images optimisées automatiquement • Cliquez sur une image pour l'activer
             </p>
           </div>
 
-          {/* Handle */}
+          {/* Handle - Nom d'utilisateur */}
           <div className="profile-settings-section">
-            <h3>Handle</h3>
+            <h3>Nom d'utilisateur (@handle)</h3>
+            <p className="profile-settings-description">
+              Ce nom apparaît dans le petit rectangle en bas de la carte
+            </p>
             <form onSubmit={handleHandleSubmit}>
               <div className="profile-settings-input-group">
                 <span className="profile-settings-prefix">@</span>
@@ -270,7 +347,7 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
                 />
               </div>
               <button type="submit" className="profile-settings-button">
-                Mettre à jour le handle
+                Mettre à jour le @handle
               </button>
             </form>
           </div>
@@ -281,6 +358,12 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
               {message}
             </div>
           )}
+
+          {/* Paramètres de rotation */}
+          <ProfileCardRotationSettings
+            rotationSettings={rotationSettings}
+            onUpdate={updateRotationSettings}
+          />
         </div>
       </div>
     </div>

@@ -1,0 +1,303 @@
+.rotation-settings {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.rotation-settings-header {
+  margin-bottom: 24px;
+}
+
+.rotation-settings-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 8px 0;
+}
+
+.rotation-settings-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.rotation-section {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.rotation-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.rotation-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.rotation-section-header h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+/* Toggle Switch */
+.rotation-toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.rotation-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.rotation-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.rotation-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.rotation-toggle input:checked + .rotation-toggle-slider {
+  background-color: #4CAF50;
+}
+
+.rotation-toggle input:checked + .rotation-toggle-slider:before {
+  transform: translateX(24px);
+}
+
+/* Options */
+.rotation-options {
+  padding-top: 8px;
+}
+
+.rotation-option-group {
+  margin-bottom: 16px;
+}
+
+.rotation-option-group:last-child {
+  margin-bottom: 0;
+}
+
+.rotation-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+}
+
+/* Radio Group */
+.rotation-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rotation-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.rotation-radio:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rotation-radio input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4CAF50;
+}
+
+.rotation-radio span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Checkbox */
+.rotation-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  margin-bottom: 4px;
+}
+
+.rotation-checkbox:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rotation-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4CAF50;
+}
+
+.rotation-checkbox span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Slider */
+.rotation-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.rotation-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #4CAF50;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.rotation-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.rotation-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #4CAF50;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s;
+}
+
+.rotation-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+.rotation-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.rotation-slider-labels span {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Actions */
+.rotation-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rotation-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.rotation-btn-primary {
+  background: #4CAF50;
+  color: white;
+}
+
+.rotation-btn-primary:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
+.rotation-btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.rotation-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Info */
+.rotation-info {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(76, 175, 80, 0.1);
+  border-left: 3px solid #4CAF50;
+  border-radius: 4px;
+}
+
+.rotation-info p {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rotation-settings {
+    padding: 16px;
+  }
+
+  .rotation-section {
+    padding: 12px;
+  }
+
+  .rotation-settings-header h3 {
+    font-size: 16px;
+  }
+
+  .rotation-section-header h4 {
+    font-size: 14px;
+  }
+}

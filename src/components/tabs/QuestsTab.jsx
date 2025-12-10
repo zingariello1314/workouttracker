@@ -16,6 +16,7 @@ import {
   validateQuietQuestExport,
 } from '../../utils/quietQuestExportImport';
 import { openQuietQuestDB, clearQuietQuestStores } from '../../utils/quietQuestIndexedDB';
+import { emitSidebarEvent, SIDEBAR_EVENTS } from '../../utils/sidebarEvents';
 import QuestsTodayView from '../quests/QuestsTodayView';
 import QuestsWeekView from '../quests/QuestsWeekView';
 import QuestsStatsView from '../quests/stats/QuestsStatsView';
@@ -62,6 +63,13 @@ const durationOptions = Array.from({ length: (420 - 5) / 10 + 1 }, (_, i) => 5 +
 const QuestsTab = () => {
   // Onglet interne QuietQuest (today / week / quests / stats / security)
   const [currentSubTab, setCurrentSubTab] = useState('today');
+
+  // Émettre un événement lors du changement de sous-onglet pour la rotation des images de profil
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tab-change', { 
+      detail: { tab: currentSubTab, isSubTab: true } 
+    }));
+  }, [currentSubTab]);
 
   // Toast notifications
   const { showSuccess, showError, showWarning, showInfo } = useToast();
@@ -325,7 +333,7 @@ const QuestsTab = () => {
     setAllQuests((prev) => {
       if (isEditing) {
         // Edition
-        return prev.map((q) =>
+        const updated = prev.map((q) =>
           q.id === editingQuestId
             ? {
                 ...q,
@@ -334,6 +342,11 @@ const QuestsTab = () => {
               }
             : q
         );
+        
+        // Emit sidebar event for quest update
+        emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: editingQuestId });
+        
+        return updated;
       }
 
       // Création
@@ -348,6 +361,10 @@ const QuestsTab = () => {
         ...baseQuest,
         xp: calculateQuestXP(baseQuest),
       };
+      
+      // Emit sidebar event for quest creation
+      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, { questId: nextId });
+      
       return [...prev, newQuest];
     });
 
@@ -359,6 +376,9 @@ const QuestsTab = () => {
     setAllQuests((prev) =>
       prev.map((q) => (q.id === id ? { ...q, active: !q.active } : q))
     );
+    
+    // Emit sidebar event for quest update (affects today's quests if it's a today quest)
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: id });
   };
 
   const deleteQuest = (id) => {
@@ -376,6 +396,10 @@ const QuestsTab = () => {
       next.delete(id);
       return next;
     });
+    
+    // Emit sidebar event for quest deletion (affects today's count if it was a today quest)
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: id, deleted: true });
+    
     showSuccess(`Quête "${questName}" supprimée`);
   };
 
@@ -392,6 +416,10 @@ const QuestsTab = () => {
         creeLe: new Date().toISOString().slice(0, 10),
         ordre: prev.length + 1,
       };
+      
+      // Emit sidebar event for quest creation
+      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, { questId: nextId });
+      
       return [...prev, copy];
     });
     showSuccess(`Quête "${original.nom}" dupliquée`);
@@ -412,6 +440,10 @@ const QuestsTab = () => {
           : q
       )
     );
+    
+    // Emit sidebar event for bulk quest update
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { bulk: true, count });
+    
     setSelectedQuests(new Set());
     showSuccess(`${count} quête${count > 1 ? 's' : ''} activée${count > 1 ? 's' : ''}`);
   };
@@ -429,6 +461,10 @@ const QuestsTab = () => {
           : q
       )
     );
+    
+    // Emit sidebar event for bulk quest update
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { bulk: true, count });
+    
     setSelectedQuests(new Set());
     showInfo(`${count} quête${count > 1 ? 's' : ''} désactivée${count > 1 ? 's' : ''}`);
   };
@@ -443,6 +479,10 @@ const QuestsTab = () => {
     )
       return;
     setAllQuests((prev) => prev.filter((q) => !selectedQuests.has(q.id)));
+    
+    // Emit sidebar event for bulk quest deletion
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { bulk: true, count, deleted: true });
+    
     setSelectedQuests(new Set());
     showSuccess(`${count} quête${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''}`);
   };

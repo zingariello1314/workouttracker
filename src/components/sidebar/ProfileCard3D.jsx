@@ -35,6 +35,21 @@ const ProfileCard3D = ({
   // État pour forcer le rechargement
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Système de double layer pour transitions fluides (comme HomePage)
+  // CardIcon layers
+  const [cardIconLayer0, setCardIconLayer0] = useState(null);
+  const [cardIconLayer1, setCardIconLayer1] = useState(null);
+  const [cardIconLayer0Opacity, setCardIconLayer0Opacity] = useState(1);
+  const [cardIconLayer1Opacity, setCardIconLayer1Opacity] = useState(0);
+  const [activeCardIconLayer, setActiveCardIconLayer] = useState(0);
+
+  // Avatar layers
+  const [avatarLayer0, setAvatarLayer0] = useState(null);
+  const [avatarLayer1, setAvatarLayer1] = useState(null);
+  const [avatarLayer0Opacity, setAvatarLayer0Opacity] = useState(1);
+  const [avatarLayer1Opacity, setAvatarLayer1Opacity] = useState(0);
+  const [activeAvatarLayer, setActiveAvatarLayer] = useState(0);
+
   // Utiliser le hook pour récupérer les données du profil
   const {
     avatarUrl,
@@ -48,9 +63,90 @@ const ProfileCard3D = ({
 
   const name = currentUsername || username || 'Utilisateur';
   
+  // CORRECTION: Avatar = petite image ronde, CardIcon = grande image de fond
   // Ne jamais afficher le logo - seulement les images uploadées
-  const finalAvatarUrl = avatarUrl && avatarUrl !== '/logo.png' ? avatarUrl : null;
-  const finalCardIconUrl = cardIconUrl || null;
+  // Filtrer les URLs invalides ou vides
+  const finalAvatarUrl = avatarUrl && 
+                         avatarUrl !== '/logo.png' && 
+                         avatarUrl.startsWith('data:image/') && 
+                         avatarUrl.length > 50 ? avatarUrl : null;
+  
+  const finalCardIconUrl = cardIconUrl && 
+                           cardIconUrl !== '/logo.png' && 
+                           cardIconUrl.startsWith('data:image/') && 
+                           cardIconUrl.length > 50 ? cardIconUrl : null;
+
+  // Gérer les transitions fluides pour cardIcon (système double layer)
+  useEffect(() => {
+    if (!finalCardIconUrl) {
+      setCardIconLayer0(null);
+      setCardIconLayer1(null);
+      return;
+    }
+
+    // Premier chargement
+    if (!cardIconLayer0 && !cardIconLayer1) {
+      setCardIconLayer0(finalCardIconUrl);
+      setCardIconLayer0Opacity(1);
+      setActiveCardIconLayer(0);
+      return;
+    }
+
+    // Changement d'image - utiliser le layer inactif
+    const inactiveLayer = activeCardIconLayer === 0 ? 1 : 0;
+    
+    if (inactiveLayer === 1) {
+      // Charger dans layer 1
+      setCardIconLayer1(finalCardIconUrl);
+      // Crossfade
+      setCardIconLayer1Opacity(1);
+      setCardIconLayer0Opacity(0);
+      setActiveCardIconLayer(1);
+    } else {
+      // Charger dans layer 0
+      setCardIconLayer0(finalCardIconUrl);
+      // Crossfade
+      setCardIconLayer0Opacity(1);
+      setCardIconLayer1Opacity(0);
+      setActiveCardIconLayer(0);
+    }
+  }, [finalCardIconUrl]);
+
+  // Gérer les transitions fluides pour avatar (système double layer)
+  useEffect(() => {
+    if (!finalAvatarUrl) {
+      setAvatarLayer0(null);
+      setAvatarLayer1(null);
+      return;
+    }
+
+    // Premier chargement
+    if (!avatarLayer0 && !avatarLayer1) {
+      setAvatarLayer0(finalAvatarUrl);
+      setAvatarLayer0Opacity(1);
+      setActiveAvatarLayer(0);
+      return;
+    }
+
+    // Changement d'image - utiliser le layer inactif
+    const inactiveLayer = activeAvatarLayer === 0 ? 1 : 0;
+    
+    if (inactiveLayer === 1) {
+      // Charger dans layer 1
+      setAvatarLayer1(finalAvatarUrl);
+      // Crossfade
+      setAvatarLayer1Opacity(1);
+      setAvatarLayer0Opacity(0);
+      setActiveAvatarLayer(1);
+    } else {
+      // Charger dans layer 0
+      setAvatarLayer0(finalAvatarUrl);
+      // Crossfade
+      setAvatarLayer0Opacity(1);
+      setAvatarLayer1Opacity(0);
+      setActiveAvatarLayer(0);
+    }
+  }, [finalAvatarUrl]);
 
   // État pour le modal de paramètres
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -310,7 +406,7 @@ const ProfileCard3D = ({
 
   const cardStyle = useMemo(
     () => ({
-      '--icon': 'none', // Toujours none pour éviter d'afficher le logo
+      '--icon': 'none', // Toujours none - on n'utilise plus cette variable CSS
       '--grain': grainUrl ? `url(${grainUrl})` : 'none',
       '--inner-gradient': innerGradient ?? DEFAULT_INNER_GRADIENT,
       '--behind-glow-color': behindGlowColor ?? 'rgba(125, 190, 255, 0.67)',
@@ -359,70 +455,51 @@ const ProfileCard3D = ({
         <div ref={shellRef} className="pc-card-shell">
           <section className="pc-card">
             <div className="pc-inside">
-              {/* Image centrale de la carte - UNIQUEMENT si cardIconUrl existe */}
-              {finalCardIconUrl && (
-                <div className="pc-card-icon" key={`card-icon-${refreshKey}`}>
+              {/* Double layer system pour transitions fluides (comme HomePage) */}
+              {/* Layer 0 - CardIcon */}
+              {cardIconLayer0 && (
+                <div 
+                  className="pc-card-icon"
+                  style={{
+                    opacity: cardIconLayer0Opacity,
+                    transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    zIndex: activeCardIconLayer === 0 ? 2 : 1,
+                    willChange: 'opacity'
+                  }}
+                >
                   <img 
-                    src={`${finalCardIconUrl}?t=${Date.now()}`} 
-                    alt="" 
-                    onLoad={(e) => {
-                      console.log('[ProfileCard3D] Card icon loaded successfully');
-                      e.target.style.display = 'block';
-                    }}
-                    onError={(e) => {
-                      console.error('[ProfileCard3D] Card icon failed to load');
-                      e.target.style.display = 'none';
-                    }}
+                    src={cardIconLayer0} 
+                    alt="Card background layer 0" 
+                    onLoad={() => console.log('[ProfileCard3D] Layer 0 loaded')}
+                    onError={() => console.error('[ProfileCard3D] Layer 0 failed')}
+                  />
+                </div>
+              )}
+              
+              {/* Layer 1 - CardIcon */}
+              {cardIconLayer1 && (
+                <div 
+                  className="pc-card-icon"
+                  style={{
+                    opacity: cardIconLayer1Opacity,
+                    transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    zIndex: activeCardIconLayer === 1 ? 2 : 1,
+                    willChange: 'opacity'
+                  }}
+                >
+                  <img 
+                    src={cardIconLayer1} 
+                    alt="Card background layer 1" 
+                    onLoad={() => console.log('[ProfileCard3D] Layer 1 loaded')}
+                    onError={() => console.error('[ProfileCard3D] Layer 1 failed')}
                   />
                 </div>
               )}
               <div className="pc-shine" />
               <div className="pc-glare" />
               <div className="pc-content pc-avatar-content">
-                {finalAvatarUrl && (
-                  <img
-                    className="avatar"
-                    src={finalAvatarUrl}
-                    alt={`${name || 'User'} avatar`}
-                    loading="lazy"
-                    onError={e => {
-                      const t = e.target;
-                      t.style.display = 'none';
-                    }}
-                  />
-                )}
-                {showUserInfo && (
-                  <div className="pc-user-info">
-                    <div className="pc-user-details">
-                      {finalAvatarUrl && (
-                        <div className="pc-mini-avatar">
-                          <img
-                            src={finalAvatarUrl}
-                            alt={`${name || 'User'} mini avatar`}
-                            loading="lazy"
-                            onError={e => {
-                              const t = e.target;
-                              t.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
-                      <div className="pc-user-text">
-                        <div className="pc-handle">@{handle}</div>
-                        <div className="pc-status">{status}</div>
-                      </div>
-                    </div>
-                    <button
-                      className="pc-contact-btn"
-                      onClick={handleContactClick}
-                      style={{ pointerEvents: 'auto' }}
-                      type="button"
-                      aria-label={`Contact ${name || 'user'}`}
-                    >
-                      {contactText}
-                    </button>
-                  </div>
-                )}
+                {/* NE RIEN AFFICHER ICI - L'image de fond est déjà dans pc-card-icon */}
+                {/* L'avatar (image de profil) n'apparaît QUE dans le petit cercle en bas */}
               </div>
               <div className="pc-content">
                 <div className="pc-details">
@@ -430,6 +507,64 @@ const ProfileCard3D = ({
                   <p>{title}</p>
                 </div>
               </div>
+              {/* Rectangle utilisateur HORS de pc-avatar-content pour éviter le mix-blend-mode */}
+              {showUserInfo && (
+                <div className="pc-user-info">
+                  <div className="pc-user-details">
+                    {/* Mini avatar avec double layer pour transitions fluides */}
+                    {(avatarLayer0 || avatarLayer1) && (
+                      <div className="pc-mini-avatar">
+                        {/* Layer 0 - Avatar */}
+                        {avatarLayer0 && (
+                          <img
+                            src={avatarLayer0}
+                            alt={`${name || 'User'} avatar layer 0`}
+                            loading="lazy"
+                            style={{
+                              opacity: avatarLayer0Opacity,
+                              transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                              zIndex: activeAvatarLayer === 0 ? 2 : 1,
+                              willChange: 'opacity'
+                            }}
+                            onLoad={() => console.log('[ProfileCard3D] Avatar layer 0 loaded')}
+                            onError={() => console.error('[ProfileCard3D] Avatar layer 0 failed')}
+                          />
+                        )}
+                        
+                        {/* Layer 1 - Avatar */}
+                        {avatarLayer1 && (
+                          <img
+                            src={avatarLayer1}
+                            alt={`${name || 'User'} avatar layer 1`}
+                            loading="lazy"
+                            style={{
+                              opacity: avatarLayer1Opacity,
+                              transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                              zIndex: activeAvatarLayer === 1 ? 2 : 1,
+                              willChange: 'opacity'
+                            }}
+                            onLoad={() => console.log('[ProfileCard3D] Avatar layer 1 loaded')}
+                            onError={() => console.error('[ProfileCard3D] Avatar layer 1 failed')}
+                          />
+                        )}
+                      </div>
+                    )}
+                    <div className="pc-user-text">
+                      <div className="pc-handle">@{handle}</div>
+                      <div className="pc-status">{status}</div>
+                    </div>
+                  </div>
+                  <button
+                    className="pc-contact-btn"
+                    onClick={handleContactClick}
+                    style={{ pointerEvents: 'auto' }}
+                    type="button"
+                    aria-label={`Contact ${name || 'user'}`}
+                  >
+                    {contactText}
+                  </button>
+                </div>
+              )}
             </div>
           </section>
         </div>

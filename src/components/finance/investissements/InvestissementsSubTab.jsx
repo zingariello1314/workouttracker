@@ -1,4 +1,4 @@
-import React, { useState, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useInvestissements } from '../../../hooks/useInvestissements';
 
@@ -22,6 +22,13 @@ const InvestissementsSubTab = () => {
   const t = useTranslation();
   const { loading } = useInvestissements();
   const [activeSubTab, setActiveSubTab] = useState('dashboard');
+
+  // Émettre un événement lors du changement de sous-onglet pour la rotation des images de profil
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tab-change', { 
+      detail: { tab: activeSubTab, isSubTab: true } 
+    }));
+  }, [activeSubTab]);
 
   const subTabs = useMemo(() => [
     { id: 'dashboard', labelKey: 'finance.investissements.subTabs.dashboard', icon: '📊', component: DashboardUnifieSubTab },

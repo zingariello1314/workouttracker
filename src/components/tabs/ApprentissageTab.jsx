@@ -3,7 +3,7 @@
  * Système de gestion de l'apprentissage avec 3 sous-onglets : Matières, Sessions, Trophées
  */
 
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useTranslation } from '../../utils/translations';
 
 // Code splitting : Lazy load des vues pour améliorer les performances initiales
@@ -26,6 +26,13 @@ const ApprentissageTab = () => {
   
   // Sous-onglet actif (matieres par défaut)
   const [currentSubView, setCurrentSubView] = useState('matieres');
+
+  // Émettre un événement lors du changement de sous-vue pour la rotation des images de profil
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tab-change', { 
+      detail: { tab: currentSubView, isSubTab: true } 
+    }));
+  }, [currentSubView]);
 
   // Navigation sous-onglets
   const subViews = [

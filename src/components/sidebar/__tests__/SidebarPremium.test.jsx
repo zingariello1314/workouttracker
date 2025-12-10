@@ -31,6 +31,8 @@ describe('SidebarPremium - Tests finaux et polish', () => {
       isSectionExpanded: vi.fn((section) => section === 'actions' || section === 'metrics'),
       getFormattedTime: vi.fn(() => '14:30'),
       getFormattedDate: vi.fn(() => 'Dimanche 8 décembre 2025'),
+      getFormattedDayMonth: vi.fn(() => 'Dimanche 8 décembre'),
+      getFormattedYear: vi.fn(() => '2025'),
       toggleMobileSidebar: vi.fn(),
       closeMobileSidebar: vi.fn(),
     };
@@ -142,7 +144,7 @@ describe('SidebarPremium - Tests finaux et polish', () => {
       expect(mockUseSidebar.toggleSection).toHaveBeenCalledWith('actions');
     });
 
-    it('devrait afficher les métriques vitales avec les bonnes valeurs', () => {
+    it('devrait afficher la progression globale avec les bonnes valeurs', () => {
       render(<SidebarPremium />);
       
       expect(screen.getByText('12,500')).toBeInTheDocument(); // XP
@@ -441,9 +443,9 @@ describe('SidebarPremium - Tests finaux et polish', () => {
       render(<SidebarPremium />);
       
       expect(screen.getByText('Actions Rapides')).toBeInTheDocument();
-      expect(screen.getByText('Métriques Vitales')).toBeInTheDocument();
+      expect(screen.getByText('Progression Globale')).toBeInTheDocument();
       expect(screen.getByText('Quêtes Actives')).toBeInTheDocument();
-      expect(screen.getByText('Sport & Santé')).toBeInTheDocument();
+      expect(screen.getByText('Activité Physique')).toBeInTheDocument();
       expect(screen.getByText('Livres')).toBeInTheDocument();
       expect(screen.getByText('Finances')).toBeInTheDocument();
     });

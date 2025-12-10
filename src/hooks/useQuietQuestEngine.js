@@ -12,6 +12,7 @@ import {
   loadAppStateFromIndexedDB,
   saveAppStateToIndexedDB,
 } from '../utils/quietQuestIndexedDB';
+import { emitSidebarEvent, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 
 // Clés de stockage QuietQuest (pour fallback localStorage)
 export const STORAGE_KEYS = {
@@ -432,13 +433,19 @@ export function useQuietQuestEngine() {
       );
 
       if (index !== -1) {
+        // Uncompleting quest
         const copy = [...prev];
         const [removed] = copy.splice(index, 1);
         updateUserXP(-(removed?.xpGagne || xp));
         setTimeout(() => recalcDailyPerformanceForDate(date), 0);
+        
+        // Emit sidebar event for quest update
+        emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId, date, completed: false });
+        
         return copy;
       }
 
+      // Completing quest
       const next = [
         ...prev,
         {
@@ -450,6 +457,10 @@ export function useQuietQuestEngine() {
       ];
       updateUserXP(xp);
       setTimeout(() => recalcDailyPerformanceForDate(date), 0);
+      
+      // Emit sidebar event for quest completion
+      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_COMPLETED, { questId, date, xp });
+      
       return next;
     });
   };

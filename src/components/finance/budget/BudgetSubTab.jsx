@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useBudget } from '../../../hooks/useBudget';
 import BudgetErrorBoundary from './BudgetErrorBoundary';
@@ -22,6 +22,13 @@ const BudgetSubTab = () => {
   const t = useTranslation();
   const { loading } = useBudget();
   const [activeSubTab, setActiveSubTab] = useState('dashboard');
+
+  // Émettre un événement lors du changement de sous-onglet pour la rotation des images de profil
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tab-change', { 
+      detail: { tab: activeSubTab, isSubTab: true } 
+    }));
+  }, [activeSubTab]);
 
   const subTabs = [
     { id: 'dashboard', labelKey: 'finance.budget.subTabs.dashboard', icon: '📊', component: DashboardSubTab },

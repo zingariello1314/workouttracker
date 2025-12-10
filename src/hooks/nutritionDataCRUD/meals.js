@@ -28,6 +28,7 @@ import {
   validateAfterOperation,
   log
 } from './shared';
+import { sidebarEvents, SIDEBAR_EVENTS } from '../../utils/sidebarEvents';
 
 /**
  * Récupère un repas par son ID
@@ -130,6 +131,14 @@ export const saveMeal = async (meal) => {
       );
       
       log.debug(`Meal sauvegardé: ${meal.id}`);
+      
+      // ✅ Émettre événement sidebar pour synchronisation temps réel
+      const isNewMeal = !meal.id || meal.id.startsWith('temp_');
+      sidebarEvents.emit(
+        isNewMeal ? SIDEBAR_EVENTS.MEAL_LOGGED : SIDEBAR_EVENTS.MEAL_UPDATED,
+        { mealId: dataToSave.id, date: dataToSave.date, type: dataToSave.type }
+      );
+      
       return true;
     } catch (error) {
       // ✅ Fallback vers méthode originale si Repository échoue
@@ -160,6 +169,13 @@ export const saveMeal = async (meal) => {
             // Invalider aussi cache dailyMeal (totaux mis à jour)
             cache.invalidate(cache.generateKey('dailyMeal', meal.date));
           }
+          
+          // ✅ Émettre événement sidebar pour synchronisation temps réel
+          const isNewMeal = !meal.id || meal.id.startsWith('temp_');
+          sidebarEvents.emit(
+            isNewMeal ? SIDEBAR_EVENTS.MEAL_LOGGED : SIDEBAR_EVENTS.MEAL_UPDATED,
+            { mealId: dataToSave.id, date: dataToSave.date, type: dataToSave.type }
+          );
           
           return true;
         }
@@ -196,6 +212,13 @@ export const saveMeal = async (meal) => {
             // Invalider aussi cache dailyMeal (totaux mis à jour)
             cache.invalidate(cache.generateKey('dailyMeal', meal.date));
           }
+          
+          // ✅ Émettre événement sidebar pour synchronisation temps réel
+          const isNewMeal = !meal.id || meal.id.startsWith('temp_');
+          sidebarEvents.emit(
+            isNewMeal ? SIDEBAR_EVENTS.MEAL_LOGGED : SIDEBAR_EVENTS.MEAL_UPDATED,
+            { mealId: dataToSave.id, date: dataToSave.date, type: dataToSave.type }
+          );
           
           return true;
         } catch (error) {
@@ -476,6 +499,10 @@ export const deleteMeal = async (mealId) => {
       }
       
       log.debug(`Meal supprimé: ${mealId}`);
+      
+      // ✅ Émettre événement sidebar pour synchronisation temps réel
+      sidebarEvents.emit(SIDEBAR_EVENTS.MEAL_DELETED, { mealId, date: mealDate });
+      
       return true;
     } catch (error) {
       // ✅ Fallback vers méthode originale si Repository échoue
@@ -513,6 +540,9 @@ export const deleteMeal = async (mealId) => {
         } catch (validationError) {
           log.warn('[deleteMeal] Erreur validation cohérence (non bloquant):', validationError);
         }
+        
+        // ✅ Émettre événement sidebar pour synchronisation temps réel
+        sidebarEvents.emit(SIDEBAR_EVENTS.MEAL_DELETED, { mealId, date: mealDate });
         
         return true;
       } catch (error) {

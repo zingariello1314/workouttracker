@@ -1,3 +1,20 @@
+/**
+ * BooksTab Component
+ * 
+ * Gère l'affichage et la manipulation de la bibliothèque de livres.
+ * 
+ * Événements Sidebar émis:
+ * - BOOK_ADDED: Émis après l'ajout d'un nouveau livre
+ * - BOOK_UPDATED: Émis après la modification d'un livre ou changement de statut
+ * - BOOK_DELETED: Émis après la suppression d'un livre
+ * - PAGES_READ: Émis après l'ajout d'une session de lecture
+ * 
+ * Ces événements permettent à la sidebar de se synchroniser automatiquement
+ * avec les changements de données sans couplage fort.
+ * 
+ * @see Requirements 2.1, 2.2, 2.3, 4.1, 4.2
+ */
+
 import React, { Suspense, useEffect, useMemo, useRef, useState, memo, useCallback } from 'react';
 import { BookOpen, Download, Search, Upload } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
@@ -21,6 +38,7 @@ import {
 import { useBooksStorage } from '../../hooks/useBooksStorage';
 import { saveBooksToIndexedDB, getAllBooksFromIndexedDB } from '../../utils/booksIndexedDB';
 import BookCard from '../books/BookCard';
+import { sidebarEvents, SIDEBAR_EVENTS } from '../../utils/sidebarEvents';
 
 const BooksDomeGallery = React.lazy(() =>
   import('../books/BooksDomeGallery')
@@ -389,6 +407,13 @@ const BooksTab = () => {
       coverFormInputRef.current.value = '';
     }
 
+    // Émettre l'événement sidebar approprié
+    if (isEditing) {
+      sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_UPDATED, { bookId: id });
+    } else {
+      sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_ADDED, { bookId: id });
+    }
+
     resetForm();
   };
 
@@ -420,6 +445,9 @@ const BooksTab = () => {
     if (selectedBookId === book.id) {
       setSelectedBookId(null);
     }
+    
+    // Émettre l'événement sidebar
+    sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_DELETED, { bookId: book.id });
   };
 
   // useCallback pour stabiliser handleStatusChange
@@ -429,6 +457,9 @@ const BooksTab = () => {
         b.id === bookId ? { ...b, status: newStatus } : b
       )
     );
+    
+    // Émettre l'événement sidebar
+    sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_UPDATED, { bookId, statusChanged: true });
   }, []);
 
   const selectedBook = useMemo(
@@ -627,6 +658,15 @@ const BooksTab = () => {
           : book
       )
     );
+
+    // Émettre l'événement sidebar
+    sidebarEvents.emit(SIDEBAR_EVENTS.PAGES_READ, { 
+      bookId: selectedBook.id, 
+      sessionId: session.id,
+      date: session.date,
+      pagesRead: session.pagesRead,
+      durationMinutes: session.durationMinutes
+    });
 
     resetSessionForm();
   };
@@ -1619,7 +1659,7 @@ const BooksTab = () => {
               </p>
             ) : (
               <>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20 books-carousel-container">
+                <div className="flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20 books-carousel-container">
                   {paginatedInProgressBooks.map((book) => renderBookCard(book, false))}
                 </div>
                 {filteredLibraryBooks.length > PAGE_SIZE && (
@@ -1686,7 +1726,7 @@ const BooksTab = () => {
               </p>
             ) : (
               <>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20 books-carousel-container">
+                <div className="flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20 books-carousel-container">
                   {paginatedCompletedBooks.map((book) => renderBookCard(book, true))}
                 </div>
                 {filteredCompletedBooks.length > PAGE_SIZE && (

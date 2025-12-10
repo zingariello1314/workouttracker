@@ -83,10 +83,18 @@
 }
 
 .profile-settings-section h3 {
-  margin: 0 0 15px 0;
+  margin: 0 0 8px 0;
   font-size: 1.1rem;
   font-family: 'Rajdhani', sans-serif;
   color: #ffd700;
+}
+
+.profile-settings-description {
+  margin: 0 0 15px 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  line-height: 1.4;
 }
 
 .profile-settings-avatar-preview {

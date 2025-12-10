@@ -41,4 +41,4 @@ Après le rechargement:
 
 ---
 
-**Note**: Si tu ne fais pas ça, RIEN ne fonctionnera. Les bases de données sont cassées et doivent être recréées.
+**Note**: Si tu ne fais pas ça, RIEN ne fonctionnera. Les bases de données sont cassées et doivent être r

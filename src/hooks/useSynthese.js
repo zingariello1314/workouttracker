@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import syntheseStorage from '../services/finance/syntheseStorage';
 import logger from '../utils/logger';
+import { sidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 
 const log = logger.module('useSynthese');
 
@@ -81,6 +82,12 @@ export const useSynthese = () => {
       await syntheseStorage.savePatrimoine(newPatrimoine);
       setPatrimoine(newPatrimoine);
       log.debug('Patrimoine updated successfully');
+      
+      // Émettre événement pour synchroniser la sidebar
+      sidebarEvents.emit(SIDEBAR_EVENTS.FINANCE_UPDATED, { 
+        type: 'patrimoine', 
+        data: newPatrimoine 
+      });
       
       // Recharger historique
       const newHistorique = await syntheseStorage.getHistorique(30);
