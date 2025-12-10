@@ -1,20 +1,24 @@
 /**
  * Hook de navigation centralisé pour la Sidebar Premium
  * Gère les redirections vers les différents modules/onglets avec support des paramètres contextuels
+ * Intègre la navigation précise avec scroll automatique et mise en évidence
  * 
  * @module hooks/useNavigation
  */
 
 import { useWorkout } from '../context/WorkoutContext';
 import { useCallback } from 'react';
+import { useDeepNavigation } from './useDeepNavigation';
 
 /**
  * Hook pour naviguer entre les différents onglets de l'application
+ * Inclut la navigation précise vers des modules spécifiques
  * 
  * @returns {Object} Fonctions de navigation
  */
 export const useNavigation = () => {
   const { setActiveTab } = useWorkout();
+  const deepNavigation = useDeepNavigation();
 
   /**
    * Navigue vers un onglet spécifique
@@ -147,7 +151,23 @@ export const useNavigation = () => {
   return {
     navigateTo,
     navigateWithParams,
-    ...navigation
+    ...navigation,
+    
+    // Navigation précise avec scroll automatique et mise en évidence
+    navigateToModule: deepNavigation.navigateToModule,
+    navigateToSportModule: deepNavigation.navigateToSport,
+    navigateToBooksModule: deepNavigation.navigateToBooks,
+    navigateToFinanceModule: deepNavigation.navigateToFinance,
+    navigateToQuestsModule: deepNavigation.navigateToQuests,
+    navigateToLearningModule: deepNavigation.navigateToLearning,
+    navigateToNutritionModule: deepNavigation.navigateToNutrition,
+    navigateToHomeModule: deepNavigation.navigateToHome,
+    navigateToSettingsModule: deepNavigation.navigateToSettings,
+    
+    // Utilitaires de navigation
+    getNavigationState: deepNavigation.getNavigationState,
+    cancelPendingNavigations: deepNavigation.cancelPendingNavigations,
+    isNavigating: deepNavigation.isNavigating
   };
 };
 

@@ -1,0 +1,245 @@
+/**
+ * Styles pour le système d'alternance des modules sidebar
+ * Requirements 13.1-13.5: Cohérence visuelle et alternance
+ */
+
+/* Container principal des modules */
+.sidebar-modules-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+/* Styles de base pour tous les modules */
+.sidebar-module {
+  position: relative;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+/* Différenciation visuelle entre types de modules */
+.sidebar-module-legacy {
+  /* Modules existants - style actuel préservé */
+  background: var(--sidebar-section-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.1));
+}
+
+.sidebar-module-historical {
+  /* Nouveaux modules historiques - style distinctif */
+  background: linear-gradient(135deg, 
+    rgba(74, 144, 226, 0.08) 0%, 
+    rgba(80, 200, 120, 0.06) 100%);
+  border: 1px solid rgba(74, 144, 226, 0.2);
+  border-left: 3px solid var(--accent-color, #4a90e2);
+}
+
+/* Badge pour identifier les nouveaux modules */
+.sidebar-module-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(45deg, #4a90e2, #50c878);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+/* Effet de survol pour les modules historiques */
+.sidebar-module-historical:hover {
+  background: linear-gradient(135deg, 
+    rgba(74, 144, 226, 0.12) 0%, 
+    rgba(80, 200, 120, 0.08) 100%);
+  border-color: rgba(74, 144, 226, 0.3);
+  transform: translateX(2px);
+}
+
+/* Effet de survol pour les modules legacy */
+.sidebar-module-legacy:hover {
+  background: var(--sidebar-section-bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--sidebar-border-hover, rgba(255, 255, 255, 0.15));
+}
+
+/* Styles pour les placeholders des modules historiques */
+.module-placeholder {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted, rgba(255, 255, 255, 0.7));
+}
+
+.module-placeholder p {
+  margin: 0 0 8px 0;
+  font-weight: 500;
+  color: var(--text-primary, rgba(255, 255, 255, 0.9));
+}
+
+.module-placeholder small {
+  font-size: 12px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.6));
+  font-style: italic;
+}
+
+/* Styles de chargement */
+.sidebar-modules-loading,
+.sidebar-module-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--text-muted, rgba(255, 255, 255, 0.7));
+}
+
+.sidebar-loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid var(--accent-color, #4a90e2);
+  border-radius: 50%;
+  animation: sidebar-spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+.sidebar-loading-text {
+  font-size: 14px;
+}
+
+@keyframes sidebar-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Styles d'erreur */
+.sidebar-modules-error,
+.sidebar-module-error {
+  padding: 16px;
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: 8px;
+  color: #ff6b6b;
+}
+
+.sidebar-error-icon {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.sidebar-error-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sidebar-error-content p {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+}
+
+.sidebar-error-content small {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* Avertissement de validation (développement uniquement) */
+.sidebar-validation-warning {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  color: #ffc107;
+  font-size: 12px;
+}
+
+.sidebar-validation-warning strong {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.sidebar-validation-warning ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.sidebar-validation-warning li {
+  margin-bottom: 4px;
+}
+
+/* Responsive - Mobile */
+@media (max-width: 768px) {
+  .sidebar-module-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    top: 6px;
+    right: 6px;
+  }
+  
+  .module-placeholder {
+    padding: 12px;
+  }
+  
+  .sidebar-module-historical:hover {
+    transform: none; /* Désactiver l'effet de translation sur mobile */
+  }
+}
+
+/* Animations d'entrée pour les modules */
+.sidebar-module {
+  animation: sidebar-module-fade-in 0.3s ease-out;
+}
+
+@keyframes sidebar-module-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Styles pour l'alternance visuelle */
+.sidebar-module:nth-child(odd) {
+  /* Modules en position impaire (historiques) */
+  margin-left: 0;
+}
+
+.sidebar-module:nth-child(even) {
+  /* Modules en position paire (legacy) */
+  margin-left: 0;
+}
+
+/* Séparateurs visuels subtils entre modules */
+.sidebar-module + .sidebar-module {
+  margin-top: 1px;
+}
+
+/* Effet de focus pour l'accessibilité */
+.sidebar-module:focus-within {
+  outline: 2px solid var(--accent-color, #4a90e2);
+  outline-offset: 2px;
+}
+
+/* Styles pour les modules en cours de navigation */
+.sidebar-module.navigating {
+  background: rgba(74, 144, 226, 0.15);
+  border-color: rgba(74, 144, 226, 0.4);
+  transform: scale(1.02);
+}
+
+/* Styles pour les modules désactivés */
+.sidebar-module.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.sidebar-module.disabled .sidebar-module-badge {
+  background: #6c757d;
+}

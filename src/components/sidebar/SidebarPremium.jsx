@@ -5,15 +5,9 @@ import { useNavigation } from '../../hooks/useNavigation';
 import { useAuth } from '../../hooks/useAuth';
 import { measureSync, SIDEBAR_OPERATIONS } from '../../utils/performanceMonitor';
 import ProfileCard3D from './ProfileCard3D';
-import ProgressionGlobaleSection from './ProgressionGlobaleSection';
-import QuestesJourSection from './QuestesJourSection';
-import ActivitePhysiqueSection from './ActivitePhysiqueSection';
-import LectureSection from './LectureSection';
-import FinancesSection from './FinancesSection';
-import NutritionSection from './NutritionSection';
-import ActionsRapidesSection from './ActionsRapidesSection';
-import AujourdhuiSection from './AujourdhuiSection';
+import ModuleRenderer from './ModuleRenderer';
 import '../../styles/sidebar-premium.css';
+import '../../styles/module-alternation.css';
 
 /**
  * Composant principal de la Sidebar Premium QuietQuest
@@ -263,72 +257,38 @@ const SidebarPremium = memo(() => {
         </div>
       </div>
 
-      {/* Zone Scrollable - Sections */}
+      {/* Zone Scrollable - Modules avec alternance */}
       <div className="sidebar-content" id="sidebar-main-content">
-        {/* Section Actions Rapides */}
-        <ActionsRapidesSection
-          isExpanded={isSectionExpanded('actions')}
-          onToggle={() => toggleSection('actions')}
-          navigation={navigation}
-        />
-
-        {/* Section Aujourd'hui */}
-        <AujourdhuiSection
-          isExpanded={isSectionExpanded('today')}
-          onToggle={() => toggleSection('today')}
-          data={today}
-          navigation={navigation}
-          todayDate={todayDate}
-        />
-
-        {/* Section Progression Globale (anciennement Métriques Vitales) */}
-        <ProgressionGlobaleSection
-          isExpanded={isSectionExpanded('metrics')}
-          onToggle={() => toggleSection('metrics')}
-          metrics={metrics}
-          navigation={navigation}
-        />
-
-        {/* Section Quêtes du Jour (refactorisée) */}
-        <QuestesJourSection
-          isExpanded={isSectionExpanded('quests')}
-          onToggle={() => toggleSection('quests')}
-          quests={quests}
-          navigation={navigation}
-        />
-
-        {/* Section Activité Physique (refactorisée) */}
-        <ActivitePhysiqueSection
-          isExpanded={isSectionExpanded('sport')}
-          onToggle={() => toggleSection('sport')}
-          data={sport}
-          navigation={navigation}
-        />
-
-        {/* Section Lecture (refactorisée) */}
-        <LectureSection
-          isExpanded={isSectionExpanded('books')}
-          onToggle={() => toggleSection('books')}
-          data={learning}
-          navigation={navigation}
-          todayDate={todayDate}
-        />
-
-        {/* Section Finances */}
-        <FinancesSection
-          isExpanded={isSectionExpanded('finance')}
-          onToggle={() => toggleSection('finance')}
-          data={finance}
-          navigation={navigation}
-        />
-
-        {/* Section Nutrition */}
-        <NutritionSection
-          isExpanded={isSectionExpanded('nutrition')}
-          onToggle={() => toggleSection('nutrition')}
-          data={nutrition}
-          navigation={navigation}
-          todayDate={todayDate}
+        <ModuleRenderer
+          sidebarProps={{
+            // Fonctions de gestion des sections
+            isSectionExpanded,
+            toggleSection,
+            
+            // Navigation
+            navigation,
+            
+            // Données
+            data: {
+              metrics,
+              quests,
+              sport,
+              finance,
+              nutrition,
+              learning,
+              today
+            },
+            
+            // Date
+            todayDate,
+            
+            // État de chargement
+            isLoading
+          }}
+          onModuleError={(error, moduleId) => {
+            console.error(`Erreur dans le module ${moduleId}:`, error);
+          }}
+          className="sidebar-modules-alternated"
         />
       </div>
     </aside>

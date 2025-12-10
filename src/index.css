@@ -5,6 +5,9 @@
 /* Import Sidebar Premium QuietQuest */
 @import './styles/sidebar-premium.css';
 
+/* Import Module Highlight Styles */
+@import './styles/module-highlight.css';
+
 /* Variables CSS pour thème dynamique (valeurs par défaut) */
 :root {
   --theme-primary: #8b5cf6;      /* Purple-500 par défaut */
