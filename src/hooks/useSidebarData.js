@@ -290,7 +290,10 @@ export const useSidebarData = () => {
         todayCalories: todayMetrics?.totalCaloriesBurned || 0,
         todaySteps: todayMetrics?.steps || 0,
         avgHeartRate: todayMetrics?.restingHeartRate || 72,
-        hasGarminData: garminData !== null
+        hasGarminData: garminData !== null,
+        // Passer les métriques complètes pour les modules historiques
+        todayMetrics: todayMetrics || null,
+        garminData: garminData || null
       };
     } catch (error) {
       console.error('[useSidebarData] Erreur calcul sport:', error);
@@ -389,7 +392,18 @@ export const useSidebarData = () => {
         todayPages: booksStatistics.todayPages || 0,
         todayMinutes: booksStatistics.todayMinutes || 0,
         dailyGoal: booksStatistics.dailyGoal || 30,
-        hasData: booksStatistics.hasData || false
+        hasData: booksStatistics.hasData || false,
+        // Ajouter les livres pour les modules historiques
+        books: books || [],
+        subjects: [
+          'mathematics',
+          'programming', 
+          'languages',
+          'science',
+          'history',
+          'philosophy',
+          'other'
+        ]
       };
     } catch (error) {
       console.error('[useSidebarData] Erreur calcul learning:', error);
@@ -398,10 +412,12 @@ export const useSidebarData = () => {
         todayPages: 0,
         todayMinutes: 0,
         dailyGoal: 30,
-        hasData: false
+        hasData: false,
+        books: [],
+        subjects: []
       };
     }
-  }, [booksStatistics]);
+  }, [booksStatistics, books]);
 
   // Données "Aujourd'hui" - Agrégation des activités du jour - Optimisé
   const todayData = useMemo(() => {

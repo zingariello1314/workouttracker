@@ -677,7 +677,7 @@ const MatièresView = () => {
           {recommendations.urgent.length > 0 && (
             <div>
               <div className="text-sm font-semibold text-red-400 mb-2">
-                ⚠️ Matières urgentes (dernière étude > 7 jours):
+                ⚠️ Matières urgentes (dernière étude &gt; 7 jours):
               </div>
               <div className="space-y-2">
                 {recommendations.urgent.map((subject) => {

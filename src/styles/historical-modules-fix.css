@@ -1,0 +1,287 @@
+/**
+ * FIX CSS pour les modules historiques de la sidebar
+ * Harmonise les nouveaux modules avec le système existant
+ */
+
+/* ============================================
+   BASE POUR TOUS LES MODULES HISTORIQUES
+   ============================================ */
+
+.historical-module {
+  /* Hériter de tous les styles de base sidebar-section */
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: var(--sidebar-radius-md);
+  margin-bottom: var(--sidebar-spacing-md);
+  overflow: hidden;
+  transition: all var(--sidebar-transition-normal);
+}
+
+.historical-module:hover {
+  border-color: rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(255, 20, 147, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Header uniforme pour tous les modules historiques */
+.historical-module .sidebar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sidebar-spacing-md);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--sidebar-transition-fast);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.historical-module .sidebar-section-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.historical-module .sidebar-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sidebar-spacing-sm);
+  font-size: var(--sidebar-text-md);
+  font-weight: 600;
+  font-family: 'Rajdhani', sans-serif;
+  color: white;
+  flex: 1;
+}
+
+.historical-module .sidebar-section-icon {
+  font-size: var(--sidebar-text-lg);
+  color: var(--sidebar-cyan);
+  filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.5));
+}
+
+.historical-module .sidebar-section-content {
+  padding: var(--sidebar-spacing-md);
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+
+/* Badge "Nouveau" uniforme */
+.historical-module .sidebar-module-badge {
+  background: var(--sidebar-gradient-signature);
+  color: white;
+  font-size: var(--sidebar-text-xs);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: var(--sidebar-spacing-sm);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   CORRECTIONS SPÉCIFIQUES PAR MODULE
+   ============================================ */
+
+/* Session Recorder Module */
+.session-recorder-module {
+  /* Réinitialiser les styles Tailwind problématiques */
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border-radius: var(--sidebar-radius-md) !important;
+  padding: 0 !important; /* Le padding est géré par les sous-éléments */
+}
+
+.session-recorder-module .sidebar-section-header {
+  background: rgba(255, 255, 255, 0.02) !important;
+  margin-bottom: 0 !important;
+  padding: var(--sidebar-spacing-md) !important;
+}
+
+.session-recorder-module .sidebar-section-content {
+  padding: var(--sidebar-spacing-md) !important;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+/* Reading Progress Module */
+.reading-progress-module {
+  /* Réinitialiser les styles custom */
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border-radius: var(--sidebar-radius-md) !important;
+  padding: 0 !important;
+}
+
+.reading-progress-module::before {
+  /* Garder l'accent coloré mais plus subtil */
+  background: linear-gradient(90deg, var(--sidebar-cyan), var(--sidebar-gold)) !important;
+  opacity: 0.3 !important;
+}
+
+.reading-progress-module:hover::before {
+  opacity: 0.6 !important;
+}
+
+.reading-progress-module .sidebar-section-header {
+  background: rgba(255, 255, 255, 0.02) !important;
+  margin-bottom: 0 !important;
+  padding: var(--sidebar-spacing-md) !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1) !important;
+}
+
+.reading-progress-module .sidebar-section-content {
+  padding: var(--sidebar-spacing-md) !important;
+}
+
+/* Garmin Metrics Module */
+.garmin-metrics-module {
+  /* Réinitialiser les styles Tailwind */
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border-radius: var(--sidebar-radius-md) !important;
+  padding: 0 !important;
+}
+
+.garmin-metrics-module .sidebar-section-header {
+  background: rgba(255, 255, 255, 0.02) !important;
+  margin-bottom: 0 !important;
+  padding: var(--sidebar-spacing-md) !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.garmin-metrics-module .sidebar-section-content {
+  padding: var(--sidebar-spacing-md) !important;
+}
+
+/* Patrimony Evolution Module */
+.patrimony-evolution-module {
+  /* Utiliser les variables CSS existantes au lieu des custom */
+  --patrimony-primary: var(--sidebar-purple);
+  --patrimony-secondary: var(--sidebar-cyan);
+  --patrimony-accent: var(--sidebar-pink);
+  --patrimony-success: var(--sidebar-green);
+  --patrimony-warning: var(--sidebar-gold);
+  --patrimony-danger: var(--sidebar-red);
+  --patrimony-info: var(--sidebar-blue);
+  
+  /* Styles de base */
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border-radius: var(--sidebar-radius-md) !important;
+  padding: 0 !important;
+}
+
+.patrimony-evolution-module .sidebar-section-header {
+  background: rgba(255, 255, 255, 0.02) !important;
+  padding: var(--sidebar-spacing-md) !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1) !important;
+  border-radius: 0 !important;
+}
+
+.patrimony-evolution-module .sidebar-section-content {
+  padding: var(--sidebar-spacing-md) !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* ============================================
+   COMPOSANTS COMMUNS HARMONISÉS
+   ============================================ */
+
+/* Cartes de métriques */
+.historical-module .metric-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: var(--sidebar-radius-sm);
+  padding: var(--sidebar-spacing-sm);
+  transition: all var(--sidebar-transition-normal);
+}
+
+.historical-module .metric-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 215, 0, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 20, 147, 0.1);
+}
+
+/* Sélecteurs de période */
+.historical-module .period-select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  color: white !important;
+  font-size: var(--sidebar-text-xs) !important;
+  padding: 4px 8px !important;
+  border-radius: var(--sidebar-radius-sm) !important;
+  transition: all var(--sidebar-transition-fast) !important;
+}
+
+.historical-module .period-select:hover {
+  border-color: rgba(255, 215, 0, 0.5) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.historical-module .period-select:focus {
+  border-color: var(--sidebar-cyan) !important;
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2) !important;
+  outline: none !important;
+}
+
+/* Indicateurs de navigation */
+.historical-module .navigation-hint {
+  text-align: center;
+  margin-top: var(--sidebar-spacing-sm);
+  padding-top: var(--sidebar-spacing-sm);
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.historical-module .navigation-hint span {
+  font-size: var(--sidebar-text-xs);
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  transition: color var(--sidebar-transition-fast);
+}
+
+.historical-module:hover .navigation-hint span {
+  color: var(--sidebar-cyan);
+}
+
+/* ============================================
+   ANIMATIONS HARMONISÉES
+   ============================================ */
+
+.historical-module .sidebar-section-content > * {
+  animation: fadeInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+.historical-module .sidebar-section-content > *:nth-child(1) { animation-delay: 0.05s; }
+.historical-module .sidebar-section-content > *:nth-child(2) { animation-delay: 0.1s; }
+.historical-module .sidebar-section-content > *:nth-child(3) { animation-delay: 0.15s; }
+.historical-module .sidebar-section-content > *:nth-child(4) { animation-delay: 0.2s; }
+.historical-module .sidebar-section-content > *:nth-child(5) { animation-delay: 0.25s; }
+
+/* ============================================
+   RESPONSIVE ET ACCESSIBILITÉ
+   ============================================ */
+
+@media (max-width: 768px) {
+  .historical-module .sidebar-section-content {
+    padding: var(--sidebar-spacing-sm) !important;
+  }
+  
+  .historical-module .metric-card {
+    padding: var(--sidebar-spacing-xs) !important;
+  }
+}
+
+/* Focus pour l'accessibilité */
+.historical-module .sidebar-section-header:focus-visible {
+  outline: 3px solid var(--sidebar-cyan);
+  outline-offset: -2px;
+}
+
+/* Réduction des animations pour les utilisateurs qui les préfèrent réduites */
+@media (prefers-reduced-motion: reduce) {
+  .historical-module,
+  .historical-module .sidebar-section-content > *,
+  .historical-module .metric-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,326 @@
+/**
+ * Styles pour le module PatrimonyEvolutionModule
+ * Module d'évolution patrimoine (Position 9)
+ */
+
+.patrimony-evolution-module {
+  /* Variables CSS pour la cohérence */
+  --patrimony-primary: #a855f7; /* purple-500 */
+  --patrimony-secondary: #8b5cf6; /* violet-500 */
+  --patrimony-accent: #ec4899; /* pink-500 */
+  --patrimony-success: #10b981; /* emerald-500 */
+  --patrimony-warning: #f59e0b; /* amber-500 */
+  --patrimony-danger: #ef4444; /* red-500 */
+  --patrimony-info: #3b82f6; /* blue-500 */
+}
+
+/* Header avec sélecteur de période */
+.patrimony-evolution-module .sidebar-section-header {
+  background: linear-gradient(135deg, var(--patrimony-primary)/10, var(--patrimony-secondary)/10);
+  border-bottom: 1px solid var(--patrimony-primary)/20;
+  padding: 0.75rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.patrimony-evolution-module .sidebar-section-title {
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.patrimony-evolution-module .sidebar-section-icon {
+  font-size: 1.125rem;
+  filter: drop-shadow(0 0 8px var(--patrimony-primary)/50);
+}
+
+/* Sélecteur de période */
+.patrimony-evolution-module .period-selector {
+  position: relative;
+}
+
+.patrimony-evolution-module .period-select {
+  background: rgba(51, 65, 85, 0.5);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  outline: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.patrimony-evolution-module .period-select:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  background: rgba(51, 65, 85, 0.7);
+}
+
+.patrimony-evolution-module .period-select:focus {
+  border-color: var(--patrimony-primary);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+}
+
+/* Contenu principal */
+.patrimony-evolution-module .sidebar-section-content {
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+/* Cartes de métriques */
+.patrimony-evolution-module .metric-card {
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.3), rgba(71, 85, 105, 0.3));
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.patrimony-evolution-module .metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--patrimony-primary), var(--patrimony-secondary));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.patrimony-evolution-module .metric-card:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+}
+
+.patrimony-evolution-module .metric-card:hover::before {
+  opacity: 1;
+}
+
+/* Indicateurs de tendance */
+.patrimony-evolution-module .trend-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.patrimony-evolution-module .trend-up {
+  color: var(--patrimony-success);
+}
+
+.patrimony-evolution-module .trend-down {
+  color: var(--patrimony-danger);
+}
+
+.patrimony-evolution-module .trend-neutral {
+  color: #94a3b8; /* slate-400 */
+}
+
+/* Valeurs des métriques */
+.patrimony-evolution-module .metric-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+}
+
+.patrimony-evolution-module .metric-label {
+  font-size: 0.75rem;
+  color: #94a3b8; /* slate-400 */
+  font-weight: 500;
+}
+
+.patrimony-evolution-module .metric-percentage {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.patrimony-evolution-module .metric-percentage.positive {
+  color: var(--patrimony-success);
+}
+
+.patrimony-evolution-module .metric-percentage.negative {
+  color: var(--patrimony-danger);
+}
+
+/* Objectifs atteints */
+.patrimony-evolution-module .objectives-indicators {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.patrimony-evolution-module .objective-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.patrimony-evolution-module .objective-dot.achieved {
+  background: var(--patrimony-success);
+  box-shadow: 0 0 4px var(--patrimony-success)/50;
+}
+
+.patrimony-evolution-module .objective-dot.not-achieved {
+  background: #475569; /* slate-600 */
+}
+
+/* Mini-graphique d'évolution */
+.patrimony-evolution-module .chart-container {
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.2), rgba(71, 85, 105, 0.2));
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.patrimony-evolution-module .evolution-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 2.5rem;
+  position: relative;
+  margin-top: 0.5rem;
+}
+
+.patrimony-evolution-module .evolution-chart .chart-bar {
+  border-radius: 2px 2px 0 0;
+  min-width: 3px;
+  flex: 1;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.patrimony-evolution-module .evolution-chart .chart-bar.positive {
+  background: linear-gradient(to top, var(--patrimony-success)/60, var(--patrimony-success)/80);
+}
+
+.patrimony-evolution-module .evolution-chart .chart-bar.negative {
+  background: linear-gradient(to top, var(--patrimony-danger)/60, var(--patrimony-danger)/80);
+}
+
+.patrimony-evolution-module .evolution-chart .chart-bar:hover {
+  opacity: 0.8;
+  transform: scaleY(1.1);
+}
+
+/* Ligne de référence zéro */
+.patrimony-evolution-module .evolution-chart .zero-line {
+  position: absolute;
+  width: 100%;
+  border-top: 1px solid rgba(100, 116, 139, 0.5);
+  z-index: 1;
+}
+
+/* Indicateur de navigation */
+.patrimony-evolution-module .navigation-hint {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.patrimony-evolution-module .navigation-hint span {
+  font-size: 0.75rem;
+  color: #64748b; /* slate-500 */
+  font-style: italic;
+  transition: color 0.2s ease;
+}
+
+.patrimony-evolution-module:hover .navigation-hint span {
+  color: var(--patrimony-primary);
+}
+
+/* États de chargement et d'erreur */
+.patrimony-evolution-module .loading-spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid rgba(168, 85, 247, 0.3);
+  border-top: 2px solid var(--patrimony-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.patrimony-evolution-module .error-message {
+  color: var(--patrimony-danger);
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .patrimony-evolution-module .sidebar-section-content {
+    padding: 0.75rem;
+  }
+  
+  .patrimony-evolution-module .metric-card {
+    padding: 0.5rem;
+  }
+  
+  .patrimony-evolution-module .metric-value {
+    font-size: 1rem;
+  }
+}
+
+/* Animations d'entrée */
+.patrimony-evolution-module .metric-card {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.patrimony-evolution-module .metric-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.patrimony-evolution-module .metric-card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Effet de survol global du module */
+.patrimony-evolution-module:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(168, 85, 247, 0.15);
+}
+
+.patrimony-evolution-module {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+/* Badge "Nouveau" */
+.patrimony-evolution-module .sidebar-module-badge {
+  background: linear-gradient(135deg, var(--patrimony-primary), var(--patrimony-secondary));
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  box-shadow: 0 2px 4px rgba(168, 85, 247, 0.3);
+}

@@ -1,0 +1,206 @@
+/**
+ * Reading Progress Module Styles
+ * Module de progression lecture (Position 3)
+ */
+
+.reading-progress-module {
+  /* Module container */
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.reading-progress-module::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+  opacity: 0.6;
+}
+
+.reading-progress-module:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+}
+
+.reading-progress-module:hover::before {
+  opacity: 1;
+}
+
+/* Header styles */
+.reading-progress-module .sidebar-section-header {
+  margin-bottom: 12px;
+}
+
+.reading-progress-module .sidebar-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.reading-progress-module .sidebar-section-icon {
+  font-size: 16px;
+}
+
+/* Period selector */
+.period-selector {
+  position: relative;
+}
+
+.period-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 6px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 24px;
+  cursor: pointer;
+}
+
+.period-select:hover {
+  background-color: rgba(51, 65, 85, 0.7);
+}
+
+/* Metric cards */
+.metric-card {
+  transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+  background-color: rgba(51, 65, 85, 0.5) !important;
+  transform: scale(1.02);
+}
+
+/* Trend indicators */
+.trend-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Mini chart */
+.mini-chart {
+  padding: 8px 0;
+  min-height: 40px;
+}
+
+.mini-chart > div {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.mini-chart > div:hover {
+  background-color: rgba(59, 130, 246, 0.8) !important;
+  transform: scaleY(1.1);
+}
+
+/* Chart container */
+.chart-container {
+  transition: all 0.2s ease;
+}
+
+.chart-container:hover {
+  background-color: rgba(51, 65, 85, 0.3) !important;
+}
+
+/* Navigation hint */
+.navigation-hint {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.reading-progress-module:hover .navigation-hint {
+  opacity: 1;
+}
+
+/* Loading state */
+.reading-progress-module .loading-spinner {
+  border-color: rgba(59, 130, 246, 0.3);
+  border-top-color: #3b82f6;
+}
+
+/* Error state */
+.reading-progress-module .error-message {
+  color: #f87171;
+  font-size: 12px;
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .reading-progress-module {
+    padding: 12px;
+  }
+  
+  .reading-progress-module .sidebar-section-title {
+    font-size: 13px;
+  }
+  
+  .metric-card {
+    padding: 8px !important;
+  }
+  
+  .metric-card .text-lg {
+    font-size: 16px;
+  }
+}
+
+/* Accessibility */
+.reading-progress-module:focus-within {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+.period-select:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Animation for data updates */
+@keyframes dataUpdate {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.metric-card.data-updated {
+  animation: dataUpdate 0.3s ease;
+}
+
+/* Gradient text for numbers */
+.reading-progress-module .metric-value {
+  background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* Hover effects for interactive elements */
+.reading-progress-module .metric-card:hover .metric-value {
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

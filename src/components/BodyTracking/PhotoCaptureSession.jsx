@@ -1293,7 +1293,6 @@ const PhotoCaptureSession = ({
                       <div className="text-center text-xs text-slate-500">
                         Temps estimé: ~{Math.round((sessionAnalysisProgress.progress < 100 ? 
                           (100 - sessionAnalysisProgress.progress) * 0.05 : 0) * sessionAnalysisProgress.total)}s
-                        )}
                       </div>
                     )}
                   </div>

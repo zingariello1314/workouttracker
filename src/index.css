@@ -1,12 +1,27 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* Import Sidebar Premium QuietQuest */
 @import './styles/sidebar-premium.css';
 
 /* Import Module Highlight Styles */
 @import './styles/module-highlight.css';
+
+/* Import Session Recorder Module Styles */
+@import './styles/session-recorder-module.css';
+
+/* Import Reading Progress Module Styles */
+@import './styles/reading-progress-module.css';
+
+/* Import Garmin Metrics Module Styles */
+@import './styles/garmin-metrics-module.css';
+
+/* Import Patrimony Evolution Module Styles */
+@import './styles/patrimony-evolution-module.css';
+
+/* Import Historical Modules Fix - DOIT ÊTRE APRÈS LES AUTRES MODULES */
+@import './styles/historical-modules-fix.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Variables CSS pour thème dynamique (valeurs par défaut) */
 :root {
