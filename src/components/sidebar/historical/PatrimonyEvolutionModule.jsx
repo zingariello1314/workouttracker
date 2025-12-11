@@ -167,7 +167,8 @@ const PatrimonyEvolutionModule = memo(({
   moduleType, 
   navigationTarget,
   data = {},
-  navigation
+  navigation,
+  isExpanded = true // Toujours affiché par défaut pour les modules historiques
 }) => {
   // États
   const [selectedPeriod, setSelectedPeriod] = useState('30');
@@ -408,11 +409,13 @@ const PatrimonyEvolutionModule = memo(({
             Évolution Patrimoine
           </h3>
         </div>
-        <div className="sidebar-section-content">
-          <div className="flex items-center justify-center py-8">
-            <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+        {isExpanded && (
+          <div className="sidebar-section-content">
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -430,11 +433,13 @@ const PatrimonyEvolutionModule = memo(({
             Évolution Patrimoine
           </h3>
         </div>
-        <div className="sidebar-section-content">
-          <div className="text-center py-4 text-red-400 text-sm">
-            {error}
+        {isExpanded && (
+          <div className="sidebar-section-content">
+            <div className="text-center py-4 text-red-400 text-sm">
+              {error}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -460,7 +465,8 @@ const PatrimonyEvolutionModule = memo(({
         </div>
       </div>
 
-      <div className="sidebar-section-content space-y-3">
+      {isExpanded && (
+        <div className="sidebar-section-content space-y-3">
         {/* Variation patrimoine net */}
         <div className="metric-card bg-slate-700/30 rounded-lg p-3 border border-slate-600/50">
           <div className="flex items-center justify-between mb-2">
@@ -558,7 +564,8 @@ const PatrimonyEvolutionModule = memo(({
             Cliquer pour voir les détails →
           </span>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 });

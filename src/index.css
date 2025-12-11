@@ -16,6 +16,9 @@
 /* Import Patrimony Evolution Module Styles */
 @import './styles/patrimony-evolution-module.css';
 
+/* Import Shopping List Module Styles */
+@import './styles/shopping-list-module.css';
+
 /* Import Historical Modules Fix - DOIT ÊTRE APRÈS LES AUTRES MODULES */
 @import './styles/historical-modules-fix.css';
 

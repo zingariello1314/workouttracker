@@ -146,7 +146,8 @@ const ReadingProgressModule = memo(({
   moduleType, 
   navigationTarget,
   data = {},
-  navigation
+  navigation,
+  isExpanded = true // Toujours affiché par défaut pour les modules historiques
 }) => {
   // États
   const [selectedPeriod, setSelectedPeriod] = useState('7');
@@ -286,11 +287,13 @@ const ReadingProgressModule = memo(({
             Progression Lecture
           </h3>
         </div>
-        <div className="sidebar-section-content">
-          <div className="flex items-center justify-center py-8">
-            <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+        {isExpanded && (
+          <div className="sidebar-section-content">
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -308,11 +311,13 @@ const ReadingProgressModule = memo(({
             Progression Lecture
           </h3>
         </div>
-        <div className="sidebar-section-content">
-          <div className="text-center py-4 text-red-400 text-sm">
-            {error}
+        {isExpanded && (
+          <div className="sidebar-section-content">
+            <div className="text-center py-4 text-red-400 text-sm">
+              {error}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -338,7 +343,8 @@ const ReadingProgressModule = memo(({
         </div>
       </div>
 
-      <div className="sidebar-section-content space-y-3">
+      {isExpanded && (
+        <div className="sidebar-section-content space-y-3">
         {/* Métriques principales */}
         <div className="grid grid-cols-2 gap-3">
           {/* Sessions */}
@@ -427,7 +433,8 @@ const ReadingProgressModule = memo(({
             Cliquer pour voir les détails →
           </span>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 });

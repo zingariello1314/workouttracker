@@ -51,6 +51,7 @@ const SidebarPremium = memo(() => {
 
   // Hook de navigation
   const navigation = useNavigation();
+  const { setActiveTab } = navigation; // Extraire setActiveTab pour les modules historiques
 
   // Hook d'authentification
   const { user } = useAuth();
@@ -267,6 +268,7 @@ const SidebarPremium = memo(() => {
             
             // Navigation
             navigation,
+            setActiveTab, // Ajouter setActiveTab pour les modules historiques
             
             // Données
             data: {

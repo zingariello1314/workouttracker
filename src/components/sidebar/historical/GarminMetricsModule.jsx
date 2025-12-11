@@ -175,13 +175,13 @@ const GarminMetricsModule = memo(({
 
   if (isLoading) {
     return (
-      <div className="sidebar-section historical-module garmin-metrics-module">
-        <div className="sidebar-section-header">
-          <h3 className="sidebar-section-title">
-            ⌚ Métriques Garmin
-          </h3>
-          <span className="sidebar-module-badge">Nouveau</span>
-        </div>
+      <section className="sidebar-section garmin-metrics-module">
+        <header className="sidebar-section-header">
+          <h2 className="sidebar-section-title">
+            <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
+            Métriques Garmin
+          </h2>
+        </header>
         
         {isExpanded && (
           <div className="sidebar-section-content">
@@ -191,19 +191,19 @@ const GarminMetricsModule = memo(({
             </div>
           </div>
         )}
-      </div>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <div className="sidebar-section historical-module garmin-metrics-module">
-        <div className="sidebar-section-header">
-          <h3 className="sidebar-section-title">
-            ⌚ Métriques Garmin
-          </h3>
-          <span className="sidebar-module-badge error">Erreur</span>
-        </div>
+      <section className="sidebar-section garmin-metrics-module">
+        <header className="sidebar-section-header">
+          <h2 className="sidebar-section-title">
+            <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
+            Métriques Garmin
+          </h2>
+        </header>
         
         {isExpanded && (
           <div className="sidebar-section-content">
@@ -223,7 +223,7 @@ const GarminMetricsModule = memo(({
             </div>
           </div>
         )}
-      </div>
+      </section>
     );
   }
 
@@ -247,15 +247,13 @@ const GarminMetricsModule = memo(({
       const steps = demoMetrics.steps;
 
       return (
-        <div className="sidebar-section historical-module garmin-metrics-module">
-          <div className="sidebar-section-header">
-            <h3 className="sidebar-section-title">
-              ⌚ Métriques Garmin
-            </h3>
-            <div className="header-actions">
-              <span className="sidebar-module-badge demo">Démo</span>
-            </div>
-          </div>
+        <section className="sidebar-section garmin-metrics-module">
+          <header className="sidebar-section-header">
+            <h2 className="sidebar-section-title">
+              <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
+              Métriques Garmin
+            </h2>
+          </header>
           
           {isExpanded && (
             <div className="sidebar-section-content">
@@ -380,20 +378,21 @@ const GarminMetricsModule = memo(({
                 <span className="nav-arrow">→</span>
               </button>
             </div>
+            </div>
           )}
-        </div>
+        </section>
       );
     }
 
     // En production, afficher le message "pas de données"
     return (
-      <div className="sidebar-section historical-module garmin-metrics-module">
-        <div className="sidebar-section-header">
-          <h3 className="sidebar-section-title">
-            ⌚ Métriques Garmin
-          </h3>
-          <span className="sidebar-module-badge">Nouveau</span>
-        </div>
+      <section className="sidebar-section garmin-metrics-module">
+        <header className="sidebar-section-header">
+          <h2 className="sidebar-section-title">
+            <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
+            Métriques Garmin
+          </h2>
+        </header>
         
         {isExpanded && (
           <div className="sidebar-section-content">
@@ -413,7 +412,7 @@ const GarminMetricsModule = memo(({
             </div>
           </div>
         )}
-      </div>
+      </section>
     );
   }
 
@@ -424,22 +423,16 @@ const GarminMetricsModule = memo(({
   const steps = todayMetrics.steps || todayMetrics.wellness?.steps || 0;
 
   return (
-    <div className="sidebar-section historical-module garmin-metrics-module">
-      <div className="sidebar-section-header">
-        <h3 className="sidebar-section-title">
-          ⌚ Métriques Garmin
-        </h3>
-        <div className="header-actions">
-          <span className="sidebar-module-badge">Nouveau</span>
-          {lastSync && (
-            <span className="last-sync" title={`Dernière mise à jour: ${lastSync.toLocaleTimeString()}`}>
-              🔄
-            </span>
-          )}
-        </div>
-      </div>
+    <section className="sidebar-section garmin-metrics-module">
+      <header className="sidebar-section-header">
+        <h2 className="sidebar-section-title">
+          <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
+          Métriques Garmin
+        </h2>
+      </header>
       
-      <div className="sidebar-section-content">
+      {isExpanded && (
+        <div className="sidebar-section-content">
         {/* Calories */}
         <div className="metric-group calories-group">
           <div className="metric-header">
@@ -563,8 +556,9 @@ const GarminMetricsModule = memo(({
             <span className="nav-arrow">→</span>
           </button>
         </div>
-      </div>
-    </div>
+        </div>
+      )}
+    </section>
   );
 });
 

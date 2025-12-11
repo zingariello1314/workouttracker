@@ -257,6 +257,7 @@ const ModuleItem = memo(({
       moduleType: module.type,
       navigationTarget: module.navigationTarget,
       navigation: sidebarProps.navigation,
+      setActiveTab: sidebarProps.setActiveTab, // FIX: Ajouter setActiveTab pour la navigation
       data: finalData,
       todayDate: sidebarProps.todayDate || new Date().toISOString().slice(0, 10),
       isLoading: false // FIX: Toujours false pour éviter les états de chargement infinis
