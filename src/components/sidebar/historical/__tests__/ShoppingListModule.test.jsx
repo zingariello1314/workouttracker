@@ -19,9 +19,14 @@ describe('ShoppingListModule', () => {
   const mockNavigateToModule = vi.fn();
 
   const defaultProps = {
-    moduleId: 'shopping-list-module',
-    moduleType: 'historical',
-    setActiveTab: mockSetActiveTab
+    isExpanded: true,
+    onToggle: vi.fn(),
+    navigation: {
+      setActiveTab: mockSetActiveTab
+    },
+    data: {
+      shoppingLists: []
+    }
   };
 
   beforeEach(() => {
@@ -39,39 +44,48 @@ describe('ShoppingListModule', () => {
 
   describe('États de chargement et d\'erreur', () => {
     it('affiche un indicateur de chargement', () => {
-      useSmartShopping.mockReturnValue({
-        listes: [],
-        loading: true,
-        error: null
-      });
+      const props = {
+        ...defaultProps,
+        data: {
+          loading: true,
+          error: null,
+          shoppingLists: []
+        }
+      };
 
-      render(<ShoppingListModule {...defaultProps} />);
+      render(<ShoppingListModule {...props} />);
 
       expect(screen.getByText('Chargement...')).toBeInTheDocument();
-      expect(screen.getByRole('status')).toBeInTheDocument();
+      expect(screen.getByText('Liste Courses')).toBeInTheDocument();
     });
 
     it('affiche un message d\'erreur', () => {
-      useSmartShopping.mockReturnValue({
-        listes: [],
-        loading: false,
-        error: 'Erreur de connexion'
-      });
+      const props = {
+        ...defaultProps,
+        data: {
+          loading: false,
+          error: 'Erreur de connexion',
+          shoppingLists: []
+        }
+      };
 
-      render(<ShoppingListModule {...defaultProps} />);
+      render(<ShoppingListModule {...props} />);
 
       expect(screen.getByText('Erreur de chargement')).toBeInTheDocument();
-      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByText('Liste Courses')).toBeInTheDocument();
     });
 
     it('affiche un état vide quand aucune liste', () => {
-      useSmartShopping.mockReturnValue({
-        listes: [],
-        loading: false,
-        error: null
-      });
+      const props = {
+        ...defaultProps,
+        data: {
+          loading: false,
+          error: null,
+          shoppingLists: []
+        }
+      };
 
-      render(<ShoppingListModule {...defaultProps} />);
+      render(<ShoppingListModule {...props} />);
 
       expect(screen.getByText('Aucune liste programmée')).toBeInTheDocument();
       expect(screen.getByText('Créer une liste')).toBeInTheDocument();

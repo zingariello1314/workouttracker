@@ -28,6 +28,19 @@ export const useSidebar = () => {
       finance: true,
       nutrition: true,
       
+      // AJOUTER: Sections pour modules historiques - OUVERTES
+      'enregistrer-session': true,
+      'progression-lecture': true,
+      'metriques-garmin': true,
+      'quetes-interactives': true,
+      'evolution-patrimoine': true,
+      'liste-courses': true,
+      'session-lecture-active': true,
+      'entrainement-jour': true,
+      'creativite-projets': true,
+      'performance-globale': true,
+      'apprentissage-express': true,
+      
       // Anciennes sections supprimées - FERMÉES (compatibilité)
       learning: false,
       journal: false,

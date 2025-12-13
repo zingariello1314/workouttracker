@@ -1,0 +1,236 @@
+/**
+ * Interactive Quests Module - Styles complémentaires
+ * Utilise principalement les styles de base .sidebar-section
+ * Ajoute uniquement les styles spécifiques manquants
+ */
+
+/* Liste des quêtes */
+.sidebar-quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sidebar-spacing-sm);
+  margin: var(--sidebar-spacing-md) 0;
+}
+
+/* Item de quête individuel */
+.sidebar-quest-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sidebar-spacing-sm);
+  padding: var(--sidebar-spacing-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: var(--sidebar-radius-sm);
+  transition: all var(--sidebar-transition-normal);
+}
+
+.sidebar-quest-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.sidebar-quest-item.completed {
+  opacity: 0.8;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Checkbox de quête */
+.sidebar-quest-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--sidebar-gold);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: var(--sidebar-text-sm);
+  font-weight: 700;
+  color: var(--sidebar-gold);
+  transition: all var(--sidebar-transition-fast);
+  flex-shrink: 0;
+}
+
+.sidebar-quest-checkbox:hover {
+  background: rgba(255, 215, 0, 0.1);
+  transform: scale(1.1);
+}
+
+.sidebar-quest-item.completed .sidebar-quest-checkbox {
+  background: var(--sidebar-gradient-signature);
+  border-color: #22c55e;
+  color: white;
+}
+
+/* Informations de la quête */
+.sidebar-quest-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-quest-name {
+  font-size: var(--sidebar-text-sm);
+  font-weight: 600;
+  color: white;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-quest-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sidebar-spacing-xs);
+  font-size: var(--sidebar-text-xs);
+}
+
+.sidebar-quest-category {
+  color: var(--sidebar-cyan);
+  font-weight: 500;
+}
+
+.sidebar-quest-xp {
+  color: var(--sidebar-gold);
+  font-weight: 600;
+}
+
+.sidebar-quest-icon {
+  font-size: var(--sidebar-text-lg);
+  flex-shrink: 0;
+}
+
+/* Barre de progression XP dans les cartes de données */
+.sidebar-data-progress {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  margin: var(--sidebar-spacing-xs) 0;
+  overflow: hidden;
+}
+
+.sidebar-data-progress-bar {
+  height: 100%;
+  background: var(--sidebar-gradient-signature);
+  border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.sidebar-data-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Sélecteur de période dans les cartes de données */
+.sidebar-data-selector {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: var(--sidebar-radius-sm);
+  color: var(--sidebar-gold);
+  font-size: var(--sidebar-text-xs);
+  padding: 2px 6px;
+  margin-top: var(--sidebar-spacing-xs);
+  cursor: pointer;
+  transition: all var(--sidebar-transition-fast);
+}
+
+.sidebar-data-selector:hover {
+  border-color: rgba(255, 215, 0, 0.4);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.sidebar-data-selector:focus {
+  outline: none;
+  border-color: var(--sidebar-cyan);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+}
+
+/* Flèche d'action dans les boutons */
+.sidebar-action-arrow {
+  margin-left: auto;
+  font-size: var(--sidebar-text-sm);
+  color: var(--sidebar-gold);
+  transition: transform var(--sidebar-transition-fast);
+}
+
+.sidebar-action-button:hover .sidebar-action-arrow {
+  transform: translateX(3px);
+}
+
+/* Animations spécifiques */
+@keyframes quest-complete {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.sidebar-quest-item.completing {
+  animation: quest-complete 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* États de chargement */
+.sidebar-quest-item.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.sidebar-quest-item.loading .sidebar-quest-checkbox {
+  animation: loading-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar-quest-name {
+    font-size: var(--sidebar-text-xs);
+  }
+  
+  .sidebar-quest-meta {
+    font-size: 10px;
+  }
+  
+  .sidebar-quest-checkbox {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+}
+
+/* Mode réduit pour les préférences d'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-quest-checkbox,
+  .sidebar-data-progress-bar,
+  .sidebar-action-arrow {
+    transition: none;
+  }
+  
+  .sidebar-data-progress-bar::after {
+    animation: none;
+  }
+  
+  .sidebar-quest-item.completing {
+    animation: none;
+  }
+}

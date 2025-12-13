@@ -1,0 +1,131 @@
+/**
+ * Styles pour les modules historiques corrigés
+ * Garantit un affichage cohérent et visible
+ */
+
+.historical-module {
+  @apply bg-gradient-to-br from-slate-800/80 to-slate-900/80;
+  @apply border border-slate-700/50 rounded-xl p-4 mb-4;
+  @apply backdrop-blur-sm transition-all duration-300;
+}
+
+.historical-module:hover {
+  @apply border-blue-500/30 bg-slate-700/30;
+}
+
+.historical-module .sidebar-section-header {
+  @apply mb-3 flex items-center justify-between;
+}
+
+.historical-module .sidebar-section-title {
+  @apply text-lg font-semibold text-white flex items-center gap-2;
+}
+
+.historical-module .sidebar-section-icon {
+  @apply text-xl;
+}
+
+.historical-module .sidebar-section-content {
+  @apply space-y-3;
+}
+
+.module-metrics {
+  @apply space-y-2;
+}
+
+.metric-item {
+  @apply flex items-center justify-between p-2 rounded-lg;
+  @apply bg-slate-700/30 border border-slate-600/30;
+  @apply transition-all duration-200;
+}
+
+.metric-item:hover {
+  @apply bg-slate-700/50;
+}
+
+.metric-info {
+  @apply flex flex-col;
+}
+
+.metric-label {
+  @apply text-xs text-slate-400;
+}
+
+.metric-value {
+  @apply text-sm font-semibold text-white;
+}
+
+.metric-status {
+  @apply text-lg;
+}
+
+.metric-item.excellent {
+  @apply border-green-500/30;
+}
+
+.metric-item.good {
+  @apply border-blue-500/30;
+}
+
+.metric-item.normal {
+  @apply border-yellow-500/30;
+}
+
+.metric-item.active {
+  @apply border-orange-500/30;
+}
+
+.navigation-section {
+  @apply pt-2 border-t border-slate-600/30;
+}
+
+.nav-button {
+  @apply w-full flex items-center justify-between gap-3;
+  @apply px-4 py-2 rounded-lg text-sm font-medium;
+  @apply bg-blue-600/20 hover:bg-blue-600/30;
+  @apply border border-blue-500/30 text-blue-300;
+  @apply transition-all duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/20;
+}
+
+.nav-button:hover {
+  @apply transform scale-105;
+}
+
+.nav-button .nav-text {
+  @apply flex-1 text-left;
+}
+
+.nav-button .nav-arrow {
+  @apply transition-transform duration-200;
+}
+
+.nav-button:hover .nav-arrow {
+  @apply transform translate-x-1;
+}
+
+/* Responsive */
+@media (max-width: 320px) {
+  .historical-module {
+    @apply p-3;
+  }
+  
+  .metric-item {
+    @apply p-1.5;
+  }
+  
+  .nav-button {
+    @apply px-3 py-1.5 text-xs;
+  }
+}
+
+/* Accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .nav-button:hover {
+    @apply transform-none;
+  }
+  
+  .nav-button:hover .nav-arrow {
+    @apply transform translate-x-0;
+  }
+}

@@ -1,0 +1,85 @@
+/* ============================================
+   MODULES HISTORIQUES UNIFIÉS
+   Suppression de tous les styles spécifiques
+   Utilisation uniquement des styles .sidebar-section
+   ============================================ */
+
+/* Suppression complète des styles spécifiques */
+.garmin-metrics-module,
+.reading-progress-module,
+.patrimony-evolution-module,
+.shopping-list-module,
+.session-recorder-module,
+.historical-module {
+  /* Aucun style spécifique - utilise uniquement .sidebar-section */
+}
+
+/* Suppression des styles de header spécifiques */
+.garmin-metrics-module .sidebar-section-header,
+.reading-progress-module .sidebar-section-header,
+.patrimony-evolution-module .sidebar-section-header,
+.shopping-list-module .sidebar-section-header,
+.session-recorder-module .sidebar-section-header,
+.historical-module .sidebar-section-header {
+  /* Utilise uniquement les styles de base .sidebar-section-header */
+}
+
+/* Suppression des styles de content spécifiques */
+.garmin-metrics-module .sidebar-section-content,
+.reading-progress-module .sidebar-section-content,
+.patrimony-evolution-module .sidebar-section-content,
+.shopping-list-module .sidebar-section-content,
+.session-recorder-module .sidebar-section-content,
+.historical-module .sidebar-section-content {
+  /* Utilise uniquement les styles de base .sidebar-section-content */
+}
+
+/* Suppression de tous les styles de métriques personnalisés */
+.metric-group,
+.metric-card,
+.metric-header,
+.metric-values,
+.metric-item,
+.metric-separator,
+.metric-value,
+.metric-unit,
+.metric-value-large,
+.battery-bar,
+.battery-fill,
+.heart-rate-values,
+.hr-item,
+.hr-label,
+.hr-value,
+.sleep-values,
+.sleep-item,
+.sleep-label,
+.sleep-value,
+.sleep-quality,
+.navigation-section,
+.nav-button,
+.nav-icon,
+.nav-text,
+.nav-arrow,
+.loading-state,
+.loading-spinner,
+.error-state,
+.error-icon,
+.empty-state,
+.empty-icon,
+.navigation-hint,
+.chart-container,
+.mini-chart,
+.evolution-chart,
+.period-selector,
+.period-select {
+  /* Tous ces styles sont supprimés - utilisation des styles de base uniquement */
+}
+
+/* ============================================
+   CONFIRMATION : AUCUN STYLE SPÉCIFIQUE
+   Les modules utilisent UNIQUEMENT les styles
+   définis dans sidebar-premium.css pour
+   .sidebar-section, .sidebar-section-header,
+   .sidebar-section-content, .sidebar-data-grid,
+   .sidebar-data-card, etc.
+   ============================================ */

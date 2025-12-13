@@ -23,7 +23,6 @@ import {
   X
 } from 'lucide-react';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
-import { useNavigation } from '../../../hooks/useNavigation';
 import { readingAPI, learningAPI } from '../../../services/dashboard/dashboardStorage';
 import '../../../styles/session-recorder-module.css';
 
@@ -348,12 +347,11 @@ const LearningMenu = memo(({
 LearningMenu.displayName = 'LearningMenu';
 
 /**
- * Composant principal SessionRecorderModule
+ * Composant principal SessionRecorderModule - PATTERN LEGACY
  */
 const SessionRecorderModule = memo(({ 
-  moduleId, 
-  moduleType, 
-  navigationTarget,
+  isExpanded,
+  onToggle,
   data = {},
   navigation
 }) => {
@@ -375,14 +373,12 @@ const SessionRecorderModule = memo(({
   // Debug: Log des données reçues
   React.useEffect(() => {
     console.log('[SessionRecorderModule] Props reçues:', {
-      moduleId,
-      moduleType,
       data,
       navigation,
       booksCount: books.length,
       subjectsCount: subjects.length
     });
-  }, [moduleId, moduleType, data, navigation, books.length, subjects.length]);
+  }, [data, navigation, books.length, subjects.length]);
 
   // Effet pour le timer
   useEffect(() => {
@@ -390,10 +386,23 @@ const SessionRecorderModule = memo(({
     
     if (readingTimer.isActive) {
       interval = setInterval(() => {
-        setReadingTimer(prev => ({
-          ...prev,
-          elapsed: prev.elapsed + 1
-        }));
+        setReadingTimer(prev => {
+          const newTimer = {
+            ...prev,
+            elapsed: prev.elapsed + 1
+          };
+          
+          // Émettre l'événement de mise à jour du timer
+          window.dispatchEvent(new CustomEvent('reading:timer:update', {
+            detail: {
+              isActive: newTimer.isActive,
+              elapsed: newTimer.elapsed,
+              startTime: newTimer.startTime
+            }
+          }));
+          
+          return newTimer;
+        });
       }, 1000);
     }
 
@@ -423,8 +432,16 @@ const SessionRecorderModule = memo(({
   const handleTimerStop = useCallback(() => {
     if (readingTimer.elapsed > 0) {
       setShowSessionModal(true);
+      
+      // Émettre l'événement d'arrêt du timer
+      window.dispatchEvent(new CustomEvent('reading:timer:stop', {
+        detail: {
+          elapsed: readingTimer.elapsed,
+          startTime: readingTimer.startTime
+        }
+      }));
     }
-  }, [readingTimer.elapsed]);
+  }, [readingTimer.elapsed, readingTimer.startTime]);
 
   const handleTimerReset = useCallback(() => {
     setReadingTimer({
@@ -536,19 +553,28 @@ const SessionRecorderModule = memo(({
   }, []);
 
   return (
-    <div 
-      className="sidebar-section historical-module session-recorder-module"
-      data-module-id={moduleId}
-      data-module-type={moduleType}
-    >
-      <div className="sidebar-section-header">
-        <h3 className="sidebar-section-title">
-          <span className="sidebar-section-icon">🎯</span>
+    <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
+      <header 
+        className="sidebar-section-header"
+        onClick={onToggle}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+      >
+        <h2 className="sidebar-section-title">
+          <span className="sidebar-section-icon" aria-hidden="true">🎯</span>
           Enregistrer Session
-        </h3>
-      </div>
+        </h2>
+        <span 
+          className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
+          aria-hidden="true"
+        >
+          ▼
+        </span>
+      </header>
 
-      <div className="sidebar-section-content space-y-4">
+      {isExpanded && (
+        <div className="sidebar-section-content">
         {/* Boutons de navigation rapide */}
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -598,17 +624,31 @@ const SessionRecorderModule = memo(({
             subjects={subjects}
           />
         </div>
-      </div>
-
-      {/* Modal de fin de session lecture */}
-      <SessionEndModal
-        isOpen={showSessionModal}
-        onClose={() => setShowSessionModal(false)}
-        onSave={handleSaveReadingSession}
-        sessionDuration={readingTimer.elapsed}
-        books={books}
-      />
-    </div>
+        
+        {/* Navigation standard */}
+        <div className="navigation-section">
+          <button 
+            onClick={handleNavigateToSport}
+            className="nav-button"
+            type="button"
+          >
+            <span className="nav-icon">🎯</span>
+            <span className="nav-text">Aller au Sport</span>
+            <span className="nav-arrow">→</span>
+          </button>
+        </div>
+        
+        {/* Modal de fin de session lecture */}
+        <SessionEndModal
+          isOpen={showSessionModal}
+          onClose={() => setShowSessionModal(false)}
+          onSave={handleSaveReadingSession}
+          sessionDuration={readingTimer.elapsed}
+          books={books}
+        />
+        </div>
+      )}
+    </section>
   );
 });
 

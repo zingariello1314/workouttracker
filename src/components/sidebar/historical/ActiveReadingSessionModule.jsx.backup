@@ -1,0 +1,75 @@
+import React, { memo } from 'react';
+
+/**
+ * Module de session de lecture active (Position 13)
+ * Affiche la session de lecture en cours
+ */
+const ActiveReadingSessionModule = memo(({ 
+  navigation,
+  data = {}
+}) => {
+  const books = data.books || [];
+  const currentBook = books.find(book => book.isCurrentlyReading) || books[0];
+  const hasActiveSession = data.today?.activeReadingSession || false;
+
+  const handleNavigateToBooks = () => {
+    if (navigation) {
+      navigation.toBooks({ action: 'session' });
+    }
+  };
+
+  return (
+    <section className="sidebar-section">
+      <header className="sidebar-section-header">
+        <h2 className="sidebar-section-title">
+          <span className="sidebar-section-icon" aria-hidden="true">📖</span>
+          Session Lecture Active
+        </h2>
+      </header>
+      
+      <div className="sidebar-section-content">
+        {currentBook ? (
+          <div className="reading-session">
+            <div className="book-info">
+              <span className="book-icon">📚</span>
+              <div className="book-details">
+                <span className="book-title">{currentBook.title}</span>
+                <span className="book-progress">
+                  {currentBook.currentPage || 0} / {currentBook.totalPages || 0} pages
+                </span>
+              </div>
+            </div>
+            
+            {hasActiveSession && (
+              <div className="session-status">
+                <span className="session-icon">⏱️</span>
+                <span className="session-text">Session en cours</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <span className="empty-icon">📖</span>
+            <p>Aucun livre en cours</p>
+          </div>
+        )}
+        
+        <div className="navigation-section">
+          <button 
+            onClick={handleNavigateToBooks}
+            className="nav-button"
+            type="button"
+          >
+            <span className="nav-icon">📚</span>
+            <span className="nav-text">Aller aux Livres</span>
+            <span className="nav-arrow">→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+});
+
+ActiveReadingSessionModule.displayName = 'ActiveReadingSessionModule';
+
+export default ActiveReadingSessionModule;

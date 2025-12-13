@@ -1,0 +1,440 @@
+/**
+ * Styles pour le système de gestion d'erreurs des modules sidebar historiques
+ * Requirements: 14.5 - Interface utilisateur pour la gestion d'erreurs
+ */
+
+/* Styles pour la mise en évidence des modules */
+.sidebar-module-highlighted {
+  position: relative;
+  animation: moduleHighlight 2s ease-in-out;
+  z-index: 10;
+}
+
+@keyframes moduleHighlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    transform: scale(1);
+  }
+}
+
+/* Styles pour les modules en état d'erreur */
+.sidebar-module-error {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.sidebar-module-error::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(239, 68, 68, 0.6) 50%, 
+    transparent 100%
+  );
+  animation: errorPulse 2s ease-in-out infinite;
+}
+
+@keyframes errorPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Styles pour les modules en cours de retry */
+.sidebar-module-retrying {
+  position: relative;
+  opacity: 0.7;
+}
+
+.sidebar-module-retrying::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-top: 2px solid rgba(59, 130, 246, 0.8);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 10;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Styles pour les fallbacks de chargement */
+.sidebar-module-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 0.5rem;
+  margin: 0.5rem;
+  min-height: 80px;
+}
+
+.sidebar-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  border-top: 2px solid rgba(148, 163, 184, 0.8);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
+
+.sidebar-loading-text {
+  color: rgba(148, 163, 184, 0.8);
+  font-size: 0.875rem;
+}
+
+/* Styles pour les erreurs de module */
+.sidebar-module-error {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 0.5rem;
+  margin: 0.5rem;
+  min-height: 60px;
+}
+
+.sidebar-error-icon {
+  font-size: 1.25rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.sidebar-error-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-error-content h4 {
+  color: rgba(248, 113, 113, 1);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.sidebar-error-content p {
+  color: rgba(248, 113, 113, 0.8);
+  font-size: 0.75rem;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.4;
+}
+
+.sidebar-error-content small {
+  color: rgba(248, 113, 113, 0.6);
+  font-size: 0.625rem;
+  font-family: monospace;
+  display: block;
+  margin-top: 0.25rem;
+  word-break: break-all;
+}
+
+/* Styles pour les avertissements de validation */
+.sidebar-validation-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin: 0.5rem;
+  color: rgba(251, 191, 36, 0.9);
+  font-size: 0.75rem;
+}
+
+.sidebar-validation-warning strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: rgba(251, 191, 36, 1);
+}
+
+.sidebar-validation-warning ul {
+  margin: 0;
+  padding-left: 1rem;
+  list-style-type: disc;
+}
+
+.sidebar-validation-warning li {
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+/* Styles pour les notifications d'erreur */
+.error-notification-container {
+  position: fixed;
+  top: 4rem;
+  right: 1rem;
+  z-index: 1000;
+  width: 320px;
+  max-width: calc(100vw - 2rem);
+  pointer-events: none;
+}
+
+.error-notification {
+  pointer-events: auto;
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease-out;
+}
+
+.error-notification.entering {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.error-notification.entered {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.error-notification.exiting {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* Styles pour les différents types de notifications */
+.error-notification.severity-low {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.error-notification.severity-medium {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.error-notification.severity-high {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.error-notification.severity-critical {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+/* Styles pour les boutons d'action des notifications */
+.error-notification-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.error-notification-action {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.error-notification-action:hover {
+  transform: translateY(-1px);
+}
+
+.error-notification-action:active {
+  transform: translateY(0);
+}
+
+.error-notification-action.primary {
+  font-weight: 600;
+}
+
+/* Styles pour l'indicateur de connexion */
+.connection-indicator {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.connection-indicator.online {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: rgba(34, 197, 94, 1);
+}
+
+.connection-indicator.offline {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: rgba(239, 68, 68, 1);
+}
+
+/* Styles pour les détails expandables */
+.error-details {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0.25rem;
+  font-family: monospace;
+  font-size: 0.625rem;
+  line-height: 1.4;
+  word-break: break-all;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.error-details::-webkit-scrollbar {
+  width: 4px;
+}
+
+.error-details::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.error-details::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 2px;
+}
+
+.error-details::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Styles pour la barre de progression auto-dismiss */
+.error-notification-progress {
+  height: 2px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.error-notification-progress-bar {
+  height: 100%;
+  transition: width linear;
+}
+
+/* Styles responsives */
+@media (max-width: 640px) {
+  .error-notification-container {
+    width: calc(100vw - 2rem);
+    right: 1rem;
+    left: 1rem;
+  }
+  
+  .connection-indicator {
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .error-notification-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .error-notification-action {
+    justify-content: center;
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+/* Styles pour les animations de performance */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-module-highlighted,
+  .error-notification,
+  .sidebar-loading-spinner,
+  .sidebar-module-retrying::after {
+    animation: none;
+  }
+  
+  .error-notification {
+    transition: none;
+  }
+  
+  .error-notification-action:hover {
+    transform: none;
+  }
+}
+
+/* Styles pour le mode sombre */
+@media (prefers-color-scheme: dark) {
+  .sidebar-module-loading {
+    background: rgba(15, 23, 42, 0.8);
+  }
+  
+  .sidebar-loading-text {
+    color: rgba(203, 213, 225, 0.8);
+  }
+  
+  .error-details::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+  }
+  
+  .error-details::-webkit-scrollbar-thumb {
+    background: rgba(203, 213, 225, 0.3);
+  }
+  
+  .error-details::-webkit-scrollbar-thumb:hover {
+    background: rgba(203, 213, 225, 0.5);
+  }
+}
+
+/* Styles pour l'accessibilité */
+@media (prefers-contrast: high) {
+  .error-notification.severity-low {
+    border-color: rgba(59, 130, 246, 0.8);
+    background: rgba(59, 130, 246, 0.2);
+  }
+  
+  .error-notification.severity-medium {
+    border-color: rgba(245, 158, 11, 0.8);
+    background: rgba(245, 158, 11, 0.2);
+  }
+  
+  .error-notification.severity-high,
+  .error-notification.severity-critical {
+    border-color: rgba(239, 68, 68, 0.8);
+    background: rgba(239, 68, 68, 0.2);
+  }
+}
+
+/* Focus styles pour l'accessibilité */
+.error-notification-action:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.8);
+  outline-offset: 2px;
+}
+
+.error-notification:focus-within {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}

@@ -1,0 +1,86 @@
+import React, { memo } from 'react';
+
+/**
+ * Module de performance globale (Position 19)
+ * Affiche le score de productivité et l'équilibre global
+ */
+const GlobalPerformanceModule = memo(({ 
+  navigation,
+  data = {}
+}) => {
+  const metrics = data.metrics || {};
+  const productivityScore = metrics.productivityScore || 0;
+  const workLifeBalance = metrics.workLifeBalance || 0;
+  const todayPerformance = data.today?.performance || {};
+
+  const getScoreColor = (score) => {
+    if (score >= 80) return 'excellent';
+    if (score >= 60) return 'good';
+    if (score >= 40) return 'average';
+    return 'low';
+  };
+
+  const handleNavigateToHomepage = () => {
+    if (navigation) {
+      navigation.toHomepage({ section: 'performance' });
+    }
+  };
+
+  return (
+    <section className="sidebar-section">
+      <header className="sidebar-section-header">
+        <h2 className="sidebar-section-title">
+          <span className="sidebar-section-icon" aria-hidden="true">📊</span>
+          Performance Globale
+        </h2>
+      </header>
+      
+      <div className="sidebar-section-content">
+        <div className="performance-metrics">
+          <div className="metric-item">
+            <span className="metric-icon">🎯</span>
+            <div className="metric-details">
+              <span className="metric-label">Productivité</span>
+              <span className={`metric-value ${getScoreColor(productivityScore)}`}>
+                {productivityScore}%
+              </span>
+            </div>
+          </div>
+          
+          <div className="metric-item">
+            <span className="metric-icon">⚖️</span>
+            <div className="metric-details">
+              <span className="metric-label">Équilibre</span>
+              <span className={`metric-value ${getScoreColor(workLifeBalance)}`}>
+                {workLifeBalance}%
+              </span>
+            </div>
+          </div>
+          
+          {todayPerformance.recommendation && (
+            <div className="recommendation">
+              <span className="recommendation-icon">💡</span>
+              <span className="recommendation-text">{todayPerformance.recommendation}</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="navigation-section">
+          <button 
+            onClick={handleNavigateToHomepage}
+            className="nav-button"
+            type="button"
+          >
+            <span className="nav-icon">📈</span>
+            <span className="nav-text">Voir Performance</span>
+            <span className="nav-arrow">→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+});
+
+GlobalPerformanceModule.displayName = 'GlobalPerformanceModule';
+
+export default GlobalPerformanceModule;

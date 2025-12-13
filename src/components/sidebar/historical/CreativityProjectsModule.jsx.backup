@@ -1,0 +1,76 @@
+import React, { memo } from 'react';
+
+/**
+ * Module de créativité et projets (Position 17)
+ * Affiche les projets créatifs en cours
+ */
+const CreativityProjectsModule = memo(({ 
+  navigation,
+  data = {}
+}) => {
+  const projects = data.today?.creativityProjects || [];
+  const recentSessions = data.today?.creativeSessions || [];
+
+  const handleNavigateToHomepage = () => {
+    if (navigation) {
+      navigation.toHomepage({ section: 'creativity' });
+    }
+  };
+
+  return (
+    <section className="sidebar-section">
+      <header className="sidebar-section-header">
+        <h2 className="sidebar-section-title">
+          <span className="sidebar-section-icon" aria-hidden="true">🎨</span>
+          Créativité & Projets
+        </h2>
+      </header>
+      
+      <div className="sidebar-section-content">
+        {projects.length > 0 || recentSessions.length > 0 ? (
+          <div className="creativity-info">
+            {projects.length > 0 && (
+              <div className="projects-list">
+                <span className="project-icon">📝</span>
+                <span className="project-count">{projects.length} projet{projects.length > 1 ? 's' : ''} actif{projects.length > 1 ? 's' : ''}</span>
+              </div>
+            )}
+            
+            {recentSessions.length > 0 && (
+              <div className="sessions-info">
+                <span className="session-icon">⏱️</span>
+                <span className="session-text">{recentSessions.length} session{recentSessions.length > 1 ? 's' : ''} récente{recentSessions.length > 1 ? 's' : ''}</span>
+              </div>
+            )}
+            
+            <div className="inspiration">
+              <span className="inspiration-icon">💡</span>
+              <span className="inspiration-text">Inspiration du jour</span>
+            </div>
+          </div>
+        ) : (
+          <div className="empty-state">
+            <span className="empty-icon">🎨</span>
+            <p>Aucun projet en cours</p>
+          </div>
+        )}
+        
+        <div className="navigation-section">
+          <button 
+            onClick={handleNavigateToHomepage}
+            className="nav-button"
+            type="button"
+          >
+            <span className="nav-icon">🏠</span>
+            <span className="nav-text">Aller à l'Accueil</span>
+            <span className="nav-arrow">→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+});
+
+CreativityProjectsModule.displayName = 'CreativityProjectsModule';
+
+export default CreativityProjectsModule;

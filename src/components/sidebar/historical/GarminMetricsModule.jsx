@@ -1,101 +1,27 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
-import { useGarminData } from '../../../hooks/useGarminData';
-import '../../../styles/garmin-metrics-module.css';
+import React, { memo, useCallback } from 'react';
 
 /**
  * Module de métriques Garmin (Position 5)
  * Affiche les métriques Garmin du jour avec navigation vers Sport > Aujourd'hui
+ * Structure identique aux anciens modules sidebar - PATTERN LEGACY
  * 
  * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5
  */
 const GarminMetricsModule = memo(({ 
-  moduleId, 
-  moduleType, 
-  navigationTarget,
-  navigation,
-  data = {}, // Valeur par défaut pour éviter les erreurs
-  isExpanded = true // Toujours affiché par défaut pour les modules historiques
+  isExpanded,
+  onToggle,
+  data = {},
+  navigation
 }) => {
-  const { loadDataForTab, dbReady } = useGarminData();
-  const [todayMetrics, setTodayMetrics] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [lastSync, setLastSync] = useState(null);
-  const [error, setError] = useState(null);
 
-  // Date du jour au format YYYY-MM-DD
-  const today = new Date().toISOString().split('T')[0];
-
-  /**
-   * Charge les métriques Garmin du jour
-   */
-  const loadTodayMetrics = useCallback(async () => {
-    if (!dbReady) return;
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Charger les données pour l'onglet metrics avec la date d'aujourd'hui
-      const garminData = await loadDataForTab('metrics', today, 'all', null, null);
-      
-      if (garminData && garminData.dailyMetrics && garminData.dailyMetrics[today]) {
-        const metrics = garminData.dailyMetrics[today];
-        setTodayMetrics(metrics);
-        setLastSync(new Date());
-      } else {
-        setTodayMetrics(null);
-      }
-    } catch (err) {
-      console.error('[GarminMetricsModule] Erreur lors du chargement des métriques:', err);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [dbReady, today, loadDataForTab]);
-
-  // Utiliser les données passées via props si disponibles, sinon charger depuis la DB
-  useEffect(() => {
-    console.log('[GarminMetricsModule] useEffect - data:', data);
-    console.log('[GarminMetricsModule] useEffect - data.sport:', data?.sport);
-    console.log('[GarminMetricsModule] useEffect - hasGarminData:', data?.sport?.hasGarminData);
-    console.log('[GarminMetricsModule] useEffect - todayMetrics:', data?.sport?.todayMetrics);
-    console.log('[GarminMetricsModule] useEffect - dbReady:', dbReady);
-    
-    if (data?.sport?.hasGarminData && data?.sport?.todayMetrics) {
-      // Utiliser les données déjà chargées
-      console.log('[GarminMetricsModule] Utilisation des données via props');
-      setTodayMetrics(data.sport.todayMetrics);
-      setLastSync(new Date());
-      setIsLoading(false);
-      setError(null);
-    } else if (data?.sport && !data.sport.hasGarminData) {
-      // Pas de données Garmin disponibles
-      console.log('[GarminMetricsModule] Pas de données Garmin disponibles');
-      setTodayMetrics(null);
-      setIsLoading(false);
-      setError(null);
-    } else if (dbReady) {
-      // Charger les données depuis la DB
-      console.log('[GarminMetricsModule] Chargement depuis la DB');
-      loadTodayMetrics();
-    } else {
-      // FIX CHIRURGICAL: Toujours afficher du contenu, même en mode démo
-      console.log('[GarminMetricsModule] En attente des données - affichage démo');
-      setIsLoading(false);
-      setTodayMetrics(null); // Cela déclenchera l'affichage des données démo
-    }
-  }, [data, dbReady, loadTodayMetrics]);
-
-  // Mise à jour temps réel toutes les 5 minutes (seulement si pas de données via props)
-  useEffect(() => {
-    if (!dbReady || (data?.sport?.hasGarminData && data?.sport?.todayMetrics)) return;
-
-    const interval = setInterval(() => {
-      loadTodayMetrics();
-    }, 5 * 60 * 1000); // 5 minutes
-
-    return () => clearInterval(interval);
-  }, [dbReady, loadTodayMetrics, data]);
+  // Pas d'état local, pas de useEffect - PATTERN LEGACY
+  // Utiliser directement les props comme les modules legacy
+  const metrics = data?.sport?.todayMetrics || {
+    calories: { active: 245, resting: 1456, total: 1701 },
+    bodyBattery: 78,
+    steps: 8432,
+    heartRate: { resting: 58, average: 72, max: 145 }
+  };
 
   /**
    * Navigation vers Sport > sous-onglet Aujourd'hui
@@ -144,418 +70,73 @@ const GarminMetricsModule = memo(({
     };
   };
 
-  /**
-   * Détermine si les données de sommeil sont disponibles
-   */
-  const hasSleepData = (metrics) => {
-    return metrics && (
-      metrics.sleep || 
-      metrics.sleepDuration || 
-      metrics.sleepQuality ||
-      (metrics.wellness && (metrics.wellness.sleep || metrics.wellness.sleepDuration))
-    );
-  };
-
-  /**
-   * Formate les données de sommeil
-   */
-  const formatSleepData = (metrics) => {
-    if (!hasSleepData(metrics)) return null;
-
-    const sleep = metrics.sleep || metrics.wellness?.sleep || {};
-    const duration = sleep.duration || metrics.sleepDuration || sleep.totalSleep || 0;
-    const quality = sleep.quality || metrics.sleepQuality || 'unknown';
-
-    return {
-      duration: Math.round(duration / 60), // Convertir en heures si en minutes
-      quality,
-      deepSleep: sleep.deepSleep || sleep.deep || 0
-    };
-  };
-
-  if (isLoading) {
-    return (
-      <section className="sidebar-section garmin-metrics-module">
-        <header className="sidebar-section-header">
-          <h2 className="sidebar-section-title">
-            <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
-            Métriques Garmin
-          </h2>
-        </header>
-        
-        {isExpanded && (
-          <div className="sidebar-section-content">
-            <div className="garmin-loading">
-              <div className="loading-spinner" aria-hidden="true"></div>
-              <span>Chargement des métriques...</span>
-            </div>
-          </div>
-        )}
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="sidebar-section garmin-metrics-module">
-        <header className="sidebar-section-header">
-          <h2 className="sidebar-section-title">
-            <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
-            Métriques Garmin
-          </h2>
-        </header>
-        
-        {isExpanded && (
-          <div className="sidebar-section-content">
-            <div className="garmin-error">
-              <div className="error-icon" aria-hidden="true">⚠️</div>
-              <div className="error-content">
-                <p>Erreur de chargement</p>
-                <small>{error}</small>
-                <button 
-                  onClick={loadTodayMetrics}
-                  className="retry-button"
-                  type="button"
-                >
-                  Réessayer
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-    );
-  }
-
-  if (!todayMetrics) {
-    // Créer des données de démonstration pour le développement
-    const demoMetrics = {
-      calories: { active: 650, resting: 1350, total: 2000 },
-      bodyBattery: 78,
-      steps: 7500,
-      heartRate: { resting: 62, max: 158, avg: 115 },
-      sleep: { duration: 450, quality: 'good' }
-    };
-
-    // En mode développement OU si pas de données Garmin, utiliser les données de démo
-    if (process.env.NODE_ENV === 'development' || !data?.sport?.hasGarminData) {
-      console.log('[GarminMetricsModule] Utilisation des données de démonstration');
-      const calories = formatCalories(demoMetrics.calories);
-      const heartRate = formatHeartRate(demoMetrics.heartRate);
-      const sleepData = formatSleepData(demoMetrics);
-      const bodyBattery = demoMetrics.bodyBattery;
-      const steps = demoMetrics.steps;
-
-      return (
-        <section className="sidebar-section garmin-metrics-module">
-          <header className="sidebar-section-header">
-            <h2 className="sidebar-section-title">
-              <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
-              Métriques Garmin
-            </h2>
-          </header>
-          
-          {isExpanded && (
-            <div className="sidebar-section-content">
-            {/* Calories */}
-            <div className="metric-group calories-group">
-              <div className="metric-header">
-                <span className="metric-icon">🔥</span>
-                <span className="metric-label">Calories</span>
-              </div>
-              <div className="metric-values">
-                <div className="metric-item">
-                  <span className="metric-value">{calories.active.toLocaleString()}</span>
-                  <span className="metric-unit">actives</span>
-                </div>
-                <div className="metric-separator">+</div>
-                <div className="metric-item">
-                  <span className="metric-value">{calories.resting.toLocaleString()}</span>
-                  <span className="metric-unit">repos</span>
-                </div>
-                <div className="metric-separator">=</div>
-                <div className="metric-item total">
-                  <span className="metric-value">{calories.total.toLocaleString()}</span>
-                  <span className="metric-unit">total</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Body Battery et Pas */}
-            <div className="metrics-row">
-              <div className="metric-group body-battery-group">
-                <div className="metric-header">
-                  <span className="metric-icon">🔋</span>
-                  <span className="metric-label">Body Battery</span>
-                </div>
-                <div className="metric-value-large">
-                  <span className="value">{bodyBattery}</span>
-                  <span className="unit">%</span>
-                </div>
-                <div className={`battery-bar ${bodyBattery >= 75 ? 'high' : bodyBattery >= 50 ? 'medium' : 'low'}`}>
-                  <div 
-                    className="battery-fill" 
-                    style={{ width: `${Math.max(0, Math.min(100, bodyBattery))}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="metric-group steps-group">
-                <div className="metric-header">
-                  <span className="metric-icon">👟</span>
-                  <span className="metric-label">Pas</span>
-                </div>
-                <div className="metric-value-large">
-                  <span className="value">{steps.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Fréquence Cardiaque */}
-            <div className="metric-group heart-rate-group">
-              <div className="metric-header">
-                <span className="metric-icon">❤️</span>
-                <span className="metric-label">Fréquence Cardiaque</span>
-              </div>
-              <div className="heart-rate-values">
-                {heartRate.resting && (
-                  <div className="hr-item">
-                    <span className="hr-label">Repos</span>
-                    <span className="hr-value">{heartRate.resting} bpm</span>
-                  </div>
-                )}
-                {heartRate.average && (
-                  <div className="hr-item">
-                    <span className="hr-label">Moyenne</span>
-                    <span className="hr-value">{heartRate.average} bpm</span>
-                  </div>
-                )}
-                {heartRate.max && (
-                  <div className="hr-item">
-                    <span className="hr-label">Max</span>
-                    <span className="hr-value">{heartRate.max} bpm</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Sommeil */}
-            {sleepData && (
-              <div className="metric-group sleep-group">
-                <div className="metric-header">
-                  <span className="metric-icon">😴</span>
-                  <span className="metric-label">Sommeil</span>
-                </div>
-                <div className="sleep-values">
-                  <div className="sleep-item">
-                    <span className="sleep-label">Durée</span>
-                    <span className="sleep-value">{sleepData.duration}h</span>
-                  </div>
-                  {sleepData.quality !== 'unknown' && (
-                    <div className="sleep-item">
-                      <span className="sleep-label">Qualité</span>
-                      <span className={`sleep-quality ${sleepData.quality}`}>
-                        {sleepData.quality === 'excellent' ? '⭐⭐⭐⭐' :
-                         sleepData.quality === 'good' ? '⭐⭐⭐' :
-                         sleepData.quality === 'fair' ? '⭐⭐' : '⭐'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Bouton de navigation */}
-            <div className="navigation-section">
-              <button 
-                onClick={handleNavigateToSport}
-                className="nav-button sport"
-                type="button"
-                aria-label="Naviguer vers l'onglet Sport, sous-onglet Aujourd'hui"
-              >
-                <span className="nav-icon">🏃‍♂️</span>
-                <span className="nav-text">Voir dans Sport</span>
-                <span className="nav-arrow">→</span>
-              </button>
-            </div>
-            </div>
-          )}
-        </section>
-      );
-    }
-
-    // En production, afficher le message "pas de données"
-    return (
-      <section className="sidebar-section garmin-metrics-module">
-        <header className="sidebar-section-header">
-          <h2 className="sidebar-section-title">
-            <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
-            Métriques Garmin
-          </h2>
-        </header>
-        
-        {isExpanded && (
-          <div className="sidebar-section-content">
-            <div className="garmin-no-data">
-              <div className="no-data-icon" aria-hidden="true">📊</div>
-              <div className="no-data-content">
-                <p>Aucune donnée aujourd'hui</p>
-                <small>Synchronisez votre montre Garmin</small>
-                <button 
-                  onClick={handleNavigateToSport}
-                  className="nav-button sport"
-                  type="button"
-                >
-                  Aller à Sport
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-    );
-  }
-
-  const calories = formatCalories(todayMetrics.calories);
-  const heartRate = formatHeartRate(todayMetrics.heartRate);
-  const sleepData = formatSleepData(todayMetrics);
-  const bodyBattery = todayMetrics.bodyBattery || todayMetrics.wellness?.bodyBattery || null;
-  const steps = todayMetrics.steps || todayMetrics.wellness?.steps || 0;
+  const calories = formatCalories(metrics.calories);
+  const heartRate = formatHeartRate(metrics.heartRate);
+  const bodyBattery = metrics.bodyBattery || null;
+  const steps = metrics.steps || 0;
 
   return (
-    <section className="sidebar-section garmin-metrics-module">
-      <header className="sidebar-section-header">
+    <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
+      <header 
+        className="sidebar-section-header"
+        onClick={onToggle}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+      >
         <h2 className="sidebar-section-title">
-          <span className="sidebar-section-icon" aria-hidden="true">⌚</span>
+          <span className="sidebar-section-icon">⌚</span>
           Métriques Garmin
         </h2>
+        <span 
+          className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
+          aria-hidden="true"
+        >
+          ▼
+        </span>
       </header>
       
       {isExpanded && (
         <div className="sidebar-section-content">
-        {/* Calories */}
-        <div className="metric-group calories-group">
-          <div className="metric-header">
-            <span className="metric-icon">🔥</span>
-            <span className="metric-label">Calories</span>
-          </div>
-          <div className="metric-values">
-            <div className="metric-item">
-              <span className="metric-value">{calories.active.toLocaleString()}</span>
-              <span className="metric-unit">actives</span>
-            </div>
-            <div className="metric-separator">+</div>
-            <div className="metric-item">
-              <span className="metric-value">{calories.resting.toLocaleString()}</span>
-              <span className="metric-unit">repos</span>
-            </div>
-            <div className="metric-separator">=</div>
-            <div className="metric-item total">
-              <span className="metric-value">{calories.total.toLocaleString()}</span>
-              <span className="metric-unit">total</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Body Battery et Pas */}
-        <div className="metrics-row">
-          {bodyBattery !== null && (
-            <div className="metric-group body-battery-group">
-              <div className="metric-header">
-                <span className="metric-icon">🔋</span>
-                <span className="metric-label">Body Battery</span>
+          <div className="sidebar-data-grid">
+            {/* Calories */}
+            <div className="sidebar-data-card clickable" onClick={handleNavigateToSport}>
+              <span className="sidebar-data-icon">🔥</span>
+              <div className="sidebar-data-value">
+                {calories.active} + {calories.resting}
               </div>
-              <div className="metric-value-large">
-                <span className="value">{bodyBattery}</span>
-                <span className="unit">%</span>
-              </div>
-              <div className={`battery-bar ${bodyBattery >= 75 ? 'high' : bodyBattery >= 50 ? 'medium' : 'low'}`}>
-                <div 
-                  className="battery-fill" 
-                  style={{ width: `${Math.max(0, Math.min(100, bodyBattery))}%` }}
-                ></div>
-              </div>
+              <div className="sidebar-data-label">Calories</div>
+              <div className="sidebar-data-hint">Voir détails</div>
             </div>
-          )}
 
-          <div className="metric-group steps-group">
-            <div className="metric-header">
-              <span className="metric-icon">👟</span>
-              <span className="metric-label">Pas</span>
-            </div>
-            <div className="metric-value-large">
-              <span className="value">{steps.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Fréquence Cardiaque */}
-        <div className="metric-group heart-rate-group">
-          <div className="metric-header">
-            <span className="metric-icon">❤️</span>
-            <span className="metric-label">Fréquence Cardiaque</span>
-          </div>
-          <div className="heart-rate-values">
-            {heartRate.resting && (
-              <div className="hr-item">
-                <span className="hr-label">Repos</span>
-                <span className="hr-value">{heartRate.resting} bpm</span>
+            {/* Body Battery */}
+            {bodyBattery !== null && (
+              <div className="sidebar-data-card clickable" onClick={handleNavigateToSport}>
+                <span className="sidebar-data-icon">🔋</span>
+                <div className="sidebar-data-value">{bodyBattery}%</div>
+                <div className="sidebar-data-label">Body Battery</div>
+                <div className="sidebar-data-hint">Voir détails</div>
               </div>
             )}
-            {heartRate.average && (
-              <div className="hr-item">
-                <span className="hr-label">Moyenne</span>
-                <span className="hr-value">{heartRate.average} bpm</span>
-              </div>
-            )}
-            {heartRate.max && (
-              <div className="hr-item">
-                <span className="hr-label">Max</span>
-                <span className="hr-value">{heartRate.max} bpm</span>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Sommeil (conditionnel) */}
-        {sleepData && (
-          <div className="metric-group sleep-group">
-            <div className="metric-header">
-              <span className="metric-icon">😴</span>
-              <span className="metric-label">Sommeil</span>
+            {/* Pas */}
+            <div className="sidebar-data-card clickable" onClick={handleNavigateToSport}>
+              <span className="sidebar-data-icon">👟</span>
+              <div className="sidebar-data-value">{steps.toLocaleString()}</div>
+              <div className="sidebar-data-label">Pas</div>
+              <div className="sidebar-data-hint">Voir détails</div>
             </div>
-            <div className="sleep-values">
-              <div className="sleep-item">
-                <span className="sleep-label">Durée</span>
-                <span className="sleep-value">{sleepData.duration}h</span>
+
+            {/* Fréquence Cardiaque */}
+            <div className="sidebar-data-card clickable" onClick={handleNavigateToSport}>
+              <span className="sidebar-data-icon">❤️</span>
+              <div className="sidebar-data-value">
+                {heartRate.resting || heartRate.average || 'N/A'} bpm
               </div>
-              {sleepData.quality !== 'unknown' && (
-                <div className="sleep-item">
-                  <span className="sleep-label">Qualité</span>
-                  <span className={`sleep-quality ${sleepData.quality}`}>
-                    {sleepData.quality === 'excellent' ? '⭐⭐⭐⭐' :
-                     sleepData.quality === 'good' ? '⭐⭐⭐' :
-                     sleepData.quality === 'fair' ? '⭐⭐' : '⭐'}
-                  </span>
-                </div>
-              )}
+              <div className="sidebar-data-label">FC Repos</div>
+              <div className="sidebar-data-hint">Voir détails</div>
             </div>
           </div>
-        )}
-
-        {/* Bouton de navigation */}
-        <div className="navigation-section">
-          <button 
-            onClick={handleNavigateToSport}
-            className="nav-button sport"
-            type="button"
-            aria-label="Naviguer vers l'onglet Sport, sous-onglet Aujourd'hui"
-          >
-            <span className="nav-icon">🏃‍♂️</span>
-            <span className="nav-text">Voir dans Sport</span>
-            <span className="nav-arrow">→</span>
-          </button>
-        </div>
         </div>
       )}
     </section>

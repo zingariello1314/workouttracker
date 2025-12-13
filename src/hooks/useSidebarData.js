@@ -15,6 +15,7 @@ import { useSynthese } from './useSynthese';
 import { usePlanificateur } from './usePlanificateur';
 import { useBooksStorage } from './useBooksStorage';
 import { useBooksStatistics } from './useBooksStatistics';
+import { useSmartShopping } from './useSmartShopping';
 import { useSidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 import { useDebouncedCallback } from './useDebouncedCallback';
 import { measureAsync, measureSync, SIDEBAR_OPERATIONS } from '../utils/performanceMonitor';
@@ -48,6 +49,7 @@ export const useSidebarData = () => {
   const { patrimoine } = useSynthese();
   const { salaire, repartition } = usePlanificateur();
   const { books } = useBooksStorage();
+  const { listes: shoppingLists, loading: shoppingLoading, error: shoppingError } = useSmartShopping();
 
   const [garminData, setGarminData] = useState(null);
   const [nutritionData, setNutritionData] = useState(null);
@@ -58,7 +60,8 @@ export const useSidebarData = () => {
     workout: 0,
     books: 0,
     nutrition: 0,
-    finance: 0
+    finance: 0,
+    shopping: 0
   });
 
   // Date du jour - calculée une seule fois
@@ -128,6 +131,10 @@ export const useSidebarData = () => {
     setRefreshTriggers(prev => ({ ...prev, finance: prev.finance + 1 }));
   }, []);
 
+  const refreshShoppingImmediate = useCallback(() => {
+    setRefreshTriggers(prev => ({ ...prev, shopping: prev.shopping + 1 }));
+  }, []);
+
   // Fonctions de rafraîchissement débouncées (500ms) pour éviter les rafraîchissements excessifs
   const { debouncedCallback: refreshQuests } = useDebouncedCallback(
     refreshQuestsImmediate,
@@ -159,6 +166,12 @@ export const useSidebarData = () => {
     [refreshFinanceImmediate]
   );
 
+  const { debouncedCallback: refreshShopping } = useDebouncedCallback(
+    refreshShoppingImmediate,
+    500,
+    [refreshShoppingImmediate]
+  );
+
   // Écouter les événements pour rafraîchir automatiquement
   useSidebarEvents(SIDEBAR_EVENTS.QUEST_COMPLETED, refreshQuests);
   useSidebarEvents(SIDEBAR_EVENTS.QUEST_UPDATED, refreshQuests);
@@ -177,6 +190,11 @@ export const useSidebarData = () => {
   useSidebarEvents(SIDEBAR_EVENTS.MEAL_DELETED, refreshNutrition);
   
   useSidebarEvents(SIDEBAR_EVENTS.FINANCE_UPDATED, refreshFinance);
+  
+  // Écouter les événements Smart Shopping
+  useSidebarEvents('SHOPPING_LIST_CREATED', refreshShopping);
+  useSidebarEvents('SHOPPING_LIST_UPDATED', refreshShopping);
+  useSidebarEvents('SHOPPING_LIST_DELETED', refreshShopping);
 
   // Calculer Streak (jours consécutifs avec succès >= 80%) - Optimisé avec gestion d'erreur
   const streak = useMemo(() => {
@@ -387,6 +405,52 @@ export const useSidebarData = () => {
   // Apprentissage (Books) - Utilise useBooksStatistics avec gestion d'erreur
   const learning = useMemo(() => {
     try {
+      // Trouver le livre actuellement en cours de lecture
+      const currentBook = books?.find(book => book.status === 'in-progress') || null;
+      
+      // Calculer la progression du livre actuel
+      let bookProgress = null;
+      if (currentBook) {
+        const totalPages = currentBook.totalPages || currentBook.pages || 0;
+        const currentPage = currentBook.currentPage || 0;
+        const progress = totalPages > 0 ? (currentPage / totalPages) * 100 : 0;
+        
+        bookProgress = {
+          id: currentBook.id,
+          title: currentBook.title,
+          author: currentBook.author,
+          totalPages,
+          currentPage,
+          progress
+        };
+      }
+
+      // Calculer les statistiques de la semaine
+      const weeklyStats = {
+        sessionsCount: 0,
+        totalPages: 0
+      };
+
+      if (books && Array.isArray(books)) {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        books.forEach(book => {
+          if (book.readingSessions && Array.isArray(book.readingSessions)) {
+            const weekSessions = book.readingSessions.filter(session => {
+              if (!session.date) return false;
+              const sessionDate = new Date(session.date);
+              return sessionDate >= oneWeekAgo;
+            });
+            
+            weeklyStats.sessionsCount += weekSessions.length;
+            weeklyStats.totalPages += weekSessions.reduce((sum, session) => {
+              return sum + (Number(session.pagesRead) || 0);
+            }, 0);
+          }
+        });
+      }
+
       return {
         currentBooks: booksStatistics.currentBooks || 0,
         todayPages: booksStatistics.todayPages || 0,
@@ -403,7 +467,22 @@ export const useSidebarData = () => {
           'history',
           'philosophy',
           'other'
-        ]
+        ],
+        // Données pour ActiveReadingSessionModule
+        activeReadingSession: {
+          currentBook: bookProgress,
+          dailyGoals: {
+            pages: 20, // Objectif par défaut, peut être configuré
+            minutes: booksStatistics.dailyGoal || 30
+          },
+          todayProgress: {
+            pages: booksStatistics.todayPages || 0,
+            minutes: booksStatistics.todayMinutes || 0
+          },
+          weeklyStats,
+          sessionTimer: null, // Sera mis à jour par les événements
+          hasData: booksStatistics.hasData || false
+        }
       };
     } catch (error) {
       console.error('[useSidebarData] Erreur calcul learning:', error);
@@ -414,10 +493,56 @@ export const useSidebarData = () => {
         dailyGoal: 30,
         hasData: false,
         books: [],
-        subjects: []
+        subjects: [],
+        activeReadingSession: {
+          currentBook: null,
+          dailyGoals: { pages: 20, minutes: 30 },
+          todayProgress: { pages: 0, minutes: 0 },
+          weeklyStats: { sessionsCount: 0, totalPages: 0 },
+          sessionTimer: null,
+          hasData: false
+        }
       };
     }
   }, [booksStatistics, books]);
+
+  // Smart Shopping - Optimisé avec gestion d'erreur
+  const shopping = useMemo(() => {
+    try {
+      if (shoppingLoading) {
+        return {
+          loading: true,
+          error: null,
+          shoppingLists: [],
+          hasData: false
+        };
+      }
+
+      if (shoppingError) {
+        return {
+          loading: false,
+          error: shoppingError,
+          shoppingLists: [],
+          hasData: false
+        };
+      }
+
+      return {
+        loading: false,
+        error: null,
+        shoppingLists: shoppingLists || [],
+        hasData: shoppingLists && shoppingLists.length > 0
+      };
+    } catch (error) {
+      console.error('[useSidebarData] Erreur calcul shopping:', error);
+      return {
+        loading: false,
+        error: error.message,
+        shoppingLists: [],
+        hasData: false
+      };
+    }
+  }, [shoppingLists, shoppingLoading, shoppingError, refreshTriggers.shopping]);
 
   // Données "Aujourd'hui" - Agrégation des activités du jour - Optimisé
   const todayData = useMemo(() => {
@@ -498,6 +623,7 @@ export const useSidebarData = () => {
     finance: finance ?? { netWorth: 0, monthlyBudget: 0, monthlySavings: 0, investments: 0, hasData: false },
     nutrition: nutrition ?? { calories: 0, proteins: 0, carbs: 0, fats: 0, water: 0, compliance: 0, hasData: false },
     learning: learning ?? { currentBooks: 0, todayPages: 0, todayMinutes: 0, dailyGoal: 30, hasData: false },
+    shopping: shopping ?? { loading: false, error: null, shoppingLists: [], hasData: false },
     today: todayData ?? { questsCompleted: 0, questsTotal: 0, workoutDone: false, pagesRead: 0, mealsLogged: 0, mealsTarget: 3 },
     isLoading,
     isAuthenticated,

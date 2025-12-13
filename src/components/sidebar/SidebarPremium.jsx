@@ -44,6 +44,7 @@ const SidebarPremium = memo(() => {
     finance,    // Patrimoine, Budget
     nutrition,  // Calories, Macros
     learning,   // Livres, Pages
+    shopping,   // Listes de courses Smart Shopping
     today,      // Agrégation des activités du jour
     todayDate,  // Date du jour (format ISO)
     isLoading
@@ -278,6 +279,7 @@ const SidebarPremium = memo(() => {
               finance,
               nutrition,
               learning,
+              shopping,
               today
             },
             

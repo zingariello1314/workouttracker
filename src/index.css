@@ -4,23 +4,17 @@
 /* Import Module Highlight Styles */
 @import './styles/module-highlight.css';
 
-/* Import Session Recorder Module Styles */
-@import './styles/session-recorder-module.css';
+/* Import Historical Modules Unified - SUPPRIME TOUS LES STYLES SPÉCIFIQUES */
+@import './styles/historical-modules-unified.css';
 
-/* Import Reading Progress Module Styles */
-@import './styles/reading-progress-module.css';
+/* Import Interactive Quests Module Styles */
+@import './styles/interactive-quests-module.css';
 
-/* Import Garmin Metrics Module Styles */
-@import './styles/garmin-metrics-module.css';
+/* Import Creativity Projects Module Styles */
+@import './styles/creativity-projects-module.css';
 
-/* Import Patrimony Evolution Module Styles */
-@import './styles/patrimony-evolution-module.css';
-
-/* Import Shopping List Module Styles */
-@import './styles/shopping-list-module.css';
-
-/* Import Historical Modules Fix - DOIT ÊTRE APRÈS LES AUTRES MODULES */
-@import './styles/historical-modules-fix.css';
+/* Import Global Performance Module Styles */
+@import './styles/global-performance-module.css';
 
 @tailwind base;
 @tailwind components;

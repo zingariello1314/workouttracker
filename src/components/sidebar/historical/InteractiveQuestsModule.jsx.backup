@@ -1,0 +1,73 @@
+import React, { memo } from 'react';
+
+/**
+ * Module de quêtes interactives (Position 7)
+ * Affiche les quêtes du jour avec interaction directe
+ */
+const InteractiveQuestsModule = memo(({ 
+  navigation,
+  data = {}
+}) => {
+  const quests = data.quests || [];
+  const todayQuests = quests.filter(quest => {
+    const today = new Date().toISOString().split('T')[0];
+    return quest.date === today && !quest.completed;
+  });
+
+  const handleNavigateToQuests = () => {
+    if (navigation) {
+      navigation.toQuests({ filter: 'today' });
+    }
+  };
+
+  return (
+    <section className="sidebar-section">
+      <header className="sidebar-section-header">
+        <h2 className="sidebar-section-title">
+          <span className="sidebar-section-icon" aria-hidden="true">🎯</span>
+          Quêtes Interactives
+        </h2>
+      </header>
+      
+      <div className="sidebar-section-content">
+        {todayQuests.length > 0 ? (
+          <div className="quests-list">
+            {todayQuests.slice(0, 3).map((quest, index) => (
+              <div key={quest.id || index} className="quest-item">
+                <span className="quest-icon">✅</span>
+                <span className="quest-title">{quest.title || `Quête ${index + 1}`}</span>
+              </div>
+            ))}
+            {todayQuests.length > 3 && (
+              <div className="quest-item more">
+                <span className="quest-icon">➕</span>
+                <span className="quest-title">{todayQuests.length - 3} autres quêtes</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <span className="empty-icon">🎯</span>
+            <p>Aucune quête aujourd'hui</p>
+          </div>
+        )}
+        
+        <div className="navigation-section">
+          <button 
+            onClick={handleNavigateToQuests}
+            className="nav-button"
+            type="button"
+          >
+            <span className="nav-icon">🎯</span>
+            <span className="nav-text">Voir toutes les quêtes</span>
+            <span className="nav-arrow">→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+});
+
+InteractiveQuestsModule.displayName = 'InteractiveQuestsModule';
+
+export default InteractiveQuestsModule;

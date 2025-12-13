@@ -1,0 +1,328 @@
+
+/**
+ * FIX GLOBAL - Modules Historiques
+ * Remplace les classes Tailwind par du CSS cohérent
+ */
+
+/* ============================================
+   RESET ET BASE POUR TOUS LES MODULES HISTORIQUES
+   ============================================ */
+
+.historical-module {
+  /* Reset Tailwind conflicts */
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border-radius: var(--sidebar-radius-md) !important;
+  padding: 0 !important;
+  margin-bottom: var(--sidebar-spacing-md) !important;
+  color: white !important;
+  font-family: 'Rajdhani', sans-serif !important;
+}
+
+.historical-module * {
+  box-sizing: border-box;
+}
+
+/* Header uniforme */
+.historical-module .sidebar-section-header {
+  background: rgba(255, 255, 255, 0.02) !important;
+  padding: var(--sidebar-spacing-md) !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1) !important;
+  margin: 0 !important;
+}
+
+.historical-module .sidebar-section-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--sidebar-spacing-sm) !important;
+  font-size: var(--sidebar-text-md) !important;
+  font-weight: 600 !important;
+  color: white !important;
+  margin: 0 !important;
+}
+
+.historical-module .sidebar-section-icon {
+  font-size: var(--sidebar-text-lg) !important;
+  color: var(--sidebar-cyan) !important;
+}
+
+/* Content uniforme */
+.historical-module .sidebar-section-content {
+  padding: var(--sidebar-spacing-md) !important;
+  background: transparent !important;
+}
+
+/* ============================================
+   COMPOSANTS COMMUNS - REMPLACEMENT TAILWIND
+   ============================================ */
+
+/* Grilles (remplace grid grid-cols-2 gap-3) */
+.historical-module .grid {
+  display: grid !important;
+}
+
+.historical-module .grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.historical-module .gap-3 {
+  gap: 12px !important;
+}
+
+.historical-module .space-y-3 > * + * {
+  margin-top: 12px !important;
+}
+
+/* Cartes métriques (remplace bg-slate-700/30 etc.) */
+.historical-module .metric-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: var(--sidebar-radius-sm) !important;
+  padding: 12px !important;
+  transition: all var(--sidebar-transition-normal) !important;
+}
+
+.historical-module .metric-card:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Flexbox utilities */
+.historical-module .flex {
+  display: flex !important;
+}
+
+.historical-module .items-center {
+  align-items: center !important;
+}
+
+.historical-module .justify-between {
+  justify-content: space-between !important;
+}
+
+.historical-module .gap-1 {
+  gap: 4px !important;
+}
+
+.historical-module .gap-2 {
+  gap: 8px !important;
+}
+
+/* Texte et couleurs */
+.historical-module .text-xs {
+  font-size: var(--sidebar-text-xs) !important;
+}
+
+.historical-module .text-sm {
+  font-size: var(--sidebar-text-sm) !important;
+}
+
+.historical-module .text-lg {
+  font-size: var(--sidebar-text-lg) !important;
+}
+
+.historical-module .font-semibold {
+  font-weight: 600 !important;
+}
+
+.historical-module .text-white {
+  color: white !important;
+}
+
+.historical-module .text-slate-400 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.historical-module .text-slate-500 {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.historical-module .text-blue-400 {
+  color: var(--sidebar-blue) !important;
+}
+
+.historical-module .text-green-400 {
+  color: var(--sidebar-green) !important;
+}
+
+.historical-module .text-purple-400 {
+  color: var(--sidebar-purple) !important;
+}
+
+.historical-module .text-orange-400 {
+  color: var(--sidebar-gold) !important;
+}
+
+.historical-module .text-red-400 {
+  color: var(--sidebar-red) !important;
+}
+
+/* Icônes */
+.historical-module .w-3 {
+  width: 12px !important;
+}
+
+.historical-module .h-3 {
+  height: 12px !important;
+}
+
+.historical-module .w-4 {
+  width: 16px !important;
+}
+
+.historical-module .h-4 {
+  height: 16px !important;
+}
+
+.historical-module .w-6 {
+  width: 24px !important;
+}
+
+.historical-module .h-6 {
+  height: 24px !important;
+}
+
+/* Marges et padding */
+.historical-module .mt-1 {
+  margin-top: 4px !important;
+}
+
+.historical-module .mb-2 {
+  margin-bottom: 8px !important;
+}
+
+.historical-module .p-3 {
+  padding: 12px !important;
+}
+
+.historical-module .py-4 {
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+.historical-module .py-8 {
+  padding-top: 32px !important;
+  padding-bottom: 32px !important;
+}
+
+/* Bordures et arrondis */
+.historical-module .rounded-lg {
+  border-radius: var(--sidebar-radius-sm) !important;
+}
+
+.historical-module .rounded-sm {
+  border-radius: 4px !important;
+}
+
+.historical-module .border {
+  border-width: 1px !important;
+}
+
+.historical-module .border-slate-600\/50 {
+  border-color: rgba(255, 215, 0, 0.2) !important;
+}
+
+.historical-module .border-slate-600\/30 {
+  border-color: rgba(255, 215, 0, 0.15) !important;
+}
+
+/* Backgrounds spéciaux */
+.historical-module .bg-slate-700\/30 {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.historical-module .bg-slate-700\/20 {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Animations */
+.historical-module .animate-spin {
+  animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* États de chargement */
+.historical-module .loading-spinner {
+  width: 24px !important;
+  height: 24px !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  border-top: 2px solid var(--sidebar-cyan) !important;
+  border-radius: 50% !important;
+}
+
+/* Sélecteurs de période */
+.historical-module .period-select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  color: white !important;
+  font-size: var(--sidebar-text-xs) !important;
+  padding: 4px 8px !important;
+  border-radius: var(--sidebar-radius-sm) !important;
+  cursor: pointer !important;
+}
+
+.historical-module .period-select:hover {
+  border-color: rgba(255, 215, 0, 0.5) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Mini graphiques */
+.historical-module .mini-chart {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 2px !important;
+  height: 40px !important;
+  padding: 8px 0 !important;
+}
+
+.historical-module .mini-chart > div {
+  background: var(--sidebar-blue) !important;
+  opacity: 0.6 !important;
+  border-radius: 2px !important;
+  min-width: 2px !important;
+  flex: 1 !important;
+  transition: all var(--sidebar-transition-fast) !important;
+}
+
+.historical-module .mini-chart > div:hover {
+  opacity: 1 !important;
+  background: var(--sidebar-cyan) !important;
+}
+
+/* Navigation hint */
+.historical-module .navigation-hint {
+  text-align: center !important;
+  margin-top: var(--sidebar-spacing-sm) !important;
+  padding-top: var(--sidebar-spacing-sm) !important;
+  border-top: 1px solid rgba(255, 215, 0, 0.1) !important;
+}
+
+.historical-module .navigation-hint span {
+  font-size: var(--sidebar-text-xs) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-style: italic !important;
+}
+
+.historical-module:hover .navigation-hint span {
+  color: var(--sidebar-cyan) !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .historical-module .sidebar-section-content {
+    padding: var(--sidebar-spacing-sm) !important;
+  }
+  
+  .historical-module .metric-card {
+    padding: var(--sidebar-spacing-xs) !important;
+  }
+  
+  .historical-module .gap-3 {
+    gap: 8px !important;
+  }
+}

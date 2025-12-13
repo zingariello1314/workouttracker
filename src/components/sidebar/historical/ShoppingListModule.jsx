@@ -1,304 +1,335 @@
-import React, { memo, useState, useEffect, useMemo } from 'react';
-import { ShoppingCart, Clock, MapPin, ChevronRight, AlertCircle } from 'lucide-react';
-import { useSmartShopping } from '../../../hooks/useSmartShopping';
+import React, { memo, useCallback, useMemo } from 'react';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
 
 /**
- * Module de liste de courses (Position 11)
+ * ShoppingListModule - Module Liste Courses (Position 11)
  * Affiche la liste programmée pour l'heure actuelle ou la plus proche
- * Permet la navigation vers Smart Shopping avec positionnement précis
+ * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
  */
 const ShoppingListModule = memo(({ 
-  moduleId = 'shopping-list-module',
-  moduleType = 'historical',
-  navigationTarget,
-  navigation,
-  setActiveTab
+  isExpanded,
+  onToggle,
+  data = {},
+  navigation
 }) => {
-  const { listes, loading, error } = useSmartShopping();
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Mise à jour de l'heure toutes les minutes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000); // 1 minute
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Logique de sélection de la liste la plus proche temporellement
+  // Extraire les données des listes de courses
+  const shoppingLists = data?.shoppingLists || [];
+  
+  /**
+   * Trouve la liste la plus appropriée pour l'heure actuelle
+   * Requirements: 6.1, 6.2
+   */
   const currentList = useMemo(() => {
-    if (!listes || listes.length === 0) return null;
-
-    const now = currentTime;
-    const currentHour = now.getHours();
-    const currentMinutes = now.getMinutes();
-    const currentTimeInMinutes = currentHour * 60 + currentMinutes;
-
-    // Filtrer les listes avec des créneaux horaires programmés
-    const scheduledLists = listes.filter(liste => 
-      liste.scheduledTime || liste.timeSlot
-    );
-
-    if (scheduledLists.length === 0) {
-      // Si aucune liste programmée, prendre la première liste prête
-      return listes.find(liste => liste.statut === 'prete') || listes[0] || null;
+    if (!shoppingLists || shoppingLists.length === 0) {
+      return null;
     }
 
-    // Trouver la liste programmée pour maintenant ou la plus proche
-    let closestList = null;
-    let smallestTimeDiff = Infinity;
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // Minutes depuis minuit
+    
+    // Filtrer les listes avec horaires programmés
+    const scheduledLists = shoppingLists.filter(list => 
+      list.scheduledTime && list.statut !== 'completee'
+    );
+    
+    if (scheduledLists.length === 0) {
+      // Retourner la première liste non complétée
+      return shoppingLists.find(list => list.statut !== 'completee') || null;
+    }
 
-    scheduledLists.forEach(liste => {
-      const scheduledTime = liste.scheduledTime || liste.timeSlot;
-      let listTimeInMinutes;
-
-      if (typeof scheduledTime === 'string') {
-        // Format "HH:MM"
-        const [hours, minutes] = scheduledTime.split(':').map(Number);
-        listTimeInMinutes = hours * 60 + minutes;
-      } else if (scheduledTime instanceof Date) {
-        listTimeInMinutes = scheduledTime.getHours() * 60 + scheduledTime.getMinutes();
-      } else {
-        return; // Skip invalid time format
-      }
-
-      // Calculer la différence de temps
-      let timeDiff;
-      let isCurrentTime = false;
+    // Trouver la liste programmée pour maintenant
+    const currentList = scheduledLists.find(list => {
+      const listTime = new Date(list.scheduledTime);
+      const listMinutes = listTime.getHours() * 60 + listTime.getMinutes();
+      const timeDiff = Math.abs(currentTime - listMinutes);
       
-      // Vérifier si c'est maintenant (tolérance de 30 minutes)
-      const diffFromNow = Math.abs(currentTimeInMinutes - listTimeInMinutes);
-      if (diffFromNow <= 30) {
-        timeDiff = diffFromNow;
-        isCurrentTime = true;
-      } else if (listTimeInMinutes > currentTimeInMinutes) {
-        // Liste programmée plus tard aujourd'hui
-        timeDiff = listTimeInMinutes - currentTimeInMinutes;
-      } else {
-        // Liste programmée plus tôt, considérer le lendemain
-        timeDiff = (24 * 60) - currentTimeInMinutes + listTimeInMinutes;
-      }
-
-      if (timeDiff < smallestTimeDiff) {
-        smallestTimeDiff = timeDiff;
-        closestList = {
-          ...liste,
-          isClosest: !isCurrentTime, // Si ce n'est pas maintenant, c'est la plus proche
-          timeDiffMinutes: timeDiff
-        };
-      }
+      // Considérer comme "actuelle" si dans les 30 minutes
+      return timeDiff <= 30;
     });
 
-    return closestList;
-  }, [listes, currentTime]);
+    if (currentList) {
+      return { ...currentList, isCurrent: true };
+    }
 
-  // Navigation vers Smart Shopping
-  const handleNavigateToSmartShopping = async () => {
-    if (!setActiveTab) {
-      console.warn('[ShoppingListModule] setActiveTab non fourni');
+    // Sinon, trouver la liste la plus proche temporellement
+    const closestList = scheduledLists.reduce((closest, list) => {
+      const listTime = new Date(list.scheduledTime);
+      const listMinutes = listTime.getHours() * 60 + listTime.getMinutes();
+      
+      const currentDiff = Math.abs(currentTime - listMinutes);
+      const closestDiff = closest ? Math.abs(currentTime - (new Date(closest.scheduledTime).getHours() * 60 + new Date(closest.scheduledTime).getMinutes())) : Infinity;
+      
+      return currentDiff < closestDiff ? list : closest;
+    }, null);
+
+    return closestList ? { ...closestList, isClosest: true } : null;
+  }, [shoppingLists]);
+
+  /**
+   * Navigation vers Smart Shopping avec positionnement précis
+   * Requirements: 6.3, 6.5
+   */
+  const handleNavigation = useCallback(async (listId = null) => {
+    if (!navigation?.setActiveTab) {
+      console.warn('[ShoppingListModule] Navigation function not available');
       return;
     }
 
-    const target = {
-      tab: 'Finances',
-      subtab: 'smart-shopping',
-      moduleId: currentList ? `shopping-list-${currentList.id}` : 'smart-shopping-main',
-      scrollBehavior: 'smooth',
-      highlightDuration: 3000,
-      params: {
-        listId: currentList?.id,
-        section: 'listes'
-      }
-    };
-
     try {
-      const success = await deepLinkService.navigateToModule(target, setActiveTab);
+      // Navigation vers Finances > Smart Shopping
+      const target = {
+        tab: 'finances',
+        subtab: 'smart-shopping',
+        moduleId: listId ? `shopping-list-${listId}` : 'smart-shopping-main',
+        scrollBehavior: 'smooth',
+        highlightDuration: 2000,
+        params: { listId }
+      };
+
+      const success = await deepLinkService.navigateToModule(target, navigation.setActiveTab);
+      
       if (success) {
-        console.log('[ShoppingListModule] Navigation réussie vers Smart Shopping');
+        console.log(`[ShoppingListModule] Navigation réussie vers Smart Shopping${listId ? ` (liste ${listId})` : ''}`);
+      } else {
+        console.warn('[ShoppingListModule] Échec de la navigation');
       }
     } catch (error) {
       console.error('[ShoppingListModule] Erreur de navigation:', error);
     }
-  };
+  }, [navigation]);
 
-  // Formatage du temps relatif
-  const formatTimeRelative = (timeDiffMinutes) => {
-    if (timeDiffMinutes < 60) {
-      return `dans ${timeDiffMinutes}min`;
-    } else if (timeDiffMinutes < 24 * 60) {
-      const hours = Math.floor(timeDiffMinutes / 60);
-      const minutes = timeDiffMinutes % 60;
-      return `dans ${hours}h${minutes > 0 ? ` ${minutes}min` : ''}`;
-    } else {
-      const days = Math.floor(timeDiffMinutes / (24 * 60));
-      return `dans ${days} jour${days > 1 ? 's' : ''}`;
-    }
-  };
+  /**
+   * Formate l'heure d'une liste
+   */
+  const formatTime = useCallback((scheduledTime) => {
+    if (!scheduledTime) return '';
+    
+    const time = new Date(scheduledTime);
+    return time.toLocaleTimeString('fr-FR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  }, []);
 
-  if (loading) {
+  /**
+   * Calcule le budget estimé d'une liste
+   */
+  const calculateEstimatedBudget = useCallback((articles) => {
+    if (!articles || articles.length === 0) return 0;
+    
+    return articles.reduce((total, article) => {
+      return total + (article.prixEstime || 0) * (article.quantite || 1);
+    }, 0);
+  }, []);
+
+  // État de chargement
+  if (data?.loading) {
     return (
-      <section className="sidebar-section shopping-list-module" id={moduleId}>
-        <header className="sidebar-section-header">
+      <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
+        <header 
+          className="sidebar-section-header"
+          onClick={onToggle}
+          role="button"
+          tabIndex={0}
+          aria-expanded={isExpanded}
+        >
           <h2 className="sidebar-section-title">
-            <span className="sidebar-section-icon" aria-hidden="true">🛒</span>
+            <span className="sidebar-section-icon">🛒</span>
             Liste Courses
           </h2>
+          <span 
+            className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
+            aria-hidden="true"
+          >
+            ▼
+          </span>
         </header>
         
-        <div className="sidebar-section-content">
-          <div className="module-loading" role="status" aria-label="Chargement des listes de courses">
-            <div className="loading-spinner"></div>
-            <span className="loading-text">Chargement...</span>
+        {isExpanded && (
+          <div className="sidebar-section-content">
+            <div className="module-loading">
+              <div className="loading-spinner"></div>
+              <span className="loading-text">Chargement...</span>
+            </div>
           </div>
-        </div>
+        )}
       </section>
     );
   }
 
-  if (error) {
+  // État d'erreur
+  if (data?.error) {
     return (
-      <section className="sidebar-section shopping-list-module" id={moduleId}>
-        <header className="sidebar-section-header">
+      <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
+        <header 
+          className="sidebar-section-header"
+          onClick={onToggle}
+          role="button"
+          tabIndex={0}
+          aria-expanded={isExpanded}
+        >
           <h2 className="sidebar-section-title">
-            <span className="sidebar-section-icon" aria-hidden="true">🛒</span>
+            <span className="sidebar-section-icon">🛒</span>
             Liste Courses
           </h2>
+          <span 
+            className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
+            aria-hidden="true"
+          >
+            ▼
+          </span>
         </header>
         
-        <div className="sidebar-section-content">
-          <div className="module-error" role="alert">
-            <AlertCircle className="error-icon" />
-            <span className="error-text">Erreur de chargement</span>
+        {isExpanded && (
+          <div className="sidebar-section-content">
+            <div className="module-error">
+              <span className="error-icon">⚠️</span>
+              <span className="error-text">Erreur de chargement</span>
+            </div>
           </div>
-        </div>
+        )}
       </section>
     );
   }
 
+  // État vide - aucune liste
   if (!currentList) {
     return (
-      <section className="sidebar-section shopping-list-module" id={moduleId}>
-        <header className="sidebar-section-header">
+      <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
+        <header 
+          className="sidebar-section-header"
+          onClick={onToggle}
+          role="button"
+          tabIndex={0}
+          aria-expanded={isExpanded}
+        >
           <h2 className="sidebar-section-title">
-            <span className="sidebar-section-icon" aria-hidden="true">🛒</span>
+            <span className="sidebar-section-icon">🛒</span>
             Liste Courses
           </h2>
+          <span 
+            className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
+            aria-hidden="true"
+          >
+            ▼
+          </span>
         </header>
         
-        <div className="sidebar-section-content">
-          <div className="module-empty">
-            <ShoppingCart className="empty-icon" />
-            <span className="empty-text">Aucune liste programmée</span>
-            <button 
-              className="create-list-btn"
-              onClick={handleNavigateToSmartShopping}
-              aria-label="Créer une nouvelle liste de courses"
-            >
-              Créer une liste
-            </button>
+        {isExpanded && (
+          <div className="sidebar-section-content">
+            <div className="module-empty">
+              <span className="empty-icon">📝</span>
+              <span className="empty-text">Aucune liste programmée</span>
+              <button 
+                className="create-list-btn"
+                onClick={() => handleNavigation()}
+              >
+                Créer une liste
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </section>
     );
   }
 
+  const estimatedBudget = calculateEstimatedBudget(currentList.articles);
+  const articlesCount = currentList.articles?.length || 0;
+  const articlesToShow = currentList.articles?.slice(0, 3) || [];
+
   return (
-    <section 
-      className="sidebar-section shopping-list-module" 
-      id={moduleId}
-      data-module-id={moduleId}
-      data-module-type={moduleType}
-    >
-      <header className="sidebar-section-header">
+    <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
+      <header 
+        className="sidebar-section-header"
+        onClick={onToggle}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+      >
         <h2 className="sidebar-section-title">
-          <span className="sidebar-section-icon" aria-hidden="true">🛒</span>
+          <span className="sidebar-section-icon">🛒</span>
           Liste Courses
         </h2>
+        <span 
+          className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
+          aria-hidden="true"
+        >
+          ▼
+        </span>
       </header>
       
-      <div className="sidebar-section-content">
-        <div className="shopping-list-content">
-          {/* En-tête de la liste */}
-          <div className="list-header">
-            <div className="list-info">
-              <h4 className="list-name">{currentList.nom}</h4>
-              <div className="list-meta">
-                {currentList.isClosest ? (
-                  <div className="time-indicator closest">
-                    <Clock className="time-icon" />
-                    <span className="time-text">
-                      {formatTimeRelative(currentList.timeDiffMinutes)}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="time-indicator current">
-                    <Clock className="time-icon" />
-                    <span className="time-text">Maintenant</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="list-status">
-              <span className={`status-badge ${currentList.statut}`}>
-                {currentList.statut === 'prete' && 'Prête'}
-                {currentList.statut === 'en-cours' && 'En cours'}
-                {currentList.statut === 'completee' && 'Terminée'}
-              </span>
-            </div>
-          </div>
-
-          {/* Aperçu des articles */}
-          <div className="articles-preview">
-            {currentList.articles && currentList.articles.length > 0 ? (
-              <>
-                <div className="articles-count">
-                  <span className="count-number">{currentList.articles.length}</span>
-                  <span className="count-label">article{currentList.articles.length > 1 ? 's' : ''}</span>
-                </div>
-                <div className="articles-sample">
-                  {currentList.articles.slice(0, 3).map((article, index) => (
-                    <div key={article.id || index} className="article-item">
-                      <span className="article-name">{article.nom}</span>
-                      {article.quantite > 1 && (
-                        <span className="article-quantity">×{article.quantite}</span>
-                      )}
-                    </div>
-                  ))}
-                  {currentList.articles.length > 3 && (
-                    <div className="articles-more">
-                      +{currentList.articles.length - 3} autres
+      {isExpanded && (
+        <div className="sidebar-section-content">
+          <div className="shopping-list-content">
+            {/* En-tête de la liste */}
+            <div className="list-header">
+              <div className="list-info">
+                <h4 className="list-name">{currentList.nom}</h4>
+                <div className="list-meta">
+                  {currentList.scheduledTime && (
+                    <div className={`time-indicator ${currentList.isCurrent ? 'current' : 'closest'}`}>
+                      <span className="time-icon">🕒</span>
+                      <span className="time-text">{formatTime(currentList.scheduledTime)}</span>
                     </div>
                   )}
                 </div>
-              </>
-            ) : (
-              <div className="no-articles">
-                <span>Liste vide</span>
+              </div>
+              <div className="list-status">
+                <span className={`status-badge ${currentList.statut}`}>
+                  {currentList.statut === 'prete' ? 'Prête' : 
+                   currentList.statut === 'en-cours' ? 'En cours' : 'Complétée'}
+                </span>
+              </div>
+            </div>
+
+            {/* Aperçu des articles */}
+            <div className="articles-preview">
+              <div className="articles-count">
+                <span className="count-number">{articlesCount}</span>
+                <span className="count-label">article{articlesCount > 1 ? 's' : ''}</span>
+              </div>
+              
+              {articlesToShow.length > 0 ? (
+                <div className="articles-sample">
+                  {articlesToShow.map((article, index) => (
+                    <div key={index} className="article-item">
+                      <span className="article-name">{article.nom}</span>
+                      <span className="article-quantity">×{article.quantite}</span>
+                    </div>
+                  ))}
+                  {articlesCount > 3 && (
+                    <div className="articles-more">
+                      +{articlesCount - 3} autre{articlesCount - 3 > 1 ? 's' : ''}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="no-articles">
+                  <span>Liste vide</span>
+                </div>
+              )}
+            </div>
+
+            {/* Budget estimé */}
+            {estimatedBudget > 0 && (
+              <div className="budget-info">
+                <span className="budget-label">Budget estimé</span>
+                <span className="budget-amount">{estimatedBudget.toFixed(2)}€</span>
               </div>
             )}
+
+            {/* Bouton de navigation */}
+            <button 
+              className="navigate-btn"
+              onClick={() => handleNavigation(currentList.id)}
+              aria-label={`Ouvrir la liste ${currentList.nom} dans Smart Shopping`}
+            >
+              <span className="btn-text">Ouvrir la liste</span>
+              <span className="btn-icon">→</span>
+            </button>
           </div>
-
-          {/* Budget estimé */}
-          {currentList.budget && (
-            <div className="budget-info">
-              <span className="budget-label">Budget:</span>
-              <span className="budget-amount">{currentList.budget.toFixed(2)}€</span>
-            </div>
-          )}
-
-          {/* Bouton de navigation */}
-          <button 
-            className="navigate-btn"
-            onClick={handleNavigateToSmartShopping}
-            aria-label={`Ouvrir la liste ${currentList.nom} dans Smart Shopping`}
-          >
-            <span className="btn-text">Ouvrir la liste</span>
-            <ChevronRight className="btn-icon" />
-          </button>
         </div>
-      </div>
+      )}
     </section>
   );
 });

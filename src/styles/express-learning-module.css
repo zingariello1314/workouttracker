@@ -1,0 +1,23 @@
+/**
+ * Express Learning Module Styles
+ * SUPPRESSION DE TOUS LES STYLES SPÉCIFIQUES
+ * Utilise uniquement les classes de base .sidebar-section
+ * Aligné sur le pattern des autres modules historiques
+ */
+
+/* ============================================
+   AUCUN STYLE SPÉCIFIQUE
+   Le module utilise UNIQUEMENT les styles
+   définis dans sidebar-premium.css
+   ============================================ */
+
+/* Styles minimaux pour les boutons de période uniquement */
+.sidebar-period-buttons {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.sidebar-period-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
