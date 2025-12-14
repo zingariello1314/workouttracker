@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import useMuscleGroups from '../../../hooks/useMuscleGroups';
 import useWeeklyMissions from '../../../hooks/useWeeklyMissions';
+import deepLinkService from '../../../services/navigation/DeepLinkService';
 
 /**
  * DailyTrainingModule - Module Entraînement du Jour (Position 15)
@@ -91,18 +92,20 @@ const DailyTrainingModule = memo(({
     return objectives;
   }, [data, todayMissions]);
 
-  // Navigation vers Sport > module entraînement
+  // Navigation vers Sport > module entraînement (Requirement 8.4)
   const handleNavigateToSport = useCallback(async () => {
-    if (!navigation?.navigateToModule) return;
+    if (!navigation?.setActiveTab) return;
     
     try {
-      await navigation.navigateToModule({
+      const target = {
         tab: 'sport',
-        subtab: 'today',
+        subtab: 'entraînement',
         moduleId: 'training-module',
         scrollBehavior: 'smooth',
         highlightDuration: 2000
-      });
+      };
+
+      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
     } catch (error) {
       console.error('[DailyTrainingModule] Erreur navigation sport:', error);
     }
@@ -110,16 +113,18 @@ const DailyTrainingModule = memo(({
 
   // Navigation vers les groupes musculaires
   const handleNavigateToMuscles = useCallback(async () => {
-    if (!navigation?.navigateToModule) return;
+    if (!navigation?.setActiveTab) return;
     
     try {
-      await navigation.navigateToModule({
+      const target = {
         tab: 'sport',
         subtab: 'muscles',
         moduleId: 'muscle-groups-grid',
         scrollBehavior: 'smooth',
         highlightDuration: 2000
-      });
+      };
+
+      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
     } catch (error) {
       console.error('[DailyTrainingModule] Erreur navigation muscles:', error);
     }
@@ -154,9 +159,6 @@ const DailyTrainingModule = memo(({
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon">💪</span>
           Entraînement du Jour
-          {todayMissions.length > 0 && (
-            <span className="sidebar-section-badge">{todayMissions.length}</span>
-          )}
         </h2>
         <span 
           className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}

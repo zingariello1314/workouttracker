@@ -31,7 +31,10 @@ function detectOptimalPerformanceMode() {
     return PERFORMANCE_MODES.DEVELOPER;
   }
   
-  if (isMobile || !hasHighMemory || !hasGoodConnection) {
+  // Priorité aux conditions de faible performance - être plus strict
+  if (isMobile || 
+      (navigator.deviceMemory && navigator.deviceMemory < 4) || 
+      (navigator.connection && (navigator.connection.effectiveType === '2g' || navigator.connection.effectiveType === '3g'))) {
     return PERFORMANCE_MODES.POWER_SAVER;
   }
   

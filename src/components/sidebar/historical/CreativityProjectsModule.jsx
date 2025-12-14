@@ -1,4 +1,9 @@
 import React, { memo, useCallback, useMemo } from 'react';
+import deepLinkService from '../../../services/navigation/DeepLinkService';
+import StatCard from '../enhanced/StatCard';
+import AnimatedProgressBar from '../enhanced/AnimatedProgressBar';
+import PremiumBadge from '../enhanced/PremiumBadge';
+import '../../../styles/sidebar-visual-enhancements.css';
 
 /**
  * CreativityProjectsModule - Module Créativité & Projets (Position 17)
@@ -106,17 +111,20 @@ const CreativityProjectsModule = memo(({
     ).length;
   }, [creativityData.recentSessions]);
 
-  // Navigation vers la page d'accueil avec positionnement sur les projets créatifs
+  // Navigation vers la page d'accueil avec positionnement sur les projets créatifs (Requirement 9.4)
   const handleNavigateToCreativity = useCallback(async () => {
-    if (!navigation?.navigateToModule) return;
+    if (!navigation?.setActiveTab) return;
     
     try {
-      await navigation.navigateToModule({
-        tab: 'home',
-        section: 'creativity-projects',
+      const target = {
+        tab: 'homepage',
+        subtab: 'creative-projects',
+        moduleId: 'creative-projects',
         scrollBehavior: 'smooth',
         highlightDuration: 2000
-      });
+      };
+
+      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
     } catch (error) {
       console.error('[CreativityProjectsModule] Erreur navigation créativité:', error);
     }
@@ -124,16 +132,18 @@ const CreativityProjectsModule = memo(({
 
   // Navigation vers un projet spécifique
   const handleNavigateToProject = useCallback(async (projectId) => {
-    if (!navigation?.navigateToModule) return;
+    if (!navigation?.setActiveTab) return;
     
     try {
-      await navigation.navigateToModule({
-        tab: 'home',
-        section: 'creativity-projects',
-        projectId: projectId,
+      const target = {
+        tab: 'homepage',
+        subtab: 'creative-projects',
+        moduleId: `creative-project-${projectId}`,
         scrollBehavior: 'smooth',
         highlightDuration: 2000
-      });
+      };
+
+      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
     } catch (error) {
       console.error('[CreativityProjectsModule] Erreur navigation projet:', error);
     }
@@ -193,9 +203,6 @@ const CreativityProjectsModule = memo(({
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon">🎨</span>
           Créativité & Projets
-          {activeProjects.length > 0 && (
-            <span className="sidebar-section-badge">{activeProjects.length}</span>
-          )}
         </h2>
         <span 
           className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
@@ -207,114 +214,149 @@ const CreativityProjectsModule = memo(({
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          {/* Inspiration du jour */}
-          <div className="sidebar-inspiration-box">
-            <div className="sidebar-inspiration-icon">💡</div>
-            <div className="sidebar-inspiration-content">
-              <div className="sidebar-inspiration-text">"{dailyInspiration.text}"</div>
-              <div className="sidebar-inspiration-author">— {dailyInspiration.author}</div>
+          {/* Inspiration du jour - VERSION ENRICHIE */}
+          <div className="stat-card-premium" style={{ 
+            marginBottom: '16px',
+            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
+            borderLeft: '4px solid var(--sidebar-purple)'
+          }}>
+            <div className="stat-header">
+              <span className="stat-icon" style={{ color: 'var(--sidebar-purple)' }}>💡</span>
+              <PremiumBadge type="info" value="Inspiration" icon="✨" />
+            </div>
+            <div className="sidebar-text-primary" style={{ 
+              fontSize: '0.85rem',
+              fontStyle: 'italic',
+              lineHeight: '1.4',
+              marginBottom: '4px',
+              textAlign: 'center'
+            }}>
+              "{dailyInspiration.text}"
+            </div>
+            <div className="sidebar-text-secondary" style={{ 
+              fontSize: '0.75rem',
+              textAlign: 'center',
+              opacity: 0.8
+            }}>
+              — {dailyInspiration.author}
             </div>
           </div>
 
-          {/* Projets créatifs en cours */}
+          {/* Projets créatifs en cours - VERSION ENRICHIE */}
           {activeProjects.length === 0 ? (
-            <div className="sidebar-info-box">
-              <span className="sidebar-info-icon">🎭</span>
-              <span>Aucun projet créatif en cours</span>
+            <div className="empty-state-attractive">
+              <div className="empty-illustration">🎭</div>
+              <div className="empty-message">Aucun projet créatif en cours</div>
               <button 
-                className="sidebar-action-button-small"
+                className="empty-action-button"
                 onClick={handleNavigateToCreativity}
               >
-                Créer un projet
+                Créer mon premier projet
               </button>
             </div>
           ) : (
-            <div className="sidebar-creative-projects">
-              <div className="sidebar-subsection-title">Projets en cours</div>
-              {activeProjects.slice(0, 2).map(project => (
-                <div 
-                  key={project.id} 
-                  className="sidebar-creative-project clickable"
-                  onClick={() => handleNavigateToProject(project.id)}
-                >
-                  <div className="sidebar-project-header">
-                    <span className="sidebar-project-icon">
-                      {getProjectTypeIcon(project.type)}
-                    </span>
-                    <div className="sidebar-project-info">
-                      <div className="sidebar-project-name">{project.name}</div>
-                      <div className="sidebar-project-meta">
-                        {project.totalSessions} sessions • {formatRelativeDate(project.lastSession)}
-                      </div>
+            <div style={{ marginBottom: '16px' }}>
+              <div className="sidebar-text-primary" style={{ 
+                fontSize: '0.8rem',
+                marginBottom: '12px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: 'var(--sidebar-cyan)'
+              }}>
+                Projets en cours ({activeProjects.length})
+              </div>
+              <div className="sidebar-content-dense" style={{ gridTemplateColumns: '1fr' }}>
+                {activeProjects.slice(0, 2).map(project => (
+                  <div 
+                    key={project.id} 
+                    className="stat-card-premium clickable"
+                    onClick={() => handleNavigateToProject(project.id)}
+                    style={{ padding: '12px' }}
+                  >
+                    <div className="stat-header">
+                      <span className="stat-icon" style={{ color: getProgressColor(project.progress) }}>
+                        {getProjectTypeIcon(project.type)}
+                      </span>
+                      <PremiumBadge 
+                        type={project.progress >= 80 ? 'success' : project.progress >= 60 ? 'warning' : 'info'}
+                        value={`${project.progress}%`}
+                      />
                     </div>
-                    <div className="sidebar-project-progress-text">
-                      {project.progress}%
+                    <div className="stat-value" style={{ 
+                      fontSize: '0.9rem',
+                      color: getProgressColor(project.progress),
+                      marginBottom: '4px'
+                    }}>
+                      {project.name}
                     </div>
-                  </div>
-                  <div className="sidebar-project-progress">
-                    <div 
-                      className="sidebar-project-progress-bar" 
-                      style={{ 
-                        width: `${project.progress}%`,
-                        backgroundColor: getProgressColor(project.progress)
-                      }}
+                    <div className="stat-title" style={{ marginBottom: '8px' }}>
+                      {project.totalSessions} sessions • {formatRelativeDate(project.lastSession)}
+                    </div>
+                    <AnimatedProgressBar
+                      value={project.progress}
+                      color={getProgressColor(project.progress)}
+                      showValue={false}
                     />
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Sessions récentes */}
-          {creativityData.recentSessions.length > 0 && (
-            <div className="sidebar-recent-sessions">
-              <div className="sidebar-subsection-title">Sessions récentes</div>
-              <div className="sidebar-data-grid">
-                <div className="sidebar-data-card clickable" onClick={handleNavigateToCreativity}>
-                  <span className="sidebar-data-icon">📝</span>
-                  <div className="sidebar-data-value">{recentSessionsCount}</div>
-                  <div className="sidebar-data-label">Cette semaine</div>
-                  <div className="sidebar-data-hint">
-                    {creativityData.recentSessions.length} sessions au total
-                  </div>
-                </div>
-
-                <div className="sidebar-data-card clickable" onClick={handleNavigateToCreativity}>
-                  <span className="sidebar-data-icon">⏱️</span>
-                  <div className="sidebar-data-value">
-                    {formatDuration(
-                      creativityData.recentSessions.reduce((total, session) => total + session.duration, 0)
-                    )}
-                  </div>
-                  <div className="sidebar-data-label">Temps total</div>
-                  <div className="sidebar-data-hint">
-                    Moyenne: {formatDuration(
-                      Math.round(creativityData.recentSessions.reduce((total, session) => total + session.duration, 0) / creativityData.recentSessions.length)
-                    )}/session
-                  </div>
-                </div>
-
-                <div className="sidebar-data-card clickable" onClick={handleNavigateToCreativity}>
-                  <span className="sidebar-data-icon">⭐</span>
-                  <div className="sidebar-data-value">
-                    {(creativityData.recentSessions.reduce((total, session) => total + (session.satisfaction || 0), 0) / creativityData.recentSessions.length).toFixed(1)}
-                  </div>
-                  <div className="sidebar-data-label">Satisfaction</div>
-                  <div className="sidebar-data-hint">
-                    Sur 5 étoiles
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Navigation vers Créativité */}
+          {/* Sessions récentes - VERSION ENRICHIE */}
+          {creativityData.recentSessions.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              <div className="sidebar-text-primary" style={{ 
+                fontSize: '0.8rem',
+                marginBottom: '12px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                color: 'var(--sidebar-orange)'
+              }}>
+                Sessions récentes
+              </div>
+              <div className="sidebar-content-dense">
+                <StatCard
+                  title="Cette semaine"
+                  value={recentSessionsCount}
+                  icon="📝"
+                  color="var(--sidebar-green)"
+                  onClick={handleNavigateToCreativity}
+                />
+
+                <StatCard
+                  title="Temps total"
+                  value={formatDuration(
+                    creativityData.recentSessions.reduce((total, session) => total + session.duration, 0)
+                  )}
+                  icon="⏱️"
+                  color="var(--sidebar-blue)"
+                  onClick={handleNavigateToCreativity}
+                />
+
+                <StatCard
+                  title="Satisfaction"
+                  value={`${(creativityData.recentSessions.reduce((total, session) => total + (session.satisfaction || 0), 0) / creativityData.recentSessions.length).toFixed(1)}/5`}
+                  icon="⭐"
+                  color="var(--sidebar-gold)"
+                  onClick={handleNavigateToCreativity}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Navigation vers Créativité - VERSION ENRICHIE */}
           <button 
             className="sidebar-action-button clickable"
             onClick={handleNavigateToCreativity}
+            style={{ 
+              width: '100%',
+              background: 'var(--sidebar-premium-gradient-2)',
+              border: 'none'
+            }}
           >
             <span className="sidebar-action-icon">🎨</span>
-            <span>Voir mes projets</span>
+            <span>Voir mes projets créatifs</span>
             <span className="sidebar-action-arrow">→</span>
           </button>
         </div>

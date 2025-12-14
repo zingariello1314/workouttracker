@@ -1,6 +1,12 @@
 import React, { memo, useCallback, useState, useMemo } from 'react';
 import { useQuietQuestEngine, getTodayDateStr } from '../../../hooks/useQuietQuestEngine';
 import { emitSidebarEvent, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
+import deepLinkService from '../../../services/navigation/DeepLinkService';
+import AnimatedProgressBar from '../enhanced/AnimatedProgressBar';
+import PremiumBadge from '../enhanced/PremiumBadge';
+import StatCard from '../enhanced/StatCard';
+import PeriodSelector from '../enhanced/PeriodSelector';
+import '../../../styles/sidebar-visual-enhancements.css';
 
 /**
  * InteractiveQuestsModule - Module Quêtes Interactives (Position 7)
@@ -125,16 +131,18 @@ const InteractiveQuestsModule = memo(({
 
   // Navigation vers création de quête
   const handleCreateQuest = useCallback(async () => {
-    if (!navigation?.navigateToModule) return;
+    if (!navigation?.setActiveTab) return;
     
     try {
-      await navigation.navigateToModule({
+      const target = {
         tab: 'quests',
         subtab: 'quests',
         moduleId: 'quest-creation-form',
         scrollBehavior: 'smooth',
         highlightDuration: 3000
-      });
+      };
+
+      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
     } catch (error) {
       console.error('[InteractiveQuestsModule] Erreur navigation création:', error);
     }
@@ -142,16 +150,18 @@ const InteractiveQuestsModule = memo(({
 
   // Navigation vers l'onglet Quêtes
   const handleNavigateToQuests = useCallback(async () => {
-    if (!navigation?.navigateToModule) return;
+    if (!navigation?.setActiveTab) return;
     
     try {
-      await navigation.navigateToModule({
+      const target = {
         tab: 'quests',
         subtab: 'today',
         moduleId: 'quests-today-view',
         scrollBehavior: 'smooth',
         highlightDuration: 2000
-      });
+      };
+
+      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
     } catch (error) {
       console.error('[InteractiveQuestsModule] Erreur navigation quêtes:', error);
     }
@@ -177,7 +187,6 @@ const InteractiveQuestsModule = memo(({
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon">🎯</span>
           Quêtes Interactives
-          <span className="sidebar-section-badge">{todayQuests.length}</span>
         </h2>
         <span 
           className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
@@ -189,31 +198,42 @@ const InteractiveQuestsModule = memo(({
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          {/* Barre XP avec niveau et progression */}
-          <div className="sidebar-data-grid">
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon">⭐</span>
-              <div className="sidebar-data-value">Niv. {xpProgress.level}</div>
-              <div className="sidebar-data-label">Niveau actuel</div>
-              <div className="sidebar-data-progress">
-                <div 
-                  className="sidebar-data-progress-bar" 
-                  style={{ width: `${xpProgress.progressPercentage}%` }}
+          {/* Barre XP avec niveau et progression - VERSION ENRICHIE */}
+          <div className="sidebar-content-dense">
+            <StatCard
+              title="Niveau Actuel"
+              value={`Niv. ${xpProgress.level}`}
+              icon="⭐"
+              color="var(--sidebar-gold)"
+            />
+            <div className="stat-card-premium">
+              <div className="stat-header">
+                <span className="stat-icon" style={{ color: 'var(--sidebar-magenta)' }}>💎</span>
+                <PremiumBadge 
+                  type="xp" 
+                  value={`${Math.round(xpProgress.progressPercentage)}%`}
+                  icon="⚡"
                 />
               </div>
-              <div className="sidebar-data-hint">
-                {xpProgress.xpInCurrentLevel} / {xpProgress.xpForNextLevel} XP
+              <AnimatedProgressBar
+                value={xpProgress.progressPercentage}
+                color="var(--sidebar-premium-gradient-1)"
+                label="Progression XP"
+                showValue={false}
+              />
+              <div className="stat-title">
+                {xpProgress.xpInCurrentLevel.toLocaleString()} / {xpProgress.xpForNextLevel.toLocaleString()} XP
               </div>
             </div>
           </div>
 
-          {/* Liste des quêtes du jour */}
+          {/* Liste des quêtes du jour - VERSION ENRICHIE */}
           {todayQuests.length === 0 ? (
-            <div className="sidebar-info-box">
-              <span className="sidebar-info-icon">🎯</span>
-              <span>Aucune quête aujourd'hui</span>
+            <div className="empty-state-attractive">
+              <div className="empty-illustration">🎯</div>
+              <div className="empty-message">Aucune quête aujourd'hui</div>
               <button 
-                className="sidebar-action-button-small"
+                className="empty-action-button"
                 onClick={handleCreateQuest}
               >
                 Créer ma première quête
@@ -228,27 +248,60 @@ const InteractiveQuestsModule = memo(({
                 return (
                   <div 
                     key={quest.id} 
-                    className={`sidebar-quest-item ${isCompleted ? 'completed' : ''}`}
+                    className={`stat-card-premium quest-item ${isCompleted ? 'completed' : ''}`}
+                    style={{ 
+                      padding: '12px',
+                      marginBottom: '8px',
+                      background: isCompleted 
+                        ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%)'
+                        : 'var(--sidebar-bg-card)'
+                    }}
                   >
-                    <div 
-                      className="sidebar-quest-checkbox"
-                      onClick={() => handleQuestToggle(quest.id)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`${isCompleted ? 'Décocher' : 'Cocher'} la quête ${quest.nom}`}
-                    >
-                      {isCompleted ? '✓' : '○'}
+                    <div className="stat-header">
+                      <div 
+                        className="sidebar-quest-checkbox"
+                        onClick={() => handleQuestToggle(quest.id)}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`${isCompleted ? 'Décocher' : 'Cocher'} la quête ${quest.nom}`}
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          background: isCompleted 
+                            ? 'var(--sidebar-premium-gradient-3)' 
+                            : 'rgba(255, 255, 255, 0.1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {isCompleted ? '✓' : '○'}
+                      </div>
+                      {quest.icone && (
+                        <span className="stat-icon" style={{ color: 'var(--sidebar-cyan)' }}>
+                          {quest.icone}
+                        </span>
+                      )}
+                      <PremiumBadge 
+                        type="xp" 
+                        value={`${quest.xp || 0} XP`}
+                        animated={false}
+                      />
                     </div>
                     <div className="sidebar-quest-info">
-                      <div className="sidebar-quest-name">{quest.nom}</div>
-                      <div className="sidebar-quest-meta">
-                        <span className="sidebar-quest-category">{quest.categorie}</span>
-                        <span className="sidebar-quest-xp">{quest.xp || 0} XP</span>
+                      <div className="stat-value" style={{ 
+                        fontSize: '0.9rem', 
+                        marginBottom: '4px',
+                        textDecoration: isCompleted ? 'line-through' : 'none',
+                        opacity: isCompleted ? 0.7 : 1
+                      }}>
+                        {quest.nom}
                       </div>
+                      <div className="stat-title">{quest.categorie}</div>
                     </div>
-                    {quest.icone && (
-                      <span className="sidebar-quest-icon">{quest.icone}</span>
-                    )}
                   </div>
                 );
               })}
@@ -266,58 +319,66 @@ const InteractiveQuestsModule = memo(({
             </button>
           </div>
 
-          {/* Statistiques avec échelles configurables */}
-          <div className="sidebar-data-grid">
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon">📊</span>
-              <div className="sidebar-data-value">{statistics.completionRate}%</div>
-              <div className="sidebar-data-label">Taux de réussite</div>
-              <select 
+          {/* Statistiques avec échelles configurables - VERSION ENRICHIE */}
+          <div className="sidebar-content-dense">
+            <div className="stat-card-premium">
+              <div className="stat-header">
+                <span className="stat-icon" style={{ color: 'var(--sidebar-green)' }}>📊</span>
+                <span className="stat-trend">
+                  {statistics.completionRate >= 80 ? '🔥' : statistics.completionRate >= 60 ? '📈' : '📉'}
+                </span>
+              </div>
+              <div className="stat-value" style={{ color: 'var(--sidebar-green)' }}>
+                {statistics.completionRate}%
+              </div>
+              <div className="stat-title">Taux de réussite</div>
+              <PeriodSelector
                 value={completionRatePeriod}
-                onChange={(e) => setCompletionRatePeriod(e.target.value)}
-                className="sidebar-data-selector"
-              >
-                {periodOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setCompletionRatePeriod}
+                options={periodOptions}
+                label=""
+                icon=""
+              />
             </div>
 
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon">🔥</span>
-              <div className="sidebar-data-value">{statistics.currentStreak}</div>
-              <div className="sidebar-data-label">Série actuelle</div>
-              <select 
+            <div className="stat-card-premium">
+              <div className="stat-header">
+                <span className="stat-icon" style={{ color: 'var(--sidebar-orange)' }}>🔥</span>
+                <PremiumBadge 
+                  type="warning" 
+                  value="jours"
+                  animated={statistics.currentStreak > 0}
+                />
+              </div>
+              <div className="stat-value" style={{ color: 'var(--sidebar-orange)' }}>
+                {statistics.currentStreak}
+              </div>
+              <div className="stat-title">Série actuelle</div>
+              <PeriodSelector
                 value={streakPeriod}
-                onChange={(e) => setStreakPeriod(e.target.value)}
-                className="sidebar-data-selector"
-              >
-                {periodOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <div className="sidebar-data-hint">jours</div>
+                onChange={setStreakPeriod}
+                options={periodOptions}
+                label=""
+                icon=""
+              />
             </div>
 
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon">💎</span>
-              <div className="sidebar-data-value">{statistics.totalXP.toLocaleString()}</div>
-              <div className="sidebar-data-label">XP total</div>
-              <select 
+            <div className="stat-card-premium">
+              <div className="stat-header">
+                <span className="stat-icon" style={{ color: 'var(--sidebar-magenta)' }}>💎</span>
+                <span className="stat-trend">⚡</span>
+              </div>
+              <div className="stat-value" style={{ color: 'var(--sidebar-magenta)' }}>
+                {statistics.totalXP.toLocaleString()}
+              </div>
+              <div className="stat-title">XP total</div>
+              <PeriodSelector
                 value={xpPeriod}
-                onChange={(e) => setXpPeriod(e.target.value)}
-                className="sidebar-data-selector"
-              >
-                {periodOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setXpPeriod}
+                options={periodOptions}
+                label=""
+                icon=""
+              />
             </div>
           </div>
 

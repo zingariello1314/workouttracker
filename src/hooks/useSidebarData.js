@@ -19,6 +19,7 @@ import { useSmartShopping } from './useSmartShopping';
 import { useSidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 import { useDebouncedCallback } from './useDebouncedCallback';
 import { measureAsync, measureSync, SIDEBAR_OPERATIONS } from '../utils/performanceMonitor';
+import garminEnhancedDataService from '../services/garmin/garminEnhancedDataService';
 
 /**
  * Hook centralisé pour les données de la Sidebar Premium
@@ -73,14 +74,48 @@ export const useSidebarData = () => {
     
     const loadGarminData = async () => {
       try {
-        const data = await measureAsync(SIDEBAR_OPERATIONS.GARMIN_DATA_LOAD, async () => {
+        // Charger les données de base depuis l'API existante
+        const baseData = await measureAsync(SIDEBAR_OPERATIONS.GARMIN_DATA_LOAD, async () => {
           return await loadDataForTab('metrics', null, 'week');
         });
-        setGarminData(data);
+        
+        // Enrichir avec les données pour les graphiques
+        const enhancedData = garminEnhancedDataService.getEnhancedData();
+        
+        // Fusionner les données de base avec les données enrichies
+        const mergedData = {
+          ...baseData,
+          ...enhancedData,
+          // Préserver les données de base si elles existent
+          dailyMetrics: baseData?.dailyMetrics || {},
+          sport: {
+            ...enhancedData.sport,
+            // Fusionner avec les données existantes si présentes
+            ...(baseData?.sport || {})
+          }
+        };
+        
+        setGarminData(mergedData);
+        
+        console.log('[useSidebarData] Données Garmin enrichies chargées:', {
+          hasHeartRateZones: !!mergedData.heartRateZones?.length,
+          hasSleepPhases: !!mergedData.sleepPhases?.length,
+          hasStressLevels: !!mergedData.stressLevels?.length,
+          baseDataKeys: Object.keys(baseData || {}),
+          enhancedDataKeys: Object.keys(enhancedData || {})
+        });
+        
       } catch (err) {
         console.error('[useSidebarData] Erreur chargement Garmin:', err);
-        // Retourner null pour indiquer l'absence de données
-        setGarminData(null);
+        // En cas d'erreur, utiliser au moins les données enrichies
+        try {
+          const fallbackData = garminEnhancedDataService.getEnhancedData();
+          setGarminData(fallbackData);
+          console.log('[useSidebarData] Utilisation des données Garmin de fallback');
+        } catch (fallbackErr) {
+          console.error('[useSidebarData] Erreur fallback Garmin:', fallbackErr);
+          setGarminData(null);
+        }
       }
     };
     
@@ -305,13 +340,21 @@ export const useSidebarData = () => {
       
       return {
         weeklyWorkouts,
-        todayCalories: todayMetrics?.totalCaloriesBurned || 0,
-        todaySteps: todayMetrics?.steps || 0,
-        avgHeartRate: todayMetrics?.restingHeartRate || 72,
+        todayCalories: todayMetrics?.totalCaloriesBurned || garminData?.sport?.todayMetrics?.calories?.total || 0,
+        todaySteps: todayMetrics?.steps || garminData?.sport?.todayMetrics?.steps || 0,
+        avgHeartRate: todayMetrics?.restingHeartRate || garminData?.sport?.todayMetrics?.heartRate?.resting || 72,
         hasGarminData: garminData !== null,
         // Passer les métriques complètes pour les modules historiques
-        todayMetrics: todayMetrics || null,
-        garminData: garminData || null
+        todayMetrics: todayMetrics || garminData?.sport?.todayMetrics || null,
+        // IMPORTANT: Passer toutes les données Garmin enrichies pour les graphiques
+        garminData: garminData || null,
+        // Données spécifiques pour les graphiques Garmin
+        heartRateZones: garminData?.heartRateZones || null,
+        sleepPhases: garminData?.sleepPhases || null,
+        stressLevels: garminData?.stressLevels || null,
+        maxHeartRate: garminData?.maxHeartRate || 190,
+        userAge: garminData?.userAge || 30,
+        sleepObjective: garminData?.sleepObjective || 480
       };
     } catch (error) {
       console.error('[useSidebarData] Erreur calcul sport:', error);

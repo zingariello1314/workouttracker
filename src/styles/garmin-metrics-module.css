@@ -1,405 +1,67 @@
 /**
  * Styles pour le GarminMetricsModule
- * Module de métriques Garmin en position 5 de la sidebar
+ * SUPPRIMÉ - Utilise maintenant les classes de base .sidebar-section
  */
-
-.garmin-metrics-module {
-  @apply bg-gradient-to-br from-slate-800/80 to-slate-900/80;
-  @apply border border-slate-700/50 rounded-xl p-4;
-  @apply backdrop-blur-sm;
+/* États de chargement et d'erreur pour les graphiques Garmin */
+.charts-loading-state,
+.charts-error-state {
+  text-align: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  margin-bottom: 16px;
 }
 
-.garmin-metrics-module .sidebar-section-header {
-  @apply mb-4 flex items-center justify-between;
+.charts-loading-state {
+  color: #22d3ee;
 }
 
-.garmin-metrics-module .sidebar-section-title {
-  @apply text-lg font-semibold text-white;
-  @apply flex items-center gap-2;
+.charts-error-state {
+  color: #ef4444;
 }
 
-.garmin-metrics-module .header-actions {
-  @apply flex items-center gap-2;
+.loading-spinner {
+  font-size: 24px;
+  margin-bottom: 8px;
+  animation: spin 1s linear infinite;
 }
 
-.garmin-metrics-module .sidebar-module-badge {
-  @apply px-2 py-1 text-xs font-medium rounded-full;
-  @apply bg-green-500/20 text-green-400 border border-green-500/30;
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-.garmin-metrics-module .sidebar-module-badge.error {
-  @apply bg-red-500/20 text-red-400 border border-red-500/30;
+.loading-message,
+.error-message {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
 }
 
-.garmin-metrics-module .sidebar-module-badge.demo {
-  @apply bg-blue-500/20 text-blue-400 border border-blue-500/30;
-}
-
-.garmin-metrics-module .last-sync {
-  @apply text-xs text-slate-400 cursor-help;
-  @apply transition-colors duration-200;
-}
-
-.garmin-metrics-module .last-sync:hover {
-  @apply text-slate-300;
-}
-
-.garmin-metrics-module .sidebar-section-content {
-  @apply space-y-4;
-}
-
-/* États de chargement et d'erreur */
-.garmin-loading,
-.garmin-error,
-.garmin-no-data {
-  @apply flex items-center gap-3 p-4;
-  @apply bg-slate-700/30 border border-slate-600/50 rounded-lg;
-}
-
-.garmin-loading .loading-spinner {
-  @apply w-5 h-5 border-2 border-slate-400/30 border-t-slate-400 rounded-full animate-spin;
-}
-
-.garmin-loading span {
-  @apply text-sm text-slate-400;
-}
-
-.garmin-error .error-icon,
-.garmin-no-data .no-data-icon {
-  @apply text-xl;
-}
-
-.garmin-error .error-content,
-.garmin-no-data .no-data-content {
-  @apply flex-1;
-}
-
-.garmin-error .error-content p,
-.garmin-no-data .no-data-content p {
-  @apply text-sm text-white font-medium;
-}
-
-.garmin-error .error-content small,
-.garmin-no-data .no-data-content small {
-  @apply text-xs text-slate-400 block mt-1;
+.error-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
 }
 
 .retry-button {
-  @apply mt-2 px-3 py-1 text-xs font-medium;
-  @apply bg-blue-600/20 hover:bg-blue-600/30;
-  @apply border border-blue-500/30 text-blue-300 rounded-lg;
-  @apply transition-all duration-200;
-  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/20;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-/* Groupes de métriques */
-.metric-group {
-  @apply bg-slate-700/20 border border-slate-600/30 rounded-lg p-3;
-  @apply transition-all duration-300;
+.retry-button:hover {
+  background: #dc2626;
 }
 
-.metric-group:hover {
-  @apply border-blue-500/30 bg-slate-700/30;
-}
-
-.metric-header {
-  @apply flex items-center gap-2 mb-3;
-}
-
-.metric-icon {
-  @apply text-lg;
-}
-
-.metric-label {
-  @apply text-sm font-medium text-slate-300;
-}
-
-/* Calories */
-.calories-group .metric-values {
-  @apply flex items-center gap-2 flex-wrap;
-}
-
-.calories-group .metric-item {
-  @apply flex flex-col items-center;
-}
-
-.calories-group .metric-value {
-  @apply text-lg font-semibold text-white tabular-nums;
-}
-
-.calories-group .metric-unit {
-  @apply text-xs text-slate-400;
-}
-
-.calories-group .metric-item.total .metric-value {
-  @apply text-orange-400;
-}
-
-.calories-group .metric-separator {
-  @apply text-slate-500 font-medium;
-}
-
-/* Ligne de métriques */
-.metrics-row {
-  @apply grid grid-cols-1 gap-3;
-}
-
-@media (min-width: 320px) {
-  .metrics-row {
-    @apply grid-cols-2;
-  }
-}
-
-/* Body Battery */
-.body-battery-group .metric-value-large {
-  @apply flex items-baseline gap-1 mb-2;
-}
-
-.body-battery-group .value {
-  @apply text-2xl font-bold text-white tabular-nums;
-}
-
-.body-battery-group .unit {
-  @apply text-sm text-slate-400;
-}
-
-.battery-bar {
-  @apply w-full h-2 bg-slate-600/50 rounded-full overflow-hidden;
-}
-
-.battery-fill {
-  @apply h-full transition-all duration-500 ease-out;
-}
-
-.battery-bar.high .battery-fill {
-  @apply bg-gradient-to-r from-green-500 to-green-400;
-}
-
-.battery-bar.medium .battery-fill {
-  @apply bg-gradient-to-r from-yellow-500 to-yellow-400;
-}
-
-.battery-bar.low .battery-fill {
-  @apply bg-gradient-to-r from-red-500 to-red-400;
-}
-
-/* Pas */
-.steps-group .metric-value-large {
-  @apply flex items-baseline gap-1;
-}
-
-.steps-group .value {
-  @apply text-2xl font-bold text-white tabular-nums;
-}
-
-/* Fréquence cardiaque */
-.heart-rate-values {
-  @apply grid grid-cols-1 gap-2;
-}
-
-@media (min-width: 280px) {
-  .heart-rate-values {
-    @apply grid-cols-3;
-  }
-}
-
-.hr-item {
-  @apply flex flex-col items-center text-center;
-}
-
-.hr-label {
-  @apply text-xs text-slate-400 mb-1;
-}
-
-.hr-value {
-  @apply text-sm font-semibold text-white tabular-nums;
-}
-
-/* Sommeil */
-.sleep-values {
-  @apply flex items-center justify-between;
-}
-
-.sleep-item {
-  @apply flex flex-col items-center text-center;
-}
-
-.sleep-label {
-  @apply text-xs text-slate-400 mb-1;
-}
-
-.sleep-value {
-  @apply text-sm font-semibold text-white tabular-nums;
-}
-
-.sleep-quality {
-  @apply text-sm;
-}
-
-.sleep-quality.excellent {
-  @apply text-green-400;
-}
-
-.sleep-quality.good {
-  @apply text-blue-400;
-}
-
-.sleep-quality.fair {
-  @apply text-yellow-400;
-}
-
-.sleep-quality.poor {
-  @apply text-red-400;
-}
-
-/* Navigation */
-.navigation-section {
-  @apply pt-2 border-t border-slate-600/30;
-}
-
-.nav-button {
-  @apply w-full flex items-center justify-between gap-3;
-  @apply px-4 py-3 rounded-lg text-sm font-medium;
-  @apply transition-all duration-200;
-  @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800;
-}
-
-.nav-button:hover {
-  @apply transform scale-105;
-}
-
-.nav-button.sport {
-  @apply bg-orange-600/20 hover:bg-orange-600/30;
-  @apply border border-orange-500/30 text-orange-300;
-  @apply focus:ring-orange-500;
-}
-
-.nav-button .nav-icon {
-  @apply text-lg;
-}
-
-.nav-button .nav-text {
-  @apply flex-1 text-left;
-}
-
-.nav-button .nav-arrow {
-  @apply text-lg transition-transform duration-200;
-}
-
-.nav-button:hover .nav-arrow {
-  @apply transform translate-x-1;
-}
-
-/* Responsive */
-@media (max-width: 320px) {
-  .garmin-metrics-module {
-    @apply p-3;
-  }
-  
-  .metric-group {
-    @apply p-2;
-  }
-  
-  .calories-group .metric-values {
-    @apply flex-col gap-1;
-  }
-  
-  .calories-group .metric-separator {
-    @apply hidden;
-  }
-  
-  .metrics-row {
-    @apply grid-cols-1 gap-2;
-  }
-  
-  .heart-rate-values {
-    @apply grid-cols-1 gap-1;
-  }
-  
-  .nav-button {
-    @apply px-3 py-2 text-xs;
-  }
-}
-
-/* Accessibilité */
-@media (prefers-reduced-motion: reduce) {
-  .nav-button:hover {
-    @apply transform-none;
-  }
-  
-  .nav-button:hover .nav-arrow {
-    @apply transform translate-x-0;
-  }
-  
-  .battery-fill {
-    @apply transition-none;
-  }
-  
-  .loading-spinner {
-    @apply animate-none;
-  }
-}
-
-/* Mode sombre amélioré */
-@media (prefers-color-scheme: dark) {
-  .garmin-metrics-module {
-    @apply bg-gradient-to-br from-slate-900/90 to-black/90;
-  }
-  
-  .metric-group {
-    @apply bg-slate-800/30 border-slate-500/30;
-  }
-  
-  .metric-group:hover {
-    @apply border-blue-400/40 bg-slate-800/40;
-  }
-}
-
-/* Animation d'entrée */
-.garmin-metrics-module {
-  animation: fadeInUp 0.3s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* États de focus améliorés */
-.nav-button:focus-visible {
-  @apply ring-2 ring-orange-500/50 ring-offset-2 ring-offset-slate-800;
-}
-
-.retry-button:focus-visible {
-  @apply ring-2 ring-blue-500/50 ring-offset-2 ring-offset-slate-800;
-}
-
-/* Indicateurs de données manquantes */
-.metric-group.no-data {
-  @apply opacity-50;
-}
-
-.metric-group.no-data::after {
-  content: "Données non disponibles";
-  @apply absolute inset-0 flex items-center justify-center;
-  @apply text-xs text-slate-500 bg-slate-800/80 rounded-lg;
-}
-
-/* Animations de mise à jour */
-.metric-value,
-.hr-value,
-.sleep-value {
-  @apply transition-all duration-300;
-}
-
-.metric-value.updating,
-.hr-value.updating,
-.sleep-value.updating {
-  @apply text-blue-400;
+.data-date-info {
+  font-size: 11px;
+  color: #475569;
+  font-style: italic;
+  margin-top: 8px;
 }

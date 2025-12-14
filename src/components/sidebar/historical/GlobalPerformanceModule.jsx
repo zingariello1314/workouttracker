@@ -1,5 +1,9 @@
 import React, { memo, useCallback, useMemo, useState, useEffect } from 'react';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
+import StatCard from '../enhanced/StatCard';
+import AnimatedProgressBar from '../enhanced/AnimatedProgressBar';
+import PremiumBadge from '../enhanced/PremiumBadge';
+import '../../../styles/sidebar-visual-enhancements.css';
 
 /**
  * GlobalPerformanceModule - Module Performance Globale (Position 19)
@@ -243,108 +247,144 @@ const GlobalPerformanceModule = memo(({
       
       {isExpanded && (
         <div className="sidebar-section-content" onClick={(e) => e.stopPropagation()}>
-          {/* Score de productivité principal */}
-          <div className="sidebar-data-grid">
-            <div className="sidebar-data-card featured">
-              <span className="sidebar-data-icon">🎯</span>
-              <div className="sidebar-data-value">{productivityScore}%</div>
-              <div className="sidebar-data-label">Score Productivité</div>
-              <div className="sidebar-data-progress">
-                <div 
-                  className="sidebar-data-progress-bar" 
-                  style={{ width: `${productivityScore}%` }}
+          {/* Score de productivité principal - VERSION ENRICHIE */}
+          <div className="stat-card-premium" style={{ marginBottom: '16px' }}>
+            <div className="stat-header">
+              <span className="stat-icon" style={{ color: 'var(--sidebar-gold)' }}>🎯</span>
+              <PremiumBadge 
+                type={productivityScore >= 80 ? 'success' : productivityScore >= 60 ? 'warning' : 'error'}
+                value={`${productivityScore}%`}
+                icon="⚡"
+              />
+            </div>
+            <div className="stat-value" style={{ 
+              color: productivityScore >= 80 ? 'var(--sidebar-green)' : 
+                     productivityScore >= 60 ? 'var(--sidebar-yellow)' : 'var(--sidebar-red)',
+              fontSize: '2rem'
+            }}>
+              {productivityScore}%
+            </div>
+            <div className="stat-title">Score de Productivité</div>
+            <AnimatedProgressBar
+              value={productivityScore}
+              color={productivityScore >= 80 ? 'var(--sidebar-premium-gradient-3)' : 
+                     productivityScore >= 60 ? 'var(--sidebar-premium-gradient-1)' : 'var(--sidebar-red)'}
+              showValue={false}
+            />
+          </div>
+
+          {/* Équilibre vie/travail/loisirs - VERSION ENRICHIE */}
+          <div className="stat-card-premium" style={{ marginBottom: '16px' }}>
+            <div className="stat-header">
+              <span className="stat-icon" style={{ color: 'var(--sidebar-cyan)' }}>⚖️</span>
+              <PremiumBadge 
+                type={lifeBalance.status === 'Équilibré' ? 'success' : 
+                      lifeBalance.status === 'Acceptable' ? 'warning' : 'error'}
+                value={lifeBalance.status}
+              />
+            </div>
+            <div className="stat-title" style={{ marginBottom: '12px' }}>Équilibre de vie</div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="sidebar-text-secondary" style={{ minWidth: '50px', fontSize: '0.75rem' }}>
+                  💼 Travail
+                </span>
+                <AnimatedProgressBar
+                  value={lifeBalance.work}
+                  color="var(--sidebar-blue)"
+                  showValue={true}
+                />
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="sidebar-text-secondary" style={{ minWidth: '50px', fontSize: '0.75rem' }}>
+                  🏠 Vie
+                </span>
+                <AnimatedProgressBar
+                  value={lifeBalance.life}
+                  color="var(--sidebar-green)"
+                  showValue={true}
+                />
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="sidebar-text-secondary" style={{ minWidth: '50px', fontSize: '0.75rem' }}>
+                  🎮 Loisirs
+                </span>
+                <AnimatedProgressBar
+                  value={lifeBalance.leisure}
+                  color="var(--sidebar-purple)"
+                  showValue={true}
                 />
               </div>
             </div>
           </div>
 
-          {/* Équilibre vie/travail/loisirs */}
-          <div className="sidebar-balance-section">
-            <div className="sidebar-balance-header">
-              <span className="sidebar-balance-icon">⚖️</span>
-              <span className="sidebar-balance-title">Équilibre de vie</span>
-              <span className={`sidebar-balance-status ${lifeBalance.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                {lifeBalance.status}
-              </span>
-            </div>
-            
-            <div className="sidebar-balance-bars">
-              <div className="sidebar-balance-item">
-                <span className="sidebar-balance-label">Travail</span>
-                <div className="sidebar-balance-bar">
-                  <div 
-                    className="sidebar-balance-fill work" 
-                    style={{ width: `${lifeBalance.work}%` }}
-                  />
-                </div>
-                <span className="sidebar-balance-value">{lifeBalance.work}%</span>
-              </div>
-              
-              <div className="sidebar-balance-item">
-                <span className="sidebar-balance-label">Vie</span>
-                <div className="sidebar-balance-bar">
-                  <div 
-                    className="sidebar-balance-fill life" 
-                    style={{ width: `${lifeBalance.life}%` }}
-                  />
-                </div>
-                <span className="sidebar-balance-value">{lifeBalance.life}%</span>
-              </div>
-              
-              <div className="sidebar-balance-item">
-                <span className="sidebar-balance-label">Loisirs</span>
-                <div className="sidebar-balance-bar">
-                  <div 
-                    className="sidebar-balance-fill leisure" 
-                    style={{ width: `${lifeBalance.leisure}%` }}
-                  />
-                </div>
-                <span className="sidebar-balance-value">{lifeBalance.leisure}%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Recommandation IA */}
+          {/* Recommandation IA - VERSION ENRICHIE */}
           {aiRecommendations.length > 0 && (
-            <div className="sidebar-ai-section">
-              <div className="sidebar-ai-header">
-                <span className="sidebar-ai-icon">🤖</span>
-                <span className="sidebar-ai-title">IA Coach</span>
+            <div className="stat-card-premium" style={{ marginBottom: '16px' }}>
+              <div className="stat-header">
+                <span className="stat-icon" style={{ color: 'var(--sidebar-magenta)' }}>🤖</span>
                 <button 
-                  className="sidebar-ai-refresh"
+                  className="badge-premium"
                   onClick={handleRefreshRecommendation}
                   aria-label="Nouvelle recommandation"
+                  style={{ 
+                    background: 'var(--sidebar-premium-gradient-2)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px 8px',
+                    borderRadius: '12px'
+                  }}
                 >
                   🔄
                 </button>
               </div>
-              <div className="sidebar-ai-recommendation">
+              <div className="stat-title" style={{ marginBottom: '8px' }}>IA Coach</div>
+              <div className="sidebar-text-primary" style={{ 
+                fontSize: '0.85rem',
+                lineHeight: '1.4',
+                fontStyle: 'italic',
+                background: 'rgba(255, 255, 255, 0.05)',
+                padding: '8px',
+                borderRadius: '6px',
+                borderLeft: '3px solid var(--sidebar-magenta)'
+              }}>
                 {aiRecommendations[currentRecommendation]}
               </div>
             </div>
           )}
 
-          {/* Métriques rapides */}
-          <div className="sidebar-data-grid">
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon">🎯</span>
-              <div className="sidebar-data-value">{quickMetrics.objectives}%</div>
-              <div className="sidebar-data-label">Objectifs</div>
-            </div>
+          {/* Métriques rapides - VERSION ENRICHIE */}
+          <div className="sidebar-content-dense">
+            <StatCard
+              title="Objectifs"
+              value={`${quickMetrics.objectives}%`}
+              icon="🎯"
+              color="var(--sidebar-gold)"
+              onClick={handleNavigation}
+            />
 
-            <div className="sidebar-data-card">
-              <span className="sidebar-data-icon">⚡</span>
-              <div className="sidebar-data-value">{quickMetrics.energy}%</div>
-              <div className="sidebar-data-label">Énergie</div>
-            </div>
+            <StatCard
+              title="Énergie"
+              value={`${quickMetrics.energy}%`}
+              icon="⚡"
+              color="var(--sidebar-cyan)"
+              onClick={handleNavigation}
+            />
           </div>
 
-          {/* Navigation vers dashboard */}
-          <div className="sidebar-navigation-hint">
-            <span className="sidebar-navigation-icon">📊</span>
+          {/* Navigation vers dashboard - VERSION ENRICHIE */}
+          <button 
+            className="sidebar-action-button clickable"
+            onClick={handleNavigation}
+            style={{ width: '100%', marginTop: '12px' }}
+          >
+            <span className="sidebar-action-icon">📊</span>
             <span>Voir le dashboard complet</span>
-            <span className="sidebar-navigation-arrow">→</span>
-          </div>
+            <span className="sidebar-action-arrow">→</span>
+          </button>
         </div>
       )}
     </section>

@@ -214,7 +214,7 @@ class DataQueryOptimizer {
    * @returns {Promise<any>} Résultat de la requête
    */
   async addToBatch(queryType, params, queryFunction) {
-    const config = QUERY_CONFIG[queryType];
+    const config = QUERY_CONFIG[queryType] || QUERY_CONFIG[QUERY_TYPES.LEARNING_DATA];
     
     if (!config.batchable) {
       return this.executeQuery(queryType, params, queryFunction);

@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { openApprentissageDB, loadSessionsHistoryFromIndexedDB, loadSubjectsFromIndexedDB, loadProgressionFromIndexedDB } from '../../../utils/apprentissageIndexedDB';
-import '../../../styles/express-learning-module.css';
+import deepLinkService from '../../../services/navigation/DeepLinkService';
 
 /**
  * ExpressLearningModule - Module Apprentissage Express (Position 21)
@@ -175,20 +175,24 @@ const ExpressLearningModule = memo(({
   }, [learningData, selectedPeriod, periods]);
 
   /**
-   * Navigation vers Paramètres > module apprentissage
-   * Requirement 11.4
+   * Navigation vers Paramètres > module apprentissage (Requirement 11.4)
    */
-  const handleNavigation = useCallback(() => {
-    if (!navigation) return;
+  const handleNavigation = useCallback(async () => {
+    if (!navigation?.setActiveTab) return;
     
-    // Navigation précise vers l'onglet Paramètres > module apprentissage
-    navigation.navigateToModule({
-      tab: 'settings',
-      subtab: 'learning',
-      moduleId: 'apprentissage-main',
-      scrollBehavior: 'smooth',
-      highlightDuration: 2000
-    });
+    try {
+      const target = {
+        tab: 'settings',
+        subtab: 'apprentissage',
+        moduleId: 'learning-module',
+        scrollBehavior: 'smooth',
+        highlightDuration: 2000
+      };
+
+      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
+    } catch (error) {
+      console.error('[ExpressLearningModule] Erreur navigation apprentissage:', error);
+    }
   }, [navigation]);
 
   // Formater la durée
@@ -325,7 +329,6 @@ const ExpressLearningModule = memo(({
                         <div className="sidebar-data-item-main">
                           <span className="sidebar-data-item-icon">{subject.icon}</span>
                           <span className="sidebar-data-item-title">{subject.name}</span>
-                          <span className="sidebar-data-item-badge">Niv. {subject.level}</span>
                         </div>
                         <div className="sidebar-data-item-subtitle">
                           <span>{formatDuration(subject.totalTime)}</span>

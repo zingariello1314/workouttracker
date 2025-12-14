@@ -1,0 +1,44 @@
+{
+  "id": 21258841472,
+  "date": "2025-12-14 15:40:40",
+  "time": "",
+  "duration": 315,
+  "calories": {
+    "total": 39,
+    "resting": 5,
+    "active": 34
+  },
+  "avgHR": 118,
+  "maxHR": 135,
+  "minHR": null,
+  "sweatLoss": null,
+  "intensityMinutes": {
+    "moderate": 3,
+    "vigorous": 1,
+    "total": 4
+  },
+  "startTimeLocal": "2025-12-14T16:40:40Z",
+  "startTimeGMT": "2025-12-14T15:40:40Z",
+  "location": null,
+  "elevation": null,
+  "deviceInfo": {
+    "deviceId": null,
+    "deviceTypePk": null,
+    "deviceVersionPk": null
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Cardio",
+  "activityType": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "c5dd04fc",
+  "_cached_at": 1765748592.4227264,
+  "_cache_version": 2
+}

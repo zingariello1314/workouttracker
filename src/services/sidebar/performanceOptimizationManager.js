@@ -144,6 +144,8 @@ class PerformanceOptimizationManager {
       if (options.mode && MODE_CONFIGS[options.mode]) {
         this.currentMode = options.mode;
         this.config = { ...MODE_CONFIGS[this.currentMode], ...options.config };
+      } else if (options.mode && !MODE_CONFIGS[options.mode]) {
+        throw new Error(`Invalid performance mode: ${options.mode}`);
       }
       
       // Initialiser les services selon la configuration
@@ -293,10 +295,14 @@ class PerformanceOptimizationManager {
       
       // Vérifier le cache d'abord si activé
       if (this.config.caching !== OPTIMIZATION_STATES.DISABLED) {
-        const cachedResult = cacheService.get(cacheKey, queryType);
-        if (cachedResult !== null) {
-          this.stats.performanceGains.cacheHits++;
-          return cachedResult;
+        try {
+          const cachedResult = cacheService.get(cacheKey, queryType);
+          if (cachedResult !== null) {
+            this.stats.performanceGains.cacheHits++;
+            return cachedResult;
+          }
+        } catch (error) {
+          console.warn('[PerformanceOptimizationManager] Cache error, falling back to direct query:', error);
         }
       }
       
@@ -310,19 +316,23 @@ class PerformanceOptimizationManager {
       
       // Compresser et mettre en cache le résultat si activé
       if (this.config.caching !== OPTIMIZATION_STATES.DISABLED) {
-        let dataToCache = result;
-        
-        // Compresser si activé
-        if (this.config.compression !== OPTIMIZATION_STATES.DISABLED) {
-          const compressed = compressionService.compress(result, queryType);
-          if (compressed.compressed) {
-            dataToCache = compressed;
-            this.stats.performanceGains.memoryReduction += 
-              compressed.originalSize - compressed.compressedSize;
+        try {
+          let dataToCache = result;
+          
+          // Compresser si activé
+          if (this.config.compression !== OPTIMIZATION_STATES.DISABLED) {
+            const compressed = compressionService.compress(result, queryType);
+            if (compressed.compressed) {
+              dataToCache = compressed;
+              this.stats.performanceGains.memoryReduction += 
+                compressed.originalSize - compressed.compressedSize;
+            }
           }
+          
+          cacheService.set(cacheKey, dataToCache, queryType);
+        } catch (error) {
+          console.warn('[PerformanceOptimizationManager] Cache storage error:', error);
         }
-        
-        cacheService.set(cacheKey, dataToCache, queryType);
       }
       
       this.stats.totalOptimizations++;

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo, useEffect, useState } from 'react';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
 
 /**
@@ -12,12 +12,47 @@ const ShoppingListModule = memo(({
   data = {},
   navigation
 }) => {
+  // État pour forcer la mise à jour
+  const [forceUpdate, setForceUpdate] = useState(0);
+  
   // Extraire les données des listes de courses
   const shoppingLists = data?.shoppingLists || [];
+
+  // Mise à jour automatique des listes (Requirement 6.4)
+  useEffect(() => {
+    const handleListUpdate = (event) => {
+      console.log('[ShoppingListModule] Mise à jour automatique détectée:', event.detail);
+      // Forcer la mise à jour du module
+      setForceUpdate(prev => prev + 1);
+    };
+    
+    // Écouter les événements de mise à jour des listes
+    window.addEventListener('shopping:list:updated', handleListUpdate);
+    window.addEventListener('shopping:list:created', handleListUpdate);
+    window.addEventListener('shopping:list:deleted', handleListUpdate);
+    window.addEventListener('shopping:list:completed', handleListUpdate);
+    
+    return () => {
+      window.removeEventListener('shopping:list:updated', handleListUpdate);
+      window.removeEventListener('shopping:list:created', handleListUpdate);
+      window.removeEventListener('shopping:list:deleted', handleListUpdate);
+      window.removeEventListener('shopping:list:completed', handleListUpdate);
+    };
+  }, []);
+
+  // Mise à jour périodique pour recalculer la liste la plus proche (Requirement 6.2)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Forcer la recalculation toutes les 5 minutes
+      setForceUpdate(prev => prev + 1);
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, []);
   
   /**
-   * Trouve la liste la plus appropriée pour l'heure actuelle
-   * Requirements: 6.1, 6.2
+   * Trouve la liste la plus appropriée pour l'heure actuelle (Requirements 6.1, 6.2)
+   * Recalculé automatiquement grâce à forceUpdate
    */
   const currentList = useMemo(() => {
     if (!shoppingLists || shoppingLists.length === 0) {
@@ -63,7 +98,7 @@ const ShoppingListModule = memo(({
     }, null);
 
     return closestList ? { ...closestList, isClosest: true } : null;
-  }, [shoppingLists]);
+  }, [shoppingLists, forceUpdate]); // Dépendance sur forceUpdate pour recalcul automatique
 
   /**
    * Navigation vers Smart Shopping avec positionnement précis

@@ -1,0 +1,1964 @@
+/* ============================================
+   SIDEBAR VISUAL ENHANCEMENTS
+   Corrections visuelles pour modules historiques
+   ============================================ */
+
+/* ===== VARIABLES CSS ENRICHIES ===== */
+:root {
+  /* Couleurs premium enrichies */
+  --sidebar-premium-gradient-1: linear-gradient(135deg, #ff1493 0%, #ff8c00 50%, #ffd700 100%);
+  --sidebar-premium-gradient-2: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #00f5ff 100%);
+  --sidebar-premium-gradient-3: linear-gradient(135deg, #22c55e 0%, #eab308 50%, #f97316 100%);
+  
+  /* Ombres premium */
+  --sidebar-shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --sidebar-shadow-medium: 0 6px 20px rgba(255, 20, 147, 0.25);
+  --sidebar-shadow-strong: 0 8px 30px rgba(255, 20, 147, 0.4);
+  --sidebar-shadow-glow: 0 0 20px rgba(255, 215, 0, 0.3);
+  
+  /* Bordures premium */
+  --sidebar-border-premium: 1px solid rgba(255, 215, 0, 0.3);
+  --sidebar-border-subtle: 1px solid rgba(255, 255, 255, 0.1);
+  --sidebar-border-accent: 2px solid rgba(255, 215, 0, 0.5);
+  
+  /* Backgrounds premium */
+  --sidebar-bg-premium: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+  --sidebar-bg-card: rgba(255, 255, 255, 0.06);
+  --sidebar-bg-hover: rgba(255, 255, 255, 0.12);
+}
+
+/* ===== CLASSES CSS DE BASE ENRICHIES ===== */
+
+/* Container principal avec richesse visuelle */
+.sidebar-section-enhanced {
+  background: var(--sidebar-bg-premium);
+  border: var(--sidebar-border-premium);
+  border-radius: 12px;
+  box-shadow: var(--sidebar-shadow-soft);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-section-enhanced::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sidebar-premium-gradient-1);
+  opacity: 0.02;
+  pointer-events: none;
+}
+
+.sidebar-section-enhanced:hover {
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: var(--sidebar-shadow-medium);
+}
+
+/* Layout dense sans espaces vides */
+.sidebar-content-dense {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  margin: 0;
+}
+
+/* Cartes de données premium */
+.sidebar-data-card-premium {
+  background: var(--sidebar-bg-card);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: var(--sidebar-shadow-soft);
+  border: var(--sidebar-border-subtle);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-data-card-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sidebar-premium-gradient-1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-data-card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sidebar-shadow-medium);
+}
+
+.sidebar-data-card-premium:hover::before {
+  opacity: 0.1;
+}
+
+/* ===== SYSTÈME TYPOGRAPHIQUE RICHE ===== */
+
+/* Texte principal avec hiérarchie */
+.sidebar-text-primary {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Texte secondaire */
+.sidebar-text-secondary {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.3;
+}
+
+/* Texte accent avec dégradé */
+.sidebar-text-accent {
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: var(--sidebar-premium-gradient-1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== COMPOSANTS VISUELS ENRICHIS ===== */
+
+/* Barres de progression animées */
+.progress-container {
+  width: 100%;
+  margin: 8px 0;
+}
+
+.progress-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2s linear infinite;
+}
+
+@keyframes progress-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.progress-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Badges premium avec effets */
+.badge-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sidebar-premium-gradient-1);
+  opacity: 0.8;
+}
+
+.badge-icon {
+  position: relative;
+  z-index: 1;
+}
+
+.badge-value {
+  position: relative;
+  z-index: 1;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.badge-glow {
+  position: absolute;
+  inset: -2px;
+  background: var(--sidebar-premium-gradient-1);
+  border-radius: 14px;
+  opacity: 0;
+  filter: blur(4px);
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.badge-premium:hover .badge-glow {
+  opacity: 0.6;
+}
+
+/* Cartes de statistiques riches */
+.stat-card-premium {
+  background: var(--sidebar-bg-card);
+  border: var(--sidebar-border-subtle);
+  border-radius: 10px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.stat-card-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sidebar-premium-gradient-1);
+  opacity: 0.03;
+}
+
+.stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.stat-icon {
+  font-size: 1.2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-trend {
+  font-size: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.stat-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-background-pattern {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.stat-card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sidebar-shadow-medium);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
+/* ===== SÉLECTEURS ENRICHIS ===== */
+
+/* Correction des sélecteurs de période (fix carrés blancs) */
+.sidebar-data-selector,
+.sidebar-period-selector {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.sidebar-data-selector:hover,
+.sidebar-period-selector:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.sidebar-data-selector:focus,
+.sidebar-period-selector:focus {
+  border-color: var(--sidebar-cyan);
+  box-shadow: 0 0 0 2px rgba(0, 245, 255, 0.3);
+}
+
+/* Options du sélecteur */
+.sidebar-data-selector option,
+.sidebar-period-selector option {
+  background: var(--sidebar-bg-dark-2);
+  color: white;
+  padding: 4px;
+}
+
+/* ===== MINI-GRAPHIQUES ENRICHIS ===== */
+
+.sidebar-mini-chart-container {
+  background: rgba(255, 255, 255, 0.05);
+  border: var(--sidebar-border-subtle);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+}
+
+.sidebar-mini-chart-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-mini-chart-svg {
+  width: 100%;
+  height: 40px;
+  overflow: visible;
+}
+
+/* ===== ÉTATS DE CHARGEMENT ENRICHIS ===== */
+
+.loading-container-premium {
+  padding: 16px;
+}
+
+.skeleton-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.skeleton-card {
+  height: 80px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 100%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ===== ÉTATS D'ERREUR ÉLÉGANTS ===== */
+
+.error-container-elegant {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.error-icon-animated {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  animation: error-pulse 2s ease-in-out infinite;
+}
+
+@keyframes error-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.error-message {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 12px;
+}
+
+.error-retry-button {
+  background: var(--sidebar-premium-gradient-1);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.error-retry-button:hover {
+  transform: translateY(-1px);
+}
+
+/* ===== ÉTATS VIDES ATTRAYANTS ===== */
+
+.empty-state-attractive {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.empty-illustration {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.empty-message {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 16px;
+}
+
+.empty-action-button {
+  background: var(--sidebar-premium-gradient-2);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.empty-action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sidebar-shadow-medium);
+}
+
+/* ===== RESPONSIVE ENHANCEMENTS ===== */
+
+@media (max-width: 768px) {
+  .sidebar-content-dense {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    padding: 8px;
+  }
+  
+  .stat-card-premium {
+    padding: 12px;
+  }
+  
+  .stat-value {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-content-dense {
+    grid-template-columns: 1fr;
+  }
+  
+  .skeleton-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== READING PROGRESS CHART ===== */
+.reading-chart-container {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.reading-chart-container .chart-header {
+  margin-bottom: 12px;
+}
+
+.reading-chart-container .chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 2px 0;
+}
+
+.reading-chart-container .chart-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.reading-chart-container .chart-wrapper {
+  margin: 8px 0;
+}
+
+/* Tooltip personnalisé pour lecture */
+.reading-chart-tooltip {
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  min-width: 140px;
+}
+
+.reading-chart-tooltip .tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.reading-chart-tooltip .tooltip-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.reading-chart-tooltip .tooltip-total {
+  font-size: 11px;
+  font-weight: 500;
+  color: #10B981;
+}
+
+.reading-chart-tooltip .tooltip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.reading-chart-tooltip .tooltip-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.reading-chart-tooltip .tooltip-color-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.reading-chart-tooltip .tooltip-name {
+  color: rgba(255, 255, 255, 0.7);
+  flex: 1;
+}
+
+.reading-chart-tooltip .tooltip-value {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.reading-chart-tooltip .tooltip-empty {
+  text-align: center;
+  padding: 4px 0;
+}
+
+.reading-chart-tooltip .tooltip-empty-text {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Légende personnalisée */
+.reading-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.reading-chart-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reading-chart-legend .legend-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.reading-chart-legend .legend-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+/* Statistiques de période */
+.reading-chart-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 8px;
+}
+
+.reading-chart-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.reading-chart-stats .stat-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reading-chart-stats .stat-value {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+/* État vide */
+.reading-chart-container .chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.reading-chart-container .empty-chart-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.reading-chart-container .empty-chart-message {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.reading-chart-container .empty-chart-suggestion {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .reading-chart-legend {
+    gap: 8px;
+  }
+  
+  .reading-chart-stats {
+    gap: 4px;
+  }
+  
+  .reading-chart-stats .stat-label {
+    font-size: 8px;
+  }
+  
+  .reading-chart-stats .stat-value {
+    font-size: 10px;
+  }
+}
+
+/* ===== OBJECTIFS ET COMPARAISONS (Task 3.3) ===== */
+
+/* Objectifs dans les tooltips */
+.reading-chart-tooltip .tooltip-objective {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.reading-chart-tooltip .tooltip-objective-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+
+.reading-chart-tooltip .objective-icon {
+  font-size: 10px;
+}
+
+.reading-chart-tooltip .objective-text {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.reading-chart-tooltip .objective-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reading-chart-tooltip .objective-value {
+  font-size: 11px;
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.reading-chart-tooltip .objective-target {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Comparaisons dans les tooltips */
+.reading-chart-tooltip .tooltip-comparison {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reading-chart-tooltip .comparison-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.reading-chart-tooltip .comparison-value {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.reading-chart-tooltip .comparison-value.positive {
+  color: #22c55e;
+}
+
+.reading-chart-tooltip .comparison-value.negative {
+  color: #ef4444;
+}
+
+/* Objectifs dans les statistiques */
+.reading-chart-stats .stat-value {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: center;
+}
+
+.reading-chart-stats .objective-stat.success .stat-value {
+  color: #22c55e;
+}
+
+.reading-chart-stats .objective-stat.warning .stat-value {
+  color: #f59e0b;
+}
+
+.reading-chart-stats .objective-stat.caution .stat-value {
+  color: #f97316;
+}
+
+.reading-chart-stats .objective-stat.danger .stat-value {
+  color: #ef4444;
+}
+
+.reading-chart-stats .objective-indicator {
+  font-size: 8px;
+}
+
+/* Comparaisons dans les statistiques */
+.reading-chart-stats .comparison-stat.up .stat-value {
+  color: #22c55e;
+}
+
+.reading-chart-stats .comparison-stat.down .stat-value {
+  color: #ef4444;
+}
+
+.reading-chart-stats .comparison-stat.stable .stat-value {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.reading-chart-stats .trend-indicator {
+  font-size: 8px;
+}
+
+/* Ligne de référence pour objectifs */
+.recharts-reference-line-line {
+  stroke-dasharray: 4 4;
+  stroke-width: 2;
+  opacity: 0.8;
+}
+
+.recharts-label {
+  font-size: 10px;
+  font-weight: 600;
+}
+/* ===== INTERACTIVITÉ ET TRANSITIONS (Task 3.4) ===== */
+
+/* Légende interactive */
+.reading-chart-legend .legend-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px 6px;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.reading-chart-legend .legend-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.reading-chart-legend .legend-item.selected {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.reading-chart-legend .legend-item.dimmed {
+  opacity: 0.4;
+}
+
+.reading-chart-legend .legend-item.selected .legend-label {
+  color: rgba(255, 255, 255, 1);
+  font-weight: 600;
+}
+
+/* Animations de chargement pour les barres */
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+}
+
+/* Transitions fluides pour les changements de données */
+.reading-chart-container .chart-wrapper {
+  transition: all 0.3s ease;
+}
+
+/* Hover effects pour les barres */
+.recharts-bar-rectangle:hover {
+  filter: brightness(1.1);
+  transition: filter 0.2s ease;
+}
+
+/* Animations pour les tooltips */
+.reading-chart-tooltip {
+  animation: tooltip-fade-in 0.2s ease-out;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Transitions pour les statistiques */
+.reading-chart-stats .stat-item {
+  transition: all 0.2s ease;
+}
+
+.reading-chart-stats .stat-item:hover {
+  transform: translateY(-1px);
+}
+
+/* Indicateurs de progression animés */
+.reading-chart-stats .objective-indicator,
+.reading-chart-stats .trend-indicator {
+  animation: indicator-pulse 2s ease-in-out infinite;
+}
+
+@keyframes indicator-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* États de focus pour l'accessibilité */
+.reading-chart-legend .legend-item:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* Responsive pour les interactions */
+@media (max-width: 768px) {
+  .reading-chart-legend .legend-item {
+    padding: 6px 8px;
+    margin: 2px;
+  }
+}
+
+@media (hover: none) {
+  .reading-chart-legend .legend-item:hover {
+    background: transparent;
+    transform: none;
+  }
+}
+/* ===== HEART RATE ZONES CHART (Task 4.2) ===== */
+
+.hr-zones-container {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hr-zones-container .chart-header {
+  margin-bottom: 12px;
+}
+
+.hr-zones-container .chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 2px 0;
+}
+
+.hr-zones-container .chart-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 4px 0;
+}
+
+.hr-zones-container .chart-info {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hr-zones-container .fcmax-info {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Tooltip des zones cardiaques */
+.hr-zones-tooltip {
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  min-width: 200px;
+}
+
+.hr-zones-tooltip .tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hr-zones-tooltip .tooltip-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hr-zones-tooltip .tooltip-hr {
+  font-size: 14px;
+  font-weight: 700;
+  color: #EF4444;
+}
+
+.hr-zones-tooltip .tooltip-zone {
+  margin-bottom: 8px;
+}
+
+.hr-zones-tooltip .zone-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.hr-zones-tooltip .zone-color-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.hr-zones-tooltip .zone-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hr-zones-tooltip .zone-range {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: auto;
+}
+
+.hr-zones-tooltip .zone-description {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 3px;
+  font-style: italic;
+}
+
+.hr-zones-tooltip .zone-benefits {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.hr-zones-tooltip .tooltip-stats {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 6px;
+}
+
+.hr-zones-tooltip .stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.hr-zones-tooltip .stat-label {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hr-zones-tooltip .stat-value {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+/* Légende interactive des zones */
+.hr-zones-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+}
+
+.hr-zones-legend .zone-legend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.hr-zones-legend .zone-legend-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(2px);
+}
+
+.hr-zones-legend .zone-legend-item.selected {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.hr-zones-legend .zone-legend-item.dimmed {
+  opacity: 0.4;
+}
+
+.hr-zones-legend .zone-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hr-zones-legend .zone-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.hr-zones-legend .zone-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  flex: 1;
+}
+
+.hr-zones-legend .zone-range {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.hr-zones-legend .zone-stats {
+  display: flex;
+  gap: 8px;
+  margin-left: 20px;
+}
+
+.hr-zones-legend .zone-time {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.hr-zones-legend .zone-avg {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Résumé des zones avec barres de progression */
+.hr-zones-summary {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hr-zones-summary .summary-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hr-zones-summary .zones-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hr-zones-summary .zone-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hr-zones-summary .zone-bar-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hr-zones-summary .zone-bar-label .zone-name {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.hr-zones-summary .zone-bar-label .zone-percent {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.hr-zones-summary .zone-bar-bg {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hr-zones-summary .zone-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s ease-out;
+  position: relative;
+}
+
+.hr-zones-summary .zone-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: zone-bar-shimmer 2s linear infinite;
+}
+
+@keyframes zone-bar-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* État vide */
+.hr-zones-container .chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.hr-zones-container .empty-chart-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.hr-zones-container .empty-chart-message {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.hr-zones-container .empty-chart-suggestion {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hr-zones-legend {
+    gap: 3px;
+    padding: 6px;
+  }
+  
+  .hr-zones-legend .zone-legend-item {
+    padding: 4px 6px;
+  }
+  
+  .hr-zones-summary .zones-distribution {
+    gap: 3px;
+  }
+}
+/* ===== SLEEP PHASES CHART (Task 4.3) ===== */
+
+.sleep-phases-container {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sleep-phases-container .chart-header {
+  margin-bottom: 12px;
+}
+
+.sleep-phases-container .chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 2px 0;
+}
+
+.sleep-phases-container .chart-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* Tooltip des phases de sommeil */
+.sleep-phases-tooltip {
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  min-width: 180px;
+}
+
+.sleep-phases-tooltip .tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sleep-phases-tooltip .tooltip-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.sleep-phases-tooltip .tooltip-total {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8B5CF6;
+}
+
+.sleep-phases-tooltip .tooltip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.sleep-phases-tooltip .tooltip-phase {
+  display: flex;
+  align-items: center;
+}
+
+.sleep-phases-tooltip .phase-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.sleep-phases-tooltip .phase-color-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.sleep-phases-tooltip .phase-name {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  flex: 1;
+}
+
+.sleep-phases-tooltip .phase-duration {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.sleep-phases-tooltip .phase-percent {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 4px;
+}
+
+/* Qualité du sommeil dans tooltip */
+.sleep-phases-tooltip .tooltip-quality {
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.sleep-phases-tooltip .quality-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sleep-phases-tooltip .quality-icon {
+  font-size: 14px;
+}
+
+.sleep-phases-tooltip .quality-text {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  flex: 1;
+}
+
+.sleep-phases-tooltip .quality-score {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Objectif dans tooltip */
+.sleep-phases-tooltip .tooltip-objective {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 10px;
+}
+
+.sleep-phases-tooltip .objective-label {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sleep-phases-tooltip .objective-progress {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+/* Légende interactive */
+.sleep-phases-legend {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.sleep-phases-legend .legend-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.sleep-phases-legend .legend-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.sleep-phases-legend .legend-item.selected {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.sleep-phases-legend .legend-item.dimmed {
+  opacity: 0.4;
+}
+
+.sleep-phases-legend .legend-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.sleep-phases-legend .legend-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.sleep-phases-legend .legend-ideal {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Statistiques des phases */
+.sleep-phases-stats {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sleep-phases-stats .stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sleep-phases-stats .stats-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sleep-phases-stats .quality-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sleep-phases-stats .quality-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sleep-phases-stats .quality-score {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Répartition des phases */
+.sleep-phases-stats .phases-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sleep-phases-stats .phase-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+
+.sleep-phases-stats .phase-stat-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sleep-phases-stats .phase-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.sleep-phases-stats .phase-name {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  flex: 1;
+}
+
+.sleep-phases-stats .phase-status {
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sleep-phases-stats .phase-status.good {
+  color: #10B981;
+}
+
+.sleep-phases-stats .phase-status.warning {
+  color: #F59E0B;
+}
+
+.sleep-phases-stats .phase-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: 14px;
+}
+
+.sleep-phases-stats .phase-duration {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.sleep-phases-stats .phase-ideal {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+/* État vide */
+.sleep-phases-container .chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.sleep-phases-container .empty-chart-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.sleep-phases-container .empty-chart-message {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.sleep-phases-container .empty-chart-suggestion {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sleep-phases-legend {
+    gap: 8px;
+  }
+  
+  .sleep-phases-stats .phases-breakdown {
+    gap: 4px;
+  }
+  
+  .sleep-phases-stats .phase-stat {
+    padding: 4px 6px;
+  }
+}
+/* ===== STRESS LEVEL CHART (Task 4.4) ===== */
+
+.stress-chart-container {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stress-chart-container .chart-header {
+  margin-bottom: 12px;
+}
+
+.stress-chart-container .chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 2px 0;
+}
+
+.stress-chart-container .chart-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* Tooltip du stress */
+.stress-chart-tooltip {
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  min-width: 200px;
+}
+
+.stress-chart-tooltip .tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stress-chart-tooltip .tooltip-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.stress-chart-tooltip .tooltip-stress {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stress-chart-tooltip .tooltip-level {
+  margin-bottom: 8px;
+}
+
+.stress-chart-tooltip .level-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.stress-chart-tooltip .level-icon {
+  font-size: 14px;
+}
+
+.stress-chart-tooltip .level-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.stress-chart-tooltip .level-range {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: auto;
+}
+
+.stress-chart-tooltip .level-description {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+.stress-chart-tooltip .tooltip-advice {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.stress-chart-tooltip .advice-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 3px;
+}
+
+.stress-chart-tooltip .advice-text {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.3;
+}
+
+.stress-chart-tooltip .tooltip-event {
+  background: rgba(59, 130, 246, 0.1);
+  padding: 4px 6px;
+  border-radius: 3px;
+  border-left: 2px solid #3B82F6;
+}
+
+.stress-chart-tooltip .event-header {
+  font-size: 10px;
+  font-weight: 600;
+  color: #3B82F6;
+  margin-bottom: 2px;
+}
+
+.stress-chart-tooltip .event-text {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Légende des niveaux de stress */
+.stress-levels-legend {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 0;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  gap: 4px;
+}
+
+.stress-levels-legend .stress-level-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stress-levels-legend .level-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stress-levels-legend .level-icon {
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.stress-levels-legend .level-color {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  margin-bottom: 2px;
+}
+
+.stress-levels-legend .level-name {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.stress-levels-legend .level-range {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 3px;
+  border-radius: 2px;
+  margin-top: 1px;
+}
+
+/* Statistiques et conseils */
+.stress-stats {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stress-stats .stats-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.stress-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.stress-stats .stat-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stress-stats .stat-value {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Carte de conseil personnalisé */
+.stress-stats .stress-advice-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 8px;
+  border-left: 3px solid #10B981;
+}
+
+.stress-stats .advice-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.stress-stats .advice-icon {
+  font-size: 14px;
+}
+
+.stress-stats .advice-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.stress-stats .advice-content {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+  margin-left: 20px;
+}
+
+/* État vide */
+.stress-chart-container .chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.stress-chart-container .empty-chart-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.stress-chart-container .empty-chart-message {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.stress-chart-container .empty-chart-suggestion {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Animations pour le gradient */
+@keyframes stress-pulse {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.stress-chart-container .recharts-area {
+  animation: stress-pulse 3s ease-in-out infinite;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stress-levels-legend {
+    gap: 2px;
+    padding: 6px;
+  }
+  
+  .stress-levels-legend .level-name {
+    font-size: 8px;
+  }
+  
+  .stress-levels-legend .level-range {
+    font-size: 7px;
+  }
+  
+  .stress-stats .stats-summary {
+    gap: 4px;
+  }
+  
+  .stress-stats .advice-content {
+    margin-left: 16px;
+  }
+}

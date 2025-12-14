@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
 import { readingAPI, learningAPI } from '../../../services/dashboard/dashboardStorage';
-import '../../../styles/session-recorder-module.css';
 
 /**
  * Composant Timer de lecture
@@ -370,15 +369,17 @@ const SessionRecorderModule = memo(({
   const books = data?.books || [];
   const subjects = data?.subjects || [];
   
-  // Debug: Log des données reçues
-  React.useEffect(() => {
-    console.log('[SessionRecorderModule] Props reçues:', {
-      data,
-      navigation,
-      booksCount: books.length,
-      subjectsCount: subjects.length
-    });
-  }, [data, navigation, books.length, subjects.length]);
+  // Formatage du temps
+  const formatTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Effet pour le timer
   useEffect(() => {
@@ -575,46 +576,78 @@ const SessionRecorderModule = memo(({
 
       {isExpanded && (
         <div className="sidebar-section-content">
-        {/* Boutons de navigation rapide */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Actions rapides */}
+        <div className="sidebar-actions-grid">
           <button
             onClick={handleNavigateToSport}
-            className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/30 text-orange-300 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105"
+            className="sidebar-action-button-small"
             aria-label="Naviguer vers l'onglet Sport"
           >
-            <Dumbbell className="w-4 h-4" />
-            Sport
+            <span className="sidebar-action-icon">🏃</span>
+            <span className="sidebar-action-label">Sport</span>
           </button>
           
           <button
             onClick={handleNavigateToBooks}
-            className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105"
+            className="sidebar-action-button-small"
             aria-label="Naviguer vers l'onglet Livres"
           >
-            <BookOpen className="w-4 h-4" />
-            Livres
+            <span className="sidebar-action-icon">📚</span>
+            <span className="sidebar-action-label">Livres</span>
           </button>
         </div>
 
         {/* Timer de lecture */}
-        <ReadingTimer
-          isActive={readingTimer.isActive}
-          elapsed={readingTimer.elapsed}
-          onPlay={handleTimerPlay}
-          onPause={handleTimerPause}
-          onStop={handleTimerStop}
-        />
+        <div className="sidebar-info-box">
+          <div className="sidebar-info-icon">⏱️</div>
+          <div>
+            <div className="sidebar-data-value">{formatTime(readingTimer.elapsed)}</div>
+            <div className="sidebar-data-label">Timer Lecture</div>
+          </div>
+        </div>
+        
+        <div className="sidebar-actions-grid">
+          {!readingTimer.isActive ? (
+            <button
+              onClick={handleTimerPlay}
+              className="sidebar-action-button"
+              aria-label="Démarrer le timer de lecture"
+            >
+              <span className="sidebar-action-icon">▶️</span>
+              <span className="sidebar-action-label">Play</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleTimerPause}
+              className="sidebar-action-button"
+              aria-label="Mettre en pause le timer de lecture"
+            >
+              <span className="sidebar-action-icon">⏸️</span>
+              <span className="sidebar-action-label">Pause</span>
+            </button>
+          )}
+          
+          <button
+            onClick={handleTimerStop}
+            disabled={readingTimer.elapsed === 0}
+            className="sidebar-action-button-small"
+            aria-label="Arrêter le timer de lecture"
+          >
+            <span className="sidebar-action-icon">⏹️</span>
+            <span className="sidebar-action-label">Stop</span>
+          </button>
+        </div>
 
-        {/* Bouton Apprentissage avec menu déroulant */}
+        {/* Bouton Apprentissage */}
         <div className="relative">
           <button
             onClick={() => setShowLearningMenu(!showLearningMenu)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105"
+            className="sidebar-action-button"
             aria-label="Enregistrer une session d'apprentissage"
             aria-expanded={showLearningMenu}
           >
-            <GraduationCap className="w-4 h-4" />
-            Apprentissage
+            <span className="sidebar-action-icon">🎓</span>
+            <span className="sidebar-action-label">Apprentissage</span>
           </button>
 
           <LearningMenu
@@ -625,18 +658,7 @@ const SessionRecorderModule = memo(({
           />
         </div>
         
-        {/* Navigation standard */}
-        <div className="navigation-section">
-          <button 
-            onClick={handleNavigateToSport}
-            className="nav-button"
-            type="button"
-          >
-            <span className="nav-icon">🎯</span>
-            <span className="nav-text">Aller au Sport</span>
-            <span className="nav-arrow">→</span>
-          </button>
-        </div>
+
         
         {/* Modal de fin de session lecture */}
         <SessionEndModal

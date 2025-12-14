@@ -1,0 +1,35 @@
+{
+  "timestamp": "2025-12-14T21:09:04.416Z",
+  "files": {
+    "src/services/garmin/garminRealDataService.js": {
+      "exists": true,
+      "description": "Service de données Garmin réelles",
+      "required": true,
+      "size": 14031
+    },
+    "src/hooks/useRealGarminData.js": {
+      "exists": true,
+      "description": "Hook pour récupérer les vraies données Garmin",
+      "required": true,
+      "size": 5187
+    },
+    "src/components/sidebar/historical/GarminMetricsModule.jsx": {
+      "exists": true,
+      "description": "Module Garmin de la sidebar (modifié)",
+      "required": true,
+      "size": 11292
+    },
+    "src/styles/garmin-metrics-module.css": {
+      "exists": true,
+      "description": "Styles CSS du module Garmin",
+      "required": true,
+      "size": 1228
+    }
+  },
+  "summary": {
+    "totalFiles": 4,
+    "existingFiles": 4,
+    "missingFiles": 0,
+    "totalSize": 31738
+  }
+}
