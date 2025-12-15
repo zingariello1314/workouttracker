@@ -3,6 +3,12 @@
    Styles pour les graphiques intelligibles
    ============================================ */
 
+/* Import des styles créatifs Phase 5 */
+@import './creative-charts.css';
+
+/* Import de l'harmonisation visuelle Phase 6 */
+@import './charts-visual-harmony.css';
+
 /* ===== VARIABLES CSS POUR GRAPHIQUES ===== */
 :root {
   /* Couleurs pour graphiques */

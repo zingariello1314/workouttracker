@@ -1,4 +1,146 @@
 /**
- * Creativity Projects Module - Styles complémentaires
- * SUPPRIMÉ - Utilise maintenant uniquement les classes de base .sidebar-section
+ * Creativity Projects Module - Styles avec graphiques donut
  */
+
+/* Grille des métriques de réussite */
+.creativity-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Cartes de métriques avec donut */
+.creativity-metric-card {
+  padding: 12px;
+  text-align: center;
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.creativity-metric-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Container du graphique donut */
+.creativity-donut-container {
+  height: 80px;
+  margin-bottom: 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Texte central du donut */
+.creativity-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.creativity-donut-value {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #fff;
+  line-height: 1;
+}
+
+.creativity-donut-label {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 2px;
+}
+
+/* Labels des métriques */
+.creativity-metric-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: #fff;
+}
+
+.creativity-metric-description {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.2;
+}
+
+/* Animation d'entrée pour les donuts */
+.creativity-donut-container .recharts-pie {
+  animation: donutFadeIn 0.8s ease-out;
+}
+
+@keyframes donutFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) rotate(-90deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Couleurs contextuelles pour les métriques */
+.creativity-metric-completion {
+  border-left: 3px solid #10B981;
+}
+
+.creativity-metric-regularity {
+  border-left: 3px solid #3B82F6;
+}
+
+.creativity-metric-satisfaction {
+  border-left: 3px solid #F59E0B;
+}
+
+.creativity-metric-diversity {
+  border-left: 3px solid #8B5CF6;
+}
+
+/* Responsive pour les métriques */
+@media (max-width: 768px) {
+  .creativity-metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .creativity-donut-container {
+    height: 70px;
+  }
+  
+  .creativity-donut-value {
+    font-size: 0.8rem;
+  }
+  
+  .creativity-metric-label {
+    font-size: 0.7rem;
+  }
+  
+  .creativity-metric-description {
+    font-size: 0.6rem;
+  }
+}
+
+/* États de performance pour les couleurs */
+.creativity-performance-excellent {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+}
+
+.creativity-performance-good {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+}
+
+.creativity-performance-needs-improvement {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+}

@@ -41,12 +41,7 @@
 }
 
 .sidebar-section-enhanced::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--sidebar-premium-gradient-1);
-  opacity: 0.02;
-  pointer-events: none;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 .sidebar-section-enhanced:hover {
@@ -76,12 +71,7 @@
 }
 
 .sidebar-data-card-premium::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--sidebar-premium-gradient-1);
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 .sidebar-data-card-premium:hover {
@@ -195,11 +185,7 @@
 }
 
 .badge-premium::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--sidebar-premium-gradient-1);
-  opacity: 0.8;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 .badge-icon {
@@ -215,18 +201,11 @@
 }
 
 .badge-glow {
-  position: absolute;
-  inset: -2px;
-  background: var(--sidebar-premium-gradient-1);
-  border-radius: 14px;
-  opacity: 0;
-  filter: blur(4px);
-  transition: opacity 0.3s ease;
-  z-index: -1;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 .badge-premium:hover .badge-glow {
-  opacity: 0.6;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 /* Cartes de statistiques riches */
@@ -241,11 +220,7 @@
 }
 
 .stat-card-premium::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--sidebar-premium-gradient-1);
-  opacity: 0.03;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 .stat-header {
@@ -288,13 +263,7 @@
 }
 
 .stat-background-pattern {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 40px;
-  height: 40px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  border-radius: 50%;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 .stat-card-premium:hover {

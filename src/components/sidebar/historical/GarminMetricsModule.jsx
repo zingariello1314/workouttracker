@@ -1,7 +1,8 @@
-import React, { memo, useCallback, useEffect, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
 import { HeartRateZonesChart, SleepPhasesChart, StressLevelChart } from '../../charts/index';
 import { useRealGarminData } from '../../../hooks/useRealGarminData';
+import SidebarHeartRateChart from '../charts/SidebarHeartRateChart';
 
 /**
  * Module de métriques Garmin (Position 5)
@@ -14,11 +15,22 @@ const GarminMetricsModule = memo(({
   isExpanded,
   onToggle,
   data = {},
-  navigation
+  navigation,
+  showHeartRateChart = true,
+  chartHeight = 280,
+  compactMode = true
 }) => {
 
-  // Utiliser le hook pour récupérer les vraies données Garmin
-  const { garminData, loading, error, refreshData, hasData } = useRealGarminData();
+  // État pour la gestion du basculement entre zones statiques et graphique temporel
+  const [showTemporalChart, setShowTemporalChart] = useState(showHeartRateChart);
+  const [selectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+
+  // Utiliser le hook pour récupérer les vraies données Garmin avec support des séries temporelles
+  const { garminData, loading, error, refreshData } = useRealGarminData({
+    selectedDate,
+    enableTimeSeriesData: showTemporalChart, // Activer les données temporelles si le graphique est affiché
+    optimizeForSidebar: true
+  });
 
   // Utiliser les vraies données Garmin avec fallback sur les données passées en props
   const metrics = useMemo(() => {
@@ -325,8 +337,56 @@ const GarminMetricsModule = memo(({
             {/* Graphiques avec vraies données */}
             {!loading && !error && garminData && (
               <>
-                {/* Graphique des zones cardiaques */}
-                {garminData.heartRateZones && garminData.heartRateZones.length > 0 && (
+                {/* Contrôles de basculement entre zones statiques et graphique temporel */}
+                {showHeartRateChart && (garminData.heartRateZones?.length > 0 || garminData.heartRateTimeSeries?.length > 0) && (
+                  <div className="chart-toggle-controls">
+                    <div className="toggle-buttons">
+                      <button
+                        className={`toggle-btn ${!showTemporalChart ? 'active' : ''}`}
+                        onClick={() => setShowTemporalChart(false)}
+                        title="Afficher les zones FC statiques"
+                      >
+                        📊 Zones
+                      </button>
+                      <button
+                        className={`toggle-btn ${showTemporalChart ? 'active' : ''}`}
+                        onClick={() => setShowTemporalChart(true)}
+                        title="Afficher le graphique FC temporel"
+                      >
+                        📈 Temporel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Graphique FC temporel (nouveau) - Requirements 1.3, 2.3, 3.3, 4.1, 4.2, 4.3, 4.4, 4.5 */}
+                {showHeartRateChart && showTemporalChart && (
+                  <div className="chart-container sidebar-optimized">
+                    <SidebarHeartRateChart
+                      garminData={garminData}
+                      selectedDate={selectedDate}
+                      height={chartHeight}
+                      compactMode={compactMode}
+                      colors={{ red: '#EF4444' }}
+                      className="garmin-hr-temporal-chart"
+                      containerWidth={null} // Laisse le composant mesurer automatiquement
+                      onNavigateToSport={handleNavigateToSport} // Navigation vers Sport (Requirement 3.3)
+                      onDataPointClick={(data, index, event) => {
+                        // Log pour debug des interactions (Requirement 1.3)
+                        console.log('[GarminMetricsModule] Point FC cliqué:', {
+                          time: data.time,
+                          bpm: data.bpm,
+                          isReal: data.isReal,
+                          isActivity: data.isActivity
+                        });
+                      }}
+                      showNavigationHint={true} // Afficher l'indication de navigation (Requirement 3.3)
+                    />
+                  </div>
+                )}
+
+                {/* Graphique des zones cardiaques (existant) - Requirement 3.4 */}
+                {(!showHeartRateChart || !showTemporalChart) && garminData.heartRateZones && garminData.heartRateZones.length > 0 && (
                   <div className="chart-container">
                     <HeartRateZonesChart
                       data={garminData.heartRateZones}
@@ -365,7 +425,7 @@ const GarminMetricsModule = memo(({
                 )}
 
                 {/* Message si pas de données graphiques */}
-                {(!garminData.heartRateZones?.length && !garminData.sleepPhases?.length && !garminData.stressLevels?.length) && (
+                {(!garminData.heartRateZones?.length && !garminData.sleepPhases?.length && !garminData.stressLevels?.length && !garminData.heartRateTimeSeries?.length) && (
                   <div className="charts-empty-state">
                     <div className="empty-state-icon">📊</div>
                     <div className="empty-state-message">

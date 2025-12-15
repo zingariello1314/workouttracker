@@ -10,9 +10,19 @@ import garminRealDataService from '../services/garmin/garminRealDataService';
 
 /**
  * Hook pour récupérer les vraies données Garmin
+ * @param {Object} options - Options pour le hook
+ * @param {string} options.selectedDate - Date sélectionnée (format YYYY-MM-DD), par défaut aujourd'hui
+ * @param {boolean} options.enableTimeSeriesData - Activer les données de série temporelle pour les graphiques
+ * @param {boolean} options.optimizeForSidebar - Optimiser les données pour l'affichage sidebar (réduction de taille)
  * @returns {Object} Données Garmin formatées pour la sidebar
  */
-export const useRealGarminData = () => {
+export const useRealGarminData = (options = {}) => {
+  const { 
+    selectedDate = new Date().toISOString().slice(0, 10),
+    enableTimeSeriesData = false,
+    optimizeForSidebar = true
+  } = options;
+  
   const { isAuthenticated } = useAuth();
   const { loadDataForTab, dbReady } = useGarminData();
   const [garminData, setGarminData] = useState(null);
@@ -28,8 +38,11 @@ export const useRealGarminData = () => {
       return;
     }
 
-    // Vérifier le cache d'abord
-    const cachedData = garminRealDataService.getCachedData();
+    // Créer une clé de cache unique basée sur les options
+    const cacheKey = `${selectedDate}-${enableTimeSeriesData}-${optimizeForSidebar}`;
+    
+    // Vérifier le cache d'abord avec la clé spécifique
+    const cachedData = garminRealDataService.getCachedData(cacheKey);
     if (cachedData) {
       setGarminData(cachedData);
       return;
@@ -49,32 +62,45 @@ export const useRealGarminData = () => {
         return;
       }
 
-      // Utiliser le service pour formater les données
-      const today = new Date().toISOString().slice(0, 10);
-      const todayMetrics = rawData.dailyMetrics[today] || {};
+      // Utiliser la date sélectionnée ou la date la plus récente disponible
+      const targetMetrics = rawData.dailyMetrics[selectedDate] || {};
       
-      // Si pas de données pour aujourd'hui, prendre la date la plus récente
+      // Si pas de données pour la date sélectionnée, prendre la date la plus récente
       const availableDates = Object.keys(rawData.dailyMetrics).sort();
       const latestDate = availableDates.length > 0 ? availableDates[availableDates.length - 1] : null;
-      const metricsToUse = Object.keys(todayMetrics).length > 0 ? todayMetrics : (latestDate ? rawData.dailyMetrics[latestDate] : {});
+      const metricsToUse = Object.keys(targetMetrics).length > 0 ? targetMetrics : (latestDate ? rawData.dailyMetrics[latestDate] : {});
+      const effectiveDate = Object.keys(targetMetrics).length > 0 ? selectedDate : latestDate;
       
-      // Formater les données avec le service
-      const formattedData = garminRealDataService.processMetrics(metricsToUse, rawData.dailyMetrics, latestDate || today);
+      // Formater les données avec le service, en incluant les options
+      const formattedData = garminRealDataService.processMetrics(
+        metricsToUse, 
+        rawData.dailyMetrics, 
+        effectiveDate || selectedDate,
+        {
+          enableTimeSeriesData,
+          optimizeForSidebar,
+          selectedDate
+        }
+      );
       
-      // Mettre à jour le cache
-      garminRealDataService.updateCache(formattedData);
+      // Mettre à jour le cache avec la clé spécifique
+      garminRealDataService.updateCache(formattedData, cacheKey);
       
       setGarminData(formattedData);
       
       console.log('[useRealGarminData] Données Garmin réelles chargées:', {
+        selectedDate: effectiveDate,
         hasHeartRateZones: !!formattedData.heartRateZones?.length,
+        hasHeartRateTimeSeries: !!formattedData.heartRateTimeSeries?.length,
         hasSleepPhases: !!formattedData.sleepPhases?.length,
         hasStressLevels: !!formattedData.stressLevels?.length,
         dataDate: formattedData.dataDate,
         hasData: formattedData.hasData,
         calories: formattedData.todayMetrics?.calories,
         steps: formattedData.todayMetrics?.steps,
-        heartRate: formattedData.todayMetrics?.heartRate
+        heartRate: formattedData.todayMetrics?.heartRate,
+        enableTimeSeriesData,
+        optimizeForSidebar
       });
       
     } catch (err) {
@@ -87,15 +113,14 @@ export const useRealGarminData = () => {
     } finally {
       setLoading(false);
     }
-  }, [dbReady, isAuthenticated, loadDataForTab]);
+  }, [dbReady, isAuthenticated, loadDataForTab, selectedDate, enableTimeSeriesData, optimizeForSidebar]);
 
   /**
    * Force le rechargement des données
    */
   const refreshData = useCallback(() => {
     // Vider le cache pour forcer un rechargement
-    garminRealDataService.cache.clear();
-    garminRealDataService.lastUpdate = null;
+    garminRealDataService.clearCache();
     loadRealGarminData();
   }, [loadRealGarminData]);
 

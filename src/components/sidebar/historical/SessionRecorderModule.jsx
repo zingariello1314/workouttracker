@@ -1,29 +1,35 @@
 /**
- * SessionRecorderModule - Module d'enregistrement de sessions (Position 1)
+ * SessionRecorderModule - Module d'enregistrement de sessions REFONTE
  * 
  * Fonctionnalités:
- * - Boutons de navigation vers Sport/Livres/Apprentissage
- * - Timer de lecture intégré avec contrôles Play/Pause/Stop
- * - Modal obligatoire de fin de session lecture
- * - Menu d'apprentissage avec sélection matière et durée
+ * - Design carré compact et harmonieux
+ * - Boutons équilibrés avec animations fluides
+ * - Navigation intelligente vers Sport/Livres/Apprentissage
+ * - Timer moderne avec états visuels
+ * - Interface intuitive et guidée
  * 
  * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6
  */
 
 import React, { memo, useState, useEffect, useCallback } from 'react';
 import { 
-  Play, 
-  Pause, 
-  Square, 
-  BookOpen, 
-  Dumbbell, 
-  GraduationCap,
-  Clock,
   Save,
-  X
+  X,
+  Clock,
+  Play,
+  Pause,
+  Square
 } from 'lucide-react';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
-import { readingAPI, learningAPI } from '../../../services/dashboard/dashboardStorage';
+import { readingAPI } from '../../../services/dashboard/dashboardStorage';
+
+// Composants refactés
+import TimerDisplay from './refonte/TimerDisplay';
+import ActivitySelector from './refonte/ActivitySelector';
+import TimerControls from './refonte/TimerControls';
+
+// Styles refonte
+import '../../../styles/session-recorder-refonte.css';
 
 /**
  * Composant Timer de lecture
@@ -239,114 +245,10 @@ const SessionEndModal = memo(({
 
 SessionEndModal.displayName = 'SessionEndModal';
 
-/**
- * Menu d'apprentissage
- */
-const LearningMenu = memo(({ 
-  isOpen, 
-  onClose, 
-  onSave,
-  subjects = []
-}) => {
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [duration, setDuration] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Reset form when menu opens
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedSubject('');
-      setDuration('');
-      setIsLoading(false);
-    }
-  }, [isOpen]);
-
-  const handleSave = async () => {
-    if (!selectedSubject || !duration || parseInt(duration) <= 0) {
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      await onSave({
-        subject: selectedSubject,
-        duration: parseInt(duration)
-      });
-      onClose();
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde de la session d\'apprentissage:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg p-4 shadow-xl z-10">
-      <h4 className="text-sm font-semibold text-white mb-3">Enregistrer Apprentissage</h4>
-      
-      <div className="space-y-3">
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">Matière</label>
-          <select
-            value={selectedSubject}
-            onChange={(e) => setSelectedSubject(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white text-sm focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
-          >
-            <option value="">Sélectionner une matière</option>
-            <option value="mathematics">Mathématiques</option>
-            <option value="programming">Programmation</option>
-            <option value="languages">Langues</option>
-            <option value="science">Sciences</option>
-            <option value="history">Histoire</option>
-            <option value="philosophy">Philosophie</option>
-            <option value="other">Autre</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">Durée (minutes)</label>
-          <input
-            type="number"
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white text-sm focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
-            min="1"
-            placeholder="Ex: 30"
-          />
-        </div>
-
-        <div className="flex gap-2 pt-2">
-          <button
-            onClick={onClose}
-            className="flex-1 px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg text-sm font-medium transition-all duration-200"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!selectedSubject || !duration || parseInt(duration) <= 0 || isLoading}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all duration-200"
-          >
-            {isLoading ? (
-              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Save className="w-3 h-3" />
-            )}
-            Enregistrer
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-});
-
-LearningMenu.displayName = 'LearningMenu';
 
 /**
- * Composant principal SessionRecorderModule - PATTERN LEGACY
+ * Composant principal SessionRecorderModule - REFONTE MODERNE
  */
 const SessionRecorderModule = memo(({ 
   isExpanded,
@@ -357,29 +259,17 @@ const SessionRecorderModule = memo(({
   // États du timer de lecture
   const [readingTimer, setReadingTimer] = useState({
     isActive: false,
+    isPaused: false,
     elapsed: 0,
     startTime: null
   });
 
   // États des modals/menus
   const [showSessionModal, setShowSessionModal] = useState(false);
-  const [showLearningMenu, setShowLearningMenu] = useState(false);
+  const [activeActivity, setActiveActivity] = useState(null);
 
   // Données simulées (à remplacer par les vraies données)
   const books = data?.books || [];
-  const subjects = data?.subjects || [];
-  
-  // Formatage du temps
-  const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Effet pour le timer
   useEffect(() => {
@@ -419,6 +309,7 @@ const SessionRecorderModule = memo(({
     setReadingTimer(prev => ({
       ...prev,
       isActive: true,
+      isPaused: false,
       startTime: prev.startTime || Date.now()
     }));
   }, []);
@@ -426,7 +317,8 @@ const SessionRecorderModule = memo(({
   const handleTimerPause = useCallback(() => {
     setReadingTimer(prev => ({
       ...prev,
-      isActive: false
+      isActive: false,
+      isPaused: true
     }));
   }, []);
 
@@ -447,13 +339,17 @@ const SessionRecorderModule = memo(({
   const handleTimerReset = useCallback(() => {
     setReadingTimer({
       isActive: false,
+      isPaused: false,
       elapsed: 0,
       startTime: null
     });
+    setActiveActivity(null);
   }, []);
 
-  // Handlers de navigation
+  // Handlers de navigation améliorés
   const handleNavigateToSport = useCallback(async () => {
+    setActiveActivity('sport');
+    
     if (navigation?.setActiveTab) {
       try {
         await deepLinkService.navigateToModule({
@@ -462,6 +358,11 @@ const SessionRecorderModule = memo(({
           moduleId: 'session-recorder',
           scrollBehavior: 'smooth'
         }, navigation.setActiveTab);
+        
+        // Émettre événement pour synchronisation
+        window.dispatchEvent(new CustomEvent('session:activity:selected', {
+          detail: { type: 'sport', timestamp: Date.now() }
+        }));
       } catch (error) {
         console.error('Erreur de navigation vers Sport:', error);
         // Fallback
@@ -471,6 +372,8 @@ const SessionRecorderModule = memo(({
   }, [navigation]);
 
   const handleNavigateToBooks = useCallback(async () => {
+    setActiveActivity('books');
+    
     if (navigation?.setActiveTab) {
       try {
         await deepLinkService.navigateToModule({
@@ -479,10 +382,39 @@ const SessionRecorderModule = memo(({
           moduleId: 'books-reading-session',
           scrollBehavior: 'smooth'
         }, navigation.setActiveTab);
+        
+        // Émettre événement pour synchronisation
+        window.dispatchEvent(new CustomEvent('session:activity:selected', {
+          detail: { type: 'books', timestamp: Date.now() }
+        }));
       } catch (error) {
         console.error('Erreur de navigation vers Livres:', error);
         // Fallback
         navigation.setActiveTab('books');
+      }
+    }
+  }, [navigation]);
+
+  const handleNavigateToLearning = useCallback(async () => {
+    setActiveActivity('learning');
+    
+    if (navigation?.setActiveTab) {
+      try {
+        await deepLinkService.navigateToModule({
+          tab: 'apprentissage',
+          subtab: 'aujourdhui',
+          moduleId: 'learning-session',
+          scrollBehavior: 'smooth'
+        }, navigation.setActiveTab);
+        
+        // Émettre événement pour synchronisation
+        window.dispatchEvent(new CustomEvent('session:activity:selected', {
+          detail: { type: 'learning', timestamp: Date.now() }
+        }));
+      } catch (error) {
+        console.error('Erreur de navigation vers Apprentissage:', error);
+        // Fallback
+        navigation.setActiveTab('apprentissage');
       }
     }
   }, [navigation]);
@@ -525,49 +457,23 @@ const SessionRecorderModule = memo(({
     }
   }, [handleTimerReset]);
 
-  const handleSaveLearningSession = useCallback(async (sessionData) => {
-    try {
-      // Sauvegarder via l'API existante
-      await learningAPI.saveSession(sessionData.duration);
-      
-      // Émettre un événement de synchronisation pour mettre à jour la sidebar
-      window.dispatchEvent(new CustomEvent('sidebar:session:saved', {
-        detail: {
-          type: 'learning',
-          data: sessionData
-        }
-      }));
-      
-      // Émettre un événement pour synchroniser avec les modules principaux
-      window.dispatchEvent(new CustomEvent('historical:session:stopped', {
-        detail: {
-          type: 'learning',
-          subject: sessionData.subject,
-          duration: sessionData.duration
-        }
-      }));
-      
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde de la session d\'apprentissage:', error);
-      throw error;
-    }
-  }, []);
+
 
   return (
-    <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
+    <div className={`session-recorder-module ${isExpanded ? 'entering' : ''}`}>
       <header 
-        className="sidebar-section-header"
+        className="session-recorder-header"
         onClick={onToggle}
         role="button"
         tabIndex={0}
         aria-expanded={isExpanded}
       >
-        <h2 className="sidebar-section-title">
-          <span className="sidebar-section-icon" aria-hidden="true">🎯</span>
+        <h2 className="session-recorder-title">
+          <span className="session-recorder-icon" aria-hidden="true">🎯</span>
           Enregistrer Session
         </h2>
         <span 
-          className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
+          className={`session-recorder-toggle ${isExpanded ? 'expanded' : ''}`}
           aria-hidden="true"
         >
           ▼
@@ -575,102 +481,44 @@ const SessionRecorderModule = memo(({
       </header>
 
       {isExpanded && (
-        <div className="sidebar-section-content">
-        {/* Actions rapides */}
-        <div className="sidebar-actions-grid">
-          <button
-            onClick={handleNavigateToSport}
-            className="sidebar-action-button-small"
-            aria-label="Naviguer vers l'onglet Sport"
-          >
-            <span className="sidebar-action-icon">🏃</span>
-            <span className="sidebar-action-label">Sport</span>
-          </button>
-          
-          <button
-            onClick={handleNavigateToBooks}
-            className="sidebar-action-button-small"
-            aria-label="Naviguer vers l'onglet Livres"
-          >
-            <span className="sidebar-action-icon">📚</span>
-            <span className="sidebar-action-label">Livres</span>
-          </button>
-        </div>
-
-        {/* Timer de lecture */}
-        <div className="sidebar-info-box">
-          <div className="sidebar-info-icon">⏱️</div>
-          <div>
-            <div className="sidebar-data-value">{formatTime(readingTimer.elapsed)}</div>
-            <div className="sidebar-data-label">Timer Lecture</div>
-          </div>
-        </div>
-        
-        <div className="sidebar-actions-grid">
-          {!readingTimer.isActive ? (
-            <button
-              onClick={handleTimerPlay}
-              className="sidebar-action-button"
-              aria-label="Démarrer le timer de lecture"
-            >
-              <span className="sidebar-action-icon">▶️</span>
-              <span className="sidebar-action-label">Play</span>
-            </button>
-          ) : (
-            <button
-              onClick={handleTimerPause}
-              className="sidebar-action-button"
-              aria-label="Mettre en pause le timer de lecture"
-            >
-              <span className="sidebar-action-icon">⏸️</span>
-              <span className="sidebar-action-label">Pause</span>
-            </button>
-          )}
-          
-          <button
-            onClick={handleTimerStop}
-            disabled={readingTimer.elapsed === 0}
-            className="sidebar-action-button-small"
-            aria-label="Arrêter le timer de lecture"
-          >
-            <span className="sidebar-action-icon">⏹️</span>
-            <span className="sidebar-action-label">Stop</span>
-          </button>
-        </div>
-
-        {/* Bouton Apprentissage */}
-        <div className="relative">
-          <button
-            onClick={() => setShowLearningMenu(!showLearningMenu)}
-            className="sidebar-action-button"
-            aria-label="Enregistrer une session d'apprentissage"
-            aria-expanded={showLearningMenu}
-          >
-            <span className="sidebar-action-icon">🎓</span>
-            <span className="sidebar-action-label">Apprentissage</span>
-          </button>
-
-          <LearningMenu
-            isOpen={showLearningMenu}
-            onClose={() => setShowLearningMenu(false)}
-            onSave={handleSaveLearningSession}
-            subjects={subjects}
+        <>
+          {/* Sélecteur d'activités */}
+          <ActivitySelector
+            onSportClick={handleNavigateToSport}
+            onBooksClick={handleNavigateToBooks}
+            onLearningClick={handleNavigateToLearning}
+            activeActivity={activeActivity}
           />
-        </div>
-        
 
-        
-        {/* Modal de fin de session lecture */}
-        <SessionEndModal
-          isOpen={showSessionModal}
-          onClose={() => setShowSessionModal(false)}
-          onSave={handleSaveReadingSession}
-          sessionDuration={readingTimer.elapsed}
-          books={books}
-        />
-        </div>
+          {/* Timer carré compact */}
+          <TimerDisplay
+            elapsed={readingTimer.elapsed}
+            isActive={readingTimer.isActive}
+            isPaused={readingTimer.isPaused}
+          />
+          
+          {/* Contrôles du timer harmonisés */}
+          <TimerControls
+            isActive={readingTimer.isActive}
+            elapsed={readingTimer.elapsed}
+            onPlay={handleTimerPlay}
+            onPause={handleTimerPause}
+            onStop={handleTimerStop}
+          />
+
+
+          
+          {/* Modal de fin de session lecture */}
+          <SessionEndModal
+            isOpen={showSessionModal}
+            onClose={() => setShowSessionModal(false)}
+            onSave={handleSaveReadingSession}
+            sessionDuration={readingTimer.elapsed}
+            books={books}
+          />
+        </>
       )}
-    </section>
+    </div>
   );
 });
 

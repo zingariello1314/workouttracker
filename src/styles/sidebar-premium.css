@@ -185,27 +185,7 @@
 }
 
 .time-shadow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
-  font-size: 2.6rem;
-  font-weight: 400;
-  letter-spacing: 0.05em;
-  background: linear-gradient(180deg,
-    #ff1493 0%,
-    #ff8c00 50%,
-    #ffd700 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  opacity: 0.2;
-  filter: blur(0.125rem);
-  z-index: -1;
-  text-align: center;
-  width: 100%;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 .time-glow {
@@ -273,41 +253,11 @@
 }
 
 .date-shadow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.1);
-  filter: blur(0.0625rem);
-  z-index: -1;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 .date-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  background: linear-gradient(180deg,
-    #ff1493 0%,
-    #ff8c00 50%,
-    #ffd700 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  opacity: 0.3;
-  filter: blur(0.2rem);
-  z-index: -2;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 /* Année (Orange/Or) */
@@ -335,17 +285,7 @@
 }
 
 .year-shadow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  font-family: 'Bangers', 'Tanker', 'Rajdhani', sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.1);
-  filter: blur(0.0625rem);
-  z-index: -1;
+  display: none !important; /* Masqué pour éviter les taches blanches */
 }
 
 .year-glow {

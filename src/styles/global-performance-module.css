@@ -1,4 +1,106 @@
 /**
- * Global Performance Module - Styles complémentaires
- * SUPPRIMÉ - Utilise maintenant uniquement les classes de base .sidebar-section
+ * Global Performance Module - Styles avec graphique radar
  */
+
+/* Graphique radar d'équilibre de vie */
+.life-balance-radar {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.life-balance-radar .radar-chart-container {
+  background: transparent;
+}
+
+.life-balance-radar .chart-wrapper {
+  margin: 0;
+}
+
+/* Tooltip personnalisé pour le radar */
+.life-balance-radar .radar-chart-tooltip {
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.life-balance-radar .tooltip-header {
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+}
+
+.life-balance-radar .tooltip-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.life-balance-radar .tooltip-color-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.life-balance-radar .tooltip-value {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+/* Légende du radar */
+.life-balance-radar .radar-legend {
+  display: none; /* Masquer la légende par défaut car on a notre propre grille */
+}
+
+/* Animation d'entrée pour le radar */
+.life-balance-radar .recharts-radar {
+  animation: radarFadeIn 0.8s ease-out;
+}
+
+@keyframes radarFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive pour le radar */
+@media (max-width: 768px) {
+  .life-balance-radar {
+    padding: 4px;
+  }
+  
+  .life-balance-radar .chart-wrapper {
+    height: 180px !important;
+  }
+}
+
+/* Amélioration des axes du radar */
+.life-balance-radar .recharts-polar-angle-axis-tick text {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  fill: rgba(255, 255, 255, 0.8) !important;
+}
+
+.life-balance-radar .recharts-polar-radius-axis-tick text {
+  font-size: 9px !important;
+  fill: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Points actifs du radar */
+.life-balance-radar .recharts-dot {
+  transition: all 0.2s ease;
+}
+
+.life-balance-radar .recharts-active-dot {
+  filter: drop-shadow(0 0 6px currentColor);
+}

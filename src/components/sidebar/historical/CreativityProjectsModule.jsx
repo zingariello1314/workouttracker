@@ -3,6 +3,7 @@ import deepLinkService from '../../../services/navigation/DeepLinkService';
 import StatCard from '../enhanced/StatCard';
 import AnimatedProgressBar from '../enhanced/AnimatedProgressBar';
 import PremiumBadge from '../enhanced/PremiumBadge';
+import { AnimatedDonutChart } from '../../charts/index';
 import '../../../styles/sidebar-visual-enhancements.css';
 
 /**
@@ -110,6 +111,60 @@ const CreativityProjectsModule = memo(({
       new Date(session.date) >= sevenDaysAgo
     ).length;
   }, [creativityData.recentSessions]);
+
+  // Données pour les graphiques donut de réussite
+  const successMetrics = useMemo(() => {
+    const projects = creativityData.projects;
+    const sessions = creativityData.recentSessions;
+
+    // Taux de completion des projets
+    const completionRate = projects.length > 0 ? 
+      (projects.reduce((sum, p) => sum + p.progress, 0) / projects.length) : 0;
+
+    // Taux de régularité (sessions cette semaine vs objectif)
+    const weeklyObjective = 5; // 5 sessions par semaine
+    const regularityRate = Math.min(100, (recentSessionsCount / weeklyObjective) * 100);
+
+    // Taux de satisfaction moyen
+    const satisfactionRate = sessions.length > 0 ? 
+      (sessions.reduce((sum, s) => sum + (s.satisfaction || 0), 0) / sessions.length / 5) * 100 : 0;
+
+    // Taux de diversité des projets (types différents)
+    const uniqueTypes = new Set(projects.map(p => p.type)).size;
+    const maxTypes = 7; // writing, art, music, video, photo, design, craft
+    const diversityRate = Math.min(100, (uniqueTypes / maxTypes) * 100);
+
+    return {
+      completion: {
+        value: Math.round(completionRate),
+        label: 'Avancement',
+        color: '#10B981',
+        icon: '🎯',
+        description: `${Math.round(completionRate)}% d'avancement moyen`
+      },
+      regularity: {
+        value: Math.round(regularityRate),
+        label: 'Régularité',
+        color: '#3B82F6',
+        icon: '📅',
+        description: `${recentSessionsCount}/${weeklyObjective} sessions cette semaine`
+      },
+      satisfaction: {
+        value: Math.round(satisfactionRate),
+        label: 'Satisfaction',
+        color: '#F59E0B',
+        icon: '⭐',
+        description: `${(satisfactionRate/20).toFixed(1)}/5 étoiles moyennes`
+      },
+      diversity: {
+        value: Math.round(diversityRate),
+        label: 'Diversité',
+        color: '#8B5CF6',
+        icon: '🎨',
+        description: `${uniqueTypes} types de projets différents`
+      }
+    };
+  }, [creativityData, recentSessionsCount]);
 
   // Navigation vers la page d'accueil avec positionnement sur les projets créatifs (Requirement 9.4)
   const handleNavigateToCreativity = useCallback(async () => {
@@ -303,7 +358,73 @@ const CreativityProjectsModule = memo(({
             </div>
           )}
 
-          {/* Sessions récentes - VERSION ENRICHIE */}
+          {/* Métriques de réussite avec graphiques donut - NOUVEAU */}
+          <div style={{ marginBottom: '16px' }}>
+            <div className="sidebar-text-primary" style={{ 
+              fontSize: '0.8rem',
+              marginBottom: '12px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: 'var(--sidebar-magenta)'
+            }}>
+              Métriques de Réussite
+            </div>
+            
+            {/* Graphiques donut en grille 2x2 */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '12px',
+              marginBottom: '12px'
+            }}>
+              {Object.entries(successMetrics).map(([key, metric]) => (
+                <div 
+                  key={key}
+                  className="stat-card-premium clickable"
+                  onClick={handleNavigateToCreativity}
+                  style={{ 
+                    padding: '12px',
+                    textAlign: 'center',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Graphique donut */}
+                  <div style={{ 
+                    height: '80px',
+                    marginBottom: '8px',
+                    position: 'relative'
+                  }}>
+                    <AnimatedDonutChart
+                      data={[
+                        { name: metric.label, value: metric.value, color: metric.color },
+                        { name: 'Restant', value: 100 - metric.value, color: 'rgba(255, 255, 255, 0.1)' }
+                      ]}
+                      centerValue={`${metric.value}%`}
+                      centerLabel=""
+                      size={70}
+                      strokeWidth={6}
+                      animationDuration={1000}
+                      showTooltip={false}
+                    />
+                  </div>
+                  
+                  {/* Informations */}
+                  <div style={{ fontSize: '0.75rem', fontWeight: '600', marginBottom: '2px' }}>
+                    {metric.icon} {metric.label}
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.65rem', 
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    lineHeight: '1.2'
+                  }}>
+                    {metric.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sessions récentes - VERSION COMPACTE */}
           {creativityData.recentSessions.length > 0 && (
             <div style={{ marginBottom: '16px' }}>
               <div className="sidebar-text-primary" style={{ 
@@ -331,14 +452,6 @@ const CreativityProjectsModule = memo(({
                   )}
                   icon="⏱️"
                   color="var(--sidebar-blue)"
-                  onClick={handleNavigateToCreativity}
-                />
-
-                <StatCard
-                  title="Satisfaction"
-                  value={`${(creativityData.recentSessions.reduce((total, session) => total + (session.satisfaction || 0), 0) / creativityData.recentSessions.length).toFixed(1)}/5`}
-                  icon="⭐"
-                  color="var(--sidebar-gold)"
                   onClick={handleNavigateToCreativity}
                 />
               </div>

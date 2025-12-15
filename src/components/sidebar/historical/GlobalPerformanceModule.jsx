@@ -3,6 +3,7 @@ import deepLinkService from '../../../services/navigation/DeepLinkService';
 import StatCard from '../enhanced/StatCard';
 import AnimatedProgressBar from '../enhanced/AnimatedProgressBar';
 import PremiumBadge from '../enhanced/PremiumBadge';
+import { PerformanceRadarChart } from '../../charts/index';
 import '../../../styles/sidebar-visual-enhancements.css';
 
 /**
@@ -80,32 +81,82 @@ const GlobalPerformanceModule = memo(({
     return Math.round((score / maxScore) * 100) || 0;
   }, [data]);
 
-  // Évaluation de l'équilibre vie/travail/loisirs
+  // Évaluation de l'équilibre vie/travail/loisirs avec données radar
   const lifeBalance = useMemo(() => {
     const {
-      sport = { workoutTime: 0 },
-      learning = { readingTime: 0, studyTime: 0 },
-      finance = { planningTime: 0 },
-      nutrition = { mealPrepTime: 0 }
+      sport = { workoutTime: 0, todayWorkouts: 0 },
+      learning = { readingTime: 0, studyTime: 0, pagesRead: 0 },
+      finance = { planningTime: 0, budgetRespected: false },
+      nutrition = { mealPrepTime: 0, caloriesGoalMet: false },
+      quests = { completed: 0, total: 0 },
+      today = { dailyTasks: 0 }
     } = data;
 
     const totalTime = sport.workoutTime + learning.readingTime + learning.studyTime + 
                      finance.planningTime + nutrition.mealPrepTime;
 
+    // Calcul des scores pour chaque dimension (0-100)
+    const healthScore = Math.min(100, (sport.todayWorkouts * 25) + (nutrition.caloriesGoalMet ? 25 : 0) + 
+                                      Math.min(sport.workoutTime * 2, 50));
+    
+    const workScore = Math.min(100, (learning.studyTime * 3) + (finance.planningTime * 2) + 
+                              (finance.budgetRespected ? 30 : 0));
+    
+    const socialScore = Math.min(100, (quests.total > 0 ? (quests.completed / quests.total) * 80 : 0) + 20);
+    
+    const leisureScore = Math.min(100, (learning.readingTime * 2) + (sport.workoutTime * 1.5));
+    
+    const learningScore = Math.min(100, (learning.pagesRead * 2) + (learning.studyTime * 1.5));
+    
+    const creativityScore = Math.min(100, (today.dailyTasks * 10) + 
+                                    (learning.readingTime > 0 ? 30 : 0) + 
+                                    (quests.completed * 15));
+    
+    const productivityScore = Math.min(100, (quests.total > 0 ? (quests.completed / quests.total) * 60 : 0) + 
+                                      (today.dailyTasks * 8) + 
+                                      (finance.budgetRespected ? 20 : 0));
+    
+    const wellbeingScore = Math.min(100, (nutrition.caloriesGoalMet ? 40 : 0) + 
+                                   (sport.workoutTime > 0 ? 30 : 0) + 
+                                   (learning.readingTime > 0 ? 30 : 0));
+
+    // Données pour le graphique radar
+    const radarData = [
+      { category: 'Santé', value: healthScore, icon: '💪', description: 'Sport et nutrition' },
+      { category: 'Travail', value: workScore, icon: '💼', description: 'Productivité professionnelle' },
+      { category: 'Social', value: socialScore, icon: '👥', description: 'Relations et quêtes' },
+      { category: 'Loisirs', value: leisureScore, icon: '🎮', description: 'Détente et plaisir' },
+      { category: 'Apprentissage', value: learningScore, icon: '📚', description: 'Développement personnel' },
+      { category: 'Créativité', value: creativityScore, icon: '🎨', description: 'Expression créative' },
+      { category: 'Productivité', value: productivityScore, icon: '⚡', description: 'Efficacité quotidienne' },
+      { category: 'Bien-être', value: wellbeingScore, icon: '🌟', description: 'Équilibre personnel' }
+    ];
+
+    // Calcul de l'équilibre global
+    const scores = [healthScore, workScore, socialScore, leisureScore, learningScore, creativityScore, productivityScore, wellbeingScore];
+    const avgScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    const maxDiff = Math.max(...scores) - Math.min(...scores);
+    
+    const status = maxDiff < 20 ? 'Parfaitement équilibré' : 
+                   maxDiff < 40 ? 'Bien équilibré' : 
+                   maxDiff < 60 ? 'Acceptable' : 'À rééquilibrer';
+
+    // Calcul des pourcentages pour l'affichage simple
     if (totalTime === 0) {
-      return { work: 33, life: 33, leisure: 34, status: 'À ajuster' };
+      return { 
+        work: 33, life: 33, leisure: 34, status: 'À ajuster',
+        radarData, avgScore: Math.round(avgScore), maxDiff: Math.round(maxDiff)
+      };
     }
 
-    // Calcul des pourcentages
     const work = Math.round(((learning.studyTime + finance.planningTime) / totalTime) * 100);
     const leisure = Math.round(((sport.workoutTime + learning.readingTime) / totalTime) * 100);
     const life = Math.round((nutrition.mealPrepTime / totalTime) * 100);
 
-    // Détermination du statut d'équilibre
-    const maxDiff = Math.max(work, leisure, life) - Math.min(work, leisure, life);
-    const status = maxDiff < 20 ? 'Équilibré' : maxDiff < 40 ? 'Acceptable' : 'À ajuster';
-
-    return { work, life, leisure, status };
+    return { 
+      work, life, leisure, status,
+      radarData, avgScore: Math.round(avgScore), maxDiff: Math.round(maxDiff)
+    };
   }, [data]);
 
   // Génération de recommandations IA basées sur patterns
@@ -273,49 +324,129 @@ const GlobalPerformanceModule = memo(({
             />
           </div>
 
-          {/* Équilibre vie/travail/loisirs - VERSION ENRICHIE */}
+          {/* Graphique radar d'équilibre de vie - NOUVEAU */}
           <div className="stat-card-premium" style={{ marginBottom: '16px' }}>
             <div className="stat-header">
-              <span className="stat-icon" style={{ color: 'var(--sidebar-cyan)' }}>⚖️</span>
+              <span className="stat-icon" style={{ color: 'var(--sidebar-cyan)' }}>🎯</span>
               <PremiumBadge 
-                type={lifeBalance.status === 'Équilibré' ? 'success' : 
+                type={lifeBalance.status === 'Parfaitement équilibré' || lifeBalance.status === 'Bien équilibré' ? 'success' : 
                       lifeBalance.status === 'Acceptable' ? 'warning' : 'error'}
                 value={lifeBalance.status}
               />
             </div>
-            <div className="stat-title" style={{ marginBottom: '12px' }}>Équilibre de vie</div>
+            <div className="stat-title" style={{ marginBottom: '8px' }}>Équilibre de Vie</div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* Métriques rapides */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              marginBottom: '12px',
+              padding: '8px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '6px'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--sidebar-cyan)' }}>
+                  {lifeBalance.avgScore}%
+                </div>
+                <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                  Score moyen
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--sidebar-purple)' }}>
+                  {lifeBalance.maxDiff}%
+                </div>
+                <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                  Écart max
+                </div>
+              </div>
+            </div>
+
+            {/* Graphique radar */}
+            <div style={{ marginTop: '12px' }}>
+              <PerformanceRadarChart
+                data={lifeBalance.radarData}
+                title=""
+                height={200}
+                maxValue={100}
+                fillOpacity={0.2}
+                strokeWidth={2}
+                formatValue={(value) => `${Math.round(value)}%`}
+                className="life-balance-radar"
+              />
+            </div>
+
+            {/* Légende des dimensions */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '4px', 
+              marginTop: '8px',
+              fontSize: '0.7rem'
+            }}>
+              {lifeBalance.radarData.slice(0, 6).map((item, index) => (
+                <div key={index} style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px',
+                  color: 'rgba(255, 255, 255, 0.8)'
+                }}>
+                  <span>{item.icon}</span>
+                  <span>{item.category}</span>
+                  <span style={{ 
+                    marginLeft: 'auto', 
+                    fontWeight: 'bold',
+                    color: item.value >= 70 ? 'var(--sidebar-green)' : 
+                           item.value >= 50 ? 'var(--sidebar-yellow)' : 'var(--sidebar-red)'
+                  }}>
+                    {item.value}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Équilibre temps simplifié - VERSION COMPACTE */}
+          <div className="stat-card-premium" style={{ marginBottom: '16px' }}>
+            <div className="stat-header">
+              <span className="stat-icon" style={{ color: 'var(--sidebar-green)' }}>⚖️</span>
+              <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                Répartition temps
+              </span>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="sidebar-text-secondary" style={{ minWidth: '50px', fontSize: '0.75rem' }}>
-                  💼 Travail
+                <span className="sidebar-text-secondary" style={{ minWidth: '45px', fontSize: '0.7rem' }}>
+                  💼 {lifeBalance.work}%
                 </span>
                 <AnimatedProgressBar
                   value={lifeBalance.work}
                   color="var(--sidebar-blue)"
-                  showValue={true}
+                  showValue={false}
                 />
               </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="sidebar-text-secondary" style={{ minWidth: '50px', fontSize: '0.75rem' }}>
-                  🏠 Vie
+                <span className="sidebar-text-secondary" style={{ minWidth: '45px', fontSize: '0.7rem' }}>
+                  🏠 {lifeBalance.life}%
                 </span>
                 <AnimatedProgressBar
                   value={lifeBalance.life}
                   color="var(--sidebar-green)"
-                  showValue={true}
+                  showValue={false}
                 />
               </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="sidebar-text-secondary" style={{ minWidth: '50px', fontSize: '0.75rem' }}>
-                  🎮 Loisirs
+                <span className="sidebar-text-secondary" style={{ minWidth: '45px', fontSize: '0.7rem' }}>
+                  🎮 {lifeBalance.leisure}%
                 </span>
                 <AnimatedProgressBar
                   value={lifeBalance.leisure}
                   color="var(--sidebar-purple)"
-                  showValue={true}
+                  showValue={false}
                 />
               </div>
             </div>

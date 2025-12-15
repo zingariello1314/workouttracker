@@ -15,9 +15,18 @@ class GarminRealDataService {
    * @param {Object} dayMetrics - Métriques d'une journée
    * @param {Object} allMetrics - Toutes les métriques quotidiennes
    * @param {string} date - Date des métriques
+   * @param {Object} options - Options de traitement
+   * @param {boolean} options.enableTimeSeriesData - Inclure les données de série temporelle
+   * @param {boolean} options.optimizeForSidebar - Optimiser pour l'affichage sidebar
+   * @param {string} options.selectedDate - Date sélectionnée
    * @returns {Object} Données formatées pour la sidebar
    */
-  processMetrics(dayMetrics, allMetrics, date) {
+  processMetrics(dayMetrics, allMetrics, date, options = {}) {
+    const { 
+      enableTimeSeriesData = false, 
+      optimizeForSidebar = true,
+      selectedDate = date
+    } = options;
     // Extraire les valeurs numériques des objets complexes
     const extractNumeric = (val, defaultVal = 0) => {
       if (val === null || val === undefined) return defaultVal;
@@ -93,7 +102,13 @@ class GarminRealDataService {
     };
 
     // Générer les données pour les graphiques
-    const chartData = this.generateChartData(dayMetrics, date);
+    const chartData = this.generateChartData(dayMetrics, date, options);
+
+    // Générer les données de série temporelle si demandées
+    let timeSeriesData = {};
+    if (enableTimeSeriesData) {
+      timeSeriesData = this.generateTimeSeriesData(dayMetrics, date, options);
+    }
 
     return {
       // Données de base pour l'affichage
@@ -110,11 +125,16 @@ class GarminRealDataService {
       // Données pour les graphiques
       ...chartData,
       
+      // Données de série temporelle (pour les graphiques avancés)
+      ...timeSeriesData,
+      
       // Métadonnées
       lastUpdate: new Date().toISOString(),
       dataSource: 'garmin-real-api',
       hasData: Object.keys(dayMetrics).length > 0,
-      dataDate: date
+      dataDate: date,
+      selectedDate: selectedDate,
+      optimizedForSidebar: optimizeForSidebar
     };
   }
 
@@ -122,9 +142,10 @@ class GarminRealDataService {
    * Génère les données pour les graphiques de la sidebar
    * @param {Object} dayMetrics - Métriques d'une journée
    * @param {string} date - Date des métriques
+   * @param {Object} options - Options de génération
    * @returns {Object} Données pour les graphiques
    */
-  generateChartData(dayMetrics, date) {
+  generateChartData(dayMetrics, date, options = {}) {
     // Générer les zones de fréquence cardiaque
     const heartRateZones = this.generateHeartRateZones(dayMetrics);
     
@@ -142,6 +163,148 @@ class GarminRealDataService {
       userAge: 30, // À récupérer du profil utilisateur
       sleepObjective: 480 // 8 heures en minutes
     };
+  }
+
+  /**
+   * Génère les données de série temporelle pour les graphiques avancés
+   * @param {Object} dayMetrics - Métriques d'une journée
+   * @param {string} date - Date des métriques
+   * @param {Object} options - Options de génération
+   * @returns {Object} Données de série temporelle
+   */
+  generateTimeSeriesData(dayMetrics, date, options = {}) {
+    const { optimizeForSidebar = true } = options;
+    
+    // Générer les données de série temporelle de fréquence cardiaque
+    const heartRateTimeSeries = this.generateHeartRateTimeSeries(dayMetrics, date, optimizeForSidebar);
+    
+    return {
+      heartRateTimeSeries,
+      // Autres séries temporelles peuvent être ajoutées ici si nécessaire
+      // stressTimeSeries: this.generateStressTimeSeries(dayMetrics, date, optimizeForSidebar),
+      // bodyBatteryTimeSeries: this.generateBodyBatteryTimeSeries(dayMetrics, date, optimizeForSidebar)
+    };
+  }
+
+  /**
+   * Génère les données de série temporelle de fréquence cardiaque
+   * @param {Object} dayMetrics - Métriques d'une journée
+   * @param {string} date - Date des métriques
+   * @param {boolean} optimizeForSidebar - Optimiser pour la sidebar
+   * @returns {Array} Données de série temporelle FC
+   */
+  generateHeartRateTimeSeries(dayMetrics, date, optimizeForSidebar = true) {
+    const heartRate = dayMetrics.heartRate || {};
+    const timeSeries = heartRate.timeSeries || [];
+    
+    // Si pas de données de série temporelle, générer des points de base
+    if (!timeSeries || timeSeries.length === 0) {
+      return this.generateBasicHeartRatePoints(heartRate, date);
+    }
+    
+    // Traiter les données existantes
+    let processedSeries = timeSeries.map((point, index) => {
+      // Gérer les formats de données compressées et non compressées
+      let timestamp, bpm;
+      
+      if (point.timestamp && point.bpm !== undefined) {
+        // Format standard
+        timestamp = typeof point.timestamp === 'number' ? point.timestamp : new Date(point.timestamp).getTime();
+        bpm = this.extractNumeric(point.bpm, 0);
+      } else if (point.d_ts !== undefined && point.d_val !== undefined) {
+        // Format compressé - nécessite décompression
+        // Pour l'instant, on utilise les valeurs directement
+        timestamp = point.d_ts;
+        bpm = this.extractNumeric(point.d_val, 0);
+      } else {
+        // Format inconnu, essayer d'extraire ce qu'on peut
+        timestamp = Date.now() + (index * 60000); // Fallback: intervalles d'1 minute
+        bpm = this.extractNumeric(point, 0);
+      }
+      
+      return {
+        timestamp,
+        bpm: bpm > 0 ? bpm : null, // Null pour les valeurs invalides
+        time: new Date(timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        isReal: true,
+        isActivity: false
+      };
+    }).filter(point => point.bpm !== null && point.bpm > 30 && point.bpm < 220); // Filtrer les valeurs aberrantes
+    
+    // Optimiser pour la sidebar si demandé
+    if (optimizeForSidebar && processedSeries.length > 100) {
+      // Réduire le nombre de points pour améliorer les performances
+      const step = Math.ceil(processedSeries.length / 100);
+      processedSeries = processedSeries.filter((_, index) => index % step === 0);
+    }
+    
+    return processedSeries;
+  }
+
+  /**
+   * Génère des points de fréquence cardiaque de base à partir des métriques agrégées
+   * @param {Object} heartRate - Métriques de fréquence cardiaque
+   * @param {string} date - Date des métriques
+   * @returns {Array} Points de base
+   */
+  generateBasicHeartRatePoints(heartRate, date) {
+    const restingHR = this.extractNumeric(heartRate.resting, null);
+    const maxHR = this.extractNumeric(heartRate.max, null);
+    const avgHR = this.extractNumeric(heartRate.avg || heartRate.average, null);
+    
+    if (!restingHR && !maxHR && !avgHR) {
+      return [];
+    }
+    
+    // Créer quelques points de base pour la journée
+    const baseDate = new Date(date + 'T00:00:00');
+    const points = [];
+    
+    // Point de repos (matin)
+    if (restingHR) {
+      points.push({
+        timestamp: baseDate.getTime() + (7 * 60 * 60 * 1000), // 07:00
+        bpm: restingHR,
+        time: '07:00',
+        isReal: false,
+        isActivity: false
+      });
+    }
+    
+    // Point moyen (milieu de journée)
+    if (avgHR) {
+      points.push({
+        timestamp: baseDate.getTime() + (14 * 60 * 60 * 1000), // 14:00
+        bpm: avgHR,
+        time: '14:00',
+        isReal: false,
+        isActivity: false
+      });
+    }
+    
+    // Point maximum (si différent de la moyenne)
+    if (maxHR && maxHR !== avgHR) {
+      points.push({
+        timestamp: baseDate.getTime() + (16 * 60 * 60 * 1000), // 16:00
+        bpm: maxHR,
+        time: '16:00',
+        isReal: false,
+        isActivity: true // Marquer comme activité
+      });
+    }
+    
+    // Point de repos (soir)
+    if (restingHR) {
+      points.push({
+        timestamp: baseDate.getTime() + (22 * 60 * 60 * 1000), // 22:00
+        bpm: restingHR + 5, // Légèrement plus élevé le soir
+        time: '22:00',
+        isReal: false,
+        isActivity: false
+      });
+    }
+    
+    return points.sort((a, b) => a.timestamp - b.timestamp);
   }
 
   /**
@@ -381,29 +544,37 @@ class GarminRealDataService {
       heartRateZones: [],
       sleepPhases: [],
       stressLevels: [],
+      heartRateTimeSeries: [], // Nouvelle série temporelle pour les graphiques
       maxHeartRate: 190,
       userAge: 30,
       sleepObjective: 480,
       lastUpdate: new Date().toISOString(),
       dataSource: 'empty',
-      hasData: false
+      hasData: false,
+      dataDate: new Date().toISOString().slice(0, 10),
+      selectedDate: new Date().toISOString().slice(0, 10),
+      optimizedForSidebar: true
     };
   }
 
   /**
    * Vérifie si les données en cache sont encore valides
+   * @param {string} cacheKey - Clé de cache spécifique
    */
-  isCacheValid() {
-    if (!this.lastUpdate) return false;
-    return (Date.now() - this.lastUpdate) < this.updateInterval;
+  isCacheValid(cacheKey = 'garminData') {
+    const cacheEntry = this.cache.get(cacheKey);
+    if (!cacheEntry || !cacheEntry.timestamp) return false;
+    return (Date.now() - cacheEntry.timestamp) < this.updateInterval;
   }
 
   /**
    * Récupère les données avec cache
+   * @param {string} cacheKey - Clé de cache spécifique
    */
-  getCachedData() {
-    if (this.isCacheValid() && this.cache.has('garminData')) {
-      return this.cache.get('garminData');
+  getCachedData(cacheKey = 'garminData') {
+    if (this.isCacheValid(cacheKey)) {
+      const cacheEntry = this.cache.get(cacheKey);
+      return cacheEntry ? cacheEntry.data : null;
     }
     
     return null;
@@ -411,10 +582,32 @@ class GarminRealDataService {
 
   /**
    * Met à jour les données en cache
+   * @param {Object} data - Données à mettre en cache
+   * @param {string} cacheKey - Clé de cache spécifique
    */
-  updateCache(data) {
-    this.cache.set('garminData', data);
-    this.lastUpdate = Date.now();
+  updateCache(data, cacheKey = 'garminData') {
+    this.cache.set(cacheKey, {
+      data,
+      timestamp: Date.now()
+    });
+    
+    // Maintenir la compatibilité avec l'ancien système
+    if (cacheKey === 'garminData') {
+      this.lastUpdate = Date.now();
+    }
+  }
+
+  /**
+   * Vide le cache
+   * @param {string} cacheKey - Clé de cache spécifique à vider, ou undefined pour tout vider
+   */
+  clearCache(cacheKey = null) {
+    if (cacheKey) {
+      this.cache.delete(cacheKey);
+    } else {
+      this.cache.clear();
+      this.lastUpdate = null;
+    }
   }
 }
 

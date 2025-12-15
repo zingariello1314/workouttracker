@@ -65,3 +65,292 @@
   font-style: italic;
   margin-top: 8px;
 }
+
+/* Contrôles de basculement entre zones statiques et graphique temporel */
+.chart-toggle-controls {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid #334155;
+  border-radius: 8px;
+}
+
+.toggle-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.toggle-btn {
+  background: rgba(51, 65, 85, 0.5);
+  color: #94a3b8;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.toggle-btn:hover {
+  background: rgba(51, 65, 85, 0.8);
+  color: #e2e8f0;
+  border-color: #64748b;
+}
+
+.toggle-btn.active {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+  font-weight: 500;
+}
+
+.toggle-btn.active:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+/* Styles pour le graphique FC temporel optimisé sidebar */
+.garmin-hr-temporal-chart {
+  margin-bottom: 16px;
+}
+
+/* Container optimisé pour la sidebar (Requirements 4.1, 4.2, 4.3, 4.4) */
+.chart-container.sidebar-optimized {
+  /* Contrainte de hauteur stricte (Requirement 4.1) */
+  max-height: 300px;
+  overflow: hidden;
+  
+  /* Optimisation de l'espace */
+  margin-bottom: 12px;
+  
+  /* Priorité à la courbe FC (Requirement 4.2) */
+  position: relative;
+}
+
+.chart-container.sidebar-optimized .garmin-hr-temporal-chart {
+  /* Adaptation pour l'espace restreint */
+  margin-bottom: 0;
+}
+
+/* Optimisations responsives pour la sidebar (Requirement 4.4) */
+@media (max-width: 320px) {
+  .chart-container.sidebar-optimized {
+    max-height: 250px;
+  }
+  
+  .toggle-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .toggle-btn {
+    min-width: 100%;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  
+  .chart-toggle-controls {
+    padding: 8px;
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 280px) {
+  .chart-container.sidebar-optimized {
+    max-height: 220px;
+  }
+  
+  .toggle-btn {
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+}
+
+/* Adaptation responsive pour les contrôles */
+@media (max-width: 768px) {
+  .toggle-buttons {
+    flex-direction: column;
+  }
+  
+  .toggle-btn {
+    min-width: 100%;
+  }
+}
+
+/* Optimisations pour les très petits espaces (Requirement 4.3) */
+.sidebar-section.expanded .sidebar-section-content {
+  /* Assurer que le contenu ne déborde pas */
+  overflow-x: hidden;
+}
+
+/* Styles pour les statistiques compactes */
+.garmin-hr-temporal-chart .compact-stats {
+  font-size: 10px;
+  line-height: 1.2;
+  margin-top: 8px;
+}
+
+.garmin-hr-temporal-chart .compact-legend {
+  font-size: 9px;
+  line-height: 1.1;
+}
+
+/* Optimisations pour la lisibilité des tooltips (Requirements 1.3, 2.3, 4.4, 4.5) */
+.recharts-tooltip-wrapper {
+  z-index: 1000;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  max-width: 180px;
+  font-size: 11px;
+}
+
+@media (max-width: 250px) {
+  .recharts-tooltip-wrapper .recharts-default-tooltip {
+    max-width: 140px;
+    font-size: 10px;
+  }
+}
+
+/* Styles pour l'interactivité des points de données (Requirements 1.3, 2.3) */
+.garmin-hr-temporal-chart .recharts-dot {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.garmin-hr-temporal-chart .recharts-dot:hover {
+  filter: brightness(1.2);
+  transform: scale(1.1);
+}
+
+.garmin-hr-temporal-chart .recharts-dot.selected {
+  filter: brightness(1.3) drop-shadow(0 0 4px rgba(252, 211, 77, 0.6));
+}
+
+/* Styles pour les tooltips améliorés (Requirements 4.3, 4.5) */
+.sidebar-hr-tooltip {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid #475569 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(8px) !important;
+  max-width: 220px;
+  padding: 12px !important;
+}
+
+.sidebar-hr-tooltip.narrow {
+  max-width: 180px;
+  padding: 8px !important;
+}
+
+.sidebar-hr-tooltip.very-narrow {
+  max-width: 140px;
+  padding: 6px !important;
+}
+
+/* Animation pour les tooltips */
+.sidebar-hr-tooltip {
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Styles pour l'indication de navigation (Requirement 3.3) */
+.navigation-hint-button {
+  background: transparent;
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 6px;
+  color: #64748b;
+  padding: 6px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.navigation-hint-button:hover {
+  background: rgba(51, 65, 85, 0.3);
+  color: #cbd5e1;
+  border-color: #64748b;
+}
+
+.navigation-hint-button:active {
+  transform: translateY(1px);
+}
+
+/* Styles pour les états interactifs du graphique */
+.garmin-hr-temporal-chart .recharts-surface {
+  cursor: pointer;
+}
+
+.garmin-hr-temporal-chart .recharts-area {
+  transition: opacity 0.2s ease;
+}
+
+.garmin-hr-temporal-chart:hover .recharts-area {
+  opacity: 0.9;
+}
+
+/* Styles pour les points de données selon leur type (Requirements 1.3, 2.3) */
+.garmin-hr-temporal-chart .recharts-dot.real-data {
+  stroke-width: 2;
+  opacity: 1;
+}
+
+.garmin-hr-temporal-chart .recharts-dot.activity-data {
+  stroke-width: 2;
+  opacity: 1;
+  filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.4));
+}
+
+.garmin-hr-temporal-chart .recharts-dot.interpolated-data {
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+/* Responsive pour l'interactivité */
+@media (max-width: 250px) {
+  .navigation-hint-button {
+    font-size: 10px;
+    padding: 4px 8px;
+    gap: 2px;
+  }
+  
+  .garmin-hr-temporal-chart .recharts-dot {
+    transform-origin: center;
+  }
+  
+  .garmin-hr-temporal-chart .recharts-dot:hover {
+    transform: scale(1.2);
+  }
+}
+
+/* Accessibilité pour l'interactivité */
+.garmin-hr-temporal-chart .recharts-dot:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.navigation-hint-button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

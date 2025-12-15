@@ -14,6 +14,27 @@ vi.mock('../../../../hooks/useGarminData', () => ({
   useGarminData: () => mockUseGarminData
 }));
 
+// Mock du hook useRealGarminData
+const mockUseRealGarminData = {
+  garminData: null,
+  loading: false,
+  error: null,
+  refreshData: vi.fn(),
+  hasData: false
+};
+
+vi.mock('../../../../hooks/useRealGarminData', () => ({
+  useRealGarminData: () => mockUseRealGarminData
+}));
+
+// Mock du contexte Auth
+vi.mock('../../../../context/AuthContext', () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    user: { id: 'test-user' }
+  })
+}));
+
 // Mock de la navigation
 const mockNavigation = {
   navigateToModule: vi.fn()
@@ -36,19 +57,25 @@ describe('GarminMetricsModule', () => {
     mockLoadDataForTab.mockResolvedValue({
       dailyMetrics: {}
     });
+    // Reset mock data
+    mockUseRealGarminData.garminData = null;
+    mockUseRealGarminData.loading = false;
+    mockUseRealGarminData.error = null;
+    mockUseRealGarminData.hasData = false;
   });
 
   it('affiche le titre du module', () => {
-    render(<GarminMetricsModule {...defaultProps} />);
+    render(<GarminMetricsModule isExpanded={true} onToggle={vi.fn()} />);
     
-    expect(screen.getByText('⌚ Métriques Garmin')).toBeInTheDocument();
-    expect(screen.getByText('Nouveau')).toBeInTheDocument();
+    expect(screen.getByText('Métriques Garmin')).toBeInTheDocument();
   });
 
   it('affiche un état de chargement initial', () => {
-    render(<GarminMetricsModule {...defaultProps} />);
+    mockUseRealGarminData.loading = true;
     
-    expect(screen.getByText('Chargement des métriques...')).toBeInTheDocument();
+    render(<GarminMetricsModule isExpanded={true} onToggle={vi.fn()} />);
+    
+    expect(screen.getByText('Chargement des données Garmin...')).toBeInTheDocument();
   });
 
   it('affiche un message quand aucune donnée n\'est disponible', async () => {

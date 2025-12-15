@@ -1,0 +1,720 @@
+/**
+ * Styles pour les États des Graphiques
+ * Phase 6 - Tâche 6.3 : Créer les états d'erreur et de chargement uniformes
+ */
+
+/* ===== CONTENEUR D'ÉTAT GÉNÉRAL ===== */
+
+.chart-state-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.02);
+  backdrop-filter: blur(2px);
+  border-radius: inherit;
+  z-index: 100;
+  min-height: 120px;
+}
+
+.chart-state-animated {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ===== ÉTATS DE CHARGEMENT ===== */
+
+/* Skeleton de base */
+.chart-loading-skeleton {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--chart-spacing-lg);
+  text-align: center;
+}
+
+/* En-tête du skeleton */
+.chart-skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--chart-spacing-lg);
+}
+
+.chart-skeleton-title {
+  width: 120px;
+  height: 20px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 25%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: chartSkeletonShimmer 2s infinite;
+  border-radius: 4px;
+}
+
+.chart-skeleton-legend {
+  display: flex;
+  gap: var(--chart-spacing-sm);
+}
+
+.chart-skeleton-legend-item {
+  width: 60px;
+  height: 12px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.08) 25%, 
+    rgba(255, 255, 255, 0.15) 50%, 
+    rgba(255, 255, 255, 0.08) 75%
+  );
+  background-size: 200% 100%;
+  animation: chartSkeletonShimmer 2s infinite;
+  border-radius: 2px;
+}
+
+.chart-skeleton-legend-item:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.chart-skeleton-legend-item:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+/* Contenu du skeleton */
+.chart-skeleton-content {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: var(--chart-spacing-lg);
+  min-height: 120px;
+}
+
+/* Skeleton pour graphique en ligne */
+.chart-loading-line .chart-skeleton-content {
+  flex-direction: column;
+}
+
+.chart-skeleton-y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100px;
+  margin-right: var(--chart-spacing-sm);
+}
+
+.chart-skeleton-tick {
+  width: 30px;
+  height: 8px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.06) 25%, 
+    rgba(255, 255, 255, 0.12) 50%, 
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: chartSkeletonShimmer 2s infinite;
+  border-radius: 2px;
+}
+
+.chart-skeleton-plot {
+  flex: 1;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-skeleton-line-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.chart-skeleton-line-path {
+  stroke-dasharray: 5 5;
+  animation: chartSkeletonLineDash 2s linear infinite;
+}
+
+.chart-skeleton-point {
+  fill: rgba(255, 255, 255, 0.2);
+  animation: chartSkeletonPulse 1.5s ease-in-out infinite;
+}
+
+.chart-skeleton-point:nth-child(2) { animation-delay: 0.2s; }
+.chart-skeleton-point:nth-child(3) { animation-delay: 0.4s; }
+.chart-skeleton-point:nth-child(4) { animation-delay: 0.6s; }
+.chart-skeleton-point:nth-child(5) { animation-delay: 0.8s; }
+
+.chart-skeleton-x-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--chart-spacing-sm);
+}
+
+/* Skeleton pour graphique en barres */
+.chart-skeleton-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  height: 100px;
+  gap: var(--chart-spacing-sm);
+}
+
+.chart-skeleton-bar {
+  flex: 1;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.15) 0%, 
+    rgba(255, 255, 255, 0.25) 50%, 
+    rgba(255, 255, 255, 0.15) 100%
+  );
+  background-size: 100% 200%;
+  animation: chartSkeletonBarGrow 2s ease-in-out infinite;
+  border-radius: 2px 2px 0 0;
+  min-height: 20px;
+}
+
+.chart-skeleton-bar:nth-child(2) { animation-delay: 0.2s; }
+.chart-skeleton-bar:nth-child(3) { animation-delay: 0.4s; }
+.chart-skeleton-bar:nth-child(4) { animation-delay: 0.6s; }
+.chart-skeleton-bar:nth-child(5) { animation-delay: 0.8s; }
+.chart-skeleton-bar:nth-child(6) { animation-delay: 1.0s; }
+
+/* Skeleton pour graphique circulaire */
+.chart-skeleton-pie-container {
+  display: flex;
+  align-items: center;
+  gap: var(--chart-spacing-lg);
+}
+
+.chart-skeleton-pie-svg {
+  width: 120px;
+  height: 120px;
+}
+
+.chart-skeleton-pie-segment {
+  animation: chartSkeletonPieRotate 3s linear infinite;
+  transform-origin: 100px 100px;
+}
+
+.chart-skeleton-pie-segment:nth-child(3) {
+  animation-delay: 1s;
+}
+
+.chart-skeleton-pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--chart-spacing-sm);
+}
+
+/* Texte de chargement */
+.chart-skeleton-loading-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chart-spacing-sm);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin-top: var(--chart-spacing-md);
+}
+
+/* Spinners */
+.chart-skeleton-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: chartSpinnerRotate 1s linear infinite;
+}
+
+.chart-skeleton-spinner-large {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top: 3px solid var(--chart-primary-blue);
+  border-radius: 50%;
+  animation: chartSpinnerRotate 1s linear infinite;
+  margin-bottom: var(--chart-spacing-md);
+}
+
+/* Barre de progression */
+.chart-skeleton-progress {
+  width: 200px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: var(--chart-spacing-sm);
+}
+
+.chart-skeleton-progress-bar {
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    var(--chart-primary-blue), 
+    transparent
+  );
+  animation: chartSkeletonProgressMove 2s ease-in-out infinite;
+}
+
+/* ===== ÉTATS D'ERREUR ===== */
+
+.chart-error-content {
+  text-align: center;
+  padding: var(--chart-spacing-xl);
+  max-width: 300px;
+}
+
+.chart-error-icon {
+  font-size: 3rem;
+  margin-bottom: var(--chart-spacing-md);
+  opacity: 0.8;
+}
+
+.chart-error-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: var(--chart-spacing-sm);
+}
+
+.chart-error-message {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+  margin-bottom: var(--chart-spacing-lg);
+}
+
+.chart-error-actions {
+  display: flex;
+  gap: var(--chart-spacing-sm);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.chart-error-retry,
+.chart-error-details,
+.chart-error-dismiss,
+.chart-error-support {
+  padding: var(--chart-spacing-sm) var(--chart-spacing-md);
+  border: none;
+  border-radius: var(--chart-radius-sm);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--chart-animation-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--chart-spacing-xs);
+}
+
+.chart-error-retry {
+  background: var(--chart-primary-blue);
+  color: white;
+}
+
+.chart-error-retry:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.chart-error-retry:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chart-error-details {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chart-error-details:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.chart-error-dismiss {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.chart-error-dismiss:hover {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.chart-error-support {
+  background: var(--chart-primary-orange);
+  color: white;
+}
+
+.chart-error-support:hover {
+  background: #d97706;
+}
+
+/* Icônes des boutons */
+.chart-error-retry-icon {
+  animation: chartRetryIconSpin 2s linear infinite paused;
+}
+
+.chart-error-retry:disabled .chart-error-retry-icon {
+  animation-play-state: running;
+}
+
+.chart-error-retry-spinner {
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-top: 1px solid white;
+  border-radius: 50%;
+  animation: chartSpinnerRotate 1s linear infinite;
+}
+
+/* Détails d'erreur */
+.chart-error-details-content {
+  margin-top: var(--chart-spacing-md);
+  padding: var(--chart-spacing-md);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--chart-radius-sm);
+  text-align: left;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.chart-error-details-content pre {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+/* Types d'erreur spécifiques */
+.chart-error-network .chart-error-icon {
+  color: #3b82f6;
+}
+
+.chart-error-timeout .chart-error-icon {
+  color: #f59e0b;
+}
+
+.chart-error-parsing .chart-error-icon {
+  color: #ef4444;
+}
+
+.chart-error-permission .chart-error-icon {
+  color: #8b5cf6;
+}
+
+/* ===== ÉTATS VIDES ===== */
+
+.chart-empty-content {
+  text-align: center;
+  padding: var(--chart-spacing-xl);
+  max-width: 320px;
+}
+
+.chart-empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--chart-spacing-md);
+  opacity: 0.6;
+}
+
+.chart-empty-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: var(--chart-spacing-sm);
+}
+
+.chart-empty-message {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+  margin-bottom: var(--chart-spacing-lg);
+}
+
+.chart-empty-suggestions {
+  text-align: left;
+  margin-bottom: var(--chart-spacing-lg);
+}
+
+.chart-empty-suggestion {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: var(--chart-spacing-xs);
+  padding-left: var(--chart-spacing-sm);
+}
+
+.chart-empty-actions {
+  display: flex;
+  gap: var(--chart-spacing-sm);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.chart-empty-clear-filters,
+.chart-empty-adjust-filters {
+  padding: var(--chart-spacing-sm) var(--chart-spacing-md);
+  border: none;
+  border-radius: var(--chart-radius-sm);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--chart-animation-fast);
+}
+
+.chart-empty-clear-filters {
+  background: var(--chart-primary-green);
+  color: white;
+}
+
+.chart-empty-clear-filters:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.chart-empty-adjust-filters {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chart-empty-adjust-filters:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Types d'état vide spécifiques */
+.chart-empty-no-data .chart-empty-icon {
+  color: #6b7280;
+}
+
+.chart-empty-filtered .chart-empty-icon {
+  color: #3b82f6;
+}
+
+.chart-empty-permission .chart-empty-icon {
+  color: #8b5cf6;
+}
+
+/* ===== ÉTATS DE DONNÉES PARTIELLES ===== */
+
+.chart-partial-content {
+  text-align: center;
+  padding: var(--chart-spacing-lg);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--chart-radius-md);
+  margin: var(--chart-spacing-sm);
+}
+
+.chart-partial-icon {
+  font-size: 1.5rem;
+  color: #f59e0b;
+  margin-bottom: var(--chart-spacing-xs);
+}
+
+.chart-partial-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: var(--chart-spacing-xs);
+}
+
+.chart-partial-message {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.3;
+}
+
+/* ===== ANIMATIONS ===== */
+
+@keyframes chartSkeletonShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes chartSkeletonLineDash {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 20;
+  }
+}
+
+@keyframes chartSkeletonPulse {
+  0%, 100% {
+    opacity: 0.2;
+    r: 3;
+  }
+  50% {
+    opacity: 0.6;
+    r: 4;
+  }
+}
+
+@keyframes chartSkeletonBarGrow {
+  0%, 100% {
+    background-position: 0% 0%;
+    transform: scaleY(0.8);
+  }
+  50% {
+    background-position: 0% 100%;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes chartSkeletonPieRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes chartSkeletonProgressMove {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes chartSpinnerRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes chartRetryIconSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .chart-state-container {
+    padding: var(--chart-spacing-md);
+  }
+  
+  .chart-loading-skeleton,
+  .chart-error-content,
+  .chart-empty-content {
+    padding: var(--chart-spacing-md);
+    max-width: 280px;
+  }
+  
+  .chart-error-actions,
+  .chart-empty-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .chart-error-retry,
+  .chart-error-details,
+  .chart-error-dismiss,
+  .chart-empty-clear-filters,
+  .chart-empty-adjust-filters {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .chart-skeleton-content {
+    min-height: 80px;
+  }
+  
+  .chart-skeleton-bars {
+    height: 60px;
+  }
+  
+  .chart-skeleton-pie-svg {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+/* ===== PRÉFÉRENCES UTILISATEUR ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-skeleton-spinner,
+  .chart-skeleton-spinner-large,
+  .chart-error-retry-spinner {
+    animation: none;
+  }
+  
+  .chart-skeleton-line-path,
+  .chart-skeleton-point,
+  .chart-skeleton-bar,
+  .chart-skeleton-pie-segment {
+    animation: none;
+  }
+  
+  .chart-skeleton-progress-bar {
+    animation: none;
+    width: 60%;
+  }
+  
+  .chart-state-animated {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .chart-error-content,
+  .chart-empty-content {
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  .chart-error-retry,
+  .chart-empty-clear-filters {
+    border: 2px solid currentColor;
+  }
+  
+  .chart-partial-content {
+    border-width: 2px;
+    background: rgba(251, 191, 36, 0.2);
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+  .chart-state-container {
+    background: white !important;
+    color: black !important;
+    backdrop-filter: none !important;
+  }
+  
+  .chart-loading-skeleton,
+  .chart-error-content,
+  .chart-empty-content {
+    border: 1px solid black !important;
+    background: white !important;
+  }
+  
+  .chart-skeleton-spinner,
+  .chart-skeleton-spinner-large {
+    display: none !important;
+  }
+  
+  .chart-error-actions,
+  .chart-empty-actions {
+    display: none !important;
+  }
+}

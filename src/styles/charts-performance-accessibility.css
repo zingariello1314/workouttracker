@@ -1,0 +1,494 @@
+/**
+ * Styles pour Performance et Accessibilité des Graphiques
+ * Phase 6 - Tâche 6.2 : Optimiser les performances et l'accessibilité
+ */
+
+/* ===== OPTIMISATIONS DE PERFORMANCE ===== */
+
+/* Accélération GPU pour les graphiques */
+.chart-container-unified {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Optimisation des animations */
+.chart-container-unified * {
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Réduction des animations si préféré */
+@media (prefers-reduced-motion: reduce) {
+  .chart-container-unified,
+  .chart-container-unified * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== LAZY LOADING ===== */
+
+/* Placeholder de chargement paresseux */
+.chart-lazy-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--chart-radius-lg);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* Skeleton de chargement */
+.chart-lazy-skeleton {
+  width: 100%;
+  max-width: 300px;
+  padding: var(--chart-spacing-lg);
+}
+
+.chart-lazy-header {
+  height: 20px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 25%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: chartSkeletonShimmer 2s infinite;
+  border-radius: 4px;
+  margin-bottom: var(--chart-spacing-md);
+}
+
+.chart-lazy-content {
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: var(--chart-spacing-sm);
+}
+
+.chart-lazy-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  gap: var(--chart-spacing-sm);
+}
+
+.chart-lazy-bar {
+  flex: 1;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 25%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: chartSkeletonShimmer 2s infinite;
+  border-radius: 2px;
+  min-height: 20px;
+}
+
+.chart-lazy-bar:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.chart-lazy-bar:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.chart-lazy-bar:nth-child(4) {
+  animation-delay: 0.6s;
+}
+
+.chart-lazy-bar:nth-child(5) {
+  animation-delay: 0.8s;
+}
+
+@keyframes chartSkeletonShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* État d'erreur de chargement */
+.chart-lazy-error {
+  text-align: center;
+  padding: var(--chart-spacing-xl);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.chart-lazy-error-icon {
+  font-size: 2rem;
+  margin-bottom: var(--chart-spacing-md);
+}
+
+.chart-lazy-error-text {
+  margin-bottom: var(--chart-spacing-lg);
+  font-size: 0.9rem;
+}
+
+.chart-lazy-retry {
+  background: var(--chart-primary-blue);
+  color: white;
+  border: none;
+  padding: var(--chart-spacing-sm) var(--chart-spacing-md);
+  border-radius: var(--chart-radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color var(--chart-animation-fast);
+}
+
+.chart-lazy-retry:hover {
+  background: #2563eb;
+}
+
+.chart-lazy-retry:focus {
+  outline: 2px solid var(--chart-focus-color);
+  outline-offset: 2px;
+}
+
+/* ===== ACCESSIBILITÉ ===== */
+
+/* Classe pour masquer visuellement mais garder accessible */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Focus visible pour les graphiques */
+.chart-container-unified:focus {
+  outline: 3px solid var(--chart-focus-color, #007acc);
+  outline-offset: 2px;
+}
+
+.chart-container-unified:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.chart-container-unified:focus-visible {
+  outline: 3px solid var(--chart-focus-color, #007acc);
+  outline-offset: 2px;
+}
+
+/* État focalisé */
+.chart-focused {
+  position: relative;
+}
+
+.chart-focused::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid var(--chart-focus-color, #007acc);
+  border-radius: calc(var(--chart-radius-lg) + 2px);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Highlight des points de données */
+.chart-data-highlight {
+  position: absolute;
+  background: var(--chart-focus-color, #007acc);
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3);
+  border-radius: 1px;
+  animation: chartDataHighlight 0.3s ease-out;
+}
+
+@keyframes chartDataHighlight {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* Table de données accessible */
+.chart-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--chart-spacing-md);
+  font-size: 0.9rem;
+}
+
+.chart-data-table th,
+.chart-data-table td {
+  padding: var(--chart-spacing-sm);
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chart-data-table th {
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chart-data-table td {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.chart-data-table tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Résumé textuel */
+.chart-summary {
+  margin-top: var(--chart-spacing-md);
+  padding: var(--chart-spacing-md);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--chart-radius-sm);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Contenu accessible */
+.chart-accessible-content {
+  margin-top: var(--chart-spacing-md);
+}
+
+/* ===== CONTRASTE ÉLEVÉ ===== */
+
+/* Mode contraste élevé */
+.chart-high-contrast {
+  --chart-primary-color: #000000;
+  --chart-secondary-color: #ffffff;
+  --chart-accent-color: #0066cc;
+  --chart-background: #ffffff;
+  --chart-text-color: #000000;
+  --chart-border-color: #000000;
+  --chart-focus-color: #0066cc;
+}
+
+.chart-high-contrast .chart-container-unified {
+  background: var(--chart-background);
+  border: 2px solid var(--chart-border-color);
+  color: var(--chart-text-color);
+}
+
+.chart-high-contrast .chart-title-unified {
+  color: var(--chart-text-color);
+  font-weight: 700;
+}
+
+.chart-high-contrast .chart-subtitle-unified {
+  color: var(--chart-text-color);
+  opacity: 0.8;
+}
+
+/* Éléments SVG en contraste élevé */
+.chart-high-contrast svg {
+  filter: contrast(1.5);
+}
+
+.chart-high-contrast .chart-line {
+  stroke-width: 3px !important;
+  stroke: var(--chart-primary-color) !important;
+}
+
+.chart-high-contrast .chart-point {
+  stroke-width: 2px !important;
+  stroke: var(--chart-primary-color) !important;
+  fill: var(--chart-background) !important;
+  r: 6 !important;
+}
+
+.chart-high-contrast .chart-bar {
+  stroke: var(--chart-border-color) !important;
+  stroke-width: 2px !important;
+}
+
+.chart-high-contrast .chart-area {
+  stroke-width: 2px !important;
+  stroke: var(--chart-primary-color) !important;
+}
+
+/* ===== RESPONSIVE ET PERFORMANCE ===== */
+
+/* Optimisations pour petits écrans */
+@media (max-width: 768px) {
+  .chart-container-unified {
+    /* Réduire les effets coûteux sur mobile */
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  
+  .chart-lazy-placeholder {
+    min-height: 120px;
+  }
+  
+  .chart-data-table {
+    font-size: 0.8rem;
+  }
+  
+  .chart-data-table th,
+  .chart-data-table td {
+    padding: var(--chart-spacing-xs);
+  }
+}
+
+/* Optimisations pour écrans haute densité */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .chart-container-unified {
+    /* Améliorer la netteté sur les écrans Retina */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* ===== ÉTATS DE CHARGEMENT OPTIMISÉS ===== */
+
+/* Chargement avec GPU */
+.chart-loading-optimized {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.chart-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid var(--chart-primary-blue);
+  border-radius: 50%;
+  animation: chartSpinOptimized 1s linear infinite;
+  transform: translateZ(0);
+}
+
+@keyframes chartSpinOptimized {
+  0% { transform: translateZ(0) rotate(0deg); }
+  100% { transform: translateZ(0) rotate(360deg); }
+}
+
+/* ===== PRÉFÉRENCES UTILISATEUR ===== */
+
+/* Respect des préférences de transparence */
+@media (prefers-reduced-transparency: reduce) {
+  .chart-container-unified {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: none;
+  }
+  
+  .chart-lazy-placeholder {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* Respect des préférences de contraste */
+@media (prefers-contrast: high) {
+  .chart-container-unified {
+    border-width: 2px;
+  }
+  
+  .chart-container-unified:focus {
+    outline-width: 4px;
+  }
+  
+  .chart-data-highlight {
+    box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.5);
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+  .chart-container-unified {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    border: 1px solid black !important;
+  }
+  
+  .chart-lazy-placeholder,
+  .chart-loading-unified {
+    display: none !important;
+  }
+  
+  .chart-accessible-content {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 1rem 0 !important;
+    padding: 1rem !important;
+    border: 1px solid black !important;
+  }
+  
+  .sr-only {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+  }
+}
+
+/* ===== VARIABLES CSS POUR PERFORMANCE ===== */
+
+:root {
+  /* Couleurs d'accessibilité */
+  --chart-focus-color: #007acc;
+  --chart-high-contrast-bg: #ffffff;
+  --chart-high-contrast-text: #000000;
+  --chart-high-contrast-border: #000000;
+  
+  /* Timings optimisés */
+  --chart-animation-gpu: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --chart-transition-fast: 150ms ease-out;
+  --chart-transition-normal: 300ms ease-out;
+  
+  /* Z-index pour l'accessibilité */
+  --chart-focus-z: 1000;
+  --chart-highlight-z: 1001;
+  --chart-tooltip-z: 1002;
+}
+
+/* ===== UTILITAIRES DE PERFORMANCE ===== */
+
+/* Force l'accélération GPU */
+.chart-gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Optimise les transitions */
+.chart-optimized-transitions * {
+  transition-property: transform, opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Désactive les animations coûteuses sur mobile */
+@media (max-width: 768px) and (max-height: 1024px) {
+  .chart-mobile-optimized {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .chart-mobile-optimized * {
+    animation: none !important;
+    transition: opacity 0.2s ease !important;
+  }
+}
