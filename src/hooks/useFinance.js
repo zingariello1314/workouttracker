@@ -112,8 +112,11 @@ export const useFinance = () => {
 
   // Ajout position avec validation
   const addPosition = useCallback(async (newPosition) => {
+    console.log('🚀 [useFinance] Début addPosition avec:', newPosition);
+    
     // Validation
     if (!newPosition.ticker || !newPosition.quantite || !newPosition.prixEntree) {
+      console.error('❌ [useFinance] Validation échouée - données incomplètes');
       throw new Error('Données incomplètes');
     }
 
@@ -125,18 +128,24 @@ export const useFinance = () => {
       dateAchat: newPosition.dateAchat || new Date().toISOString().split('T')[0],
       investissementTotal: newPosition.quantite * newPosition.prixEntree
     };
+    
+    console.log('✅ [useFinance] Position normalisée:', normalized);
 
     // Récupérer données Yahoo
     try {
+      console.log('🌐 [useFinance] Récupération données Yahoo pour', normalized.ticker);
       const yahooData = await yahooFinanceService.getQuoteData(normalized.ticker);
+      console.log('📊 [useFinance] Données Yahoo reçues:', yahooData);
+      
       normalized.yahooData = {
         ...yahooData,
         ma20: yahooData.prixActuel * 0.98,
         ma50: yahooData.prixActuel * 0.95,
         ma200: yahooData.prixActuel * 0.90
       };
+      console.log('📈 [useFinance] Données Yahoo enrichies:', normalized.yahooData);
     } catch (err) {
-      log.warn('Yahoo data unavailable, using defaults', err);
+      console.warn('⚠️ [useFinance] Yahoo data unavailable, using defaults:', err.message);
       normalized.yahooData = { 
         prixActuel: normalized.prixEntree,
         variationJour: 0
@@ -144,16 +153,27 @@ export const useFinance = () => {
     }
 
     // Calculs automatiques
+    console.log('🧮 [useFinance] Calcul des métriques...');
+    console.log('📋 [useFinance] Portfolio actuel:', portfolio.length, 'positions');
     const withCalculations = calculateBatchMetrics([...portfolio, normalized]);
     const updated = withCalculations[withCalculations.length - 1];
+    console.log('✅ [useFinance] Position avec calculs:', updated);
 
     // Sauvegarder
+    console.log('💾 [useFinance] Sauvegarde en cours...');
     setPortfolio(prev => {
+      console.log('📊 [useFinance] Portfolio précédent:', prev.length, 'positions');
       const newPortfolio = [...prev, updated];
+      console.log('📊 [useFinance] Nouveau portfolio:', newPortfolio.length, 'positions');
+      
+      // Sauvegarder en storage
       financeStorage.savePortfolio(newPortfolio);
+      console.log('💾 [useFinance] Sauvegarde terminée');
+      
       return newPortfolio;
     });
 
+    console.log('🎉 [useFinance] Position ajoutée avec succès!');
     return updated;
   }, [portfolio]);
 

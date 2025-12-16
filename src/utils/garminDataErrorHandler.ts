@@ -1,5 +1,5 @@
 /**
- * Utilitaires de gestion d'erreurs pour les données Garmin
+ * Utilitaires de gestion d\'erreurs pour les données Garmin
  * 
  * Requirements: 1.4
  * - Gérer les cas de données manquantes ou incomplètes (1.4)
@@ -13,7 +13,7 @@ import {
 } from '../types/garminSidebarData';
 
 /**
- * Types d'erreurs Garmin
+ * Types d\'erreurs Garmin
  */
 export enum GarminErrorType {
   MISSING_DATA = 'missing_data',
@@ -25,7 +25,7 @@ export enum GarminErrorType {
 }
 
 /**
- * Codes d'erreur spécifiques
+ * Codes d\'erreur spécifiques
  */
 export enum GarminErrorCode {
   NO_HEART_RATE_DATA = 'NO_HR_DATA',
@@ -37,7 +37,7 @@ export enum GarminErrorCode {
 }
 
 /**
- * Gestionnaire d'erreurs pour les données Garmin
+ * Gestionnaire d\'erreurs pour les données Garmin
  */
 export class GarminDataErrorHandler {
   private static instance: GarminDataErrorHandler;
@@ -57,7 +57,7 @@ export class GarminDataErrorHandler {
   }
 
   /**
-   * Obtenir l'instance singleton
+   * Obtenir l\'instance singleton
    */
   static getInstance(config?: Partial<ErrorHandlingConfig>): GarminDataErrorHandler {
     if (!GarminDataErrorHandler.instance) {
@@ -83,7 +83,7 @@ export class GarminDataErrorHandler {
       timestamp: new Date().toISOString()
     };
 
-    // Ajouter à l'historique
+    // Ajouter à l\'historique
     this.addToHistory(error);
 
     return error;
@@ -298,7 +298,7 @@ export class GarminDataErrorHandler {
     statusCode?: number,
     context: string = 'unknown'
   ): GarminDataError {
-    const message = `Erreur réseau lors de l'accès à ${endpoint}${statusCode ? ` (${statusCode})` : ''}`;
+    const message = `Erreur réseau lors de l\'accès à ${endpoint}${statusCode ? ` (${statusCode})` : ''}`;
     
     return this.createError(
       GarminErrorType.NETWORK_ERROR,
@@ -361,7 +361,7 @@ export class GarminDataErrorHandler {
   }
 
   /**
-   * Crée un message d'erreur utilisateur-friendly
+   * Crée un message d\'erreur utilisateur-friendly
    */
   createUserFriendlyMessage(error: GarminDataError): string {
     const baseMessage = this.getUserFriendlyErrorMessage(error.type);
@@ -371,7 +371,7 @@ export class GarminDataErrorHandler {
   }
 
   /**
-   * Obtient un message d'erreur convivial
+   * Obtient un message d\'erreur convivial
    */
   private getUserFriendlyErrorMessage(type: GarminErrorType): string {
     switch (type) {
@@ -388,10 +388,10 @@ export class GarminDataErrorHandler {
         return '🔄 Erreur de synchronisation';
       
       case GarminErrorType.TIMEOUT_ERROR:
-        return '⏱️ Délai d'attente dépassé';
+        return '⏱️ Délai d\'attente dépassé';
       
       case GarminErrorType.PERMISSION_ERROR:
-        return '🔒 Problème d'autorisation';
+        return '🔒 Problème d\'autorisation';
       
       default:
         return '❌ Erreur inconnue';
@@ -399,26 +399,26 @@ export class GarminDataErrorHandler {
   }
 
   /**
-   * Ajoute une erreur à l'historique
+   * Ajoute une erreur à l\'historique
    */
   private addToHistory(error: GarminDataError): void {
     this.errorHistory.unshift(error);
     
-    // Limiter la taille de l'historique
+    // Limiter la taille de l\'historique
     if (this.errorHistory.length > this.maxHistorySize) {
       this.errorHistory = this.errorHistory.slice(0, this.maxHistorySize);
     }
   }
 
   /**
-   * Obtient l'historique des erreurs
+   * Obtient l\'historique des erreurs
    */
   getErrorHistory(limit?: number): GarminDataError[] {
     return limit ? this.errorHistory.slice(0, limit) : [...this.errorHistory];
   }
 
   /**
-   * Obtient les statistiques d'erreurs
+   * Obtient les statistiques d\'erreurs
    */
   getErrorStats(): {
     total: number;
@@ -457,7 +457,7 @@ export class GarminDataErrorHandler {
   }
 
   /**
-   * Vide l'historique des erreurs
+   * Vide l\'historique des erreurs
    */
   clearErrorHistory(): void {
     this.errorHistory = [];

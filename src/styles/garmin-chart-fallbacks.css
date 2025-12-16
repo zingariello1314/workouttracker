@@ -1,0 +1,312 @@
+/**
+ * Styles pour les fallbacks des graphiques Garmin
+ * 
+ * Requirements: 1.4, 1.5
+ * - Messages d'erreur informatifs (1.4)
+ * - Mode dégradé pour les performances (1.5)
+ */
+
+/* Conteneur de base pour tous les fallbacks */
+.garmin-fallback {
+  @apply bg-slate-800/60 border border-slate-700 rounded-lg p-4 text-center;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.garmin-fallback.compact {
+  @apply p-3;
+  min-height: 80px;
+}
+
+/* Contenu du fallback */
+.fallback-content {
+  @apply w-full max-w-sm;
+}
+
+/* Icônes */
+.fallback-icon {
+  @apply text-2xl mb-3;
+}
+
+.garmin-fallback.compact .fallback-icon {
+  @apply text-xl mb-2;
+}
+
+.fallback-icon.error {
+  @apply text-red-400;
+}
+
+.fallback-icon.warning {
+  @apply text-yellow-400;
+}
+
+.fallback-icon.info {
+  @apply text-blue-400;
+}
+
+.fallback-icon.loading {
+  @apply text-slate-400;
+}
+
+/* Animation de chargement */
+.loading-spinner {
+  @apply inline-block;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Messages */
+.fallback-title {
+  @apply text-white font-semibold text-sm mb-2;
+}
+
+.garmin-fallback.compact .fallback-title {
+  @apply text-xs mb-1;
+}
+
+.fallback-description {
+  @apply text-slate-400 text-xs mb-3;
+}
+
+.garmin-fallback.compact .fallback-description {
+  @apply text-xs mb-2;
+}
+
+/* Actions */
+.fallback-actions {
+  @apply space-y-2;
+}
+
+.garmin-fallback.compact .fallback-actions {
+  @apply space-y-1;
+}
+
+/* Boutons */
+.sync-button,
+.retry-button,
+.enable-full-button,
+.static-view-button {
+  @apply px-3 py-1.5 rounded text-xs font-medium transition-colors duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800;
+}
+
+.garmin-fallback.compact .sync-button,
+.garmin-fallback.compact .retry-button,
+.garmin-fallback.compact .enable-full-button,
+.garmin-fallback.compact .static-view-button {
+  @apply px-2 py-1 text-xs;
+}
+
+/* Boutons primaires */
+.sync-button.primary,
+.retry-button.primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700;
+  @apply focus:ring-blue-500;
+}
+
+/* Boutons secondaires */
+.enable-full-button.secondary,
+.static-view-button.secondary {
+  @apply bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white;
+  @apply focus:ring-slate-500;
+}
+
+/* Hints et messages d'aide */
+.fallback-hint {
+  @apply text-slate-500 text-xs mt-2;
+}
+
+.garmin-fallback.compact .fallback-hint {
+  @apply text-xs mt-1;
+}
+
+/* Informations de retry */
+.retry-info {
+  @apply text-slate-500 text-xs mt-1;
+}
+
+.max-retries-message,
+.max-retries-reached {
+  @apply text-slate-500 text-xs;
+}
+
+/* Fallbacks spécifiques */
+
+/* Données manquantes */
+.garmin-fallback.missing-data {
+  @apply border-slate-600;
+}
+
+.garmin-fallback.missing-data .fallback-icon {
+  @apply text-slate-400;
+}
+
+/* Erreur de chargement */
+.garmin-fallback.loading-error {
+  @apply border-red-700/50 bg-red-900/10;
+}
+
+/* Mode dégradé */
+.garmin-fallback.degraded-mode {
+  @apply border-yellow-700/50 bg-yellow-900/10;
+}
+
+/* Données insuffisantes */
+.garmin-fallback.insufficient-data {
+  @apply border-blue-700/50 bg-blue-900/10;
+}
+
+/* Chargement */
+.garmin-fallback.loading {
+  @apply border-slate-600;
+}
+
+/* Error Boundary */
+.garmin-chart-error-fallback {
+  @apply bg-slate-800/60 border border-red-700/50 rounded-lg p-4 text-center;
+  @apply bg-red-900/10;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.garmin-chart-error-fallback.compact {
+  @apply p-3;
+  min-height: 80px;
+}
+
+.error-content {
+  @apply w-full max-w-sm;
+}
+
+.error-icon {
+  @apply text-2xl mb-3 text-red-400;
+}
+
+.garmin-chart-error-fallback.compact .error-icon {
+  @apply text-xl mb-2;
+}
+
+.error-message {
+  @apply mb-3;
+}
+
+.error-title {
+  @apply text-white font-semibold text-sm mb-2;
+}
+
+.garmin-chart-error-fallback.compact .error-title {
+  @apply text-xs mb-1;
+}
+
+.error-description {
+  @apply text-slate-400 text-xs mb-3;
+}
+
+.error-details {
+  @apply mt-2 text-left;
+}
+
+.error-details summary {
+  @apply text-slate-400 text-xs cursor-pointer hover:text-slate-300;
+}
+
+.error-stack {
+  @apply bg-slate-900/50 border border-slate-700 rounded p-2 mt-2;
+  @apply text-xs text-slate-400 font-mono overflow-auto max-h-32;
+}
+
+.error-actions {
+  @apply space-y-2;
+}
+
+.garmin-chart-error-fallback.compact .error-actions {
+  @apply space-y-1;
+}
+
+/* Responsive */
+@media (max-width: 320px) {
+  .garmin-fallback {
+    @apply p-2;
+    min-height: 60px;
+  }
+  
+  .fallback-icon {
+    @apply text-lg mb-1;
+  }
+  
+  .fallback-title {
+    @apply text-xs mb-1;
+  }
+  
+  .fallback-description {
+    @apply text-xs mb-2;
+  }
+  
+  .sync-button,
+  .retry-button,
+  .enable-full-button,
+  .static-view-button {
+    @apply px-2 py-1 text-xs;
+  }
+}
+
+/* États d'interaction */
+.sync-button:disabled,
+.retry-button:disabled,
+.enable-full-button:disabled,
+.static-view-button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.sync-button:hover:not(:disabled),
+.retry-button:hover:not(:disabled) {
+  @apply transform scale-105;
+}
+
+.enable-full-button:hover:not(:disabled),
+.static-view-button:hover:not(:disabled) {
+  @apply transform scale-105;
+}
+
+/* Animations */
+.garmin-fallback {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mode sombre spécifique */
+@media (prefers-color-scheme: dark) {
+  .garmin-fallback {
+    @apply bg-slate-900/80 border-slate-600;
+  }
+  
+  .fallback-title {
+    @apply text-slate-100;
+  }
+  
+  .fallback-description {
+    @apply text-slate-300;
+  }
+  
+  .fallback-hint {
+    @apply text-slate-400;
+  }
+}

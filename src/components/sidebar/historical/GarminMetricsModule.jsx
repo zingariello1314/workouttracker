@@ -1,15 +1,17 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
 import { HeartRateZonesChart, SleepPhasesChart, StressLevelChart } from '../../charts/index';
 import { useRealGarminData } from '../../../hooks/useRealGarminData';
 import SidebarHeartRateChart from '../charts/SidebarHeartRateChart';
+import { garminDataErrorHandler, GarminErrorType } from '../../../utils/garminDataErrorHandler';
 
 /**
  * Module de métriques Garmin (Position 5)
  * Affiche les métriques Garmin du jour avec navigation vers Sport > Aujourd'hui
  * Structure identique aux anciens modules sidebar - PATTERN LEGACY
  * 
- * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5
+ * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 1.5
+ * - Optimisations de performance ajoutées (1.5, 3.5)
  */
 const GarminMetricsModule = memo(({ 
   isExpanded,
@@ -24,21 +26,72 @@ const GarminMetricsModule = memo(({
   // État pour la gestion du basculement entre zones statiques et graphique temporel
   const [showTemporalChart, setShowTemporalChart] = useState(showHeartRateChart);
   const [selectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+  
+  // États pour la gestion d'erreurs (Requirements 1.4, 1.5)
+  const [moduleError, setModuleError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isDegradedMode, setIsDegradedMode] = useState(false);
+  const maxRetries = 3;
 
-  // Utiliser le hook pour récupérer les vraies données Garmin avec support des séries temporelles
-  const { garminData, loading, error, refreshData } = useRealGarminData({
+  // Hook optimisé pour les données Garmin avec mémorisation (Requirements 1.5, 3.5)
+  const garminDataConfig = useMemo(() => ({
     selectedDate,
-    enableTimeSeriesData: showTemporalChart, // Activer les données temporelles si le graphique est affiché
+    enableTimeSeriesData: true, // Toujours activer pour avoir le graphique
     optimizeForSidebar: true
-  });
+  }), [selectedDate]);
 
-  // Utiliser les vraies données Garmin avec fallback sur les données passées en props
+  const { garminData, loading, error, refreshData } = useRealGarminData(garminDataConfig);
+
+  // Gestionnaire d'erreurs du module (Requirements 1.4, 1.5)
+  const handleModuleError = useCallback((error, context = 'unknown') => {
+    console.error('[GarminMetricsModule] Erreur:', error, 'Contexte:', context);
+    
+    const garminError = garminDataErrorHandler.createError(
+      GarminErrorType.INVALID_FORMAT,
+      error.message || 'Erreur du module Garmin',
+      undefined,
+      { originalError: error, context, timestamp: Date.now() }
+    );
+    
+    setModuleError(garminError);
+    
+    // Activer le mode dégradé en cas d'erreurs répétées
+    if (retryCount >= 2) {
+      setIsDegradedMode(true);
+    }
+  }, [retryCount]);
+
+  // Fonction de retry pour le module
+  const handleModuleRetry = useCallback(() => {
+    if (retryCount >= maxRetries) {
+      console.warn('[GarminMetricsModule] Nombre maximum de tentatives atteint');
+      return;
+    }
+
+    console.log(`[GarminMetricsModule] Tentative de retry ${retryCount + 1}/${maxRetries}`);
+    
+    setModuleError(null);
+    setRetryCount(prev => prev + 1);
+    
+    // Retry des données
+    refreshData();
+  }, [retryCount, maxRetries, refreshData]);
+
+  // Reset des erreurs quand les données changent
+  useEffect(() => {
+    if (garminData && !error) {
+      setModuleError(null);
+      setRetryCount(0);
+    }
+  }, [garminData, error]);
+
+  // Métriques avec mémorisation optimisée (Requirements 1.5, 3.5)
   const metrics = useMemo(() => {
-    if (garminData && garminData.hasData) {
+    if (garminData?.hasData) {
       return garminData.todayMetrics;
     }
     
-    // Fallback sur les données passées en props
+    // Fallback optimisé avec mémorisation
     const fallbackData = data?.sport?.todayMetrics || data?.garmin || {};
     return {
       calories: fallbackData.calories || { active: 0, resting: 0, total: 0 },
@@ -47,7 +100,7 @@ const GarminMetricsModule = memo(({
       heartRate: fallbackData.heartRate || { resting: null, average: null, max: null },
       sleep: fallbackData.sleep || null
     };
-  }, [garminData, data]);
+  }, [garminData?.hasData, garminData?.todayMetrics, data?.sport?.todayMetrics, data?.garmin]);
 
   // Le rafraîchissement est maintenant géré par useRealGarminData
 
@@ -197,11 +250,16 @@ const GarminMetricsModule = memo(({
     return `${hours}h ${mins}min`;
   };
 
-  const calories = formatCalories(metrics.calories);
-  const heartRate = formatHeartRate(metrics.heartRate);
-  const bodyBattery = extractNumericValue(metrics.bodyBattery, null);
-  const steps = extractNumericValue(metrics.steps, 0);
-  const sleepData = metrics.sleep;
+  // Mémorisation des valeurs formatées pour optimiser les performances (Requirement 1.5)
+  const formattedMetrics = useMemo(() => ({
+    calories: formatCalories(metrics.calories),
+    heartRate: formatHeartRate(metrics.heartRate),
+    bodyBattery: extractNumericValue(metrics.bodyBattery, null),
+    steps: extractNumericValue(metrics.steps, 0),
+    sleepData: metrics.sleep
+  }), [metrics.calories, metrics.heartRate, metrics.bodyBattery, metrics.steps, metrics.sleep]);
+
+  const { calories, heartRate, bodyBattery, steps, sleepData } = formattedMetrics;
 
   // Debug: Log des données de sommeil complètes
   useEffect(() => {
@@ -229,6 +287,44 @@ const GarminMetricsModule = memo(({
   const shouldShowSleep = useMemo(() => {
     return sleepData && sleepData.duration && sleepData.duration > 0;
   }, [sleepData]);
+
+  // Mesure du temps de rendu initial du module avec optimisations (Requirements 1.5, 3.5)
+  const [moduleRenderTime, setModuleRenderTime] = useState(0);
+  const moduleRenderStartRef = useRef(null);
+  const moduleFrameRequestRef = useRef(null);
+  
+  useEffect(() => {
+    moduleRenderStartRef.current = performance.now();
+    
+    // Utiliser requestAnimationFrame pour mesurer après le rendu complet
+    if (moduleFrameRequestRef.current) {
+      cancelAnimationFrame(moduleFrameRequestRef.current);
+    }
+    
+    moduleFrameRequestRef.current = requestAnimationFrame(() => {
+      if (moduleRenderStartRef.current) {
+        const duration = performance.now() - moduleRenderStartRef.current;
+        setModuleRenderTime(duration);
+        
+        // Log si le rendu dépasse le seuil de 200ms (Requirement 3.5)
+        if (duration > 200) {
+          console.warn(`[GarminMetricsModule] Rendu initial lent: ${duration.toFixed(2)}ms > 200ms`);
+          
+          // Activer automatiquement le mode dégradé si le rendu est très lent
+          if (duration > 500 && !isDegradedMode) {
+            console.warn(`[GarminMetricsModule] Activation automatique du mode dégradé`);
+            setIsDegradedMode(true);
+          }
+        }
+      }
+    });
+    
+    return () => {
+      if (moduleFrameRequestRef.current) {
+        cancelAnimationFrame(moduleFrameRequestRef.current);
+      }
+    };
+  }, [garminData, isExpanded, isDegradedMode]);
 
   return (
     <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
@@ -317,20 +413,56 @@ const GarminMetricsModule = memo(({
 
           {/* Graphiques avancés Garmin - Utilisation des vraies données */}
           <div className="garmin-charts-section">
-            {/* Indicateur de chargement */}
+            {/* Indicateur de chargement avec timeout */}
             {loading && (
               <div className="charts-loading-state">
                 <div className="loading-spinner">⏳</div>
-                <div className="loading-message">Chargement des données Garmin...</div>
+                <div className="loading-message">
+                  {isDegradedMode ? 'Chargement simplifié...' : 'Chargement des données Garmin...'}
+                </div>
+                {isDegradedMode && (
+                  <div className="degraded-mode-hint">Mode performance activé</div>
+                )}
               </div>
             )}
 
-            {/* Indicateur d'erreur */}
-            {error && (
+            {/* Indicateur d'erreur avec retry intelligent */}
+            {(error || moduleError) && (
               <div className="charts-error-state">
                 <div className="error-icon">⚠️</div>
-                <div className="error-message">Erreur: {error}</div>
-                <button onClick={refreshData} className="retry-button">Réessayer</button>
+                <div className="error-message">
+                  {moduleError ? 
+                    garminDataErrorHandler.createUserFriendlyMessage(moduleError) : 
+                    `Erreur: ${error}`
+                  }
+                </div>
+                <div className="error-actions">
+                  {retryCount < maxRetries ? (
+                    <button 
+                      onClick={moduleError ? handleModuleRetry : refreshData} 
+                      className="retry-button"
+                      title={`Tentative ${retryCount + 1}/${maxRetries}`}
+                    >
+                      🔄 Réessayer ({retryCount + 1}/{maxRetries})
+                    </button>
+                  ) : (
+                    <div className="max-retries-info">
+                      <span className="max-retries-message">Nombre maximum de tentatives atteint</span>
+                      <button 
+                        onClick={() => setIsDegradedMode(true)}
+                        className="degraded-mode-button"
+                        title="Activer le mode dégradé"
+                      >
+                        ⚡ Mode simplifié
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {moduleError?.details?.suggestion && (
+                  <div className="error-suggestion">
+                    💡 {moduleError.details.suggestion}
+                  </div>
+                )}
               </div>
             )}
 
@@ -353,34 +485,99 @@ const GarminMetricsModule = memo(({
                         onClick={() => setShowTemporalChart(true)}
                         title="Afficher le graphique FC temporel"
                       >
-                        📈 Temporel
+                        📈 Graphique
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Graphique FC temporel (nouveau) - Requirements 1.3, 2.3, 3.3, 4.1, 4.2, 4.3, 4.4, 4.5 */}
+                {/* Graphique FC temporel - SEUL GRAPHIQUE (7 jours comme dans l'onglet Garmin) */}
                 {showHeartRateChart && showTemporalChart && (
                   <div className="chart-container sidebar-optimized">
+                    <div className="chart-header" style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      marginBottom: '8px',
+                      padding: '0 4px'
+                    }}>
+                      <h4 style={{ 
+                        margin: 0, 
+                        fontSize: '14px', 
+                        color: '#EF4444',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        Fréquence Cardiaque 7j
+                      </h4>
+                      <button 
+                        onClick={() => {
+                          console.log('[GarminMetricsModule] Bouton Sync cliqué');
+                          // Forcer le rechargement des données
+                          refreshData();
+                          // Émettre des événements pour déclencher la synchronisation
+                          window.dispatchEvent(new CustomEvent('garmin:refresh:request', {
+                            detail: { source: 'sidebar-sync-button', timestamp: Date.now() }
+                          }));
+                          window.dispatchEvent(new CustomEvent('garmin:data:updated', {
+                            detail: { source: 'sidebar-sync-button', timestamp: Date.now() }
+                          }));
+                        }}
+                        className="sync-button"
+                        style={{
+                          background: '#3B82F6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '4px 8px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = '#2563EB';
+                          e.target.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.background = '#3B82F6';
+                          e.target.style.transform = 'scale(1)';
+                        }}
+                        title="Synchroniser les données Garmin"
+                      >
+                        🔄 Sync
+                      </button>
+                    </div>
                     <SidebarHeartRateChart
                       garminData={garminData}
                       selectedDate={selectedDate}
-                      height={chartHeight}
+                      height={isDegradedMode ? Math.min(chartHeight, 200) : chartHeight}
                       compactMode={compactMode}
                       colors={{ red: '#EF4444' }}
                       className="garmin-hr-temporal-chart"
-                      containerWidth={null} // Laisse le composant mesurer automatiquement
-                      onNavigateToSport={handleNavigateToSport} // Navigation vers Sport (Requirement 3.3)
+                      containerWidth={null}
+                      onNavigateToSport={handleNavigateToSport}
                       onDataPointClick={(data, index, event) => {
-                        // Log pour debug des interactions (Requirement 1.3)
-                        console.log('[GarminMetricsModule] Point FC cliqué:', {
-                          time: data.time,
-                          bpm: data.bpm,
-                          isReal: data.isReal,
-                          isActivity: data.isActivity
-                        });
+                        if (process.env.NODE_ENV === 'development') {
+                          console.log('[GarminMetricsModule] Point FC cliqué:', {
+                            time: data.time,
+                            bpm: data.bpm,
+                            isReal: data.isReal,
+                            isActivity: data.isActivity
+                          });
+                        }
                       }}
-                      showNavigationHint={true} // Afficher l'indication de navigation (Requirement 3.3)
+                      showNavigationHint={true}
+                      onError={handleModuleError}
+                      onRetry={handleModuleRetry}
+                      enableDegradedMode={true}
+                      maxRetries={maxRetries}
+                      loadingTimeout={isDegradedMode ? 5000 : 10000}
+                      performanceThreshold={isDegradedMode ? 300 : 1000}
+                      enableLazyLoading={true}
                     />
                   </div>
                 )}
@@ -437,6 +634,27 @@ const GarminMetricsModule = memo(({
                     {garminData.dataDate && (
                       <div className="data-date-info">
                         Dernières données: {garminData.dataDate}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Informations de performance du module en mode développement (Requirements 1.5, 3.5) */}
+                {process.env.NODE_ENV === 'development' && moduleRenderTime > 0 && (
+                  <div className="mt-2 p-2 bg-slate-900/20 border border-slate-700/30 rounded text-xs text-slate-500">
+                    <div className="flex justify-between items-center">
+                      <span>Performance Module:</span>
+                      <div className="flex gap-2">
+                        <span className={moduleRenderTime > 200 ? 'text-yellow-400' : 'text-green-400'}>
+                          {moduleRenderTime.toFixed(1)}ms
+                        </span>
+                        {isDegradedMode && <span className="text-orange-400">Mode dégradé</span>}
+                        {retryCount > 0 && <span className="text-red-400">Retry: {retryCount}</span>}
+                      </div>
+                    </div>
+                    {moduleRenderTime > 200 && (
+                      <div className="mt-1 text-yellow-400">
+                        ⚠️ Rendu lent détecté - considérez le mode dégradé
                       </div>
                     )}
                   </div>

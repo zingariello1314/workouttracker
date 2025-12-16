@@ -22,10 +22,13 @@ const AddPositionForm = ({ onClose }) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    
+    console.log('📝 [AddPositionForm] Soumission du formulaire avec:', formData);
 
     try {
       // Validation
       if (!formData.ticker || !formData.quantite || !formData.prixEntree) {
+        console.error('❌ [AddPositionForm] Validation échouée');
         throw new Error('Veuillez remplir tous les champs obligatoires');
       }
 
@@ -36,11 +39,16 @@ const AddPositionForm = ({ onClose }) => {
         prixEntree: parseFloat(formData.prixEntree),
         dateAchat: formData.dateAchat
       };
+      
+      console.log('✅ [AddPositionForm] Position préparée:', position);
+      console.log('🔄 [AddPositionForm] Appel addPosition...');
 
-      await addPosition(position);
+      const result = await addPosition(position);
+      console.log('🎉 [AddPositionForm] Position ajoutée avec succès:', result);
       
       // Toast succès
       showToast(`${position.ticker} ajouté au portfolio`, 'success');
+      console.log('📢 [AddPositionForm] Toast affiché');
       
       // Reset form
       setFormData({
@@ -50,12 +58,16 @@ const AddPositionForm = ({ onClose }) => {
         prixEntree: '',
         dateAchat: new Date().toISOString().split('T')[0]
       });
+      console.log('🔄 [AddPositionForm] Formulaire réinitialisé');
       
       onClose();
+      console.log('🚪 [AddPositionForm] Formulaire fermé');
     } catch (err) {
+      console.error('❌ [AddPositionForm] Erreur:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+      console.log('⏹️ [AddPositionForm] Fin du processus');
     }
   };
 

@@ -16,6 +16,15 @@ const BourseSubTab = () => {
   const { portfolio, loading, error } = useFinance();
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewMode, setViewMode] = useState('table'); // 'table' ou 'cards'
+  
+  // Debug logs
+  console.log('🏦 [BourseSubTab] Render avec:', {
+    portfolioLength: portfolio?.length || 0,
+    loading,
+    error: error?.message,
+    showAddForm,
+    viewMode
+  });
 
   if (loading) {
     return (

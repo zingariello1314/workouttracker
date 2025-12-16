@@ -354,3 +354,113 @@
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
+/* États d'erreur pour le module Garmin */
+.charts-loading-state {
+  @apply bg-slate-800/60 border border-slate-700 rounded-lg p-4 text-center;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  @apply text-2xl mb-2;
+  animation: spin 2s linear infinite;
+}
+
+.loading-message {
+  @apply text-slate-400 text-sm mb-1;
+}
+
+.degraded-mode-hint {
+  @apply text-yellow-400 text-xs;
+}
+
+.charts-error-state {
+  @apply bg-slate-800/60 border border-red-700/50 rounded-lg p-4 text-center;
+  @apply bg-red-900/10;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-icon {
+  @apply text-2xl mb-2 text-red-400;
+}
+
+.error-message {
+  @apply text-slate-300 text-sm mb-3;
+  white-space: pre-line;
+}
+
+.error-actions {
+  @apply space-y-2;
+}
+
+.retry-button {
+  @apply px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium;
+  @apply hover:bg-blue-700 transition-colors duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800;
+}
+
+.max-retries-info {
+  @apply space-y-2;
+}
+
+.max-retries-message {
+  @apply text-slate-500 text-xs block;
+}
+
+.degraded-mode-button {
+  @apply px-3 py-1.5 bg-yellow-600 text-white rounded text-xs font-medium;
+  @apply hover:bg-yellow-700 transition-colors duration-200;
+  @apply focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-slate-800;
+}
+
+.error-suggestion {
+  @apply text-slate-400 text-xs mt-2 p-2 bg-slate-900/50 rounded;
+  @apply border border-slate-700;
+}
+
+/* Mode dégradé pour le module */
+.garmin-charts-section.degraded-mode {
+  @apply opacity-90;
+}
+
+.garmin-charts-section.degraded-mode .chart-container {
+  @apply border-yellow-700/50;
+}
+
+.garmin-charts-section.degraded-mode::before {
+  content: "⚡ Mode simplifié";
+  @apply absolute top-2 right-2 text-xs text-yellow-400 bg-yellow-900/20 px-2 py-1 rounded;
+  position: absolute;
+  z-index: 10;
+}
+
+/* Responsive pour les états d'erreur */
+@media (max-width: 320px) {
+  .charts-loading-state,
+  .charts-error-state {
+    @apply p-3;
+    min-height: 80px;
+  }
+  
+  .loading-spinner,
+  .error-icon {
+    @apply text-xl mb-1;
+  }
+  
+  .loading-message,
+  .error-message {
+    @apply text-xs;
+  }
+  
+  .retry-button,
+  .degraded-mode-button {
+    @apply px-2 py-1 text-xs;
+  }
+}
