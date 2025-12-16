@@ -787,9 +787,14 @@ const BooksDomeGallery = ({
   }
 
   const handleItemClick = (item) => {
-    // Vérifier si on a fait un drag récemment (comme dans la référence ligne 2390-2392)
+    // Vérifier si on a fait un drag récemment - logique améliorée
     if (draggingRef.current) return;
-    if (performance.now() - lastDragEndAtRef.current < 80) return;
+    
+    // Réduire le délai de 80ms à 50ms et ajouter une vérification d'inertie
+    const timeSinceDragEnd = performance.now() - lastDragEndAtRef.current;
+    if (timeSinceDragEnd < 50 && inertiaActiveRef.current) return;
+    
+    console.log('📚 Clic sur livre détecté:', item.book?.title || item.alt);
     
     if (onBookOpen) {
       onBookOpen(item.bookId);

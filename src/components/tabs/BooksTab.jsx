@@ -16,7 +16,7 @@
  */
 
 import React, { Suspense, useEffect, useMemo, useRef, useState, memo, useCallback } from 'react';
-import { BookOpen, Download, Search, Upload } from 'lucide-react';
+import { BookOpen, Download, Search, Upload, BarChart3, Library } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, TextArea, Select } from '../ui/Input';
@@ -39,6 +39,9 @@ import { useBooksStorage } from '../../hooks/useBooksStorage';
 import { saveBooksToIndexedDB, getAllBooksFromIndexedDB } from '../../utils/booksIndexedDB';
 import BookCard from '../books/BookCard';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../utils/sidebarEvents';
+
+// Import du sous-onglet statistiques
+import StatisticsSubTab from './books/StatisticsSubTab';
 
 const BooksDomeGallery = React.lazy(() =>
   import('../books/BooksDomeGallery')
@@ -81,6 +84,10 @@ const readFileAsDataUrl = (file) =>
 const BooksTab = () => {
   const t = useTranslation();
   const { books, setBooks, isLoading } = useBooksStorage();
+  
+  // État pour la navigation par sous-onglets
+  const [activeSubTab, setActiveSubTab] = useState('library'); // 'library' | 'statistics'
+  
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [form, setForm] = useState(emptyBookForm);
   const [sessionForm, setSessionForm] = useState(emptySessionForm);
@@ -1255,7 +1262,7 @@ const BooksTab = () => {
         </Card>
       )}
 
-      {/* Header dédié */}
+      {/* Header avec navigation par sous-onglets */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -1272,17 +1279,46 @@ const BooksTab = () => {
               </p>
             </div>
           </div>
+          {activeSubTab === 'library' && (
+            <Button
+              onClick={() => setShow3D(!show3D)}
+              variant="glass"
+              size="md"
+            >
+              {show3D
+                ? t('books.dome.hide', 'Masquer la vue 3D')
+                : t('books.dome.show', 'Afficher la vue 3D')}
+            </Button>
+          )}
+        </div>
+
+        {/* Navigation par sous-onglets */}
+        <div className="flex gap-2 mb-6">
           <Button
-            onClick={() => setShow3D(!show3D)}
-            variant="glass"
-            size="md"
+            variant={activeSubTab === 'library' ? 'primary' : 'glass'}
+            onClick={() => setActiveSubTab('library')}
+            className="flex items-center gap-2"
           >
-            {show3D
-              ? t('books.dome.hide', 'Masquer la vue 3D')
-              : t('books.dome.show', 'Afficher la vue 3D')}
+            <Library className="w-4 h-4" />
+            {t('books.subtabs.library', 'Bibliothèque')}
+          </Button>
+          <Button
+            variant={activeSubTab === 'statistics' ? 'primary' : 'glass'}
+            onClick={() => setActiveSubTab('statistics')}
+            className="flex items-center gap-2"
+          >
+            <BarChart3 className="w-4 h-4" />
+            {t('books.subtabs.statistics', 'Statistiques')}
           </Button>
         </div>
       </div>
+
+      {/* Contenu conditionnel selon le sous-onglet actif */}
+      {activeSubTab === 'statistics' ? (
+        <StatisticsSubTab books={books} />
+      ) : (
+        // Contenu de la bibliothèque (code existant)
+        <div className="space-y-6">
 
       {/* Formulaire et Recherche/Filtres en grille */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -1628,10 +1664,10 @@ const BooksTab = () => {
             dragSensitivity={50}
             dragDampening={0.3}
             maxVerticalRotationDeg={8}
-            fit={0.9}
-            minRadius={600}
-            maxRadius={1400}
-            padFactor={0.05}
+            fit={1.0}
+            minRadius={700}
+            maxRadius={1600}
+            padFactor={0.02}
           />
         </Suspense>
       )}
@@ -2258,6 +2294,8 @@ const BooksTab = () => {
           </p>
         </CardFooter>
       </Card>
+        </div>
+      )}
     </div>
   );
 };
