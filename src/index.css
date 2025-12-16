@@ -220,3 +220,62 @@ html, body {
 .animate-quote-fade-in {
   animation: quoteFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
+
+/* 🎯 Citations adaptatives - Ajustement automatique de la taille de police */
+.adaptive-quote-text {
+  /* Taille de base pour les citations courtes */
+  font-size: clamp(2rem, 8vw, 5rem); /* 32px min, 80px max, responsive */
+  line-height: 1.2; /* Augmenté de 1.1 à 1.2 pour éviter la coupure des ascendantes */
+  max-width: 600px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  padding-top: 0.1em; /* Petit padding en haut pour les ascendantes */
+}
+
+/* Ajustements responsifs pour différentes tailles d'écran */
+@media (max-width: 768px) {
+  .adaptive-quote-text {
+    font-size: clamp(1.5rem, 6vw, 3rem); /* Plus petit sur mobile */
+    max-width: 90vw;
+  }
+}
+
+@media (max-width: 480px) {
+  .adaptive-quote-text {
+    font-size: clamp(1.25rem, 5vw, 2.5rem); /* Encore plus petit sur très petit écran */
+    max-width: 95vw;
+  }
+}
+
+/* Ajustement basé sur la longueur du contenu avec CSS Container Queries */
+@container (max-width: 600px) {
+  .adaptive-quote-text {
+    font-size: clamp(1.5rem, 4vw, 3rem);
+  }
+}
+
+/* Fallback pour les navigateurs qui ne supportent pas container queries */
+.adaptive-quote-text:has(span:nth-child(n+4)) {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+}
+
+/* Style pour les citations très longues */
+.adaptive-quote-text[data-long="true"] {
+  font-size: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.adaptive-quote-text[data-very-long="true"] {
+  font-size: clamp(1rem, 2.5vw, 2rem);
+}
+
+/* Assurer que le texte ne déborde jamais */
+.adaptive-quote-text {
+  width: 100%;
+  max-width: min(600px, 90vw);
+  box-sizing: border-box;
+  /* Assurer que les ascendantes et descendantes ne sont pas coupées */
+  overflow: visible;
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+}

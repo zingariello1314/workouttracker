@@ -415,6 +415,40 @@ const HomePage = () => {
     return () => clearInterval(rotationInterval);
   }, [backgroundImages.length]);
 
+  // Fonction pour ajuster la taille de police des citations longues
+  const adjustQuoteSize = () => {
+    const quoteElement = document.querySelector('.adaptive-quote-text');
+    if (!quoteElement) return;
+
+    const textContent = quoteElement.textContent || '';
+    const textLength = textContent.length;
+    
+    // Supprimer les attributs précédents
+    quoteElement.removeAttribute('data-long');
+    quoteElement.removeAttribute('data-very-long');
+    
+    // Ajuster selon la longueur
+    if (textLength > 120) {
+      quoteElement.setAttribute('data-very-long', 'true');
+      quoteElement.style.fontSize = 'clamp(1rem, 2.5vw, 2rem)';
+    } else if (textLength > 80) {
+      quoteElement.setAttribute('data-long', 'true');
+      quoteElement.style.fontSize = 'clamp(1.25rem, 3vw, 2.5rem)';
+    } else if (textLength > 50) {
+      quoteElement.style.fontSize = 'clamp(1.5rem, 4vw, 3.5rem)';
+    } else {
+      quoteElement.style.fontSize = 'clamp(2rem, 6vw, 5rem)';
+    }
+  };
+
+  // Ajuster la taille quand la citation change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      adjustQuoteSize();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [displayQuote, quoteLoading]);
+
   // Fonction pour changer l'image de fond ET la citation lors des interactions
   const handleInteraction = () => {
     changeBackgroundImage();
@@ -614,17 +648,19 @@ const HomePage = () => {
       {/* Contenu principal */}
       <main className="relative z-10 flex-1 flex items-center justify-start px-8 pt-12 pb-12 min-h-0 overflow-hidden">
         <div className="max-w-2xl flex-shrink-0 w-full">
-          {/* Titre principal - Citations dynamiques */}
+          {/* Titre principal - Citations dynamiques avec ajustement automatique de la taille */}
           <h1 
             key={displayQuote ? `${displayQuote.line1}-${displayQuote.line2}-${displayQuote.line3}` : 'default'}
-            className="text-5xl md:text-6xl lg:text-7xl font-light leading-[1.1] mb-10 animate-quote-fade-in" 
+            className="adaptive-quote-text font-light mb-10 animate-quote-fade-in" 
             style={{ 
               textShadow: '2px 2px 4px rgba(0,0,0,0.8)', 
               display: 'flex', 
               flexDirection: 'column', 
               justifyContent: 'flex-start', 
               gap: '0.25rem',
-              animation: 'quoteFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+              animation: 'quoteFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+              lineHeight: '1.2', /* Assurer un line-height suffisant */
+              paddingTop: '0.1em' /* Espace pour les ascendantes comme f, h, l */
             }}
           >
             {quoteLoading ? (
