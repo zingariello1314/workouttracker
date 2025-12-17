@@ -160,9 +160,10 @@ const PagesPerDayChart = ({ books, statisticsData, selectedPeriod, filters }) =>
       </div>
 
       {/* Graphique principal */}
-      <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+      <div className="h-80 min-h-80">
+        {chartData.length > 0 && (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="date" 
@@ -208,6 +209,7 @@ const PagesPerDayChart = ({ books, statisticsData, selectedPeriod, filters }) =>
             />
           </LineChart>
         </ResponsiveContainer>
+        )}
       </div>
 
       {/* Légende et informations */}

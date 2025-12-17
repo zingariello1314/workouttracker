@@ -311,6 +311,33 @@ export const translations = {
     'books.filters.sort.pages': 'Nombre de pages (décroissant)',
     'books.filters.sort.score': 'Note perso (décroissante)',
     
+    // Books - Sub-tabs
+    'books.subtabs.library': 'Bibliothèque',
+    'books.subtabs.statistics': 'Statistiques',
+    
+    // Books - Statistics
+    'books.statistics.title': 'Statistiques de Lecture',
+    'books.statistics.subtitle': 'Analyse de tes habitudes et progression de lecture',
+    'books.statistics.comparison': 'Comparaison',
+    'books.statistics.filters': 'Filtres',
+    'books.statistics.period': 'Période',
+    'books.statistics.allGenres': 'Tous les genres',
+    'books.statistics.allStatuses': 'Tous les statuts',
+    'books.statistics.allAuthors': 'Tous les auteurs',
+    'books.statistics.noData.title': 'Aucune donnée de lecture',
+    'books.statistics.noData.description': 'Commence à enregistrer des sessions de lecture pour voir tes statistiques apparaître ici.',
+    'books.statistics.noData.suggestions.title': 'Pour commencer:',
+    'books.statistics.noData.suggestions.addBook': 'Ajoute un livre à ta bibliothèque',
+    'books.statistics.noData.suggestions.addSession': 'Enregistre une session de lecture',
+    'books.statistics.noData.suggestions.viewStats': 'Reviens ici pour voir tes statistiques',
+    
+    // Books - Status translations
+    'books.status.in-progress': 'En cours',
+    'books.status.completed': 'Terminé',
+    'books.status.to-read': 'À lire',
+    'books.status.paused': 'En pause',
+    'books.status.abandoned': 'Abandonné',
+    
     // Charts
     'charts.empty.title': 'Aucune donnée disponible',
     'charts.empty.message': 'Commencez à enregistrer vos entraînements pour voir vos graphiques ici.'
@@ -525,6 +552,33 @@ export const translations = {
     'books.filters.sort.author': 'Author (A → Z)',
     'books.filters.sort.pages': 'Number of pages (descending)',
     'books.filters.sort.score': 'Personal rating (descending)',
+    
+    // Books - Sub-tabs
+    'books.subtabs.library': 'Library',
+    'books.subtabs.statistics': 'Statistics',
+    
+    // Books - Statistics
+    'books.statistics.title': 'Reading Statistics',
+    'books.statistics.subtitle': 'Analysis of your reading habits and progress',
+    'books.statistics.comparison': 'Comparison',
+    'books.statistics.filters': 'Filters',
+    'books.statistics.period': 'Period',
+    'books.statistics.allGenres': 'All genres',
+    'books.statistics.allStatuses': 'All statuses',
+    'books.statistics.allAuthors': 'All authors',
+    'books.statistics.noData.title': 'No reading data',
+    'books.statistics.noData.description': 'Start recording reading sessions to see your statistics appear here.',
+    'books.statistics.noData.suggestions.title': 'To get started:',
+    'books.statistics.noData.suggestions.addBook': 'Add a book to your library',
+    'books.statistics.noData.suggestions.addSession': 'Record a reading session',
+    'books.statistics.noData.suggestions.viewStats': 'Come back here to see your statistics',
+    
+    // Books - Status translations
+    'books.status.in-progress': 'In progress',
+    'books.status.completed': 'Completed',
+    'books.status.to-read': 'To read',
+    'books.status.paused': 'Paused',
+    'books.status.abandoned': 'Abandoned',
     
     // Charts
     'charts.empty.title': 'No data available',

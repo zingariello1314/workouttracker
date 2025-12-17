@@ -88,6 +88,13 @@ const BooksTab = () => {
   // État pour la navigation par sous-onglets
   const [activeSubTab, setActiveSubTab] = useState('library'); // 'library' | 'statistics'
   
+  // Émettre un événement lors du changement de sous-onglet pour la rotation des images de profil
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tab-change', { 
+      detail: { tab: activeSubTab, isSubTab: true, parentTab: 'books' } 
+    }));
+  }, [activeSubTab]);
+  
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [form, setForm] = useState(emptyBookForm);
   const [sessionForm, setSessionForm] = useState(emptySessionForm);

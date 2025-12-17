@@ -12,8 +12,9 @@ import { BarChart3, LineChart, Calendar, PieChart, Target } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import { useTranslation } from '../../../../utils/translations';
+import StatisticsErrorBoundary from '../../../statistics/StatisticsErrorBoundary';
 
-// Import des composants de graphiques individuels (à créer)
+// Import des composants de graphiques individuels
 import PagesPerDayChart from './charts/PagesPerDayChart';
 import ReadingSpeedChart from './charts/ReadingSpeedChart';
 import HeatmapCalendar from './charts/HeatmapCalendar';
@@ -69,12 +70,12 @@ const ChartNavButton = ({ config, isActive, onClick }) => {
       variant={isActive ? 'primary' : 'ghost'}
       size="sm"
       onClick={() => onClick(config.id)}
-      className="flex items-center gap-2 text-left justify-start"
+      className="chart-nav-button touch-target"
     >
       <Icon className="w-4 h-4" />
       <div className="hidden sm:block">
         <div className="text-sm font-medium">{config.title}</div>
-        <div className="text-xs opacity-75">{config.description}</div>
+        <div className="chart-description text-xs opacity-75">{config.description}</div>
       </div>
       <span className="sm:hidden">{config.title}</span>
     </Button>
@@ -101,7 +102,7 @@ const ChartsContainer = ({
       {/* Navigation des graphiques */}
       <Card variant="glass">
         <CardContent className="p-4">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="charts-navigation">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-purple-300" />
               <span className="font-medium text-slate-200">
@@ -112,7 +113,7 @@ const ChartsContainer = ({
             {/* Navigation responsive */}
             <div className="flex-1">
               {/* Version desktop - tous les boutons visibles */}
-              <div className="hidden lg:flex gap-2 flex-wrap">
+              <div className="chart-nav-desktop">
                 {Object.values(CHART_CONFIGS).map(config => (
                   <ChartNavButton
                     key={config.id}
@@ -124,11 +125,11 @@ const ChartsContainer = ({
               </div>
               
               {/* Version mobile - menu déroulant */}
-              <div className="lg:hidden">
+              <div className="chart-nav-mobile">
                 <Button
                   variant="glass"
                   onClick={() => setIsNavExpanded(!isNavExpanded)}
-                  className="w-full justify-between"
+                  className="w-full justify-between touch-target"
                 >
                   <span className="flex items-center gap-2">
                     <activeConfig.icon className="w-4 h-4" />
@@ -172,12 +173,29 @@ const ChartsContainer = ({
           </p>
         </CardHeader>
         <CardContent>
-          <ActiveChartComponent
-            books={books}
-            statisticsData={statisticsData}
-            selectedPeriod={selectedPeriod}
-            filters={filters}
-          />
+          <div className="chart-container">
+            <StatisticsErrorBoundary
+              context={{ 
+                chartType: activeChart,
+                dataSize: books?.length || 0,
+                hasData: statisticsData?.hasData || false
+              }}
+              fallbackType="minimal"
+              onRetry={() => {
+                // Forcer le re-render du graphique
+                if (onChartChange) {
+                  onChartChange(activeChart);
+                }
+              }}
+            >
+              <ActiveChartComponent
+                books={books}
+                statisticsData={statisticsData}
+                selectedPeriod={selectedPeriod}
+                filters={filters}
+              />
+            </StatisticsErrorBoundary>
+          </div>
         </CardContent>
       </Card>
     </div>

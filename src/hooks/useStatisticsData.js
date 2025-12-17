@@ -4,6 +4,9 @@
  * Hook personnalisé pour calculer et transformer les données de lecture
  * en statistiques et données de graphiques pour le sous-onglet statistiques.
  * 
+ * Utilise les services SessionAggregator, MetricsCalculator et ChartDataTransformer
+ * pour fournir des données complètes et optimisées pour les composants de statistiques.
+ * 
  * Calcule:
  * - Métriques de base (pages, temps, vitesse, sessions, livres terminés)
  * - Données pour les graphiques (pages par jour, vitesse, heatmap, genres)
@@ -14,235 +17,113 @@
  */
 
 import { useMemo } from 'react';
+import { SessionAggregator, MetricsCalculator, ChartDataTransformer } from '../services/statistics/index.js';
+
+
 
 /**
- * Utilitaire pour obtenir la date d'aujourd'hui au format YYYY-MM-DD
+ * Récupérer les objectifs stockés dans localStorage
  */
-const getTodayString = () => {
-  return new Date().toISOString().split('T')[0];
+const getStoredGoals = () => {
+  try {
+    const dailyGoal = localStorage.getItem('readingDailyGoal');
+    const weeklyGoal = localStorage.getItem('readingWeeklyGoal');
+    const monthlyGoal = localStorage.getItem('readingMonthlyGoal');
+    
+    return {
+      dailyMinutes: dailyGoal ? Number(dailyGoal) : null,
+      weeklyPages: weeklyGoal ? Number(weeklyGoal) : null,
+      monthlyBooks: monthlyGoal ? Number(monthlyGoal) : null
+    };
+  } catch (error) {
+    console.warn('[useStatisticsData] Error reading goals from localStorage:', error);
+    return {};
+  }
 };
 
 /**
- * Utilitaire pour obtenir la date il y a N jours
+ * Calculer la progression d'aujourd'hui
  */
-const getDaysAgo = (days) => {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return date.toISOString().split('T')[0];
+const getTodayProgress = (aggregatedData) => {
+  const today = new Date().toISOString().split('T')[0];
+  const todayData = aggregatedData.byDate[today];
+  return todayData ? todayData.totalMinutes : 0;
 };
 
 /**
- * Utilitaire pour filtrer les sessions selon la période sélectionnée
+ * Générer des insights basés sur les métriques calculées
  */
-const filterSessionsByPeriod = (sessions, period) => {
-  if (period === 'all') return sessions;
+const generateInsights = (calculatedMetrics) => {
+  const insights = [];
   
-  const periodDays = {
-    '7d': 7,
-    '1m': 30,
-    '3m': 90,
-    '6m': 180,
-    '1y': 365
-  };
-  
-  const days = periodDays[period];
-  if (!days) return sessions;
-  
-  const cutoffDate = getDaysAgo(days);
-  
-  return sessions.filter(session => {
-    if (!session.date) return false;
-    const sessionDate = session.date.split('T')[0];
-    return sessionDate >= cutoffDate;
-  });
-};
-
-/**
- * Calculer les métriques de base
- */
-const calculateMetrics = (books, period, filters) => {
-  // Filtrer les livres selon les filtres actifs
-  let filteredBooks = books;
-  
-  if (filters.genre) {
-    filteredBooks = filteredBooks.filter(book => 
-      book.genre && book.genre.toLowerCase().includes(filters.genre.toLowerCase())
-    );
-  }
-  
-  if (filters.status) {
-    filteredBooks = filteredBooks.filter(book => book.status === filters.status);
-  }
-  
-  if (filters.author) {
-    filteredBooks = filteredBooks.filter(book => 
-      book.author && book.author.toLowerCase().includes(filters.author.toLowerCase())
-    );
-  }
-
-  // Collecter toutes les sessions des livres filtrés
-  const allSessions = [];
-  filteredBooks.forEach(book => {
-    if (book.readingSessions && Array.isArray(book.readingSessions)) {
-      book.readingSessions.forEach(session => {
-        allSessions.push({
-          ...session,
-          bookId: book.id,
-          bookTitle: book.title,
-          bookGenre: book.genre
-        });
+  try {
+    const { basic, patterns, speedByGenre } = calculatedMetrics;
+    
+    // Insight sur la vitesse de lecture
+    if (basic.averageSpeed > 0) {
+      insights.push({
+        type: 'speed',
+        title: 'Vitesse de lecture',
+        message: `Tu lis en moyenne ${basic.averageSpeed} pages par heure`,
+        icon: 'trending-up',
+        color: 'blue'
       });
     }
-  });
-
-  // Filtrer les sessions selon la période
-  const filteredSessions = filterSessionsByPeriod(allSessions, period);
-
-  // Calculer les métriques de base
-  const totalPages = filteredSessions.reduce((sum, session) => 
-    sum + (Number(session.pagesRead) || 0), 0
-  );
-  
-  const totalTime = filteredSessions.reduce((sum, session) => 
-    sum + (Number(session.durationMinutes) || 0), 0
-  );
-  
-  const sessionsCount = filteredSessions.length;
-  
-  const averageSpeed = totalTime > 0 ? (totalPages / (totalTime / 60)) : 0; // pages per hour
-  
-  const booksCompleted = filteredBooks.filter(book => book.status === 'completed').length;
-  
-  const averageSessionDuration = sessionsCount > 0 ? totalTime / sessionsCount : 0;
-
-  // Calculer la fréquence de lecture (sessions par semaine)
-  const uniqueDays = new Set(filteredSessions.map(s => s.date?.split('T')[0])).size;
-  const periodDays = period === 'all' ? Math.max(uniqueDays, 1) : 
-    Math.min(uniqueDays, { '7d': 7, '1m': 30, '3m': 90, '6m': 180, '1y': 365 }[period] || 30);
-  const readingFrequency = (uniqueDays / periodDays) * 7; // sessions per week
-
-  // Calculer les streaks (simplifié pour cette version)
-  const today = getTodayString();
-  const sessionsToday = filteredSessions.filter(s => s.date?.split('T')[0] === today);
-  const currentStreak = sessionsToday.length > 0 ? 1 : 0; // Simplifié
-  const longestStreak = Math.max(currentStreak, 1); // Simplifié
-
-  // Objectif quotidien depuis localStorage
-  let dailyGoal = 30; // défaut
-  try {
-    const stored = localStorage.getItem('readingDailyGoal');
-    if (stored) {
-      const parsed = Number(stored);
-      if (!isNaN(parsed) && parsed > 0) {
-        dailyGoal = parsed;
+    
+    // Insight sur la régularité
+    if (basic.currentStreak > 0) {
+      insights.push({
+        type: 'streak',
+        title: 'Série de lecture',
+        message: `Tu es sur une série de ${basic.currentStreak} jour(s) !`,
+        icon: 'calendar',
+        color: 'green'
+      });
+    }
+    
+    // Insight sur le genre préféré
+    if (speedByGenre && Object.keys(speedByGenre).length > 0) {
+      const favoriteGenre = Object.values(speedByGenre)
+        .sort((a, b) => b.totalPages - a.totalPages)[0];
+      
+      if (favoriteGenre) {
+        insights.push({
+          type: 'genre',
+          title: 'Genre préféré',
+          message: `Tu lis principalement du ${favoriteGenre.genre.toLowerCase()}`,
+          icon: 'book-open',
+          color: 'purple'
+        });
       }
     }
-  } catch (error) {
-    console.warn('Error reading daily goal:', error);
-  }
-
-  // Progression d'aujourd'hui
-  const todayProgress = filteredSessions
-    .filter(s => s.date?.split('T')[0] === today)
-    .reduce((sum, s) => sum + (Number(s.durationMinutes) || 0), 0);
-
-  return {
-    totalPages,
-    totalTime,
-    averageSpeed,
-    sessionsCount,
-    booksCompleted,
-    currentStreak,
-    longestStreak,
-    averageSessionDuration,
-    readingFrequency,
-    dailyGoal,
-    todayProgress
-  };
-};
-
-/**
- * Calculer les données pour le graphique pages par jour
- */
-const calculatePagesPerDayData = (books, period, filters) => {
-  // Même logique de filtrage que calculateMetrics
-  let filteredBooks = books;
-  
-  if (filters.genre) {
-    filteredBooks = filteredBooks.filter(book => 
-      book.genre && book.genre.toLowerCase().includes(filters.genre.toLowerCase())
-    );
-  }
-  
-  if (filters.status) {
-    filteredBooks = filteredBooks.filter(book => book.status === filters.status);
-  }
-  
-  if (filters.author) {
-    filteredBooks = filteredBooks.filter(book => 
-      book.author && book.author.toLowerCase().includes(filters.author.toLowerCase())
-    );
-  }
-
-  // Collecter toutes les sessions
-  const allSessions = [];
-  filteredBooks.forEach(book => {
-    if (book.readingSessions && Array.isArray(book.readingSessions)) {
-      book.readingSessions.forEach(session => {
-        allSessions.push({
-          ...session,
-          bookId: book.id,
-          bookTitle: book.title,
-          bookGenre: book.genre
+    
+    // Insight sur les patterns
+    if (patterns.bestDaysOfWeek) {
+      const bestDay = Object.values(patterns.bestDaysOfWeek)
+        .sort((a, b) => b.averagePagesPerDay - a.averagePagesPerDay)[0];
+      
+      if (bestDay && bestDay.averagePagesPerDay > 0) {
+        insights.push({
+          type: 'pattern',
+          title: 'Meilleur jour',
+          message: `Tu es plus productif le ${bestDay.dayName.toLowerCase()}`,
+          icon: 'calendar',
+          color: 'orange'
         });
-      });
-    }
-  });
-
-  // Filtrer par période
-  const filteredSessions = filterSessionsByPeriod(allSessions, period);
-
-  // Grouper par date
-  const sessionsByDate = {};
-  filteredSessions.forEach(session => {
-    if (!session.date) return;
-    
-    const date = session.date.split('T')[0];
-    if (!sessionsByDate[date]) {
-      sessionsByDate[date] = {
-        date,
-        pages: 0,
-        sessions: 0,
-        totalMinutes: 0,
-        books: []
-      };
+      }
     }
     
-    sessionsByDate[date].pages += Number(session.pagesRead) || 0;
-    sessionsByDate[date].sessions += 1;
-    sessionsByDate[date].totalMinutes += Number(session.durationMinutes) || 0;
-    
-    // Ajouter le livre s'il n'est pas déjà dans la liste
-    const existingBook = sessionsByDate[date].books.find(b => b.id === session.bookId);
-    if (existingBook) {
-      existingBook.pagesRead += Number(session.pagesRead) || 0;
-    } else {
-      sessionsByDate[date].books.push({
-        id: session.bookId,
-        title: session.bookTitle,
-        pagesRead: Number(session.pagesRead) || 0
-      });
-    }
-  });
-
-  // Convertir en tableau et trier par date
-  return Object.values(sessionsByDate).sort((a, b) => a.date.localeCompare(b.date));
+  } catch (error) {
+    console.warn('[useStatisticsData] Error generating insights:', error);
+  }
+  
+  return insights;
 };
 
 /**
- * Hook principal
+ * Hook principal utilisant les nouveaux services
  */
-export const useStatisticsData = (books = [], selectedPeriod = '1m', filters = {}) => {
+export const useStatisticsData = (books = [], selectedPeriod = '1m', filters = {}, dataVersion = 0) => {
   return useMemo(() => {
     try {
       // Vérifier que books est un tableau valide
@@ -270,7 +151,7 @@ export const useStatisticsData = (books = [], selectedPeriod = '1m', filters = {
             totalTime: 0,
             averageSpeed: 0,
             sessionsCount: 0,
-            booksCompleted: 0,
+            booksCompleted: books.filter(book => book.status === 'completed').length,
             currentStreak: 0,
             longestStreak: 0,
             averageSessionDuration: 0,
@@ -279,31 +160,43 @@ export const useStatisticsData = (books = [], selectedPeriod = '1m', filters = {
             todayProgress: 0
           },
           chartData: {
-            pagesPerDay: []
+            pagesPerDay: [],
+            readingSpeed: { evolution: [], byGenre: [] },
+            heatmap: [],
+            genreDistribution: { pie: [], bar: [] },
+            goalsProgress: []
           },
           insights: [],
           predictions: []
         };
       }
 
-      // Calculer les métriques
-      const metrics = calculateMetrics(books, selectedPeriod, filters);
+      // 1. Agréger les sessions avec SessionAggregator
+      const aggregatedData = SessionAggregator.aggregateSessions(books, selectedPeriod, filters);
       
-      // Calculer les données des graphiques
-      const pagesPerDayData = calculatePagesPerDayData(books, selectedPeriod, filters);
+      // 2. Calculer les métriques avec MetricsCalculator
+      const goals = getStoredGoals(); // Récupérer les objectifs depuis localStorage
+      const calculatedMetrics = MetricsCalculator.calculateAllMetrics(books, aggregatedData, goals);
+      
+      // 3. Transformer les données pour les graphiques avec ChartDataTransformer
+      const chartData = ChartDataTransformer.transformAllChartData(calculatedMetrics);
+      
+      // 4. Enrichir les métriques de base avec les objectifs
+      const enrichedMetrics = {
+        ...calculatedMetrics.basic,
+        booksCompleted: books.filter(book => book.status === 'completed').length,
+        dailyGoal: goals.dailyMinutes || 30,
+        todayProgress: getTodayProgress(aggregatedData)
+      };
 
       return {
         hasData: true,
-        metrics,
-        chartData: {
-          pagesPerDay: pagesPerDayData,
-          speedEvolution: [], // TODO: implémenter
-          genreDistribution: [], // TODO: implémenter
-          heatmapData: [], // TODO: implémenter
-          goalsProgress: [] // TODO: implémenter
-        },
-        insights: [], // TODO: implémenter
-        predictions: [] // TODO: implémenter
+        metrics: enrichedMetrics,
+        chartData,
+        insights: generateInsights(calculatedMetrics),
+        predictions: calculatedMetrics.predictions || [],
+        patterns: calculatedMetrics.patterns || {},
+        goals: calculatedMetrics.goals || {}
       };
     } catch (error) {
       console.error('[useStatisticsData] Error calculating statistics:', error);
@@ -315,7 +208,7 @@ export const useStatisticsData = (books = [], selectedPeriod = '1m', filters = {
         predictions: []
       };
     }
-  }, [books, selectedPeriod, filters]);
+  }, [books, selectedPeriod, filters, dataVersion]);
 };
 
 export default useStatisticsData;

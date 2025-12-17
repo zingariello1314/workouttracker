@@ -24,14 +24,14 @@ const TimeFilters = ({
         {t('books.statistics.period', 'Période')}:
       </span>
       
-      <div className="flex gap-1">
+      <div className="flex gap-1 flex-wrap">
         {Object.entries(periods).map(([key, config]) => (
           <Button
             key={key}
             variant={selectedPeriod === key ? 'primary' : 'ghost'}
             size="sm"
             onClick={() => onPeriodChange(key)}
-            className="text-xs px-3 py-1"
+            className="text-xs px-3 py-1 touch-target"
           >
             {config.label}
           </Button>

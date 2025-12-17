@@ -15,22 +15,35 @@
  * @see Requirements 1.1, 1.2, 10.3
  */
 
-import React, { useState, useMemo } from 'react';
-import { BarChart3, Calendar, Clock, Target, TrendingUp, Filter } from 'lucide-react';
-import Card, { CardHeader, CardTitle, CardContent } from '../../ui/Card';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { BarChart3, Calendar, TrendingUp, Filter } from 'lucide-react';
+import Card, { CardContent } from '../../ui/Card';
 import Button from '../../ui/Button';
-import { Select } from '../../ui/Input';
+import DebouncedInput from '../../ui/DebouncedInput';
 import { useTranslation } from '../../../utils/translations';
+import { sidebarEvents, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
 
-// Import des composants de graphiques (à créer)
+// Import des styles mobile
+import '../../../styles/statistics-mobile.css';
+
+// Import des composants de graphiques
 import ChartsContainer from './statistics/ChartsContainer';
 import MetricsPanel from './statistics/MetricsPanel';
 import TimeFilters from './statistics/TimeFilters';
 import ComparisonMode from './statistics/ComparisonMode';
 import ExportTools from './statistics/ExportTools';
+import PredictionsPanel from './statistics/PredictionsPanel';
 
-// Import des services de données (à créer)
-import { useStatisticsData } from '../../../hooks/useStatisticsData';
+// Import du moniteur de performance (dev seulement)
+import PerformanceMonitor from '../../debug/PerformanceMonitor';
+
+// Import de l'error boundary
+import StatisticsErrorBoundary from '../../statistics/StatisticsErrorBoundary';
+
+// Import des services de données
+import { useOptimizedStatistics } from '../../../hooks/useOptimizedStatistics';
+import { usePredictions } from '../../../hooks/usePredictions';
+import { useUserPreferences } from '../../../hooks/useUserPreferences';
 
 /**
  * Types de périodes temporelles supportées
@@ -44,32 +57,66 @@ const TIME_PERIODS = {
   'all': { label: 'Tout', days: null, granularity: 'month' }
 };
 
-/**
- * Types de graphiques disponibles
- */
-const CHART_TYPES = {
-  PAGES_PER_DAY: 'pages-per-day',
-  READING_SPEED: 'reading-speed',
-  HEATMAP_CALENDAR: 'heatmap-calendar',
-  GENRE_DISTRIBUTION: 'genre-distribution',
-  GOALS_PROGRESS: 'goals-progress'
-};
 
-const StatisticsSubTab = ({ books = [] }) => {
+
+const StatisticsSubTabContent = ({ books = [] }) => {
   const t = useTranslation();
   
-  // État local du composant
-  const [selectedPeriod, setSelectedPeriod] = useState('1m');
-  const [activeChart, setActiveChart] = useState(CHART_TYPES.PAGES_PER_DAY);
-  const [comparisonMode, setComparisonMode] = useState(false);
+  // Gestion des préférences utilisateur
+  const {
+    preferences,
+    updateFilters,
+    updateDisplay,
+    isSectionExpanded,
+    toggleSection
+  } = useUserPreferences();
+  
+  // État local du composant basé sur les préférences
+  const [selectedPeriod, setSelectedPeriod] = useState(preferences.filters.selectedPeriod);
+  const [activeChart, setActiveChart] = useState(preferences.display.activeChart);
+  const [comparisonMode, setComparisonMode] = useState(preferences.display.comparisonMode);
   const [filters, setFilters] = useState({
-    genre: '',
-    status: '',
-    author: ''
+    genre: preferences.filters.genre,
+    status: preferences.filters.status,
+    author: preferences.filters.author
   });
+  
+  // État pour forcer la re-calcul des données lors des événements sidebar
+  const [dataVersion, setDataVersion] = useState(0);
+  
+  // Écouter les événements sidebar pour mettre à jour les statistiques en temps réel
+  const handleSidebarEvent = useCallback(() => {
+    // Forcer le recalcul des données en incrémentant la version
+    setDataVersion(prev => prev + 1);
+  }, []);
+  
+  useEffect(() => {
+    // S'abonner aux événements qui affectent les statistiques
+    sidebarEvents.on(SIDEBAR_EVENTS.BOOK_ADDED, handleSidebarEvent);
+    sidebarEvents.on(SIDEBAR_EVENTS.BOOK_UPDATED, handleSidebarEvent);
+    sidebarEvents.on(SIDEBAR_EVENTS.BOOK_DELETED, handleSidebarEvent);
+    sidebarEvents.on(SIDEBAR_EVENTS.PAGES_READ, handleSidebarEvent);
+    
+    return () => {
+      // Nettoyer les listeners
+      sidebarEvents.off(SIDEBAR_EVENTS.BOOK_ADDED, handleSidebarEvent);
+      sidebarEvents.off(SIDEBAR_EVENTS.BOOK_UPDATED, handleSidebarEvent);
+      sidebarEvents.off(SIDEBAR_EVENTS.BOOK_DELETED, handleSidebarEvent);
+      sidebarEvents.off(SIDEBAR_EVENTS.PAGES_READ, handleSidebarEvent);
+    };
+  }, [handleSidebarEvent]);
 
-  // Calculer les données statistiques avec le hook personnalisé
-  const statisticsData = useStatisticsData(books, selectedPeriod, filters);
+  // Calculer les données statistiques avec le hook optimisé
+  // Inclure dataVersion dans les dépendances pour forcer le recalcul lors des événements sidebar
+  const statisticsData = useOptimizedStatistics(books, selectedPeriod, filters, dataVersion);
+  
+  // Calculer les prédictions et recommandations
+  const predictions = usePredictions(
+    books, 
+    statisticsData.metrics?.basic || {}, 
+    statisticsData.aggregatedData || {},
+    { maxResults: 5, minConfidence: 'medium' }
+  );
 
   // Mémoriser les options de filtres disponibles
   const filterOptions = useMemo(() => {
@@ -80,34 +127,40 @@ const StatisticsSubTab = ({ books = [] }) => {
     return { genres, authors, statuses };
   }, [books]);
 
-  // Gestionnaires d'événements
+  // Gestionnaires d'événements avec persistance
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
+    updateFilters({ selectedPeriod: period });
   };
 
   const handleChartChange = (chartType) => {
     setActiveChart(chartType);
+    updateDisplay({ activeChart: chartType });
   };
 
   const handleFilterChange = (filterType, value) => {
-    setFilters(prev => ({
-      ...prev,
+    const newFilters = {
+      ...filters,
       [filterType]: value
-    }));
+    };
+    setFilters(newFilters);
+    updateFilters(newFilters);
   };
 
   const handleComparisonToggle = () => {
-    setComparisonMode(!comparisonMode);
+    const newComparisonMode = !comparisonMode;
+    setComparisonMode(newComparisonMode);
+    updateDisplay({ comparisonMode: newComparisonMode });
   };
 
   // Vérifier si nous avons des données à afficher
   const hasData = books.length > 0 && statisticsData.hasData;
 
   return (
-    <div className="space-y-6">
+    <div className="statistics-container">
       {/* Header avec titre et contrôles principaux */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="statistics-header">
+        <div className="statistics-title-section">
           <BarChart3 className="w-6 h-6 text-purple-300" />
           <div>
             <h2 className="text-2xl font-bold text-white">
@@ -119,39 +172,37 @@ const StatisticsSubTab = ({ books = [] }) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="statistics-controls">
           <Button
             variant={comparisonMode ? 'primary' : 'glass'}
             size="sm"
             onClick={handleComparisonToggle}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 touch-target"
           >
             <TrendingUp className="w-4 h-4" />
             {t('books.statistics.comparison', 'Comparaison')}
           </Button>
-          <ExportTools 
-            statisticsData={statisticsData}
-            selectedPeriod={selectedPeriod}
-          />
         </div>
       </div>
 
       {/* Filtres temporels et autres filtres */}
       <Card variant="glass">
         <CardContent className="p-4">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="filters-container">
             {/* Filtres temporels */}
-            <TimeFilters
-              selectedPeriod={selectedPeriod}
-              onPeriodChange={handlePeriodChange}
-              periods={TIME_PERIODS}
-            />
+            <div className="time-filters">
+              <TimeFilters
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={handlePeriodChange}
+                periods={TIME_PERIODS}
+              />
+            </div>
             
             {/* Séparateur visuel */}
             <div className="hidden lg:block w-px h-6 bg-slate-600"></div>
             
             {/* Autres filtres */}
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="other-filters">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-slate-400" />
                 <span className="text-sm text-slate-300">
@@ -159,21 +210,27 @@ const StatisticsSubTab = ({ books = [] }) => {
                 </span>
               </div>
               
-              <Select
+              <DebouncedInput
+                type="select"
                 value={filters.genre}
                 onChange={(e) => handleFilterChange('genre', e.target.value)}
-                className="min-w-[120px]"
+                className="min-w-[120px] touch-target"
+                delay={200}
+                showLoadingIndicator={true}
               >
                 <option value="">{t('books.statistics.allGenres', 'Tous les genres')}</option>
                 {filterOptions.genres.map(genre => (
                   <option key={genre} value={genre}>{genre}</option>
                 ))}
-              </Select>
+              </DebouncedInput>
               
-              <Select
+              <DebouncedInput
+                type="select"
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="min-w-[120px]"
+                className="min-w-[120px] touch-target"
+                delay={200}
+                showLoadingIndicator={true}
               >
                 <option value="">{t('books.statistics.allStatuses', 'Tous les statuts')}</option>
                 {filterOptions.statuses.map(status => (
@@ -181,18 +238,21 @@ const StatisticsSubTab = ({ books = [] }) => {
                     {t(`books.status.${status}`, status)}
                   </option>
                 ))}
-              </Select>
+              </DebouncedInput>
               
-              <Select
+              <DebouncedInput
+                type="select"
                 value={filters.author}
                 onChange={(e) => handleFilterChange('author', e.target.value)}
-                className="min-w-[120px]"
+                className="min-w-[120px] touch-target"
+                delay={200}
+                showLoadingIndicator={true}
               >
                 <option value="">{t('books.statistics.allAuthors', 'Tous les auteurs')}</option>
                 {filterOptions.authors.map(author => (
                   <option key={author} value={author}>{author}</option>
                 ))}
-              </Select>
+              </DebouncedInput>
             </div>
           </div>
         </CardContent>
@@ -223,37 +283,96 @@ const StatisticsSubTab = ({ books = [] }) => {
         </Card>
       ) : comparisonMode ? (
         // Mode comparaison
-        <ComparisonMode
-          books={books}
-          statisticsData={statisticsData}
-          selectedPeriod={selectedPeriod}
-          filters={filters}
-        />
+        <div className="comparison-layout">
+          <ComparisonMode
+            books={books}
+            statisticsData={statisticsData}
+            selectedPeriod={selectedPeriod}
+            filters={filters}
+            userPreferences={{
+              preferences,
+              addFavoriteComparison: (comparison) => {
+                // Placeholder for future implementation
+                console.log('Add favorite comparison:', comparison);
+              },
+              removeFavoriteComparison: (id) => {
+                // Placeholder for future implementation
+                console.log('Remove favorite comparison:', id);
+              }
+            }}
+          />
+        </div>
       ) : (
         // Mode normal - dashboard avec métriques et graphiques
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          {/* Panneau de métriques (colonne de gauche) */}
-          <div className="xl:col-span-1">
-            <MetricsPanel 
-              statisticsData={statisticsData}
-              selectedPeriod={selectedPeriod}
-            />
+        <div className="space-y-6">
+          {/* Panneau de prédictions et insights */}
+          <div className="predictions-panel">
+            <PredictionsPanel predictions={predictions} />
           </div>
           
-          {/* Container des graphiques (colonnes de droite) */}
-          <div className="xl:col-span-3">
-            <ChartsContainer
-              books={books}
-              statisticsData={statisticsData}
-              activeChart={activeChart}
-              onChartChange={handleChartChange}
-              selectedPeriod={selectedPeriod}
-              filters={filters}
-            />
+          <div className="statistics-main-layout">
+            {/* Panneau de métriques (colonne de gauche) */}
+            <div className="metrics-sidebar">
+              <MetricsPanel 
+                statisticsData={statisticsData}
+                selectedPeriod={selectedPeriod}
+                books={books}
+                userPreferences={{ isSectionExpanded, toggleSection }}
+              />
+              
+              {/* Outils d'export */}
+              <div className="export-tools">
+                <ExportTools 
+                  statisticsData={statisticsData}
+                  selectedPeriod={selectedPeriod}
+                  books={books}
+                />
+              </div>
+            </div>
+            
+            {/* Container des graphiques (colonnes de droite) */}
+            <div className="charts-main">
+              <ChartsContainer
+                books={books}
+                statisticsData={statisticsData}
+                activeChart={activeChart}
+                onChartChange={handleChartChange}
+                selectedPeriod={selectedPeriod}
+                filters={filters}
+              />
+            </div>
           </div>
         </div>
       )}
+      
+      {/* Moniteur de performance (dev seulement) */}
+      <PerformanceMonitor statisticsData={statisticsData} />
     </div>
+  );
+};
+
+// Wrapper avec Error Boundary
+const StatisticsSubTab = ({ books = [] }) => {
+  return (
+    <StatisticsErrorBoundary
+      context={{ books: books?.length || 0 }}
+      fallbackType="full"
+      onRetry={() => {
+        // Invalider le cache lors du retry
+        if (window.statisticsCache) {
+          window.statisticsCache.clear();
+        }
+      }}
+      onReset={() => {
+        // Reset complet des préférences si nécessaire
+        if (window.confirm('Réinitialiser toutes les préférences des statistiques ?')) {
+          localStorage.removeItem('statisticsPreferences');
+          window.location.reload();
+        }
+      }}
+    >
+      <StatisticsSubTabContent books={books} />
+    </StatisticsErrorBoundary>
   );
 };
 

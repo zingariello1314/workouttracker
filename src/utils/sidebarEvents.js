@@ -34,6 +34,17 @@ class SidebarEventEmitter {
   }
 
   /**
+   * Supprime un listener spécifique d'un événement
+   * @param {string} event - Nom de l'événement
+   * @param {Function} callback - Fonction à supprimer
+   */
+  off(event, callback) {
+    if (this.listeners[event]) {
+      this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
+    }
+  }
+
+  /**
    * Émet un événement avec des données
    * @param {string} event - Nom de l'événement
    * @param {*} data - Données à transmettre
