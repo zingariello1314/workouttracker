@@ -1,33 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useFinance } from '../../../hooks/useFinance';
+import { useFinance } from '../../../context/FinanceContext';
 import { financeAlertsService } from '../../../services/finance/financeAlerts';
-import { yahooFinanceService } from '../../../services/finance/yahooFinanceService';
+import { useHistoricalData } from '../../../hooks/useHistoricalData';
 
 const AlertsPanel = () => {
   const { portfolio } = useFinance();
   const [alerts, setAlerts] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [historicalDataMap, setHistoricalDataMap] = useState({});
-
-  // Charger historique pour détection croisements MA
-  useEffect(() => {
-    const loadHistoricalData = async () => {
-      const map = {};
-      for (const position of portfolio) {
-        try {
-          const historical = await yahooFinanceService.getHistoricalData(position.ticker, '3m');
-          map[position.ticker] = historical;
-        } catch (error) {
-          console.warn(`Failed to load historical for ${position.ticker}:`, error);
-        }
-      }
-      setHistoricalDataMap(map);
-    };
-
-    if (portfolio.length > 0) {
-      loadHistoricalData();
-    }
-  }, [portfolio]);
+  
+  // ✅ OPTIMISATION Phase 1.1 : Utiliser hook centralisé pour données historiques
+  // Élimine double chargement et partage cache entre composants
+  const { data: historicalDataMap } = useHistoricalData(
+    portfolio.map(p => p.ticker),
+    '3m',
+    { enabled: portfolio.length > 0 }
+  );
 
   useEffect(() => {
     if (!portfolio || portfolio.length === 0) {

@@ -1,19 +1,39 @@
-import React, { useState } from 'react';
+/**
+ * Composant principal du sous-onglet Bourse
+ * 
+ * ✅ OPTIMISATION Phase 2.1 : Lazy Loading Composants Lourds
+ * - PortfolioChart, RecommendationsPanel, AlertsPanel chargés à la demande
+ * - Réduction bundle initial 30-40%
+ * - Amélioration temps chargement initial
+ * 
+ * @module components/finance/bourse/BourseSubTab
+ * @see docs/finance/ANALYSE_PROFONDE_SOUS_ONGLET_BOURSE.md - Solution 5
+ */
+
+import React, { useState, Suspense, lazy } from 'react';
 import { useTranslation } from '../../../utils/translations';
-import { useFinance } from '../../../hooks/useFinance';
+import { useFinance } from '../../../context/FinanceContext';
 import PortfolioTable from './PortfolioTable';
 import AddPositionForm from './AddPositionForm';
 import PortfolioSummary from './PortfolioSummary';
-import PortfolioChart from './PortfolioChart';
 import StockCard from './StockCard';
-import RecommendationsPanel from './RecommendationsPanel';
-import AlertsPanel from './AlertsPanel';
 import ExportCSV from './ExportCSV';
-import { PortfolioTableSkeleton, SummarySkeleton, ChartSkeleton } from './SkeletonLoader';
+import { 
+  PortfolioTableSkeleton, 
+  SummarySkeleton, 
+  ChartSkeleton,
+  AlertsPanelSkeleton,
+  RecommendationsPanelSkeleton
+} from './SkeletonLoader';
+
+// ✅ OPTIMISATION Phase 2.1 : Lazy loading composants lourds (réduction bundle initial 30-40%)
+const PortfolioChart = lazy(() => import('./PortfolioChart'));
+const RecommendationsPanel = lazy(() => import('./RecommendationsPanel'));
+const AlertsPanel = lazy(() => import('./AlertsPanel'));
 
 const BourseSubTab = () => {
   const t = useTranslation();
-  const { portfolio, loading, error } = useFinance();
+  const { portfolio, loading, error, refreshing, refreshYahooData } = useFinance();
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewMode, setViewMode] = useState('table'); // 'table' ou 'cards'
   
@@ -48,7 +68,7 @@ const BourseSubTab = () => {
 
   return (
     <div className="bourse-sub-tab space-y-6">
-      {/* Header avec bouton ajouter */}
+      {/* Header avec boutons */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">
@@ -58,13 +78,31 @@ const BourseSubTab = () => {
             {portfolio.length} position{portfolio.length > 1 ? 's' : ''} dans votre portfolio
           </p>
         </div>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
-        >
-          <span>+</span>
-          <span>Ajouter une position</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={refreshYahooData}
+            disabled={refreshing || loading}
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
+            title="Rafraîchir les données de marché"
+          >
+            <svg 
+              className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>{refreshing ? 'Rafraîchissement...' : 'Rafraîchir'}</span>
+          </button>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+          >
+            <span>+</span>
+            <span>Ajouter une position</span>
+          </button>
+        </div>
       </div>
 
       {/* Formulaire ajout position */}
@@ -79,24 +117,30 @@ const BourseSubTab = () => {
         <PortfolioSummary portfolio={portfolio} />
       )}
 
-      {/* Alertes */}
+      {/* Alertes - Lazy loaded */}
       {portfolio.length > 0 && (
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-          <AlertsPanel />
+          <Suspense fallback={<AlertsPanelSkeleton />}>
+            <AlertsPanel />
+          </Suspense>
         </div>
       )}
 
-      {/* Recommandations IA */}
+      {/* Recommandations IA - Lazy loaded */}
       {portfolio.length > 0 && (
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-          <RecommendationsPanel />
+          <Suspense fallback={<RecommendationsPanelSkeleton />}>
+            <RecommendationsPanel />
+          </Suspense>
         </div>
       )}
 
-      {/* Graphiques portfolio */}
+      {/* Graphiques portfolio - Lazy loaded */}
       {portfolio.length > 0 && (
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-          <PortfolioChart portfolio={portfolio} />
+          <Suspense fallback={<ChartSkeleton />}>
+            <PortfolioChart portfolio={portfolio} />
+          </Suspense>
         </div>
       )}
 

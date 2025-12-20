@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFinance } from '../../../hooks/useFinance';
+import { useFinance } from '../../../context/FinanceContext';
 
 const ExportCSV = () => {
   const { portfolio } = useFinance();

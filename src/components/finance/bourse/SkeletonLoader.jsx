@@ -34,6 +34,36 @@ export const SummarySkeleton = () => (
   </div>
 );
 
+/**
+ * Skeleton pour AlertsPanel
+ * ✅ OPTIMISATION Phase 2.1 : Skeleton pour lazy loading
+ */
+export const AlertsPanelSkeleton = () => (
+  <div className="animate-pulse space-y-4">
+    <div className="h-6 bg-slate-700/50 rounded w-1/4 mb-4"></div>
+    {[...Array(3)].map((_, i) => (
+      <div key={i} className="h-20 bg-slate-700/30 rounded-lg border border-slate-700/50"></div>
+    ))}
+  </div>
+);
+
+/**
+ * Skeleton pour RecommendationsPanel
+ * ✅ OPTIMISATION Phase 2.1 : Skeleton pour lazy loading
+ */
+export const RecommendationsPanelSkeleton = () => (
+  <div className="animate-pulse space-y-4">
+    <div className="h-6 bg-slate-700/50 rounded w-1/3 mb-4"></div>
+    {[...Array(2)].map((_, i) => (
+      <div key={i} className="h-32 bg-slate-700/30 rounded-lg border border-slate-700/50 p-4">
+        <div className="h-4 bg-slate-700/50 rounded w-1/2 mb-2"></div>
+        <div className="h-3 bg-slate-700/30 rounded w-3/4 mb-2"></div>
+        <div className="h-3 bg-slate-700/30 rounded w-2/3"></div>
+      </div>
+    ))}
+  </div>
+);
+
 // Export par défaut pour compatibilité
 const SkeletonLoader = () => (
   <div className="flex items-center justify-center min-h-[400px]">

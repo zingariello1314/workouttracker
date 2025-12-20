@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../../utils/translations';
-import { useFinance } from '../../../hooks/useFinance';
+import { useFinance } from '../../../context/FinanceContext';
 import { useToast } from '../../ui/Toast';
 
 const AddPositionForm = ({ onClose }) => {

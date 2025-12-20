@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useFinance } from '../../../hooks/useFinance';
+import { useFinance } from '../../../context/FinanceContext';
 import { useToast } from '../../ui/Toast';
 
 const AlertSettings = ({ position, onClose }) => {
@@ -14,6 +14,8 @@ const AlertSettings = ({ position, onClose }) => {
 
   const handleSave = async () => {
     try {
+      // ✅ FIX : updatePosition supporte maintenant les deux signatures
+      // Ici on passe la position complète avec les nouveaux settings
       await updatePosition({
         ...position,
         settings: {

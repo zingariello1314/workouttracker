@@ -14,9 +14,15 @@ const positionSchema = z.object({
   }).optional()
 });
 
-// Cache simple pour memoization
+// Cache simple pour memoization (calculs élémentaires)
 const calculationCache = new Map();
 const CACHE_MAX_SIZE = 1000;
+
+// ✅ OPTIMISATION Phase 1.2 : Cache par position pour calculs batch
+// Structure: Map<positionId, { calculs, hash, timestamp, totalPortfolio }>
+const positionCalculationsCache = new Map();
+const POSITION_CACHE_MAX_SIZE = 500; // Limite cache positions
+const POSITION_CACHE_TTL = 5 * 60 * 1000; // 5 minutes TTL pour cache position
 
 /**
  * Calculer valorisation position avec validation
@@ -303,45 +309,344 @@ export function detectTechnicalSignals(prix, ma50, ma200, previousPrix = null) {
 }
 
 /**
- * Calcul batch optimisé
+ * Générer hash pour détecter changements d'une position
+ * Hash basé sur les champs qui affectent les calculs
  */
-export function calculateBatchMetrics(positions) {
-  // Calculer total portfolio d'abord
-  const totalPortfolio = positions.reduce((sum, pos) => {
+function generatePositionHash(position) {
+  const prixActuel = position.yahooData?.prixActuel || position.prixEntree;
+  const ma50 = position.yahooData?.ma50 || null;
+  const ma200 = position.yahooData?.ma200 || null;
+  
+  // Hash basé sur les inputs qui affectent les calculs
+  const hashInput = JSON.stringify({
+    id: position.id,
+    quantite: position.quantite,
+    prixEntree: position.prixEntree,
+    prixActuel: prixActuel,
+    ma50: ma50,
+    ma200: ma200
+  });
+  
+  // Hash simple mais efficace (FNV-1a inspired)
+  let hash = 2166136261;
+  for (let i = 0; i < hashInput.length; i++) {
+    hash ^= hashInput.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  
+  return hash >>> 0; // Convertir en unsigned 32-bit
+}
+
+/**
+ * Calculer métriques pour une seule position
+ * Fonction pure, réutilisable et testable
+ */
+function calculatePositionMetrics(position, totalPortfolio) {
+  // Déterminer le prix actuel
+  // Priorité: yahooData.prixActuel si disponible et valide (> 0 et différent de prixEntree)
+  // Si prixActuel === prixEntree, cela peut indiquer des données non rafraîchies
+  let prixActuel;
+  
+  if (position.yahooData?.prixActuel !== undefined && 
+      position.yahooData?.prixActuel !== null && 
+      position.yahooData?.prixActuel > 0) {
+    prixActuel = position.yahooData.prixActuel;
+  } else {
+    // Si yahooData n'existe pas ou prixActuel n'est pas valide, utiliser prixEntree
+    // Cela donnera une plus-value de 0 temporairement jusqu'à ce que les données soient chargées
+    prixActuel = position.prixEntree;
+  }
+  
+  const valeurPosition = calculatePositionValue(position.quantite, prixActuel);
+  
+  // Calculer plus-value
+  const plusValueEuro = calculateGainLoss(position.prixEntree, prixActuel, position.quantite);
+  const plusValuePourcent = position.prixEntree > 0 
+    ? ((prixActuel - position.prixEntree) / position.prixEntree) * 100
+    : 0;
+  
+  const poidsPortfolio = calculatePortfolioWeight(valeurPosition, totalPortfolio);
+  
+  // Signal technique (basique pour l'instant)
+  const signal = position.yahooData?.ma50 && position.yahooData?.ma200
+    ? detectTechnicalSignals(
+        prixActuel,
+        position.yahooData.ma50,
+        position.yahooData.ma200
+      )
+    : { signal: 'NEUTRE', confidence: 0 };
+  
+  return {
+    valeurPosition,
+    plusValueEuro,
+    plusValuePourcent: Math.round(plusValuePourcent * 100) / 100,
+    poidsPortfolio,
+    signal
+  };
+}
+
+/**
+ * Calculer total portfolio de manière optimisée
+ * Utilise cache si toutes les positions sont en cache et valides
+ */
+function calculateTotalPortfolio(positions, useCache = true) {
+  if (!positions || positions.length === 0) return 0;
+  
+  // Si toutes positions en cache et valides, utiliser cache total
+  if (useCache) {
+    let allCached = true;
+    let cachedTotal = 0;
+    const now = Date.now();
+    
+    for (const pos of positions) {
+      const cached = positionCalculationsCache.get(pos.id);
+      if (!cached || (now - cached.timestamp) > POSITION_CACHE_TTL) {
+        allCached = false;
+        break;
+      }
+      cachedTotal += cached.calculs.valeurPosition;
+    }
+    
+    if (allCached) {
+      return cachedTotal;
+    }
+  }
+  
+  // Calculer total normalement
+  return positions.reduce((sum, pos) => {
     const prixActuel = pos.yahooData?.prixActuel || pos.prixEntree;
     return sum + calculatePositionValue(pos.quantite, prixActuel);
   }, 0);
+}
+
+/**
+ * Calcul batch optimisé avec cache incrémental par position
+ * 
+ * ✅ OPTIMISATION Phase 1.2 : Calcul incrémental avec cache par position
+ * - Ne recalcule que les positions qui ont changé
+ * - Cache par position ID avec hash de détection
+ * - Réutilisation calculs inchangés
+ * - Gestion TTL et taille cache (LRU)
+ * 
+ * @param {Array} positions - Liste des positions du portfolio
+ * @param {Object} options - Options de calcul
+ * @param {boolean} options.forceRecalculate - Forcer recalcul même si cache valide (défaut: false)
+ * @returns {Array} Positions avec calculs mis à jour
+ */
+export function calculateBatchMetrics(positions, options = {}) {
+  if (!positions || positions.length === 0) {
+    return [];
+  }
+
+  const { forceRecalculate = false } = options;
+  const now = Date.now();
   
-  return positions.map(pos => {
-    const prixActuel = pos.yahooData?.prixActuel || pos.prixEntree;
-    const valeurPosition = calculatePositionValue(pos.quantite, prixActuel);
+  // Calculer total portfolio d'abord (nécessaire pour poidsPortfolio)
+  // Utiliser cache si possible pour éviter recalcul complet
+  const totalPortfolio = calculateTotalPortfolio(positions, !forceRecalculate);
+  
+  // Séparer positions à recalculer vs positions en cache valides
+  const positionsToRecalculate = [];
+  const cachedPositions = [];
+  
+  for (const pos of positions) {
+    if (!pos.id) {
+      // Position sans ID (nouvelle), toujours recalculer
+      positionsToRecalculate.push(pos);
+      continue;
+    }
     
-    const plusValueEuro = calculateGainLoss(pos.prixEntree, prixActuel, pos.quantite);
-    const plusValuePourcent = pos.prixEntree > 0 
-      ? ((prixActuel - pos.prixEntree) / pos.prixEntree) * 100
-      : 0;
+    if (forceRecalculate) {
+      positionsToRecalculate.push(pos);
+      continue;
+    }
     
-    const poidsPortfolio = calculatePortfolioWeight(valeurPosition, totalPortfolio);
+    // Vérifier cache
+    const cached = positionCalculationsCache.get(pos.id);
+    if (cached) {
+      // Vérifier TTL
+      const age = now - cached.timestamp;
+      if (age < POSITION_CACHE_TTL) {
+        // Vérifier hash pour détecter changements
+        const currentHash = generatePositionHash(pos);
+        if (cached.hash === currentHash && cached.totalPortfolio === totalPortfolio) {
+          // Cache valide, réutiliser
+          cachedPositions.push({
+            ...pos,
+            calculs: cached.calculs
+          });
+          continue;
+        }
+      }
+    }
     
-    // Signal technique (basique pour l'instant)
-    const signal = pos.yahooData?.ma50 && pos.yahooData?.ma200
-      ? detectTechnicalSignals(
-          prixActuel,
-          pos.yahooData.ma50,
-          pos.yahooData.ma200
-        )
-      : { signal: 'NEUTRE', confidence: 0 };
+    // Cache invalide ou position changée, recalculer
+    positionsToRecalculate.push(pos);
+  }
+  
+  // Recalculer seulement positions qui ont changé
+  const recalculated = positionsToRecalculate.map(pos => {
+    const calculs = calculatePositionMetrics(pos, totalPortfolio);
+    const hash = generatePositionHash(pos);
+    
+    // Mettre en cache
+    if (pos.id) {
+      // Gestion taille cache (LRU simple)
+      if (positionCalculationsCache.size >= POSITION_CACHE_MAX_SIZE) {
+        // Supprimer entrée la plus ancienne
+        let oldestKey = null;
+        let oldestTime = Infinity;
+        for (const [key, value] of positionCalculationsCache.entries()) {
+          if (value.timestamp < oldestTime) {
+            oldestTime = value.timestamp;
+            oldestKey = key;
+          }
+        }
+        if (oldestKey) {
+          positionCalculationsCache.delete(oldestKey);
+        }
+      }
+      
+      positionCalculationsCache.set(pos.id, {
+        calculs,
+        hash,
+        timestamp: now,
+        totalPortfolio
+      });
+    }
     
     return {
       ...pos,
-      calculs: {
-        valeurPosition,
-        plusValueEuro,
-        plusValuePourcent: Math.round(plusValuePourcent * 100) / 100,
-        poidsPortfolio,
-        signal
-      }
+      calculs
     };
   });
+  
+  // Combiner positions recalculées et positions en cache
+  const result = [...recalculated, ...cachedPositions];
+  
+  // S'assurer que l'ordre est préservé (important pour UI)
+  // Créer map pour lookup rapide
+  const resultMap = new Map(result.map(pos => [pos.id || pos.ticker, pos]));
+  return positions.map(pos => {
+    const id = pos.id || pos.ticker;
+    return resultMap.get(id) || pos;
+  });
+}
+
+/**
+ * Invalider cache pour une position spécifique
+ * Utile quand position modifiée manuellement
+ */
+export function invalidatePositionCache(positionId) {
+  if (positionId) {
+    positionCalculationsCache.delete(positionId);
+  }
+}
+
+/**
+ * Nettoyer cache positions expirées
+ * Utile pour maintenance périodique
+ */
+export function cleanupExpiredPositionCache() {
+  const now = Date.now();
+  let cleaned = 0;
+  
+  for (const [id, cached] of positionCalculationsCache.entries()) {
+    if (now - cached.timestamp > POSITION_CACHE_TTL) {
+      positionCalculationsCache.delete(id);
+      cleaned++;
+    }
+  }
+  
+  return cleaned;
+}
+
+/**
+ * Obtenir statistiques du cache positions
+ * Utile pour debugging et monitoring
+ */
+export function getPositionCacheStats() {
+  const now = Date.now();
+  let valid = 0;
+  let expired = 0;
+  
+  for (const cached of positionCalculationsCache.values()) {
+    if (now - cached.timestamp < POSITION_CACHE_TTL) {
+      valid++;
+    } else {
+      expired++;
+    }
+  }
+  
+  return {
+    total: positionCalculationsCache.size,
+    valid,
+    expired,
+    maxSize: POSITION_CACHE_MAX_SIZE,
+    ttl: POSITION_CACHE_TTL
+  };
+}
+
+/**
+ * Calculer statistiques de prix depuis date achat et sur période
+ * 
+ * ✅ OPTIMISATION Phase 1.4 : Fonction pour modal détail action
+ * - Calcule plus haut/bas depuis date achat
+ * - Calcule plus haut/bas sur période (52 semaines par défaut)
+ * - Gestion robuste des dates et données manquantes
+ * 
+ * @param {Array} historicalData - Données historiques [{ date, close, ... }]
+ * @param {string|Date} dateAchat - Date d'achat de la position
+ * @param {number} periodWeeks - Période en semaines (défaut: 52)
+ * @returns {Object|null} { highSincePurchase, lowSincePurchase, high52Weeks, low52Weeks, currentPrice }
+ */
+export function calculatePriceStats(historicalData, dateAchat, periodWeeks = 52) {
+  if (!historicalData || historicalData.length === 0) {
+    return null;
+  }
+
+  const dateAchatObj = dateAchat instanceof Date ? dateAchat : new Date(dateAchat);
+  
+  // Filtrer données depuis date achat
+  const dataSincePurchase = historicalData.filter(d => {
+    const dataDate = new Date(d.date);
+    return dataDate >= dateAchatObj;
+  });
+
+  // Calculer plus haut/bas depuis achat
+  const pricesSincePurchase = dataSincePurchase.map(d => d.close || d.prixActuel || 0).filter(p => p > 0);
+  const highSincePurchase = pricesSincePurchase.length > 0 
+    ? Math.max(...pricesSincePurchase) 
+    : null;
+  const lowSincePurchase = pricesSincePurchase.length > 0 
+    ? Math.min(...pricesSincePurchase) 
+    : null;
+
+  // Calculer période (par défaut 52 semaines)
+  const now = new Date();
+  const periodStart = new Date(now);
+  periodStart.setDate(periodStart.getDate() - (periodWeeks * 7));
+
+  const dataPeriod = historicalData.filter(d => {
+    const dataDate = new Date(d.date);
+    return dataDate >= periodStart;
+  });
+
+  const pricesPeriod = dataPeriod.map(d => d.close || d.prixActuel || 0).filter(p => p > 0);
+  const high52Weeks = pricesPeriod.length > 0 ? Math.max(...pricesPeriod) : null;
+  const low52Weeks = pricesPeriod.length > 0 ? Math.min(...pricesPeriod) : null;
+
+  // Prix actuel (dernière donnée disponible)
+  const currentPrice = historicalData.length > 0 
+    ? (historicalData[historicalData.length - 1].close || historicalData[historicalData.length - 1].prixActuel || null)
+    : null;
+
+  return {
+    highSincePurchase,
+    lowSincePurchase,
+    high52Weeks,
+    low52Weeks,
+    currentPrice
+  };
 }
 

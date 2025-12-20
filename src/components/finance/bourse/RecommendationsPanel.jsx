@@ -1,31 +1,18 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { useFinance } from '../../../hooks/useFinance';
+import React, { useMemo } from 'react';
+import { useFinance } from '../../../context/FinanceContext';
 import { recommendationEngine } from '../../../services/finance/financeRecommendations';
-import { yahooFinanceService } from '../../../services/finance/yahooFinanceService';
+import { useHistoricalData } from '../../../hooks/useHistoricalData';
 
 const RecommendationsPanel = () => {
   const { portfolio } = useFinance();
-  const [historicalDataCache, setHistoricalDataCache] = useState({});
-
-  // Charger historique pour chaque position
-  useEffect(() => {
-    const loadHistoricalData = async () => {
-      const cache = {};
-      for (const position of portfolio) {
-        try {
-          const historical = await yahooFinanceService.getHistoricalData(position.ticker, '3m');
-          cache[position.ticker] = historical;
-        } catch (error) {
-          console.warn(`Failed to load historical for ${position.ticker}:`, error);
-        }
-      }
-      setHistoricalDataCache(cache);
-    };
-
-    if (portfolio.length > 0) {
-      loadHistoricalData();
-    }
-  }, [portfolio]);
+  
+  // ✅ OPTIMISATION Phase 1.1 : Utiliser hook centralisé pour données historiques
+  // Élimine double chargement et partage cache entre composants
+  const { data: historicalDataCache } = useHistoricalData(
+    portfolio.map(p => p.ticker),
+    '3m',
+    { enabled: portfolio.length > 0 }
+  );
 
   const recommendations = useMemo(() => {
     if (!portfolio || portfolio.length === 0) return [];

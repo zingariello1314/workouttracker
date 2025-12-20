@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../utils/translations';
+import { FinanceProvider } from '../../context/FinanceContext';
 import BourseSubTab from '../finance/bourse/BourseSubTab';
 import BudgetSubTab from '../finance/budget/BudgetSubTab';
 import InvestissementsSubTab from '../finance/investissements/InvestissementsSubTab';
@@ -47,7 +48,8 @@ const FinanceTab = () => {
   };
 
   return (
-    <div className="finance-tab-container min-h-[calc(100vh-140px)]">
+    <FinanceProvider>
+      <div className="finance-tab-container min-h-[calc(100vh-140px)]">
       <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="mb-6">
@@ -84,7 +86,8 @@ const FinanceTab = () => {
           {renderSubTabContent()}
         </div>
       </div>
-    </div>
+      </div>
+    </FinanceProvider>
   );
 };
 

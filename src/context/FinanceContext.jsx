@@ -1,8 +1,15 @@
 /**
- * Hook principal pour la gestion du portfolio Finance
+ * Context Provider pour le module Finance
+ * 
+ * ✅ FIX : Partage state entre tous les composants Finance
+ * - Évite problème de closure stale
+ * - État global synchronisé
+ * - Pattern identique à WorkoutContext et GarminContext
+ * 
+ * @module context/FinanceContext
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { financeStorage } from '../services/finance/financeStorage';
 import { yahooFinanceService } from '../services/finance/yahooFinanceService';
 import { 
@@ -11,9 +18,25 @@ import {
 } from '../services/finance/financeCalculations';
 import logger from '../utils/logger';
 
-const log = logger.module('useFinance');
+const log = logger.module('FinanceContext');
 
+const FinanceContext = createContext(null);
+
+/**
+ * Hook pour utiliser le contexte Finance
+ */
 export const useFinance = () => {
+  const context = useContext(FinanceContext);
+  if (!context) {
+    throw new Error('useFinance must be used within a FinanceProvider');
+  }
+  return context;
+};
+
+/**
+ * Provider pour le contexte Finance
+ */
+export const FinanceProvider = ({ children }) => {
   const [portfolio, setPortfolio] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,11 +60,20 @@ export const useFinance = () => {
           const enrichedBatch = await Promise.all(
             batch.map(async (position) => {
               try {
-                const yahooData = await yahooFinanceService.getQuoteData(position.ticker);
+                // Utiliser forceRefresh: true au chargement initial pour obtenir les vraies données
+                const yahooData = await yahooFinanceService.getQuoteData(position.ticker, { forceRefresh: true });
+                
+                // Vérifier que les données sont valides
+                if (!yahooData || !yahooData.prixActuel || yahooData.prixActuel <= 0) {
+                  log.warn(`Invalid Yahoo data for ${position.ticker}:`, yahooData);
+                  return position; // Retourner position sans yahooData
+                }
+                
                 return {
                   ...position,
                   yahooData: {
                     ...yahooData,
+                    timestamp: Date.now(),
                     // Moyennes mobiles basiques (à améliorer avec historique)
                     ma20: yahooData.prixActuel * 0.98, // Placeholder
                     ma50: yahooData.prixActuel * 0.95, // Placeholder
@@ -69,9 +101,9 @@ export const useFinance = () => {
         const withCalculations = calculateBatchMetrics(enrichedData);
         
         // Si certaines positions n'ont pas de yahooData, forcer un refresh immédiat
-        const positionsWithoutYahooData = withCalculations.filter(p => !p.yahooData || !p.yahooData.prixActuel);
+        const positionsWithoutYahooData = withCalculations.filter(p => !p.yahooData || !p.yahooData.prixActuel || p.yahooData.prixActuel === p.prixEntree);
         if (positionsWithoutYahooData.length > 0) {
-          log.info(`Forcing refresh for ${positionsWithoutYahooData.length} positions without Yahoo data`);
+          log.info(`Forcing refresh for ${positionsWithoutYahooData.length} positions without valid Yahoo data`);
           // Rafraîchir en arrière-plan sans bloquer l'affichage
           setTimeout(() => {
             refreshYahooData().catch(err => {
@@ -100,6 +132,30 @@ export const useFinance = () => {
     loadData();
   }, []);
 
+  // Refresh automatique au chargement si des positions n'ont pas de données Yahoo valides
+  useEffect(() => {
+    if (!loading && portfolio.length > 0) {
+      const positionsWithoutValidData = portfolio.filter(p => 
+        !p.yahooData || 
+        !p.yahooData.prixActuel || 
+        p.yahooData.prixActuel <= 0 ||
+        p.yahooData.prixActuel === p.prixEntree
+      );
+      
+      if (positionsWithoutValidData.length > 0) {
+        log.info(`Auto-refreshing ${positionsWithoutValidData.length} positions without valid Yahoo data`);
+        // Attendre un peu avant de rafraîchir pour ne pas bloquer le rendu initial
+        const timeoutId = setTimeout(() => {
+          refreshYahooData().catch(err => {
+            log.error('Error auto-refreshing Yahoo data:', err);
+          });
+        }, 2000);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [loading, portfolio, refreshYahooData]);
+
   // Auto-refresh intelligent (seulement heures bourse)
   useEffect(() => {
     const isMarketOpen = () => {
@@ -107,8 +163,8 @@ export const useFinance = () => {
       const hour = now.getHours();
       const day = now.getDay();
       
-      // Lundi-Vendredi, 9h-17h30 (heures bourse US approximatives)
-      return day >= 1 && day <= 5 && hour >= 9 && hour < 17;
+      // Bourse ouverte : lundi-vendredi, 9h-17h30 (heure Paris)
+      return day >= 1 && day <= 5 && hour >= 9 && hour < 18;
     };
 
     if (isMarketOpen() && portfolio.length > 0) {
@@ -122,15 +178,15 @@ export const useFinance = () => {
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [portfolio.length]);
+  }, [portfolio.length, refreshYahooData]);
 
   // Ajout position avec validation
   const addPosition = useCallback(async (newPosition) => {
-    console.log('🚀 [useFinance] Début addPosition avec:', newPosition);
+    console.log('🚀 [FinanceContext] Début addPosition avec:', newPosition);
     
     // Validation
     if (!newPosition.ticker || !newPosition.quantite || !newPosition.prixEntree) {
-      console.error('❌ [useFinance] Validation échouée - données incomplètes');
+      console.error('❌ [FinanceContext] Validation échouée - données incomplètes');
       throw new Error('Données incomplètes');
     }
 
@@ -143,32 +199,32 @@ export const useFinance = () => {
       investissementTotal: newPosition.quantite * newPosition.prixEntree
     };
     
-    console.log('✅ [useFinance] Position normalisée:', normalized);
+    console.log('✅ [FinanceContext] Position normalisée:', normalized);
 
-    // Récupérer données Yahoo
+    // Récupérer données Yahoo avec forceRefresh pour obtenir les vraies données
     let yahooDataLoaded = false;
     try {
-      console.log('🌐 [useFinance] Récupération données Yahoo pour', normalized.ticker);
+      console.log('🌐 [FinanceContext] Récupération données Yahoo pour', normalized.ticker);
       const yahooData = await yahooFinanceService.getQuoteData(normalized.ticker, { forceRefresh: true });
-      console.log('📊 [useFinance] Données Yahoo reçues:', yahooData);
+      console.log('📊 [FinanceContext] Données Yahoo reçues:', yahooData);
       
       if (yahooData && yahooData.prixActuel && yahooData.prixActuel > 0) {
         normalized.yahooData = {
           ...yahooData,
+          timestamp: Date.now(),
           ma20: yahooData.prixActuel * 0.98,
           ma50: yahooData.prixActuel * 0.95,
           ma200: yahooData.prixActuel * 0.90
         };
         yahooDataLoaded = true;
-        console.log('📈 [useFinance] Données Yahoo enrichies:', normalized.yahooData);
+        console.log('📈 [FinanceContext] Données Yahoo enrichies:', normalized.yahooData);
       } else {
-        console.warn('⚠️ [useFinance] Données Yahoo invalides (prixActuel manquant ou 0)');
+        console.warn('⚠️ [FinanceContext] Données Yahoo invalides (prixActuel manquant ou 0)');
         normalized.yahooData = undefined;
       }
     } catch (err) {
-      console.warn('⚠️ [useFinance] Yahoo data unavailable, will retry on refresh:', err.message);
-      // Ne pas définir yahooData avec prixEntree car cela donnerait une plus-value de 0
-      // Laisser yahooData undefined pour que le système force un refresh
+      console.warn('⚠️ [FinanceContext] Yahoo data unavailable, will retry on refresh:', err.message);
+      // Ne pas définir yahooData avec prixEntree pour éviter plus-value à 0
       normalized.yahooData = undefined;
     }
 
@@ -176,15 +232,15 @@ export const useFinance = () => {
     // ✅ FIX : Utiliser fonction updater pour éviter closure stale
     let addedPosition;
     setPortfolio(prev => {
-      console.log('📋 [useFinance] Portfolio actuel:', prev.length, 'positions');
+      console.log('📋 [FinanceContext] Portfolio actuel:', prev.length, 'positions');
       
       // Créer nouveau portfolio avec position ajoutée
       const newPortfolio = [...prev, normalized];
-      console.log('📊 [useFinance] Nouveau portfolio avant calculs:', newPortfolio.length, 'positions');
+      console.log('📊 [FinanceContext] Nouveau portfolio avant calculs:', newPortfolio.length, 'positions');
       
       // Calculer métriques pour TOUT le portfolio (important pour poidsPortfolio)
       const withCalculations = calculateBatchMetrics(newPortfolio);
-      console.log('✅ [useFinance] Portfolio avec calculs:', withCalculations.length, 'positions');
+      console.log('✅ [FinanceContext] Portfolio avec calculs:', withCalculations.length, 'positions');
       
       // Récupérer la position ajoutée (dernière dans le tableau)
       addedPosition = withCalculations[withCalculations.length - 1];
@@ -197,11 +253,11 @@ export const useFinance = () => {
       return withCalculations;
     });
 
-    console.log('🎉 [useFinance] Position ajoutée avec succès!');
+    console.log('🎉 [FinanceContext] Position ajoutée avec succès!');
     
     // Si Yahoo data n'a pas été chargée, forcer un refresh immédiat en arrière-plan
     if (!yahooDataLoaded) {
-      console.log('🔄 [useFinance] Forcing refresh pour position sans Yahoo data');
+      console.log('🔄 [FinanceContext] Forcing refresh pour position sans Yahoo data');
       setTimeout(async () => {
         try {
           await refreshYahooData();
@@ -212,45 +268,72 @@ export const useFinance = () => {
     }
     
     return addedPosition;
-  }, []); // Pas de dépendance portfolio pour éviter closure stale
+  }, []);
 
   // Mise à jour position
-  const updatePosition = useCallback(async (id, updates) => {
-    const updated = portfolio.map(pos => {
-      if (pos.id === id) {
-        const merged = { ...pos, ...updates };
-        const withCalculations = calculateBatchMetrics([merged]);
-        return withCalculations[0];
-      }
-      return pos;
-    });
+  // ✅ Support deux signatures : updatePosition(id, updates) ou updatePosition(positionComplete)
+  const updatePosition = useCallback(async (idOrPosition, updates) => {
+    // Détecter si premier paramètre est un objet (position complète) ou string (id)
+    let positionId;
+    let positionUpdates;
     
-    setPortfolio(updated);
-    await financeStorage.savePortfolio(updated);
-  }, [portfolio]);
+    if (typeof idOrPosition === 'string' || typeof idOrPosition === 'number') {
+      // Signature classique : updatePosition(id, updates)
+      positionId = idOrPosition;
+      positionUpdates = updates;
+    } else if (idOrPosition && typeof idOrPosition === 'object' && idOrPosition.id) {
+      // Signature alternative : updatePosition(positionComplete) - pour compatibilité AlertSettings
+      positionId = idOrPosition.id;
+      positionUpdates = idOrPosition;
+    } else {
+      throw new Error('Invalid arguments to updatePosition');
+    }
+    
+    invalidatePositionCache(positionId);
+    
+    setPortfolio(prev => {
+      const updated = prev.map(pos => {
+        if (pos.id === positionId) {
+          const merged = { ...pos, ...positionUpdates };
+          const withCalculations = calculateBatchMetrics([merged]);
+          return withCalculations[0];
+        }
+        return pos;
+      });
+      
+      // Recalculer tout le portfolio pour mettre à jour poidsPortfolio
+      const withCalculations = calculateBatchMetrics(updated);
+      
+      financeStorage.savePortfolio(withCalculations).catch(err => {
+        log.error('Error saving portfolio after update:', err);
+      });
+      
+      return withCalculations;
+    });
+  }, []);
 
   // Suppression position
   const deletePosition = useCallback(async (id) => {
-    // ✅ OPTIMISATION Phase 1.2 : Nettoyer cache position supprimée
     invalidatePositionCache(id);
     
-    const updated = portfolio.filter(pos => pos.id !== id);
+    setPortfolio(prev => {
+      const updated = prev.filter(pos => pos.id !== id);
+      
+      // Recalculer positions restantes pour mettre à jour poidsPortfolio
+      const withCalculations = calculateBatchMetrics(updated);
+      
+      financeStorage.savePortfolio(withCalculations).catch(err => {
+        log.error('Error saving portfolio after delete:', err);
+      });
+      
+      return withCalculations;
+    });
     
-    // Recalculer positions restantes pour mettre à jour poidsPortfolio
-    const withCalculations = calculateBatchMetrics(updated);
-    
-    setPortfolio(withCalculations);
-    await financeStorage.savePortfolio(withCalculations);
     await financeStorage.deletePosition(id);
-  }, [portfolio]);
+  }, []);
 
   /**
    * ✅ OPTIMISATION Phase 1.3 : Refresh Yahoo data refactorisé
-   * - Async/await propre (pas d'anti-pattern setState)
-   * - Comparaison données avant mise à jour
-   * - Gestion erreurs complète
-   * - Loading state approprié
-   * - Évite race conditions avec AbortController
    */
   const refreshYahooData = useCallback(async () => {
     // Annuler refresh précédent si en cours
@@ -278,13 +361,12 @@ export const useFinance = () => {
     try {
       const tickers = currentPortfolio.map(p => p.ticker);
       const batchSize = 5;
-      const BATCH_DELAY = 500; // Réduit à 500ms
+      const BATCH_DELAY = 500;
       const updatedPositions = [];
       const errors = [];
 
       // Traiter par batches séquentiels
       for (let i = 0; i < tickers.length; i += batchSize) {
-        // Vérifier si annulé
         if (signal.aborted) {
           log.debug('Refresh cancelled');
           return;
@@ -292,42 +374,41 @@ export const useFinance = () => {
 
         const batch = tickers.slice(i, i + batchSize);
         
-        // Charger batch en parallèle
         const batchResults = await Promise.allSettled(
           batch.map(async (ticker) => {
             const position = currentPortfolio.find(p => p.ticker === ticker);
             if (!position) return null;
 
             try {
-              // Récupérer données Yahoo avec forceRefresh pour éviter cache obsolète
+              // Utiliser forceRefresh: true pour obtenir les vraies données à jour
               const yahooData = await yahooFinanceService.getQuoteData(ticker, { 
                 forceRefresh: true 
               });
+              
+              // Vérifier que les données sont valides
+              if (!yahooData || !yahooData.prixActuel || yahooData.prixActuel <= 0) {
+                log.warn(`Invalid Yahoo data for ${ticker}:`, yahooData);
+                return null;
+              }
 
-              // Comparer avec données existantes pour éviter mises à jour inutiles
               const currentPrice = position.yahooData?.prixActuel;
               const newPrice = yahooData.prixActuel;
               
-              // Si prix identique et données récentes, skip
               if (currentPrice === newPrice && position.yahooData?.timestamp) {
                 const dataAge = Date.now() - position.yahooData.timestamp;
-                if (dataAge < 60000) { // Moins d'1 minute
+                if (dataAge < 60000) {
                   log.debug(`Skipping ${ticker} - no changes`);
-                  return null; // Pas de changement
+                  return null;
                 }
               }
 
-              // Invalider cache position avant recalcul
               invalidatePositionCache(position.id);
 
-              // Construire position mise à jour
-              // Note: Les MA réelles seront calculées plus tard avec historique
               const updated = {
                 ...position,
                 yahooData: {
                   ...yahooData,
                   timestamp: Date.now(),
-                  // Placeholders temporaires (seront remplacés par MA réelles)
                   ma20: yahooData.prixActuel * 0.98,
                   ma50: yahooData.prixActuel * 0.95,
                   ma200: yahooData.prixActuel * 0.90
@@ -338,12 +419,11 @@ export const useFinance = () => {
             } catch (err) {
               log.warn(`Failed to refresh ${ticker}:`, err);
               errors.push({ ticker, error: err });
-              return null; // Garder position existante
+              return null;
             }
           })
         );
 
-        // Traiter résultats batch
         batchResults.forEach((result, index) => {
           if (result.status === 'fulfilled' && result.value) {
             updatedPositions.push(result.value);
@@ -353,34 +433,27 @@ export const useFinance = () => {
           }
         });
 
-        // Délai entre batches seulement si nécessaire
         if (i + batchSize < tickers.length && !signal.aborted) {
           await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
         }
       }
 
-      // Vérifier si annulé avant mise à jour
       if (signal.aborted) {
         log.debug('Refresh cancelled before update');
         return;
       }
 
-      // Mettre à jour portfolio seulement si changements détectés
       if (updatedPositions.length > 0) {
-        setPortfolio(prev => {
-          // Créer map pour lookup rapide
+        setPortfolio(prevPortfolio => {
           const updatedMap = new Map(updatedPositions.map(p => [p.id || p.ticker, p]));
           
-          // Fusionner positions mises à jour avec positions existantes
-          const merged = prev.map(p => {
+          const merged = prevPortfolio.map(p => {
             const updated = updatedMap.get(p.id || p.ticker);
             return updated || p;
           });
 
-          // Recalculer métriques avec cache incrémental
           const withCalculations = calculateBatchMetrics(merged);
           
-          // Sauvegarder de manière asynchrone (ne bloque pas UI)
           financeStorage.savePortfolio(withCalculations).catch(err => {
             log.error('Error saving portfolio after refresh:', err);
           });
@@ -391,7 +464,6 @@ export const useFinance = () => {
         log.debug('No positions updated during refresh');
       }
 
-      // Logger erreurs si présentes
       if (errors.length > 0) {
         log.warn(`Refresh completed with ${errors.length} errors:`, errors);
       }
@@ -408,18 +480,28 @@ export const useFinance = () => {
     }
   }, []);
 
-  return {
+  // ✅ FIX : calculateMetrics en dehors de useMemo (évite violation règles hooks)
+  const calculateMetrics = useCallback(() => {
+    return calculateBatchMetrics(portfolio);
+  }, [portfolio]);
+
+  const value = React.useMemo(() => ({
     portfolio,
     loading,
     error,
-    refreshing, // ✅ OPTIMISATION Phase 1.3 : Loading state pour refresh
+    refreshing,
     addPosition,
     updatePosition,
     deletePosition,
     refreshYahooData,
-    calculateMetrics: useCallback(() => {
-      return calculateBatchMetrics(portfolio);
-    }, [portfolio])
-  };
+    calculateMetrics
+  }), [portfolio, loading, error, refreshing, addPosition, updatePosition, deletePosition, refreshYahooData, calculateMetrics]);
+
+  return (
+    <FinanceContext.Provider value={value}>
+      {children}
+    </FinanceContext.Provider>
+  );
 };
 
+export default FinanceContext;
