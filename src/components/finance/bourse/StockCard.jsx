@@ -1,12 +1,58 @@
-import React, { useState } from 'react';
+/**
+ * Composant carte d'une position boursière
+ * 
+ * ✅ OPTIMISATION Phase 2.2 : Memoization Composants et Props
+ * - React.memo avec comparaison optimisée basée sur données position
+ * - Réduction re-renders inutiles
+ * 
+ * @module components/finance/bourse/StockCard
+ * @see docs/finance/ANALYSE_PROFONDE_SOUS_ONGLET_BOURSE.md - Solution 6
+ */
+
+import React, { useState, memo, useCallback } from 'react';
 import StockChart from './StockChart';
 import TechnicalIndicators from './TechnicalIndicators';
+import StockDetailModal from './StockDetailModal';
 
-const StockCard = ({ position }) => {
+/**
+ * Comparaison optimisée pour détecter changements position
+ */
+function arePositionsEqual(prevPos, nextPos) {
+  // Comparaison basée sur champs critiques seulement
+  return (
+    prevPos.id === nextPos.id &&
+    prevPos.quantite === nextPos.quantite &&
+    prevPos.prixEntree === nextPos.prixEntree &&
+    prevPos.yahooData?.prixActuel === nextPos.yahooData?.prixActuel &&
+    prevPos.yahooData?.variationJour === nextPos.yahooData?.variationJour &&
+    prevPos.calculs?.valeurPosition === nextPos.calculs?.valeurPosition &&
+    prevPos.calculs?.plusValueEuro === nextPos.calculs?.plusValueEuro &&
+    prevPos.calculs?.plusValuePourcent === nextPos.calculs?.plusValuePourcent &&
+    prevPos.calculs?.signal?.signal === nextPos.calculs?.signal?.signal
+  );
+}
+
+const StockCard = memo(({ position }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showChart, setShowChart] = useState(false);
   const [showIndicators, setShowIndicators] = useState(false);
   const [showAlertSettings, setShowAlertSettings] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false); // ✅ OPTIMISATION Phase 2.5 : Modal détail
+
+  // ✅ OPTIMISATION Phase 2.2 : useCallback pour handlers (évite re-création fonctions)
+  const toggleDetails = useCallback(() => setShowDetails(prev => !prev), []);
+  const toggleChart = useCallback(() => setShowChart(prev => !prev), []);
+  const toggleIndicators = useCallback(() => setShowIndicators(prev => !prev), []);
+  const toggleAlertSettings = useCallback(() => setShowAlertSettings(prev => !prev), []);
+  
+  // ✅ OPTIMISATION Phase 2.5 : Handler pour ouvrir modal détail
+  const handleCardClick = useCallback(() => {
+    setShowDetailModal(true);
+  }, []);
+  
+  const handleCloseModal = useCallback(() => {
+    setShowDetailModal(false);
+  }, []);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -27,7 +73,20 @@ const StockCard = ({ position }) => {
   const plusValueColor = calculs.plusValueEuro >= 0 ? 'text-green-400' : 'text-red-400';
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-4">
+    <>
+      <div 
+        className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-4 cursor-pointer hover:border-blue-500/50 transition-colors"
+        onClick={handleCardClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleCardClick();
+          }
+        }}
+        aria-label={`Voir détails de ${position.ticker}`}
+      >
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -161,25 +220,37 @@ const StockCard = ({ position }) => {
       {/* Actions */}
       <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-700">
         <button
-          onClick={() => setShowDetails(!showDetails)}
+          onClick={(e) => {
+            e.stopPropagation(); // ✅ OPTIMISATION Phase 2.5 : Empêcher ouverture modal lors clic bouton
+            toggleDetails();
+          }}
           className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
         >
           {showDetails ? 'Masquer détails' : 'Voir détails'}
         </button>
         <button
-          onClick={() => setShowChart(!showChart)}
+          onClick={(e) => {
+            e.stopPropagation(); // ✅ OPTIMISATION Phase 2.5 : Empêcher ouverture modal lors clic bouton
+            toggleChart();
+          }}
           className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
         >
           {showChart ? 'Masquer graphique' : 'Voir graphique'}
         </button>
         <button
-          onClick={() => setShowIndicators(!showIndicators)}
+          onClick={(e) => {
+            e.stopPropagation(); // ✅ OPTIMISATION Phase 2.5 : Empêcher ouverture modal lors clic bouton
+            toggleIndicators();
+          }}
           className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
         >
           {showIndicators ? 'Masquer indicateurs' : 'Indicateurs'}
         </button>
         <button
-          onClick={() => setShowAlertSettings(!showAlertSettings)}
+          onClick={(e) => {
+            e.stopPropagation(); // ✅ OPTIMISATION Phase 2.5 : Empêcher ouverture modal lors clic bouton
+            toggleAlertSettings();
+          }}
           className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors text-sm"
         >
           {showAlertSettings ? 'Masquer paramètres' : 'Paramètres alertes'}
@@ -210,9 +281,19 @@ const StockCard = ({ position }) => {
           />
         </div>
       )}
-    </div>
+      </div>
+
+      {/* ✅ OPTIMISATION Phase 2.5 : Modal détail action */}
+      <StockDetailModal
+        position={position}
+        isOpen={showDetailModal}
+        onClose={handleCloseModal}
+      />
+    </>
   );
-};
+}, arePositionsEqual);
+
+StockCard.displayName = 'StockCard';
 
 export default StockCard;
 

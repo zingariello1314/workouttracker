@@ -57,11 +57,27 @@ class YahooFinanceService {
     if (hasApiKey('ALPHA_VANTAGE')) {
       try {
         const data = await this.fetchAlphaVantage(ticker);
-        await financeStorage.setYahooCache(ticker, data);
+        // ✅ CORRECTION : Valider données normalisées avant cache
+        const normalized = this.normalizeQuoteData(data, 'alphaVantage');
+        if (!normalized || !normalized.prixActuel || normalized.prixActuel <= 0) {
+          throw new Error(`Invalid normalized data from Alpha Vantage for ${ticker}`);
+        }
+        await financeStorage.setYahooCache(ticker, normalized);
         this.onSuccess();
-        return this.normalizeQuoteData(data, 'alphaVantage');
+        return normalized;
       } catch (error) {
-        log.warn(`Alpha Vantage failed for ${ticker}:`, error.message);
+        // ✅ CORRECTION : Logger seulement en debug si d'autres APIs disponibles (fallback normal)
+        const hasOtherApis = hasApiKey('FINNHUB') || hasApiKey('POLYGON');
+        if (hasOtherApis) {
+          log.debug(`Alpha Vantage failed for ${ticker}, trying fallback:`, error.message);
+        } else {
+          // Seulement logger en warn si c'est la seule API et que l'erreur est critique
+          if (error.message.includes('rate limit') || error.message.includes('API key')) {
+            log.warn(`Alpha Vantage critical error for ${ticker}:`, error.message);
+          } else {
+            log.debug(`Alpha Vantage failed for ${ticker}:`, error.message);
+          }
+        }
         this.onFailure();
       }
     }
@@ -74,7 +90,13 @@ class YahooFinanceService {
         this.onSuccess();
         return this.normalizeQuoteData(data, 'finnhub');
       } catch (error) {
-        log.warn(`Finnhub failed for ${ticker}:`, error.message);
+        // ✅ OPTIMISATION : Logger seulement en debug si d'autres APIs disponibles
+        const hasOtherApis = hasApiKey('POLYGON');
+        if (hasOtherApis) {
+          log.debug(`Finnhub failed for ${ticker}, trying fallback:`, error.message);
+        } else {
+          log.warn(`Finnhub failed for ${ticker}:`, error.message);
+        }
         this.onFailure();
       }
     }
@@ -104,21 +126,87 @@ class YahooFinanceService {
 
   async fetchAlphaVantage(ticker) {
     const apiKey = getApiKey('ALPHA_VANTAGE');
-    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${apiKey}`;
     
-    const response = await this.fetchWithRetry(url);
+    // ✅ CORRECTION : Validation API key avant requête
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('Alpha Vantage API key is missing or invalid');
+    }
     
+    // ✅ CORRECTION : Validation ticker avant requête
+    if (!ticker || ticker.trim() === '') {
+      throw new Error('Ticker symbol is required');
+    }
+    
+    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(ticker.trim())}&apikey=${encodeURIComponent(apiKey.trim())}`;
+    
+    let response;
+    try {
+      response = await this.fetchWithRetry(url);
+    } catch (error) {
+      // ✅ CORRECTION : Gestion erreur réseau avec message clair
+      throw new Error(`Network error fetching Alpha Vantage data: ${error.message}`);
+    }
+    
+    // ✅ CORRECTION : Validation réponse existe et est un objet
+    if (!response || typeof response !== 'object') {
+      throw new Error('Alpha Vantage returned invalid response format');
+    }
+    
+    // ✅ CORRECTION : Vérifier erreur API explicite
     if (response['Error Message']) {
-      throw new Error(response['Error Message']);
+      const errorMsg = response['Error Message'];
+      // Ne pas throw si c'est juste un ticker invalide (on peut essayer fallback)
+      if (errorMsg.includes('Invalid API call') || errorMsg.includes('symbol')) {
+        throw new Error(`Invalid ticker symbol: ${ticker}`);
+      }
+      throw new Error(`Alpha Vantage API error: ${errorMsg}`);
     }
     
+    // ✅ CORRECTION : Vérifier rate limit
     if (response['Note']) {
-      throw new Error('API rate limit exceeded');
+      const note = response['Note'];
+      if (note.includes('rate limit') || note.includes('Thank you for using Alpha Vantage')) {
+        throw new Error('Alpha Vantage API rate limit exceeded. Please try again later.');
+      }
+      throw new Error(`Alpha Vantage API note: ${note}`);
     }
     
+    // ✅ CORRECTION : Validation Global Quote avec vérifications détaillées
     const quote = response['Global Quote'];
-    if (!quote || !quote['05. price']) {
-      throw new Error('Invalid response from Alpha Vantage');
+    
+    if (!quote) {
+      // Vérifier si c'est une réponse vide ou malformée
+      if (Object.keys(response).length === 0) {
+        throw new Error('Alpha Vantage returned empty response');
+      }
+      // Log pour debugging mais ne pas throw si on peut utiliser fallback
+      log.debug(`Alpha Vantage: Global Quote missing for ${ticker}, response keys:`, Object.keys(response));
+      throw new Error(`Alpha Vantage: Global Quote missing for ${ticker}`);
+    }
+    
+    if (typeof quote !== 'object') {
+      throw new Error(`Alpha Vantage: Global Quote is not an object for ${ticker}`);
+    }
+    
+    // ✅ CORRECTION : Vérifier que le prix existe et est valide
+    const priceStr = quote['05. price'];
+    if (!priceStr || priceStr === '' || priceStr === 'N/A' || priceStr === 'null') {
+      log.debug(`Alpha Vantage: Invalid price for ${ticker}, price value:`, priceStr);
+      throw new Error(`Alpha Vantage: Invalid or missing price data for ${ticker}`);
+    }
+    
+    // ✅ CORRECTION : Vérifier que le prix est un nombre valide
+    const price = parseFloat(priceStr);
+    if (isNaN(price) || price <= 0) {
+      log.debug(`Alpha Vantage: Price is not a valid number for ${ticker}, parsed:`, price);
+      throw new Error(`Alpha Vantage: Price is not a valid number for ${ticker}`);
+    }
+    
+    // ✅ CORRECTION : Vérifier que le symbole correspond
+    const symbol = quote['01. symbol'];
+    if (symbol && symbol.toUpperCase() !== ticker.toUpperCase()) {
+      log.debug(`Alpha Vantage: Symbol mismatch for ${ticker}, received:`, symbol);
+      // Ne pas throw, juste log (certaines APIs retournent des variations)
     }
     
     return quote;
@@ -152,16 +240,44 @@ class YahooFinanceService {
 
   normalizeQuoteData(data, source) {
     const normalizers = {
-      alphaVantage: (d) => ({
-        prixActuel: parseFloat(d['05. price'] || 0),
-        variationJour: parseFloat((d['10. change percent'] || '0%').replace('%', '')),
-        volume: parseInt(d['06. volume'] || 0),
-        capitalisation: parseFloat(d['07. market cap'] || 0),
-        previousClose: parseFloat(d['08. previous close'] || 0),
-        open: parseFloat(d['02. open'] || 0),
-        high: parseFloat(d['03. high'] || 0),
-        low: parseFloat(d['04. low'] || 0)
-      }),
+      alphaVantage: (d) => {
+        // ✅ CORRECTION : Validation et parsing robuste des données Alpha Vantage
+        if (!d || typeof d !== 'object') {
+          throw new Error('Invalid Alpha Vantage data: data is not an object');
+        }
+        
+        const priceStr = d['05. price'];
+        if (!priceStr || priceStr === '' || priceStr === 'N/A') {
+          throw new Error('Invalid Alpha Vantage data: price is missing or invalid');
+        }
+        
+        const prixActuel = parseFloat(priceStr);
+        if (isNaN(prixActuel) || prixActuel <= 0) {
+          throw new Error(`Invalid Alpha Vantage data: price is not a valid number (${priceStr})`);
+        }
+        
+        // ✅ CORRECTION : Parsing robuste pour variationJour
+        let variationJour = 0;
+        const changePercentStr = d['10. change percent'];
+        if (changePercentStr && changePercentStr !== 'N/A' && changePercentStr !== '') {
+          const cleaned = String(changePercentStr).replace(/[%,\s]/g, '');
+          const parsed = parseFloat(cleaned);
+          if (!isNaN(parsed)) {
+            variationJour = parsed;
+          }
+        }
+        
+        return {
+          prixActuel,
+          variationJour,
+          volume: parseInt(d['06. volume'] || '0', 10) || 0,
+          capitalisation: parseFloat(d['07. market cap'] || '0') || 0,
+          previousClose: parseFloat(d['08. previous close'] || '0') || 0,
+          open: parseFloat(d['02. open'] || '0') || 0,
+          high: parseFloat(d['03. high'] || '0') || 0,
+          low: parseFloat(d['04. low'] || '0') || 0
+        };
+      },
       finnhub: (d) => ({
         prixActuel: d.c || 0,
         variationJour: d.dp || 0,

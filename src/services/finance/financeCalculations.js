@@ -88,6 +88,15 @@ export function calculatePortfolioWeight(valeurPosition, totalPortfolio) {
 
 /**
  * Calculer moyennes mobiles optimisé (algorithme incrémental)
+ * 
+ * ✅ OPTIMISATION Phase 2.3 : Algorithme incrémental O(n)
+ * - Calcul initial O(periods)
+ * - Calcul incrémental O(n-periods)
+ * - Complexité totale : O(n)
+ * 
+ * @param {Array} historicalData - Données historiques avec propriétés date, close/prixActuel
+ * @param {number} periods - Nombre de périodes pour la moyenne mobile
+ * @returns {Object} { ma: valeur dernière MA, data: Array<{date, value}> }
  */
 export function calculateMovingAverages(historicalData, periods) {
   if (!historicalData || historicalData.length < periods) {
@@ -101,14 +110,14 @@ export function calculateMovingAverages(historicalData, periods) {
   
   const maValues = [];
   
-  // Calcul initial (première fenêtre)
+  // Calcul initial (première fenêtre) - O(periods)
   let sum = sorted.slice(0, periods).reduce((acc, d) => acc + (d.close || d.prixActuel || 0), 0);
   maValues.push({
     date: sorted[periods - 1].date,
     value: sum / periods
   });
   
-  // Calcul incrémental (O(n) au lieu de O(n²))
+  // Calcul incrémental (O(n-periods) au lieu de O(n²))
   for (let i = periods; i < sorted.length; i++) {
     sum = sum - (sorted[i - periods].close || sorted[i - periods].prixActuel || 0) + (sorted[i].close || sorted[i].prixActuel || 0);
     maValues.push({
@@ -120,6 +129,119 @@ export function calculateMovingAverages(historicalData, periods) {
   return {
     ma: maValues[maValues.length - 1]?.value || null,
     data: maValues
+  };
+}
+
+/**
+ * Calculer moyennes mobiles avec Map pour lookup O(1)
+ * 
+ * ✅ OPTIMISATION Phase 2.3 : Map pour lookup O(1) au lieu de recherche linéaire O(n)
+ * - Évite recherche linéaire avec .find() dans les composants
+ * - Lookup O(1) au lieu de O(n) pour chaque point
+ * - Réduction complexité globale de O(n²) → O(n)
+ * - Cache intégré pour éviter recalculs identiques
+ * 
+ * @param {Array} historicalData - Données historiques avec propriétés date, close/prixActuel
+ * @param {number} periods - Nombre de périodes pour la moyenne mobile
+ * @param {Object} options - Options
+ * @param {boolean} options.useCache - Utiliser cache (défaut: true)
+ * @returns {Map<string, number>} Map avec clé = date (ISO string), valeur = MA value
+ */
+const maMapCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(historicalData, periods) {
+  // Créer clé de cache basée sur hash des données et période
+  if (!historicalData || historicalData.length === 0) return null;
+  
+  const dataHash = `${historicalData.length}_${historicalData[0]?.date}_${historicalData[historicalData.length - 1]?.date}_${periods}`;
+  return `ma_${dataHash}`;
+}
+
+export function calculateMovingAveragesMap(historicalData, periods, options = {}) {
+  const { useCache = true } = options;
+  
+  if (!historicalData || historicalData.length < periods) {
+    return new Map();
+  }
+  
+  // Vérifier cache si activé
+  if (useCache) {
+    const cacheKey = getCacheKey(historicalData, periods);
+    if (cacheKey) {
+      const cached = maMapCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.map;
+      }
+    }
+  }
+  
+  const maData = calculateMovingAverages(historicalData, periods);
+  
+  // Créer Map pour lookup O(1) - O(n) pour créer la Map
+  const maMap = new Map(
+    maData.data.map(item => [item.date, item.value])
+  );
+  
+  // Mettre en cache si activé
+  if (useCache && getCacheKey(historicalData, periods)) {
+    const cacheKey = getCacheKey(historicalData, periods);
+    maMapCache.set(cacheKey, {
+      map: maMap,
+      timestamp: Date.now()
+    });
+    
+    // Nettoyer cache si trop grand (max 100 entrées)
+    if (maMapCache.size > 100) {
+      const firstKey = maMapCache.keys().next().value;
+      maMapCache.delete(firstKey);
+    }
+  }
+  
+  return maMap;
+}
+
+/**
+ * Créer Map à partir de résultat calculateMovingAverages
+ * 
+ * ✅ OPTIMISATION Phase 2.3 : Helper pour convertir résultat MA en Map
+ * - Utile pour code existant qui utilise calculateMovingAverages
+ * - Conversion O(n) une seule fois
+ * - Permet lookup O(1) au lieu de recherche linéaire O(n)
+ * 
+ * @param {Object} maResult - Résultat de calculateMovingAverages { ma, data }
+ * @returns {Map<string, number>} Map avec clé = date, valeur = MA value
+ */
+export function createMAMap(maResult) {
+  if (!maResult || !maResult.data || !Array.isArray(maResult.data)) {
+    return new Map();
+  }
+  
+  // Créer Map pour lookup O(1) - O(n) pour créer la Map
+  return new Map(
+    maResult.data.map(item => [item.date, item.value])
+  );
+}
+
+/**
+ * Nettoyer le cache des MA Maps
+ * 
+ * ✅ OPTIMISATION Phase 2.3 : Fonction utilitaire pour gestion cache
+ */
+export function clearMAMapCache() {
+  maMapCache.clear();
+}
+
+/**
+ * Obtenir statistiques du cache MA Maps
+ * 
+ * ✅ OPTIMISATION Phase 2.3 : Fonction utilitaire pour debugging
+ */
+export function getMAMapCacheStats() {
+  return {
+    size: maMapCache.size,
+    maxSize: 100,
+    ttl: CACHE_TTL
   };
 }
 
@@ -600,6 +722,20 @@ export function getPositionCacheStats() {
  * @param {number} periodWeeks - Période en semaines (défaut: 52)
  * @returns {Object|null} { highSincePurchase, lowSincePurchase, high52Weeks, low52Weeks, currentPrice }
  */
+/**
+ * Calculer statistiques de prix depuis date achat et sur période
+ * 
+ * ✅ OPTIMISATION Phase 2.5 : Fonction pour calculs métriques historiques
+ * - Plus haut/bas prix depuis achat
+ * - Plus haut/bas prix sur période (par défaut 52 semaines)
+ * - Prix actuel (dernière donnée disponible)
+ * - Complexité O(n) pour filtrage et calculs
+ * 
+ * @param {Array} historicalData - Données historiques avec propriétés date, close/prixActuel
+ * @param {Date|string} dateAchat - Date d'achat de la position
+ * @param {number} periodWeeks - Nombre de semaines pour période (défaut: 52)
+ * @returns {Object|null} { highSincePurchase, lowSincePurchase, high52Weeks, low52Weeks, currentPrice } ou null
+ */
 export function calculatePriceStats(historicalData, dateAchat, periodWeeks = 52) {
   if (!historicalData || historicalData.length === 0) {
     return null;
@@ -607,14 +743,17 @@ export function calculatePriceStats(historicalData, dateAchat, periodWeeks = 52)
 
   const dateAchatObj = dateAchat instanceof Date ? dateAchat : new Date(dateAchat);
   
-  // Filtrer données depuis date achat
+  // Filtrer données depuis date achat - O(n)
   const dataSincePurchase = historicalData.filter(d => {
     const dataDate = new Date(d.date);
     return dataDate >= dateAchatObj;
   });
 
-  // Calculer plus haut/bas depuis achat
-  const pricesSincePurchase = dataSincePurchase.map(d => d.close || d.prixActuel || 0).filter(p => p > 0);
+  // Calculer plus haut/bas depuis achat - O(n)
+  const pricesSincePurchase = dataSincePurchase
+    .map(d => d.close || d.prixActuel || 0)
+    .filter(p => p > 0); // Filtrer prix invalides
+  
   const highSincePurchase = pricesSincePurchase.length > 0 
     ? Math.max(...pricesSincePurchase) 
     : null;
@@ -622,7 +761,7 @@ export function calculatePriceStats(historicalData, dateAchat, periodWeeks = 52)
     ? Math.min(...pricesSincePurchase) 
     : null;
 
-  // Calculer période (par défaut 52 semaines)
+  // Calculer période (par défaut 52 semaines) - O(n)
   const now = new Date();
   const periodStart = new Date(now);
   periodStart.setDate(periodStart.getDate() - (periodWeeks * 7));
@@ -632,11 +771,14 @@ export function calculatePriceStats(historicalData, dateAchat, periodWeeks = 52)
     return dataDate >= periodStart;
   });
 
-  const pricesPeriod = dataPeriod.map(d => d.close || d.prixActuel || 0).filter(p => p > 0);
+  const pricesPeriod = dataPeriod
+    .map(d => d.close || d.prixActuel || 0)
+    .filter(p => p > 0); // Filtrer prix invalides
+  
   const high52Weeks = pricesPeriod.length > 0 ? Math.max(...pricesPeriod) : null;
   const low52Weeks = pricesPeriod.length > 0 ? Math.min(...pricesPeriod) : null;
 
-  // Prix actuel (dernière donnée disponible)
+  // Prix actuel (dernière donnée disponible) - O(1)
   const currentPrice = historicalData.length > 0 
     ? (historicalData[historicalData.length - 1].close || historicalData[historicalData.length - 1].prixActuel || null)
     : null;

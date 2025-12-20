@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
+/**
+ * Formulaire d'ajout de position boursière
+ * 
+ * ✅ OPTIMISATION Phase 2.2 : Memoization Composants et Props
+ * - useCallback pour handlers (évite re-création fonctions)
+ * - Réduction re-renders inutiles
+ * 
+ * @module components/finance/bourse/AddPositionForm
+ * @see docs/finance/ANALYSE_PROFONDE_SOUS_ONGLET_BOURSE.md - Solution 6
+ */
+
+import React, { useState, useCallback, memo } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useFinance } from '../../../context/FinanceContext';
 import { useToast } from '../../ui/Toast';
 
-const AddPositionForm = ({ onClose }) => {
+const AddPositionForm = memo(({ onClose }) => {
   const t = useTranslation();
   const { addPosition } = useFinance();
   const { showToast } = useToast();
@@ -18,7 +29,8 @@ const AddPositionForm = ({ onClose }) => {
     dateAchat: new Date().toISOString().split('T')[0]
   });
 
-  const handleSubmit = async (e) => {
+  // ✅ OPTIMISATION Phase 2.2 : useCallback pour handleSubmit (évite re-création fonction)
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -69,7 +81,7 @@ const AddPositionForm = ({ onClose }) => {
       setLoading(false);
       console.log('⏹️ [AddPositionForm] Fin du processus');
     }
-  };
+  }, [formData, addPosition, showToast, onClose]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -181,7 +193,9 @@ const AddPositionForm = ({ onClose }) => {
       </div>
     </form>
   );
-};
+});
+
+AddPositionForm.displayName = 'AddPositionForm';
 
 export default AddPositionForm;
 

@@ -211,6 +211,36 @@ class FinanceStorage {
     }
   }
 
+  async loadHistory(limit = 1000) {
+    try {
+      await this.initPromise;
+      const tx = this.db.transaction(STORES.HISTORY, 'readonly');
+      const store = tx.objectStore(STORES.HISTORY);
+      const index = store.index('timestamp');
+      const history = await index.getAll(null, limit);
+      // Trier par timestamp décroissant (plus récent en premier)
+      return history.sort((a, b) => b.timestamp - a.timestamp);
+    } catch (error) {
+      log.error('Error loading history:', error);
+      return [];
+    }
+  }
+
+  async saveHistoryEntry(entry) {
+    try {
+      await this.initPromise;
+      const tx = this.db.transaction(STORES.HISTORY, 'readwrite');
+      const store = tx.objectStore(STORES.HISTORY);
+      await store.add({
+        ...entry,
+        timestamp: entry.timestamp || Date.now()
+      });
+    } catch (error) {
+      log.error('Error saving history entry:', error);
+      throw error;
+    }
+  }
+
   async createBackup() {
     try {
       const portfolio = await this.loadPortfolio();

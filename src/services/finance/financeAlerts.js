@@ -149,11 +149,13 @@ class FinanceAlertsService {
       const prevPrice = recent[0]?.close || recent[0]?.prixActuel;
       const currentPrice = recent[1]?.close || recent[1]?.prixActuel || prixActuel;
       
-      // Calculer MA pour les deux points
+      // ✅ OPTIMISATION Phase 2.3 : Calcul MA optimisé (algorithme incrémental O(n))
+      // Note: Accès par index est déjà O(1), mais on garde l'algorithme optimisé
       const { calculateMovingAverages } = require('./financeCalculations');
       const ma50Data = calculateMovingAverages(historicalData.slice(-51), 50);
       const ma200Data = calculateMovingAverages(historicalData.slice(-201), 200);
       
+      // Accès O(1) par index (déjà optimal)
       if (ma50Data.data.length >= 2 && ma200Data.data.length >= 2) {
         const prevMA50 = ma50Data.data[ma50Data.data.length - 2]?.value;
         const currentMA50 = ma50Data.data[ma50Data.data.length - 1]?.value;
