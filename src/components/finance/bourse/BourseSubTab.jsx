@@ -31,6 +31,7 @@ import AddPositionForm from './AddPositionForm';
 import PortfolioSummary from './PortfolioSummary';
 import StockCard from './StockCard';
 import ExportCSV from './ExportCSV';
+import StockDetailPage from './StockDetailPage';
 import { 
   PortfolioTableSkeleton, 
   SummarySkeleton, 
@@ -46,9 +47,12 @@ const AlertsPanel = lazy(() => import('./AlertsPanel'));
 
 const BourseSubTab = () => {
   const t = useTranslation();
-  const { portfolio, loading, error, refreshing, refreshYahooData } = useFinance();
+  // ✅ PHASE 3.16 : Utiliser loading states centralisés
+  const { portfolio, loading, error, refreshing, loadingStates, refreshYahooData } = useFinance();
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewMode, setViewMode] = useState('table'); // 'table' ou 'cards'
+  // ✅ PHASE 6 - Étape 6.1 : État pour navigation vers page détail
+  const [selectedPositionId, setSelectedPositionId] = useState(null);
   
   // ✅ OPTIMISATION Phase 2.2 : Memoization portfolio pour éviter re-renders enfants
   // Hash basé sur données critiques seulement (ID, quantite, prixActuel, plusValueEuro)
@@ -75,6 +79,31 @@ const BourseSubTab = () => {
   const handleRefresh = useCallback(async () => {
     await refreshYahooData();
   }, [refreshYahooData]);
+
+  // ✅ PHASE 6 - Étape 6.1 : Handlers pour navigation vers page détail
+  const handlePositionClick = useCallback((positionId) => {
+    setSelectedPositionId(positionId);
+  }, []);
+
+  const handleBackToList = useCallback(() => {
+    setSelectedPositionId(null);
+  }, []);
+
+  // ✅ PHASE 6 - Étape 6.1 : Trouver la position sélectionnée
+  const selectedPosition = useMemo(() => {
+    if (!selectedPositionId) return null;
+    return portfolio.find(p => p.id === selectedPositionId);
+  }, [portfolio, selectedPositionId]);
+
+  // ✅ PHASE 6 - Étape 6.1 : Afficher page détail si position sélectionnée
+  if (selectedPosition) {
+    return (
+      <StockDetailPage
+        position={selectedPosition}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -111,7 +140,8 @@ const BourseSubTab = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleRefresh}
-            disabled={refreshing || loading}
+            // ✅ PHASE 3.16 : Utiliser loading states centralisés pour désactiver bouton
+            disabled={refreshing || loading || loadingStates?.adding || loadingStates?.updating || loadingStates?.deleting}
             className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
             title="Rafraîchir les données de marché"
           >
@@ -127,7 +157,9 @@ const BourseSubTab = () => {
           </button>
           <button
             onClick={handleAddFormToggle}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            // ✅ PHASE 3.16 : Désactiver bouton pendant opérations
+            disabled={loadingStates?.adding || loadingStates?.updating || loadingStates?.deleting || refreshing}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
           >
             <span>+</span>
             <span>Ajouter une position</span>
@@ -203,11 +235,11 @@ const BourseSubTab = () => {
       {/* Tableau ou Cartes portfolio */}
       {memoizedPortfolio.length > 0 ? (
         viewMode === 'table' ? (
-          <PortfolioTable portfolio={memoizedPortfolio} />
+          <PortfolioTable portfolio={memoizedPortfolio} onPositionClick={handlePositionClick} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {memoizedPortfolio.map((position) => (
-              <StockCard key={position.id} position={position} />
+              <StockCard key={position.id} position={position} onPositionClick={handlePositionClick} />
             ))}
           </div>
         )

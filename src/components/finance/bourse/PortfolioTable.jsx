@@ -22,10 +22,14 @@ import { useToast } from '../../ui/Toast';
 import { useVirtualScrolling } from '../../../hooks/useVirtualScrolling';
 import { useDebounce } from '../../../hooks/useDebounce';
 import VirtualizedTable from './VirtualizedTable';
-import StockDetailModal from './StockDetailModal';
+// ✅ PHASE 3 - Étape 3.19 : Import Modal pour remplacer window.confirm
+import Modal from '../../ui/Modal';
+// ✅ PHASE 4 - Étape 4.9 : Import service devises pour affichage correct
+import { formatCurrency as formatCurrencyWithDevise, detectCurrency, getCurrencySymbol } from '../../../services/finance/currencyService';
 
-const PortfolioTable = memo(({ portfolio }) => {
-  const { deletePosition, refreshYahooData, refreshing } = useFinance(); // ✅ OPTIMISATION Phase 1.3 : Utiliser state refreshing du hook
+const PortfolioTable = memo(({ portfolio, onPositionClick }) => {
+  // ✅ PHASE 3.16 : Utiliser loading states centralisés
+  const { deletePosition, refreshYahooData, refreshing, loadingStates } = useFinance();
   const { showToast } = useToast();
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   
@@ -34,15 +38,35 @@ const PortfolioTable = memo(({ portfolio }) => {
   const debouncedSearchTerm = useDebounce(searchTerm, 300); // Valeur filtrée (débouncée 300ms)
   
   const [selectedPosition, setSelectedPosition] = useState(null); // Pour modal détail
+  // ✅ PHASE 3 - Étape 3.19 : État pour modal de confirmation suppression
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, ticker: null });
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
-  };
+  // ✅ PHASE 4 - Étape 4.9 : Formater selon devise de la position
+  const formatCurrency = useCallback((value, position = null) => {
+    if (!Number.isFinite(value)) return 'N/A';
+    
+    // Si position fournie, utiliser sa devise, sinon EUR par défaut
+    const currency = position?.calculs?.currency || position?.currency || detectCurrency(position?.ticker) || 'EUR';
+    
+    // Utiliser service de formatage avec devise
+    return formatCurrencyWithDevise(value, currency, 'fr-FR');
+  }, []);
+  
+  // ✅ PHASE 4 - Étape 4.9 : Formater prix selon devise (pour prix d'achat et prix actuel)
+  const formatPrice = useCallback((value, position = null) => {
+    if (!Number.isFinite(value)) return 'N/A';
+    
+    // Pour les prix, utiliser devise originale de la position
+    const currency = position?.calculs?.currency || position?.currency || detectCurrency(position?.ticker) || 'EUR';
+    
+    return formatCurrencyWithDevise(value, currency, 'fr-FR');
+  }, []);
+  
+  // ✅ PHASE 4 - Étape 4.9 : Formater valeurs converties en EUR (pour plus-value, valeur position)
+  const formatCurrencyEUR = useCallback((value) => {
+    if (!Number.isFinite(value)) return 'N/A';
+    return formatCurrencyWithDevise(value, 'EUR', 'fr-FR');
+  }, []);
 
   const formatPercent = (value) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
@@ -126,24 +150,37 @@ const PortfolioTable = memo(({ portfolio }) => {
     }
   }, [refreshYahooData, showToast]);
 
-  const handleDelete = useCallback(async (id, ticker) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la position ${ticker} ?`)) {
-      try {
-        await deletePosition(id);
-        showToast(`${ticker} supprimé du portfolio`, 'success');
-      } catch (error) {
-        showToast('Erreur lors de la suppression', 'error');
-      }
+  // ✅ PHASE 3 - Étape 3.19 : Ouvrir modal confirmation au lieu de window.confirm
+  const handleDeleteClick = useCallback((id, ticker) => {
+    setDeleteConfirm({ isOpen: true, id, ticker });
+  }, []);
+
+  // ✅ PHASE 3 - Étape 3.19 : Handler confirmation suppression
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteConfirm.id || !deleteConfirm.ticker) return;
+    
+    try {
+      await deletePosition(deleteConfirm.id);
+      showToast(`${deleteConfirm.ticker} supprimé du portfolio`, 'success');
+      setDeleteConfirm({ isOpen: false, id: null, ticker: null });
+    } catch (error) {
+      showToast('Erreur lors de la suppression', 'error');
+      setDeleteConfirm({ isOpen: false, id: null, ticker: null });
     }
-  }, [deletePosition, showToast]);
+  }, [deleteConfirm, deletePosition, showToast]);
 
+  // ✅ PHASE 3 - Étape 3.19 : Handler annulation suppression
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteConfirm({ isOpen: false, id: null, ticker: null });
+  }, []);
+
+  // ✅ PHASE 6 - Étape 6.1 : Navigation vers page détail au lieu du modal
   const handleRowClick = useCallback((position) => {
-    setSelectedPosition(position);
-  }, []);
+    if (onPositionClick) {
+      onPositionClick(position.id);
+    }
+  }, [onPositionClick]);
 
-  const handleCloseModal = useCallback(() => {
-    setSelectedPosition(null);
-  }, []);
 
   const SortIcon = ({ columnKey }) => {
     if (sortConfig.key !== columnKey) return null;
@@ -163,7 +200,8 @@ const PortfolioTable = memo(({ portfolio }) => {
         />
         <button
           onClick={handleRefresh}
-          disabled={refreshing}
+          // ✅ PHASE 3.16 : Utiliser loading states centralisés pour désactiver bouton
+          disabled={refreshing || loadingStates?.adding || loadingStates?.updating || loadingStates?.deleting}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
         >
           {refreshing ? (
@@ -187,6 +225,7 @@ const PortfolioTable = memo(({ portfolio }) => {
           onDelete={handleDelete}
           onSort={handleSort}
           onRowClick={handleRowClick}
+          onPositionClick={onPositionClick}
           sortConfig={sortConfig}
           height={optimalContainerHeight}
           itemHeight={estimatedItemHeight}
@@ -247,10 +286,12 @@ const PortfolioTable = memo(({ portfolio }) => {
                       )}
                     </td>
                     <td className="py-3 px-4 text-white">{position.quantite}</td>
-                    <td className="py-3 px-4 text-white">{formatCurrency(position.prixEntree)}</td>
+                    {/* ✅ PHASE 4 - Étape 4.9 : Afficher prix d'achat dans devise originale */}
+                    <td className="py-3 px-4 text-white">{formatPrice(position.prixEntree, position)}</td>
                     <td className="py-3 px-4">
+                      {/* ✅ PHASE 4 - Étape 4.9 : Afficher prix actuel dans devise originale */}
                       <div className="text-white">
-                        {yahooData.prixActuel ? formatCurrency(yahooData.prixActuel) : 'N/A'}
+                        {yahooData.prixActuel ? formatPrice(yahooData.prixActuel, position) : 'N/A'}
                       </div>
                       {yahooData.variationJour !== undefined && (
                         <div className={`text-sm ${variationColor}`}>
@@ -258,13 +299,15 @@ const PortfolioTable = memo(({ portfolio }) => {
                         </div>
                       )}
                     </td>
+                    {/* ✅ PHASE 4 - Étape 4.9 : Valeur position en EUR (convertie) */}
                     <td className="py-3 px-4 text-white">
-                      {calculs.valeurPosition ? formatCurrency(calculs.valeurPosition) : 'N/A'}
+                      {calculs.valeurPosition ? formatCurrencyEUR(calculs.valeurPosition) : 'N/A'}
                     </td>
+                    {/* ✅ PHASE 4 - Étape 4.9 : Plus-value en EUR (convertie) */}
                     <td className={`py-3 px-4 ${plusValueColor}`}>
                       {calculs.plusValueEuro !== undefined ? (
                         <>
-                          <div>{formatCurrency(calculs.plusValueEuro)}</div>
+                          <div>{formatCurrencyEUR(calculs.plusValueEuro)}</div>
                           {calculs.plusValuePourcent !== undefined && (
                             <div className="text-sm">
                               ({formatPercent(calculs.plusValuePourcent)})
@@ -284,7 +327,8 @@ const PortfolioTable = memo(({ portfolio }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(position.id, position.ticker);
+                          // ✅ PHASE 3 - Étape 3.19 : Ouvrir modal confirmation au lieu de window.confirm
+                          handleDeleteClick(position.id, position.ticker);
                         }}
                         className="text-red-400 hover:text-red-300 transition-colors"
                         title="Supprimer"
@@ -314,6 +358,26 @@ const PortfolioTable = memo(({ portfolio }) => {
           onClose={handleCloseModal}
         />
       )}
+
+      {/* ✅ PHASE 3 - Étape 3.19 : Modal confirmation suppression (remplace window.confirm) */}
+      <Modal
+        isOpen={deleteConfirm.isOpen}
+        onClose={handleDeleteCancel}
+        title="Confirmer la suppression"
+        variant="danger"
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        closeOnOverlayClick={true}
+      >
+        <p className="text-slate-300">
+          Êtes-vous sûr de vouloir supprimer la position <strong className="text-white">{deleteConfirm.ticker}</strong> ?
+        </p>
+        <p className="text-sm text-slate-400 mt-2">
+          Cette action est irréversible. Toutes les données associées à cette position seront supprimées.
+        </p>
+      </Modal>
     </div>
   );
 }, (prevProps, nextProps) => {

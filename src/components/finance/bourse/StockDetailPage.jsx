@@ -1,7 +1,7 @@
 /**
- * Modal de détail pour une action du portfolio
+ * Page de détail pour une action du portfolio
  * 
- * ✅ OPTIMISATION Phase 2.5 : Modal Détail Action avec TradingView et Métriques Avancées
+ * ✅ PHASE 6 - Étape 6.1 : Page dédiée avec navigation retour
  * 
  * Fonctionnalités :
  * - Graphique TradingView professionnel intégré
@@ -10,19 +10,19 @@
  * - Plus haut/bas prix sur 52 semaines (dernière année)
  * - Métriques de performance (plus-value, %)
  * - Calculs optimisés avec memoization
+ * - Navigation retour avec flèche
  * 
  * Optimisations :
  * - useMemo pour métriques calculées (évite recalculs)
  * - useHistoricalData avec cache partagé (évite requêtes dupliquées)
- * - Chargement conditionnel données historiques (seulement si modal ouvert)
+ * - Chargement conditionnel données historiques (seulement si page visible)
  * - TradingViewWidget avec key pour remount propre
  * 
- * @module components/finance/bourse/StockDetailModal
- * @see docs/finance/ANALYSE_PROFONDE_SOUS_ONGLET_BOURSE.md - Solution 11
+ * @module components/finance/bourse/StockDetailPage
+ * @see docs/finance/ANALYSE_PROFONDE_SOUS_ONGLET_BOURSE.md - Solution 11 (mise à jour)
  */
 
 import React, { useState, useEffect, useMemo, memo, useCallback } from 'react';
-import Modal from '../../ui/Modal';
 import { useHistoricalData } from '../../../hooks/useHistoricalData';
 import { calculatePriceStats } from '../../../services/finance/financeCalculations';
 import TradingViewWidget from './TradingViewWidget';
@@ -30,18 +30,18 @@ import TradingViewWidget from './TradingViewWidget';
 import { formatCurrency as formatCurrencyWithDevise, detectCurrency } from '../../../services/finance/currencyService';
 
 /**
- * Modal de détail pour une position
+ * Page de détail pour une position
  * 
- * ✅ OPTIMISATION Phase 2.5 : React.memo pour éviter re-renders inutiles
+ * ✅ PHASE 6 - Étape 6.1 : Page dédiée avec navigation retour
  */
-const StockDetailModal = memo(({ position, isOpen, onClose }) => {
+const StockDetailPage = memo(({ position, onBack }) => {
   const [loading, setLoading] = useState(true);
   
   // Charger données historiques pour calculer les statistiques
   const { data: historicalDataMap, loading: historicalLoading } = useHistoricalData(
     position ? [position.ticker] : [],
     '1a', // 1 an pour calculer 52 semaines
-    { enabled: !!position && isOpen }
+    { enabled: !!position }
   );
 
   // Calculer les métriques depuis les données historiques
@@ -63,7 +63,7 @@ const StockDetailModal = memo(({ position, isOpen, onClose }) => {
   }, [position, historicalDataMap]);
 
   useEffect(() => {
-    if (isOpen && position) {
+    if (position) {
       setLoading(true);
       // Attendre que les données historiques soient chargées
       if (!historicalLoading && historicalDataMap && historicalDataMap[position.ticker]) {
@@ -72,7 +72,7 @@ const StockDetailModal = memo(({ position, isOpen, onClose }) => {
     } else {
       setLoading(false);
     }
-  }, [isOpen, position, historicalLoading, historicalDataMap]);
+  }, [position, historicalLoading, historicalDataMap]);
 
   // ✅ PHASE 4 - Étape 4.9 : Détecter devise de la position
   const positionCurrency = useMemo(() => {
@@ -106,14 +106,43 @@ const StockDetailModal = memo(({ position, isOpen, onClose }) => {
   if (!position) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Détails - ${position.ticker}${position.entreprise ? ` (${position.entreprise})` : ''}`}
-      variant="info"
-      className="max-w-6xl"
-      showCloseButton={true}
-    >
+    <div className="stock-detail-page space-y-6">
+      {/* Header avec flèche retour */}
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={onBack}
+          className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-white transition-colors"
+          aria-label="Retour au portfolio"
+          title="Retour au portfolio"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+        <div>
+          <h1 className="text-3xl font-bold text-white">
+            {position.ticker}
+            {position.entreprise && (
+              <span className="text-xl font-normal text-slate-400 ml-2">
+                ({position.entreprise})
+              </span>
+            )}
+          </h1>
+          <p className="text-slate-400 mt-1">Détails de la position</p>
+        </div>
+      </div>
+
       <div className="space-y-6">
         {/* Graphique TradingView */}
         <div>
@@ -325,12 +354,11 @@ const StockDetailModal = memo(({ position, isOpen, onClose }) => {
           </div>
         )}
       </div>
-    </Modal>
+    </div>
   );
 }, (prevProps, nextProps) => {
-  // Comparaison optimisée : seulement si position ou isOpen changent
+  // Comparaison optimisée : seulement si position change
   return (
-    prevProps.isOpen === nextProps.isOpen &&
     prevProps.position?.id === nextProps.position?.id &&
     prevProps.position?.ticker === nextProps.position?.ticker &&
     prevProps.position?.yahooData?.prixActuel === nextProps.position?.yahooData?.prixActuel &&
@@ -338,6 +366,6 @@ const StockDetailModal = memo(({ position, isOpen, onClose }) => {
   );
 });
 
-StockDetailModal.displayName = 'StockDetailModal';
+StockDetailPage.displayName = 'StockDetailPage';
 
-export default StockDetailModal;
+export default StockDetailPage;

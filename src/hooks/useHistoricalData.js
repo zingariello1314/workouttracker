@@ -74,19 +74,19 @@ export const useHistoricalData = (tickers = [], period = '3m', options = {}) => 
   }, [tickers]);
 
   /**
-   * Vérifier cache IndexedDB pour un ticker
+   * ✅ PHASE 3 - Étape 3.14 : Vérifier cache IndexedDB pour un ticker avec TTL strict
    */
   const getCachedData = useCallback(async (ticker) => {
     try {
       const cacheKey = `historical_${ticker}_${period}`;
-      const cached = await financeStorage.getYahooCache(cacheKey);
+      // ✅ PHASE 3.14 : Utiliser nouvelle signature getYahooCache avec TTL strict
+      const cached = await financeStorage.getYahooCache(cacheKey, {
+        ttl: CACHE_TTL,
+        allowStale: false // TTL strict : pas de cache expiré
+      });
       
       if (cached && !forceRefresh) {
-        // Vérifier TTL strict
-        const age = Date.now() - cached.timestamp;
-        if (age < CACHE_TTL) {
-          return cached.data;
-        }
+        return cached; // getYahooCache retourne déjà les données (pas cached.data)
       }
       
       return null;
@@ -329,4 +329,5 @@ export const getCacheStats = () => {
     cacheKeys: Array.from(globalCache.keys())
   };
 };
+
 

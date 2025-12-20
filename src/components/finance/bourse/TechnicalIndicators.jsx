@@ -9,8 +9,10 @@ const TechnicalIndicators = ({ ticker }) => {
     autoRefresh: false
   });
 
+  // ✅ PHASE 3 - Étape 3.16 : Validation robuste avant calcul indicateurs
   const indicators = useMemo(() => {
-    if (!historicalData || historicalData.length === 0) {
+    // ✅ PHASE 3.16 : Vérifier que historicalData est un tableau valide
+    if (!historicalData || !Array.isArray(historicalData) || historicalData.length === 0) {
       return {
         rsi: null,
         macd: null,
@@ -18,15 +20,35 @@ const TechnicalIndicators = ({ ticker }) => {
       };
     }
 
-    const rsi = calculateRSI(historicalData, 14);
-    const macd = calculateMACD(historicalData);
-    const bollinger = calculateBollingerBands(historicalData, 20, 2);
+    // ✅ PHASE 3.16 : Vérifier que les données contiennent au moins un élément avec prix
+    const hasValidData = historicalData.some(d => d && (d.close !== undefined || d.prixActuel !== undefined));
+    if (!hasValidData) {
+      return {
+        rsi: null,
+        macd: null,
+        bollinger: null
+      };
+    }
 
-    return {
-      rsi,
-      macd,
-      bollinger
-    };
+    try {
+      const rsi = calculateRSI(historicalData, 14);
+      const macd = calculateMACD(historicalData);
+      const bollinger = calculateBollingerBands(historicalData, 20, 2);
+
+      return {
+        rsi,
+        macd,
+        bollinger
+      };
+    } catch (error) {
+      // ✅ PHASE 3.16 : Gestion erreur gracieuse si calcul échoue
+      console.error('Error calculating technical indicators:', error);
+      return {
+        rsi: null,
+        macd: null,
+        bollinger: null
+      };
+    }
   }, [historicalData]);
 
   if (loading) {

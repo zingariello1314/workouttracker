@@ -33,20 +33,25 @@ class YahooFinanceService {
   async getQuoteData(ticker, options = {}) {
     const { useCache = true, forceRefresh = false } = options;
     
-    // 1. Vérifier cache IndexedDB
+    // ✅ PHASE 3 - Étape 3.14 : Vérifier cache IndexedDB avec TTL strict
     if (useCache && !forceRefresh) {
-      const cached = await financeStorage.getYahooCache(ticker);
+      const cached = await financeStorage.getYahooCache(ticker, {
+        ttl: this.cacheTTL.quote,
+        allowStale: false // TTL strict : pas de cache expiré
+      });
       if (cached) {
-        log.debug(`Cache hit for ${ticker}`);
         return cached;
       }
     }
 
-    // 2. Vérifier circuit breaker
+    // ✅ PHASE 3.14 : Vérifier circuit breaker (peut utiliser cache stale en dernier recours)
     if (this.circuitBreaker.state === 'OPEN') {
       if (Date.now() < this.circuitBreaker.nextAttempt) {
-        log.warn('Circuit breaker OPEN, using cache');
-        const cached = await financeStorage.getYahooCache(ticker);
+        log.warn('Circuit breaker OPEN, trying stale cache as last resort');
+        const cached = await financeStorage.getYahooCache(ticker, {
+          ttl: this.cacheTTL.quote,
+          allowStale: true // Circuit breaker : autoriser stale cache
+        });
         if (cached) return cached;
         throw new Error('Circuit breaker is OPEN and no cache available');
       }
@@ -114,10 +119,12 @@ class YahooFinanceService {
       }
     }
 
-    // 6. Dernier recours : données locales
-    const cached = await financeStorage.getYahooCache(ticker);
+    // ✅ PHASE 3.14 : Dernier recours : données locales (stale cache autorisé seulement ici)
+    const cached = await financeStorage.getYahooCache(ticker, {
+      ttl: this.cacheTTL.quote,
+      allowStale: true // Dernier recours : autoriser stale cache
+    });
     if (cached) {
-      log.warn(`Using stale cache for ${ticker}`);
       return cached;
     }
 
@@ -358,71 +365,179 @@ class YahooFinanceService {
   async getHistoricalData(ticker, period = '1mo', options = {}) {
     const { useCache = true, forceRefresh = false } = options;
     
-    // Vérifier cache
+    // ✅ PHASE 3 - Étape 3.14 : Vérifier cache avec TTL strict
     const cacheKey = `historical_${ticker}_${period}`;
     if (useCache && !forceRefresh) {
-      const cached = await financeStorage.getYahooCache(cacheKey);
-      if (cached && Date.now() - cached.timestamp < 60 * 60 * 1000) { // 1h cache
-        return cached.data;
+      const cached = await financeStorage.getYahooCache(cacheKey, {
+        ttl: this.cacheTTL.historical,
+        allowStale: false // TTL strict : pas de cache expiré
+      });
+      if (cached) {
+        return cached;
       }
     }
 
     try {
       // Essayer Alpha Vantage TIME_SERIES_DAILY
       if (hasApiKey('ALPHA_VANTAGE')) {
-        const data = await this.fetchAlphaVantageHistorical(ticker, period);
-        await financeStorage.setYahooCache(cacheKey, data);
-        this.onSuccess();
-        return this.normalizeHistoricalData(data, 'alphaVantage');
+        try {
+          const data = await this.fetchAlphaVantageHistorical(ticker, period);
+          await financeStorage.setYahooCache(cacheKey, data);
+          this.onSuccess();
+          return this.normalizeHistoricalData(data, 'alphaVantage');
+        } catch (error) {
+          // ✅ CORRECTION : Logger en debug si fallback disponible, error si pas de fallback
+          const hasFallback = hasApiKey('FINNHUB') || hasApiKey('POLYGON');
+          if (hasFallback) {
+            log.debug(`Alpha Vantage historical failed for ${ticker}, trying fallback:`, error.message);
+          } else {
+            log.error(`Alpha Vantage historical failed for ${ticker}:`, error.message);
+            throw error; // Re-throw si pas de fallback
+          }
+        }
       }
 
       // Fallback Finnhub
       if (hasApiKey('FINNHUB')) {
-        const data = await this.fetchFinnhubHistorical(ticker, period);
-        await financeStorage.setYahooCache(cacheKey, data);
-        this.onSuccess();
-        return this.normalizeHistoricalData(data, 'finnhub');
+        try {
+          const data = await this.fetchFinnhubHistorical(ticker, period);
+          await financeStorage.setYahooCache(cacheKey, data);
+          this.onSuccess();
+          return this.normalizeHistoricalData(data, 'finnhub');
+        } catch (error) {
+          // ✅ CORRECTION : Logger en debug si fallback disponible, error si pas de fallback
+          const hasFallback = hasApiKey('POLYGON');
+          if (hasFallback) {
+            log.debug(`Finnhub historical failed for ${ticker}, trying fallback:`, error.message);
+          } else {
+            log.error(`Finnhub historical failed for ${ticker}:`, error.message);
+            throw error; // Re-throw si pas de fallback
+          }
+        }
       }
 
       // Fallback Polygon
       if (hasApiKey('POLYGON')) {
-        const data = await this.fetchPolygonHistorical(ticker, period);
-        await financeStorage.setYahooCache(cacheKey, data);
-        this.onSuccess();
-        return this.normalizeHistoricalData(data, 'polygon');
+        try {
+          const data = await this.fetchPolygonHistorical(ticker, period);
+          await financeStorage.setYahooCache(cacheKey, data);
+          this.onSuccess();
+          return this.normalizeHistoricalData(data, 'polygon');
+        } catch (error) {
+          log.error(`Polygon historical failed for ${ticker}:`, error.message);
+          throw error; // Dernier recours, re-throw
+        }
       }
 
       return [];
     } catch (error) {
-      log.error(`Error fetching historical data for ${ticker}:`, error);
+      // ✅ CORRECTION : Logger en ERROR seulement si vraiment toutes les APIs ont échoué
+      // Si on arrive ici, c'est qu'une erreur a été re-throwée (pas de fallback disponible)
+      // ou qu'aucune API n'est configurée
+      const hasAnyApi = hasApiKey('ALPHA_VANTAGE') || hasApiKey('FINNHUB') || hasApiKey('POLYGON');
+      if (hasAnyApi) {
+        // Une API était configurée mais a échoué sans fallback
+        log.error(`Error fetching historical data for ${ticker} (no fallback available):`, error.message);
+      } else {
+        // Aucune API configurée
+        log.warn(`No API keys configured for historical data for ${ticker}`);
+      }
+      
       this.onFailure();
       
-      // Fallback cache
-      const cached = await financeStorage.getYahooCache(cacheKey);
-      if (cached) return cached.data;
+      // ✅ PHASE 3.14 : Fallback cache (stale autorisé seulement en cas d'erreur)
+      const cached = await financeStorage.getYahooCache(cacheKey, {
+        ttl: this.cacheTTL.historical,
+        allowStale: true // Erreur : autoriser stale cache comme fallback
+      });
+      if (cached) {
+        return cached;
+      }
       
+      // Retourner tableau vide plutôt que throw pour éviter de casser l'UI
+      log.warn(`No historical data available for ${ticker}, returning empty array`);
       return [];
     }
   }
 
   async fetchAlphaVantageHistorical(ticker, period) {
     const apiKey = getApiKey('ALPHA_VANTAGE');
+    
+    // ✅ CORRECTION : Validation API key avant requête
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('Alpha Vantage API key is missing or invalid');
+    }
+    
+    // ✅ CORRECTION : Validation ticker avant requête
+    if (!ticker || ticker.trim() === '') {
+      throw new Error('Ticker symbol is required');
+    }
+    
     const outputsize = period === 'Max' ? 'full' : 'compact';
-    const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${ticker}&outputsize=${outputsize}&apikey=${apiKey}`;
+    const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${encodeURIComponent(ticker.trim())}&outputsize=${outputsize}&apikey=${encodeURIComponent(apiKey.trim())}`;
     
-    const response = await this.fetchWithRetry(url);
+    let response;
+    try {
+      response = await this.fetchWithRetry(url);
+    } catch (error) {
+      // ✅ CORRECTION : Gestion erreur réseau avec message clair
+      throw new Error(`Network error fetching Alpha Vantage historical data: ${error.message}`);
+    }
     
+    // ✅ CORRECTION : Validation réponse existe et est un objet
+    if (!response || typeof response !== 'object') {
+      throw new Error('Alpha Vantage returned invalid response format');
+    }
+    
+    // ✅ CORRECTION : Vérifier erreur API explicite
     if (response['Error Message']) {
-      throw new Error(response['Error Message']);
+      const errorMsg = response['Error Message'];
+      // Ne pas throw si c'est juste un ticker invalide (on peut essayer fallback)
+      if (errorMsg.includes('Invalid API call') || errorMsg.includes('symbol')) {
+        throw new Error(`Invalid ticker symbol: ${ticker}`);
+      }
+      throw new Error(`Alpha Vantage API error: ${errorMsg}`);
     }
     
+    // ✅ CORRECTION : Vérifier rate limit
     if (response['Note']) {
-      throw new Error('API rate limit exceeded');
+      const note = response['Note'];
+      if (note.includes('rate limit') || note.includes('Thank you for using Alpha Vantage')) {
+        throw new Error('Alpha Vantage API rate limit exceeded. Please try again later.');
+      }
+      throw new Error(`Alpha Vantage API note: ${note}`);
     }
     
+    // ✅ CORRECTION : Validation Time Series avec vérifications détaillées
     const timeSeries = response['Time Series (Daily)'];
+    
     if (!timeSeries) {
+      // Vérifier si c'est une réponse vide ou malformée
+      if (Object.keys(response).length === 0) {
+        throw new Error('Alpha Vantage returned empty response');
+      }
+      
+      // Vérifier si métadonnées existent mais pas de données (ticker invalide ou autre problème)
+      if (response['Meta Data']) {
+        const metaData = response['Meta Data'];
+        log.warn(`Alpha Vantage returned metadata but no time series for ${ticker}:`, metaData);
+        throw new Error(`No time series data available for ${ticker}`);
+      }
+      
+      // Réponse inattendue
+      log.warn(`Alpha Vantage unexpected response structure for ${ticker}:`, Object.keys(response));
       throw new Error('No time series data in response');
+    }
+    
+    // ✅ CORRECTION : Vérifier que timeSeries est un objet et contient des données
+    if (typeof timeSeries !== 'object' || Array.isArray(timeSeries)) {
+      throw new Error('Time Series (Daily) is not a valid object');
+    }
+    
+    // ✅ CORRECTION : Vérifier que timeSeries contient au moins une entrée
+    const timeSeriesKeys = Object.keys(timeSeries);
+    if (timeSeriesKeys.length === 0) {
+      throw new Error('Time Series (Daily) is empty');
     }
     
     return timeSeries;

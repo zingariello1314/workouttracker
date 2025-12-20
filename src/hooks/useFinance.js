@@ -38,14 +38,14 @@ export const useFinance = () => {
             batch.map(async (position) => {
               try {
                 const yahooData = await yahooFinanceService.getQuoteData(position.ticker);
+                // ✅ PHASE 3 - Étape 3.15 : Ne pas inclure MA si pas de données historiques
+                // Les MA seront calculées plus tard quand on aura les données historiques
                 return {
                   ...position,
                   yahooData: {
-                    ...yahooData,
-                    // Moyennes mobiles basiques (à améliorer avec historique)
-                    ma20: yahooData.prixActuel * 0.98, // Placeholder
-                    ma50: yahooData.prixActuel * 0.95, // Placeholder
-                    ma200: yahooData.prixActuel * 0.90  // Placeholder
+                    ...yahooData
+                    // MA (ma20, ma50, ma200) seront calculées plus tard avec données historiques
+                    // Ne pas inclure de placeholders pour éviter signaux techniques incorrects
                   }
                 };
               } catch (err) {
@@ -100,7 +100,7 @@ export const useFinance = () => {
     loadData();
   }, []);
 
-  // Auto-refresh intelligent (seulement heures bourse)
+  // ✅ PHASE 5 - Étape 5.2 : Auto-refresh intelligent avec comparaison données et Page Visibility API
   useEffect(() => {
     const isMarketOpen = () => {
       const now = new Date();
@@ -111,18 +111,50 @@ export const useFinance = () => {
       return day >= 1 && day <= 5 && hour >= 9 && hour < 17;
     };
 
+    // ✅ PHASE 5 - Étape 5.2 : Référence pour état visibilité page
+    let isPageVisible = !document.hidden;
+
+    // ✅ PHASE 5 - Étape 5.2 : Handler pour changement visibilité page
+    const handleVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      
+      // Si page redevient visible et marché ouvert, refresh immédiat
+      if (isPageVisible && isMarketOpen() && portfolio.length > 0) {
+        refreshYahooData().catch(err => {
+          log.warn('Error refreshing on visibility change:', err);
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // ✅ PHASE 5 - Étape 5.2 : Auto-refresh intelligent seulement si marché ouvert ET page visible
     if (isMarketOpen() && portfolio.length > 0) {
       refreshIntervalRef.current = setInterval(async () => {
-        await refreshYahooData();
+        // ✅ PHASE 5 - Étape 5.2 : Ne refresh que si page visible
+        if (!isPageVisible) {
+          log.debug('Page not visible, skipping auto-refresh');
+          return;
+        }
+
+        try {
+          // ✅ PHASE 5 - Étape 5.2 : refreshYahooData compare déjà les données (lignes 308-319)
+          // et skip si pas de changement, donc on peut appeler directement
+          await refreshYahooData();
+        } catch (err) {
+          log.warn('Error during auto-refresh:', err);
+        }
       }, 60000); // 1 minute
     }
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
       }
     };
-  }, [portfolio.length]);
+  }, [portfolio.length, refreshYahooData]);
 
   // Ajout position avec validation
   const addPosition = useCallback(async (newPosition) => {
@@ -153,11 +185,12 @@ export const useFinance = () => {
       console.log('📊 [useFinance] Données Yahoo reçues:', yahooData);
       
       if (yahooData && yahooData.prixActuel && yahooData.prixActuel > 0) {
+        // ✅ PHASE 3 - Étape 3.15 : Ne pas inclure MA si pas de données historiques
+        // Les MA seront calculées plus tard quand on aura les données historiques
         normalized.yahooData = {
-          ...yahooData,
-          ma20: yahooData.prixActuel * 0.98,
-          ma50: yahooData.prixActuel * 0.95,
-          ma200: yahooData.prixActuel * 0.90
+          ...yahooData
+          // MA (ma20, ma50, ma200) seront calculées plus tard avec données historiques
+          // Ne pas inclure de placeholders pour éviter signaux techniques incorrects
         };
         yahooDataLoaded = true;
         console.log('📈 [useFinance] Données Yahoo enrichies:', normalized.yahooData);
@@ -320,17 +353,15 @@ export const useFinance = () => {
               // Invalider cache position avant recalcul
               invalidatePositionCache(position.id);
 
-              // Construire position mise à jour
-              // Note: Les MA réelles seront calculées plus tard avec historique
+              // ✅ PHASE 3 - Étape 3.15 : Construire position mise à jour sans placeholders MA
+              // Les MA réelles seront calculées plus tard avec données historiques
               const updated = {
                 ...position,
                 yahooData: {
                   ...yahooData,
-                  timestamp: Date.now(),
-                  // Placeholders temporaires (seront remplacés par MA réelles)
-                  ma20: yahooData.prixActuel * 0.98,
-                  ma50: yahooData.prixActuel * 0.95,
-                  ma200: yahooData.prixActuel * 0.90
+                  timestamp: Date.now()
+                  // MA (ma20, ma50, ma200) seront calculées plus tard avec données historiques
+                  // Ne pas inclure de placeholders pour éviter signaux techniques incorrects
                 }
               };
 

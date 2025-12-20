@@ -5,61 +5,28 @@
  * - React.memo avec comparaison optimisée basée sur hash portfolio
  * - Réduction re-renders inutiles de 60-80%
  * 
+ * ✅ PHASE 4 - Étape 4.2 : Logique métier extraite vers portfolioService
+ * - Calculs centralisés dans service
+ * - Composant se contente d'afficher
+ * - Séparation logique métier / présentation
+ * 
  * @module components/finance/bourse/PortfolioSummary
- * @see docs/finance/ANALYSE_PROFONDE_SOUS_ONGLET_BOURSE.md - Solution 6
+ * @see docs/finance/ANALYSE_PROFONDE_SOUS_ONGLET_BOURSE.md - Solution 6, Phase 4 Étape 22
  */
 
 import React, { useMemo, memo } from 'react';
-
-/**
- * Génère un hash simple pour détecter changements portfolio
- * Plus performant que comparaison profonde complète
- */
-function getPortfolioHash(portfolio) {
-  if (!portfolio || portfolio.length === 0) return 'empty';
-  
-  // Hash basé sur ID, quantite, prixEntree, prixActuel, plusValueEuro
-  // Cela capture tous les changements significatifs sans comparaison profonde coûteuse
-  return portfolio.map(pos => 
-    `${pos.id}_${pos.quantite}_${pos.prixEntree}_${pos.yahooData?.prixActuel || 0}_${pos.calculs?.plusValueEuro || 0}`
-  ).join('|');
-}
+// ✅ PHASE 4 - Étape 4.2 : Import service logique métier
+import { 
+  calculatePortfolioSummary, 
+  getPortfolioHash,
+  formatCurrency 
+} from '../../../services/finance/portfolioService';
 
 const PortfolioSummary = memo(({ portfolio }) => {
+  // ✅ PHASE 4 - Étape 4.2 : Utiliser service pour calculs résumé
   const summary = useMemo(() => {
-    const totalInvesti = portfolio.reduce((sum, pos) => 
-      sum + (pos.quantite * pos.prixEntree), 0
-    );
-    
-    const totalValorise = portfolio.reduce((sum, pos) => 
-      sum + (pos.calculs?.valeurPosition || 0), 0
-    );
-    
-    const totalPlusValue = portfolio.reduce((sum, pos) => 
-      sum + (pos.calculs?.plusValueEuro || 0), 0
-    );
-    
-    const totalPlusValuePourcent = totalInvesti > 0 
-      ? (totalPlusValue / totalInvesti) * 100 
-      : 0;
-
-    return {
-      totalInvesti,
-      totalValorise,
-      totalPlusValue,
-      totalPlusValuePourcent,
-      positions: portfolio.length
-    };
+    return calculatePortfolioSummary(portfolio);
   }, [portfolio]);
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
-  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -106,6 +73,7 @@ const PortfolioSummary = memo(({ portfolio }) => {
     </div>
   );
 }, (prevProps, nextProps) => {
+  // ✅ PHASE 4 - Étape 4.2 : Utiliser fonction service pour hash
   // Comparaison personnalisée optimisée : utiliser hash au lieu de comparaison profonde
   const prevHash = getPortfolioHash(prevProps.portfolio);
   const nextHash = getPortfolioHash(nextProps.portfolio);

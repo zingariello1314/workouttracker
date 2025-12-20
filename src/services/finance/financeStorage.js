@@ -9,12 +9,13 @@ import logger from '../../utils/logger';
 const log = logger.module('financeStorage');
 
 const DB_NAME = 'FinanceDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // ✅ PHASE 4 - Étape 4.9 : Version 2 pour ajouter store EXCHANGE_RATES
 const STORES = {
   PORTFOLIO: 'portfolio',
   YAHOO_CACHE: 'yahooCache',
   CALCULATIONS: 'calculations',
-  HISTORY: 'history'
+  HISTORY: 'history',
+  EXCHANGE_RATES: 'exchangeRates' // ✅ PHASE 4 - Étape 4.9 : Store pour taux de change
 };
 
 class FinanceStorage {
@@ -26,8 +27,10 @@ class FinanceStorage {
   async initDB() {
     try {
       this.db = await openDB(DB_NAME, DB_VERSION, {
-        upgrade(db) {
-          // Store Portfolio
+        upgrade(db, oldVersion, newVersion, transaction) {
+          log.info(`Upgrading FinanceDB from version ${oldVersion} to ${newVersion}`);
+          
+          // Store Portfolio (version 1)
           if (!db.objectStoreNames.contains(STORES.PORTFOLIO)) {
             const portfolioStore = db.createObjectStore(STORES.PORTFOLIO, {
               keyPath: 'id'
@@ -36,7 +39,7 @@ class FinanceStorage {
             portfolioStore.createIndex('dateAchat', 'dateAchat', { unique: false });
           }
 
-          // Store Yahoo Cache
+          // Store Yahoo Cache (version 1)
           if (!db.objectStoreNames.contains(STORES.YAHOO_CACHE)) {
             const cacheStore = db.createObjectStore(STORES.YAHOO_CACHE, {
               keyPath: 'ticker'
@@ -44,14 +47,14 @@ class FinanceStorage {
             cacheStore.createIndex('timestamp', 'timestamp', { unique: false });
           }
 
-          // Store Calculations (memoization)
+          // Store Calculations (version 1)
           if (!db.objectStoreNames.contains(STORES.CALCULATIONS)) {
             db.createObjectStore(STORES.CALCULATIONS, {
               keyPath: 'key'
             });
           }
 
-          // Store History (audit trail)
+          // Store History (version 1)
           if (!db.objectStoreNames.contains(STORES.HISTORY)) {
             const historyStore = db.createObjectStore(STORES.HISTORY, {
               keyPath: 'id',
@@ -59,6 +62,16 @@ class FinanceStorage {
             });
             historyStore.createIndex('timestamp', 'timestamp', { unique: false });
             historyStore.createIndex('action', 'action', { unique: false });
+          }
+
+          // ✅ PHASE 4 - Étape 4.9 : Store Exchange Rates (version 2)
+          // Migration : Ajouter store pour taux de change
+          if (oldVersion < 2 && !db.objectStoreNames.contains(STORES.EXCHANGE_RATES)) {
+            log.info('Creating EXCHANGE_RATES store for multi-currency support');
+            const exchangeRatesStore = db.createObjectStore(STORES.EXCHANGE_RATES, {
+              keyPath: 'key'
+            });
+            exchangeRatesStore.createIndex('timestamp', 'timestamp', { unique: false });
           }
         }
       });
@@ -163,18 +176,46 @@ class FinanceStorage {
     }
   }
 
-  async getYahooCache(ticker) {
+  /**
+   * ✅ PHASE 3 - Étape 3.14 : Récupérer cache Yahoo avec vérification TTL stricte
+   * @param {string} ticker - Ticker ou clé de cache
+   * @param {Object} options - Options
+   * @param {number} options.ttl - TTL en millisecondes (défaut: 15 min pour quotes)
+   * @param {boolean} options.allowStale - Si true, retourne cache même expiré (défaut: false)
+   * @returns {Promise<Object|null>} Données en cache ou null si expiré/inexistant
+   */
+  async getYahooCache(ticker, options = {}) {
+    const { ttl = 15 * 60 * 1000, allowStale = false } = options;
+    
     try {
       await this.initPromise;
       const tx = this.db.transaction(STORES.YAHOO_CACHE, 'readonly');
       const store = tx.objectStore(STORES.YAHOO_CACHE);
       const cached = await store.get(ticker);
       
-      if (cached && Date.now() - cached.timestamp < 15 * 60 * 1000) {
-        return cached.data;
+      if (!cached) {
+        return null;
       }
       
-      return null;
+      // ✅ PHASE 3.14 : Vérification TTL stricte
+      const now = Date.now();
+      const age = now - cached.timestamp;
+      const isExpired = age >= ttl;
+      
+      if (isExpired && !allowStale) {
+        // Cache expiré et stale non autorisé : retourner null
+        log.debug(`Cache expired for ${ticker} (age: ${Math.round(age / 1000)}s, TTL: ${Math.round(ttl / 1000)}s)`);
+        return null;
+      }
+      
+      if (isExpired && allowStale) {
+        // Cache expiré mais stale autorisé : logger warning
+        log.warn(`Using stale cache for ${ticker} (age: ${Math.round(age / 1000)}s, TTL: ${Math.round(ttl / 1000)}s)`);
+      } else {
+        log.debug(`Cache hit for ${ticker} (age: ${Math.round(age / 1000)}s)`);
+      }
+      
+      return cached.data;
     } catch (error) {
       log.error('Error getting Yahoo cache:', error);
       return null;
@@ -208,6 +249,45 @@ class FinanceStorage {
       });
     } catch (error) {
       log.error('Error logging history:', error);
+    }
+  }
+
+  /**
+   * ✅ PHASE 4 - Étape 4.9 : Récupérer taux de change depuis IndexedDB
+   * @param {string} key - Clé du taux (ex: 'USD_EUR')
+   * @returns {Promise<Object|null>} Taux de change avec timestamp ou null
+   */
+  async getExchangeRate(key) {
+    try {
+      await this.initPromise;
+      const tx = this.db.transaction(STORES.EXCHANGE_RATES, 'readonly');
+      const store = tx.objectStore(STORES.EXCHANGE_RATES);
+      const cached = await store.get(key);
+      return cached || null;
+    } catch (error) {
+      log.error('Error getting exchange rate:', error);
+      return null;
+    }
+  }
+
+  /**
+   * ✅ PHASE 4 - Étape 4.9 : Sauvegarder taux de change dans IndexedDB
+   * @param {string} key - Clé du taux (ex: 'USD_EUR')
+   * @param {Object} data - Données du taux { rate, timestamp }
+   * @returns {Promise<void>}
+   */
+  async setExchangeRate(key, data) {
+    try {
+      await this.initPromise;
+      const tx = this.db.transaction(STORES.EXCHANGE_RATES, 'readwrite');
+      const store = tx.objectStore(STORES.EXCHANGE_RATES);
+      await store.put({
+        key,
+        rate: data.rate,
+        timestamp: data.timestamp || Date.now()
+      });
+    } catch (error) {
+      log.error('Error setting exchange rate:', error);
     }
   }
 

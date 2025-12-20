@@ -52,6 +52,28 @@ export const prepareFinanceExportData = async (options = {}) => {
         updatedAt: position.updatedAt || null,
       };
 
+      // ✅ PHASE 4 - Étape 4.9 : Inclure devise si disponible
+      if (position.currency) {
+        normalized.currency = position.currency;
+      }
+
+      // ✅ PHASE 4 - Étape 4.8 : Inclure dividendes, frais et splits si disponibles
+      if (position.dividendes && Array.isArray(position.dividendes) && position.dividendes.length > 0) {
+        normalized.dividendes = position.dividendes;
+      }
+      
+      if (position.splits && Array.isArray(position.splits) && position.splits.length > 0) {
+        normalized.splits = position.splits;
+      }
+      
+      if (position.frais && (position.frais.fraisAchat || position.frais.fraisVente || position.frais.fraisGestionAnnuel)) {
+        normalized.frais = {
+          fraisAchat: position.frais.fraisAchat || 0,
+          fraisVente: position.frais.fraisVente || 0,
+          fraisGestionAnnuel: position.frais.fraisGestionAnnuel || 0
+        };
+      }
+
       // Inclure données Yahoo si demandé
       if (opts.includeYahooData && position.yahooData) {
         normalized.yahooData = {
@@ -78,6 +100,18 @@ export const prepareFinanceExportData = async (options = {}) => {
             confidence: position.calculs.signal.confidence,
           } : null,
         };
+
+        // ✅ PHASE 4 - Étape 4.8 : Inclure détails calcul complet si disponible
+        if (position.calculs.completeGainLoss) {
+          normalized.calculs.completeGainLoss = {
+            plusValueBrute: position.calculs.completeGainLoss.plusValueBrute,
+            dividendesCumules: position.calculs.completeGainLoss.dividendesCumules,
+            fraisTotaux: position.calculs.completeGainLoss.fraisTotaux,
+            investissementNet: position.calculs.completeGainLoss.investissementNet,
+            rendementTotal: position.calculs.completeGainLoss.rendementTotal,
+            details: position.calculs.completeGainLoss.details
+          };
+        }
       }
 
       return normalized;

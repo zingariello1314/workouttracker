@@ -13,13 +13,15 @@
 
 import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import { FixedSizeList } from 'react-window';
+// ✅ PHASE 4 - Étape 4.9 : Import service devises pour affichage correct
+import { formatCurrency as formatCurrencyWithDevise, detectCurrency } from '../../../services/finance/currencyService';
 
 /**
  * Composant de ligne virtualisée
  * Mémoïsé pour éviter re-renders inutiles
  */
 const TableRow = React.memo(({ index, style, data }) => {
-  const { positions, onDelete, onRowClick, formatCurrency, formatPercent } = data;
+  const { positions, onDelete, onRowClick, onPositionClick, formatPercent } = data;
   const position = positions[index];
 
   if (!position) return null;
@@ -28,12 +30,31 @@ const TableRow = React.memo(({ index, style, data }) => {
   const yahooData = position.yahooData || {};
   const variationColor = yahooData.variationJour >= 0 ? 'text-green-400' : 'text-red-400';
   const plusValueColor = calculs.plusValueEuro >= 0 ? 'text-green-400' : 'text-red-400';
+  
+  // ✅ PHASE 4 - Étape 4.9 : Détecter devise de la position
+  const positionCurrency = calculs.currency || position.currency || detectCurrency(position.ticker) || 'EUR';
+  
+  // ✅ PHASE 4 - Étape 4.9 : Formater prix selon devise originale
+  const formatPrice = useCallback((value) => {
+    if (!Number.isFinite(value)) return 'N/A';
+    return formatCurrencyWithDevise(value, positionCurrency, 'fr-FR');
+  }, [positionCurrency]);
+  
+  // ✅ PHASE 4 - Étape 4.9 : Formater valeurs converties en EUR
+  const formatCurrencyEUR = useCallback((value) => {
+    if (!Number.isFinite(value)) return 'N/A';
+    return formatCurrencyWithDevise(value, 'EUR', 'fr-FR');
+  }, []);
 
+  // ✅ PHASE 6 - Étape 6.1 : Navigation vers page détail au lieu du modal
   const handleRowClick = useCallback(() => {
-    if (onRowClick) {
+    if (onPositionClick) {
+      onPositionClick(position.id);
+    } else if (onRowClick) {
+      // Fallback pour compatibilité
       onRowClick(position);
     }
-  }, [position, onRowClick]);
+  }, [position, onPositionClick, onRowClick]);
 
   const handleDeleteClick = useCallback((e) => {
     e.stopPropagation(); // Empêcher déclenchement du clic sur la ligne
@@ -56,10 +77,12 @@ const TableRow = React.memo(({ index, style, data }) => {
           )}
         </div>
         <div className="text-white">{position.quantite}</div>
-        <div className="text-white">{formatCurrency(position.prixEntree)}</div>
+        {/* ✅ PHASE 4 - Étape 4.9 : Afficher prix d'achat dans devise originale */}
+        <div className="text-white">{formatPrice(position.prixEntree)}</div>
         <div>
+          {/* ✅ PHASE 4 - Étape 4.9 : Afficher prix actuel dans devise originale */}
           <div className="text-white">
-            {yahooData.prixActuel ? formatCurrency(yahooData.prixActuel) : 'N/A'}
+            {yahooData.prixActuel ? formatPrice(yahooData.prixActuel) : 'N/A'}
           </div>
           {yahooData.variationJour !== undefined && (
             <div className={`text-sm ${variationColor}`}>
@@ -67,13 +90,15 @@ const TableRow = React.memo(({ index, style, data }) => {
             </div>
           )}
         </div>
+        {/* ✅ PHASE 4 - Étape 4.9 : Valeur position en EUR (convertie) */}
         <div className="text-white">
-          {calculs.valeurPosition ? formatCurrency(calculs.valeurPosition) : 'N/A'}
+          {calculs.valeurPosition ? formatCurrencyEUR(calculs.valeurPosition) : 'N/A'}
         </div>
+        {/* ✅ PHASE 4 - Étape 4.9 : Plus-value en EUR (convertie) */}
         <div className={plusValueColor}>
           {calculs.plusValueEuro !== undefined ? (
             <>
-              <div>{formatCurrency(calculs.plusValueEuro)}</div>
+              <div>{formatCurrencyEUR(calculs.plusValueEuro)}</div>
               {calculs.plusValuePourcent !== undefined && (
                 <div className="text-sm">
                   ({formatPercent(calculs.plusValuePourcent)})
@@ -141,30 +166,24 @@ const VirtualizedTable = ({
 
   /**
    * Formatters mémoïsés pour éviter recréation à chaque render
+   * ✅ PHASE 4 - Étape 4.9 : formatCurrency retiré (géré dans TableRow avec devise)
    */
-  const formatCurrency = useCallback((value) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
-  }, []);
-
   const formatPercent = useCallback((value) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   }, []);
 
   /**
    * Données pour react-window (mémoïsées)
+   * ✅ PHASE 4 - Étape 4.9 : formatCurrency retiré (géré dans TableRow)
+   * ✅ PHASE 6 - Étape 6.1 : Ajout onPositionClick pour navigation vers page détail
    */
   const listData = useMemo(() => ({
     positions,
     onDelete,
     onRowClick,
-    formatCurrency,
+    onPositionClick,
     formatPercent
-  }), [positions, onDelete, onRowClick, formatCurrency, formatPercent]);
+  }), [positions, onDelete, onRowClick, onPositionClick, formatPercent]);
 
   /**
    * Mesurer la hauteur du conteneur dynamiquement
