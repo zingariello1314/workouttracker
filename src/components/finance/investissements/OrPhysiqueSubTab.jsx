@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useInvestissements } from '../../../hooks/useInvestissements';
 import { useOrPrice } from '../../../hooks/useOrPrice';
@@ -35,18 +35,7 @@ const OrPhysiqueSubTab = () => {
   // Le fallback 119€/g correspond au prix réel actuel (décembre 2025)
   const prixOr = (prixOrRaw && prixOrRaw > 0) ? prixOrRaw : 119;
   
-  // Debug: log pour vérifier les valeurs
-  useEffect(() => {
-    console.log('[OrPhysiqueSubTab] 🔍 DEBUG Prix Or:', {
-      prixOrRaw,
-      priceLoading,
-      priceError,
-      prixOr,
-      type: typeof prixOrRaw,
-      isNull: prixOrRaw === null,
-      isUndefined: prixOrRaw === undefined
-    });
-  }, [prixOrRaw, priceLoading, priceError, prixOr]);
+  // Logs de debug supprimés pour réduire la verbosité (visible uniquement en cas d'erreur)
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-FR', {

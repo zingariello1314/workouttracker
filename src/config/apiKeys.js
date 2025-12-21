@@ -15,16 +15,13 @@ const envDiagnostics = {
   allEnvKeys: typeof import.meta.env !== 'undefined' ? Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')) : []
 };
 
-console.log('[apiKeys] 🔍 DIAGNOSTIC Variables d\'environnement:', {
-  hasImportMeta: typeof import.meta !== 'undefined',
-  hasImportMetaEnv: typeof import.meta?.env !== 'undefined',
-  golpricezPresent: !!envDiagnostics.golpricez,
-  golpricezLength: envDiagnostics.golpricez?.length,
-  goldApiPresent: !!envDiagnostics.goldApi,
-  goldApiLength: envDiagnostics.goldApi?.length,
-  allViteKeys: envDiagnostics.allEnvKeys,
-  golpricezValue: envDiagnostics.golpricez ? `${envDiagnostics.golpricez.substring(0, 10)}...` : 'undefined'
-});
+// 🔍 DIAGNOSTIC : Vérifier les variables d'environnement au chargement (une seule fois)
+// Logs réduits - visible uniquement si clés absentes
+if (!envDiagnostics.golpricez || !envDiagnostics.goldApi) {
+  console.warn('%c⚠️ ATTENTION: Les clés API or ne sont PAS chargées !', 'color: #ff9900; font-weight: bold;');
+  console.warn('💡 SOLUTION: Vérifiez que le fichier .env existe et redémarrez le serveur avec: npm run dev');
+  console.log('📋 Variables présentes:', envDiagnostics.allEnvKeys.length > 0 ? envDiagnostics.allEnvKeys : 'AUCUNE');
+}
 
 const API_KEYS = {
   // Alpha Vantage - Bourse et Indices (PRIORITÉ HAUTE)
@@ -67,25 +64,7 @@ export const hasApiKey = (keyName) => {
  */
 export const getApiKey = (keyName) => {
   const key = API_KEYS[keyName];
-  // Debug: log détaillé pour vérifier le chargement des clés (seulement pour les clés or)
-  if (keyName === 'GOLDPRICEZ' || keyName === 'GOLD_API') {
-    const envVarName = keyName === 'GOLDPRICEZ' ? 'VITE_GOLDPRICEZ_API_KEY' : 'VITE_GOLD_API_KEY';
-    const envValue = import.meta.env?.[envVarName];
-    console.log(`[getApiKey] ${keyName}:`, {
-      fromAPI_KEYS: {
-        hasKey: !!key,
-        keyLength: key?.length,
-        firstChars: key ? key.substring(0, 10) + '...' : 'null'
-      },
-      fromImportMetaEnv: {
-        hasEnvVar: !!envValue,
-        envValueLength: envValue?.length,
-        envValueFirstChars: envValue ? envValue.substring(0, 10) + '...' : 'undefined'
-      },
-      match: key === envValue ? '✅ MATCH' : '❌ MISMATCH',
-      recommendation: !envValue ? '⚠️ REDÉMARREZ LE SERVEUR (npm run dev)' : '✅ OK'
-    });
-  }
+  // Logs de diagnostic supprimés (visible uniquement dans le diagnostic initial au chargement)
   return key;
 };
 

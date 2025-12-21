@@ -39,7 +39,7 @@ const CACHE_KEY = 'or_price_current';
 /**
  * Clé pour le fallback prix (en cas d'erreur API)
  */
-const FALLBACK_PRICE = 65; // €/g par défaut
+const FALLBACK_PRICE = 119; // €/g par défaut (prix réel décembre 2025)
 
 // ==================== GESTION REQUÊTES EN COURS ====================
 

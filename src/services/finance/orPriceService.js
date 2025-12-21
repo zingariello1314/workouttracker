@@ -84,14 +84,8 @@ class OrPriceService {
    */
   async fetchFromGoldPriceZ() {
     const apiKey = getApiKey('GOLDPRICEZ');
-    console.log('[fetchFromGoldPriceZ] 🔑 Vérification clé API:', {
-      hasKey: !!apiKey,
-      keyLength: apiKey?.length,
-      envVar: import.meta.env.VITE_GOLDPRICEZ_API_KEY ? 'présente' : 'absente'
-    });
     if (!apiKey) {
-      log.warn('[fetchFromGoldPriceZ] ⚠️ Clé API non configurée - Vérifiez que le serveur a été redémarré après ajout dans .env');
-      console.warn('[fetchFromGoldPriceZ] ⚠️ Clé API non configurée. Vérifiez .env et redémarrez le serveur (npm run dev)');
+      log.debug('[fetchFromGoldPriceZ] Clé API non configurée (fallback activé)');
       return null;
     }
 
@@ -212,10 +206,11 @@ class OrPriceService {
       console.warn('[fetchFromGoldPriceZ] ⚠️ Format non reconnu, données complètes:', data);
       return null;
     } catch (error) {
+      // Log en debug car cette erreur est attendue dans une stratégie multi-sources
       if (error.name === 'AbortError') {
-        log.warn('[fetchFromGoldPriceZ] Timeout');
+        log.debug('[fetchFromGoldPriceZ] Timeout (fallback activé)');
       } else {
-        log.warn(`[fetchFromGoldPriceZ] Erreur: ${error.message}`);
+        log.debug(`[fetchFromGoldPriceZ] Erreur (fallback activé): ${error.message}`);
       }
       return null;
     }
@@ -230,14 +225,8 @@ class OrPriceService {
    */
   async fetchFromGoldAPI() {
     const apiKey = getApiKey('GOLD_API');
-    console.log('[fetchFromGoldAPI] 🔑 Vérification clé API:', {
-      hasKey: !!apiKey,
-      keyLength: apiKey?.length,
-      envVar: import.meta.env.VITE_GOLD_API_KEY ? 'présente' : 'absente'
-    });
     if (!apiKey) {
-      log.warn('[fetchFromGoldAPI] ⚠️ Clé API non configurée - Vérifiez que le serveur a été redémarré après ajout dans .env');
-      console.warn('[fetchFromGoldAPI] ⚠️ Clé API non configurée. Vérifiez .env et redémarrez le serveur (npm run dev)');
+      log.debug('[fetchFromGoldAPI] Clé API non configurée (fallback activé)');
       return null;
     }
 
@@ -346,10 +335,14 @@ class OrPriceService {
       clearTimeout(timeoutId);
       throw lastError || new Error('Aucun endpoint Gold-API.com fonctionnel');
     } catch (error) {
+      // Log en debug car cette erreur est attendue dans une stratégie multi-sources
+      // Seulement log.warn si c'est une erreur de clé API invalide (403) pour info
       if (error.name === 'AbortError') {
-        log.warn('[fetchFromGoldAPI] Timeout');
+        log.debug('[fetchFromGoldAPI] Timeout (fallback activé)');
+      } else if (error.message && error.message.includes('403')) {
+        log.debug('[fetchFromGoldAPI] Clé API invalide ou expirée (403) - fallback activé');
       } else {
-        log.warn(`[fetchFromGoldAPI] Erreur: ${error.message}`);
+        log.debug(`[fetchFromGoldAPI] Erreur (fallback activé): ${error.message}`);
       }
       return null;
     }
@@ -430,25 +423,7 @@ class OrPriceService {
       return cached.price;
     }
 
-    // 🔍 DIAGNOSTIC : Vérifier les clés API au début de getCurrentPrice
-    const golpricezKey = getApiKey('GOLDPRICEZ');
-    const goldApiKey = getApiKey('GOLD_API');
-    console.log('[orPriceService.getCurrentPrice] 🔍 DIAGNOSTIC Clés API:', {
-      golpricez: {
-        hasKey: !!golpricezKey,
-        length: golpricezKey?.length,
-        firstChars: golpricezKey?.substring(0, 10)
-      },
-      goldApi: {
-        hasKey: !!goldApiKey,
-        length: goldApiKey?.length,
-        firstChars: goldApiKey?.substring(0, 10)
-      },
-      importMetaEnv: {
-        golpricez: import.meta.env?.VITE_GOLDPRICEZ_API_KEY ? 'présente' : 'absente',
-        goldApi: import.meta.env?.VITE_GOLD_API_KEY ? 'présente' : 'absente'
-      }
-    });
+    // Les clés API sont vérifiées dans les méthodes fetchFrom*
 
     // ✅ Stratégie multi-sources : essayer plusieurs APIs
     let prixParGramme = null;
@@ -482,7 +457,8 @@ class OrPriceService {
     // 4. Si toutes les APIs échouent, utiliser prix par défaut
     if (!prixParGramme) {
       log.warn('[getCurrentPrice] Toutes les APIs ont échoué, utilisation prix par défaut');
-      prixParGramme = 65; // Prix par défaut en €/g
+      console.warn('%c[getCurrentPrice] ⚠️ Toutes les APIs ont échoué, utilisation prix par défaut (119€/g)', 'color: #ff9900; font-weight: bold;');
+      prixParGramme = 119; // Prix par défaut en €/g (décembre 2025)
       source = 'Default (fallback)';
     }
     
@@ -493,6 +469,7 @@ class OrPriceService {
     });
     
     log.info(`[getCurrentPrice] ✅ Prix or récupéré depuis ${source}: ${prixParGramme.toFixed(2)}€/g`);
+    console.log(`%c[getCurrentPrice] ✅ Prix or récupéré depuis ${source}: ${prixParGramme.toFixed(2)}€/g`, 'color: #00ff00; font-weight: bold;');
     
     return prixParGramme;
   }
