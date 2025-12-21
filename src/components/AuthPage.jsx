@@ -131,6 +131,17 @@ const AuthPage = () => {
               </p>
             )}
           </div>
+          
+          {/* ✅ Bouton Premium */}
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <Button
+              onClick={() => setActiveTab('pricing')}
+              variant="primary"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg shadow-purple-500/50"
+            >
+              ⭐ Passer à l'abonnement premium
+            </Button>
+          </div>
         </Card>
 
         <Card variant="glass" padding="lg" className="h-full">

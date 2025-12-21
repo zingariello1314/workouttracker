@@ -41,7 +41,7 @@ import { QuotesErrorBoundary } from '../quotes/QuotesErrorBoundary';
 import ProfileCardSettings from '../sidebar/ProfileCardSettings';
 
 const SettingsTab = () => {
-  const { data, updateData, loadFromDB, deleteMockEnduranceSessions } = useWorkout();
+  const { data, updateData, loadFromDB, deleteMockEnduranceSessions, setActiveTab } = useWorkout();
   const { currentUser, updateAvatar, updateProfile, updatePassword, linkAnonymousDataToUser } = useAuth();
   const t = useTranslation();
   const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
@@ -2344,6 +2344,20 @@ const SettingsTab = () => {
                     <span className="text-xs text-emerald-400">✅ Mot de passe mis à jour avec succès</span>
                   )}
                 </div>
+              </div>
+
+              {/* ✅ Bouton Premium */}
+              <div className="space-y-3 pt-4 border-t border-slate-700">
+                <Button
+                  onClick={() => setActiveTab('pricing')}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg shadow-purple-500/50 flex items-center justify-center gap-2"
+                >
+                  <span>⭐</span>
+                  <span>Passer à l'abonnement premium</span>
+                </Button>
+                <p className="text-xs text-slate-400 text-center">
+                  Débloquez toutes les fonctionnalités avancées de Momentum
+                </p>
               </div>
 
               {/* Migration des données */}

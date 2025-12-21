@@ -30,10 +30,19 @@ const useWorkout = () => {
 const WorkoutProvider = ({ children }) => {
   // État principal
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTabState] = useState('home');
+  const [previousTab, setPreviousTab] = useState(null);
   const [weekVariant, setWeekVariant] = useState('A');
   const [statsPeriod, setStatsPeriod] = useState('week');
   const [isGymMode, setIsGymMode] = useState(false);
+  
+  // Wrapper pour setActiveTab qui stocke la page précédente
+  const setActiveTab = useCallback((newTab) => {
+    if (activeTab !== newTab) {
+      setPreviousTab(activeTab);
+      setActiveTabState(newTab);
+    }
+  }, [activeTab]);
   
   // États pour les modifications non sauvegardées par section
   const [hasUnsavedExercises, setHasUnsavedExercises] = useState(false);
@@ -2385,6 +2394,7 @@ const WorkoutProvider = ({ children }) => {
     setCurrentDate,
     activeTab,
     setActiveTab,
+    previousTab,
     weekVariant,
     setWeekVariant,
     statsPeriod,
@@ -2664,6 +2674,7 @@ const WorkoutProvider = ({ children }) => {
       updateData: async () => {},
       activeTab: 'home',
       setActiveTab: () => {},
+      previousTab: null,
       // ... autres valeurs minimales si nécessaire
     };
     return (

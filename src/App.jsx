@@ -29,6 +29,7 @@ import NutritionTab from './components/tabs/NutritionTab';
 import BooksTab from './components/tabs/BooksTab';
 import FinanceTab from './components/tabs/FinanceTab';
 import DashboardTab from './components/tabs/DashboardTab';
+import PricingTab from './components/tabs/PricingTab';
 import CoachDashboard from './components/tabs/nutrition/components/CoachDashboard';
 import ExerciseVariations from './components/ExerciseVariations/ExerciseVariations';
 import AdvancedStats from './components/AdvancedStats';
@@ -200,15 +201,19 @@ const WorkoutTrackerContent = () => {
         return <FinanceTab />;
       case 'settings':
         return <SettingsTab />;
+      case 'pricing':
+        // Pricing est géré directement dans le JSX principal pour affichage plein écran
+        return null;
       default:
         return <HomePage />;
     }
   };
 
   // Déterminer si la sidebar doit être affichée
-  // Visible partout SAUF sur home et auth
+  // Visible partout SAUF sur home, auth et pricing
   const shouldShowSidebar = activeTab !== 'home' && 
-                            activeTab !== 'auth';
+                            activeTab !== 'auth' &&
+                            activeTab !== 'pricing';
 
   // État pour contrôler l'affichage du fond animé
   const [showAnimatedBackground, setShowAnimatedBackground] = useState(false);
@@ -233,9 +238,9 @@ const WorkoutTrackerContent = () => {
   // IMPORTANT: Le fond reste TOUJOURS monté pour éviter le rechargement entre onglets
   // Seule l'opacité change selon l'onglet actif
   useEffect(() => {
-    // Ne pas afficher le fond sur home et auth uniquement
+    // Ne pas afficher le fond sur home, auth et pricing
     // Pour dashboard, l'opacité est gérée par scrollProgress (0 = masqué, 1 = visible)
-    const shouldShow = activeTab !== 'home' && activeTab !== 'auth';
+    const shouldShow = activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'pricing';
     setShowAnimatedBackground(shouldShow);
   }, [activeTab]);
 
@@ -283,9 +288,9 @@ const WorkoutTrackerContent = () => {
       />
       
       <div className="flex flex-col min-h-screen">
-        {/* Header et Navigation - Masqués sur home, auth et dashboard */}
-        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && <Header />}
-        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && <Navigation />}
+        {/* Header et Navigation - Masqués sur home, auth, dashboard et pricing */}
+        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing' && <Header />}
+        {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing' && <Navigation />}
         
         {/* HomePage avec transition fluide vers Dashboard */}
         {(activeTab === 'home' || activeTab === 'dashboard') && <HomePageScrollTransition />}
@@ -299,7 +304,7 @@ const WorkoutTrackerContent = () => {
             className={`${(activeTab === 'home' || activeTab === 'dashboard') ? 'overflow-hidden' : ''}`}
             style={{
               marginLeft: shouldShowSidebar ? '300px' : '0',
-              marginTop: activeTab === 'settings' ? '-742px' : activeTab === 'finance' ? '-710px' : (activeTab === 'quests' || activeTab === 'apprentissage' || activeTab === 'books') ? '-690px' : (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard') ? '-642px' : '0',
+              marginTop: activeTab === 'settings' ? '-742px' : activeTab === 'finance' ? '-710px' : (activeTab === 'quests' || activeTab === 'apprentissage' || activeTab === 'books') ? '-690px' : (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing') ? '-642px' : '0',
               transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               minHeight: '100vh',
               position: 'relative',
@@ -308,6 +313,8 @@ const WorkoutTrackerContent = () => {
           >
             {activeTab === 'auth' ? (
               <AuthPage />
+            ) : activeTab === 'pricing' ? (
+              <PricingTab />
             ) : (activeTab !== 'home' && activeTab !== 'dashboard') ? (
               <div className="container mx-auto px-4">
                 {renderTabContent()}
