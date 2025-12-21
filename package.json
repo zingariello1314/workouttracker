@@ -74,5 +74,8 @@
     "street-workout"
   ],
   "author": "Zinga",
-  "license": "MIT"
+  "license": "MIT",
+  "overrides": {
+    "three": "^0.181.2"
+  }
 }

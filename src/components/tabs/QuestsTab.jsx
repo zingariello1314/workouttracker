@@ -1404,9 +1404,11 @@ const QuestsTab = () => {
   // --- Rendu global --------------------------------------------------------
 
   return (
-    <div className="space-y-6">
-      {/* Navigation interne QuietQuest */}
-      {renderSubTabNav()}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 space-y-6 p-6">
+        {/* Navigation interne QuietQuest */}
+        {renderSubTabNav()}
 
       {/* Contenu de l’onglet courant */}
       {renderCurrentSubTab()}
@@ -1615,6 +1617,7 @@ const QuestsTab = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

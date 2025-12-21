@@ -162,8 +162,11 @@ export function GarminTabView({
   }, []);
 
   return (
-    <GarminErrorBoundary>
-      <GarminProvider
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10">
+        <GarminErrorBoundary>
+          <GarminProvider
         dailyMetrics={memoizedDailyMetrics}
         activities={memoizedActivities}
         selectedDate={selectedDate}
@@ -345,6 +348,8 @@ export function GarminTabView({
         </GarminDebugPortal>
       </GarminProvider>
     </GarminErrorBoundary>
+      </div>
+    </div>
   );
 }
 

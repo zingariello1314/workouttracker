@@ -1258,8 +1258,10 @@ const BooksTab = () => {
   };
 
   return (
-    <div className="space-y-8 p-8">
-      {isLoading && (
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 space-y-8 p-8">
+        {isLoading && (
         <Card variant="glass">
           <CardContent>
             <p className="text-sm text-slate-300">
@@ -2303,6 +2305,7 @@ const BooksTab = () => {
       </Card>
         </div>
       )}
+      </div>
     </div>
   );
 };

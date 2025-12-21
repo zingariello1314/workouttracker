@@ -299,8 +299,10 @@ const PredictionsTab = () => {
   const { predictions, exercisePredictions, recommendations, analytics } = generatePredictions;
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 space-y-6 p-6">
+        {/* En-tête */}
       <div className="text-center space-y-2">
         <h1 className={typography.presets.h2Gradient}>
           Prédictions de Performance
@@ -515,6 +517,7 @@ const PredictionsTab = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

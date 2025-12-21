@@ -85,8 +85,10 @@ const HistoryTab = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 space-y-6 p-6">
+        {/* En-tête */}
       <div className="text-center space-y-2">
         <h1 className={typography.presets.h2Gradient}>
           Historique des Entraînements
@@ -411,6 +413,7 @@ const HistoryTab = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
       </div>
     </div>
   );

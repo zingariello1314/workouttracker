@@ -357,8 +357,10 @@ const StatsTab = () => {
   ];
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Sélecteur de période */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 p-6 space-y-6">
+        {/* Sélecteur de période */}
       <div className="flex justify-center">
         <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700">
           {periods.map(period => (
@@ -718,6 +720,7 @@ const StatsTab = () => {
         >
           Voir les statistiques avancées
         </Button>
+      </div>
       </div>
     </div>
   );

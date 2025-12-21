@@ -102,9 +102,11 @@ const ProgressTab = () => {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Navigation des sections */}
-      <Card>
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 space-y-6 p-6">
+        {/* Navigation des sections */}
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="w-6 h-6 text-orange-400" />
@@ -127,6 +129,7 @@ const ProgressTab = () => {
       <BodyTrackingErrorBoundary>
         {renderActiveSection()}
       </BodyTrackingErrorBoundary>
+      </div>
     </div>
   );
 };

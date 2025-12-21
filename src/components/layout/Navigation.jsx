@@ -57,6 +57,10 @@ const Navigation = () => {
       setActiveTab('home');
       return;
     }
+    if (tabId === 'dashboard') {
+      setActiveTab('dashboard');
+      return;
+    }
     setActiveTab(tabId);
   };
 

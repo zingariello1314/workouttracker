@@ -1692,8 +1692,10 @@ const SmartBalancingTab = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 space-y-6 p-6">
+        {/* En-tête */}
       <div className="text-center space-y-2">
         <h1 className={typography.presets.h2Gradient}>
           Équilibrage Intelligent
@@ -2999,6 +3001,7 @@ const SmartBalancingTab = () => {
           <BarChart3 className="w-4 h-4" />
           {showAdvancedAnalysis ? 'Masquer' : 'Afficher'} l'analyse avancée
         </button>
+      </div>
       </div>
     </div>
   );

@@ -150,9 +150,11 @@ const NutritionTab = () => {
   }, []);
 
   return (
-    <div className="space-y-6 p-6">
-      {/* En-tête */}
-      <div className="mb-8">
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 space-y-6 p-6">
+        {/* En-tête */}
+        <div className="mb-8">
         <h1 className={`${typography.presets.h1} text-white mb-2 flex items-center gap-3`}>
           <span className="text-5xl">🥗</span>
           {t('nutrition.title')}
@@ -243,6 +245,7 @@ const NutritionTab = () => {
           {},
           t('nutrition.skeletons.sharing')
         )}
+      </div>
       </div>
     </div>
   );

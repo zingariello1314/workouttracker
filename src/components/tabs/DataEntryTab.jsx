@@ -293,8 +293,10 @@ const DataEntryTab = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* En-tête avec sélection de date */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 p-6 space-y-6">
+        {/* En-tête avec sélection de date */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className={`${typography.presets.h1} text-white mb-2`}>
@@ -837,7 +839,7 @@ const DataEntryTab = () => {
       
       {/* Section Saisies passées */}
       <WorkoutHistorySection />
-
+      </div>
     </div>
   );
 };

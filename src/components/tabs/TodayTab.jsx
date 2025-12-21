@@ -651,8 +651,10 @@ const TodayTab = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-      {/* Workout Header */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Workout Header */}
       <div className={`p-6 rounded-lg shadow-xl border border-slate-700 ${
         workout.focus.includes('Repos') 
           ? 'bg-gradient-to-r from-blue-900/80 to-slate-800/80' 
@@ -1207,6 +1209,7 @@ const TodayTab = () => {
         isOpen={showAddExceptionalModal}
         onClose={() => setShowAddExceptionalModal(false)}
       />
+      </div>
     </div>
   );
 };

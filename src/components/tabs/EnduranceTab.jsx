@@ -1051,8 +1051,10 @@ const EnduranceTab = () => {
   }, [getEnduranceExercisesFromHistory]);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Menu latéral */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 flex h-screen bg-gradient-to-br from-slate-900/80 via-slate-800/80 to-slate-900/80">
+        {/* Menu latéral */}
       <div className="w-72 bg-slate-900/50 backdrop-blur-xl border-r border-slate-700/50">
         <div className="p-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-violet-500 bg-clip-text text-transparent">
@@ -2584,6 +2586,7 @@ const EnduranceTab = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

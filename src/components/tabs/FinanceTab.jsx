@@ -49,8 +49,10 @@ const FinanceTab = () => {
 
   return (
     <FinanceProvider>
-      <div className="finance-tab-container min-h-[calc(100vh-140px)]">
-      <div className="max-w-7xl mx-auto p-4 md:p-6">
+      <div className="relative min-h-screen">
+        {/* Contenu avec z-index relatif */}
+        <div className="relative z-10 finance-tab-container min-h-[calc(100vh-140px)]">
+        <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">
@@ -85,7 +87,8 @@ const FinanceTab = () => {
         <div className="finance-main-content bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
           {renderSubTabContent()}
         </div>
-      </div>
+        </div>
+        </div>
       </div>
     </FinanceProvider>
   );

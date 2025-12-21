@@ -40,6 +40,14 @@ const NavigationHeader = () => {
           >
             {t('nav.home')}
           </button>
+          {/* Dashboard */}
+          <button 
+            onClick={() => navigateToTab('dashboard')}
+            className="bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-4 py-3 rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+            aria-label="Navigate to Dashboard"
+          >
+            {t('nav.dashboard')}
+          </button>
           {/* Sport regroupe tous les onglets d'entraînement (Today, Saisie, Programme, etc.) */}
           <button 
             onClick={() => navigateToTab('today')}

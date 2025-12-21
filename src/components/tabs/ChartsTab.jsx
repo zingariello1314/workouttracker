@@ -480,8 +480,10 @@ const ChartsTab = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white p-6">
-      {/* Header avec votre design exact */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 min-h-screen bg-gradient-to-br from-slate-950/80 via-purple-950/80 to-slate-950/80 text-white p-6">
+        {/* Header avec votre design exact */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
@@ -572,6 +574,7 @@ const ChartsTab = () => {
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

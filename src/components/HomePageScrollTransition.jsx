@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import HomePage from './HomePage';
 import DashboardTab from './tabs/DashboardTab';
 import Header from './layout/Header';
 import Navigation from './layout/Navigation';
 import SidebarPremium from './sidebar/SidebarPremium';
+import AnimatedBackground from './ui/AnimatedBackground';
 
 /**
  * HomePageScrollTransition - Scroll naturel entre HomePage et Dashboard
@@ -15,8 +16,12 @@ const HomePageScrollTransition = () => {
   const containerRef = useRef(null);
   const homePageRef = useRef(null);
   const dashboardRef = useRef(null);
+  
+  // État pour contrôler l'affichage du fond animé basé sur le scroll progressif
+  const [showAnimatedBackground, setShowAnimatedBackground] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0); // 0 = home, 1 = dashboard
 
-  // Gérer le scroll pour détecter sur quelle page on est
+  // Gérer le scroll pour détecter sur quelle page on est et calculer le progrès
   useEffect(() => {
     if (activeTab !== 'home' && activeTab !== 'dashboard') return;
 
@@ -26,6 +31,18 @@ const HomePageScrollTransition = () => {
     const handleScroll = () => {
       const scrollTop = container.scrollTop;
       const viewportHeight = window.innerHeight;
+      
+      // Calculer le progrès du scroll (0 = home, 1 = dashboard)
+      const progress = Math.min(Math.max(scrollTop / viewportHeight, 0), 1);
+      setScrollProgress(progress);
+      
+      // Activer le fond animé progressivement quand on dépasse 25% du scroll
+      // Cela évite que le fond apparaisse trop tôt et permet une transition fluide
+      if (progress > 0.25) {
+        setShowAnimatedBackground(true);
+      } else {
+        setShowAnimatedBackground(false);
+      }
       
       // Si on a scrollé plus de 50% de la hauteur de la fenêtre, on est sur le dashboard
       if (scrollTop > viewportHeight * 0.5) {
@@ -41,6 +58,9 @@ const HomePageScrollTransition = () => {
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Appeler handleScroll une fois pour initialiser l'état
+    handleScroll();
 
     return () => {
       container.removeEventListener('scroll', handleScroll);
@@ -55,10 +75,16 @@ const HomePageScrollTransition = () => {
     if (activeTab === 'home') {
       // Scroll vers le haut (HomePage)
       container.scrollTo({ top: 0, behavior: 'smooth' });
+      // Masquer le fond animé immédiatement quand on revient à home
+      setShowAnimatedBackground(false);
+      setScrollProgress(0);
     } else if (activeTab === 'dashboard') {
-      // Scroll vers le bas (Dashboard)
+      // Scroll vers le bas (Dashboard) avec transition fluide
       const viewportHeight = window.innerHeight;
       container.scrollTo({ top: viewportHeight, behavior: 'smooth' });
+      
+      // Le fond sera activé progressivement par handleScroll quand scrollProgress > 0.25
+      // Pas besoin de setTimeout, le handleScroll se déclenchera automatiquement pendant le scroll
     }
   }, [activeTab]);
 
@@ -76,13 +102,37 @@ const HomePageScrollTransition = () => {
         scrollBehavior: 'smooth',
       }}
     >
+      {/* Fond animé - affiché progressivement quand on scroll vers le dashboard */}
+      {/* Le fond apparaît progressivement avec une transition d'opacité basée sur le scroll */}
+      {showAnimatedBackground && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 0,
+            pointerEvents: 'none',
+            // Opacité progressive : 0% à 25% de scroll, puis augmente jusqu'à 100% à 50% de scroll
+            opacity: scrollProgress < 0.25 
+              ? 0 
+              : scrollProgress < 0.5 
+                ? (scrollProgress - 0.25) / 0.25 // Transition de 0 à 1 entre 25% et 50%
+                : 1,
+            transition: 'opacity 0.2s ease-out'
+          }}
+        >
+          <AnimatedBackground />
+        </div>
+      )}
 
       {/* Conteneur avec les deux pages empilées verticalement */}
       <div>
         {/* HomePage - Prend toute la hauteur de la fenêtre */}
         <div 
           ref={homePageRef}
-          className="w-full"
+          className="w-full relative z-10"
           style={{ 
             minHeight: '100vh',
             maxHeight: '100vh',
@@ -95,7 +145,7 @@ const HomePageScrollTransition = () => {
         {/* Dashboard - Commence juste en dessous */}
         <div 
           ref={dashboardRef}
-          className="w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col"
+          className="w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col relative z-10"
           style={{ 
             minHeight: '100vh',
             position: 'relative'

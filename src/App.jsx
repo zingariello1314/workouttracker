@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkoutProvider } from './context/WorkoutContext';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -37,6 +37,7 @@ import SidebarPremium from './components/sidebar/SidebarPremium';
 import { useWorkout } from './context/WorkoutContext';
 import { useGarminData } from './hooks/useGarminData';
 import { useAuth } from './context/AuthContext';
+import AnimatedBackground from './components/ui/AnimatedBackground';
 
 const WorkoutTrackerApp = () => {
   return (
@@ -208,8 +209,25 @@ const WorkoutTrackerContent = () => {
   const shouldShowSidebar = activeTab !== 'home' && 
                             activeTab !== 'auth';
 
+  // État pour contrôler l'affichage du fond animé
+  const [showAnimatedBackground, setShowAnimatedBackground] = useState(false);
+  
+  // Mettre à jour l'état du fond animé selon l'onglet actif
+  // Note: Le fond pour home/dashboard est géré par HomePageScrollTransition
+  useEffect(() => {
+    // Ne pas afficher le fond sur home, dashboard (géré par HomePageScrollTransition) et auth
+    // Le fond pour dashboard est géré dans HomePageScrollTransition pour une transition fluide
+    const shouldShow = activeTab !== 'home' && activeTab !== 'dashboard' && activeTab !== 'auth';
+    setShowAnimatedBackground(shouldShow);
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Fond animé global - affiché sur tous les onglets sauf home, dashboard et auth */}
+      {/* Le fond est en position fixed donc il persiste entre les changements d'onglets */}
+      {/* Utilisation d'un état pour éviter le flash sur la page d'accueil */}
+      {showAnimatedBackground && <AnimatedBackground />}
+      
       <div className="flex flex-col min-h-screen">
         {/* Header et Navigation - Masqués sur home, auth et dashboard */}
         {activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && <Header />}

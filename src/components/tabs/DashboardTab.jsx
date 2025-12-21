@@ -115,8 +115,10 @@ const DashboardTab = () => {
   }
 
   return (
-    <div className="dashboard-tab min-h-[calc(100vh-140px)]">
-      <div className="max-w-[2400px] mx-auto p-4 md:p-6 space-y-6">
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 dashboard-tab min-h-[calc(100vh-140px)]">
+        <div className="max-w-[2400px] mx-auto p-4 md:p-6 space-y-6">
         {/* Header Premium */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600/20 via-purple-600/20 to-pink-600/20 border border-indigo-500/30 p-6">
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-pink-500/10 animate-pulse"></div>
@@ -449,6 +451,7 @@ const DashboardTab = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

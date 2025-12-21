@@ -2165,8 +2165,10 @@ const SettingsTab = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <style>{`
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 p-6 space-y-6">
+        <style>{`
         .profile-input-dark input[type="email"],
         .profile-input-dark input[type="password"],
         .profile-input-dark input[type="text"] {
@@ -3760,6 +3762,7 @@ const SettingsTab = () => {
         isOpen={showProfileCardSettings}
         onClose={() => setShowProfileCardSettings(false)}
       />
+      </div>
     </div>
   );
 };

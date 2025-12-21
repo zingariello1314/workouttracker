@@ -329,8 +329,10 @@ const ExercisesTab = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Statut de synchronisation */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 space-y-6 p-6">
+        {/* Statut de synchronisation */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -636,6 +638,7 @@ const ExercisesTab = () => {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 };

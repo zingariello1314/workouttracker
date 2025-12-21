@@ -59,8 +59,10 @@ const ApprentissageTab = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Navigation sous-onglets */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 min-h-screen bg-gradient-to-br from-slate-900/80 via-slate-800/80 to-slate-900/80">
+        {/* Navigation sous-onglets */}
       <div className="bg-slate-800/90 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -91,6 +93,7 @@ const ApprentissageTab = () => {
         <Suspense fallback={<LoadingFallback />}>
           {renderSubView()}
         </Suspense>
+      </div>
       </div>
     </div>
   );

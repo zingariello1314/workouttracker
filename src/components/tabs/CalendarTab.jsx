@@ -202,8 +202,10 @@ const CalendarTab = () => {
   }, [deleteMockEnduranceSessions]); // ✅ FIX : Supprimer currentData?.enduranceData?.sessions des dépendances
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Module Compteur de Séances */}
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 p-6 space-y-6">
+        {/* Module Compteur de Séances */}
       <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-purple-500/30">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
@@ -435,6 +437,7 @@ const CalendarTab = () => {
       </Card>
 
       <CalendarHeatmap workoutHistory={workoutHistory} garminData={garminData} />
+      </div>
     </div>
   );
 };
