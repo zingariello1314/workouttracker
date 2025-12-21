@@ -34,7 +34,7 @@ function arePositionsEqual(prevPos, nextPos) {
   );
 }
 
-const StockCard = memo(({ position }) => {
+const StockCard = memo(({ position, onPositionClick }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showChart, setShowChart] = useState(false);
   const [showIndicators, setShowIndicators] = useState(false);
@@ -46,14 +46,12 @@ const StockCard = memo(({ position }) => {
   const toggleIndicators = useCallback(() => setShowIndicators(prev => !prev), []);
   const toggleAlertSettings = useCallback(() => setShowAlertSettings(prev => !prev), []);
   
-  // ✅ OPTIMISATION Phase 2.5 : Handler pour ouvrir modal détail
+  // ✅ OPTIMISATION Phase 2.5 : Handler pour ouvrir page détail
   const handleCardClick = useCallback(() => {
-    setShowDetailModal(true);
-  }, []);
-  
-  const handleCloseModal = useCallback(() => {
-    setShowDetailModal(false);
-  }, []);
+    if (onPositionClick) {
+      onPositionClick(position.id);
+    }
+  }, [onPositionClick, position.id]);
 
   const calculs = position.calculs || {};
   const yahooData = position.yahooData || {};

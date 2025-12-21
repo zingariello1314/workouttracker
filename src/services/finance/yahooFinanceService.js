@@ -329,13 +329,60 @@ class YahooFinanceService {
         
         clearTimeout(timeoutId);
         
+        // ✅ CORRECTION : Gestion intelligente des codes HTTP
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          const status = response.status;
+          
+          // Erreurs permanentes : ne pas retry (401, 403, 404, 429 avec retry-after long)
+          if (status === 401) {
+            throw new Error(`HTTP 401 Unauthorized - Invalid API key or token expired`);
+          }
+          if (status === 403) {
+            // Essayer de récupérer le message d'erreur du body si disponible
+            let errorMsg = 'HTTP 403 Forbidden';
+            try {
+              const errorBody = await response.text();
+              if (errorBody) {
+                try {
+                  const errorJson = JSON.parse(errorBody);
+                  if (errorJson.error || errorJson.message) {
+                    errorMsg = `HTTP 403 Forbidden - ${errorJson.error || errorJson.message}`;
+                  }
+                } catch {
+                  // Pas du JSON, garder le message par défaut
+                }
+              }
+            } catch {
+              // Ignorer les erreurs de lecture du body
+            }
+            throw new Error(errorMsg);
+          }
+          if (status === 404) {
+            throw new Error(`HTTP 404 Not Found - Resource not found`);
+          }
+          if (status === 429) {
+            // Rate limit : peut-être retry après un délai plus long
+            const retryAfter = response.headers.get('Retry-After');
+            if (retryAfter && parseInt(retryAfter) < 60 && attempt < maxRetries - 1) {
+              // Retry après le délai indiqué si < 60s
+              await new Promise(resolve => setTimeout(resolve, parseInt(retryAfter) * 1000));
+              continue;
+            }
+            throw new Error(`HTTP 429 Too Many Requests - Rate limit exceeded${retryAfter ? ` (retry after ${retryAfter}s)` : ''}`);
+          }
+          
+          // Autres erreurs serveur : retry possible
+          throw new Error(`HTTP ${status} ${response.statusText}`);
         }
         
         const data = await response.json();
         return data;
       } catch (error) {
+        // Si c'est une erreur permanente (401, 403, 404), ne pas retry
+        if (error.message && (error.message.includes('401') || error.message.includes('403') || error.message.includes('404'))) {
+          throw error;
+        }
+        
         if (attempt === maxRetries - 1) throw error;
         
         // Backoff exponentiel avec jitter
@@ -407,11 +454,22 @@ class YahooFinanceService {
         } catch (error) {
           // ✅ CORRECTION : Logger en debug si fallback disponible, error si pas de fallback
           const hasFallback = hasApiKey('POLYGON');
-          if (hasFallback) {
-            log.debug(`Finnhub historical failed for ${ticker}, trying fallback:`, error.message);
+          
+          // Gérer les erreurs 403 différemment (token invalide, ne pas spammer)
+          if (error.message && error.message.includes('403')) {
+            if (hasFallback) {
+              log.warn(`Finnhub API token invalid or expired for ${ticker} (403), trying Polygon fallback`);
+            } else {
+              log.error(`Finnhub API token invalid or expired for ${ticker} (403) - ${error.message}`);
+              throw error;
+            }
           } else {
-            log.error(`Finnhub historical failed for ${ticker}:`, error.message);
-            throw error; // Re-throw si pas de fallback
+            if (hasFallback) {
+              log.debug(`Finnhub historical failed for ${ticker}, trying fallback:`, error.message);
+            } else {
+              log.error(`Finnhub historical failed for ${ticker}:`, error.message);
+              throw error; // Re-throw si pas de fallback
+            }
           }
         }
       }
@@ -424,7 +482,12 @@ class YahooFinanceService {
           this.onSuccess();
           return this.normalizeHistoricalData(data, 'polygon');
         } catch (error) {
-          log.error(`Polygon historical failed for ${ticker}:`, error.message);
+          // Gérer les erreurs DELAYED différemment (peut être temporaire)
+          if (error.message && error.message.includes('DELAYED')) {
+            log.warn(`Polygon historical data delayed for ${ticker}, may be available later:`, error.message);
+          } else {
+            log.error(`Polygon historical failed for ${ticker}:`, error.message);
+          }
           throw error; // Dernier recours, re-throw
         }
       }
@@ -546,14 +609,26 @@ class YahooFinanceService {
   async fetchFinnhubHistorical(ticker, period) {
     const apiKey = getApiKey('FINNHUB');
     const endDate = Math.floor(Date.now() / 1000);
-    const startDate = this.getStartDateForPeriod(period);
+    const startDateObj = this.getStartDateForPeriod(period);
+    
+    // ✅ CORRECTION : Extraire timestamp Unix (Finnhub attend un nombre, pas un objet)
+    const startDate = startDateObj.unix || Math.floor(startDateObj.getTime() / 1000);
     
     const url = `https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=D&from=${startDate}&to=${endDate}&token=${apiKey}`;
     
     const response = await this.fetchWithRetry(url);
     
+    // ✅ CORRECTION : Gestion améliorée des erreurs Finnhub
     if (response.error) {
-      throw new Error(response.error);
+      const errorMsg = response.error;
+      // Messages d'erreur plus informatifs
+      if (errorMsg.includes('Invalid API key') || errorMsg.includes('token')) {
+        throw new Error(`Finnhub API error: Invalid token or API key`);
+      }
+      if (errorMsg.includes('limit') || errorMsg.includes('rate')) {
+        throw new Error(`Finnhub API error: Rate limit exceeded`);
+      }
+      throw new Error(`Finnhub API error: ${errorMsg}`);
     }
     
     return response;
@@ -561,15 +636,29 @@ class YahooFinanceService {
 
   async fetchPolygonHistorical(ticker, period) {
     const apiKey = getApiKey('POLYGON');
-    const startDate = this.getStartDateForPeriod(period);
+    const startDateObj = this.getStartDateForPeriod(period);
     const endDate = new Date().toISOString().split('T')[0];
+    
+    // ✅ CORRECTION : Extraire date ISO (Polygon attend une string YYYY-MM-DD, pas un objet)
+    const startDate = startDateObj.iso || startDateObj.toISOString().split('T')[0];
     
     const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apikey=${apiKey}`;
     
     const response = await this.fetchWithRetry(url);
     
+    // ✅ CORRECTION : Gestion améliorée des erreurs Polygon (DELAYED, etc.)
     if (response.status !== 'OK') {
-      throw new Error(response.status);
+      const statusMsg = response.status;
+      if (statusMsg === 'DELAYED') {
+        throw new Error('DELAYED - Data not yet available, may be delayed');
+      }
+      if (statusMsg === 'NOT_FOUND') {
+        throw new Error('NOT_FOUND - Ticker or date range not found');
+      }
+      if (response.error) {
+        throw new Error(`${statusMsg} - ${response.error}`);
+      }
+      throw new Error(statusMsg || 'Unknown Polygon API error');
     }
     
     return response;

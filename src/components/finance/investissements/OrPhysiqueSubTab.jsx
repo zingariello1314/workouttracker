@@ -1,40 +1,52 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useInvestissements } from '../../../hooks/useInvestissements';
-import { orPriceService } from '../../../services/finance/orPriceService';
+import { useOrPrice } from '../../../hooks/useOrPrice';
 import { useToast } from '../../ui/Toast';
 import OrCalendar from './OrCalendar';
 import OrStockage from './OrStockage';
 import OrAnalytics from './OrAnalytics';
 import AddOrAcquisitionForm from './AddOrAcquisitionForm';
 
+/**
+ * ✅ SOLUTION 2.1/2.9 : Utilisation hook useOrPrice avec cache partagé
+ * 
+ * Remplace l'utilisation directe de orPriceService pour bénéficier de :
+ * - Cache partagé entre tous les composants
+ * - Évite requêtes API dupliquées
+ * - Refresh automatique configuré (1h par défaut)
+ * - Gestion d'erreurs avec fallback
+ */
 const OrPhysiqueSubTab = () => {
   const t = useTranslation();
   const { or, addOrAcquisition, updateOrData, loading } = useInvestissements();
   const { showToast } = useToast();
-  const [prixOr, setPrixOr] = useState(null);
-  const [priceLoading, setPriceLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-
+  
+  // ✅ SOLUTION 2.1/2.9 : Utiliser hook avec cache partagé
+  // autoRefresh: true par défaut, refreshInterval: 1h (configuré dans le hook)
+  const { price: prixOrRaw, loading: priceLoading, error: priceError } = useOrPrice({
+    autoRefresh: true,
+    refreshInterval: 60 * 60 * 1000, // 1h
+    initialLoad: true
+  });
+  
+  // ✅ FIX: Toujours avoir un prix à afficher (fallback 65€/g si null/undefined/0)
+  // Le fallback 65€/g est une valeur raisonnable si les APIs échouent
+  const prixOr = (prixOrRaw && prixOrRaw > 0) ? prixOrRaw : 65;
+  
+  // Debug: log pour vérifier les valeurs
   useEffect(() => {
-    const loadPrice = async () => {
-      try {
-        setPriceLoading(true);
-        const price = await orPriceService.getCurrentPrice();
-        setPrixOr(price);
-      } catch (error) {
-        console.error('Error loading gold price:', error);
-      } finally {
-        setPriceLoading(false);
-      }
-    };
-    
-    loadPrice();
-    
-    // Refresh prix toutes les heures
-    const interval = setInterval(loadPrice, 60 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
+    console.log('[OrPhysiqueSubTab] 🔍 DEBUG Prix Or:', {
+      prixOrRaw,
+      priceLoading,
+      priceError,
+      prixOr,
+      type: typeof prixOrRaw,
+      isNull: prixOrRaw === null,
+      isUndefined: prixOrRaw === undefined
+    });
+  }, [prixOrRaw, priceLoading, priceError, prixOr]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -131,7 +143,7 @@ const OrPhysiqueSubTab = () => {
             <div>
               <div className="text-sm text-slate-400">Prix Or</div>
               <div className="text-2xl font-bold text-white">
-                {priceLoading ? '...' : `${formatCurrency(prixOr)}/g`}
+                {prixOr ? `${formatCurrency(prixOr)}/g` : '...'}
               </div>
             </div>
           </div>

@@ -1,7 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback, memo } from 'react';
 import { useBudget } from '../../../hooks/useBudget';
+import VirtualizedExpenseList from './VirtualizedExpenseList';
+import { BudgetConfig } from '../../../config/budget.config';
 
-const PredictiveAnalysis = () => {
+/**
+ * ✅ SOLUTION 1.16 : Optimisation Mémoïsation Composants
+ * 
+ * Composant mémoïsé avec React.memo pour éviter re-renders inutiles
+ * Les useMemo internes optimisent déjà les calculs lourds
+ */
+const PredictiveAnalysis = memo(() => {
   const { budget, depenses, depensesMoisActuel, calculateMetrics } = useBudget();
 
   const analysis = useMemo(() => {
@@ -127,14 +135,63 @@ const PredictiveAnalysis = () => {
     );
   }
 
-  const formatCurrency = (value) => {
+  // ✅ OPTIMISATION : Mémoïsation de formatCurrency pour éviter recréation
+  const formatCurrency = useCallback((value) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
-  };
+  }, []);
+
+  // ✅ SOLUTION 1.3 : Renderer pour catégories avec formatCurrency mémorisé
+  const renderCategoryItem = useCallback((cat, index) => {
+    const statutColor = {
+      OK: 'text-green-400',
+      ATTENTION: 'text-yellow-400',
+      DEPASSE: 'text-red-400'
+    }[cat.statut] || 'text-slate-400';
+
+    return (
+      <div
+        key={cat.id}
+        className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-semibold text-white">{cat.nom}</span>
+          <span className={`text-sm font-medium ${statutColor}`}>
+            {cat.statut}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <div className="text-slate-400">Actuel</div>
+            <div className="text-white font-semibold">
+              {formatCurrency(cat.depenseActuelle)}
+            </div>
+          </div>
+          <div>
+            <div className="text-slate-400">Projection</div>
+            <div className={`font-semibold ${
+              cat.ecartCategorie > 0 ? 'text-red-400' : 'text-green-400'
+            }`}>
+              {formatCurrency(cat.projectionCategorie)}
+            </div>
+          </div>
+        </div>
+        <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+          <div
+            className={`h-2 rounded-full ${
+              cat.pourcentUtilise >= 100 ? 'bg-red-500' :
+              cat.pourcentUtilise >= 80 ? 'bg-yellow-500' : 'bg-green-500'
+            }`}
+            style={{ width: `${Math.min(cat.pourcentUtilise, 150)}%` }}
+          />
+        </div>
+      </div>
+    );
+  }, [formatCurrency]);
 
   return (
     <div className="predictive-analysis space-y-6">
@@ -169,12 +226,13 @@ const PredictiveAnalysis = () => {
         </div>
       </div>
 
-      {/* Alertes */}
+      {/* ✅ SOLUTION 1.3 : Alertes avec virtualisation */}
       {analysis.alertes.length > 0 && (
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-          <h5 className="text-md font-semibold text-white mb-4">Alertes Contextuelles</h5>
-          <div className="space-y-2">
-            {analysis.alertes.map((alerte, index) => {
+          <h5 className="text-md font-semibold text-white mb-4">Alertes Contextuelles ({analysis.alertes.length})</h5>
+          <VirtualizedExpenseList
+            items={analysis.alertes}
+            renderItem={useCallback((alerte, index) => {
               const colorClass = {
                 CRITIQUE: 'bg-red-900/30 border-red-500/50 text-red-400',
                 HIGH: 'bg-orange-900/30 border-orange-500/50 text-orange-400',
@@ -190,17 +248,21 @@ const PredictiveAnalysis = () => {
                   <div className="text-sm opacity-80">{alerte.action}</div>
                 </div>
               );
-            })}
-          </div>
+            }, [])}
+            itemHeight={BudgetConfig.virtualScroll.alertItemHeight}
+            height={Math.min(analysis.alertes.length * BudgetConfig.virtualScroll.alertItemHeight, BudgetConfig.virtualScroll.maxContainerHeight)}
+            className="space-y-2"
+          />
         </div>
       )}
 
-      {/* Recommandations */}
+      {/* ✅ SOLUTION 1.3 : Recommandations avec virtualisation */}
       {analysis.recommendations.length > 0 && (
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-          <h5 className="text-md font-semibold text-white mb-4">Recommandations</h5>
-          <div className="space-y-2">
-            {analysis.recommendations.map((rec, index) => (
+          <h5 className="text-md font-semibold text-white mb-4">Recommandations ({analysis.recommendations.length})</h5>
+          <VirtualizedExpenseList
+            items={analysis.recommendations}
+            renderItem={useCallback((rec, index) => (
               <div
                 key={index}
                 className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-3 text-blue-300"
@@ -215,67 +277,31 @@ const PredictiveAnalysis = () => {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            ), [])}
+            itemHeight={BudgetConfig.virtualScroll.alertItemHeight}
+            height={Math.min(analysis.recommendations.length * BudgetConfig.virtualScroll.alertItemHeight, BudgetConfig.virtualScroll.maxContainerHeight)}
+            className="space-y-2"
+          />
         </div>
       )}
 
-      {/* Analyse par catégorie */}
+      {/* ✅ SOLUTION 1.3 : Analyse par catégorie avec virtualisation */}
       {analysis.categoriesAnalysis.length > 0 && (
         <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
-          <h5 className="text-md font-semibold text-white mb-4">Analyse par Catégorie</h5>
-          <div className="space-y-3">
-            {analysis.categoriesAnalysis.map(cat => {
-              const statutColor = {
-                OK: 'text-green-400',
-                ATTENTION: 'text-yellow-400',
-                DEPASSE: 'text-red-400'
-              }[cat.statut] || 'text-slate-400';
-
-              return (
-                <div
-                  key={cat.id}
-                  className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-white">{cat.nom}</span>
-                    <span className={`text-sm font-medium ${statutColor}`}>
-                      {cat.statut}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="text-slate-400">Actuel</div>
-                      <div className="text-white font-semibold">
-                        {formatCurrency(cat.depenseActuelle)}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-slate-400">Projection</div>
-                      <div className={`font-semibold ${
-                        cat.ecartCategorie > 0 ? 'text-red-400' : 'text-green-400'
-                      }`}>
-                        {formatCurrency(cat.projectionCategorie)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        cat.pourcentUtilise >= 100 ? 'bg-red-500' :
-                        cat.pourcentUtilise >= 80 ? 'bg-yellow-500' : 'bg-green-500'
-                      }`}
-                      style={{ width: `${Math.min(cat.pourcentUtilise, 150)}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <h5 className="text-md font-semibold text-white mb-4">Analyse par Catégorie ({analysis.categoriesAnalysis.length})</h5>
+          <VirtualizedExpenseList
+            items={analysis.categoriesAnalysis}
+            renderItem={renderCategoryItem}
+            itemHeight={BudgetConfig.virtualScroll.categoryItemHeight}
+            height={Math.min(analysis.categoriesAnalysis.length * BudgetConfig.virtualScroll.categoryItemHeight, BudgetConfig.virtualScroll.maxContainerHeight)}
+            className="space-y-3"
+          />
         </div>
       )}
     </div>
   );
-};
+});
+
+PredictiveAnalysis.displayName = 'PredictiveAnalysis';
 
 export default PredictiveAnalysis;

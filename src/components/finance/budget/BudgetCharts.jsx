@@ -1,57 +1,61 @@
-import React, { useMemo, memo } from 'react';
+import React, { useMemo, memo, useCallback } from 'react';
 import {
   LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { useBudget } from '../../../hooks/useBudget';
+import { getMonthKey, formatMonthDate, filterDepensesByMonth, generateMonthRange } from '../../../utils/chartDateCache';
+import { BudgetConfig } from '../../../config/budget.config';
 
 const BudgetCharts = memo(() => {
   const { budget, categories, depensesMoisActuel, depenses } = useBudget();
 
-  // Données pour graphique évolution (3 derniers mois)
+  // ✅ SOLUTION 1.10 : Données pour graphique évolution optimisées avec cache
   const evolutionData = useMemo(() => {
-    const mois = [];
-    const now = new Date();
+    // ✅ OPTIMISATION : Générer range de mois avec cache
+    const monthRange = generateMonthRange(3);
+    const revenus = budget?.revenus || 0;
     
-    for (let i = 2; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const moisKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    // ✅ OPTIMISATION : Calculer dépenses pour chaque mois avec cache
+    const mois = monthRange.map(({ date, monthKey, formatted }) => {
+      // ✅ SOLUTION 1.10 : Utiliser fonction optimisée avec cache
+      const depensesMois = filterDepensesByMonth(depenses, monthKey);
+      const totalDepenses = depensesMois.reduce((sum, d) => sum + (d.montant || 0), 0);
       
-      const depensesMois = depenses.filter(d => {
-        const dDate = new Date(d.date);
-        const dMois = `${dDate.getFullYear()}-${String(dDate.getMonth() + 1).padStart(2, '0')}`;
-        return dMois === moisKey;
-      });
-      
-      const totalDepenses = depensesMois.reduce((sum, d) => sum + d.montant, 0);
-      const revenus = budget?.revenus || 0;
-      
-      mois.push({
-        mois: date.toLocaleString('fr-FR', { month: 'short', year: 'numeric' }),
+      return {
+        mois: formatted, // Utiliser date formatée depuis cache
         depenses: totalDepenses,
         revenus: revenus,
         restant: revenus - totalDepenses
-      });
-    }
+      };
+    });
     
     return mois;
   }, [depenses, budget]);
 
-  // Données pour pie chart répartition par catégorie
+  // ✅ SOLUTION 1.10 : Données pie chart optimisées avec mémoïsation
   const repartitionData = useMemo(() => {
     if (!categories || categories.length === 0) return [];
+    if (!depensesMoisActuel || depensesMoisActuel.length === 0) return [];
     
+    // ✅ OPTIMISATION : Créer Map pour lookup O(1) au lieu de filter O(n) pour chaque catégorie
+    const depensesByCategory = new Map();
+    depensesMoisActuel.forEach(d => {
+      if (!d.categorie) return;
+      const current = depensesByCategory.get(d.categorie) || 0;
+      depensesByCategory.set(d.categorie, current + (d.montant || 0));
+    });
+    
+    // ✅ OPTIMISATION : Calculer data avec Map (plus performant)
     const data = categories.map(categorie => {
-      const depensesCategorie = depensesMoisActuel.filter(d => d.categorie === categorie.id);
-      const total = depensesCategorie.reduce((sum, d) => sum + d.montant, 0);
+      const total = depensesByCategory.get(categorie.id) || 0;
+      const budget = categorie.budgetMensuel || 0;
       
       return {
         name: categorie.nom || 'Autre',
         value: total,
-        budget: categorie.budgetMensuel || 0,
-        pourcent: categorie.budgetMensuel > 0 
-          ? (total / categorie.budgetMensuel) * 100 
-          : 0
+        budget: budget,
+        pourcent: budget > 0 ? (total / budget) * 100 : 0
       };
     }).filter(item => item.value > 0);
     
@@ -60,14 +64,16 @@ const BudgetCharts = memo(() => {
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
-  const formatCurrency = (value) => {
+  // ✅ SOLUTION 1.10 : Formateur currency mémorisé pour éviter recréation
+  const formatCurrency = useCallback((value) => {
+    if (!Number.isFinite(value)) return '0 €';
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
-  };
+  }, []);
 
   if (depensesMoisActuel.length === 0 && evolutionData.every(d => d.depenses === 0)) {
     return (

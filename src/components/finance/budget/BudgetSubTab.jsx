@@ -1,12 +1,39 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useCallback, useMemo } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useBudget } from '../../../hooks/useBudget';
 import BudgetErrorBoundary from './BudgetErrorBoundary';
+
+/**
+ * ✅ SOLUTION 1.11 : Lazy Loading Amélioré
+ * 
+ * Améliorations :
+ * - Lazy loading avec React.lazy
+ * - Prefetch intelligent au survol des onglets
+ * - Preload du composant suivant probable
+ * - Skeleton loader optimisé
+ */
 
 // Lazy loading pour performance
 const DashboardSubTab = lazy(() => import('./DashboardSubTab'));
 const CategoryManagerSubTab = lazy(() => import('./CategoryManagerSubTab'));
 const CalendarPredictiveSubTab = lazy(() => import('./CalendarPredictiveSubTab'));
+
+// ✅ SOLUTION 1.11 : Map des composants pour prefetch
+const componentModules = {
+  dashboard: () => import('./DashboardSubTab'),
+  categories: () => import('./CategoryManagerSubTab'),
+  calendar: () => import('./CalendarPredictiveSubTab')
+};
+
+// ✅ SOLUTION 1.11 : Prefetch d'un module (précharge sans l'exécuter)
+const prefetchComponent = (componentId) => {
+  const moduleLoader = componentModules[componentId];
+  if (moduleLoader) {
+    moduleLoader().catch(err => {
+      console.warn(`[BudgetSubTab] Prefetch failed for ${componentId}:`, err);
+    });
+  }
+};
 
 const BudgetSubTabSkeleton = () => (
   <div className="flex flex-col items-center justify-center h-full p-4 text-slate-200">
@@ -30,13 +57,42 @@ const BudgetSubTab = () => {
     }));
   }, [activeSubTab]);
 
-  const subTabs = [
+  // ✅ SOLUTION 1.11 : Prefetch des composants adjacents au chargement initial
+  useEffect(() => {
+    // Prefetch des autres composants après un court délai (non-bloquant)
+    const prefetchTimer = setTimeout(() => {
+      Object.keys(componentModules).forEach(id => {
+        if (id !== activeSubTab) {
+          prefetchComponent(id);
+        }
+      });
+    }, 2000); // 2 secondes après chargement initial
+
+    return () => clearTimeout(prefetchTimer);
+  }, [activeSubTab]);
+
+  // ✅ SOLUTION 1.11 : Mémoïser la liste des onglets
+  const subTabs = useMemo(() => [
     { id: 'dashboard', labelKey: 'finance.budget.subTabs.dashboard', icon: '📊', component: DashboardSubTab },
     { id: 'categories', labelKey: 'finance.budget.subTabs.categories', icon: '🏗️', component: CategoryManagerSubTab },
     { id: 'calendar', labelKey: 'finance.budget.subTabs.calendar', icon: '📅', component: CalendarPredictiveSubTab }
-  ];
+  ], []);
 
-  const ActiveComponent = subTabs.find(tab => tab.id === activeSubTab)?.component;
+  // ✅ SOLUTION 1.11 : Mémoïser le composant actif
+  const ActiveComponent = useMemo(() => {
+    return subTabs.find(tab => tab.id === activeSubTab)?.component;
+  }, [activeSubTab, subTabs]);
+
+  // ✅ SOLUTION 1.11 : Handler avec prefetch au survol
+  const handleTabHover = useCallback((tabId) => {
+    if (tabId !== activeSubTab) {
+      prefetchComponent(tabId);
+    }
+  }, [activeSubTab]);
+
+  const handleTabClick = useCallback((tabId) => {
+    setActiveSubTab(tabId);
+  }, []);
 
   if (loading) {
     return <BudgetSubTabSkeleton />;
@@ -51,7 +107,8 @@ const BudgetSubTab = () => {
           {subTabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveSubTab(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
+              onMouseEnter={() => handleTabHover(tab.id)}
               className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2
                 ${activeSubTab === tab.id
                   ? 'bg-blue-600/30 text-blue-300 border border-blue-500/50'

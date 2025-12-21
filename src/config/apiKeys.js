@@ -20,6 +20,15 @@ const API_KEYS = {
   // Fixer.io - Taux de change et métaux précieux
   FIXER: import.meta.env.VITE_FIXER_API_KEY || null,
   
+  // Metals API - Métaux précieux (optionnel)
+  METALS_API: import.meta.env.VITE_METALS_API_KEY || null,
+  
+  // GoldPriceZ - Prix de l'or (gratuit, 30-60 req/heure)
+  GOLDPRICEZ: import.meta.env.VITE_GOLDPRICEZ_API_KEY || null,
+  
+  // Gold-API.com - Prix de l'or (gratuit)
+  GOLD_API: import.meta.env.VITE_GOLD_API_KEY || null,
+  
   // CoinGecko - Cryptomonnaies
   COINGECKO: import.meta.env.VITE_COINGECKO_API_KEY || null,
   
@@ -38,7 +47,18 @@ export const hasApiKey = (keyName) => {
  * Récupère une clé API
  */
 export const getApiKey = (keyName) => {
-  return API_KEYS[keyName];
+  const key = API_KEYS[keyName];
+  // Debug: log pour vérifier le chargement des clés
+  if (keyName === 'GOLDPRICEZ' || keyName === 'GOLD_API') {
+    console.log(`[getApiKey] ${keyName}:`, {
+      hasKey: !!key,
+      keyLength: key?.length,
+      envVar: keyName === 'GOLDPRICEZ' 
+        ? (import.meta.env.VITE_GOLDPRICEZ_API_KEY ? 'présente' : 'absente')
+        : (import.meta.env.VITE_GOLD_API_KEY ? 'présente' : 'absente')
+    });
+  }
+  return key;
 };
 
 /**

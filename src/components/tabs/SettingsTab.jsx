@@ -30,6 +30,7 @@ import { ENDURANCE_SCHEMA_VERSION } from '../../services/endurance/enduranceData
 import { prepareBooksExportData, processBooksImportData, downloadBooksExportFile } from '../../utils/booksExportImport';
 import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../../utils/booksIndexedDB';
 import { loadBooks as loadBooksFromLocalStorage, saveBooks as saveBooksToLocalStorage } from '../../utils/booksStorage';
+import { prepareBudgetExportData, downloadBudgetExportFile, importBudgetData } from '../../utils/budgetExportImport';
 import { exportQuietQuestData, importQuietQuestData, validateQuietQuestExport } from '../../utils/quietQuestExportImport';
 import { openQuietQuestDB, loadQuestsFromIndexedDB, loadValidationsFromIndexedDB, loadUserDataFromIndexedDB } from '../../utils/quietQuestIndexedDB';
 import { STORAGE_KEYS, loadFromStorage, defaultUserData } from '../../hooks/useQuietQuestEngine';
@@ -57,6 +58,8 @@ const SettingsTab = () => {
   const [nutritionExportStatus, setNutritionExportStatus] = useState(null);
   const [booksExportStatus, setBooksExportStatus] = useState(null);
   const [booksImportStatus, setBooksImportStatus] = useState(null);
+  const [budgetExportStatus, setBudgetExportStatus] = useState(null);
+  const [budgetImportStatus, setBudgetImportStatus] = useState(null);
   const [quietQuestExportStatus, setQuietQuestExportStatus] = useState(null);
   const [quietQuestImportStatus, setQuietQuestImportStatus] = useState(null);
   const [quietQuestStats, setQuietQuestStats] = useState({
@@ -715,6 +718,26 @@ const SettingsTab = () => {
 
       // ✅ Ajouter les données Livres dans l'export global (structure complète)
       exportObject.data.booksData = booksExport;
+      
+      // ✅ Ajouter les données Budget Personnel dans l'export global si disponibles
+      try {
+        const budgetExport = await prepareBudgetExportData({
+          includeHistory: true,
+          includeMetadata: true,
+          includeCalculations: false
+        });
+        exportObject.data.budgetData = budgetExport;
+        exportObject.metadata.budgetSummary = {
+          categories: budgetExport.summary?.categories?.total || 0,
+          depenses: budgetExport.summary?.depenses?.total || 0,
+          depensesPlanifiees: budgetExport.summary?.depensesPlanifiees?.total || 0,
+          chargesFixes: budgetExport.summary?.chargesFixes?.total || 0,
+          estimatedSizeKB: budgetExport.metadata?.estimatedSizeKB || 0
+        };
+      } catch (budgetError) {
+        console.warn('⚠️ Erreur récupération données Budget pour export global:', budgetError);
+        // Continue sans Budget si erreur
+      }
 
       // Créer le fichier JSON
       const jsonString = JSON.stringify(exportObject, null, 2);
@@ -896,6 +919,79 @@ const SettingsTab = () => {
       console.error('❌ Erreur export Livres:', error);
       setBooksExportStatus('error');
       setTimeout(() => setBooksExportStatus(null), 3000);
+    }
+  };
+
+  // ✅ Fonction pour exporter les données Budget Personnel
+  const handleExportBudgetData = async () => {
+    try {
+      setBudgetExportStatus('loading');
+      
+      // Préparer l'export Budget
+      const budgetExport = await prepareBudgetExportData({
+        includeHistory: true,
+        includeMetadata: true,
+        includeCalculations: false
+      });
+      
+      // Télécharger le fichier
+      downloadBudgetExportFile(budgetExport);
+      
+      setBudgetExportStatus('success');
+      setTimeout(() => setBudgetExportStatus(null), 3000);
+      
+    } catch (error) {
+      console.error('❌ Erreur export Budget:', error);
+      setBudgetExportStatus('error');
+      setTimeout(() => setBudgetExportStatus(null), 3000);
+    }
+  };
+  
+  // ✅ Fonction pour importer les données Budget Personnel
+  const handleImportBudgetData = async (jsonData) => {
+    try {
+      setBudgetImportStatus('loading');
+      
+      let parsed;
+      if (typeof jsonData === 'string') {
+        parsed = JSON.parse(jsonData);
+      } else {
+        parsed = jsonData;
+      }
+      
+      // Importer les données
+      const result = await importBudgetData(parsed, {
+        merge: false,
+        overwrite: true,
+        validate: true
+      });
+      
+      const totalImported = 
+        result.imported.budget +
+        result.imported.categories +
+        result.imported.depenses +
+        result.imported.depensesPlanifiees +
+        result.imported.chargesFixes;
+      
+      if (totalImported === 0 && result.errors.length > 0) {
+        throw new Error(result.errors.join(', '));
+      }
+      
+      console.log(`[Settings] ✅ Import Budget réussi (${totalImported} éléments importés)`);
+      setBudgetImportStatus('success');
+      setTimeout(() => {
+        setBudgetImportStatus(null);
+        // Recharger la page pour voir les changements
+        if (window.confirm(`${totalImported} élément(s) Budget importé(s) avec succès ! Voulez-vous recharger la page pour voir les changements ?`)) {
+          window.location.reload();
+        }
+      }, 2000);
+      
+    } catch (error) {
+      console.error('❌ Erreur import Budget:', error);
+      setBudgetImportStatus('error');
+      alert(`Erreur lors de l'import du Budget : ${error.message}`);
+      setTimeout(() => setBudgetImportStatus(null), 3000);
     }
   };
 
@@ -2807,6 +2903,97 @@ const SettingsTab = () => {
         </CardContent>
       </Card>
 
+      {/* ✅ Section Budget Personnel - Export/Import dédié */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <span className="mr-2">💰</span>
+            Budget Personnel
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-gray-300 text-sm">
+              Gérez votre budget personnel : revenus, épargne, catégories, dépenses, dépenses planifiées et charges fixes. Exportez et importez toutes vos données budgétaires.
+            </p>
+            
+            <div className="bg-slate-700/50 rounded-lg p-4">
+              <h4 className="font-medium text-white mb-2">Fonctionnalités :</h4>
+              <ul className="text-sm text-gray-300 space-y-1">
+                <li>• Gestion complète de votre budget personnel (revenus, épargne, objectifs)</li>
+                <li>• Suivi des dépenses par catégorie avec budgets mensuels</li>
+                <li>• Gestion des dépenses planifiées et charges fixes récurrentes</li>
+                <li>• Stockage dans IndexedDB (performance optimale)</li>
+                <li>• Export/Import au format JSON versionné avec métadonnées</li>
+                <li>• Intégration avec l'export global de l'application</li>
+              </ul>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button
+                onClick={handleExportBudgetData}
+                disabled={budgetExportStatus === 'loading'}
+                icon={Download}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {budgetExportStatus === 'loading' ? 'Export en cours...' : 'Exporter le Budget'}
+              </Button>
+              
+              <Button
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.json';
+                  input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      handleImportBudgetData(event.target.result);
+                    };
+                    reader.readAsText(file);
+                  };
+                  input.click();
+                }}
+                disabled={budgetImportStatus === 'loading'}
+                icon={Upload}
+                className="w-full bg-green-500 hover:bg-green-600"
+              >
+                {budgetImportStatus === 'loading' ? 'Import en cours...' : 'Importer le Budget'}
+              </Button>
+            </div>
+
+            {budgetExportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Export réussi ! Le fichier a été téléchargé.
+              </div>
+            )}
+
+            {budgetExportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'export
+              </div>
+            )}
+
+            {budgetImportStatus === 'success' && (
+              <div className="flex items-center text-green-400 text-sm">
+                <CheckCircle className="mr-2" size={16} />
+                Import réussi ! Les données ont été restaurées.
+              </div>
+            )}
+
+            {budgetImportStatus === 'error' && (
+              <div className="flex items-center text-red-400 text-sm">
+                <AlertTriangle className="mr-2" size={16} />
+                Erreur lors de l'import
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Section QuietQuest - Export/Import dédié */}
       <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
         <CardHeader>
@@ -3530,6 +3717,34 @@ const SettingsTab = () => {
               <span>Mécanisme de récupération :</span>
               <span>3 tentatives avec fallback automatique</span>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section Attributions */}
+      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="flex items-center text-white">
+            <FileText className="mr-2" size={20} />
+            Attributions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 text-sm text-gray-300">
+            <div className="flex items-center justify-between">
+              <span>Prix de l'or :</span>
+              <a 
+                href="https://goldpricez.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 underline transition-colors"
+              >
+                Source: GoldPriceZ.com
+              </a>
+            </div>
+            <p className="text-xs text-slate-400 mt-2">
+              Les données de prix de l'or sont fournies par GoldPriceZ.com via leur API gratuite.
+            </p>
           </div>
         </CardContent>
       </Card>

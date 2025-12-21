@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../../utils/translations';
+import { useToast } from '../../ui/Toast';
+import { validateCategory } from '../../../services/finance/budgetSchemas';
+import logger from '../../../utils/logger';
+
+const log = logger.module('AddCategoryForm');
 
 const CATEGORY_TEMPLATES = {
   courses: {
@@ -48,6 +53,7 @@ const CATEGORY_TEMPLATES = {
 
 const AddCategoryForm = ({ category, onSave, onCancel }) => {
   const t = useTranslation();
+  const { showWarning } = useToast();
   const [formData, setFormData] = useState({
     nom: category?.nom || '',
     budgetMensuel: category?.budgetMensuel || 0,
@@ -116,10 +122,28 @@ const AddCategoryForm = ({ category, onSave, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.nom.trim()) {
-      alert('Le nom de la catégorie est requis');
+    
+    // ✅ SOLUTION 1.6 : Validation Zod côté client pour meilleure UX
+    try {
+      // Créer un objet temporaire avec ID pour validation
+      const tempCategory = {
+        ...formData,
+        id: category?.id || `temp_${Date.now()}`
+      };
+      
+      validateCategory(tempCategory, { throwOnError: true, strict: false });
+    } catch (error) {
+      log.error('[AddCategoryForm] Validation error:', error);
+      showError(`Données invalides: ${error.message}`);
       return;
     }
+    
+    // Validation basique supplémentaire pour UX immédiate
+    if (!formData.nom.trim()) {
+      showWarning('Le nom de la catégorie est requis');
+      return;
+    }
+    
     onSave(formData);
   };
 

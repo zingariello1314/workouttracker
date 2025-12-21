@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import { useBudget } from '../../../hooks/useBudget';
+import { useToast } from '../../ui/Toast';
+import logger from '../../../utils/logger';
+import { validateDepensePlanifiee } from '../../../services/finance/budgetSchemas';
+
+const log = logger.module('AddExpenseForm');
 
 const AddExpenseForm = ({ onSave, onCancel, initialDate = null }) => {
   const { categories, addDepensePlanifiee } = useBudget();
+  const { showWarning, showError, showSuccess } = useToast();
   const [formData, setFormData] = useState({
     titre: '',
     montant: 0,
@@ -15,16 +21,41 @@ const AddExpenseForm = ({ onSave, onCancel, initialDate = null }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // ✅ SOLUTION 1.6 : Validation Zod côté client pour meilleure UX
+    try {
+      // Créer un objet temporaire avec ID pour validation
+      const tempDepense = {
+        ...formData,
+        id: `temp_${Date.now()}`,
+        date: formData.date || new Date().toISOString().split('T')[0]
+      };
+      
+      validateDepensePlanifiee(tempDepense, { throwOnError: true, strict: false });
+    } catch (error) {
+      log.error('[AddExpenseForm] Validation error:', error);
+      showError(`Données invalides: ${error.message}`);
+      return;
+    }
+    
+    // Validation basique supplémentaire pour UX immédiate
     if (!formData.titre.trim() || formData.montant <= 0) {
-      alert('Veuillez remplir tous les champs requis');
+      showWarning('Veuillez remplir tous les champs requis');
       return;
     }
 
     try {
       await addDepensePlanifiee(formData);
+      showSuccess('Dépense planifiée ajoutée avec succès');
       onSave(formData);
     } catch (error) {
-      alert('Erreur lors de l\'ajout de la dépense');
+      log.error('[AddExpenseForm] Error adding expense:', error);
+      // Si erreur contient "invalide", c'est une erreur de validation
+      if (error.message && error.message.includes('invalide')) {
+        showError(error.message);
+      } else {
+        showError('Erreur lors de l\'ajout de la dépense');
+      }
     }
   };
 

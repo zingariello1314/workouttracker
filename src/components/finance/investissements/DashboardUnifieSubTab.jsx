@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useInvestissements } from '../../../hooks/useInvestissements';
 import { investissementsAlerts } from '../../../services/finance/investissementsAlerts';
-import { orPriceService } from '../../../services/finance/orPriceService';
+import { useOrPrice } from '../../../hooks/useOrPrice';
 import PredictiveModeling from './PredictiveModeling';
 import AllocationDragDrop from './AllocationDragDrop';
 import SimulationLab from './SimulationLab';
@@ -13,27 +13,17 @@ const DashboardUnifieSubTab = () => {
   const t = useTranslation();
   const { or, liquidites, bourseCrypto, calculateAllocation, loading } = useInvestissements();
   const [alerts, setAlerts] = useState([]);
-  const [prixOr, setPrixOr] = useState(65);
-  const [priceLoading, setPriceLoading] = useState(true);
   const [currentMode, setCurrentMode] = useState(MODES.OVERVIEW);
+  
+  // ✅ SOLUTION 2.1/2.9 : Utiliser hook avec cache partagé
+  const { price: prixOr, loading: priceLoading } = useOrPrice({
+    autoRefresh: true,
+    refreshInterval: 60 * 60 * 1000, // 1h
+    initialLoad: true
+  });
 
-  const allocation = useMemo(() => calculateAllocation(), [calculateAllocation]);
-
-  // Charger prix or
-  useEffect(() => {
-    const loadPrice = async () => {
-      setPriceLoading(true);
-      try {
-        const price = await orPriceService.getCurrentPrice();
-        setPrixOr(price);
-      } catch (err) {
-        console.error("Failed to load gold price:", err);
-      } finally {
-        setPriceLoading(false);
-      }
-    };
-    loadPrice();
-  }, []);
+  // ✅ FIX: Calculer allocation directement (cache interne évite recalculs)
+  const allocation = calculateAllocation();
 
   // Générer alertes
   useEffect(() => {
@@ -42,7 +32,7 @@ const DashboardUnifieSubTab = () => {
       const generatedAlerts = investissementsAlerts.analyze(data);
       setAlerts(generatedAlerts);
     }
-  }, [or, liquidites, bourseCrypto, allocation, loading]);
+  }, [or, liquidites, bourseCrypto, allocation, loading, calculateAllocation]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -53,11 +43,15 @@ const DashboardUnifieSubTab = () => {
     }).format(value);
   };
 
-  if (loading || priceLoading) {
+  // ✅ FIX: Ne bloquer que si vraiment en chargement (pas si prix or seulement)
+  // Le prix or peut utiliser un fallback et ne pas bloquer l'affichage
+  if (loading) {
     return <SkeletonLoader />;
   }
 
-  if (!allocation) {
+  // ✅ FIX: Afficher même si allocation est null (peut arriver si données en chargement)
+  // calculateAllocation peut retourner null si données incomplètes, mais on peut afficher quand même
+  if (!or || !liquidites || !bourseCrypto) {
     return (
       <div className="text-center py-12 text-slate-400">
         <div className="text-6xl mb-4">📊</div>
@@ -67,7 +61,21 @@ const DashboardUnifieSubTab = () => {
     );
   }
 
-  const valorisationOr = (or?.stockActuel || 0) * prixOr;
+  // Utiliser allocation calculée directement (déjà calculé ci-dessus)
+  const allocationData = allocation;
+  
+  if (!allocationData) {
+    return (
+      <div className="text-center py-12 text-slate-400">
+        <div className="text-6xl mb-4">📊</div>
+        <p className="text-lg mb-2">Calcul de l'allocation en cours...</p>
+      </div>
+    );
+  }
+
+  // ✅ FIX: Utiliser prixOr avec fallback si non chargé
+  const prixOrActuel = prixOr || 65; // Fallback si prix or pas encore chargé
+  const valorisationOr = (or?.stockActuel || 0) * prixOrActuel;
   const totalLiquidites = liquidites?.stockTotal || 0;
   const valorisationBourseCrypto = bourseCrypto?.positions?.reduce((sum, pos) => 
     sum + (pos.montant || 0), 0) || 0;
@@ -91,7 +99,7 @@ const DashboardUnifieSubTab = () => {
             </div>
           </div>
           <div className="text-xs text-slate-500">
-            {or?.stockActuel || 0}g • {allocation.or.toFixed(1)}% du patrimoine
+            {or?.stockActuel || 0}g • {allocationData.or.toFixed(1)}% du patrimoine
           </div>
         </div>
 
@@ -106,7 +114,7 @@ const DashboardUnifieSubTab = () => {
             </div>
           </div>
           <div className="text-xs text-slate-500">
-            {allocation.liquidites.toFixed(1)}% du patrimoine
+            {allocationData.liquidites.toFixed(1)}% du patrimoine
           </div>
           {liquidites?.objectifMensuel > 0 && (
             <div className="text-xs text-blue-400 mt-1">
@@ -126,7 +134,7 @@ const DashboardUnifieSubTab = () => {
             </div>
           </div>
           <div className="text-xs text-slate-500">
-            {allocation.bourseCrypto.toFixed(1)}% du patrimoine
+            {allocationData.bourseCrypto.toFixed(1)}% du patrimoine
           </div>
           {bourseCrypto?.positions && bourseCrypto.positions.length > 0 && (
             <div className="text-xs text-blue-400 mt-1">
@@ -142,7 +150,7 @@ const DashboardUnifieSubTab = () => {
           <div>
             <div className="text-sm text-slate-400 mb-1">Patrimoine Total</div>
             <div className="text-4xl font-bold text-white">
-              {formatCurrency(allocation.total)}
+              {formatCurrency(allocationData.total)}
             </div>
           </div>
           <span className="text-5xl">💎</span>
@@ -154,9 +162,9 @@ const DashboardUnifieSubTab = () => {
         <h4 className="text-lg font-semibold text-white mb-4">🎯 Allocation Actuelle vs Cible</h4>
         <div className="space-y-4">
           {[
-            { nom: 'Or', actuel: allocation.or, cible: 30, couleur: '#eab308', icon: '🥇' },
-            { nom: 'Cash', actuel: allocation.liquidites, cible: 15, couleur: '#10b981', icon: '💰' },
-            { nom: 'Risqué', actuel: allocation.bourseCrypto, cible: 55, couleur: '#3b82f6', icon: '📈' }
+            { nom: 'Or', actuel: allocationData.or, cible: 30, couleur: '#eab308', icon: '🥇' },
+            { nom: 'Cash', actuel: allocationData.liquidites, cible: 15, couleur: '#10b981', icon: '💰' },
+            { nom: 'Risqué', actuel: allocationData.bourseCrypto, cible: 55, couleur: '#3b82f6', icon: '📈' }
           ].map((item, index) => {
             const ecart = item.actuel - item.cible;
             const tolerance = item.nom === 'Or' ? 2 : item.nom === 'Cash' ? 3 : 1;
