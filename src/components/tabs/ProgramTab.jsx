@@ -187,7 +187,7 @@ const ProgramTab = () => {
   return (
     <div className="relative min-h-screen">
       {/* Contenu avec z-index relatif */}
-      <div className="relative z-10 min-h-screen bg-gradient-to-br from-slate-900/80 via-slate-800/80 to-slate-900/80 text-white">
+      <div className="relative z-10 min-h-screen text-white">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
         {selectedProgram ? (
           <ProgramDetailView 

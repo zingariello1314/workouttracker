@@ -80,12 +80,14 @@
   top: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background: var(--sidebar-gradient-bg);
+  background: transparent;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-right: 1px solid rgba(255, 215, 0, 0.2);
   z-index: 60;
   display: flex;
   flex-direction: column;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
   overflow-y: auto;
   overflow-x: hidden;
   align-self: flex-start;
@@ -96,10 +98,9 @@
   flex-shrink: 0;
   padding: var(--sidebar-spacing-lg);
   border-bottom: 1px solid rgba(255, 215, 0, 0.15);
-  background: linear-gradient(180deg, 
-    rgba(26, 26, 46, 0.98) 0%, 
-    rgba(22, 33, 62, 0.95) 100%
-  );
+  background: transparent;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* ===== ZONE SCROLLABLE ===== */

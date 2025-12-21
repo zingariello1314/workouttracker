@@ -38,6 +38,7 @@ import { useWorkout } from './context/WorkoutContext';
 import { useGarminData } from './hooks/useGarminData';
 import { useAuth } from './context/AuthContext';
 import AnimatedBackground from './components/ui/AnimatedBackground';
+import GlassFilter from './components/ui/GlassFilter';
 
 const WorkoutTrackerApp = () => {
   return (
@@ -222,11 +223,19 @@ const WorkoutTrackerContent = () => {
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen">
+      {/* Filtre SVG pour l'effet liquid glass - UNE SEULE FOIS dans l'app */}
+      <GlassFilter />
+      
       {/* Fond animé global - affiché sur tous les onglets sauf home, dashboard et auth */}
       {/* Le fond est en position fixed donc il persiste entre les changements d'onglets */}
       {/* Utilisation d'un état pour éviter le flash sur la page d'accueil */}
       {showAnimatedBackground && <AnimatedBackground />}
+      
+      {/* Fond de fallback uniquement pour home/auth/dashboard */}
+      {!showAnimatedBackground && (
+        <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 -z-10" />
+      )}
       
       <div className="flex flex-col min-h-screen">
         {/* Header et Navigation - Masqués sur home, auth et dashboard */}

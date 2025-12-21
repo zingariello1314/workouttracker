@@ -140,7 +140,7 @@ const AnimatedBackground = ({ className = "" }) => {
 
 	return (
 		<div
-			className={`fixed inset-0 z-0 ${className}`}
+			className={`fixed inset-0 ${className}`}
 			style={{ 
 				pointerEvents: 'none', 
 				width: '100vw', 
@@ -148,7 +148,8 @@ const AnimatedBackground = ({ className = "" }) => {
 				top: 0,
 				left: 0,
 				right: 0,
-				bottom: 0
+				bottom: 0,
+				zIndex: -1, // Derrière tout le reste
 			}}
 		>
 			<Canvas

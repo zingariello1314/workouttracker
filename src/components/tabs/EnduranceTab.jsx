@@ -1053,7 +1053,7 @@ const EnduranceTab = () => {
   return (
     <div className="relative min-h-screen">
       {/* Contenu avec z-index relatif */}
-      <div className="relative z-10 flex h-screen bg-gradient-to-br from-slate-900/80 via-slate-800/80 to-slate-900/80">
+      <div className="relative z-10 flex h-screen">
         {/* Menu latéral */}
       <div className="w-72 bg-slate-900/50 backdrop-blur-xl border-r border-slate-700/50">
         <div className="p-8">
