@@ -150,11 +150,19 @@ const AnimatedBackground = ({ className = "" }) => {
 				right: 0,
 				bottom: 0,
 				zIndex: -1, // Derrière tout le reste
+				// Fond de fallback pendant le chargement du Canvas (couleur de base du shader)
+				backgroundColor: '#0a2e1a', // Vert foncé correspondant à vec3(0.2, 0.7, 0.5) du shader
 			}}
 		>
 			<Canvas
 				style={{ width: '100%', height: '100%' }}
-				gl={{ antialias: true, alpha: false }}
+				gl={{ 
+					antialias: true, 
+					alpha: false,
+					// Optimisations pour réduire le flash
+					powerPreference: 'high-performance',
+					preserveDrawingBuffer: false,
+				}}
 			>
 				<ShaderPlane
 					vertexShader={vertexShader}

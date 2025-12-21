@@ -12,11 +12,12 @@ import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
 import SwipeIndicator from './ui/SwipeIndicator';
 import { getSettings } from '../services/swipeNavigationSettings';
 import { useQuoteDisplay } from '../hooks/useQuoteDisplay';
+import { SplineScene } from './ui/SplineScene';
 
 const log = logger.component('HomePage');
 
 const HomePage = () => {
-  const { setActiveTab } = useWorkout();
+  const { setActiveTab, activeTab } = useWorkout();
   const { isAuthenticated } = useAuth();
   const t = useTranslation();
   const { language } = useLanguage();
@@ -500,7 +501,8 @@ const HomePage = () => {
   // qui offre une transition fluide et animée entre HomePage et Dashboard
 
   // ✅ Chargement initial : Déterminer si on doit afficher l'écran de chargement
-  const shouldShowLoading = isLoading || showLoadingScreen;
+  // Ne s'affiche que si on est vraiment sur home ET que le chargement est en cours
+  const shouldShowLoading = (isLoading || showLoadingScreen) && activeTab === 'home';
 
   // ✅ Screen reader announcement state
   const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState('');
@@ -551,12 +553,15 @@ const HomePage = () => {
       {!shouldShowLoading && <NavigationHeader />}
 
       {/* ✅ Chargement initial : Écran de chargement élégant et professionnel */}
+      {/* Ne s'affiche que lors du premier chargement de l'app, pas lors de la navigation */}
       {shouldShowLoading && (
         <div 
           className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-[100] flex items-center justify-center transition-opacity duration-500"
           style={{
             opacity: shouldShowLoading ? 1 : 0,
             pointerEvents: shouldShowLoading ? 'auto' : 'none',
+            // Masquer si on n'est pas sur home (pour éviter l'affichage lors de la navigation vers dashboard)
+            display: shouldShowLoading ? 'flex' : 'none',
           }}
         >
           <div className="text-center">
@@ -631,6 +636,16 @@ const HomePage = () => {
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`,
               mixBlendMode: 'overlay'
             }}
+          />
+        </div>
+      )}
+
+      {/* Robot Spline - Suit la souris avec la tête - Uniquement sur la page d'accueil */}
+      {activeTab === 'home' && (
+        <div className="fixed bottom-0 right-[16rem] w-96 h-96 z-50 pointer-events-none">
+          <SplineScene 
+            scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+            className="w-full h-full pointer-events-auto"
           />
         </div>
       )}

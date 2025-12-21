@@ -5,11 +5,14 @@ import DashboardTab from './tabs/DashboardTab';
 import Header from './layout/Header';
 import Navigation from './layout/Navigation';
 import SidebarPremium from './sidebar/SidebarPremium';
-import AnimatedBackground from './ui/AnimatedBackground';
+// AnimatedBackground n'est plus importé ici - on utilise celui de App.jsx pour éviter le rechargement
 
 /**
  * HomePageScrollTransition - Scroll naturel entre HomePage et Dashboard
- * Utilise une vraie scrollbar pour naviguer entre les deux pages
+ * 
+ * SOLUTION SIMPLIFIÉE : 
+ * - Navigation par clic depuis navtab → toujours directe (comme les autres onglets)
+ * - Scroll manuel depuis home → détection et transition fluide
  */
 const HomePageScrollTransition = () => {
   const { activeTab, setActiveTab } = useWorkout();
@@ -17,11 +20,81 @@ const HomePageScrollTransition = () => {
   const homePageRef = useRef(null);
   const dashboardRef = useRef(null);
   
-  // État pour contrôler l'affichage du fond animé basé sur le scroll progressif
-  const [showAnimatedBackground, setShowAnimatedBackground] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0); // 0 = home, 1 = dashboard
+  // État pour contrôler le scroll progress
+  const [scrollProgress, setScrollProgress] = useState(0);
+  
+  // Refs pour éviter les conflits
+  const isScrollingRef = useRef(false);
+  
+  // Utiliser sessionStorage pour persister l'onglet précédent entre montages/démontages
+  const getPreviousTab = () => {
+    return sessionStorage.getItem('previousTab') || null;
+  };
+  
+  const setPreviousTab = (tab) => {
+    if (tab) {
+      sessionStorage.setItem('previousTab', tab);
+    } else {
+      sessionStorage.removeItem('previousTab');
+    }
+  };
+  
+  // Initialiser le scroll selon l'onglet actif
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    const viewportHeight = window.innerHeight;
+    const previousTab = getPreviousTab();
+    
+    if (activeTab === 'dashboard') {
+      // Si on vient d'un autre onglet (pas home/dashboard), navigation directe
+      if (previousTab && previousTab !== 'home' && previousTab !== 'dashboard') {
+        // Navigation directe depuis un autre onglet (comme "sport")
+        isScrollingRef.current = true;
+        container.scrollTo({ top: viewportHeight, behavior: 'auto' });
+        setScrollProgress(1); // Forcer scrollProgress à 1 pour afficher header/sidebar
+        setTimeout(() => {
+          isScrollingRef.current = false;
+        }, 50);
+      } else if (previousTab === 'home') {
+        // On vient de home → scroll smooth (navigation depuis home fonctionne bien)
+        isScrollingRef.current = true;
+        container.scrollTo({ top: viewportHeight, behavior: 'smooth' });
+        setScrollProgress(1); // Forcer scrollProgress à 1 pour afficher header/sidebar
+        setTimeout(() => {
+          isScrollingRef.current = false;
+        }, 800);
+      } else {
+        // Cas par défaut : s'assurer que le scroll est correct
+        const currentScroll = container.scrollTop;
+        if (currentScroll < viewportHeight * 0.5) {
+          isScrollingRef.current = true;
+          container.scrollTo({ top: viewportHeight, behavior: 'auto' });
+          setScrollProgress(1); // Forcer scrollProgress à 1 pour afficher header/sidebar
+          setTimeout(() => {
+            isScrollingRef.current = false;
+          }, 50);
+        } else {
+          // Le scroll est déjà correct, mettre scrollProgress à 1
+          setScrollProgress(1);
+        }
+      }
+    } else if (activeTab === 'home') {
+      // Navigation vers home : toujours smooth (fonctionne bien depuis dashboard)
+      isScrollingRef.current = true;
+      container.scrollTo({ top: 0, behavior: 'smooth' });
+      setScrollProgress(0); // Forcer scrollProgress à 0 pour masquer header/sidebar
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 500);
+    }
+    
+    // Sauvegarder l'onglet actuel comme précédent pour la prochaine navigation
+    setPreviousTab(activeTab);
+  }, [activeTab]);
 
-  // Gérer le scroll pour détecter sur quelle page on est et calculer le progrès
+  // Gérer le scroll manuel (uniquement pour la transition depuis home)
   useEffect(() => {
     if (activeTab !== 'home' && activeTab !== 'dashboard') return;
 
@@ -29,69 +102,55 @@ const HomePageScrollTransition = () => {
     if (!container) return;
 
     const handleScroll = () => {
+      // Ignorer pendant les transitions programmées
+      if (isScrollingRef.current) return;
+
       const scrollTop = container.scrollTop;
       const viewportHeight = window.innerHeight;
       
-      // Calculer le progrès du scroll (0 = home, 1 = dashboard)
       const progress = Math.min(Math.max(scrollTop / viewportHeight, 0), 1);
       setScrollProgress(progress);
       
-      // Activer le fond animé progressivement quand on dépasse 25% du scroll
-      // Cela évite que le fond apparaisse trop tôt et permet une transition fluide
-      if (progress > 0.25) {
-        setShowAnimatedBackground(true);
-      } else {
-        setShowAnimatedBackground(false);
-      }
+      // Émettre un événement pour informer App.jsx du scrollProgress pour dashboard
+      // Cela permet de contrôler l'opacité du fond animé global
+      window.dispatchEvent(new CustomEvent('dashboard-scroll-progress', { 
+        detail: { progress, activeTab } 
+      }));
       
-      // Si on a scrollé plus de 50% de la hauteur de la fenêtre, on est sur le dashboard
-      if (scrollTop > viewportHeight * 0.5) {
+      // Détection du scroll manuel : changer activeTab selon la position
+      // Seuil plus strict pour éviter les changements trop fréquents
+      if (scrollTop > viewportHeight * 0.6) {
+        // On est clairement sur le dashboard
         if (activeTab !== 'dashboard') {
           setActiveTab('dashboard');
         }
-      } else {
-        // Si on remonte au-dessus de 50%, on revient sur home
-        if (activeTab === 'dashboard') {
+      } else if (scrollTop < viewportHeight * 0.05) {
+        // On est clairement sur home
+        if (activeTab !== 'home') {
           setActiveTab('home');
         }
       }
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
-    
-    // Appeler handleScroll une fois pour initialiser l'état
     handleScroll();
 
     return () => {
       container.removeEventListener('scroll', handleScroll);
     };
   }, [activeTab, setActiveTab]);
-
-  // Quand on change d'onglet depuis la navigation, ajuster le scroll
+  
+  // Émettre le scrollProgress initial et à chaque changement
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    window.dispatchEvent(new CustomEvent('dashboard-scroll-progress', { 
+      detail: { progress: scrollProgress, activeTab } 
+    }));
+  }, [scrollProgress, activeTab]);
 
-    if (activeTab === 'home') {
-      // Scroll vers le haut (HomePage)
-      container.scrollTo({ top: 0, behavior: 'smooth' });
-      // Masquer le fond animé immédiatement quand on revient à home
-      setShowAnimatedBackground(false);
-      setScrollProgress(0);
-    } else if (activeTab === 'dashboard') {
-      // Scroll vers le bas (Dashboard) avec transition fluide
-      const viewportHeight = window.innerHeight;
-      container.scrollTo({ top: viewportHeight, behavior: 'smooth' });
-      
-      // Le fond sera activé progressivement par handleScroll quand scrollProgress > 0.25
-      // Pas besoin de setTimeout, le handleScroll se déclenchera automatiquement pendant le scroll
-    }
-  }, [activeTab]);
-
-  // Si on n'est ni sur home ni sur dashboard, ne rien afficher
-  if (activeTab !== 'home' && activeTab !== 'dashboard') {
-    return null;
-  }
+  // Ne pas démonter le composant même si on n'est pas sur home/dashboard
+  // Cela permet de garder le fond animé monté et éviter le rechargement
+  // On masque juste le contenu avec display: none
+  const isVisible = activeTab === 'home' || activeTab === 'dashboard';
 
   return (
     <div 
@@ -100,36 +159,18 @@ const HomePageScrollTransition = () => {
       style={{ 
         zIndex: 1000,
         scrollBehavior: 'smooth',
+        // Masquer le contenu si on n'est pas sur home/dashboard, mais garder le composant monté
+        display: isVisible ? 'block' : 'none',
+        pointerEvents: isVisible ? 'auto' : 'none',
       }}
     >
-      {/* Fond animé - affiché progressivement quand on scroll vers le dashboard */}
-      {/* Le fond apparaît progressivement avec une transition d'opacité basée sur le scroll */}
-      {showAnimatedBackground && (
-        <div 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 0,
-            pointerEvents: 'none',
-            // Opacité progressive : 0% à 25% de scroll, puis augmente jusqu'à 100% à 50% de scroll
-            opacity: scrollProgress < 0.25 
-              ? 0 
-              : scrollProgress < 0.5 
-                ? (scrollProgress - 0.25) / 0.25 // Transition de 0 à 1 entre 25% et 50%
-                : 1,
-            transition: 'opacity 0.2s ease-out'
-          }}
-        >
-          <AnimatedBackground />
-        </div>
-      )}
+      {/* Le fond animé est géré par App.jsx pour éviter le rechargement */}
+      {/* On émet un événement 'dashboard-scroll-progress' pour informer App.jsx du scrollProgress */}
+      {/* Le fond animé global dans App.jsx reste monté en permanence et ajuste son opacité selon scrollProgress */}
 
       {/* Conteneur avec les deux pages empilées verticalement */}
       <div>
-        {/* HomePage - Prend toute la hauteur de la fenêtre */}
+        {/* HomePage */}
         <div 
           ref={homePageRef}
           className="w-full relative z-10"
@@ -142,37 +183,64 @@ const HomePageScrollTransition = () => {
           <HomePage />
         </div>
 
-        {/* Dashboard - Commence juste en dessous */}
+        {/* Dashboard */}
         <div 
           ref={dashboardRef}
-          className="w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col relative z-10"
+          className="w-full flex flex-col relative z-10"
           style={{ 
             minHeight: '100vh',
             position: 'relative'
           }}
         >
-          {/* Header et Navigation - Visibles uniquement sur le Dashboard */}
-          {activeTab === 'dashboard' && (
-            <>
-              {/* Header du site (avec logo, date, profil utilisateur) */}
+          {/* Header et Navigation - Visibles uniquement quand on est sur le dashboard (scrollProgress > 0.3) */}
+          {/* Masquer progressivement quand on scroll vers home */}
+          {scrollProgress > 0.3 && (
+            <div
+              style={{
+                opacity: scrollProgress < 0.5 ? (scrollProgress - 0.3) / 0.2 : 1,
+                transition: 'opacity 0.2s ease-out',
+                pointerEvents: scrollProgress < 0.3 ? 'none' : 'auto'
+              }}
+            >
               <Header />
-              
-              {/* Navigation entre onglets */}
               <Navigation />
-            </>
+            </div>
           )}
           
-          {/* Sidebar Premium - Positionnée en fixed juste sous le header/navigation */}
-          {activeTab === 'dashboard' && (
-            <div style={{ position: 'fixed', left: 0, top: '116px', bottom: 0, width: '300px', zIndex: 60 }}>
+          {/* Sidebar Premium - Masquer progressivement quand on scroll vers home */}
+          {scrollProgress > 0.3 && (
+            <div 
+              style={{ 
+                position: 'fixed', 
+                left: 0, 
+                top: '116px', 
+                bottom: 0, 
+                width: '300px', 
+                zIndex: 60,
+                opacity: scrollProgress < 0.5 ? (scrollProgress - 0.3) / 0.2 : 1,
+                transition: 'opacity 0.2s ease-out',
+                pointerEvents: scrollProgress < 0.3 ? 'none' : 'auto'
+              }}
+            >
               <SidebarPremium />
             </div>
           )}
           
           {/* Layout avec contenu du Dashboard */}
-          <div className="flex-1 relative" style={{ paddingTop: activeTab === 'dashboard' ? '116px' : '0' }}>
-            {/* Contenu du Dashboard avec marge pour la sidebar */}
-            <div style={{ marginLeft: activeTab === 'dashboard' ? '300px' : '0' }}>
+          {/* Padding et margin basés sur scrollProgress pour transition fluide */}
+          <div 
+            className="flex-1 relative" 
+            style={{ 
+              paddingTop: scrollProgress > 0.3 ? '116px' : '0',
+              transition: 'padding-top 0.2s ease-out'
+            }}
+          >
+            <div 
+              style={{ 
+                marginLeft: scrollProgress > 0.3 ? '300px' : '0',
+                transition: 'margin-left 0.2s ease-out'
+              }}
+            >
               <DashboardTab />
             </div>
           </div>

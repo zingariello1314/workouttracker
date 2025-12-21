@@ -212,13 +212,30 @@ const WorkoutTrackerContent = () => {
 
   // État pour contrôler l'affichage du fond animé
   const [showAnimatedBackground, setShowAnimatedBackground] = useState(false);
+  const [dashboardScrollProgress, setDashboardScrollProgress] = useState(0);
+  
+  // Écouter les événements de scrollProgress depuis HomePageScrollTransition
+  useEffect(() => {
+    const handleDashboardScrollProgress = (event) => {
+      const { progress, activeTab: eventTab } = event.detail;
+      if (eventTab === 'dashboard' || eventTab === 'home') {
+        setDashboardScrollProgress(progress);
+      }
+    };
+    
+    window.addEventListener('dashboard-scroll-progress', handleDashboardScrollProgress);
+    return () => {
+      window.removeEventListener('dashboard-scroll-progress', handleDashboardScrollProgress);
+    };
+  }, []);
   
   // Mettre à jour l'état du fond animé selon l'onglet actif
-  // Note: Le fond pour home/dashboard est géré par HomePageScrollTransition
+  // IMPORTANT: Le fond reste TOUJOURS monté pour éviter le rechargement entre onglets
+  // Seule l'opacité change selon l'onglet actif
   useEffect(() => {
-    // Ne pas afficher le fond sur home, dashboard (géré par HomePageScrollTransition) et auth
-    // Le fond pour dashboard est géré dans HomePageScrollTransition pour une transition fluide
-    const shouldShow = activeTab !== 'home' && activeTab !== 'dashboard' && activeTab !== 'auth';
+    // Ne pas afficher le fond sur home et auth uniquement
+    // Pour dashboard, l'opacité est gérée par scrollProgress (0 = masqué, 1 = visible)
+    const shouldShow = activeTab !== 'home' && activeTab !== 'auth';
     setShowAnimatedBackground(shouldShow);
   }, [activeTab]);
 
@@ -227,15 +244,43 @@ const WorkoutTrackerContent = () => {
       {/* Filtre SVG pour l'effet liquid glass - UNE SEULE FOIS dans l'app */}
       <GlassFilter />
       
-      {/* Fond animé global - affiché sur tous les onglets sauf home, dashboard et auth */}
+      {/* Fond animé global - TOUJOURS monté pour éviter le rechargement */}
       {/* Le fond est en position fixed donc il persiste entre les changements d'onglets */}
-      {/* Utilisation d'un état pour éviter le flash sur la page d'accueil */}
-      {showAnimatedBackground && <AnimatedBackground />}
+      {/* IMPORTANT: Ne JAMAIS démonter ce composant pour éviter le rechargement du Canvas Three.js */}
+      {/* Pour dashboard, l'opacité est gérée par scrollProgress (0 = masqué, >0.25 = visible progressivement) */}
+      <div 
+        style={{ 
+          opacity: activeTab === 'dashboard' 
+            ? (dashboardScrollProgress < 0.25 
+                ? 0 
+                : dashboardScrollProgress < 0.5 
+                  ? (dashboardScrollProgress - 0.25) / 0.25
+                  : 1)
+            : showAnimatedBackground 
+              ? 1 
+              : 0,
+          transition: 'opacity 0.2s ease-out',
+          pointerEvents: 'none',
+          position: 'fixed',
+          inset: 0,
+          zIndex: -1,
+          // Toujours monté, même si opacity est 0
+          display: 'block'
+        }}
+      >
+        <AnimatedBackground />
+      </div>
       
-      {/* Fond de fallback uniquement pour home/auth/dashboard */}
-      {!showAnimatedBackground && (
-        <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 -z-10" />
-      )}
+      {/* Fond de fallback - couleur de base du shader animé (vert foncé) pour transition fluide */}
+      {/* Ce fond évite le flash blanc pendant le chargement du Canvas Three.js */}
+      <div 
+        className="fixed inset-0 -z-10" 
+        style={{ 
+          background: showAnimatedBackground 
+            ? 'linear-gradient(135deg, #0a2e1a 0%, #1a4d2e 50%, #0a2e1a 100%)' // Vert foncé correspondant au shader
+            : 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' // Slate pour home/auth/dashboard
+        }}
+      />
       
       <div className="flex flex-col min-h-screen">
         {/* Header et Navigation - Masqués sur home, auth et dashboard */}
