@@ -388,10 +388,11 @@ class OrPriceService {
       clearTimeout(timeoutId);
       
       // 2. Prix or approximatif en USD/once (décembre 2025)
-      // Prix actuel réel : ~3700-3800 USD/oz (environ 119€/g)
-      // Conversion : 3700 USD/oz / 1.17 EUR/USD / 31.1035 g/oz ≈ 101€/g
-      // Mais le prix réel est ~119€/g, donc ajustons : 119 * 31.1035 * 1.17 ≈ 4320 USD/oz
-      const prixOrUSDParOnce = 4320; // Prix approximatif ajusté pour donner ~119€/g
+      // Prix actuel réel cible : ~119€/g
+      // Conversion inverse : 119€/g * 31.1035 g/oz = 3701.32€/oz
+      // Avec taux USD/EUR de ~0.853 : 3701.32€/oz / 0.853 = 4339 USD/oz
+      // Arrondi pour stabilité : 4340 USD/oz
+      const prixOrUSDParOnce = 4340; // Prix ajusté pour donner ~119€/g (si taux ≈ 0.853)
       
       // 3. Convertir : USD/oz → EUR/oz → EUR/g
       const prixParOnceEUR = prixOrUSDParOnce / usdRate;
@@ -428,6 +429,26 @@ class OrPriceService {
       log.debug('[getCurrentPrice] Returning cached gold price');
       return cached.price;
     }
+
+    // 🔍 DIAGNOSTIC : Vérifier les clés API au début de getCurrentPrice
+    const golpricezKey = getApiKey('GOLDPRICEZ');
+    const goldApiKey = getApiKey('GOLD_API');
+    console.log('[orPriceService.getCurrentPrice] 🔍 DIAGNOSTIC Clés API:', {
+      golpricez: {
+        hasKey: !!golpricezKey,
+        length: golpricezKey?.length,
+        firstChars: golpricezKey?.substring(0, 10)
+      },
+      goldApi: {
+        hasKey: !!goldApiKey,
+        length: goldApiKey?.length,
+        firstChars: goldApiKey?.substring(0, 10)
+      },
+      importMetaEnv: {
+        golpricez: import.meta.env?.VITE_GOLDPRICEZ_API_KEY ? 'présente' : 'absente',
+        goldApi: import.meta.env?.VITE_GOLD_API_KEY ? 'présente' : 'absente'
+      }
+    });
 
     // ✅ Stratégie multi-sources : essayer plusieurs APIs
     let prixParGramme = null;

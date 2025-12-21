@@ -31,9 +31,9 @@ const OrPhysiqueSubTab = () => {
     initialLoad: true
   });
   
-  // ✅ FIX: Toujours avoir un prix à afficher (fallback 65€/g si null/undefined/0)
-  // Le fallback 65€/g est une valeur raisonnable si les APIs échouent
-  const prixOr = (prixOrRaw && prixOrRaw > 0) ? prixOrRaw : 65;
+  // ✅ FIX: Toujours avoir un prix à afficher (fallback 119€/g si null/undefined/0)
+  // Le fallback 119€/g correspond au prix réel actuel (décembre 2025)
+  const prixOr = (prixOrRaw && prixOrRaw > 0) ? prixOrRaw : 119;
   
   // Debug: log pour vérifier les valeurs
   useEffect(() => {
