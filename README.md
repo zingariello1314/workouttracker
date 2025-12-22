@@ -4,9 +4,9 @@
 
 [![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge)](https://github.com/zingariello1314/workouttracker)
 ![Momentum](https://img.shields.io/badge/Momentum-Fitness-purple?style=for-the-badge&logo=dumbbell)
-[![React](https://img.shields.io/badge/React-18.0+-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=for-the-badge&logo=vite)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.0+-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![React](https://img.shields.io/badge/React-18.2+-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-4.4+-646CFF?style=for-the-badge&logo=vite)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3+-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![PWA](https://img.shields.io/badge/PWA-Ready-4285F4?style=for-the-badge&logo=pwa)](https://web.dev/progressive-web-apps/)
 [![IndexedDB](https://img.shields.io/badge/IndexedDB-Native-FF6B6B?style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
@@ -44,7 +44,7 @@
 
 ## 🎯 Vue d'Ensemble
 
-**Momentum** est une application web progressive (PWA) sophistiquée développée avec **React 18+** et **Vite 5+**, offrant une expérience complète de gestion d'entraînement. L'application intègre **14 onglets spécialisés**, un système de suivi corporel avancé avec **analyse IA**, des fonctionnalités d'analyse de données statistiques poussées, et une **intégration complète avec Garmin Connect**.
+**Momentum** est une application web progressive (PWA) sophistiquée développée avec **React 18.2+** et **Vite 4.4+**, offrant une expérience complète de gestion d'entraînement. L'application intègre **8 onglets principaux** avec de nombreux sous-onglets spécialisés, un système de suivi corporel avancé avec **analyse IA**, des fonctionnalités d'analyse de données statistiques poussées, une **intégration complète avec Garmin Connect**, un système de gestion de quêtes quotidiennes, un module d'apprentissage avec suivi de progression, une bibliothèque de livres avec statistiques avancées, et un module financier complet avec suivi de portfolio.
 
 ### ✨ Points Forts Principaux
 
@@ -122,15 +122,19 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| **Onglets Spécialisés** | 14 |
+| **Onglets Principaux** | 8 (Home, Dashboard, Sport, Quests, Apprentissage, Books, Finance, Settings) |
+| **Sous-Onglets Sport** | 14 (Today, Data Entry, Program, Nutrition, Exercises, Progress, Endurance, Calendar, History, Charts, Stats, Predictions, Smart Balancing, Garmin) |
+| **Sous-Onglets Finance** | 6 (Bourse, Budget, Investissements, Smart Shopping, Planificateur, Synthèse) |
 | **Graphiques Disponibles** | 20+ |
-| **Bases IndexedDB** | 4 |
+| **Bases IndexedDB** | 8 (WorkoutTrackerDB, GarminDataDB, HomepageImagesDB, WorkoutTrackerContextDB, QuietQuestDB, ApprentissageDB, BooksDB, FinanceDB) |
 | **Types d'Activités Endurance** | 5 |
 | **Sections Suivi Corporel** | 10 |
 | **Bundle Initial (gzipped)** | ~500KB |
 | **Temps Chargement (3G)** | <2s |
 | **Support Données** | 10,000+ séances, 1000+ photos |
 | **Taux Succès Sync Garmin** | ~95% |
+| **Système de Boutons Gradient Premium** | Implémenté sur tous les onglets |
+| **Système de Citations** | Gestion complète avec modes aléatoire/fixe |
 
 ---
 
@@ -150,7 +154,7 @@
 </tr>
 <tr>
 <td><strong>React</strong></td>
-<td>18.3.1+</td>
+<td>18.2.0+</td>
 <td>
 • Framework UI avec Hooks, Context API, Suspense<br>
 • Composants fonctionnels optimisés<br>
@@ -159,7 +163,7 @@
 </tr>
 <tr>
 <td><strong>Vite</strong></td>
-<td>5.4.10+</td>
+<td>4.4.5+</td>
 <td>
 • Build tool ultra-rapide (HMR <50ms)<br>
 • Tree-shaking automatique<br>
@@ -168,7 +172,7 @@
 </tr>
 <tr>
 <td><strong>Tailwind CSS</strong></td>
-<td>3.4.14+</td>
+<td>3.3.3+</td>
 <td>
 • Utility-first responsive<br>
 • PurgeCSS automatique<br>
@@ -213,7 +217,7 @@
 </tr>
 </table>
 
-### 🗄️ Architecture des Données - 4 Bases IndexedDB
+### 🗄️ Architecture des Données - 8 Bases IndexedDB
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -221,10 +225,33 @@
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ 1. WorkoutTrackerDB (v1)                                        │
+│ 1. WorkoutTrackerDB (v11+)                                      │
 ├─────────────────────────────────────────────────────────────────┤
-│ Object Store: workouts                                          │
-│ Clé: 'main'                                                     │
+│ Object Stores:                                                  │
+│  • workouts              → Données d'entraînement              │
+│  • nutrition_dailyMeals   → Résumés nutrition journaliers         │
+│  • nutrition_meals       → Repas détaillés                       │
+│  • nutrition_programs    → Programmes nutritionnels              │
+│  • nutrition_favoriteFoods → Aliments favoris                    │
+│  • nutrition_mealPhotos  → Photos de repas                      │
+│  • nutrition_hydrationLog → Suivi hydratation                    │
+│  • nutrition_apiCache     → Cache API                            │
+│  • nutrition_gamification → Badges, XP, streaks                   │
+│  • nutrition_shareLinks   → Liens partage coach                  │
+│  • nutrition_progressPhotos → Photos avant/après                 │
+│  • nutrition_mlModels     → Modèles ML TensorFlow.js            │
+│  • nutrition_offlineQueue  → Queue modifications offline          │
+│  • quietquest_quests      → Quêtes quotidiennes                 │
+│  • quietquest_validations → Validations quêtes                   │
+│  • quietquest_user_data   → Données utilisateur quêtes           │
+│  • quietquest_daily_performances → Performances quotidiennes    │
+│  • quietquest_app_state   → État application quêtes              │
+│  • apprentissage_subjects → Matières d'apprentissage            │
+│  • apprentissage_progression → Progression apprentissage         │
+│  • apprentissage_sessions_history → Historique sessions         │
+│  • apprentissage_planner  → Planificateur hebdomadaire           │
+│  • apprentissage_timer    → État timer sessions                  │
+│  • books                  → Bibliothèque de livres               │
 │                                                                 │
 │ Contient:                                                       │
 │  • Données d'entraînement (exercices, répétitions)              │
@@ -235,33 +262,41 @@
 │  • Variations journalières                                     │
 │  • Données endurance (5 activités)                             │
 │  • Défis et challenges                                         │
+│  • Données nutrition complètes (21 phases)                     │
+│  • Quêtes quotidiennes (QuietQuest)                            │
+│  • Données apprentissage (matières, sessions, progression)     │
+│  • Bibliothèque de livres (livres, sessions lecture)           │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ 2. GarminDataDB (v1)                                            │
+│ 2. GarminDataDB (v5)                                            │
 ├─────────────────────────────────────────────────────────────────┤
 │ Object Stores:                                                  │
-│  • activities      → Activités (natation, cardio, etc.)        │
-│  • dailyMetrics    → Métriques quotidiennes                    │
-│  • heartRate       → FC time series (compressée)              │
-│  • sleep           → Données sommeil                             │
-│  • stress          → Niveaux stress                             │
-│  • bodyBattery     → Body Battery                              │
-│  • respiration     → Respiration                               │
+│  • garmin_activities      → Activités (natation, cardio, etc.) │
+│  • garmin_daily_metrics   → Métriques quotidiennes              │
+│  • garmin_heart_rate      → FC time series (compressée)         │
+│  • garmin_sleep           → Données sommeil                      │
+│  • garmin_stress          → Niveaux stress                      │
+│  • garmin_body_battery   → Body Battery                        │
+│  • garmin_respiration     → Respiration                        │
+│  • forced_ranges_history → Historique syncs forcées            │
+│  • auto_sync_history     → Historique syncs automatiques       │
+│  • telemetry_history      → Télémetrie observabilité            │
 │                                                                 │
-│ Indexation: Par date, type d'activité                           │
+│ Indexation: Par date, type d'activité, timestamp                │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ 3. HomepageImagesDB (v2)                                        │
+│ 3. HomepageImagesDB (v3)                                        │
 ├─────────────────────────────────────────────────────────────────┤
 │ Object Store: images                                            │
 │ Indexation: type, timestamp                                     │
 │                                                                 │
 │ Contient:                                                       │
-│  • Images de fond personnalisables                             │
+│  • Images de fond personnalisables (format v3 avec thumbnails)  │
 │  • Rotation automatique (2 min)                                 │
 │  • Validation Base64 stricte                                   │
+│  • Versioning (5 versions par image avec rollback)              │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -273,6 +308,27 @@
 │  • État React (onglets actifs)                                 │
 │  • Préférences utilisateur                                     │
 │  • Configuration interface                                     │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 5. FinanceDB (v2)                                               │
+├─────────────────────────────────────────────────────────────────┤
+│ Object Stores:                                                  │
+│  • portfolio        → Positions boursières                      │
+│  • yahooCache      → Cache données Yahoo Finance              │
+│  • calculations    → Calculs financiers                         │
+│  • history         → Historique transactions                    │
+│  • exchangeRates   → Taux de change                             │
+│                                                                 │
+│ Indexation: ticker, dateAchat, timestamp                        │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 6-8. Stores dans WorkoutTrackerDB (déjà listés ci-dessus)       │
+├─────────────────────────────────────────────────────────────────┤
+│ Les bases QuietQuestDB, ApprentissageDB, et BooksDB sont       │
+│ en réalité des stores dans WorkoutTrackerDB pour simplifier     │
+│ l'architecture et permettre des requêtes croisées.            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1185,6 +1241,59 @@ Gradients
 | **Toast** | Success, error, warning, info | Notifications |
 | **Badge** | Status, count, label | Indicateurs |
 
+#### Système de Boutons Gradient Premium
+
+**Implémentation** : Système unifié de boutons avec effet gradient animé appliqué sur **tous les onglets** de l'application.
+
+**Fichier CSS** : `src/index.css`
+
+**Classes principales** :
+- `.gradient-button-premium` : Classe de base avec gradient radial animé
+- `.gradient-button-premium-variant` : Variante cyan/blue pour hiérarchie visuelle
+- `.gradient-button-premium-sm` : Taille petite (pagination, actions secondaires)
+- `.gradient-button-premium-md` : Taille moyenne (formulaires, actions principales)
+- `.gradient-button-premium-lg` : Taille grande (actions importantes, CTA)
+
+**Technologie** :
+- **CSS `@property`** : Propriétés personnalisées animables pour transitions fluides
+- **Gradient radial** : Position, spread, couleurs et stops animés au hover
+- **Bordure animée** : Angle et couleurs de bordure avec transition
+- **Transitions** : 0.5s pour toutes les propriétés avec easing naturel
+
+**Hiérarchie des couleurs** :
+- **Default** : Gradient sombre (noir → violet → rose) pour actions principales
+- **Variant** : Gradient cyan/blue pour actions secondaires ou états actifs
+- **Hover** : Animation vers couleurs plus claires avec repositionnement du gradient
+
+**Exemple d'utilisation** :
+```jsx
+// Bouton principal
+<button className="gradient-button-premium gradient-button-premium-md rounded-lg">
+  Sauvegarder
+</button>
+
+// Bouton secondaire (variant)
+<button className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg">
+  Annuler
+</button>
+
+// Bouton actif (variant + shadow)
+<button className="gradient-button-premium gradient-button-premium-variant shadow-lg shadow-cyan-500/30">
+  Actif
+</button>
+```
+
+**Couverture** :
+- ✅ **Tous les onglets** : Home, Dashboard, Sport (14 sous-onglets), Quests, Apprentissage, Books, Finance (6 sous-onglets), Settings
+- ✅ **Composants réutilisables** : Modal, EmptyState, QuoteManager, etc.
+- ✅ **Actions contextuelles** : Formulaires, navigation, filtres, pagination
+
+**Avantages** :
+- 🎨 **Cohérence visuelle** : Même style sur toute l'application
+- ⚡ **Performance** : Animations GPU-accelerated via CSS
+- 🔧 **Maintenabilité** : Système centralisé dans `index.css`
+- 📱 **Responsive** : S'adapte automatiquement aux différentes tailles
+
 ### 🎬 Diagrammes de Séquence Interactifs
 
 Les diagrammes ci-dessus utilisent **Mermaid**, un langage de diagrammes open-source supporté nativement par GitHub. Ils sont interactifs et peuvent être zoomés/navigués.
@@ -1211,51 +1320,63 @@ Les diagrammes ci-dessus utilisent **Mermaid**, un langage de diagrammes open-so
 
 ---
 
-## 📱 Documentation Complète - Les 14 Onglets
+## 📱 Documentation Complète - Les 8 Onglets Principaux
 
-Cette section détaille chaque onglet de Momentum avec ses fonctionnalités, techniques utilisées, et interconnexions.
+Cette section détaille chaque onglet principal de Momentum avec ses fonctionnalités, techniques utilisées, et interconnexions.
 
-### 🗺️ Vue d'Ensemble des Onglets
+### 🗺️ Vue d'Ensemble des Onglets Principaux
 
 ```mermaid
 flowchart TB
-    A[🏠 Home] --> B[📅 Today]
-    A --> C[✏️ Data Entry]
-    A --> D[📸 Progress]
-    A --> E[🏃 Endurance]
-    A --> F[🗓️ Calendar]
-    A --> G[🎯 Program]
-    A --> H[📊 Charts]
-    A --> I[📈 Stats]
-    A --> J[💪 Exercises]
-    A --> K[📜 History]
-    A --> L[🔮 Predictions]
-    A --> M[⌚ Garmin]
-    A --> N[🧠 Smart Balancing]
-    A --> O[⚙️ Settings]
+    A[🏠 Home] --> B[📊 Dashboard]
+    A --> C[🏋️ Sport<br/>14 Sous-Onglets]
+    A --> D[⚡ Quests<br/>Quêtes Quotidiennes]
+    A --> E[📖 Apprentissage<br/>Matières & Sessions]
+    A --> F[📚 Books<br/>Bibliothèque]
+    A --> G[💰 Finance<br/>6 Sous-Onglets]
+    A --> H[⚙️ Settings]
     
-    B --> I
-    C --> B
-    D --> I
-    E --> H
-    F --> I
-    G --> B
-    H --> I
-    M --> E
-    M --> H
-    I --> L
+    C --> C1[📅 Today]
+    C --> C2[✏️ Data Entry]
+    C --> C3[🎯 Program]
+    C --> C4[🥗 Nutrition]
+    C --> C5[💪 Exercises]
+    C --> C6[📸 Progress]
+    C --> C7[🏃 Endurance]
+    C --> C8[🗓️ Calendar]
+    C --> C9[📜 History]
+    C --> C10[📊 Charts]
+    C --> C11[📈 Stats]
+    C --> C12[🔮 Predictions]
+    C --> C13[🧠 Smart Balancing]
+    C --> C14[⌚ Garmin]
+    
+    G --> G1[📈 Bourse]
+    G --> G2[💰 Budget]
+    G --> G3[🥇 Investissements]
+    G --> G4[🛒 Smart Shopping]
+    G --> G5[📅 Planificateur]
+    G --> G6[📊 Synthèse]
     
     style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style B fill:#3b82f6,stroke:#fff,color:#fff
+    style C fill:#10b981,stroke:#fff,color:#fff
     style D fill:#ec4899,stroke:#fff,color:#fff
-    style I fill:#3b82f6,stroke:#fff,color:#fff
-    style M fill:#10b981,stroke:#fff,color:#fff
+    style E fill:#f59e0b,stroke:#fff,color:#fff
+    style F fill:#8b5cf6,stroke:#fff,color:#fff
+    style G fill:#06b6d4,stroke:#fff,color:#fff
+    style H fill:#64748b,stroke:#fff,color:#fff
 ```
 
 **Légende** :
-- 🟣 **Home** : Point d'entrée principal
-- 🔴 **Progress** : Suivi corporel avancé (10 sous-sections)
-- 🔵 **Stats** : Centralise les données de tous les onglets
-- 🟢 **Garmin** : Source de données externes
+- 🟣 **Home** : Point d'entrée principal avec citations inspirantes
+- 🔵 **Dashboard** : Vue d'ensemble globale avec 28 blocs modulaires
+- 🟢 **Sport** : 14 sous-onglets pour suivi d'entraînement complet
+- 🔴 **Quests** : Système de quêtes quotidiennes (QuietQuest)
+- 🟠 **Apprentissage** : Gestion matières, sessions, progression
+- 🟣 **Books** : Bibliothèque de livres avec statistiques avancées
+- 🔵 **Finance** : 6 sous-onglets pour gestion financière complète
+- ⚫ **Settings** : Centre de contrôle et configuration
 
 ---
 
@@ -1347,11 +1468,416 @@ sequenceDiagram
 
 **Interconnexions** :
 - → **Tous les onglets** : Point d'entrée principal
-- ← **Settings** : Configuration images de fond
+- ← **Settings** : Configuration images de fond et citations
+
+**Système de Citations Inspirantes** :
+- **Gestion** : `QuoteManager` avec export/import JSON
+- **Affichage** : Rotation automatique (90s) ou manuelle via interactions
+- **Modes** : Aléatoire (random) ou Fixe (pinned quotes 3x plus fréquentes)
+- **Stockage** : IndexedDB via `quotesService`
+- **Hook** : `useQuoteDisplay` pour logique de sélection et rotation
 
 ---
 
-### 2. 📅 Onglet "Today" (Aujourd'hui)
+### 2. 📊 Onglet "Dashboard" (Tableau de Bord)
+
+**Fichier** : `src/components/tabs/DashboardTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Vue d'ensemble globale** avec 28 blocs modulaires organisés par priorité
+- **Métriques rapides** : Quêtes, Sport, Lecture, Patrimoine
+- **Blocs PRIORITY-MAX** : Quête du jour, Séance sport active, Patrimoine temps réel, Session de lecture
+- **Blocs PRIORITY-HIGH** : Statut apprentissage, Timer actif, Dernière chance, Régularité quotidienne, Budget mensuel
+- **Blocs PRIORITY-MEDIUM** : Progression livre principal, Portfolio actions, Surveillance, Progression hebdomadaire, Performance du jour
+- **Blocs PRIORITY-LOW** : Rythme de lecture, Statistiques rapides, Objectifs DCA, Allocation salaire, Échéances, Progression intelligente, Comparaisons sport/lecture, Performance lecture, Quêtes express, Objectifs loisirs, Matrice de projection, Théorie vs Réalité, Actualités
+
+#### Architecture & Flux de Données
+
+```mermaid
+flowchart TD
+    A[📊 DashboardTab Chargé] --> B[useDashboard Hook]
+    B --> C[Chargement Données Multi-Sources]
+    C --> D[Quests: QuietQuestDB]
+    C --> E[Sport: WorkoutTrackerDB]
+    C --> F[Lecture: BooksDB]
+    C --> G[Finance: FinanceDB]
+    C --> H[Apprentissage: ApprentissageDB]
+    
+    D --> I[Calcul Métriques Globales]
+    E --> I
+    F --> I
+    G --> I
+    H --> I
+    
+    I --> J[Organisation par Priorité]
+    J --> K[Affichage Blocs Modulaires]
+    
+    K --> L[👤 Interaction Utilisateur]
+    L --> M[Action Contextuelle]
+    M --> N[Mise à Jour Source]
+    N --> O[Re-render Optimisé]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style I fill:#10b981,stroke:#fff,color:#fff
+    style L fill:#ec4899,stroke:#fff,color:#fff
+    style N fill:#3b82f6,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **DashboardTab** : Composant principal avec organisation par priorité
+- **useDashboard** : Hook personnalisé pour agrégation multi-sources
+- **28 Blocs modulaires** : Composants spécialisés par domaine (QuestDailyBlock, SportSessionBlock, etc.)
+- **IndexedDB Multi-Sources** : QuietQuestDB, WorkoutTrackerDB, BooksDB, FinanceDB, ApprentissageDB
+
+**Fonctionnalités techniques** :
+1. **Agrégation multi-sources** :
+   - Chargement parallèle depuis 5 bases IndexedDB
+   - Calcul de métriques globales en temps réel
+   - Organisation hiérarchique par priorité (MAX → HIGH → MEDIUM → LOW)
+
+2. **Blocs interactifs** :
+   - Actions contextuelles (toggle quest, save session, add book, etc.)
+   - Rafraîchissement manuel ou automatique
+   - Navigation vers onglets détaillés
+
+3. **Performance** :
+   - Chargement paresseux des blocs non visibles
+   - Mise en cache des calculs coûteux
+   - Debouncing des actions utilisateur
+
+**Interconnexions** :
+- → **Quests** : Validation quêtes, création express
+- → **Sport** : Sauvegarde séances, navigation Today
+- → **Books** : Ajout livres, sessions de lecture
+- → **Finance** : Patrimoine temps réel, portfolio
+- → **Apprentissage** : Statut actif, timer
+
+---
+
+### 3. 🎯 Onglet "Quests" (Quêtes)
+
+**Fichier** : `src/components/tabs/QuestsTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Gestion complète des quêtes** : Création, édition, suppression, validation
+- **3 vues principales** : Aujourd'hui, Semaine, Statistiques
+- **Système de catégories** : Sport, Lecture, Finance, Apprentissage, Santé, Social, etc.
+- **Types de quêtes** : Récurrentes (jours spécifiques) ou Exceptionnelles (date unique)
+- **Système XP** : Calcul automatique basé sur difficulté, durée, récurrence
+- **Filtres avancés** : Catégorie, difficulté, jour, statut actif/inactif
+- **Tri multi-colonnes** : Nom, catégorie, difficulté, durée, XP, récurrence
+- **Sélection multiple** : Actions groupées (activer/désactiver, supprimer)
+- **Drag & drop** : Réorganisation manuelle de l'ordre
+- **Export/Import JSON** : Sauvegarde et restauration complète
+
+#### Architecture & Flux de Données
+
+```mermaid
+flowchart TD
+    A[🎯 QuestsTab Chargé] --> B[Chargement QuietQuestDB]
+    B --> C[Affichage Vue Sélectionnée]
+    C --> D1[📅 Today View]
+    C --> D2[📆 Week View]
+    C --> D3[📊 Stats View]
+    
+    D1 --> E[Validation Quête]
+    D2 --> E
+    D3 --> F[Analyse Statistiques]
+    
+    E --> G[updateQuestValidation]
+    G --> H[Transaction IndexedDB]
+    H --> I[Calcul XP + Stats]
+    I --> J[Re-render Optimisé]
+    
+    K[👤 Création Quête] --> L[QuestForm]
+    L --> M[Validation Données]
+    M --> N[addQuest / updateQuest]
+    N --> H
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style E fill:#ec4899,stroke:#fff,color:#fff
+    style H fill:#10b981,stroke:#fff,color:#fff
+    style I fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **QuestsTab** : Composant principal avec navigation 3 vues
+- **QuestsTodayView** : Affichage quêtes du jour avec validation
+- **QuestsWeekView** : Vue hebdomadaire avec validation par jour
+- **QuestsStatsView** : Graphiques et statistiques (Recharts)
+- **QuietQuestDB** : IndexedDB v1 (object stores: `quests`, `validations`, `stats`)
+
+**Fonctionnalités techniques** :
+1. **Gestion des quêtes** :
+   - CRUD complet avec validation de formulaire
+   - Types récurrents (jours de la semaine) ou exceptionnels (date unique)
+   - Système de catégories extensible
+   - Calcul XP automatique : `difficulté × durée × (récurrence ? 1.5 : 1)`
+
+2. **Validation et suivi** :
+   - Validation par date avec historique
+   - Calcul automatique de statistiques (taux de complétion, XP total, streaks)
+   - Export/Import JSON pour sauvegarde
+
+3. **Interface utilisateur** :
+   - Filtres multi-critères avec recherche textuelle
+   - Tri multi-colonnes avec indicateurs visuels
+   - Sélection multiple pour actions groupées
+   - Drag & drop pour réorganisation
+
+**Interconnexions** :
+- → **Dashboard** : Affichage quête du jour, dernière chance
+- ← **Settings** : Export/Import données quêtes
+
+---
+
+### 4. 📚 Onglet "Apprentissage" (Learning)
+
+**Fichier** : `src/components/tabs/ApprentissageTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **3 sous-onglets** : Matières, Sessions, Trophées
+- **Gestion des matières** : Création, édition, suppression, protocoles personnalisés
+- **Système de sessions** : Timer Pomodoro, suivi temps réel, historique complet
+- **Planificateur hebdomadaire** : Organisation sessions par jour, objectifs quotidiens
+- **Système de trophées** : Récompenses basées sur objectifs, streaks, temps total
+- **Entrée manuelle** : Ajout de sessions passées
+- **Statistiques avancées** : Temps total, moyenne par matière, streaks, objectifs
+
+#### Architecture & Flux de Données
+
+```mermaid
+flowchart TD
+    A[📚 ApprentissageTab Chargé] --> B[Navigation Sous-Onglets]
+    B --> C1[📖 Matières View]
+    B --> C2[⏱️ Sessions View]
+    B --> C3[🏆 Trophées View]
+    
+    C1 --> D[Gestion Matières]
+    D --> E[addSubject / updateSubject / deleteSubject]
+    E --> F[ApprentissageDB: subjects]
+    
+    C2 --> G[Timer Pomodoro]
+    G --> H[startSession / pauseSession / stopSession]
+    H --> I[ApprentissageDB: sessions]
+    I --> J[Calcul Statistiques]
+    
+    C2 --> K[Planificateur Hebdomadaire]
+    K --> L[addPlannedSession]
+    L --> I
+    
+    C3 --> M[Calcul Trophées]
+    M --> N[Affichage Récompenses]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style G fill:#ec4899,stroke:#fff,color:#fff
+    style I fill:#10b981,stroke:#fff,color:#fff
+    style J fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **ApprentissageTab** : Composant principal avec lazy loading (Suspense)
+- **MatièresView** : Gestion des matières et protocoles
+- **SessionsView** : Timer, historique, planificateur
+- **TrophéesView** : Affichage des récompenses
+- **ApprentissageDB** : IndexedDB v1 (object stores: `subjects`, `sessions`, `timer`, `planner`)
+
+**Fonctionnalités techniques** :
+1. **Gestion des matières** :
+   - CRUD complet avec protocoles personnalisés
+   - Système de catégories (apprentissage, lecture, etc.)
+   - Undo/Redo pour actions destructives
+
+2. **Système de sessions** :
+   - Timer Pomodoro avec pauses automatiques
+   - Mode silencieux (sans notifications)
+   - Ajustement temps en cours de session
+   - Historique complet avec filtres
+
+3. **Planificateur hebdomadaire** :
+   - Organisation par jour de la semaine
+   - Objectifs quotidiens en minutes
+   - Mode compact pour vue d'ensemble
+   - Navigation semaines précédentes/suivantes
+
+4. **Optimisations** :
+   - Code splitting avec lazy loading (React.lazy + Suspense)
+   - Chargement paresseux des graphiques (Recharts)
+   - Debouncing pour ajustements timer
+
+**Interconnexions** :
+- → **Dashboard** : Statut apprentissage, timer actif
+- ← **Settings** : Export/Import données apprentissage
+
+---
+
+### 5. 📖 Onglet "Books" (Livres)
+
+**Fichier** : `src/components/tabs/BooksTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **Gestion bibliothèque complète** : Ajout, édition, suppression, import/export
+- **Statuts de lecture** : En cours, Terminé, À lire, Abandonné, En pause
+- **Sessions de lecture** : Suivi pages lues, vitesse (pages/heure), notes
+- **Galerie 3D** : Affichage immersif avec couvertures (WebGL/Three.js)
+- **Statistiques avancées** : Temps total, vitesse moyenne, progression, objectifs
+- **Filtres et recherche** : Par genre, année, score, statut, recherche textuelle
+- **Tri multi-critères** : Récent, titre, auteur, pages, score
+- **Gestion couvertures** : Upload, compression WebP, stockage IndexedDB
+
+#### Architecture & Flux de Données
+
+```mermaid
+flowchart TD
+    A[📖 BooksTab Chargé] --> B[Chargement BooksDB]
+    B --> C[Affichage Bibliothèque]
+    C --> D[Galerie 3D / Liste]
+    
+    E[👤 Ajout Livre] --> F[BookForm]
+    F --> G[Upload Couverture]
+    G --> H[Compression WebP]
+    H --> I[Stockage IndexedDB]
+    I --> J[addBook]
+    J --> K[BooksDB: books]
+    
+    L[📖 Session Lecture] --> M[SessionForm]
+    M --> N[Enregistrement Pages]
+    N --> O[Calcul Vitesse]
+    O --> P[updateBookProgress]
+    P --> K
+    
+    Q[📊 Statistiques] --> R[Calcul Métriques]
+    R --> S[Affichage Graphiques]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style L fill:#ec4899,stroke:#fff,color:#fff
+    style K fill:#10b981,stroke:#fff,color:#fff
+    style R fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **BooksTab** : Composant principal avec toggle 3D/Liste
+- **BookCard** : Carte individuelle avec actions (éditer, supprimer, session)
+- **BooksDB** : IndexedDB v1 (object stores: `books`, `sessions`, `covers`)
+
+**Fonctionnalités techniques** :
+1. **Gestion bibliothèque** :
+   - CRUD complet avec validation
+   - Import/Export JSON pour sauvegarde
+   - Gestion multi-statuts avec transitions
+
+2. **Sessions de lecture** :
+   - Enregistrement pages lues par date
+   - Calcul automatique vitesse (pages/heure)
+   - Notes et commentaires par session
+   - Historique complet avec graphiques
+
+3. **Galerie 3D** :
+   - Affichage immersif avec Three.js
+   - Chargement paresseux des couvertures
+   - Navigation fluide (rotation, zoom)
+
+4. **Optimisations** :
+   - Compression WebP pour couvertures (-70% taille)
+   - Chargement batch des couvertures (8 à la fois)
+   - Debouncing pour filtres et recherche
+   - Cache IndexedDB pour couvertures
+
+**Interconnexions** :
+- → **Dashboard** : Progression livre principal, sessions de lecture
+- ← **Settings** : Export/Import données livres
+
+---
+
+### 6. 💰 Onglet "Finance" (Finance)
+
+**Fichier** : `src/components/tabs/FinanceTab.jsx`
+
+#### Fonctionnalités Principales
+
+- **6 sous-onglets** : Bourse, Budget, Investissements, Smart Shopping, Planificateur, Synthèse
+- **Bourse** : Portfolio actions, suivi cours temps réel, alertes, graphiques, export CSV
+- **Budget** : Gestion dépenses, catégories, sous-catégories, recherche, filtres
+- **Investissements** : Or physique, suivi acquisitions, valorisation
+- **Smart Shopping** : Listes intelligentes, optimisation achats
+- **Planificateur** : Planification financière, objectifs, échéances
+- **Synthèse** : Vue d'ensemble complète, métriques globales
+
+#### Architecture & Flux de Données
+
+```mermaid
+flowchart TD
+    A[💰 FinanceTab Chargé] --> B[FinanceProvider Context]
+    B --> C[Navigation Sous-Onglets]
+    C --> D1[📈 Bourse]
+    C --> D2[💰 Budget]
+    C --> D3[🥇 Investissements]
+    C --> D4[🛒 Smart Shopping]
+    C --> D5[📅 Planificateur]
+    C --> D6[📊 Synthèse]
+    
+    D1 --> E[Portfolio Actions]
+    E --> F[API Cours Temps Réel]
+    F --> G[FinanceDB: positions]
+    
+    D2 --> H[Gestion Dépenses]
+    H --> I[FinanceDB: expenses]
+    
+    D3 --> J[Or Physique]
+    J --> K[FinanceDB: gold]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style F fill:#ec4899,stroke:#fff,color:#fff
+    style G fill:#10b981,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **FinanceTab** : Composant principal avec FinanceProvider
+- **BourseSubTab** : Portfolio, graphiques, alertes
+- **BudgetSubTab** : Dépenses, catégories, recherche
+- **InvestissementsSubTab** : Or physique, valorisation
+- **FinanceDB** : IndexedDB v2 (object stores: `positions`, `expenses`, `categories`, `gold`, etc.)
+
+**Fonctionnalités techniques** :
+1. **Bourse** :
+   - Portfolio avec suivi positions
+   - API cours temps réel (Yahoo Finance, Alpha Vantage)
+   - Alertes personnalisées (seuils prix, variations)
+   - Graphiques interactifs (Recharts)
+   - Export CSV pour analyse externe
+
+2. **Budget** :
+   - Gestion dépenses avec catégories hiérarchiques
+   - Recherche et filtres avancés
+   - Statistiques par période (jour, semaine, mois)
+   - Budgets par catégorie avec alertes
+
+3. **Investissements** :
+   - Suivi or physique (acquisitions, valorisation)
+   - Calcul performance automatique
+   - Historique complet
+
+**Interconnexions** :
+- → **Dashboard** : Patrimoine temps réel, portfolio actions, budget mensuel
+- ← **Settings** : Export/Import données finance
+
+---
+
+### 7. 📅 Onglet "Today" (Aujourd'hui)
 
 **Fichier** : `src/components/tabs/TodayTab.jsx`
 
@@ -3472,9 +3998,9 @@ flowchart LR
 
 ---
 
-**✅ CHAPITRE 3 TERMINÉ - Documentation Complète des 14 Onglets**
+**✅ CHAPITRE 3 TERMINÉ - Documentation Complète des 8 Onglets Principaux**
 
-*Tous les onglets ont été documentés avec diagrammes Mermaid interactifs et explications détaillées. La section Interconnexion montre comment les données circulent entre les onglets.*
+*Tous les onglets principaux et leurs sous-onglets ont été documentés avec diagrammes Mermaid interactifs et explications détaillées. La section Interconnexion montre comment les données circulent entre les onglets.*
 
 ---
 
@@ -3736,9 +4262,9 @@ Votre soutien permet de :
 
 ### Technologies & Bibliothèques
 
-- **React** : Framework UI moderne
-- **Vite** : Build tool ultra-rapide
-- **Tailwind CSS** : Utility-first CSS
+- **React 18.2+** : Framework UI moderne avec Hooks, Context API, Suspense
+- **Vite 4.4+** : Build tool ultra-rapide avec HMR <50ms
+- **Tailwind CSS 3.3+** : Utility-first CSS avec PurgeCSS automatique
 - **Recharts** : Visualisation données
 - **MediaPipe** : Détection pose IA
 - **BodyPix** : Segmentation corporelle
@@ -3755,18 +4281,24 @@ Votre soutien permet de :
 
 ## 📝 Conclusion
 
-**Momentum** représente une solution complète et professionnelle pour le suivi d'entraînement personnel. Avec **14 onglets spécialisés**, une **architecture moderne**, des **optimisations avancées**, et une **intégration IA**, l'application offre une expérience utilisateur exceptionnelle.
+**Momentum** représente une solution complète et professionnelle pour le suivi d'entraînement personnel et le développement personnel. Avec **8 onglets principaux** et de nombreux sous-onglets spécialisés, une **architecture moderne**, des **optimisations avancées**, et une **intégration IA**, l'application offre une expérience utilisateur exceptionnelle.
 
 ### Points Forts Récapitulatifs
 
-✅ **14 onglets** couvrant tous les aspects du suivi d'entraînement  
+✅ **8 onglets principaux** avec sous-onglets spécialisés couvrant tous les aspects  
 ✅ **20+ graphiques** interactifs pour visualisation avancée  
 ✅ **Analyse IA** avec MediaPipe et BodyPix  
 ✅ **Intégration Garmin** complète avec synchronisation automatique  
+✅ **Système de quêtes quotidiennes** (QuietQuest) avec gamification  
+✅ **Module d'apprentissage** avec suivi de progression et planificateur  
+✅ **Bibliothèque de livres** avec statistiques avancées et vue 3D  
+✅ **Module financier** complet (bourse, budget, investissements)  
+✅ **Système de citations** avec modes aléatoire/fixe  
+✅ **Boutons gradient premium** unifiés sur toute l'application  
 ✅ **Performance optimale** : Bundle <500KB, FCP <1.5s  
 ✅ **100% Privé** : Toutes données locales, aucune transmission externe  
 ✅ **PWA** : Installation offline, expérience native  
-✅ **Architecture moderne** : React 18+, Vite 5+, IndexedDB  
+✅ **Architecture moderne** : React 18.2+, Vite 4.4+, IndexedDB (8 bases)  
 
 ### Roadmap Future
 
