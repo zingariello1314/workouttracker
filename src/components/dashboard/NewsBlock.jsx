@@ -43,10 +43,17 @@ const NewsBlock = ({ newsData, onRefresh }) => {
 
   const tabs = [
     { id: 'tout', label: 'Tout', count: news.length },
+    { id: 'france', label: 'France', count: news.filter(n => n.category === 'france').length },
+    { id: 'monde', label: 'Monde', count: news.filter(n => n.category === 'monde').length },
     { id: 'bourse', label: 'Bourse', count: news.filter(n => n.category === 'bourse').length },
     { id: 'crypto', label: 'Crypto', count: news.filter(n => n.category === 'crypto').length },
     { id: 'economie', label: 'Économie', count: news.filter(n => n.category === 'economie').length },
-    { id: 'politique', label: 'Politique', count: news.filter(n => n.category === 'politique').length }
+    { id: 'tech', label: 'Tech', count: news.filter(n => n.category === 'tech').length },
+    { id: 'sport', label: 'Sport', count: news.filter(n => n.category === 'sport').length },
+    { id: 'culture', label: 'Culture', count: news.filter(n => n.category === 'culture').length },
+    { id: 'politique', label: 'Politique', count: news.filter(n => n.category === 'politique').length },
+    { id: 'sante', label: 'Santé', count: news.filter(n => n.category === 'sante').length },
+    { id: 'environnement', label: 'Environnement', count: news.filter(n => n.category === 'environnement').length }
   ];
 
   const sortOptions = [
@@ -116,8 +123,8 @@ const NewsBlock = ({ newsData, onRefresh }) => {
               <Newspaper className="w-6 h-6 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white">Actualités Financières</h3>
-              <p className="text-sm text-slate-400 mt-1">Dernières nouvelles des marchés</p>
+              <h3 className="text-xl font-bold text-white">Actualités</h3>
+              <p className="text-sm text-slate-400 mt-1">Dernières nouvelles du monde et de France</p>
             </div>
           </div>
           <button

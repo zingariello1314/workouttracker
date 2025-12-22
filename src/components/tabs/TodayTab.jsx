@@ -712,10 +712,18 @@ const TodayTab = () => {
       <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">
         <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
           {t('today.exercises.title')}
+          {programExercises.length > 0 && (
+            <span className="text-sm text-slate-400">({programExercises.length})</span>
+          )}
         </h3>
-        <div className="space-y-3">
-          {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
-          {programExercises.map((exercise) => {
+        {programExercises.length === 0 && additionalExercises.length === 0 ? (
+          <div className="text-center py-8 text-slate-400">
+            <p>{t('today.exercises.noExercises', 'Aucun exercice prévu pour aujourd\'hui')}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
+            {programExercises.map((exercise) => {
             // Générer la clé appropriée selon le type d'exercice
             let exerciseKey = `${dateStr}_${exercise.id}`;
             
@@ -901,19 +909,19 @@ const TodayTab = () => {
             </div>
           )}
 
-          {/* ✅ NOUVEAU : Bouton pour ajouter un exercice exceptionnel */}
-          <div className="mt-4 pt-4 border-t border-slate-600/50">
-            <button
-              type="button"
-              onClick={() => setShowAddExceptionalModal(true)}
-              className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              {t('today.exercises.addExceptional')}
-            </button>
-          </div>
-          
-          {/* Activités complémentaires */}
+            {/* ✅ NOUVEAU : Bouton pour ajouter un exercice exceptionnel */}
+            <div className="mt-4 pt-4 border-t border-slate-600/50">
+              <button
+                type="button"
+                onClick={() => setShowAddExceptionalModal(true)}
+                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {t('today.exercises.addExceptional')}
+              </button>
+            </div>
+            
+            {/* Activités complémentaires */}
           {workout.complementaryActivity && (
             <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-700/30 to-blue-700/30 rounded-lg border border-purple-500/50 hover:from-purple-700/40 hover:to-blue-700/40 transition-all duration-200">
               <div className="flex-1">
@@ -967,7 +975,8 @@ const TodayTab = () => {
               </div>
             </div>
           )}
-        </div>
+          </div>
+        )}
 
         {/* Boutons de sauvegarde */}
         {hasUnsavedExercises && (
@@ -1000,8 +1009,8 @@ const TodayTab = () => {
         )}
       </div>
 
-      {/* Étirements */}
-      {workout.etirements && (
+      {/* Étirements - Afficher seulement s'il y a des étirements avec contenu */}
+      {workout.etirements && Object.keys(workout.etirements).length > 0 && Object.values(workout.etirements).some(etirement => etirement && etirement.trim().length > 0) && (
         <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">
           <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
             <span className="text-purple-400">🧘‍♂️</span>

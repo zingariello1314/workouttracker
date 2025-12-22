@@ -17,10 +17,27 @@ const envDiagnostics = {
 
 // 🔍 DIAGNOSTIC : Vérifier les variables d'environnement au chargement (une seule fois)
 // Logs réduits - visible uniquement si clés absentes
-if (!envDiagnostics.golpricez || !envDiagnostics.goldApi) {
-  console.warn('%c⚠️ ATTENTION: Les clés API or ne sont PAS chargées !', 'color: #ff9900; font-weight: bold;');
+const newsApiKey = import.meta.env?.VITE_NEWSAPI_API_KEY;
+const guardianApiKey = import.meta.env?.VITE_GUARDIAN_API_KEY;
+const mediastackApiKey = import.meta.env?.VITE_MEDIASTACK_API_KEY;
+const newsdataApiKey = import.meta.env?.VITE_NEWSDATA_API_KEY;
+
+if (!newsApiKey || !guardianApiKey || !mediastackApiKey || !newsdataApiKey) {
+  console.warn('%c⚠️ ATTENTION: Certaines clés API News ne sont PAS chargées !', 'color: #ff9900; font-weight: bold;');
   console.warn('💡 SOLUTION: Vérifiez que le fichier .env existe et redémarrez le serveur avec: npm run dev');
-  console.log('📋 Variables présentes:', envDiagnostics.allEnvKeys.length > 0 ? envDiagnostics.allEnvKeys : 'AUCUNE');
+  console.log('📋 Clés News détectées:', {
+    NEWSAPI: newsApiKey ? `✅ (${newsApiKey.substring(0, 8)}...)` : '❌',
+    GUARDIAN: guardianApiKey ? `✅ (${guardianApiKey.substring(0, 8)}...)` : '❌',
+    MEDIASTACK: mediastackApiKey ? `✅ (${mediastackApiKey.substring(0, 8)}...)` : '❌',
+    NEWSDATA: newsdataApiKey ? `✅ (${newsdataApiKey.substring(0, 8)}...)` : '❌'
+  });
+  console.log('📋 Toutes les variables présentes:', envDiagnostics.allEnvKeys.length > 0 ? envDiagnostics.allEnvKeys : 'AUCUNE');
+  console.log('📋 Variables d\'environnement brutes:', {
+    VITE_NEWSAPI_API_KEY: import.meta.env?.VITE_NEWSAPI_API_KEY ? 'PRESENT' : 'ABSENT',
+    VITE_GUARDIAN_API_KEY: import.meta.env?.VITE_GUARDIAN_API_KEY ? 'PRESENT' : 'ABSENT',
+    VITE_MEDIASTACK_API_KEY: import.meta.env?.VITE_MEDIASTACK_API_KEY ? 'PRESENT' : 'ABSENT',
+    VITE_NEWSDATA_API_KEY: import.meta.env?.VITE_NEWSDATA_API_KEY ? 'PRESENT' : 'ABSENT'
+  });
 }
 
 const API_KEYS = {
@@ -50,13 +67,42 @@ const API_KEYS = {
   
   // CoinCap - Cryptomonnaies (alternative)
   COINCAP: import.meta.env.VITE_COINCAP_API_KEY || null,
+  
+  // ==================== NEWS APIs ====================
+  
+  // NewsAPI.org - Actualités générales et France (PRIORITÉ HAUTE)
+  NEWSAPI: import.meta.env.VITE_NEWSAPI_API_KEY || null,
+  
+  // Guardian API - Actualités monde (fallback)
+  GUARDIAN: import.meta.env.VITE_GUARDIAN_API_KEY || null,
+  
+  // MediaStack - Actualités alternative
+  MEDIASTACK: import.meta.env.VITE_MEDIASTACK_API_KEY || null,
+  
+  // NewsData.io - Actualités alternative
+  NEWSDATA: import.meta.env.VITE_NEWSDATA_API_KEY || null,
 };
 
 /**
  * Vérifie si une clé API est disponible
  */
 export const hasApiKey = (keyName) => {
-  return API_KEYS[keyName] !== null && API_KEYS[keyName] !== undefined;
+  const key = API_KEYS[keyName];
+  const hasKey = key !== null && key !== undefined && key !== '';
+  
+  // Diagnostic détaillé en cas d'absence
+  if (!hasKey && (keyName === 'NEWSAPI' || keyName === 'GUARDIAN' || keyName === 'MEDIASTACK' || keyName === 'NEWSDATA')) {
+    console.debug(`[apiKeys] ${keyName}:`, {
+      value: key,
+      isNull: key === null,
+      isUndefined: key === undefined,
+      isEmpty: key === '',
+      envVar: `VITE_${keyName}_API_KEY`,
+      envValue: import.meta.env?.[`VITE_${keyName}_API_KEY`] || 'NOT_FOUND'
+    });
+  }
+  
+  return hasKey;
 };
 
 /**

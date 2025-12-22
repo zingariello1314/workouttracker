@@ -26,12 +26,18 @@
  * @version 3.0.0 - Phase 7 FINALE (14/14 modules) - 100% COMPLET ✅
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { 
   Eye, TrendingUp, TrendingDown, Plus, Upload, X, AlertTriangle, Bell,
   Newspaper, ThumbsUp, ThumbsDown, Lightbulb, Zap, ExternalLink
 } from 'lucide-react';
+import { useFinance } from '../../context/FinanceContext';
+import { getAllMarketIndices, getCommoditiesAndCrypto } from '../../services/finance/marketDataService';
+import { financeQuotaManager } from '../../services/finance/financeQuotaManager';
+import logger from '../../utils/logger';
+
+const log = logger.module('SurveillanceBlock');
 
 /**
  * SurveillanceBlock - Composant principal de surveillance des marchés
@@ -41,6 +47,18 @@ import {
  * @param {Function} props.onRefresh - Callback pour rafraîchir les données
  */
 const SurveillanceBlock = ({ onRefresh = () => {} }) => {
+  // ============================================================================
+  // CONNEXION AU FINANCE CONTEXT
+  // ============================================================================
+  
+  const { 
+    portfolio, 
+    loading: financeLoading, 
+    refreshing: financeRefreshing,
+    refreshYahooData,
+    loadingStates 
+  } = useFinance();
+  
   // ============================================================================
   // ÉTATS PRINCIPAUX
   // ============================================================================
@@ -72,98 +90,262 @@ const SurveillanceBlock = ({ onRefresh = () => {} }) => {
   const [expandedEconomic, setExpandedEconomic] = useState(false);
   
   // États pour les corrélations
-  const [selectedAssets, setSelectedAssets] = useState(['BTC', 'ETH', 'NVDA', 'TSLA', 'OR']);
+  const [selectedAssets, setSelectedAssets] = useState([]);
   const [showAssetSelector, setShowAssetSelector] = useState(false);
   
   // ============================================================================
-  // DONNÉES MOCK - MODULE 1: HEADER PREMIUM
+  // MAPPING DES DONNÉES DU PORTFOLIO VERS FORMAT SURVEILLANCE
   // ============================================================================
   
-  const [stocks, setStocks] = useState([
-    {
-      name: 'Apple',
-      ticker: 'AAPL',
-      price: '182.52',
-      change: '+2.3%',
-      signal: 'ACHAT',
-      logo: null
-    },
-    {
-      name: 'Tesla',
-      ticker: 'TSLA',
-      price: '248.50',
-      change: '-1.2%',
-      signal: 'ATTENTE',
-      logo: null
-    },
-    {
-      name: 'NVIDIA',
-      ticker: 'NVDA',
-      price: '495.22',
-      change: '+5.8%',
-      signal: 'ACHAT FORT',
-      logo: null
+  /**
+   * Normalise la variation (peut être un nombre ou une chaîne)
+   * @param {number|string} variation - Variation en nombre ou chaîne
+   * @returns {string} Variation formatée en chaîne avec %
+   */
+  const normalizeVariation = useCallback((variation) => {
+    if (variation === null || variation === undefined) return '0.0%';
+    
+    // Si c'est déjà une chaîne, vérifier si elle contient %
+    if (typeof variation === 'string') {
+      return variation.includes('%') ? variation : `${variation}%`;
     }
-  ]);
+    
+    // Si c'est un nombre, le formater
+    if (typeof variation === 'number') {
+      const sign = variation >= 0 ? '+' : '';
+      return `${sign}${variation.toFixed(2)}%`;
+    }
+    
+    return '0.0%';
+  }, []);
+  
+  /**
+   * Extrait la valeur numérique de la variation
+   * @param {number|string} variation - Variation en nombre ou chaîne
+   * @returns {number} Valeur numérique
+   */
+  const getVariationNumber = useCallback((variation) => {
+    if (variation === null || variation === undefined) return 0;
+    
+    // Si c'est un nombre, le retourner directement
+    if (typeof variation === 'number') {
+      return variation;
+    }
+    
+    // Si c'est une chaîne, extraire le nombre
+    if (typeof variation === 'string') {
+      const cleaned = variation.replace('%', '').replace('+', '').trim();
+      return parseFloat(cleaned) || 0;
+    }
+    
+    return 0;
+  }, []);
+  
+  /**
+   * Convertit une position du portfolio en format stock pour SurveillanceBlock
+   */
+  const mapPositionToStock = useCallback((position) => {
+    const yahooData = position.yahooData || {};
+    const calculs = position.calculs || {};
+    
+    // Déterminer le signal basé sur les calculs
+    let signal = 'ATTENTE';
+    if (calculs.plusValuePourcent > 5) {
+      signal = 'ACHAT FORT';
+    } else if (calculs.plusValuePourcent > 0) {
+      signal = 'ACHAT';
+    } else if (calculs.plusValuePourcent < -5) {
+      signal = 'VENTE';
+    }
+    
+    return {
+      id: position.id,
+      name: position.entreprise || position.ticker,
+      ticker: position.ticker,
+      price: yahooData.prixActuel ? yahooData.prixActuel.toFixed(2) : position.prixEntree.toFixed(2),
+      change: normalizeVariation(yahooData.variationJour),
+      signal: signal,
+      logo: null,
+      quantite: position.quantite,
+      prixEntree: position.prixEntree,
+      plusValueEuro: calculs.plusValueEuro || 0,
+      plusValuePourcent: calculs.plusValuePourcent || 0,
+      valeurPosition: calculs.valeurPosition || 0
+    };
+  }, [normalizeVariation]);
+  
+  /**
+   * Stocks surveillés depuis le portfolio
+   */
+  const stocks = useMemo(() => {
+    if (!portfolio || portfolio.length === 0) return [];
+    return portfolio.map(mapPositionToStock);
+  }, [portfolio, mapPositionToStock]);
+  
+  /**
+   * Met à jour selectedAssets avec les tickers du portfolio
+   */
+  useEffect(() => {
+    if (portfolio && portfolio.length > 0) {
+      const tickers = portfolio.map(p => p.ticker).slice(0, 5);
+      setSelectedAssets(prev => {
+        // Garder les sélections existantes si elles sont dans le portfolio
+        const existing = prev.filter(t => portfolio.some(p => p.ticker === t));
+        return existing.length > 0 ? existing : tickers;
+      });
+    }
+  }, [portfolio]);
   
   // ============================================================================
-  // DONNÉES MOCK - MODULE 2: MARKET STATUS
+  // MARKET STATUS - DONNÉES RÉELLES
   // ============================================================================
   
-  const marketIndices = [
+  const [marketIndices, setMarketIndices] = useState([
     { name: 'CAC 40', value: '7,842.50', change: '+1.2%', trend: 'up' },
     { name: 'S&P 500', value: '4,783.45', change: '+0.8%', trend: 'up' },
     { name: 'NASDAQ', value: '15,310.97', change: '+1.5%', trend: 'up' },
     { name: 'DOW JONES', value: '37,545.33', change: '+0.3%', trend: 'up' }
-  ];
+  ]);
   
-  const commoditiesAndCrypto = [
+  const [commoditiesAndCrypto, setCommoditiesAndCrypto] = useState([
     { name: 'OR', value: '2,045.30 $', change: '+0.5%', trend: 'up', type: 'commodity' },
     { name: 'PÉTROLE', value: '78.45 $', change: '-1.2%', trend: 'down', type: 'commodity' },
     { name: 'BTC', value: '43,250 $', change: '+3.2%', trend: 'up', type: 'crypto' },
     { name: 'ETH', value: '2,285 $', change: '+2.8%', trend: 'up', type: 'crypto' }
-  ];
-  
-  // ============================================================================
-  // DONNÉES MOCK - MODULE 4: ALERTS
-  // ============================================================================
-  
-  const [alerts] = useState([
-    {
-      id: 1,
-      ticker: 'AAPL',
-      type: 'price',
-      condition: 'above',
-      targetPrice: '185.00',
-      currentPrice: '182.52',
-      status: 'active',
-      message: 'Prix cible: 185.00 $'
-    },
-    {
-      id: 2,
-      ticker: 'TSLA',
-      type: 'change',
-      condition: 'drop',
-      threshold: '-5%',
-      currentChange: '-1.2%',
-      status: 'active',
-      message: 'Alerte baisse > -5%'
-    },
-    {
-      id: 3,
-      ticker: 'NVDA',
-      type: 'volume',
-      condition: 'spike',
-      status: 'triggered',
-      message: 'Volume anormal détecté'
-    }
   ]);
   
+  const [loadingMarketData, setLoadingMarketData] = useState(false);
+  
+  /**
+   * Charge les données de marché (indices, commodities, crypto)
+   * Utilise le cache intelligent pour éviter les appels inutiles
+   */
+  const loadMarketData = useCallback(async (forceRefresh = false) => {
+    // Ne pas charger si déjà en cours
+    if (loadingMarketData && !forceRefresh) return;
+    
+    setLoadingMarketData(true);
+    
+    try {
+      // Charger indices et commodities/crypto en parallèle
+      const [indices, commodities] = await Promise.allSettled([
+        getAllMarketIndices(),
+        getCommoditiesAndCrypto()
+      ]);
+      
+      // Mettre à jour les indices même si certains sont null
+      if (indices.status === 'fulfilled' && indices.value) {
+        const validIndices = indices.value.filter(idx => idx && idx.name);
+        if (validIndices.length > 0) {
+          const mappedIndices = validIndices.map(idx => ({
+            name: idx.name,
+            value: idx.value || '0.00',
+            change: idx.change || '0.0%',
+            trend: idx.trend || 'up'
+          }));
+          setMarketIndices(mappedIndices);
+        }
+      }
+      
+      // Mettre à jour les commodities/crypto même si certains sont null
+      if (commodities.status === 'fulfilled' && commodities.value) {
+        const validCommodities = commodities.value.filter(item => item && item.name);
+        if (validCommodities.length > 0) {
+          setCommoditiesAndCrypto(validCommodities);
+        }
+      }
+    } catch (error) {
+      // Ne logger qu'en debug pour éviter spam
+      if (log.debug) {
+        log.debug('Error loading market data:', error);
+      }
+      // Garder les données mock en cas d'erreur
+    } finally {
+      setLoadingMarketData(false);
+    }
+  }, [loadingMarketData]);
+  
+  /**
+   * Charge les données de marché au montage et périodiquement
+   */
+  useEffect(() => {
+    let mounted = true;
+    
+    // Charger immédiatement
+    loadMarketData();
+    
+    // Recharger toutes les 5 minutes (TTL du cache)
+    const interval = setInterval(() => {
+      if (mounted) {
+        loadMarketData();
+      }
+    }, 5 * 60 * 1000);
+    
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [loadMarketData]);
+  
   // ============================================================================
-  // DONNÉES MOCK - MODULE 5: NEWS FEED
+  // ALERTS GÉNÉRÉES DEPUIS LE PORTFOLIO
   // ============================================================================
   
-  const [newsItems] = useState([
+  /**
+   * Génère des alertes basées sur le portfolio
+   */
+  const alerts = useMemo(() => {
+    if (!portfolio || portfolio.length === 0) return [];
+    
+    const generatedAlerts = [];
+    
+    portfolio.forEach((position) => {
+      const yahooData = position.yahooData || {};
+      const calculs = position.calculs || {};
+      const currentPrice = yahooData.prixActuel || position.prixEntree;
+      const variation = yahooData.variationJour;
+      const variationNum = getVariationNumber(variation);
+      const variationStr = normalizeVariation(variation);
+      
+      // Alerte si perte importante (> -5%)
+      if (calculs.plusValuePourcent < -5) {
+        generatedAlerts.push({
+          id: `alert-loss-${position.id}`,
+          ticker: position.ticker,
+          type: 'change',
+          condition: 'drop',
+          threshold: '-5%',
+          currentChange: `${calculs.plusValuePourcent.toFixed(2)}%`,
+          status: 'active',
+          message: `Perte importante: ${calculs.plusValuePourcent.toFixed(2)}%`
+        });
+      }
+      
+      // Alerte si variation journalière importante (> 5% ou < -5%)
+      if (variationNum > 5 || variationNum < -5) {
+        generatedAlerts.push({
+          id: `alert-volatility-${position.id}`,
+          ticker: position.ticker,
+          type: 'change',
+          condition: variationNum > 0 ? 'spike' : 'drop',
+          threshold: variationNum > 0 ? '+5%' : '-5%',
+          currentChange: variationStr,
+          status: 'active',
+          message: `Volatilité importante: ${variationStr}`
+        });
+      }
+    });
+    
+    return generatedAlerts.slice(0, 10); // Limiter à 10 alertes
+  }, [portfolio, getVariationNumber, normalizeVariation]);
+  
+  // ============================================================================
+  // NEWS FEED - CONNEXION AVEC NEWSBLOCK
+  // ============================================================================
+  
+  // Les news sont gérées par NewsBlock via useDashboard
+  // On peut réutiliser les données si disponibles, sinon fallback mock
+  const [newsItems, setNewsItems] = useState([
     {
       id: 1,
       title: 'La Fed maintient ses taux directeurs inchangés',
@@ -206,42 +388,78 @@ const SurveillanceBlock = ({ onRefresh = () => {} }) => {
     }
   ]);
   
+  // TODO: Connecter avec NewsBlock si données disponibles
+  // Les news sont déjà chargées par NewsBlock dans le dashboard
+  // On pourrait partager les données via un contexte ou props
+  
   // ============================================================================
-  // DONNÉES MOCK - MODULE 6: AI RECOMMENDATIONS
+  // RECOMMANDATIONS IA GÉNÉRÉES DEPUIS LE PORTFOLIO
   // ============================================================================
   
-  const [aiRecommendations] = useState([
-    {
-      id: 1,
-      type: 'buy',
-      ticker: 'MSFT',
-      confidence: 85,
-      reason: 'Forte croissance du cloud Azure',
-      targetPrice: '420.00',
-      currentPrice: '385.50',
-      potential: '+8.9%'
-    },
-    {
-      id: 2,
-      type: 'hold',
-      ticker: 'AAPL',
-      confidence: 72,
-      reason: 'Consolidation après résultats',
-      targetPrice: '190.00',
-      currentPrice: '182.52',
-      potential: '+4.1%'
-    },
-    {
-      id: 3,
-      type: 'sell',
-      ticker: 'META',
-      confidence: 68,
-      reason: 'Surévaluation technique',
-      targetPrice: '320.00',
-      currentPrice: '345.80',
-      potential: '-7.5%'
-    }
-  ]);
+  /**
+   * Génère des recommandations basées sur les performances du portfolio
+   */
+  const aiRecommendations = useMemo(() => {
+    if (!portfolio || portfolio.length === 0) return [];
+    
+    return portfolio
+      .map((position) => {
+        const calculs = position.calculs || {};
+        const yahooData = position.yahooData || {};
+        const currentPrice = yahooData.prixActuel || position.prixEntree;
+        
+        let type = 'hold';
+        let confidence = 50;
+        let reason = '';
+        let targetPrice = currentPrice;
+        let potential = '0.0%';
+        
+        // Logique de recommandation basée sur la performance
+        if (calculs.plusValuePourcent > 10) {
+          type = 'sell';
+          confidence = 75;
+          reason = 'Prise de bénéfices recommandée';
+          targetPrice = (currentPrice * 0.95).toFixed(2);
+          potential = '-5.0%';
+        } else if (calculs.plusValuePourcent > 5) {
+          type = 'hold';
+          confidence = 70;
+          reason = 'Performance positive, maintenir';
+          targetPrice = (currentPrice * 1.05).toFixed(2);
+          potential = '+5.0%';
+        } else if (calculs.plusValuePourcent < -10) {
+          type = 'sell';
+          confidence = 80;
+          reason = 'Perte importante, considérer sortie';
+          targetPrice = (currentPrice * 0.90).toFixed(2);
+          potential = '-10.0%';
+        } else if (calculs.plusValuePourcent < -5) {
+          type = 'hold';
+          confidence = 60;
+          reason = 'Attendre rebond technique';
+          targetPrice = (currentPrice * 1.10).toFixed(2);
+          potential = '+10.0%';
+        } else {
+          type = 'hold';
+          confidence = 65;
+          reason = 'Position stable';
+          targetPrice = (currentPrice * 1.03).toFixed(2);
+          potential = '+3.0%';
+        }
+        
+        return {
+          id: `rec-${position.id}`,
+          type,
+          ticker: position.ticker,
+          confidence,
+          reason,
+          targetPrice,
+          currentPrice: currentPrice.toFixed(2),
+          potential
+        };
+      })
+      .slice(0, 5); // Limiter à 5 recommandations
+  }, [portfolio]);
   
   // ============================================================================
   // DONNÉES MOCK - MODULE 7: ECONOMIC CALENDAR
@@ -348,39 +566,108 @@ const SurveillanceBlock = ({ onRefresh = () => {} }) => {
   ]);
   
   // ============================================================================
-  // DONNÉES MOCK - MODULE 8: PERFORMERS
+  // PERFORMERS DEPUIS LE PORTFOLIO
   // ============================================================================
   
-  const [topPerformers] = useState([
-    { symbol: 'NVDA', name: 'NVIDIA', change: '+12.5%', price: '495.22' },
-    { symbol: 'BTC', name: 'Bitcoin', change: '+8.3%', price: '43,250' },
-    { symbol: 'ETH', name: 'Ethereum', change: '+6.7%', price: '2,285' },
-    { symbol: 'TSLA', name: 'Tesla', change: '+5.2%', price: '248.50' },
-    { symbol: 'AAPL', name: 'Apple', change: '+4.1%', price: '182.52' }
-  ]);
+  /**
+   * Top performers du portfolio
+   */
+  const topPerformers = useMemo(() => {
+    if (!portfolio || portfolio.length === 0) return [];
+    
+    return portfolio
+      .filter(p => {
+        const calculs = p.calculs || {};
+        return calculs.plusValuePourcent > 0;
+      })
+      .sort((a, b) => {
+        const calcA = a.calculs?.plusValuePourcent || 0;
+        const calcB = b.calculs?.plusValuePourcent || 0;
+        return calcB - calcA;
+      })
+      .slice(0, 5)
+      .map(p => {
+        const calculs = p.calculs || {};
+        const yahooData = p.yahooData || {};
+        const price = yahooData.prixActuel || p.prixEntree;
+        return {
+          symbol: p.ticker,
+          name: p.entreprise || p.ticker,
+          change: `+${calculs.plusValuePourcent.toFixed(2)}%`,
+          price: price.toFixed(2)
+        };
+      });
+  }, [portfolio]);
   
-  const [worstPerformers] = useState([
-    { symbol: 'META', name: 'Meta', change: '-8.2%', price: '345.80' },
-    { symbol: 'NFLX', name: 'Netflix', change: '-5.4%', price: '428.30' },
-    { symbol: 'AMZN', name: 'Amazon', change: '-3.8%', price: '152.45' },
-    { symbol: 'GOOGL', name: 'Google', change: '-2.9%', price: '138.20' },
-    { symbol: 'MSFT', name: 'Microsoft', change: '-1.5%', price: '385.50' }
-  ]);
+  /**
+   * Worst performers du portfolio
+   */
+  const worstPerformers = useMemo(() => {
+    if (!portfolio || portfolio.length === 0) return [];
+    
+    return portfolio
+      .filter(p => {
+        const calculs = p.calculs || {};
+        return calculs.plusValuePourcent < 0;
+      })
+      .sort((a, b) => {
+        const calcA = a.calculs?.plusValuePourcent || 0;
+        const calcB = b.calculs?.plusValuePourcent || 0;
+        return calcA - calcB; // Tri croissant (plus négatif en premier)
+      })
+      .slice(0, 5)
+      .map(p => {
+        const calculs = p.calculs || {};
+        const yahooData = p.yahooData || {};
+        const price = yahooData.prixActuel || p.prixEntree;
+        return {
+          symbol: p.ticker,
+          name: p.entreprise || p.ticker,
+          change: `${calculs.plusValuePourcent.toFixed(2)}%`,
+          price: price.toFixed(2)
+        };
+      });
+  }, [portfolio]);
   
   // ============================================================================
-  // DONNÉES MOCK - MODULE 10: CORRELATION LAB
+  // CORRELATION LAB - ASSETS DEPUIS LE PORTFOLIO
   // ============================================================================
   
-  const [correlationAssets, setCorrelationAssets] = useState([
-    { symbol: 'BTC', name: 'Bitcoin', color: '#F7931A', yourHolding: '0.5 BTC', performance7d: '+8.3%' },
-    { symbol: 'ETH', name: 'Ethereum', color: '#627EEA', yourHolding: '5 ETH', performance7d: '+6.7%' },
-    { symbol: 'NVDA', name: 'NVIDIA', color: '#76B900', yourHolding: '10 actions', performance7d: '+12.5%' },
-    { symbol: 'TSLA', name: 'Tesla', color: '#E82127', yourHolding: '5 actions', performance7d: '+5.2%' },
-    { symbol: 'AAPL', name: 'Apple', color: '#A2AAAD', yourHolding: '15 actions', performance7d: '+4.1%' },
-    { symbol: 'OR', name: 'Or', color: '#FFD700', yourHolding: '50g', performance7d: '+0.5%' },
-    { symbol: 'SOL', name: 'Solana', color: '#14F195', yourHolding: '100 SOL', performance7d: '+7.2%' },
-    { symbol: 'MSFT', name: 'Microsoft', color: '#00A4EF', yourHolding: '8 actions', performance7d: '-1.5%' }
-  ]);
+  /**
+   * Assets pour le lab de corrélation depuis le portfolio
+   */
+  const correlationAssets = useMemo(() => {
+    if (!portfolio || portfolio.length === 0) return [];
+    
+    // Couleurs par défaut pour différents types d'actifs
+    const getColor = (ticker) => {
+      const colors = {
+        'BTC': '#F7931A',
+        'ETH': '#627EEA',
+        'SOL': '#14F195',
+        'NVDA': '#76B900',
+        'TSLA': '#E82127',
+        'AAPL': '#A2AAAD',
+        'MSFT': '#00A4EF',
+        'OR': '#FFD700'
+      };
+      return colors[ticker] || '#6366f1';
+    };
+    
+    return portfolio.map(p => {
+      const calculs = p.calculs || {};
+      const yahooData = p.yahooData || {};
+      const variation = normalizeVariation(yahooData.variationJour);
+      
+      return {
+        symbol: p.ticker,
+        name: p.entreprise || p.ticker,
+        color: getColor(p.ticker),
+        yourHolding: `${p.quantite} ${p.ticker}`,
+        performance7d: variation // Utiliser variation jour comme approximation
+      };
+    });
+  }, [portfolio, normalizeVariation]);
   
   const correlationMatrix = useMemo(() => ({
     'btc_eth': 0.85,
@@ -631,6 +918,26 @@ const SurveillanceBlock = ({ onRefresh = () => {} }) => {
   // ============================================================================
   
   /**
+   * Handler pour rafraîchir les données via FinanceContext
+   * Rafraîchit aussi les données de marché
+   */
+  const handleRefresh = useCallback(async () => {
+    try {
+      // Rafraîchir portfolio (priorité haute)
+      await refreshYahooData();
+      
+      // Rafraîchir données de marché (priorité moyenne)
+      await loadMarketData();
+      
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Error refreshing finance data:', error);
+    }
+  }, [refreshYahooData, loadMarketData, onRefresh]);
+  
+  /**
    * Calcule le nombre total d'actions surveillées
    * @returns {number} Nombre d'actions
    */
@@ -765,11 +1072,14 @@ const SurveillanceBlock = ({ onRefresh = () => {} }) => {
   
   /**
    * Supprime une action de la liste
+   * Note: Cette fonction est désactivée car les stocks viennent maintenant du portfolio Finance
    * @callback
    * @param {string} ticker - Ticker de l'action à supprimer
    */
   const handleRemoveStock = useCallback((ticker) => {
-    setStocks(prev => prev.filter(stock => stock.ticker !== ticker));
+    // Les stocks sont maintenant gérés par le FinanceContext
+    // Pour supprimer, il faudrait utiliser deletePosition du contexte
+    console.warn('handleRemoveStock: Les stocks sont maintenant gérés par le FinanceContext. Utilisez deletePosition du contexte Finance.');
   }, []);
   
   /**

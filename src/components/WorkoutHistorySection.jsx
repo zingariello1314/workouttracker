@@ -17,7 +17,7 @@ const WorkoutHistorySection = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [collapsedDays, setCollapsedDays] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
-  const { data, updateReps, getDateStr, getDayName, getCurrentData, updateTempExerciseData, saveExerciseChanges, updateTempStretchData, saveStretchChanges } = useWorkout();
+  const { data, updateReps, getDateStr, getDayName, getCurrentData, updateTempExerciseData, saveExerciseChanges, updateTempStretchData, saveStretchChanges, getTodayWorkout } = useWorkout();
 
   // Ordre chronologique des jours
   const daysOrder = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -338,7 +338,21 @@ const WorkoutHistorySection = () => {
 
     daysOrder.forEach(day => {
       const dayKey = dayMapping[day];
-      const dayWorkout = workoutProgram[dayKey];
+      // ✅ Utiliser getTodayWorkout pour obtenir le workout du jour (inclut le programme actif)
+      // Utiliser une date représentative (le prochain jour de ce type)
+      const today = new Date();
+      const dayIndex = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'].indexOf(dayKey);
+      const nextDayDate = new Date(today);
+      const daysUntilNext = (dayIndex - today.getDay() + 7) % 7 || 7;
+      nextDayDate.setDate(today.getDate() + daysUntilNext);
+      
+      const dayWorkoutRaw = getTodayWorkout ? getTodayWorkout(nextDayDate, false) : (workoutProgram[dayKey] || null);
+      const dayWorkout = dayWorkoutRaw ? {
+        ...dayWorkoutRaw,
+        exercices: dayWorkoutRaw.exercices || dayWorkoutRaw.exercises || [],
+        salleVariants: dayWorkoutRaw.salleVariants
+      } : null;
+      
       if (dayWorkout) {
         totalDaysWithWorkouts++;
         totalExercises += getAllExercisesForDay(dayWorkout).length;
@@ -416,7 +430,20 @@ const WorkoutHistorySection = () => {
         <div className="space-y-4 mt-4">
           {daysOrder.map((day) => {
             const dayKey = dayMapping[day];
-            const dayWorkout = workoutProgram[dayKey];
+            // ✅ Utiliser getTodayWorkout pour obtenir le workout du jour (inclut le programme actif)
+            // Utiliser une date représentative (le prochain jour de ce type)
+            const today = new Date();
+            const dayIndex = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'].indexOf(dayKey);
+            const nextDayDate = new Date(today);
+            const daysUntilNext = (dayIndex - today.getDay() + 7) % 7 || 7;
+            nextDayDate.setDate(today.getDate() + daysUntilNext);
+            
+            const dayWorkoutRaw = getTodayWorkout ? getTodayWorkout(nextDayDate, false) : (workoutProgram[dayKey] || null);
+            const dayWorkout = dayWorkoutRaw ? {
+              ...dayWorkoutRaw,
+              exercices: dayWorkoutRaw.exercices || dayWorkoutRaw.exercises || [],
+              salleVariants: dayWorkoutRaw.salleVariants
+            } : null;
             const isCollapsed = collapsedDays[day];
             const allExercises = getAllExercisesForDay(dayWorkout);
             const allStretches = getAllStretchesForDay(dayWorkout);

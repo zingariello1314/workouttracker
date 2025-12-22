@@ -4,6 +4,9 @@
  */
 
 import { z } from 'zod';
+import logger from '../../utils/logger';
+
+const log = logger.module('dashboardStorage');
 
 // ============================================================================
 // SCHEMAS VALIDATION
@@ -1349,58 +1352,73 @@ export const questExpressAPI = {
   }
 };
 
-// News API
+// News API - Utilise le service news complet
 export const newsAPI = {
-  get: async () => {
-    return {
-      news: [
-        {
-          id: 1,
-          title: 'Bitcoin atteint 45k$',
-          summary: 'Le Bitcoin franchit un nouveau palier psychologique',
-          source: 'CoinDesk',
-          category: 'crypto',
-          sentiment: 'positive',
-          impact: 'high',
-          quality: 85,
-          url: 'https://example.com',
-          date: new Date().toISOString()
-        },
-        {
-          id: 2,
-          title: 'Fed maintient les taux',
-          summary: 'La Réserve Fédérale maintient sa politique monétaire',
-          source: 'Bloomberg',
-          category: 'economie',
-          sentiment: 'neutral',
-          impact: 'medium',
-          quality: 90,
-          url: 'https://example.com',
-          date: new Date().toISOString()
-        },
-        {
-          id: 3,
-          title: 'Apple annonce nouveaux produits',
-          summary: 'Apple dévoile sa nouvelle gamme de produits',
-          source: 'TechCrunch',
-          category: 'bourse',
-          sentiment: 'positive',
-          impact: 'medium',
-          quality: 80,
-          url: 'https://example.com',
-          date: new Date().toISOString()
+  get: async (options = {}) => {
+    // Importer dynamiquement pour éviter dépendance circulaire
+    const { newsService } = await import('../news/newsService');
+    
+    const { category = 'tout', page = 1, pageSize = 20 } = options;
+    
+    try {
+      // Récupérer les actualités depuis le service
+      const result = await newsService.getNews({
+        category,
+        page,
+        pageSize,
+        useCache: true
+      });
+      
+      // Calculer les stats
+      const stats = {
+        total: result.total || result.news.length,
+        today: result.news.filter(n => {
+          const date = new Date(n.publishedAt || 0);
+          const today = new Date();
+          return date.toDateString() === today.toDateString();
+        }).length,
+        positive: result.news.filter(n => n.sentiment === 'positive').length,
+        neutral: result.news.filter(n => n.sentiment === 'neutral').length,
+        negative: result.news.filter(n => n.sentiment === 'negative').length
+      };
+      
+      // Déterminer le statut du marché (simplifié)
+      const marketStatus = 'open'; // TODO: Calculer depuis heures d'ouverture
+      
+      // Statut des APIs
+      const apiStatus = newsService.getAPIStatus();
+      
+      return {
+        news: result.news,
+        apiStatus,
+        marketStatus,
+        stats
+      };
+    } catch (error) {
+      log.error('Error fetching news:', error);
+      // Logger les détails pour debug
+      console.error('News API Error Details:', {
+        message: error.message,
+        stack: error.stack,
+        category,
+        page,
+        pageSize
+      });
+      
+      // Retourner données mock en cas d'erreur
+      return {
+        news: [],
+        apiStatus: { newsapi: 'error', finnhub: 'error', reddit: 'error', guardian: 'error', mediastack: 'error', newsdata: 'error' },
+        marketStatus: 'unknown',
+        stats: {
+          total: 0,
+          today: 0,
+          positive: 0,
+          neutral: 0,
+          negative: 0
         }
-      ],
-      apiStatus: { newsapi: 'ok', finnhub: 'ok', reddit: 'ok' },
-      marketStatus: 'open',
-      stats: {
-        total: 3,
-        positive: 2,
-        neutral: 1,
-        negative: 0,
-        urgent: 1
-      }
-    };
+      };
+    }
   }
 };
 

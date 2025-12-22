@@ -15,7 +15,7 @@ import { useFormatters } from '../../utils/translations/formatters-hook';
 import { useToast } from '../ui/Toast';
 
 const DataEntryTab = () => {
-  const { data, updateReps, toggleCheck, getDateStr, getDayName, getCurrentData } = useWorkout();
+  const { data, updateReps, toggleCheck, getDateStr, getDayName, getCurrentData, getTodayWorkout, activeProgram } = useWorkout();
   const { currentUser, isAuthenticated } = useAuth();
   const t = useTranslation();
   const { formatDate: formatLocaleDate } = useFormatters();
@@ -34,8 +34,14 @@ const DataEntryTab = () => {
 
   const dateStr = getDateStr(selectedDate);
   const dayName = getDayName(selectedDate);
-  // ✅ Utiliser workoutProgram seulement si admin, sinon workout vide
-  const workout = isAdmin && isAuthenticated ? workoutProgram[dayName] : null;
+  // ✅ Utiliser getTodayWorkout pour obtenir le workout du jour (inclut le programme actif)
+  const workoutRaw = isAdmin && isAuthenticated ? (getTodayWorkout ? getTodayWorkout(selectedDate, false) : (workoutProgram[dayName] || null)) : null;
+  
+  // Convertir le format du workout si c'est du nouveau format (avec exercices au lieu de exercices)
+  const workout = workoutRaw ? {
+    ...workoutRaw,
+    exercices: workoutRaw.exercices || workoutRaw.exercises || []
+  } : null;
 
   // Ordre chronologique des jours (traduits)
   const daysOrder = [

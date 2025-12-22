@@ -3,7 +3,7 @@ import { useWorkoutData } from '../hooks/useWorkoutData';
 import { useWorkoutLogic } from '../hooks/useWorkoutLogic';
 import { workoutProgram } from '../data/workoutProgram';
 import { findExerciseInDatabase } from '../data/exerciseDatabase';
-import { getDateStr, getDayName } from '../utils/dateUtils';
+import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 import { isMockEnduranceSession } from '../utils/calendarUtils';
 import { 
   createJustification, 
@@ -102,7 +102,7 @@ const WorkoutProvider = ({ children }) => {
     generateTestData: false,
     ephemeral: !isAuthenticated
   });
-  
+
   // État pour l'historique des programmes
   const [programHistory, setProgramHistory] = useState([]);
 
@@ -296,20 +296,21 @@ const WorkoutProvider = ({ children }) => {
   const activateProgram = (programId) => {
     const program = programs.find(p => p.id === programId);
     if (program) {
-      // Désactiver l'ancien programme actif s'il y en a un
+      // Désactiver l'ancien programme actif s'il y en a un (sans le marquer comme terminé)
       if (activeProgram) {
         setPrograms(prev => prev.map(p => 
           p.id === activeProgram.id 
-            ? { ...p, status: 'completed', endDate: new Date().toISOString() }
+            ? { ...p, status: 'inactive' } // Ne pas marquer comme 'completed', juste 'inactive'
             : p
         ));
       }
       
       // Activer le nouveau programme
+      // Si le programme n'a pas de startDate, l'initialiser, sinon garder la date originale
       const updatedProgram = {
         ...program,
         status: 'active',
-        startDate: new Date().toISOString()
+        startDate: program.startDate || new Date().toISOString() // Garder la date originale si elle existe
       };
       setPrograms(prev => prev.map(p => 
         p.id === programId ? updatedProgram : p
@@ -322,7 +323,7 @@ const WorkoutProvider = ({ children }) => {
     if (activeProgram) {
       setPrograms(prev => prev.map(p => 
         p.id === activeProgram.id 
-          ? { ...p, status: 'completed', endDate: new Date().toISOString() }
+          ? { ...p, status: 'inactive' } // Ne pas marquer comme 'completed', juste 'inactive'
           : p
       ));
       setActiveProgram(null);
@@ -344,6 +345,46 @@ const WorkoutProvider = ({ children }) => {
       setActiveProgram(updatedProgram);
     }
   };
+
+  // Fonction pour calculer le nombre réel de jours d'utilisation d'un programme
+  const calculateRealUsageDays = useCallback((programId, startDate) => {
+    if (!startDate || !data?.checkedExercises) return 0;
+    const start = new Date(startDate);
+    let usageDays = 0;
+    const today = new Date();
+
+    for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+      const dateStr = getDateStr(d);
+      const dayName = getDayName(d);
+      const program = programs.find(p => p.id === programId);
+
+      if (program && program.schedule && program.schedule[dayName]) {
+        const daySchedule = program.schedule[dayName];
+        const hasCompletedExercise = (daySchedule.exercises || []).some(ex => {
+          // Convertir l'ID string en ID numérique (même logique que dans getTodayWorkoutWrapper)
+          let numericId;
+          if (typeof ex.id === 'string') {
+            let hash = 0;
+            for (let i = 0; i < ex.id.length; i++) {
+              const char = ex.id.charCodeAt(i);
+              hash = ((hash << 5) - hash) + char;
+              hash = hash & hash;
+            }
+            numericId = Math.abs(hash) + 10000;
+          } else {
+            numericId = ex.id;
+          }
+          
+          const exerciseKey = `${dateStr}_${numericId}`;
+          return data.checkedExercises[exerciseKey];
+        });
+        if (hasCompletedExercise) {
+          usageDays++;
+        }
+      }
+    }
+    return usageDays;
+  }, [data?.checkedExercises, programs]);
 
   // Fonctions de sauvegarde automatique pour les états du contexte
   const openContextDB = () => {
@@ -497,15 +538,161 @@ const WorkoutProvider = ({ children }) => {
   };
 
   // Hooks personnalisés pour la logique et les statistiques
-  const workoutLogic = useWorkoutLogic(data, updateData);
+  const workoutLogic = useWorkoutLogic(data, updateData, getCurrentData, updateTempExerciseData, updateTempStretchData);
   // CORRECTION: Utiliser toujours les données réelles (data) pour les statistiques et badges
   // Les données temporaires (tempData) ne doivent être utilisées que pour l'édition en cours
   // const workoutStats = useWorkoutStats(); // Commenté temporairement pour éviter l'erreur circulaire
+
+  // Mapping pour stocker la correspondance entre IDs numériques et exercices du programme actif
+  const exerciseIdMappingRef = useRef(new Map()); // Map<numericId, {name, originalId}>
+
+  // Fonction utilitaire pour convertir un ID (string ou number) en ID numérique stable
+  const convertToStableNumericId = useCallback((id, index = 0) => {
+    if (typeof id === 'number') {
+      return id;
+    }
+    if (typeof id === 'string') {
+      // Créer un hash déterministe et stable de l'ID string
+      // Utiliser un hash plus robuste pour éviter les collisions
+      let hash = 0;
+      const str = id.toString();
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convertir en entier 32 bits
+      }
+      // Ajouter un offset pour éviter les conflits avec les IDs du programme par défaut (< 1000)
+      return Math.abs(hash) + 10000;
+    }
+    // Fallback : utiliser l'index + 10000
+    return index + 10000;
+  }, []);
+
+  // Mettre à jour le mapping des IDs quand le programme actif change
+  useEffect(() => {
+    exerciseIdMappingRef.current.clear();
+    
+    if (activeProgram && activeProgram.schedule) {
+      const dayNames = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+      
+      dayNames.forEach(dayName => {
+        const daySchedule = activeProgram.schedule[dayName];
+        if (daySchedule && daySchedule.exercises) {
+          daySchedule.exercises.forEach((ex, index) => {
+            const numericId = convertToStableNumericId(ex.id, index);
+            exerciseIdMappingRef.current.set(numericId, {
+              name: ex.name,
+              originalId: ex.id
+            });
+          });
+        }
+      });
+    }
+  }, [activeProgram, convertToStableNumericId]);
+
+  // Fonction wrapper pour getTodayWorkout qui utilise activeProgram si disponible
+  const getTodayWorkoutWrapper = useCallback((currentDate, isGymMode = false) => {
+    // Si un programme actif existe, utiliser son schedule
+    if (activeProgram && activeProgram.schedule) {
+      const dayName = getDayName(currentDate);
+      const daySchedule = activeProgram.schedule[dayName];
+      
+      if (daySchedule) {
+        // Convertir le format du programme actif au format attendu
+        // Générer des IDs numériques stables pour chaque exercice
+        const exercises = (daySchedule.exercises || []).map((ex, index) => {
+          const numericId = convertToStableNumericId(ex.id, index);
+          
+          return {
+            id: numericId,
+            name: ex.name,
+            series: ex.series,
+            type: ex.type || 'standard',
+            materiel: ex.materiel || 'poids du corps',
+            notes: ex.notes || '',
+            rest: ex.rest || 90,
+            intensity: ex.intensity || 'moderate',
+            // Stocker l'ID original pour référence (important pour getExerciseNameById)
+            originalId: ex.id
+          };
+        });
+        
+        // Ne créer les étirements que s'il y en a vraiment
+        const etirements = {};
+        if (daySchedule.etirements) {
+          if (daySchedule.etirements.matin?.instructions) {
+            etirements.matin = daySchedule.etirements.matin.instructions;
+          }
+          if (daySchedule.etirements.midi?.instructions) {
+            etirements.midi = daySchedule.etirements.midi.instructions;
+          }
+          if (daySchedule.etirements.soir?.instructions) {
+            etirements.soir = daySchedule.etirements.soir.instructions;
+          }
+        }
+        
+        return {
+          name: daySchedule.name || '',
+          focus: daySchedule.focus || '',
+          exercices: exercises,
+          etirements: Object.keys(etirements).length > 0 ? etirements : undefined,
+          isGymMode: false,
+          weekVariant: getAutoWeekVariant(currentDate)
+        };
+      }
+    }
+    
+    // Fallback vers la fonction originale de workoutLogic
+    if (workoutLogic && workoutLogic.getTodayWorkout) {
+      return workoutLogic.getTodayWorkout(currentDate, isGymMode);
+    }
+    
+    // Dernier fallback
+      return {
+        name: null,
+        focus: null,
+        exercices: [],
+        etirements: undefined,
+        isGymMode: false,
+        weekVariant: getAutoWeekVariant(currentDate)
+      };
+  }, [activeProgram, workoutLogic, convertToStableNumericId]);
   
   // Fonction getWorkoutHistory directement dans le contexte pour éviter la dépendance circulaire
   // Fonction pour récupérer le nom d'un exercice à partir de son ID
-  const getExerciseNameById = (exerciseId) => {
-    // Chercher dans tous les jours du programme
+  const getExerciseNameById = useCallback((exerciseId) => {
+    const searchId = typeof exerciseId === 'string' ? parseInt(exerciseId) : exerciseId;
+    
+    // ✅ PRIORITÉ 1 : Chercher dans le mapping du programme actif (plus rapide)
+    const mappedExercise = exerciseIdMappingRef.current.get(searchId);
+    if (mappedExercise) {
+      return mappedExercise.name;
+    }
+    
+    // ✅ PRIORITÉ 2 : Chercher dans le programme actif si disponible (fallback)
+    if (activeProgram && activeProgram.schedule) {
+      const dayNames = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+      
+      for (const dayName of dayNames) {
+        const daySchedule = activeProgram.schedule[dayName];
+        if (daySchedule && daySchedule.exercises) {
+          // Chercher par ID numérique (hash) ou par originalId
+          for (const ex of daySchedule.exercises) {
+            // Calculer l'ID numérique attendu pour cet exercice
+            const expectedNumericId = convertToStableNumericId(ex.id);
+            
+            // Vérifier si l'ID recherché correspond à l'ID numérique ou à l'ID original
+            if (expectedNumericId === searchId || ex.id === exerciseId || ex.id === searchId) {
+              // Mettre à jour le mapping pour la prochaine fois
+              exerciseIdMappingRef.current.set(searchId, { name: ex.name, originalId: ex.id });
+              return ex.name;
+            }
+          }
+        }
+      }
+    }
+    
+    // ✅ PRIORITÉ 2 : Chercher dans le programme par défaut (workoutProgram)
     for (const day of Object.values(workoutProgram)) {
       if (day.exercices) {
         const exercise = day.exercices.find(ex => ex.id === parseInt(exerciseId));
@@ -527,10 +714,19 @@ const WorkoutProvider = ({ children }) => {
       }
     }
     
-    // Si pas trouvé dans le programme, essayer dans la base de données d'exercices
-    // (au cas où l'exercice aurait été ajouté manuellement)
+    // ✅ PRIORITÉ 3 : Chercher dans la base de données d'exercices
+    try {
+      const dbExercise = findExerciseInDatabase(`Exercice ${exerciseId}`);
+      if (dbExercise) {
+        return dbExercise.name;
+      }
+    } catch (e) {
+      // Ignorer les erreurs
+    }
+    
+    // Dernier fallback
     return `Exercice ${exerciseId}`;
-  };
+  }, [activeProgram, convertToStableNumericId]);
 
   const getWorkoutHistory = () => {
     const currentData = getCurrentData();
@@ -2478,6 +2674,8 @@ const WorkoutProvider = ({ children }) => {
     deactivateProgram,
     deleteProgram,
     updateProgram,
+    calculateRealUsageDays,
+    getExerciseNameById,
     
     // Programmes personnalisés
     customPrograms,
@@ -2486,6 +2684,8 @@ const WorkoutProvider = ({ children }) => {
     // Fonctions de données
     // Hooks personnalisés (spread seulement si défini)
     ...(workoutLogic || {}),
+    // ✅ Surcharger getTodayWorkout pour utiliser activeProgram
+    getTodayWorkout: getTodayWorkoutWrapper || (workoutLogic?.getTodayWorkout),
     
     // Fonctions de statistiques
     getWorkoutHistory,
@@ -2550,6 +2750,150 @@ const WorkoutProvider = ({ children }) => {
 
     migratePhotos();
   }, [data?.progressPhotos, updateData]);
+
+  // Nouveau programme Musculation - Haut Pectoraux & Épaules
+  const newMusculationProgram = {
+    id: 'musculation-haut-pecs-epaules',
+    name: "Programme Musculation - Haut Pectoraux & Épaules",
+    description: "Programme d'entraînement axé sur le développement du haut des pectoraux, des épaules et des bras",
+    duration: 4,
+    goal: "Développement musculaire ciblé - Haut de pecs, épaules, dos, jambes",
+    createdAt: new Date('2025-01-20').toISOString(),
+    updatedAt: new Date('2025-01-20').toISOString(),
+    status: 'inactive',
+    schedule: {
+      lundi: {
+        name: "HAUT DES PECS + ÉPAULES (PRIORITÉ)",
+        focus: "Haut de pecs + deltoïde latéral",
+        duration: "60-75 min",
+        notes: "",
+        etirements: {
+          matin: { name: "Étirements matinaux", duration: "5-7 min", instructions: "" },
+          midi: { name: "Pause active", duration: "4-6 min", instructions: "" },
+          soir: { name: "Récupération", duration: "5-7 min", instructions: "" }
+        },
+        exercises: [
+          { id: "pompes_declinees", name: "Pompes déclinées sur poignées", series: "4×8–15", reps: "", rest: 90, intensity: "heavy", notes: "tempo 4–1–1", materiel: "poignées", type: "standard" },
+          { id: "developpe_sol_unilateral", name: "Développé au sol unilatéral (angle claviculaire)", series: "4×10–12", reps: "", rest: 90, intensity: "heavy", notes: "/ bras", materiel: "haltères", type: "standard" },
+          { id: "ecartes_elastique", name: "Écartés élastique bas → haut", series: "4×15–25", reps: "", rest: 60, intensity: "moderate", notes: "pause 2s en haut", materiel: "élastique", type: "standard" },
+          { id: "elevations_laterales_haltères", name: "Élévations latérales haltère strictes", series: "5×12–15", reps: "", rest: 45, intensity: "moderate", notes: "repos 45s", materiel: "haltères", type: "standard" },
+          { id: "elevations_laterales_elastique", name: "Élévations latérales élastique (tension continue)", series: "3×20–25", reps: "", rest: 45, intensity: "moderate", notes: "", materiel: "élastique", type: "standard" },
+          { id: "circuit_abdos_lundi", name: "Circuit abdos", series: "2 TOURS", reps: "", rest: 30, intensity: "moderate", notes: "", materiel: "poids du corps", type: "circuit" },
+          { id: "finisher_pompes_lundi", name: "Finisher - 100 pompes", series: "5×20 ou 10×10", reps: "", rest: 60, intensity: "moderate", notes: "pas de corde ce jour-là", materiel: "poids du corps", type: "finisher" }
+        ]
+      },
+      mardi: {
+        name: "DOS LARGEUR + BICEPS",
+        focus: "V-taper + bras pleins",
+        duration: "60-75 min",
+        notes: "",
+        etirements: {
+          matin: { name: "Étirements matinaux", duration: "5-7 min", instructions: "" },
+          midi: { name: "Pause active", duration: "4-6 min", instructions: "" },
+          soir: { name: "Récupération", duration: "5-7 min", instructions: "" }
+        },
+        exercises: [
+          { id: "tirage_elastique_bras_tendus", name: "Tirage élastique bras tendus", series: "4×15–20", reps: "", rest: 60, intensity: "moderate", notes: "", materiel: "élastique", type: "standard" },
+          { id: "tractions_australiennes", name: "Tractions australiennes (barres parallèles)", series: "4×8–12", reps: "", rest: 90, intensity: "heavy", notes: "", materiel: "barres parallèles", type: "standard" },
+          { id: "rowing_elastique_lourd", name: "Rowing élastique lourd", series: "5×10–15", reps: "", rest: 90, intensity: "heavy", notes: "pause 2s", materiel: "élastique", type: "standard" },
+          { id: "curl_incline_sol", name: "Curl incliné au sol (lent)", series: "4×10–12", reps: "", rest: 60, intensity: "moderate", notes: "", materiel: "haltères", type: "standard" },
+          { id: "curl_marteau_elastique", name: "Curl marteau élastique", series: "3×12–15", reps: "", rest: 60, intensity: "moderate", notes: "", materiel: "élastique", type: "standard" },
+          { id: "circuit_abdos_mardi", name: "Circuit abdos", series: "1 TOUR", reps: "", rest: 30, intensity: "moderate", notes: "", materiel: "poids du corps", type: "circuit" },
+          { id: "cardio_corde_mardi", name: "Corde à sauter", series: "8–10 min", reps: "", rest: 0, intensity: "moderate", notes: "rythme modéré - pas de pompes ce jour-là", materiel: "corde à sauter", type: "cardio" }
+        ]
+      },
+      mercredi: {
+        name: "JAMBES + ABDOS",
+        focus: "Hormones + équilibre + gainage",
+        duration: "60-75 min",
+        notes: "",
+        etirements: {
+          matin: { name: "Étirements matinaux", duration: "5-7 min", instructions: "" },
+          midi: { name: "Pause active", duration: "4-6 min", instructions: "" },
+          soir: { name: "Récupération", duration: "5-7 min", instructions: "" }
+        },
+        exercises: [
+          { id: "squat_gobelet_lourd", name: "Squat gobelet lourd", series: "4×10–15", reps: "", rest: 90, intensity: "heavy", notes: "", materiel: "haltère", type: "standard" },
+          { id: "fentes_arriere_longues", name: "Fentes arrière longues", series: "4×10–12", reps: "", rest: 90, intensity: "moderate", notes: "/ jambe", materiel: "poids du corps", type: "standard" },
+          { id: "pont_fessier_charge", name: "Pont fessier au sol chargé", series: "4×15–20", reps: "", rest: 60, intensity: "moderate", notes: "pause 2s", materiel: "haltère", type: "standard" },
+          { id: "mollets_debout_haltère", name: "Mollets debout haltère", series: "5×15–25", reps: "", rest: 45, intensity: "moderate", notes: "", materiel: "haltère", type: "standard" },
+          { id: "circuit_abdos_mercredi", name: "Circuit abdos", series: "3 TOURS", reps: "", rest: 30, intensity: "moderate", notes: "jour principal abdos", materiel: "poids du corps", type: "circuit" },
+          { id: "cardio_corde_mercredi", name: "Corde à sauter", series: "8 min", reps: "", rest: 0, intensity: "moderate", notes: "", materiel: "corde à sauter", type: "cardio" }
+        ]
+      },
+      jeudi: {
+        name: "REPOS TOTAL",
+        focus: "Récupération",
+        duration: "0 min",
+        notes: "Récupération obligatoire",
+        etirements: {
+          matin: { name: "Étirements matinaux", duration: "5-7 min", instructions: "Marche légère / mobilité si envie" },
+          midi: { name: "Pause active", duration: "4-6 min", instructions: "" },
+          soir: { name: "Récupération", duration: "5-7 min", instructions: "" }
+        },
+        exercises: []
+      },
+      vendredi: {
+        name: "ÉPAULES + BRAS (TRICEPS PRIORITÉ)",
+        focus: "Largeur d'épaules + bras plus épais",
+        duration: "60-75 min",
+        notes: "",
+        etirements: {
+          matin: { name: "Étirements matinaux", duration: "5-7 min", instructions: "" },
+          midi: { name: "Pause active", duration: "4-6 min", instructions: "" },
+          soir: { name: "Récupération", duration: "5-7 min", instructions: "" }
+        },
+        exercises: [
+          { id: "elevations_laterales_mecaniques", name: "Élévations latérales mécaniques", series: "3 rounds", reps: "", rest: 60, intensity: "moderate", notes: "12 strictes → 10 partielles → 20 rapides", materiel: "haltères", type: "standard" },
+          { id: "oiseau_elastique", name: "Oiseau élastique", series: "4×15–20", reps: "", rest: 60, intensity: "moderate", notes: "", materiel: "élastique", type: "standard" },
+          { id: "dips_barres_paralleles", name: "Dips aux barres parallèles (buste droit)", series: "4×8–12", reps: "", rest: 90, intensity: "heavy", notes: "", materiel: "barres parallèles", type: "standard" },
+          { id: "extension_triceps_tete", name: "Extension triceps au-dessus de la tête (haltère)", series: "4×10–12", reps: "", rest: 60, intensity: "moderate", notes: "", materiel: "haltère", type: "standard" },
+          { id: "curl_concentration", name: "Curl concentration", series: "3×12", reps: "", rest: 60, intensity: "moderate", notes: "/ bras", materiel: "haltère", type: "standard" },
+          { id: "circuit_abdos_vendredi", name: "Circuit abdos", series: "1 TOUR", reps: "", rest: 30, intensity: "moderate", notes: "", materiel: "poids du corps", type: "circuit" },
+          { id: "finisher_pompes_vendredi", name: "Finisher - 100 pompes", series: "100", reps: "", rest: 60, intensity: "moderate", notes: "pas de corde", materiel: "poids du corps", type: "finisher" }
+        ]
+      },
+      samedi: {
+        name: "DOS ÉPAISSEUR + LOMBAIRES",
+        focus: "Dos dense et solide",
+        duration: "60-75 min",
+        notes: "",
+        etirements: {
+          matin: { name: "Étirements matinaux", duration: "5-7 min", instructions: "" },
+          midi: { name: "Pause active", duration: "4-6 min", instructions: "" },
+          soir: { name: "Récupération", duration: "5-7 min", instructions: "" }
+        },
+        exercises: [
+          { id: "rowing_elastique_prise_basse", name: "Rowing élastique prise basse", series: "5×8–12", reps: "", rest: 90, intensity: "heavy", notes: "", materiel: "élastique", type: "standard" },
+          { id: "tirage_elastique_prise_neutre", name: "Tirage élastique prise neutre", series: "4×12–15", reps: "", rest: 60, intensity: "moderate", notes: "pause 2s", materiel: "élastique", type: "standard" },
+          { id: "face_pull_elastique", name: "Face pull élastique", series: "4×15–20", reps: "", rest: 60, intensity: "moderate", notes: "", materiel: "élastique", type: "standard" },
+          { id: "extensions_lombaires_sol", name: "Extensions lombaires au sol", series: "3×15–20", reps: "", rest: 60, intensity: "moderate", notes: "", materiel: "poids du corps", type: "standard" },
+          { id: "gainage_lateral_statique", name: "Gainage latéral statique", series: "3×40s", reps: "", rest: 60, intensity: "moderate", notes: "/ côté", materiel: "poids du corps", type: "standard" },
+          { id: "cardio_corde_samedi", name: "Corde à sauter", series: "8–10 min", reps: "", rest: 0, intensity: "moderate", notes: "", materiel: "corde à sauter", type: "cardio" }
+        ]
+      },
+      dimanche: {
+        name: "PECS COMPLETS + RAPPELS",
+        focus: "Volume pecs + rappel épaules / triceps",
+        duration: "60-75 min",
+        notes: "",
+        etirements: {
+          matin: { name: "Étirements matinaux", duration: "5-7 min", instructions: "" },
+          midi: { name: "Pause active", duration: "4-6 min", instructions: "" },
+          soir: { name: "Récupération", duration: "5-7 min", instructions: "" }
+        },
+        exercises: [
+          { id: "pompes_lentes_poignees", name: "Pompes lentes sur poignées", series: "4×max propre", reps: "", rest: 90, intensity: "moderate", notes: "", materiel: "poignées", type: "standard" },
+          { id: "developpe_haltère_sol", name: "Développé haltère au sol", series: "4×8–12", reps: "", rest: 90, intensity: "heavy", notes: "", materiel: "haltères", type: "standard" },
+          { id: "ecartes_elastique_lents", name: "Écartés élastique lents", series: "3×20", reps: "", rest: 60, intensity: "moderate", notes: "", materiel: "élastique", type: "standard" },
+          { id: "elevations_laterales_legeres", name: "Élévations latérales légères", series: "3×25", reps: "", rest: 45, intensity: "light", notes: "", materiel: "haltères", type: "standard" },
+          { id: "extension_triceps_elastique", name: "Extension triceps élastique", series: "3×15–20", reps: "", rest: 60, intensity: "moderate", notes: "", materiel: "élastique", type: "standard" },
+          { id: "circuit_abdos_dimanche", name: "Circuit abdos", series: "2 TOURS", reps: "", rest: 30, intensity: "moderate", notes: "", materiel: "poids du corps", type: "circuit" },
+          { id: "cardio_corde_dimanche", name: "Corde à sauter", series: "8 min", reps: "", rest: 0, intensity: "moderate", notes: "pas de 100 pompes (elles sont déjà incluses via l'entraînement)", materiel: "corde à sauter", type: "cardio" }
+        ]
+      }
+    }
+  };
 
   // Initialisation avec le programme par défaut si aucun programme actif
   useEffect(() => {
@@ -2653,6 +2997,28 @@ const WorkoutProvider = ({ children }) => {
     const initializeContext = async () => {
       try {
         await loadContext();
+        
+        // Ajouter le nouveau programme musculation pour zingariello131 si il n'existe pas déjà
+        // Utiliser un petit délai pour s'assurer que le chargement est terminé
+        setTimeout(() => {
+          if (currentUser?.username === 'zingariello131' || currentUser?.username === 'zingariello1314') {
+            setPrograms(prevPrograms => {
+              // Vérifier si le programme existe déjà
+              const programExists = prevPrograms.some(p => p.id === newMusculationProgram.id || p.name === newMusculationProgram.name);
+              
+              if (!programExists && prevPrograms.length > 0) {
+                // Ajouter le nouveau programme en premier (au-dessus du programme existant)
+                return [newMusculationProgram, ...prevPrograms];
+              } else if (!programExists && prevPrograms.length === 0) {
+                // Si aucun programme, ajouter juste le nouveau
+                return [newMusculationProgram];
+              }
+              
+              return prevPrograms;
+            });
+          }
+        }, 300);
+        
         isInitialLoadRef.current = false;
       } catch (error) {
         console.error('❌ Erreur lors de l\'initialisation du contexte:', error);
@@ -2661,9 +3027,11 @@ const WorkoutProvider = ({ children }) => {
       }
     };
     
-    initializeContext();
+    if (isAuthenticated && currentUser) {
+      initializeContext();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Exécuter une seule fois au montage
+  }, [currentUser, isAuthenticated]); // Exécuter quand l'utilisateur change
 
   // S'assurer que contextValue est toujours défini avant de rendre
   if (!contextValue) {

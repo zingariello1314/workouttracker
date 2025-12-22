@@ -180,3 +180,4 @@ useEffect(() => {
 - **Scroll manuel depuis Home** : Détection correcte du scroll et changement d'onglet fluide
 - **Pas de conflits** : Les deux modes de navigation ne s'interfèrent pas
 
+

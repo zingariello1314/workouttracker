@@ -13,7 +13,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
-import { getDateStr } from '../utils/dateUtils';
+import { getDateStr, getDayName } from '../utils/dateUtils';
 import JustificationModal from './modals/JustificationModal';
 import { workoutProgram } from '../data/workoutProgram';
 import { calculateDayIntensityWithGarmin, getGarminActivityIcons } from '../utils/garminCalendarUtils';
@@ -46,7 +46,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   const [justificationModalDate, setJustificationModalDate] = useState(null);
 
   // Récupérer les données du contexte pour le calcul du temps réel
-  const { data, getCurrentData } = useWorkout();
+  const { data, getCurrentData, getTodayWorkout, programs, getExerciseNameById } = useWorkout();
   // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées)
   const allData = getCurrentData();
   
@@ -126,8 +126,16 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
         const dateMatch = key.match(/^(\d{4}-\d{2}-\d{2})/);
         if (dateMatch) {
           const dateStr = dateMatch[1];
-          const dayName = getDayName(new Date(dateStr));
-          const workout = workoutProgram[dayName];
+          const dayDate = new Date(dateStr);
+          const dayName = getDayName(dayDate);
+          // ✅ Utiliser getTodayWorkout pour obtenir le workout du jour (inclut le programme actif)
+          const workoutRaw = getTodayWorkout ? getTodayWorkout(dayDate, false) : (workoutProgram[dayName] || null);
+          const workout = workoutRaw ? {
+            ...workoutRaw,
+            exercices: workoutRaw.exercices || workoutRaw.exercises || [],
+            salleVariants: workoutRaw.salleVariants,
+            complementaryActivity: workoutRaw.complementaryActivity
+          } : null;
           
           if (workout?.complementaryActivity) {
             const complementaryKey = `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`;
@@ -202,7 +210,78 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     }
     
     const dayName = getDayName(date);
-    const workout = workoutProgram[dayName];
+    
+    // ✅ NOUVEAU : Récupérer les exercices de TOUS les programmes pour cette date
+    const getAllExercisesForDate = () => {
+      const allExercises = [];
+      const exercisesIdsSeen = new Set();
+      
+      // 1. Ajouter les exercices du programme par défaut (workoutProgram)
+      const defaultWorkout = workoutProgram[dayName];
+      if (defaultWorkout?.exercices) {
+        defaultWorkout.exercices.forEach(ex => {
+          if (!exercisesIdsSeen.has(ex.id)) {
+            exercisesIdsSeen.add(ex.id);
+            allExercises.push({
+              ...ex,
+              programName: 'Cycle 3+1',
+              programId: 'default'
+            });
+          }
+        });
+      }
+      
+      // 2. Ajouter les exercices de tous les programmes personnalisés
+      if (programs && Array.isArray(programs)) {
+        programs.forEach(program => {
+          if (program.schedule && program.schedule[dayName]) {
+            const daySchedule = program.schedule[dayName];
+            if (daySchedule.exercises) {
+              daySchedule.exercises.forEach((ex, index) => {
+                // Convertir l'ID string en ID numérique (comme dans getTodayWorkoutWrapper)
+                let numericId;
+                if (typeof ex.id === 'string') {
+                  let hash = 0;
+                  for (let i = 0; i < ex.id.length; i++) {
+                    const char = ex.id.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                  }
+                  numericId = Math.abs(hash) + 10000;
+                } else {
+                  numericId = ex.id;
+                }
+                
+                if (!exercisesIdsSeen.has(numericId)) {
+                  exercisesIdsSeen.add(numericId);
+                  allExercises.push({
+                    id: numericId,
+                    name: ex.name,
+                    series: ex.series,
+                    type: ex.type || 'standard',
+                    materiel: ex.materiel || 'poids du corps',
+                    notes: ex.notes || '',
+                    programName: program.name || 'Programme personnalisé',
+                    programId: program.id
+                  });
+                }
+              });
+            }
+          }
+        });
+      }
+      
+      return allExercises;
+    };
+    
+    const allExercisesForDate = getAllExercisesForDate();
+    
+    // Pour compatibilité avec le code existant, créer un workout "virtuel" avec tous les exercices
+    const workout = allExercisesForDate.length > 0 ? {
+      exercices: allExercisesForDate,
+      name: 'Tous les programmes',
+      isGymMode: false
+    } : null;
     
     // ✅ LOGS DE DEBUG DÉSACTIVÉS pour réduire le bruit (33k messages)
     // Debug pour le 28 octobre 2025 (réactiver uniquement si nécessaire)
@@ -330,8 +409,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     
     const enduranceData = getEnduranceDataForDate();
     
-    // Si pas de programme pour ce jour ET pas de données d'endurance, retourner des valeurs par défaut
-    if (!workout && enduranceData.sessions === 0) {
+    // Si pas d'exercices pour ce jour ET pas de données d'endurance, retourner des valeurs par défaut
+    if (allExercisesForDate.length === 0 && enduranceData.sessions === 0) {
       return { 
         level: 0, 
         reps: 0, 
@@ -343,31 +422,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       };
     }
 
-    // Obtenir la liste des exercices - CORRECTION: inclure TOUTES les variantes
-    // ✅ CORRECTION : Utiliser un Set pour éviter les doublons si un exercice existe dans plusieurs variantes
-    let exercisesList = [];
-    const exercisesIdsSeen = new Set(); // Pour éviter de compter le même exercice plusieurs fois
-    
-    if (workout?.salleVariants) {
-      // Pour les jours avec variantes de salle, inclure TOUS les exercices possibles
-      const semaineA = workout.salleVariants.semaineA?.exercices || [];
-      const semaineB = workout.salleVariants.semaineB?.exercices || [];
-      const streetExercices = workout.exercices || [];
-      
-      // Combiner tous les exercices possibles (salle A, salle B, street)
-      // ✅ CORRECTION : Filtrer les doublons par ID d'exercice
-      const allExercises = [...semaineA, ...semaineB, ...streetExercices];
-      exercisesList = allExercises.filter(exercise => {
-        if (exercisesIdsSeen.has(exercise.id)) {
-          return false; // Déjà vu, ignorer
-        }
-        exercisesIdsSeen.add(exercise.id);
-        return true;
-      });
-    } else if (workout?.exercices) {
-      // Pour les jours sans variantes, utiliser les exercices de base
-      exercisesList = workout.exercices || [];
-    }
+    // ✅ NOUVEAU : Utiliser tous les exercices de tous les programmes (déjà récupérés dans getAllExercisesForDate)
+    const exercisesList = allExercisesForDate;
     
     // ✅ CORRECTION : Calculer les répétitions totales de manière séquentielle et claire
     // Le total doit être : exercices classiques COCHÉS + reps d'endurance (pompes, boxe, défis complétés)
@@ -834,9 +890,18 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
 
     const realDuration = calculateRealDuration();
     
-    // Vérifier si une activité complémentaire est cochée
-    const isComplementaryChecked = workout?.complementaryActivity && 
-      allData?.checkedExercises?.[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`];
+    // Vérifier si une activité complémentaire est cochée (depuis le programme par défaut ou actif)
+    const defaultWorkout = workoutProgram[dayName];
+    const activeWorkoutRaw = getTodayWorkout ? getTodayWorkout(date, false) : null;
+    const activeWorkout = activeWorkoutRaw ? {
+      ...activeWorkoutRaw,
+      exercices: activeWorkoutRaw.exercices || activeWorkoutRaw.exercises || [],
+      complementaryActivity: activeWorkoutRaw.complementaryActivity
+    } : null;
+    
+    const complementaryActivity = activeWorkout?.complementaryActivity || defaultWorkout?.complementaryActivity;
+    const isComplementaryChecked = complementaryActivity && 
+      allData?.checkedExercises?.[`${dateStr}_complementary_${complementaryActivity.name.toLowerCase()}`];
     
         // Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
         // Seules les activités complémentaires de l'onglet Aujourd'hui comptent
@@ -984,7 +1049,10 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             
             return {
               name: ex.name,
-              reps: parseInt(allData?.reps?.[actualKey] || 0)
+              reps: parseInt(allData?.reps?.[actualKey] || 0),
+              exerciseId: ex.id,
+              programName: ex.programName || 'Programme inconnu',
+              programId: ex.programId
             };
           })
       } : null
@@ -1984,12 +2052,26 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               <div>
                 <h4 className="text-white font-medium mb-2">{t('calendar.heatmap.dayDetails.exercisesCompleted')}</h4>
                 <div className="space-y-2">
-                  {selectedDate.intensity.session.exercises.map((exercise, index) => (
-                    <div key={index} className="bg-slate-700/30 rounded p-2 flex justify-between">
-                      <span className="text-slate-300">{exercise.name}</span>
-                      <span className="text-white font-medium">{exercise.reps} {t('calendar.heatmap.dayDetails.reps')}</span>
-                    </div>
-                  ))}
+                  {selectedDate.intensity.session.exercises.map((exercise, index) => {
+                    // Récupérer le nom du programme depuis l'exercice ou via getExerciseNameById
+                    const programName = exercise.programName || 'Programme inconnu';
+                    const exerciseName = exercise.name || (getExerciseNameById ? getExerciseNameById(exercise.exerciseId || exercise.id) : `Exercice ${exercise.exerciseId || exercise.id}`);
+                    
+                    return (
+                      <div key={index} className="bg-slate-700/30 rounded p-2">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-slate-300 font-medium">{exerciseName}</span>
+                          <span className="text-white font-medium">{exercise.reps} {t('calendar.heatmap.dayDetails.reps')}</span>
+                        </div>
+                        {programName && (
+                          <div className="text-xs text-slate-400 flex items-center gap-1">
+                            <span className="text-purple-400">📋</span>
+                            <span>{programName}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

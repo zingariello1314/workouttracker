@@ -12,7 +12,7 @@ import { useToast } from '../ui/Toast';
 import { useAuth } from '../../context/AuthContext';
 
 const ProgramTab = () => {
-  const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram } = useContext(WorkoutContext);
+  const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram, data } = useContext(WorkoutContext);
   const { currentUser } = useAuth();
   const t = useTranslation();
   const { formatDate: formatLocaleDate } = useFormatters();
@@ -25,6 +25,43 @@ const ProgramTab = () => {
     duration: 4, // semaines par défaut
     exercises: []
   });
+
+  // Fonction pour calculer les jours réels d'utilisation d'un programme
+  const calculateRealUsageDays = (program) => {
+    if (!program || !data || !data.checkedExercises) return 0;
+    
+    // Si le programme a un startDate, compter les jours avec exercices complétés depuis cette date
+    if (program.startDate) {
+      const programStartDate = new Date(program.startDate);
+      programStartDate.setHours(0, 0, 0, 0);
+      
+      const endDate = program.endDate ? new Date(program.endDate) : new Date();
+      endDate.setHours(23, 59, 59, 999);
+      
+      const daysWithExercises = new Set();
+      
+      // Parcourir tous les exercices complétés
+      Object.keys(data.checkedExercises).forEach(key => {
+        if (data.checkedExercises[key]) {
+          // Extraire la date de la clé (format: YYYY-MM-DD_exerciseId)
+          const parts = key.split('_');
+          if (parts.length >= 2) {
+            const dateStr = parts[0];
+            const exerciseDate = new Date(dateStr + 'T00:00:00');
+            
+            // Vérifier si la date est dans la période du programme
+            if (exerciseDate >= programStartDate && exerciseDate <= endDate) {
+              daysWithExercises.add(dateStr);
+            }
+          }
+        }
+      });
+      
+      return daysWithExercises.size;
+    }
+    
+    return 0;
+  };
 
   const formatDuration = (startDate, endDate = null) => {
     const start = new Date(startDate);
@@ -258,7 +295,13 @@ const ProgramTab = () => {
               <div className="flex flex-wrap items-center gap-6 text-sm text-white/80 mb-4">
                 <div className="flex items-center gap-2">
                   <Clock size={16} />
-                  <span>{t('program.currentProgram.activeSince', { duration: formatDuration(visibleActiveProgram.startDate) })}</span>
+                  <span>{(() => {
+                    const realDays = calculateRealUsageDays(visibleActiveProgram);
+                    const daysText = realDays > 0 
+                      ? `${realDays} jour${realDays > 1 ? 's' : ''}`
+                      : formatDuration(visibleActiveProgram.startDate);
+                    return t('program.currentProgram.activeSince', { duration: daysText });
+                  })()}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar size={16} />
@@ -368,8 +411,6 @@ const ProgramTab = () => {
                     className={`p-4 rounded-lg border transition-all ${
                       program.id === activeProgram?.id
                         ? 'border-purple-400/50 bg-purple-500/10'
-                        : program.status === 'completed'
-                        ? 'border-green-400/50 bg-green-500/10'
                         : 'border-slate-600 bg-slate-700/30 hover:border-slate-500'
                     }`}
                   >
@@ -380,11 +421,9 @@ const ProgramTab = () => {
                           <span className={`px-2 py-1 text-xs rounded-full ${
                             program.id === activeProgram?.id
                               ? 'bg-purple-500/20 text-purple-200 border border-purple-400/30'
-                              : program.status === 'completed'
-                              ? 'bg-green-500/20 text-green-200 border border-green-400/30'
                               : 'bg-slate-600/20 text-slate-300 border border-slate-500/30'
                           }`}>
-                            {program.id === activeProgram?.id ? t('program.status.active') : program.status === 'completed' ? t('program.status.completed') : t('program.status.inactive')}
+                            {program.id === activeProgram?.id ? t('program.status.active') : t('program.status.inactive')}
                           </span>
                         </div>
                         
@@ -401,12 +440,20 @@ const ProgramTab = () => {
                             <div className="flex items-center gap-1">
                               <Clock size={14} />
                               <span>
-                                {program.status === 'completed' 
-                                  ? t('program.list.usedFor', { duration: formatDuration(program.startDate, program.endDate) })
-                                  : program.id === activeProgram?.id
-                                  ? t('program.list.activeSince', { duration: formatDuration(program.startDate) })
-                                  : t('program.list.createdOn', { date: formatLocaleDate(new Date(program.createdAt)) })
-                                }
+                                {(() => {
+                                  const realDays = calculateRealUsageDays(program);
+                                  const daysText = realDays > 0 
+                                    ? `${realDays} jour${realDays > 1 ? 's' : ''}`
+                                    : program.startDate ? formatDuration(program.startDate, program.endDate) : '';
+                                  
+                                  if (program.id === activeProgram?.id) {
+                                    return t('program.list.activeSince', { duration: daysText || '0 jour' });
+                                  } else if (program.startDate && realDays > 0) {
+                                    return `Utilisé ${daysText}`;
+                                  } else {
+                                    return t('program.list.createdOn', { date: formatLocaleDate(new Date(program.createdAt)) });
+                                  }
+                                })()}
                               </span>
                             </div>
                           )}
@@ -414,7 +461,7 @@ const ProgramTab = () => {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        {program.id !== activeProgram?.id && program.status !== 'completed' && (
+                        {program.id !== activeProgram?.id && (
                           <button
                             type="button"
                             onClick={() => handleActivateProgram(program.id)}

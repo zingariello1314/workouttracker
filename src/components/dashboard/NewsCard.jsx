@@ -38,10 +38,18 @@ const NewsCard = ({ news, onClick }) => {
 
   const getCategoryLabel = (category) => {
     const labels = {
+      tout: 'Tout',
+      france: 'France',
+      monde: 'Monde',
       bourse: 'Bourse',
       crypto: 'Crypto',
       economie: 'Économie',
-      politique: 'Politique'
+      tech: 'Tech',
+      sport: 'Sport',
+      culture: 'Culture',
+      politique: 'Politique',
+      sante: 'Santé',
+      environnement: 'Environnement'
     };
     return labels[category] || category;
   };
