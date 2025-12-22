@@ -237,14 +237,13 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
         <CardContent className="p-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => handleDateChange(-1)}
-                className="text-slate-300 hover:text-white"
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
               >
                 ←
-              </Button>
+              </button>
               
               <div className="flex items-center gap-2">
                 <Calendar size={20} className="text-blue-400" />
@@ -259,23 +258,23 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
                 </span>
               </div>
               
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => handleDateChange(1)}
-                className="text-slate-300 hover:text-white"
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
               >
                 →
-              </Button>
+              </button>
             </div>
 
-            <Button
+            <button
+              type="button"
               onClick={() => handleAddMeal()}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
             >
-              <Plus size={18} className="mr-2" />
+              <Plus size={18} />
               Ajouter un repas
-            </Button>
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -342,20 +341,20 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
           </div>
           
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-700/50">
-            <Button
-              variant="ghost"
+            <button
+              type="button"
               onClick={handleMealDeleteCancel}
-              className="px-4 py-2"
+              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
             >
               Annuler
-            </Button>
-            <Button
-              variant="danger"
+            </button>
+            <button
+              type="button"
               onClick={handleMealDeleteConfirm}
-              className="px-4 py-2"
+              className="gradient-button-premium gradient-button-premium-md rounded-lg"
             >
               Supprimer
-            </Button>
+            </button>
           </div>
         </div>
       </Modal>

@@ -495,11 +495,12 @@ const ChartsTab = () => {
           {periods.map(period => (
             <button
               key={period.value}
+              type="button"
               onClick={() => setSelectedPeriod(period.value)}
-              className={`px-4 py-2 rounded-md transition-all duration-300 ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 selectedPeriod === period.value
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/50'
-                  : 'hover:bg-slate-800/50 text-slate-400'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
             >
               {period.label}

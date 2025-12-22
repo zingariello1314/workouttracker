@@ -712,11 +712,8 @@ const SessionsView = () => {
       {/* Barre d'outils Undo/Redo */}
       {(canUndo || canRedo) && (
         <div className="flex items-center justify-end gap-2 mb-4">
-          <Button
-            variant="secondary"
-            size="sm"
-            icon="↶"
-            iconPosition="left"
+          <button
+            type="button"
             onClick={() => {
               undo();
               showSuccess('Action annulée');
@@ -724,14 +721,13 @@ const SessionsView = () => {
             disabled={!canUndo}
             title="Annuler (Ctrl+Z)"
             aria-label="Annuler la dernière action"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
           >
+            <span>↶</span>
             Annuler
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon="↷"
-            iconPosition="left"
+          </button>
+          <button
+            type="button"
             onClick={() => {
               redo();
               showSuccess('Action refaite');
@@ -739,9 +735,11 @@ const SessionsView = () => {
             disabled={!canRedo}
             title="Refaire (Ctrl+Y)"
             aria-label="Refaire la dernière action annulée"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
           >
+            <span>↷</span>
             Refaire
-          </Button>
+          </button>
         </div>
       )}
       

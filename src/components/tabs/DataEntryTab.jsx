@@ -314,14 +314,16 @@ const DataEntryTab = () => {
             onChange={(e) => setSelectedDate(new Date(e.target.value))}
             className="bg-slate-800 border-slate-700 text-white"
           />
-          <Button
-            variant={advancedMode ? "default" : "outline"}
+          <button
+            type="button"
             onClick={() => setAdvancedMode(!advancedMode)}
-            className="whitespace-nowrap"
+            className={`gradient-button-premium gradient-button-premium-sm rounded-lg whitespace-nowrap flex items-center gap-2 ${
+              advancedMode ? 'gradient-button-premium-variant' : ''
+            }`}
           >
-            <TrendingUp size={16} className="mr-2" />
+            <TrendingUp size={16} />
             {t('dataEntry.advancedMode.label')}
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -383,14 +385,22 @@ const DataEntryTab = () => {
           })}
           
           <div className="flex gap-3 pt-4">
-            <Button onClick={handleSaveReps} className="flex-1">
-              <Save size={16} className="mr-2" />
+            <button
+              type="button"
+              onClick={handleSaveReps}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2"
+            >
+              <Save size={16} />
               {t('dataEntry.buttons.save')}
-            </Button>
-            <Button variant="outline" onClick={handleResetDay}>
-              <RotateCcw size={16} className="mr-2" />
+            </button>
+            <button
+              type="button"
+              onClick={handleResetDay}
+              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
+            >
+              <RotateCcw size={16} />
               {t('dataEntry.buttons.reset')}
-            </Button>
+            </button>
           </div>
         </CardContent>
       </Card>

@@ -528,11 +528,12 @@ const QuestsTab = () => {
       ].map((tab) => (
         <button
           key={tab.id}
+          type="button"
           onClick={() => setCurrentSubTab(tab.id)}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+          className={`gradient-button-premium gradient-button-premium-md rounded-lg ${
             currentSubTab === tab.id
-              ? 'bg-emerald-400 text-slate-900 border-emerald-300 shadow-lg shadow-emerald-500/30'
-              : 'bg-slate-900/40 text-slate-200 border-slate-700 hover:bg-slate-800'
+              ? 'gradient-button-premium-variant'
+              : ''
           }`}
         >
           {tab.label}
@@ -554,8 +555,9 @@ const QuestsTab = () => {
           </p>
         </div>
         <button
+          type="button"
           onClick={openNewQuestPopup}
-          className="self-start inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-900 text-sm font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-400/50 hover:-translate-y-0.5 transition-all"
+          className="gradient-button-premium gradient-button-premium-md rounded-lg self-start inline-flex items-center gap-2"
         >
           <span>＋</span>
           <span>Nouvelle quête</span>
@@ -631,20 +633,23 @@ const QuestsTab = () => {
             {selectedQuests.size} quête(s) sélectionnée(s)
           </span>
           <button
+            type="button"
             onClick={bulkActivate}
-            className="px-2 py-1 rounded-full bg-emerald-500/90 text-slate-900 font-semibold hover:bg-emerald-400"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
           >
             Activer
           </button>
           <button
+            type="button"
             onClick={bulkDeactivate}
-            className="px-2 py-1 rounded-full bg-amber-500/90 text-slate-900 font-semibold hover:bg-amber-400"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
           >
             Désactiver
           </button>
           <button
+            type="button"
             onClick={bulkDelete}
-            className="px-2 py-1 rounded-full bg-rose-600/90 text-slate-50 font-semibold hover:bg-rose-500"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
           >
             Supprimer
           </button>
@@ -769,33 +774,37 @@ const QuestsTab = () => {
                   <td className="px-3 py-2 align-top text-right">
                     <div className="inline-flex gap-1">
                       <button
+                        type="button"
                         onClick={() => toggleQuestActive(quest.id)}
                         title={quest.active === false ? 'Activer' : 'Désactiver'}
-                        className={`px-2 py-1 rounded-full text-[11px] font-semibold ${
+                        className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                           quest.active === false
-                            ? 'bg-emerald-500/90 text-slate-900'
-                            : 'bg-amber-500/90 text-slate-900'
+                            ? ''
+                            : 'gradient-button-premium-variant'
                         }`}
                       >
                         {quest.active === false ? '▶️' : '⏸️'}
                       </button>
                       <button
+                        type="button"
                         onClick={() => openEditQuestPopup(quest.id)}
-                        className="px-2 py-1 rounded-full text-[11px] font-semibold bg-sky-500/90 text-slate-900"
+                        className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
                         title="Éditer"
                       >
                         ✏️
                       </button>
                       <button
+                        type="button"
                         onClick={() => duplicateQuest(quest.id)}
-                        className="px-2 py-1 rounded-full text-[11px] font-semibold bg-sky-700/90 text-slate-50"
+                        className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
                         title="Dupliquer"
                       >
                         📋
                       </button>
                       <button
+                        type="button"
                         onClick={() => deleteQuest(quest.id)}
-                        className="px-2 py-1 rounded-full text-[11px] font-semibold bg-rose-600/90 text-slate-50"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                         title="Supprimer"
                       >
                         🗑️
@@ -1013,10 +1022,10 @@ const QuestsTab = () => {
                   key={p}
                   type="button"
                   onClick={() => setSelectedPeriod(p)}
-                  className={`px-2 py-1 rounded-full border text-xs transition-all ${
+                  className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                     selectedPeriod === p
-                      ? 'bg-emerald-400 text-slate-900 border-emerald-300'
-                      : 'bg-slate-900/50 text-slate-200 border-slate-700 hover:bg-slate-800'
+                      ? 'gradient-button-premium-variant'
+                      : ''
                   }`}
                 >
                   {labelMap[p]}
@@ -1336,8 +1345,9 @@ const QuestsTab = () => {
               </div>
             </div>
             <button
+              type="button"
               onClick={handleExport}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-900 hover:bg-white"
+              className="gradient-button-premium gradient-button-premium-md rounded-lg"
             >
               Exporter
             </button>
@@ -1352,7 +1362,7 @@ const QuestsTab = () => {
                 Remplace entièrement les données actuelles par un fichier exporté.
               </div>
             </div>
-            <label className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-100 hover:bg-slate-700 cursor-pointer">
+            <label className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg cursor-pointer inline-block">
               Importer
               <input
                 type="file"
@@ -1373,8 +1383,9 @@ const QuestsTab = () => {
               </div>
             </div>
             <button
+              type="button"
               onClick={handleReset}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 text-slate-50 hover:bg-rose-500"
+              className="gradient-button-premium gradient-button-premium-md rounded-lg"
             >
               Réinitialiser
             </button>
@@ -1422,8 +1433,9 @@ const QuestsTab = () => {
                 {editingQuestId ? 'Modifier la quête' : 'Nouvelle quête'}
               </h2>
               <button
+                type="button"
                 onClick={closeQuestPopup}
-                className="text-slate-400 hover:text-slate-100 text-lg"
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
               >
                 ✕
               </button>
@@ -1547,10 +1559,10 @@ const QuestsTab = () => {
                             return { ...prev, jours: [...jours, day].sort() };
                           });
                         }}
-                        className={`px-2 py-1 rounded-full border ${
+                        className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                           questForm.jours?.includes(Number(j.value))
-                            ? 'bg-emerald-500/90 border-emerald-300 text-slate-900'
-                            : 'bg-slate-950 border-slate-700 text-slate-200'
+                            ? 'gradient-button-premium-variant'
+                            : ''
                         }`}
                       >
                         {j.label.slice(0, 3)}
@@ -1566,7 +1578,7 @@ const QuestsTab = () => {
                         onClick={() =>
                           setQuestForm((prev) => ({ ...prev, jours: [...preset.jours] }))
                         }
-                        className="px-2 py-1 rounded-full bg-slate-900 border border-slate-700 hover:bg-slate-800"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                       >
                         {preset.label}
                       </button>
@@ -1602,14 +1614,16 @@ const QuestsTab = () => {
 
             <div className="flex justify-end gap-2 pt-2">
               <button
+                type="button"
                 onClick={closeQuestPopup}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
               >
                 Annuler
               </button>
               <button
+                type="button"
                 onClick={saveQuestFromForm}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-900 hover:bg-emerald-400"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg"
               >
                 Enregistrer
               </button>

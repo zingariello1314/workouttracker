@@ -69,11 +69,12 @@ const FinanceTab = () => {
             {subTabs.map(tab => (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`sub-tab-button flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
                   activeSubTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                    ? 'gradient-button-premium-variant'
+                    : ''
                 }`}
               >
                 <span className="text-lg">{tab.icon}</span>

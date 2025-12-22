@@ -805,10 +805,14 @@ const StabilityAnalysis = () => {
             <p className="text-slate-400 mb-4">
               Sélectionnez au moins une métrique pour commencer l'analyse de stabilité.
             </p>
-            <Button onClick={() => setSelectedMetrics(['weight', 'bodyFat', 'muscleMass'])}>
-              <RefreshCw className="w-4 h-4 mr-2" />
+            <button
+              type="button"
+              onClick={() => setSelectedMetrics(['weight', 'bodyFat', 'muscleMass'])}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+            >
+              <RefreshCw className="w-4 h-4" />
               Sélectionner les métriques principales
-            </Button>
+            </button>
           </CardContent>
         </Card>
       )}

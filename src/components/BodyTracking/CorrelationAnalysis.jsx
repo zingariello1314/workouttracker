@@ -855,10 +855,14 @@ const CorrelationAnalysis = () => {
             <p className="text-slate-400 mb-4">
               Ajustez les filtres ou la période d'analyse pour voir plus de corrélations.
             </p>
-            <Button onClick={() => setSelectedCorrelations(['strong', 'moderate', 'weak'])}>
-              <RefreshCw className="w-4 h-4 mr-2" />
+            <button
+              type="button"
+              onClick={() => setSelectedCorrelations(['strong', 'moderate', 'weak'])}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+            >
+              <RefreshCw className="w-4 h-4" />
               Afficher toutes les corrélations
-            </Button>
+            </button>
           </CardContent>
         </Card>
       )}

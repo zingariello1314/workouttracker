@@ -1060,10 +1060,14 @@ const ProgressComments = () => {
             <p className="text-slate-400 mb-4">
               Sélectionnez des types de commentaires et une période d'analyse pour commencer.
             </p>
-            <Button onClick={() => setCommentTypes(['achievements', 'trends', 'recommendations'])}>
-              <Sparkles className="w-4 h-4 mr-2" />
+            <button
+              type="button"
+              onClick={() => setCommentTypes(['achievements', 'trends', 'recommendations'])}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+            >
+              <Sparkles className="w-4 h-4" />
               Générer des commentaires
-            </Button>
+            </button>
           </CardContent>
         </Card>
       )}

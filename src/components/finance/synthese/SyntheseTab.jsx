@@ -54,8 +54,9 @@ const SyntheseTab = () => {
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <div className="text-red-400 mb-4">Erreur: {error}</div>
           <button
+            type="button"
             onClick={refreshData}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg"
           >
             Réessayer
           </button>
@@ -83,14 +84,13 @@ const SyntheseTab = () => {
             </p>
           </div>
           <button
+            type="button"
             onClick={refreshData}
-            className="group px-5 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl transition-all duration-300 text-sm font-medium shadow-lg hover:shadow-purple-500/50 hover:scale-105 transform"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
             aria-label="Rafraîchir les données"
           >
-            <span className="flex items-center gap-2">
-              <span className="group-hover:rotate-180 transition-transform duration-500">🔄</span>
-              Rafraîchir
-            </span>
+            <span className="group-hover:rotate-180 transition-transform duration-500">🔄</span>
+            Rafraîchir
           </button>
         </div>
       </div>
@@ -319,18 +319,17 @@ const SyntheseTab = () => {
         ].map(({ id, icon: Icon, label, ariaLabel }) => (
           <button
             key={id}
+            type="button"
             onClick={() => setActiveSection(id)}
-            className={`group px-4 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
+            className={`gradient-button-premium gradient-button-premium-md rounded-lg flex flex-col items-center gap-2 ${
               activeSection === id
-                ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-lg shadow-purple-500/50 scale-105'
-                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 border border-slate-600/50 hover:border-purple-500/50'
+                ? 'gradient-button-premium-variant'
+                : ''
             }`}
             aria-label={ariaLabel}
           >
-            <div className="flex flex-col items-center gap-2">
-              <Icon className={`w-5 h-5 transition-transform duration-300 ${activeSection === id ? 'rotate-12' : 'group-hover:rotate-12'}`} />
-              <span className="text-xs sm:text-sm">{label}</span>
-            </div>
+            <Icon className={`w-5 h-5 transition-transform duration-300 ${activeSection === id ? 'rotate-12' : 'group-hover:rotate-12'}`} />
+            <span className="text-xs sm:text-sm">{label}</span>
           </button>
         ))}
       </div>

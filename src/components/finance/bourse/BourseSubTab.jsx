@@ -139,10 +139,11 @@ const BourseSubTab = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleRefresh}
             // ✅ PHASE 3.16 : Utiliser loading states centralisés pour désactiver bouton
             disabled={refreshing || loading || loadingStates?.adding || loadingStates?.updating || loadingStates?.deleting}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
             title="Rafraîchir les données de marché"
           >
             <svg 
@@ -156,10 +157,11 @@ const BourseSubTab = () => {
             <span>{refreshing ? 'Rafraîchissement...' : 'Rafraîchir'}</span>
           </button>
           <button
+            type="button"
             onClick={handleAddFormToggle}
             // ✅ PHASE 3.16 : Désactiver bouton pendant opérations
             disabled={loadingStates?.adding || loadingStates?.updating || loadingStates?.deleting || refreshing}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
           >
             <span>+</span>
             <span>Ajouter une position</span>
@@ -210,21 +212,23 @@ const BourseSubTab = () => {
       {memoizedPortfolio.length > 0 && (
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => handleViewModeChange('table')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`gradient-button-premium gradient-button-premium-md rounded-lg ${
               viewMode === 'table'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                ? 'gradient-button-premium-variant'
+                : ''
             }`}
           >
             📊 Tableau
           </button>
           <button
+            type="button"
             onClick={() => handleViewModeChange('cards')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`gradient-button-premium gradient-button-premium-md rounded-lg ${
               viewMode === 'cards'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                ? 'gradient-button-premium-variant'
+                : ''
             }`}
           >
             🃏 Cartes
@@ -253,8 +257,9 @@ const BourseSubTab = () => {
             Commencez par ajouter votre première position boursière
           </p>
           <button
+            type="button"
             onClick={handleAddFormToggle}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg"
           >
             Ajouter une position
           </button>

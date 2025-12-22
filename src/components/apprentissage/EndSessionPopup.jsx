@@ -26,16 +26,16 @@ const EndSessionPopup = React.memo(({ timer, onContinue, onFinish }) => {
           )}
           <div className="flex gap-4 justify-center">
             <button
+              type="button"
               onClick={onContinue}
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-2 border-emerald-500 rounded-lg text-emerald-400 font-bold uppercase tracking-wide hover:from-emerald-500/30 hover:to-cyan-500/30 hover:scale-105 transition-transform duration-200"
-              style={{ willChange: 'transform' }}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg font-bold uppercase tracking-wide"
             >
               CONTINUER
             </button>
             <button
+              type="button"
               onClick={onFinish}
-              className="px-6 py-3 bg-slate-800/50 border-2 border-slate-600 rounded-lg text-slate-300 font-bold uppercase tracking-wide hover:bg-slate-700/50 hover:scale-105 transition-transform duration-200"
-              style={{ willChange: 'transform' }}
+              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg font-bold uppercase tracking-wide"
             >
               TERMINER
             </button>

@@ -14,11 +14,12 @@ export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixed
       {/* Mode Toggle */}
       <div className="flex gap-2">
         <button
+          type="button"
           onClick={() => onModeChange('random')}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
             mode === 'random'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-              : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              ? 'gradient-button-premium gradient-button-premium-variant shadow-lg shadow-cyan-500/30'
+              : 'gradient-button-premium'
           }`}
         >
           <Shuffle size={18} />
@@ -26,11 +27,12 @@ export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixed
         </button>
 
         <button
+          type="button"
           onClick={() => onModeChange('fixed')}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
             mode === 'fixed'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-              : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              ? 'gradient-button-premium gradient-button-premium-variant shadow-lg shadow-cyan-500/30'
+              : 'gradient-button-premium'
           }`}
         >
           <Pin size={18} />

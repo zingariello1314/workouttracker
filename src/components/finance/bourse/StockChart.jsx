@@ -35,11 +35,12 @@ const StockChart = ({ ticker, dateAchat, prixEntree }) => {
           {['1j', '5j', '1m', '3m', '6m', '1a', 'Max'].map(p => (
             <button
               key={p}
+              type="button"
               onClick={() => handlePeriodChange(p)}
-              className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 selectedPeriod === p
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
             >
               {p}

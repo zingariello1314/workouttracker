@@ -188,9 +188,13 @@ const NutritionDailyChallenges = () => {
         <CardContent className="text-center py-8">
           <AlertCircle size={48} className="text-red-400 mx-auto mb-4" />
           <p className="text-slate-300 mb-2">Erreur lors du chargement des défis</p>
-          <Button onClick={refresh} variant="outline" className="mt-4">
+          <button
+            type="button"
+            onClick={refresh}
+            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg mt-4"
+          >
             Réessayer
-          </Button>
+          </button>
         </CardContent>
       </Card>
     );

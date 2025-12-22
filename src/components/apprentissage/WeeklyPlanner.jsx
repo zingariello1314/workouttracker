@@ -31,26 +31,30 @@ const WeeklyPlanner = React.memo(({
         <h3 className="text-lg md:text-xl font-bold text-emerald-400">📅 Planificateur Hebdomadaire</h3>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => onNavigateWeek(-1)}
-            className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 transition-all"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
           >
             ⬅️
           </button>
           <button
+            type="button"
             onClick={onGoToCurrentWeek}
-            className="px-4 py-1 bg-emerald-500/20 border border-emerald-500/50 rounded text-emerald-400 hover:bg-emerald-500/30 transition-all text-sm"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg text-sm"
           >
             {planner.currentWeekOffset === 0 ? 'Cette semaine' : 'Aller à aujourd\'hui'}
           </button>
           <button
+            type="button"
             onClick={() => onNavigateWeek(1)}
-            className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 transition-all"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
           >
             ➡️
           </button>
           <button
+            type="button"
             onClick={onToggleCompactMode}
-            className="px-4 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 transition-all text-sm"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg text-sm"
           >
             {planner.compactMode ? '📈 Vue étendue' : '📊 Vue compacte'}
           </button>
@@ -90,8 +94,9 @@ const WeeklyPlanner = React.memo(({
                     <div className="font-semibold text-slate-200 truncate flex-1">{subject.name}</div>
                     {!timer.isRunning && (
                       <button
+                        type="button"
                         onClick={() => onStartSession(subject)}
-                        className="ml-2 text-emerald-400 hover:text-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Démarrer session"
                       >
                         ▶️

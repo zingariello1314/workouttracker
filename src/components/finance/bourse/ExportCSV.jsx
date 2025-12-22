@@ -175,8 +175,9 @@ const ExportCSV = () => {
 
   return (
     <button
+      type="button"
       onClick={exportToCSV}
-      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
+      className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
     >
       <span>📥</span>
       <span>Exporter CSV</span>

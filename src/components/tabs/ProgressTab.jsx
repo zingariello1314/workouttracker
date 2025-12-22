@@ -82,15 +82,16 @@ const ProgressTab = () => {
           return (
             <button
               key={section.id}
+              type="button"
               onClick={() => setActiveSection(section.id)}
-              className={`p-4 rounded-lg border transition-all text-left ${
+              className={`gradient-button-premium rounded-lg p-4 text-left ${
                 activeSection === section.id
-                  ? 'border-orange-500 bg-orange-600/20 text-white'
-                  : 'border-slate-600 bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
             >
               <Icon className={`w-5 h-5 mb-2 ${
-                activeSection === section.id ? 'text-orange-400' : 'text-slate-400'
+                activeSection === section.id ? 'text-white' : 'text-slate-400'
               }`} />
               <div className="font-medium text-sm">{section.label}</div>
               <div className="text-xs text-slate-400 mt-1">{section.description}</div>

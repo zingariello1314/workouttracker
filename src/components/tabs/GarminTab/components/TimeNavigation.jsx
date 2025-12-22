@@ -256,18 +256,20 @@ function TimeNavigation({
         {/* Navigation principale */}
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={goToFirst}
             disabled={!selectedDate || dateKeys.indexOf(selectedDate) === 0}
             aria-label="Aller à la première date"
-            className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             title="Première date"
           >
             ««
           </button>
           <button
+            type="button"
             onClick={goToPrevious}
             disabled={!selectedDate || dateKeys.indexOf(selectedDate) === 0}
-            className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
             title="Jour précédent"
           >
             ‹
@@ -316,25 +318,28 @@ function TimeNavigation({
           </div>
 
           <button
+            type="button"
             onClick={goToNext}
             disabled={!selectedDate || dateKeys.indexOf(selectedDate) === dateKeys.length - 1}
-            className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
             title="Jour suivant"
           >
             ›
           </button>
           <button
+            type="button"
             onClick={goToLast}
             disabled={!selectedDate || dateKeys.indexOf(selectedDate) === dateKeys.length - 1}
-            className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             title="Dernière date"
           >
             »»
           </button>
           <button
+            type="button"
             onClick={goToToday}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
-          aria-label="Aller à aujourd'hui"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Aller à aujourd'hui"
             title="Aujourd'hui"
           >
             Aujourd'hui
@@ -344,11 +349,12 @@ function TimeNavigation({
         {/* Boutons de filtres et comparaison */}
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+            className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
               showFilters
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                ? 'gradient-button-premium-variant'
+                : ''
             }`}
             aria-expanded={showFilters}
             aria-controls={filtersSectionId}
@@ -357,11 +363,12 @@ function TimeNavigation({
             🔍 Filtres
           </button>
           <button
+            type="button"
             onClick={() => setShowComparison(!showComparison)}
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+            className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
               comparisonMode
-                ? 'bg-purple-600 text-white'
-                : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                ? 'gradient-button-premium-variant'
+                : ''
             }`}
             aria-expanded={showComparison}
             aria-controls={comparisonSectionId}
@@ -386,66 +393,72 @@ function TimeNavigation({
           </h5>
           <div className="flex flex-wrap gap-2 mb-3">
             <button
+              type="button"
               onClick={() => applyPeriodFilter('week')}
-              className={`px-3 py-1 rounded text-sm ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 periodFilter === 'week'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
               aria-pressed={periodFilter === 'week'}
             >
               7 derniers jours
             </button>
             <button
+              type="button"
               onClick={() => applyPeriodFilter('month')}
-              className={`px-3 py-1 rounded text-sm ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 periodFilter === 'month'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
               aria-pressed={periodFilter === 'month'}
             >
               30 derniers jours
             </button>
             <button
+              type="button"
               onClick={() => applyPeriodFilter('3months')}
-              className={`px-3 py-1 rounded text-sm ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 periodFilter === '3months'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
               aria-pressed={periodFilter === '3months'}
             >
               3 derniers mois
             </button>
             <button
+              type="button"
               onClick={() => applyPeriodFilter('6months')}
-              className={`px-3 py-1 rounded text-sm ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 periodFilter === '6months'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
               aria-pressed={periodFilter === '6months'}
             >
               6 derniers mois
             </button>
             <button
+              type="button"
               onClick={() => applyPeriodFilter('year')}
-              className={`px-3 py-1 rounded text-sm ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 periodFilter === 'year'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
               aria-pressed={periodFilter === 'year'}
             >
               1 an
             </button>
             <button
+              type="button"
               onClick={() => applyPeriodFilter('all')}
-              className={`px-3 py-1 rounded text-sm ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 periodFilter === 'all' || !periodFilter
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
               aria-pressed={periodFilter === 'all' || !periodFilter}
             >
@@ -486,6 +499,7 @@ function TimeNavigation({
                 />
               </div>
               <button
+                type="button"
                 onClick={() => {
                   if (customStartDate && customEndDate) {
                     setPeriodFilter('custom');
@@ -493,18 +507,19 @@ function TimeNavigation({
                   }
                 }}
                 disabled={!customStartDate || !customEndDate}
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Appliquer
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setCustomStartDate('');
                   setCustomEndDate('');
                   setPeriodFilter('all');
                   applyPeriodFilter('all');
                 }}
-                className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-sm"
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
               >
                 Réinitialiser
               </button>

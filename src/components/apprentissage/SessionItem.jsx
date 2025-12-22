@@ -56,18 +56,20 @@ const SessionItem = React.memo(({
             </div>
             <div className="flex gap-2" role="group" aria-label="Actions sur la session">
               <button
+                type="button"
                 onClick={() => onStartEditSession(index)}
                 aria-label={`Modifier la session ${index + 1} de ${session.subject}`}
-                className="px-2 py-1 bg-slate-800/50 border border-slate-600 rounded text-slate-400 hover:bg-slate-700/50 transition-all focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
                 title="MODIFY ENTRY"
               >
                 <span aria-hidden="true">✏️</span>
                 <span className="sr-only">Modifier</span>
               </button>
               <button
+                type="button"
                 onClick={() => onDeleteSession(index)}
                 aria-label={`Supprimer la session ${index + 1} de ${session.subject}`}
-                className="px-2 py-1 bg-red-900/30 border border-red-500/50 rounded text-red-400 hover:bg-red-500/20 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                 title="DELETE ENTRY"
               >
                 <span aria-hidden="true">🗑️</span>
@@ -135,15 +137,17 @@ const SessionItem = React.memo(({
             </div>
             <div className="flex gap-2 justify-end">
               <button
+                type="button"
                 onClick={onSaveEditSession}
                 disabled={!editSession.subjectName}
-                className="px-4 py-1.5 bg-emerald-500/20 border border-emerald-500 rounded text-emerald-400 font-semibold text-xs uppercase disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-500/30 transition-all"
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg font-semibold text-xs uppercase"
               >
                 ✅ SAVE
               </button>
               <button
+                type="button"
                 onClick={onCancelEditSession}
-                className="px-4 py-1.5 bg-slate-800/50 border border-slate-600 rounded text-slate-300 font-semibold text-xs uppercase hover:bg-slate-700/50 transition-all"
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg font-semibold text-xs uppercase"
               >
                 ❌ CANCEL
               </button>

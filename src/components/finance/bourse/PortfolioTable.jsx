@@ -199,10 +199,11 @@ const PortfolioTable = memo(({ portfolio, onPositionClick }) => {
           className="flex-1 min-w-[200px] px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
+          type="button"
           onClick={handleRefresh}
           // ✅ PHASE 3.16 : Utiliser loading states centralisés pour désactiver bouton
           disabled={refreshing || loadingStates?.adding || loadingStates?.updating || loadingStates?.deleting}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
+          className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
         >
           {refreshing ? (
             <>

@@ -78,15 +78,17 @@ export class QuotesErrorBoundary extends React.Component {
 
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={this.handleRetry}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
               >
                 <RefreshCw size={16} />
                 Réessayer {this.state.retryCount > 0 && `(${this.state.retryCount})`}
               </button>
               <button
+                type="button"
                 onClick={this.handleReset}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
               >
                 Réinitialiser
               </button>

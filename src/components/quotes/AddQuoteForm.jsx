@@ -5,7 +5,6 @@
 
 import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
-import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 
 export function AddQuoteForm({ onAdd, onCancel }) {
@@ -168,22 +167,21 @@ export function AddQuoteForm({ onAdd, onCancel }) {
 
       {/* Actions */}
       <div className="flex gap-2 pt-2">
-        <Button
+        <button
           type="submit"
-          icon={Plus}
-          className="flex-1 bg-blue-600 hover:bg-blue-700"
+          className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2"
         >
+          <Plus className="w-4 h-4" />
           Ajouter
-        </Button>
+        </button>
         {onCancel && (
-          <Button
+          <button
             type="button"
             onClick={onCancel}
-            variant="outline"
-            className="flex-1"
+            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1"
           >
             Annuler
-          </Button>
+          </button>
         )}
       </div>
     </form>

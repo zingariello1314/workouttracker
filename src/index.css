@@ -279,3 +279,247 @@ html, body {
   margin-top: 0.2em;
   margin-bottom: 0.2em;
 }
+
+/* ============================================
+   BOUTONS GRADIENT PREMIUM - Onglet Livres
+   ============================================ */
+
+@layer base {
+  /* Propriétés CSS personnalisées pour les boutons gradient */
+  @property --gradient-pos-x {
+    syntax: '<percentage>';
+    initial-value: 11.14%;
+    inherits: false;
+  }
+
+  @property --gradient-pos-y {
+    syntax: '<percentage>';
+    initial-value: 140%;
+    inherits: false;
+  }
+
+  @property --gradient-spread-x {
+    syntax: '<percentage>';
+    initial-value: 150%;
+    inherits: false;
+  }
+
+  @property --gradient-spread-y {
+    syntax: '<percentage>';
+    initial-value: 180.06%;
+    inherits: false;
+  }
+
+  @property --gradient-color-1 {
+    syntax: '<color>';
+    initial-value: #000;
+    inherits: false;
+  }
+
+  @property --gradient-color-2 {
+    syntax: '<color>';
+    initial-value: #08012c;
+    inherits: false;
+  }
+
+  @property --gradient-color-3 {
+    syntax: '<color>';
+    initial-value: #4e1e40;
+    inherits: false;
+  }
+
+  @property --gradient-color-4 {
+    syntax: '<color>';
+    initial-value: #70464e;
+    inherits: false;
+  }
+
+  @property --gradient-color-5 {
+    syntax: '<color>';
+    initial-value: #88394c;
+    inherits: false;
+  }
+
+  @property --gradient-border-angle {
+    syntax: '<angle>';
+    initial-value: 20deg;
+    inherits: true;
+  }
+
+  @property --gradient-border-color-1 {
+    syntax: '<color>';
+    initial-value: hsla(340, 75%, 60%, 0.2);
+    inherits: true;
+  }
+
+  @property --gradient-border-color-2 {
+    syntax: '<color>';
+    initial-value: hsla(340, 75%, 40%, 0.75);
+    inherits: true;
+  }
+
+  @property --gradient-stop-1 {
+    syntax: '<percentage>';
+    initial-value: 37.35%;
+    inherits: false;
+  }
+
+  @property --gradient-stop-2 {
+    syntax: '<percentage>';
+    initial-value: 61.36%;
+    inherits: false;
+  }
+
+  @property --gradient-stop-3 {
+    syntax: '<percentage>';
+    initial-value: 78.42%;
+    inherits: false;
+  }
+
+  @property --gradient-stop-4 {
+    syntax: '<percentage>';
+    initial-value: 89.52%;
+    inherits: false;
+  }
+
+  @property --gradient-stop-5 {
+    syntax: '<percentage>';
+    initial-value: 100%;
+    inherits: false;
+  }
+}
+
+@layer components {
+  /* Classe de base pour les boutons gradient premium */
+  .gradient-button-premium {
+    @apply relative appearance-none cursor-pointer rounded-lg;
+    background: radial-gradient(
+      var(--gradient-spread-x) var(--gradient-spread-y) at var(--gradient-pos-x) var(--gradient-pos-y),
+      var(--gradient-color-1) var(--gradient-stop-1),
+      var(--gradient-color-2) var(--gradient-stop-2),
+      var(--gradient-color-3) var(--gradient-stop-3),
+      var(--gradient-color-4) var(--gradient-stop-4),
+      var(--gradient-color-5) var(--gradient-stop-5)
+    );
+    transition:
+      --gradient-pos-x 0.5s,
+      --gradient-pos-y 0.5s,
+      --gradient-spread-x 0.5s,
+      --gradient-spread-y 0.5s,
+      --gradient-color-1 0.5s,
+      --gradient-color-2 0.5s,
+      --gradient-color-3 0.5s,
+      --gradient-color-4 0.5s,
+      --gradient-color-5 0.5s,
+      --gradient-border-angle 0.5s,
+      --gradient-border-color-1 0.5s,
+      --gradient-border-color-2 0.5s,
+      --gradient-stop-1 0.5s,
+      --gradient-stop-2 0.5s,
+      --gradient-stop-3 0.5s,
+      --gradient-stop-4 0.5s,
+      --gradient-stop-5 0.5s;
+    color: white;
+    font-weight: 500;
+    border: none;
+    outline: none;
+  }
+
+  .gradient-button-premium::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      var(--gradient-border-angle),
+      var(--gradient-border-color-1),
+      var(--gradient-border-color-2)
+    );
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .gradient-button-premium:hover {
+    --gradient-pos-x: 0%;
+    --gradient-pos-y: 91.51%;
+    --gradient-spread-x: 120.24%;
+    --gradient-spread-y: 103.18%;
+    --gradient-color-1: #c96287;
+    --gradient-color-2: #c66c64;
+    --gradient-color-3: #cc7d23;
+    --gradient-color-4: #37140a;
+    --gradient-color-5: #000;
+    --gradient-border-angle: 190deg;
+    --gradient-border-color-1: hsla(340, 78%, 90%, 0.1);
+    --gradient-border-color-2: hsla(340, 75%, 90%, 0.6);
+    --gradient-stop-1: 0%;
+    --gradient-stop-2: 8.8%;
+    --gradient-stop-3: 21.44%;
+    --gradient-stop-4: 71.34%;
+    --gradient-stop-5: 85.76%;
+  }
+
+  .gradient-button-premium:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+  }
+
+  .gradient-button-premium:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Variante cyan/blue pour certains boutons */
+  .gradient-button-premium-variant {
+    --gradient-color-1: #000022;
+    --gradient-color-2: #1f3f6d;
+    --gradient-color-3: #469396;
+    --gradient-color-4: #f1ffa5;
+    --gradient-border-angle: 200deg;
+    --gradient-border-color-1: hsla(320, 75%, 90%, 0.6);
+    --gradient-border-color-2: hsla(320, 50%, 90%, 0.15);
+  }
+
+  .gradient-button-premium-variant:hover {
+    --gradient-pos-x: 0%;
+    --gradient-pos-y: 95.51%;
+    --gradient-spread-x: 110.24%;
+    --gradient-spread-y: 110.2%;
+    --gradient-color-1: #000020;
+    --gradient-color-2: #f1ffa5;
+    --gradient-color-3: #469396;
+    --gradient-color-4: #1f3f6d;
+    --gradient-color-5: #000;
+    --gradient-stop-1: 0%;
+    --gradient-stop-2: 10%;
+    --gradient-stop-3: 35.44%;
+    --gradient-stop-4: 71.34%;
+    --gradient-stop-5: 90.76%;
+    --gradient-border-angle: 210deg;
+    --gradient-border-color-1: hsla(320, 75%, 90%, 0.2);
+    --gradient-border-color-2: hsla(320, 50%, 90%, 0.75);
+  }
+
+  /* Variante pour les boutons de pagination (plus petits) */
+  .gradient-button-premium-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    min-height: 2rem;
+  }
+
+  /* Variante pour les boutons de formulaire */
+  .gradient-button-premium-md {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+    min-height: 2.5rem;
+  }
+
+  /* Variante pour les boutons principaux */
+  .gradient-button-premium-lg {
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    min-height: 3rem;
+  }
+}

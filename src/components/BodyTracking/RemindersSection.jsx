@@ -845,13 +845,20 @@ const RemindersSection = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" className="bg-yellow-600 hover:bg-yellow-700">
-                  <Save className="w-4 h-4 mr-2" />
+                <button
+                  type="submit"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
                   {editingReminder ? 'Modifier' : 'Créer'} le rappel
-                </Button>
-                <Button type="button" variant="ghost" onClick={resetForm}>
+                </button>
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                >
                   Annuler
-                </Button>
+                </button>
               </div>
             </form>
           </CardContent>
@@ -968,10 +975,14 @@ const RemindersSection = () => {
             <p className="text-slate-400 mb-4">
               Créez des rappels pour ne jamais oublier vos mesures et votre suivi corporel.
             </p>
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+            >
+              <Plus className="w-4 h-4" />
               Créer le premier rappel
-            </Button>
+            </button>
           </CardContent>
         </Card>
       )}

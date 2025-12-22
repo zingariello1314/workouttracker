@@ -231,38 +231,42 @@ const StockCard = memo(({ position, onPositionClick }) => {
       {/* Actions */}
       <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-700">
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation(); // ✅ OPTIMISATION Phase 2.5 : Empêcher ouverture modal lors clic bouton
             toggleDetails();
           }}
-          className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
+          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex-1"
         >
           {showDetails ? 'Masquer détails' : 'Voir détails'}
         </button>
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation(); // ✅ OPTIMISATION Phase 2.5 : Empêcher ouverture modal lors clic bouton
             toggleChart();
           }}
-          className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex-1"
         >
           {showChart ? 'Masquer graphique' : 'Voir graphique'}
         </button>
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation(); // ✅ OPTIMISATION Phase 2.5 : Empêcher ouverture modal lors clic bouton
             toggleIndicators();
           }}
-          className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
+          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex-1"
         >
           {showIndicators ? 'Masquer indicateurs' : 'Indicateurs'}
         </button>
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation(); // ✅ OPTIMISATION Phase 2.5 : Empêcher ouverture modal lors clic bouton
             toggleAlertSettings();
           }}
-          className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors text-sm"
+          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex-1"
         >
           {showAlertSettings ? 'Masquer paramètres' : 'Paramètres alertes'}
         </button>

@@ -77,12 +77,13 @@ const PlanificateurSubTab = () => {
           {sections.map(section => (
             <button
               key={section.id}
+              type="button"
               onClick={() => setActiveSection(section.id)}
-              className={`sub-section-button flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200
-                ${activeSection === section.id
-                  ? 'bg-blue-600/30 text-blue-300 border border-blue-500/50'
-                  : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
-                }`}
+              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
+                activeSection === section.id
+                  ? 'gradient-button-premium-variant'
+                  : ''
+              }`}
               aria-label={`Naviguer vers ${t(section.labelKey)}`}
               aria-current={activeSection === section.id ? 'page' : undefined}
             >

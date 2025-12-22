@@ -1467,10 +1467,14 @@ const PhotoGallerySection = () => {
               <Camera className="w-16 h-16 mx-auto mb-4 text-slate-500" />
               <h4 className="text-xl font-semibold mb-2 text-white">Aucune photo</h4>
               <p className="text-slate-400 mb-4">Commencez votre suivi en ajoutant vos premières photos de progression.</p>
-              <Button onClick={() => fileInputRef.current?.click()}>
-                <Upload className="w-4 h-4 mr-2" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+              >
+                <Upload className="w-4 h-4" />
                 Ajouter la première photo
-              </Button>
+              </button>
             </div>
           )}
             </>

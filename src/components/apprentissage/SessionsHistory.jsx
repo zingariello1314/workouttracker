@@ -34,13 +34,14 @@ const SessionsHistory = React.memo(({
           <span aria-hidden="true">📊</span> SESSION ARCHIVE
         </h3>
         <button
+          type="button"
           onClick={onToggleManualForm}
           aria-label={showManualForm ? 'Fermer le formulaire d\'ajout manuel' : 'Ouvrir le formulaire d\'ajout manuel'}
           aria-expanded={showManualForm}
-          className={`px-4 py-2 rounded-lg font-semibold text-xs uppercase tracking-wide transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+          className={`gradient-button-premium gradient-button-premium-md rounded-lg font-semibold text-xs uppercase tracking-wide ${
             showManualForm
-              ? 'bg-red-900/30 border border-red-500/50 text-red-400 hover:bg-red-500/20 focus:ring-red-500'
-              : 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30 focus:ring-emerald-500'
+              ? 'gradient-button-premium-variant'
+              : ''
           }`}
         >
           {showManualForm ? '❌ CANCEL' : '➕ MANUAL DATA ENTRY'}
@@ -109,9 +110,10 @@ const SessionsHistory = React.memo(({
             </div>
           </div>
           <button
+            type="button"
             onClick={onAddManualSession}
             disabled={!manualSession.subjectName}
-            className="mt-4 px-6 py-2 bg-emerald-500/20 border border-emerald-500 rounded-lg text-emerald-400 font-semibold uppercase text-xs tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-500/30 transition-all duration-200"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg mt-4 font-semibold uppercase text-xs tracking-wide"
           >
             ✅ COMMIT DATA
           </button>
@@ -149,8 +151,9 @@ const SessionsHistory = React.memo(({
             <div className="text-sm font-semibold text-slate-400">RECENT ACTIVITY:</div>
             <div className="flex gap-2 items-center">
               <button
+                type="button"
                 onClick={() => setViewMode(viewMode === 'virtualized' ? 'paginated' : 'virtualized')}
-                className="px-3 py-1 text-xs bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 transition-colors"
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg text-xs"
                 aria-label={`Basculer vers ${viewMode === 'virtualized' ? 'pagination' : 'virtualisation'}`}
               >
                 {viewMode === 'virtualized' ? '📄 Pagination' : '⚡ Virtualisé'}
@@ -205,17 +208,19 @@ const SessionsHistory = React.memo(({
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-slate-700/50">
                   <button
+                    type="button"
                     onClick={() => handlePageChange(1)}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    className="gradient-button-premium gradient-button-premium-sm rounded-lg text-sm"
                     aria-label="Première page"
                   >
                     ⏮️
                   </button>
                   <button
+                    type="button"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    className="gradient-button-premium gradient-button-premium-sm rounded-lg text-sm"
                     aria-label="Page précédente"
                   >
                     ⬅️
@@ -224,17 +229,19 @@ const SessionsHistory = React.memo(({
                     Page {currentPage} / {totalPages}
                   </span>
                   <button
+                    type="button"
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    className="gradient-button-premium gradient-button-premium-sm rounded-lg text-sm"
                     aria-label="Page suivante"
                   >
                     ➡️
                   </button>
                   <button
+                    type="button"
                     onClick={() => handlePageChange(totalPages)}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded text-slate-300 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    className="gradient-button-premium gradient-button-premium-sm rounded-lg text-sm"
                     aria-label="Dernière page"
                   >
                     ⏭️

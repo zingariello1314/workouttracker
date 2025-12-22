@@ -5,7 +5,6 @@
 
 import React from 'react';
 import { Edit2, Trash2, Pin, GripVertical } from 'lucide-react';
-import Button from '../ui/Button';
 
 export function QuoteCard({ quote, onEdit, onDelete, onTogglePin, draggable = false }) {
   return (
@@ -35,11 +34,12 @@ export function QuoteCard({ quote, onEdit, onDelete, onTogglePin, draggable = fa
         {/* Actions */}
         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
+            type="button"
             onClick={() => onTogglePin(quote.id)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`gradient-button-premium gradient-button-premium-sm rounded-lg p-2 ${
               quote.isPinned
-                ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                : 'text-slate-400 hover:bg-slate-600 hover:text-slate-300'
+                ? 'gradient-button-premium-variant'
+                : ''
             }`}
             title={quote.isPinned ? 'Désépingler' : 'Épingler (3x plus fréquent)'}
           >
@@ -47,16 +47,18 @@ export function QuoteCard({ quote, onEdit, onDelete, onTogglePin, draggable = fa
           </button>
 
           <button
+            type="button"
             onClick={() => onEdit(quote)}
-            className="p-2 rounded-lg text-slate-400 hover:bg-slate-600 hover:text-blue-400 transition-colors"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
             title="Modifier"
           >
             <Edit2 size={16} />
           </button>
 
           <button
+            type="button"
             onClick={() => onDelete(quote.id)}
-            className="p-2 rounded-lg text-slate-400 hover:bg-slate-600 hover:text-red-400 transition-colors"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
             title="Supprimer"
           >
             <Trash2 size={16} />

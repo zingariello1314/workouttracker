@@ -110,8 +110,9 @@ const ExpenseSearchFilter = ({
         />
         {localQuery && (
           <button
+            type="button"
             onClick={handleClear}
-            className="absolute right-3 p-1 text-slate-400 hover:text-white transition-colors"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg absolute right-3 p-1"
             aria-label="Effacer la recherche"
           >
             <X className="h-4 w-4" />

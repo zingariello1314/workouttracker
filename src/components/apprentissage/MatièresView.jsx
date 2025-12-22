@@ -12,7 +12,6 @@ import SkeletonLoader from '../ui/SkeletonLoader';
 import Modal from '../ui/Modal';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
-import Button from '../ui/Button';
 import Input from '../ui/Input';
 import LazyFile from '../ui/LazyFile';
 
@@ -302,30 +301,28 @@ const MatièresView = () => {
       {/* Barre d'outils Undo/Redo */}
       {(canUndo || canRedo) && (
         <div className="flex items-center justify-end gap-2 mb-4">
-          <Button
-            variant="secondary"
-            size="sm"
-            icon="↶"
-            iconPosition="left"
+          <button
+            type="button"
             onClick={undo}
             disabled={!canUndo}
             title="Annuler (Ctrl+Z)"
             aria-label="Annuler la dernière action"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
           >
+            <span>↶</span>
             Annuler
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon="↷"
-            iconPosition="left"
+          </button>
+          <button
+            type="button"
             onClick={redo}
             disabled={!canRedo}
             title="Refaire (Ctrl+Y)"
             aria-label="Refaire la dernière action annulée"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
           >
+            <span>↷</span>
             Refaire
-          </Button>
+          </button>
         </div>
       )}
 
@@ -394,7 +391,7 @@ const MatièresView = () => {
             disabled={!newSubject.name || !newSubject.name.trim()}
             aria-label="Initialiser un nouveau protocole d'apprentissage"
             aria-describedby={!newSubject.name || !newSubject.name.trim() ? 'name-required' : undefined}
-            className="w-full py-3 px-6 bg-gradient-to-r from-slate-900 to-slate-800 border-2 border-emerald-500 rounded-lg text-emerald-400 font-bold uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gradient-to-r hover:from-emerald-500/20 hover:to-cyan-500/20 hover:text-cyan-300 hover:border-cyan-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg w-full"
           >
             ➕ INITIALISER LE PROTOCOLE
           </button>
@@ -538,15 +535,16 @@ const MatièresView = () => {
                   <div className="ml-4 flex flex-col gap-2">
                     {/* Bouton démarrer session */}
                     <button
-                      className="px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500 rounded-lg text-emerald-400 hover:from-emerald-500/30 hover:to-cyan-500/30 hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/50 transition-all duration-200 font-semibold uppercase text-xs tracking-wide"
+                      type="button"
+                      className="gradient-button-premium gradient-button-premium-md rounded-lg font-semibold uppercase text-xs tracking-wide"
                     >
                       ▶️ LANCER LE PROTOCOLE
                     </button>
                     {/* Bouton supprimer */}
                     <button
+                      type="button"
                       onClick={() => handleDeleteSubject(subject.id)}
-                      className="px-4 py-2 bg-gradient-to-r from-red-900/90 to-red-800/90 border border-red-500 rounded-lg text-red-400 hover:bg-red-500/20 hover:border-red-400 hover:scale-105 hover:shadow-lg hover:shadow-red-500/50 transition-transform duration-200 font-semibold uppercase text-xs tracking-wide"
-                      style={{ willChange: 'transform' }}
+                      className="gradient-button-premium gradient-button-premium-sm rounded-lg font-semibold uppercase text-xs tracking-wide"
                     >
                       🗑️ SUPPRIMER LE PROTOCOLE
                     </button>

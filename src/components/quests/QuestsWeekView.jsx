@@ -117,10 +117,10 @@ const QuestsWeekView = ({
                           key={quest.id}
                           type="button"
                           onClick={() => toggleQuestValidation(quest.id, day.date)}
-                          className={`w-full flex items-center justify-between text-[10px] rounded-lg px-2 py-1 mb-0.5 border ${
+                          className={`gradient-button-premium gradient-button-premium-sm rounded-lg w-full flex items-center justify-between text-[10px] px-2 py-1 mb-0.5 ${
                             completed
-                              ? 'bg-emerald-500/15 border-emerald-400/60 text-slate-100'
-                              : 'bg-slate-900/60 border-slate-700/80 text-slate-300 hover:bg-slate-800'
+                              ? 'gradient-button-premium-variant'
+                              : ''
                           }`}
                         >
                           <span className="line-clamp-1 mr-1 text-left">

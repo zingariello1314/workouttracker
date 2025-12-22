@@ -207,20 +207,22 @@ const ProgramTab = () => {
               </div>
               {isAdmin ? (
                 <div className="flex gap-3">
-                  <Button
+                  <button
+                    type="button"
                     onClick={importCurrentProgram}
-                    className="bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 flex items-center gap-2"
+                    className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
                   >
                     <Download size={20} />
                     {t('program.buttons.import')}
-                  </Button>
-                  <Button
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setShowCreateForm(true)}
-                    className="btn-primary flex items-center gap-2"
+                    className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
                   >
                     <Plus size={20} />
                     {t('program.buttons.new')}
-                  </Button>
+                  </button>
                 </div>
               ) : (
                 <div className="px-4 py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-200 max-w-md">
@@ -243,13 +245,14 @@ const ProgramTab = () => {
                     <p className="text-white/90 mt-2">{visibleActiveProgram.description}</p>
                   )}
                 </div>
-                <Button
+                <button
+                  type="button"
                   onClick={handleDeactivateProgram}
-                  className="bg-red-500/20 text-red-200 border border-red-400/30 hover:bg-red-500/30 px-3 py-2 rounded-lg transition-colors"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
                 >
-                  <Pause size={16} className="mr-2" />
+                  <Pause size={16} />
                   {t('program.currentProgram.deactivate')}
-                </Button>
+                </button>
               </div>
               
               <div className="flex flex-wrap items-center gap-6 text-sm text-white/80 mb-4">
@@ -332,18 +335,20 @@ const ProgramTab = () => {
               </div>
               
               <div className="flex gap-3 mt-6">
-                <Button
+                <button
+                  type="button"
                   onClick={handleCreateProgram}
-                  className="btn-primary"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg"
                 >
                   {t('program.buttons.create')}
-                </Button>
-                <Button
+                </button>
+                <button
+                  type="button"
                   onClick={() => setShowCreateForm(false)}
-                  className="btn-secondary"
+                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
                 >
                   {t('program.buttons.cancel')}
-                </Button>
+                </button>
               </div>
             </CardContent>
           </Card>
@@ -410,31 +415,37 @@ const ProgramTab = () => {
                       
                       <div className="flex items-center gap-2">
                         {program.id !== activeProgram?.id && program.status !== 'completed' && (
-                          <Button
+                          <button
+                            type="button"
                             onClick={() => handleActivateProgram(program.id)}
-                            className="bg-green-500/20 text-green-200 border border-green-400/30 hover:bg-green-500/30 px-3 py-1 text-sm"
+                            className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
                           >
-                            <Play size={14} className="mr-1" />
+                            <Play size={14} />
                             {t('program.buttons.activate')}
-                          </Button>
+                          </button>
                         )}
                         
-                        <Button
+                        <button
+                          type="button"
                           onClick={() => handleViewProgram(program)}
-                          className="bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 px-3 py-1 text-sm"
+                          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
                         >
-                          <Eye size={14} className="mr-1" />
+                          <Eye size={14} />
                           {t('program.buttons.view')}
-                        </Button>
+                        </button>
                         
-                        <button className="p-2 text-slate-400 hover:text-slate-200 transition-colors">
+                        <button
+                          type="button"
+                          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
+                        >
                           <Edit3 size={16} />
                         </button>
                         
                         {program.id !== activeProgram?.id && (
-                          <button 
+                          <button
+                            type="button"
                             onClick={() => deleteProgram(program.id)}
-                            className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                            className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                           >
                             <Trash2 size={16} />
                           </button>

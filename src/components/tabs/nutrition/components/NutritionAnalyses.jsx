@@ -624,18 +624,18 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
         </div>
         <div className="flex gap-2">
           {periods.map((period) => (
-            <Button
+            <button
               key={period.value}
+              type="button"
               onClick={() => setSelectedPeriod(period.value)}
-              variant={selectedPeriod === period.value ? 'default' : 'ghost'}
-              size="sm"
-              className={selectedPeriod === period.value 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                : 'text-slate-300 hover:text-white'
-              }
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
+                selectedPeriod === period.value 
+                  ? 'gradient-button-premium-variant' 
+                  : ''
+              }`}
             >
               {period.label}
-            </Button>
+            </button>
           ))}
         </div>
       </div>

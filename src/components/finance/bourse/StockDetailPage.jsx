@@ -110,8 +110,9 @@ const StockDetailPage = memo(({ position, onBack }) => {
       {/* Header avec flèche retour */}
       <div className="flex items-center gap-4 mb-6">
         <button
+          type="button"
           onClick={onBack}
-          className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-white transition-colors"
+          className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center justify-center w-10 h-10"
           aria-label="Retour au portfolio"
           title="Retour au portfolio"
         >

@@ -85,33 +85,35 @@ const TimerComponent = React.memo(({
         {/* Contrôles */}
         <div className="flex gap-2 md:gap-3 flex-wrap justify-center" role="toolbar" aria-label="Contrôles du timer">
           <button
+            type="button"
             onClick={onTogglePause}
             aria-label={timer.isPaused ? 'Reprendre la session' : 'Mettre en pause'}
-            className="px-4 py-2 md:px-6 md:py-3 min-w-[44px] min-h-[44px] bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-emerald-500 rounded-lg text-emerald-400 font-semibold uppercase tracking-wide text-sm md:text-base hover:from-emerald-500/20 hover:to-cyan-500/20 hover:text-cyan-300 hover:border-cyan-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg min-w-[44px] min-h-[44px] font-semibold uppercase tracking-wide text-sm md:text-base"
           >
             {timer.isPaused ? '▶️ Reprendre' : '⏸️ Pause'}
           </button>
           <button
+            type="button"
             onClick={onStop}
             aria-label="Arrêter la session"
-            className="px-4 py-2 md:px-6 md:py-3 min-w-[44px] min-h-[44px] bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-red-500 rounded-lg text-red-400 font-semibold uppercase tracking-wide text-sm md:text-base hover:from-red-500/20 hover:to-red-600/20 hover:text-red-300 hover:border-red-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/40 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-            style={{ willChange: 'transform' }}
+            className="gradient-button-premium gradient-button-premium-md rounded-lg min-w-[44px] min-h-[44px] font-semibold uppercase tracking-wide text-sm md:text-base"
           >
             ⏹️ Arrêter
           </button>
           <button
+            type="button"
             onClick={() => onAdjustTime(10)}
             aria-label="Ajouter 10 minutes"
-            className="px-4 py-2 md:px-6 md:py-3 min-w-[44px] min-h-[44px] bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-cyan-500 rounded-lg text-cyan-400 font-semibold uppercase tracking-wide text-sm md:text-base hover:from-cyan-500/20 hover:to-blue-500/20 hover:text-cyan-300 hover:border-cyan-400 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-500/40 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-            style={{ willChange: 'transform' }}
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg min-w-[44px] min-h-[44px] font-semibold uppercase tracking-wide text-sm md:text-base"
           >
             +10 min
           </button>
           <button
+            type="button"
             onClick={onToggleSilentMode}
             aria-label={timer.silentMode ? 'Activer le son' : 'Désactiver le son'}
-            className={`px-4 py-2 md:px-6 md:py-3 min-w-[44px] min-h-[44px] bg-gradient-to-r from-slate-800 to-slate-900 border-2 border-slate-500 rounded-lg font-semibold uppercase tracking-wide text-sm md:text-base hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
-              timer.silentMode ? 'text-slate-500' : 'text-slate-300'
+            className={`gradient-button-premium gradient-button-premium-sm rounded-lg min-w-[44px] min-h-[44px] font-semibold uppercase tracking-wide text-sm md:text-base ${
+              timer.silentMode ? 'opacity-60' : ''
             }`}
           >
             {timer.silentMode ? '🔇' : '🔊'}

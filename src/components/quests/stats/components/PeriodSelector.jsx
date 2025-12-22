@@ -24,10 +24,10 @@ const PeriodSelector = ({ selectedPeriod, onPeriodChange }) => {
           key={period.key}
           type="button"
           onClick={() => onPeriodChange(period.key)}
-          className={`px-2 py-1 rounded-full border text-xs transition-all ${
+          className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
             selectedPeriod === period.key
-              ? 'bg-emerald-400 text-slate-900 border-emerald-300 shadow-lg shadow-emerald-500/30'
-              : 'bg-slate-900/50 text-slate-200 border-slate-700 hover:bg-slate-800'
+              ? 'gradient-button-premium-variant'
+              : ''
           }`}
         >
           <span className="mr-1">{period.icon}</span>

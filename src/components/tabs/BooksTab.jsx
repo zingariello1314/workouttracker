@@ -18,7 +18,6 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState, memo, useCallback } from 'react';
 import { BookOpen, Download, Search, Upload, BarChart3, Library } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
-import Button from '../ui/Button';
 import { Input, TextArea, Select } from '../ui/Input';
 import './booksLiquidGlass.css';
 import { useTranslation } from '../../utils/translations';
@@ -1289,36 +1288,40 @@ const BooksTab = () => {
             </div>
           </div>
           {activeSubTab === 'library' && (
-            <Button
+            <button
+              type="button"
               onClick={() => setShow3D(!show3D)}
-              variant="glass"
-              size="md"
+              className="gradient-button-premium gradient-button-premium-md rounded-lg"
             >
               {show3D
                 ? t('books.dome.hide', 'Masquer la vue 3D')
                 : t('books.dome.show', 'Afficher la vue 3D')}
-            </Button>
+            </button>
           )}
         </div>
 
         {/* Navigation par sous-onglets */}
         <div className="flex gap-2 mb-6">
-          <Button
-            variant={activeSubTab === 'library' ? 'primary' : 'glass'}
+          <button
+            type="button"
             onClick={() => setActiveSubTab('library')}
-            className="flex items-center gap-2"
+            className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
+              activeSubTab === 'library' ? 'gradient-button-premium-variant' : ''
+            }`}
           >
             <Library className="w-4 h-4" />
             {t('books.subtabs.library', 'Bibliothèque')}
-          </Button>
-          <Button
-            variant={activeSubTab === 'statistics' ? 'primary' : 'glass'}
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveSubTab('statistics')}
-            className="flex items-center gap-2"
+            className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
+              activeSubTab === 'statistics' ? 'gradient-button-premium-variant' : ''
+            }`}
           >
             <BarChart3 className="w-4 h-4" />
             {t('books.subtabs.statistics', 'Statistiques')}
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -1338,13 +1341,13 @@ const BooksTab = () => {
               <CardTitle size="md" className="books-glass-card-title">
                 {t('books.form.title', 'Ajouter/Modifier un livre')}
               </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => setIsFormExpanded(!isFormExpanded)}
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
               >
                 {isFormExpanded ? t('common.hide', 'Masquer') : t('common.show', 'Afficher')}
-              </Button>
+              </button>
             </div>
           </CardHeader>
           <CardContent className="books-glass-card-content">
@@ -1449,19 +1452,22 @@ const BooksTab = () => {
               
               {/* Bouton toujours visible */}
               <div className="flex flex-wrap items-center gap-3">
-                <Button type="submit" variant="glass">
+                <button
+                  type="submit"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                >
                   {form.id
                     ? t('books.actions.updateBook', 'Mettre à jour le livre')
                     : t('books.actions.addBook', 'Ajouter le livre')}
-                </Button>
+                </button>
                 {form.id && (
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
                     onClick={resetForm}
+                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
                   >
                     {t('books.actions.cancelEdit', 'Annuler la modification')}
-                  </Button>
+                  </button>
                 )}
               </div>
               
@@ -1617,25 +1623,23 @@ const BooksTab = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
-            <Button
+            <button
               type="button"
-              variant="glass"
-              size="md"
-              icon={Download}
               onClick={handleExport}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center justify-center gap-2"
             >
+              <Download className="w-4 h-4" />
               {t('books.actions.export', 'Exporter JSON')}
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant="glass"
-              size="md"
-              icon={Upload}
-              loading={isImporting}
               onClick={handleImportClick}
+              disabled={isImporting}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center justify-center gap-2"
             >
-              {t('books.actions.import', 'Importer JSON')}
-            </Button>
+              <Upload className="w-4 h-4" />
+              {isImporting ? t('common.loading', 'Chargement...') : t('books.actions.import', 'Importer JSON')}
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -1716,7 +1720,7 @@ const BooksTab = () => {
                     <div className="flex gap-1.5">
                       <button
                         type="button"
-                        className="px-2.5 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                         onClick={() =>
                           setPageInProgress((p) => Math.max(0, p - 1))
                         }
@@ -1726,7 +1730,7 @@ const BooksTab = () => {
                       </button>
                       <button
                         type="button"
-                        className="px-2.5 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                         onClick={() =>
                           setPageInProgress((p) =>
                             Math.min(
@@ -1783,7 +1787,7 @@ const BooksTab = () => {
                     <div className="flex gap-1.5">
                       <button
                         type="button"
-                        className="px-2.5 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                         onClick={() =>
                           setPageCompleted((p) => Math.max(0, p - 1))
                         }
@@ -1793,7 +1797,7 @@ const BooksTab = () => {
                       </button>
                       <button
                         type="button"
-                        className="px-2.5 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                         onClick={() =>
                           setPageCompleted((p) =>
                             Math.min(
@@ -1853,7 +1857,7 @@ const BooksTab = () => {
                     <div className="flex gap-1.5">
                       <button
                         type="button"
-                        className="px-2.5 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                         onClick={() =>
                           setPageToRead((p) => Math.max(0, p - 1))
                         }
@@ -1863,7 +1867,7 @@ const BooksTab = () => {
                       </button>
                       <button
                         type="button"
-                        className="px-2.5 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                         onClick={() =>
                           setPageToRead((p) =>
                             Math.min(
@@ -1911,44 +1915,40 @@ const BooksTab = () => {
           </div>
           {selectedBook && (
             <div className="flex flex-wrap gap-2 items-center">
-              <Button
+              <button
                 type="button"
-                size="sm"
-                variant="ghost"
                 onClick={() => handleEdit(selectedBook)}
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
               >
                 {t('books.actions.editBook', 'Éditer')}
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                size="sm"
-                variant="danger"
                 onClick={() => handleDelete(selectedBook)}
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
               >
                 {t('books.actions.deleteBook', 'Supprimer')}
-              </Button>
+              </button>
               <span className="text-xs text-slate-400 ml-2">
                 {selectedBook.hasPdf
                   ? t('books.assets.pdfAttached', 'PDF associé')
                   : t('books.assets.noPdf', 'Aucun PDF associé')}
               </span>
-              <Button
+              <button
                 type="button"
-                size="sm"
-                variant="outline"
                 onClick={handleAttachPdfClick}
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
               >
                 {t('books.assets.attachPdf', 'Joindre un PDF')}
-              </Button>
+              </button>
               {selectedBook.hasPdf && (
-                <Button
+                <button
                   type="button"
-                  size="sm"
-                  variant="ghost"
                   onClick={handleRemovePdf}
+                  className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                 >
                   {t('books.assets.removePdf', 'Supprimer le PDF')}
-                </Button>
+                </button>
               )}
               <input
                 ref={pdfInputRef}
@@ -1962,34 +1962,31 @@ const BooksTab = () => {
                   ? t('books.assets.coverAttached', 'Couverture associée')
                   : t('books.assets.noCover', 'Aucune couverture associée')}
               </span>
-              <Button
+              <button
                 type="button"
-                size="sm"
-                variant="outline"
                 onClick={handleAttachCoverClick}
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
               >
                 {selectedBook.hasCover
                   ? t('books.assets.changeCover', 'Changer la couverture')
                   : t('books.assets.attachCover', 'Ajouter une couverture')}
-              </Button>
+              </button>
               {selectedBook.hasCover && (
                 <>
-                  <Button
+                  <button
                     type="button"
-                    size="sm"
-                    variant="ghost"
                     onClick={handleViewCover}
+                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
                   >
                     {t('books.assets.viewCover', 'Voir la couverture')}
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
-                    size="sm"
-                    variant="ghost"
                     onClick={handleRemoveCover}
+                    className="gradient-button-premium gradient-button-premium-sm rounded-lg"
                   >
                     {t('books.assets.removeCover', 'Supprimer la couverture')}
-                  </Button>
+                  </button>
                 </>
               )}
               <input
@@ -2242,12 +2239,15 @@ const BooksTab = () => {
                       }
                     />
                   </div>
-                  <Button type="submit" size="sm" variant="primary">
+                  <button
+                    type="submit"
+                    className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                  >
                     {t(
                       'books.sessions.addButton',
                       'Ajouter la session de lecture'
                     )}
-                  </Button>
+                  </button>
                 </form>
               </div>
 

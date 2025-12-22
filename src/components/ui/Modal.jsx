@@ -153,16 +153,18 @@ const Modal = ({
           <div className="flex gap-3 justify-end p-6 border-t border-slate-700/50">
             {onCancel && (
               <button
+                type="button"
                 onClick={handleCancel}
-                className="px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-slate-300 hover:bg-slate-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
               >
                 {cancelLabel}
               </button>
             )}
             {onConfirm && (
               <button
+                type="button"
                 onClick={handleConfirm}
-                className={`px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 ${styles.confirm}`}
+                className="gradient-button-premium gradient-button-premium-md rounded-lg"
               >
                 {confirmLabel}
               </button>

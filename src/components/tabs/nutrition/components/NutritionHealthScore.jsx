@@ -53,10 +53,14 @@ const NutritionHealthScore = React.memo(() => {
           <AlertCircle size={48} className="mx-auto mb-4" />
           <p>Erreur lors du calcul du score santé global</p>
           <p className="text-sm text-slate-400 mt-2">{error.message}</p>
-          <Button onClick={refresh} variant="secondary" className="mt-4">
-            <RefreshCw size={16} className="mr-2" />
+          <button
+            type="button"
+            onClick={refresh}
+            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg mt-4 flex items-center gap-2"
+          >
+            <RefreshCw size={16} />
             Réessayer
-          </Button>
+          </button>
         </CardContent>
       </Card>
     );
@@ -131,9 +135,13 @@ const NutritionHealthScore = React.memo(() => {
               Mis à jour {lastUpdate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
-          <Button onClick={refresh} variant="ghost" size="sm">
+          <button
+            type="button"
+            onClick={refresh}
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+          >
             <RefreshCw size={18} />
-          </Button>
+          </button>
         </div>
       </div>
 

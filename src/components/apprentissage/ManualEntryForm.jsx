@@ -67,9 +67,10 @@ const ManualEntryForm = ({ subjects, manualSession, onManualSessionChange, onAdd
         </div>
       </div>
       <button
+        type="button"
         onClick={onAddManualSession}
         disabled={!manualSession.subjectName}
-        className="mt-4 px-6 py-2 bg-emerald-500/20 border border-emerald-500 rounded-lg text-emerald-400 font-semibold uppercase text-xs tracking-wide disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-500/30 transition-all duration-200"
+        className="gradient-button-premium gradient-button-premium-md rounded-lg mt-4 font-semibold uppercase text-xs tracking-wide"
       >
         ✅ COMMIT DATA
       </button>

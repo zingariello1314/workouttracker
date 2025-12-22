@@ -209,10 +209,12 @@ export function QuoteManager() {
             {/* Add Quote Form */}
             {!showAddForm ? (
               <button
+                type="button"
                 onClick={() => setShowAddForm(true)}
-                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
               >
-                + Ajouter une citation
+                <span>+</span>
+                <span>Ajouter une citation</span>
               </button>
             ) : (
               <AddQuoteForm

@@ -259,7 +259,7 @@ const AddCategoryForm = ({ category, onSave, onCancel }) => {
           <button
             type="button"
             onClick={handleAddSubCategory}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
           >
             Ajouter
           </button>
@@ -275,7 +275,7 @@ const AddCategoryForm = ({ category, onSave, onCancel }) => {
                 <button
                   type="button"
                   onClick={() => handleRemoveSubCategory(index)}
-                  className="text-red-400 hover:text-red-300"
+                  className="gradient-button-premium gradient-button-premium-sm rounded-lg text-red-400 hover:text-red-300"
                 >
                   ×
                 </button>
@@ -289,14 +289,14 @@ const AddCategoryForm = ({ category, onSave, onCancel }) => {
       <div className="flex gap-2 pt-4">
         <button
           type="submit"
-          className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+          className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1"
         >
           {category ? 'Modifier' : 'Ajouter'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex-1"
         >
           Annuler
         </button>

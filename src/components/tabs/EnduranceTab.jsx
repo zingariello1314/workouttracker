@@ -1118,7 +1118,7 @@ const EnduranceTab = () => {
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2'
                   },
                   {
                     key: 'past-boxing-session',
@@ -1126,7 +1126,7 @@ const EnduranceTab = () => {
                     icon: Calendar,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2'
                   }
                 ]}
               />
@@ -1195,15 +1195,16 @@ const EnduranceTab = () => {
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-2">
                                   <button
+                                    type="button"
                                     onClick={() => editSession('boxing', session.id)}
-                                    className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                                     title={t('endurance.session.edit')}
                                   >
                                     <Edit className="w-4 h-4" />
                                   </button>
                                 <button
                                   onClick={() => deleteBoxingSession(session.id, idx)}
-                                  className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                  className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                                     title={t('endurance.session.delete')}
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -1234,7 +1235,7 @@ const EnduranceTab = () => {
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2'
                   },
                   {
                     key: 'past-pushup-session',
@@ -1242,7 +1243,7 @@ const EnduranceTab = () => {
                     icon: Calendar,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2'
                   },
                   {
                     key: 'create-pushup-challenge',
@@ -1250,7 +1251,7 @@ const EnduranceTab = () => {
                     icon: Award,
                     onClick: () => setUI({ showChallengeModal: true }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2'
                   }
                 ]}
               />
@@ -1343,19 +1344,21 @@ const EnduranceTab = () => {
                               {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
                             </span>
                             <button
+                              type="button"
                               onClick={() => editChallenge(challenge.id)}
-                              className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                               title={t('endurance.session.editChallenge')}
                             >
                               <Edit className="w-5 h-5" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
                                 const realIndex = challenges.findIndex(c => c === challenge);
                                 deleteChallenge(challenge.id, realIndex);
                               }}
-                              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                               title={t('endurance.session.deleteChallenge')}
                             >
                               <Trash2 className="w-5 h-5" />
@@ -1416,14 +1419,14 @@ const EnduranceTab = () => {
                                   )}
                                   <button
                                     onClick={() => editSession('pushups', session.id)}
-                                    className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                                     title={t('endurance.session.edit')}
                                   >
                                     <Edit className="w-4 h-4" />
                                   </button>
                                   <button
                                     onClick={() => deletePushupSession(session.id, originalIndex)}
-                                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                    className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                                     title={t('endurance.session.delete')}
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -1455,7 +1458,7 @@ const EnduranceTab = () => {
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2'
                   },
                   {
                     key: 'create-swimming-challenge',
@@ -1463,7 +1466,7 @@ const EnduranceTab = () => {
                     icon: Award,
                     onClick: () => setUI({ showChallengeModal: true }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2'
                   }
                 ]}
               />
@@ -1522,13 +1525,13 @@ const EnduranceTab = () => {
                         resetSwimmingForm();
                         setUI({ showSessionForm: false });
                       }}
-                      className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
                     >
                       {t('endurance.actions.cancel')}
                     </button>
                     <button
                       onClick={addSwimmingSession}
-                      className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
+                      className="gradient-button-premium gradient-button-premium-md rounded-lg"
                     >
                       {t('endurance.actions.save')}
                     </button>
@@ -1578,19 +1581,21 @@ const EnduranceTab = () => {
                               {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
                             </span>
                             <button
+                              type="button"
                               onClick={() => editChallenge(challenge.id)}
-                              className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                               title={t('endurance.session.editChallenge')}
                             >
                               <Edit className="w-5 h-5" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
                                 const realIndex = challenges.findIndex(c => c === challenge);
                                 deleteChallenge(challenge.id, realIndex);
                               }}
-                              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                               title={t('endurance.session.deleteChallenge')}
                             >
                               <Trash2 className="w-5 h-5" />
@@ -1681,14 +1686,14 @@ const EnduranceTab = () => {
                               )}
                               <button
                                 onClick={() => editSession('swimming', session.id)}
-                                className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                                 title="Modifier la session"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => deleteSwimmingSession(session.id, originalIndex)}
-                                className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                                 title="Supprimer la session"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1737,7 +1742,7 @@ const EnduranceTab = () => {
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2'
                   },
                   {
                     key: 'create-jumprope-challenge',
@@ -1745,7 +1750,7 @@ const EnduranceTab = () => {
                     icon: Award,
                     onClick: () => setUI({ showChallengeModal: true }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2'
                   }
                 ]}
               />
@@ -1789,13 +1794,13 @@ const EnduranceTab = () => {
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       onClick={() => setUI({ showSessionForm: false })}
-                      className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
                     >
                       {t('endurance.actions.cancel')}
                     </button>
                     <button
                       onClick={addJumpropeSession}
-                      className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
+                      className="gradient-button-premium gradient-button-premium-md rounded-lg"
                     >
                       {t('endurance.actions.save')}
                     </button>
@@ -1804,7 +1809,7 @@ const EnduranceTab = () => {
                         addJumpropeSession();
                         setJumpropeForm({ ...jumpropeForm, sessionNumber: parseInt(jumpropeForm.sessionNumber) + 1 });
                       }}
-                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-green-500/50 transition-all"
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
                     >
                       {t('endurance.actions.saveAndCreateAnother')}
                     </button>
@@ -1855,19 +1860,21 @@ const EnduranceTab = () => {
                           </div>
                           <div className="flex items-center gap-3">
                             <button
+                              type="button"
                               onClick={() => editChallenge(challenge.id)}
-                              className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                               title={t('endurance.session.editChallenge')}
                             >
                               <Edit className="w-5 h-5" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
                                 const realIndex = challenges.findIndex(c => c === challenge);
                                 deleteChallenge(challenge.id, realIndex);
                               }}
-                              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                               title={t('endurance.session.deleteChallenge')}
                             >
                               <Trash2 className="w-5 h-5" />
@@ -1935,14 +1942,14 @@ const EnduranceTab = () => {
                                   )}
                                   <button
                                     onClick={() => editSession('jumprope', session.id)}
-                                    className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                                     title={t('endurance.session.edit')}
                                   >
                                     <Edit className="w-4 h-4" />
                                   </button>
                                   <button
                                     onClick={() => deleteJumpropeSession(session.id, originalIndex)}
-                                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                    className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                                     title={t('endurance.session.delete')}
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -1974,7 +1981,7 @@ const EnduranceTab = () => {
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2'
                   },
                   {
                     key: 'create-running-challenge',
@@ -1982,7 +1989,7 @@ const EnduranceTab = () => {
                     icon: Award,
                     onClick: () => setUI({ showChallengeModal: true }),
                     className:
-                      'flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105'
+                      'gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2'
                   }
                 ]}
               />
@@ -2035,13 +2042,13 @@ const EnduranceTab = () => {
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       onClick={() => setUI({ showSessionForm: false })}
-                      className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
                     >
                       {t('endurance.actions.cancel')}
                     </button>
                     <button
                       onClick={addRunningSession}
-                      className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
+                      className="gradient-button-premium gradient-button-premium-md rounded-lg"
                     >
                       {t('endurance.actions.save')}
                     </button>
@@ -2092,19 +2099,21 @@ const EnduranceTab = () => {
                           </div>
                           <div className="flex items-center gap-3">
                             <button
+                              type="button"
                               onClick={() => editChallenge(challenge.id)}
-                              className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                               title={t('endurance.session.editChallenge')}
                             >
                               <Edit className="w-5 h-5" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => {
                                 // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
                                 const realIndex = challenges.findIndex(c => c === challenge);
                                 deleteChallenge(challenge.id, realIndex);
                               }}
-                              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                               title={t('endurance.session.deleteChallenge')}
                             >
                               <Trash2 className="w-5 h-5" />
@@ -2175,14 +2184,14 @@ const EnduranceTab = () => {
                               )}
                               <button
                                 onClick={() => editSession('running', session.id)}
-                                className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                                 title="Modifier la session"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => deleteRunningSession(session.id, originalIndex)}
-                                className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                                 title="Supprimer la session"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -2571,14 +2580,16 @@ const EnduranceTab = () => {
 
             <div className="mt-8 flex justify-end gap-3">
               <button
+                type="button"
                 onClick={() => setUI({ showChallengeModal: false })}
-                className="px-6 py-3 text-slate-300 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-all"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
               >
                 Annuler
               </button>
               <button
+                type="button"
                 onClick={addChallenge}
-                className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-pink-500/50 transition-all"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg"
               >
                 {t('endurance.challenges.modal.create')}
               </button>

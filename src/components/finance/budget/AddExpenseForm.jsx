@@ -158,14 +158,14 @@ const AddExpenseForm = ({ onSave, onCancel, initialDate = null }) => {
       <div className="flex gap-2 pt-4">
         <button
           type="submit"
-          className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+          className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1"
         >
           Ajouter
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex-1"
         >
           Annuler
         </button>

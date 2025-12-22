@@ -113,9 +113,13 @@ const NutritionCorrelations = React.memo(() => {
           <p className="text-red-400">
             {error?.message || metadata.errorMessage || t('nutritionAnalyses.correlations.error')}
           </p>
-          <Button onClick={refresh} variant="outline" className="mt-4">
-            <RefreshCw size={16} className="mr-2" /> {t('nutritionAnalyses.correlations.retry')}
-          </Button>
+          <button
+            type="button"
+            onClick={refresh}
+            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg mt-4 flex items-center gap-2"
+          >
+            <RefreshCw size={16} /> {t('nutritionAnalyses.correlations.retry')}
+          </button>
         </CardContent>
       </Card>
     );

@@ -26,16 +26,16 @@ const BreakPopup = React.memo(({ timer, onStartBreak, onSkipBreak }) => {
           <p className="text-slate-400 mb-6">Repose-toi bien !</p>
           <div className="flex gap-4 justify-center">
             <button
+              type="button"
               onClick={onStartBreak}
-              className="px-6 py-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 border-2 border-orange-500 rounded-lg text-orange-400 font-bold uppercase tracking-wide hover:from-orange-500/30 hover:to-amber-500/30 hover:scale-105 transition-transform duration-200"
-              style={{ willChange: 'transform' }}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg font-bold uppercase tracking-wide"
             >
               DÉMARRER PAUSE
             </button>
             <button
+              type="button"
               onClick={onSkipBreak}
-              className="px-6 py-3 bg-slate-800/50 border-2 border-slate-600 rounded-lg text-slate-300 font-bold uppercase tracking-wide hover:bg-slate-700/50 hover:scale-105 transition-transform duration-200"
-              style={{ willChange: 'transform' }}
+              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg font-bold uppercase tracking-wide"
             >
               PASSER
             </button>

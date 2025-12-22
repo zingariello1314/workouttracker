@@ -103,16 +103,15 @@ const DayJustificationButton = memo(({ date }) => {
               )}
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={handleOpenModal}
-            icon={Edit2}
-            className="flex-shrink-0"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2 flex-shrink-0"
             aria-label={t('justification.button.modifyAriaLabel')}
           >
+            <Edit2 className="w-4 h-4" />
             {t('justification.button.modify')}
-          </Button>
+          </button>
         </div>
         
         <JustificationModal
@@ -137,15 +136,14 @@ const DayJustificationButton = memo(({ date }) => {
               <p className="text-xs text-slate-500">{t('justification.button.justifyHint')}</p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            type="button"
             onClick={handleOpenModal}
-            icon={Calendar}
-            className="flex-shrink-0"
+            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2 flex-shrink-0"
           >
+            <Calendar className="w-4 h-4" />
             {t('justification.button.justify')}
-          </Button>
+          </button>
         </div>
       </div>
       

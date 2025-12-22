@@ -196,7 +196,7 @@ const BookCard = memo(({
                     onStatusChange(book.id, e.target.value);
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-full px-3 py-2.5 rounded-md bg-white/10 backdrop-blur-sm border-2 border-white/20 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200 appearance-none cursor-pointer"
+                  className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant w-full rounded-lg appearance-none cursor-pointer relative"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
                     backgroundRepeat: 'no-repeat',
@@ -218,11 +218,12 @@ const BookCard = memo(({
             {onAddSession && (
               <div className="flex-shrink-0">
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onAddSession(book.id);
                   }}
-                  className="w-full px-3 py-2.5 rounded-md bg-white/10 backdrop-blur-sm border-2 border-white/20 text-sm font-medium text-white hover:bg-white/15 hover:border-white/30 transition-all duration-200 whitespace-nowrap"
+                  className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant w-full rounded-lg whitespace-nowrap"
                 >
                   {t('books.actions.addSession', 'Ajouter session')}
                 </button>

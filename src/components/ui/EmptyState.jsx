@@ -44,8 +44,9 @@ const EmptyState = ({
       )}
       {actionLabel && onAction && (
         <button
+          type="button"
           onClick={onAction}
-          className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold rounded-lg hover:from-emerald-600 hover:to-cyan-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+          className="gradient-button-premium gradient-button-premium-md rounded-lg font-semibold"
           aria-label={actionLabel}
         >
           {actionLabel}

@@ -69,16 +69,13 @@ const ApprentissageTab = () => {
             {subViews.map((subView) => (
               <button
                 key={subView.id}
+                type="button"
                 onClick={() => switchToSubView(subView.id)}
-                className={`
-                  flex items-center space-x-2 px-4 py-2 rounded-lg font-medium
-                  transition-all duration-200 whitespace-nowrap flex-shrink-0
-                  ${
-                    currentSubView === subView.id
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-                  }
-                `}
+                className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center space-x-2 whitespace-nowrap flex-shrink-0 ${
+                  currentSubView === subView.id
+                    ? 'gradient-button-premium-variant'
+                    : ''
+                }`}
               >
                 <span className="text-lg">{subView.icon}</span>
                 <span>{subView.label}</span>

@@ -11,7 +11,6 @@ import { useNutritionData } from '../../hooks/useNutritionData';
 import { compressGarminExport, decompressGarminExport, isCompressed } from './GarminTab/utils/jsonCompression';
 import { compressNutritionExport, decompressNutritionExport } from '../../utils/nutritionCompression';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
-import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 import HomePageImageSettings from '../HomePageImageSettings';
 import BannerExportImport from '../BannerExportImport';
@@ -2280,13 +2279,14 @@ const SettingsTab = () => {
                     style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
                     className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
                   />
-                  <Button
+                  <button
+                    type="button"
                     onClick={handleEmailUpdate}
                     disabled={emailStatus === 'loading' || !email || !confirmEmail || (email === (currentUser.email || '') && confirmEmail === (currentUser.email || ''))}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="gradient-button-premium gradient-button-premium-md rounded-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {emailStatus === 'loading' ? 'Mise à jour...' : 'Enregistrer l\'email'}
-                  </Button>
+                  </button>
                   {emailError && (
                     <span className="text-xs text-red-400 block">{emailError}</span>
                   )}
@@ -2330,13 +2330,14 @@ const SettingsTab = () => {
                     style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
                     className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
                   />
-                  <Button
+                  <button
+                    type="button"
                     onClick={handlePasswordUpdate}
                     disabled={passwordStatus === 'loading' || !oldPassword || !newPassword || !confirmPassword}
-                    className="w-full bg-purple-600 hover:bg-purple-700"
+                    className="gradient-button-premium gradient-button-premium-md rounded-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {passwordStatus === 'loading' ? 'Mise à jour...' : 'Changer le mot de passe'}
-                  </Button>
+                  </button>
                   {passwordError && (
                     <span className="text-xs text-red-400 block">{passwordError}</span>
                   )}
@@ -2348,13 +2349,14 @@ const SettingsTab = () => {
 
               {/* ✅ Bouton Premium */}
               <div className="space-y-3 pt-4 border-t border-slate-700">
-                <Button
+                <button
+                  type="button"
                   onClick={() => setActiveTab('pricing')}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg shadow-purple-500/50 flex items-center justify-center gap-2"
+                  className="gradient-button-premium gradient-button-premium-lg gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2"
                 >
                   <span>⭐</span>
                   <span>Passer à l'abonnement premium</span>
-                </Button>
+                </button>
                 <p className="text-xs text-slate-400 text-center">
                   Débloquez toutes les fonctionnalités avancées de Momentum
                 </p>
@@ -2365,13 +2367,14 @@ const SettingsTab = () => {
                 <p className="text-xs text-slate-400 mb-3">
                   Tu peux associer toutes tes données locales actuelles (notamment les livres) à ce compte.
                 </p>
-                <Button
+                <button
+                  type="button"
                   onClick={handleMigrateData}
                   disabled={migrationStatus === 'loading'}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Associer mes données locales à ce compte
-                </Button>
+                </button>
                 
                 {migrationStatus === 'loading' && (
                   <div className="mt-4 space-y-2">
@@ -2438,13 +2441,14 @@ const SettingsTab = () => {
               </ul>
             </div>
 
-            <Button
+            <button
+              type="button"
               onClick={() => setShowProfileCardSettings(true)}
-              icon={Image}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
             >
+              <Image className="w-5 h-5" />
               Gérer l'Image de la Carte
-            </Button>
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -2473,13 +2477,14 @@ const SettingsTab = () => {
               </ul>
             </div>
 
-            <Button
+            <button
+              type="button"
               onClick={() => setShowProfileCardSettings(true)}
-              icon={User}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2"
             >
+              <User className="w-5 h-5" />
               Gérer le Handle de la Carte
-            </Button>
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -2509,13 +2514,14 @@ const SettingsTab = () => {
               </ul>
             </div>
 
-            <Button
+            <button
+              type="button"
               onClick={() => setShowHomePageSettings(true)}
-              icon={Image}
-              className="w-full bg-purple-600 hover:bg-purple-700"
+              className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
             >
+              <Image className="w-5 h-5" />
               Configurer les Images de la Page d'Accueil
-            </Button>
+            </button>
 
             {/* Section Export/Import Bannières */}
             <div className="mt-4 pt-4 border-t border-slate-700">
@@ -2604,41 +2610,45 @@ const SettingsTab = () => {
             </div>
 
                 <div className="grid grid-cols-1 gap-3">
-              <Button
+              <button
+                type="button"
                 onClick={exportAllData}
                 disabled={exportStatus === 'loading'}
-                icon={Download}
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                    <Download className="w-4 h-4" />
                     {exportStatus === 'loading' ? 'Export en cours...' : 'Export Complet Sport'}
-              </Button>
+              </button>
               
-              <Button
+              <button
+                type="button"
                 onClick={exportBodyTrackingData}
                 disabled={exportStatus === 'loading'}
-                icon={FileText}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <FileText className="w-4 h-4" />
                 {exportStatus === 'loading' ? 'Export en cours...' : 'Export Suivi Corporel'}
-              </Button>
+              </button>
               
-              <Button
+              <button
+                type="button"
                 onClick={handleExportGarminData}
                 disabled={garminExportStatus === 'loading'}
-                icon={Download}
-                className="w-full bg-purple-600 hover:bg-purple-700"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Download className="w-4 h-4" />
                 {garminExportStatus === 'loading' ? 'Export en cours...' : 'Export Garmin'}
-              </Button>
+              </button>
               
-              <Button
+              <button
+                type="button"
                 onClick={handleExportNutritionData}
                 disabled={nutritionExportStatus === 'loading'}
-                icon={Download}
-                className="w-full bg-orange-600 hover:bg-orange-700"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Download className="w-4 h-4" />
                 {nutritionExportStatus === 'loading' ? 'Export en cours...' : 'Export Nutrition'}
-              </Button>
+              </button>
                 </div>
               </div>
 
@@ -2665,14 +2675,15 @@ const SettingsTab = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 gap-3">
-                    <Button
+                    <button
+                      type="button"
                       onClick={handleExportQuietQuest}
                       disabled={quietQuestExportStatus === 'loading'}
-                      icon={Download}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
+                      <Download className="w-4 h-4" />
                       {quietQuestExportStatus === 'loading' ? 'Export en cours...' : 'Export QuietQuest'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
 
@@ -2698,14 +2709,15 @@ const SettingsTab = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 gap-3">
-              <Button
+              <button
+                type="button"
                 onClick={handleExportBooksData}
                 disabled={booksExportStatus === 'loading'}
-                      icon={Download}
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Download className="w-4 h-4" />
                 {booksExportStatus === 'loading' ? 'Export en cours...' : 'Export Livres'}
-              </Button>
+              </button>
                   </div>
             </div>
 
@@ -2731,23 +2743,24 @@ const SettingsTab = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 gap-3">
-                    <Button
+                    <button
+                      type="button"
                       onClick={handleExportApprentissage}
                       disabled={apprentissageExportStatus === 'loading'}
-                      icon={Download}
-                      className="w-full bg-cyan-600 hover:bg-cyan-700"
+                      className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
+                      <Download className="w-4 h-4" />
                       {apprentissageExportStatus === 'loading' ? 'Export en cours...' : 'Export Apprentissage'}
-                    </Button>
-                    <Button
+                    </button>
+                    <button
+                      type="button"
                       onClick={handleImportApprentissage}
                       disabled={apprentissageImportStatus === 'loading'}
-                      icon={Upload}
-                      variant="outline"
-                      className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10"
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
+                      <Upload className="w-4 h-4" />
                       {apprentissageImportStatus === 'loading' ? 'Import en cours...' : 'Import Apprentissage'}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2855,16 +2868,18 @@ const SettingsTab = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button
+              <button
+                type="button"
                 onClick={handleExportBooksData}
                 disabled={booksExportStatus === 'loading'}
-                icon={Download}
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Download className="w-4 h-4" />
                 {booksExportStatus === 'loading' ? 'Export en cours...' : 'Exporter les Livres'}
-              </Button>
+              </button>
               
-              <Button
+              <button
+                type="button"
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
@@ -2881,11 +2896,11 @@ const SettingsTab = () => {
                   input.click();
                 }}
                 disabled={booksImportStatus === 'loading'}
-                icon={Upload}
-                className="w-full bg-indigo-500 hover:bg-indigo-600"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Upload className="w-4 h-4" />
                 {booksImportStatus === 'loading' ? 'Import en cours...' : 'Importer les Livres'}
-              </Button>
+              </button>
             </div>
 
             {booksExportStatus === 'success' && (
@@ -2946,16 +2961,18 @@ const SettingsTab = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button
+              <button
+                type="button"
                 onClick={handleExportBudgetData}
                 disabled={budgetExportStatus === 'loading'}
-                icon={Download}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Download className="w-4 h-4" />
                 {budgetExportStatus === 'loading' ? 'Export en cours...' : 'Exporter le Budget'}
-              </Button>
+              </button>
               
-              <Button
+              <button
+                type="button"
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
@@ -2972,11 +2989,11 @@ const SettingsTab = () => {
                   input.click();
                 }}
                 disabled={budgetImportStatus === 'loading'}
-                icon={Upload}
-                className="w-full bg-green-500 hover:bg-green-600"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Upload className="w-4 h-4" />
                 {budgetImportStatus === 'loading' ? 'Import en cours...' : 'Importer le Budget'}
-              </Button>
+              </button>
             </div>
 
             {budgetExportStatus === 'success' && (
@@ -3052,23 +3069,25 @@ const SettingsTab = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button
+              <button
+                type="button"
                 onClick={handleExportQuietQuest}
                 disabled={quietQuestExportStatus === 'loading'}
-                icon={Download}
-                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Download className="w-4 h-4" />
                 {quietQuestExportStatus === 'loading' ? 'Export en cours...' : 'Exporter QuietQuest'}
-              </Button>
+              </button>
               
-              <Button
+              <button
+                type="button"
                 onClick={handleImportQuietQuest}
                 disabled={quietQuestImportStatus === 'loading'}
-                icon={Upload}
-                className="w-full bg-emerald-500 hover:bg-emerald-600"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Upload className="w-4 h-4" />
                 {quietQuestImportStatus === 'loading' ? 'Import en cours...' : 'Importer QuietQuest'}
-              </Button>
+              </button>
             </div>
 
             {quietQuestExportStatus === 'success' && (
@@ -3152,49 +3171,49 @@ const SettingsTab = () => {
             </div>
 
             <div className="flex gap-3 flex-wrap">
-              <Button
+              <button
+                type="button"
                 onClick={previewImport}
                 disabled={!importData.trim() || importStatus === 'loading'}
-                icon={FileText}
-                variant="outline"
-                className="flex-1"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t('settings.tooltips.import.previewBodyTracking')}
               >
+                <FileText className="w-4 h-4" />
                 Prévisualiser (Body Tracking)
-              </Button>
+              </button>
               
               {/* ✅ FIX CALENDRIER : Bouton pour prévisualiser l'import COMPLET */}
-              <Button
+              <button
+                type="button"
                 onClick={previewImportAllData}
                 disabled={!importData.trim() || allDataImportStatus === 'loading'}
-                icon={FileText}
-                variant="outline"
-                className="flex-1 bg-blue-600/20 border-blue-500/50 text-blue-300 hover:bg-blue-600/30"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t('settings.tooltips.import.previewComplete')}
               >
+                <FileText className="w-4 h-4" />
                 {allDataImportStatus === 'loading' ? 'Prévisualisation...' : 'Prévisualiser (Complet)'}
-              </Button>
+              </button>
               
-              <Button
+              <button
+                type="button"
                 onClick={() => handleImportGarminData(importData)}
                 disabled={!importData.trim() || garminImportStatus === 'loading'}
-                icon={Upload}
-                variant="outline"
-                className="bg-purple-600/20 border-purple-500/50 text-purple-300 hover:bg-purple-600/30"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t('settings.tooltips.import.importGarmin')}
               >
+                <Upload className="w-4 h-4" />
                 {garminImportStatus === 'loading' ? 'Import...' : 'Import Garmin'}
-              </Button>
+              </button>
               
               {localStorage.getItem('workoutData_preImport_backup') && (
-                <Button
+                <button
+                  type="button"
                   onClick={restorePreImportBackup}
-                  icon={RotateCcw}
-                  variant="outline"
-                  className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center justify-center gap-2"
                 >
+                  <RotateCcw className="w-4 h-4" />
                   Restaurer
-                </Button>
+                </button>
               )}
             </div>
 
@@ -3258,16 +3277,16 @@ const SettingsTab = () => {
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">Prévisualisation de l'import complet</h3>
-                <Button
+                <button
+                  type="button"
                   onClick={() => {
                     setShowAllDataImportPreview(false);
                     setAllDataPreviewData(null);
                   }}
-                  variant="outline"
-                  className="text-white border-slate-600 hover:bg-slate-700"
+                  className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                 >
                   <X size={16} />
-                </Button>
+                </button>
               </div>
               
               <div className="space-y-4">
@@ -3354,24 +3373,25 @@ const SettingsTab = () => {
                 
                 {/* Actions */}
                 <div className="flex gap-3 pt-4">
-                  <Button
+                  <button
+                    type="button"
                     onClick={() => {
                       setShowAllDataImportPreview(false);
                       setAllDataPreviewData(null);
                     }}
-                    variant="outline"
-                    className="flex-1 border-slate-600 text-white hover:bg-slate-700"
+                    className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1"
                   >
                     Annuler
-                  </Button>
-                  <Button
+                  </button>
+                  <button
+                    type="button"
                     onClick={confirmImportAllData}
                     disabled={allDataImportStatus === 'loading'}
-                    icon={Save}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
+                    <Save className="w-4 h-4" />
                     {allDataImportStatus === 'loading' ? 'Import en cours...' : 'Confirmer l\'import complet'}
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -3386,12 +3406,13 @@ const SettingsTab = () => {
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">Prévisualisation de l'import</h3>
-                <Button
+                <button
+                  type="button"
                   onClick={() => setShowImportPreview(false)}
-                  variant="ghost"
-                  size="sm"
-                  icon={X}
-                />
+                  className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
+                >
+                  <X size={16} />
+                </button>
               </div>
 
               <div className="space-y-4">
@@ -3453,21 +3474,22 @@ const SettingsTab = () => {
                 )}
 
                 <div className="flex gap-3 pt-4">
-                  <Button
+                  <button
+                    type="button"
                     onClick={() => setShowImportPreview(false)}
-                    variant="outline"
-                    className="flex-1"
+                    className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1"
                   >
                     Annuler
-                  </Button>
-                  <Button
+                  </button>
+                  <button
+                    type="button"
                     onClick={confirmImport}
                     disabled={importStatus === 'loading'}
-                    icon={Save}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
+                    <Save className="w-4 h-4" />
                     {importStatus === 'loading' ? 'Import en cours...' : 'Confirmer l\'import'}
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -3507,25 +3529,26 @@ const SettingsTab = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button
+              <button
+                type="button"
                 onClick={debugMockSessions}
-                variant="outline"
-                icon={AlertTriangle}
-                className="flex-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1 flex items-center justify-center gap-2"
                 title={t('settings.tooltips.cleanup.debugConsole')}
               >
+                <AlertTriangle className="w-4 h-4" />
                 Debug (Console)
-              </Button>
+              </button>
               
-              <Button
+              <button
+                type="button"
                 onClick={handleCleanupMockEndurance}
                 disabled={cleanupStatus === 'loading'}
-                icon={AlertTriangle}
-                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-red-800"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t('settings.tooltips.cleanup.removeMocked')}
               >
+                <AlertTriangle className="w-4 h-4" />
                 {cleanupStatus === 'loading' ? 'Nettoyage...' : 'Supprimer mockées'}
-              </Button>
+              </button>
             </div>
 
             {cleanupStatus === 'success' && (
@@ -3550,7 +3573,8 @@ const SettingsTab = () => {
             )}
 
             {localStorage.getItem('workoutData_preCleanup_backup') && (
-              <Button
+              <button
+                type="button"
                 onClick={async () => {
                   try {
                     const backup = localStorage.getItem('workoutData_preCleanup_backup');
@@ -3564,12 +3588,11 @@ const SettingsTab = () => {
                     alert(`❌ ${t('messages.importExport.restoreError', { error: error.message })}`);
                   }
                 }}
-                icon={RotateCcw}
-                variant="outline"
-                className="w-full border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2"
               >
+                <RotateCcw className="w-4 h-4" />
                 Restaurer la sauvegarde pré-nettoyage
-              </Button>
+              </button>
             )}
           </div>
         </CardContent>

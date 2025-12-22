@@ -85,22 +85,20 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
+              type="button"
               onClick={() => onEdit(meal)}
-              className="text-slate-400 hover:text-blue-400"
+              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
             >
               <Edit2 size={16} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
+            </button>
+            <button
+              type="button"
               onClick={() => onDelete(meal.id)}
-              className="text-slate-400 hover:text-red-400"
+              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
             >
               <Trash2 size={16} />
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -180,13 +178,14 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
         <CardContent className="p-8 text-center">
           <Utensils size={48} className="mx-auto text-slate-600 mb-4" />
           <p className="text-slate-400 mb-4">Aucun repas enregistré pour ce jour</p>
-          <Button
+          <button
+            type="button"
             onClick={() => onAdd()}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
           >
-            <Plus size={18} className="mr-2" />
+            <Plus size={18} />
             Ajouter un repas
-          </Button>
+          </button>
         </CardContent>
       </Card>
     );
@@ -254,14 +253,14 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
 
         {/* Bouton ajouter repas */}
         <div className="pt-4 border-t border-slate-700/50">
-          <Button
+          <button
+            type="button"
             onClick={() => onAdd()}
-            variant="outline"
-            className="w-full border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2"
           >
-            <Plus size={18} className="mr-2" />
+            <Plus size={18} />
             Ajouter un repas
-          </Button>
+          </button>
         </div>
       </CardContent>
     </Card>

@@ -162,8 +162,9 @@ const AlertsPanel = () => {
   return (
     <div className="alerts-panel">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="alerts-button relative w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-between"
+        className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
           <span className="text-xl">🔔</span>

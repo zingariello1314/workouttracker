@@ -5,7 +5,6 @@
 
 import React, { useRef, useState } from 'react';
 import { Download, Upload, CheckCircle, AlertTriangle } from 'lucide-react';
-import Button from '../ui/Button';
 import { useExportImport } from '../../hooks/useExportImport';
 
 export function ExportImportSection({ onImportComplete }) {
@@ -103,23 +102,25 @@ export function ExportImportSection({ onImportComplete }) {
       <h3 className="text-sm font-medium text-slate-300">Export / Import</h3>
 
       <div className="flex gap-2">
-        <Button
+        <button
+          type="button"
           onClick={handleExport}
-          icon={Download}
           disabled={status === 'loading'}
-          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-green-800"
+          className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
+          <Download className="w-4 h-4" />
           Exporter JSON
-        </Button>
+        </button>
 
-        <Button
+        <button
+          type="button"
           onClick={handleImportClick}
-          icon={Upload}
           disabled={status === 'loading'}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800"
+          className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
+          <Upload className="w-4 h-4" />
           Importer JSON
-        </Button>
+        </button>
       </div>
 
       {/* Hidden file input */}

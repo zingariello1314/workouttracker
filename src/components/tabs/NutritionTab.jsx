@@ -170,19 +170,19 @@ const NutritionTab = () => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
           return (
-            <Button
+            <button
               key={section.id}
-              variant={isActive ? 'default' : 'ghost'}
+              type="button"
               onClick={() => setActiveSection(section.id)}
-              className={`flex-1 flex items-center justify-center gap-2 transition-all ${
+              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2 ${
                 isActive 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  ? 'gradient-button-premium-variant' 
+                  : ''
               }`}
             >
               <Icon size={18} />
               <span>{section.label}</span>
-            </Button>
+            </button>
           );
         })}
       </div>

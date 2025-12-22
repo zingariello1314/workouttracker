@@ -50,12 +50,13 @@ const InvestissementsSubTab = () => {
         {subTabs.map(tab => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveSubTab(tab.id)}
-            className={`sub-tab-button flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200
-              ${activeSubTab === tab.id
-                ? 'bg-blue-600/30 text-blue-300 border border-blue-500/50'
-                : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
-              }`}
+            className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
+              activeSubTab === tab.id
+                ? 'gradient-button-premium-variant'
+                : ''
+            }`}
           >
             <span className="text-lg">{tab.icon}</span>
             <span className="text-sm font-medium">{t(tab.labelKey)}</span>

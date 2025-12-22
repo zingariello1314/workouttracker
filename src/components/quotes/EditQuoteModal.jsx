@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Save, X } from 'lucide-react';
-import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 
 export function EditQuoteModal({ quote, onSave, onClose }) {
@@ -170,21 +169,20 @@ export function EditQuoteModal({ quote, onSave, onClose }) {
 
           {/* Actions */}
           <div className="flex gap-2 pt-4">
-            <Button
+            <button
               type="submit"
-              icon={Save}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2"
             >
+              <Save className="w-4 h-4" />
               Enregistrer
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
               onClick={onClose}
-              variant="outline"
-              className="flex-1"
+              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1"
             >
               Annuler
-            </Button>
+            </button>
           </div>
         </form>
       </div>

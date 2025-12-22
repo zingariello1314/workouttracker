@@ -105,12 +105,11 @@ const ProgrammeItem = React.memo(({ program, isActive, isActivating, onEdit, onA
 
         <div className="flex items-center gap-2 ml-4">
           {!isActive && !program.isArchived && (
-            <Button
+            <button
+              type="button"
               onClick={() => onActivate(program.id)}
-              variant="ghost"
-              size="sm"
               disabled={isActivating || loading}
-              className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
+              className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               title="Activer ce programme"
             >
               {isActivating ? (
@@ -118,26 +117,24 @@ const ProgrammeItem = React.memo(({ program, isActive, isActivating, onEdit, onA
               ) : (
                 <Play size={16} />
               )}
-            </Button>
+            </button>
           )}
-          <Button
+          <button
+            type="button"
             onClick={() => onEdit(program)}
-            variant="ghost"
-            size="sm"
-            className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
             title="Modifier"
           >
             <Edit2 size={16} />
-          </Button>
-          <Button
+          </button>
+          <button
+            type="button"
             onClick={() => onDelete(program.id)}
-            variant="ghost"
-            size="sm"
-            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
             title="Supprimer"
           >
             <Trash2 size={16} />
-          </Button>
+          </button>
         </div>
       </div>
     </div>
@@ -504,13 +501,14 @@ const NutritionPrograms = ({ nutritionData }) => {
             Créez et gérez vos programmes nutritionnels personnalisés
           </p>
         </div>
-        <Button
+        <button
+          type="button"
           onClick={handleCreateProgram}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
         >
-          <Plus size={18} className="mr-2" />
+          <Plus size={18} />
           Nouveau Programme
-        </Button>
+        </button>
       </div>
 
       {/* Programme Actif */}
@@ -522,19 +520,19 @@ const NutritionPrograms = ({ nutritionData }) => {
                 <CheckCircle size={24} className="text-green-400" />
                 <CardTitle className="text-white">Programme Actif</CardTitle>
               </div>
-              <Button
+              <button
+                type="button"
                 onClick={handleDeactivateProgram}
-                variant="outline"
                 disabled={deactivatingProgramId !== null || loading}
-                className="border-red-500/50 text-red-400 hover:bg-red-500/20"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {deactivatingProgramId !== null ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
                 ) : (
-                  <Pause size={16} className="mr-2" />
+                  <Pause size={16} />
                 )}
                 Désactiver
-              </Button>
+              </button>
             </div>
           </CardHeader>
           <CardContent>
@@ -578,15 +576,14 @@ const NutritionPrograms = ({ nutritionData }) => {
               </div>
 
               <div className="flex items-center gap-4 pt-2 border-t border-slate-700/50">
-                <Button
+                <button
+                  type="button"
                   onClick={() => handleEditProgram(activeProgram)}
-                  variant="outline"
-                  size="sm"
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                  className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
                 >
-                  <Edit2 size={16} className="mr-2" />
+                  <Edit2 size={16} />
                   Modifier
-                </Button>
+                </button>
                 <div className="flex items-center gap-2 text-slate-400 text-sm">
                   <Calendar size={16} />
                   <span>
@@ -612,13 +609,14 @@ const NutritionPrograms = ({ nutritionData }) => {
             <div className="text-center py-12">
               <Target size={48} className="mx-auto text-slate-600 mb-4" />
               <p className="text-slate-400 mb-4">Aucun programme créé</p>
-              <Button
+              <button
+                type="button"
                 onClick={handleCreateProgram}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
               >
-                <Plus size={18} className="mr-2" />
+                <Plus size={18} />
                 Créer votre premier programme
-              </Button>
+              </button>
             </div>
           ) : (
             <div className="space-y-3">

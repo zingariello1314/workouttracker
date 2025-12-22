@@ -314,9 +314,10 @@ export default function SyncControls({
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-white font-semibold">Statut</h3>
           <button
+            type="button"
             onClick={fetchStatus}
             disabled={loading}
-            className="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded"
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Actualiser
           </button>
@@ -349,9 +350,10 @@ export default function SyncControls({
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={syncNow}
                   disabled={loading}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed rounded text-white text-sm font-medium whitespace-nowrap"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   {loading ? 'En cours...' : 'Réessayer'}
                 </button>
@@ -470,16 +472,13 @@ export default function SyncControls({
         <h3 className="text-white font-semibold mb-3">Synchronisation</h3>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => syncNow({ forceRefresh: false, skipDelay: true })}
             disabled={loading}
             aria-label={ARIA_LABELS.SYNC_BUTTON}
             aria-busy={loading}
             aria-disabled={loading}
-            className={`px-4 py-2 rounded-md text-white font-medium ${
-              loading
-                ? 'bg-slate-600 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
+            className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Synchronisation...' : 'Synchroniser'}
           </button>
@@ -650,16 +649,13 @@ export default function SyncControls({
           </div>
         </div>
         <button
+          type="button"
           onClick={backfill}
           disabled={loading || !startDate || !endDate}
           aria-label={ARIA_LABELS.BACKFILL_BUTTON}
           aria-busy={loading}
           aria-disabled={loading || !startDate || !endDate}
-          className={`px-4 py-2 rounded-md text-white ${
-            loading || !startDate || !endDate
-              ? 'bg-slate-600 cursor-not-allowed'
-              : 'bg-emerald-600 hover:bg-emerald-700'
-          }`}
+          className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Backfill
         </button>
@@ -676,13 +672,10 @@ export default function SyncControls({
           </p>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={handleDeleteMocks}
               disabled={deletingMocks || loading}
-              className={`px-4 py-2 rounded-md text-white text-sm ${
-                deletingMocks || loading
-                  ? 'bg-slate-600 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700'
-              }`}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {deletingMocks ? 'Suppression...' : 'Supprimer toutes les données mock'}
             </button>

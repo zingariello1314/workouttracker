@@ -1954,10 +1954,10 @@ const SmartBalancingTab = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedComponent('workout')}
-                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                  className={`gradient-button-premium rounded-lg text-center p-2 ${
                     selectedComponent === 'workout'
-                      ? 'border-blue-400 bg-blue-500/20 ring-1 ring-blue-400'
-                      : 'border-blue-400/30 bg-blue-400/10 hover:bg-blue-400/15 hover:-translate-y-0.5'
+                      ? 'gradient-button-premium-variant'
+                      : ''
                   }`}
                   title="Impact de l'entraînement sur le score global"
                 >
@@ -1970,10 +1970,10 @@ const SmartBalancingTab = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedComponent('justification')}
-                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                  className={`gradient-button-premium rounded-lg text-center p-2 ${
                     selectedComponent === 'justification'
-                      ? 'border-purple-400 bg-purple-500/20 ring-1 ring-purple-400'
-                      : 'border-purple-400/30 bg-purple-400/10 hover:bg-purple-400/15 hover:-translate-y-0.5'
+                      ? 'gradient-button-premium-variant'
+                      : ''
                   }`}
                   title="Impact des justifications sur le score global"
                 >
@@ -1986,10 +1986,10 @@ const SmartBalancingTab = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedComponent('garmin')}
-                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                  className={`gradient-button-premium rounded-lg text-center p-2 ${
                     selectedComponent === 'garmin'
-                      ? 'border-cyan-400 bg-cyan-500/20 ring-1 ring-cyan-400'
-                      : 'border-cyan-400/30 bg-cyan-400/10 hover:bg-cyan-400/15 hover:-translate-y-0.5'
+                      ? 'gradient-button-premium-variant'
+                      : ''
                   }`}
                   title="Impact des données Garmin sur le score global"
                 >
@@ -2002,10 +2002,10 @@ const SmartBalancingTab = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedComponent('nutrition')}
-                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                  className={`gradient-button-premium rounded-lg text-center p-2 ${
                     selectedComponent === 'nutrition'
-                      ? 'border-orange-400 bg-orange-500/20 ring-1 ring-orange-400'
-                      : 'border-orange-400/30 bg-orange-400/10 hover:bg-orange-400/15 hover:-translate-y-0.5'
+                      ? 'gradient-button-premium-variant'
+                      : ''
                   }`}
                   title="Impact de la nutrition sur le score global"
                 >
@@ -2018,10 +2018,10 @@ const SmartBalancingTab = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedComponent('bodyTracking')}
-                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                  className={`gradient-button-premium rounded-lg text-center p-2 ${
                     selectedComponent === 'bodyTracking'
-                      ? 'border-pink-400 bg-pink-500/20 ring-1 ring-pink-400'
-                      : 'border-pink-400/30 bg-pink-400/10 hover:bg-pink-400/15 hover:-translate-y-0.5'
+                      ? 'gradient-button-premium-variant'
+                      : ''
                   }`}
                   title="Impact du suivi corporel sur le score global"
                 >
@@ -2034,10 +2034,10 @@ const SmartBalancingTab = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedComponent('sessionFeedback')}
-                  className={`text-center p-2 rounded border transition-transform duration-200 cursor-pointer ${
+                  className={`gradient-button-premium rounded-lg text-center p-2 ${
                     selectedComponent === 'sessionFeedback'
-                      ? 'border-yellow-400 bg-yellow-500/20 ring-1 ring-yellow-400'
-                      : 'border-yellow-400/30 bg-yellow-400/10 hover:bg-yellow-400/15 hover:-translate-y-0.5'
+                      ? 'gradient-button-premium-variant'
+                      : ''
                   }`}
                   title="Impact des feedbacks de session sur le score global"
                 >

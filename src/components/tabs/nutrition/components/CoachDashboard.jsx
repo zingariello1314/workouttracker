@@ -385,18 +385,19 @@ const CoachDashboard = () => {
                   className="sr-only"
                   aria-describedby="upload-instructions upload-file-format"
                 />
-                <Button
+                <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     !loading && fileInputRef.current?.click();
                   }}
                   disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label={t('nutrition.tooltips.coachDashboard.selectFile')}
                 >
-                  <FileText size={18} className="mr-2" aria-hidden="true" />
+                  <FileText size={18} aria-hidden="true" />
                   Sélectionner un fichier JSON
-                </Button>
+                </button>
                 <p 
                   id="upload-file-format" 
                   className="text-xs text-slate-500 mt-4"
@@ -460,15 +461,15 @@ const CoachDashboard = () => {
               <Eye size={20} className="text-blue-400" />
               Dashboard Coach - Données Partagées
             </CardTitle>
-            <Button
+            <button
+              type="button"
               onClick={clearData}
-              variant="outline"
-              className="text-slate-300 border-slate-600 hover:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
               aria-label={t('nutrition.tooltips.coachDashboard.resetAndImport')}
             >
-              <RefreshCw size={16} className="mr-2" aria-hidden="true" />
+              <RefreshCw size={16} aria-hidden="true" />
               Nouveau import
-            </Button>
+            </button>
           </div>
         </CardHeader>
         <CardContent>

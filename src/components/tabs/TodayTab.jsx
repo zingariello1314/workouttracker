@@ -670,21 +670,23 @@ const TodayTab = () => {
             <span className="text-sm text-gray-200">{t('today.workout.trainingMode')}</span>
             <div className="flex items-center bg-slate-700/50 rounded-lg p-1">
               <button
+                type="button"
                 onClick={() => setIsGymMode(false)}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${
+                className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                   !isGymMode 
-                    ? 'bg-purple-600 text-white shadow-md' 
-                    : 'text-gray-300 hover:text-white'
+                    ? 'gradient-button-premium-variant' 
+                    : ''
                 }`}
               >
                 {t('today.workout.home')}
               </button>
               <button
+                type="button"
                 onClick={() => setIsGymMode(true)}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${
+                className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                   isGymMode 
-                    ? 'bg-purple-600 text-white shadow-md' 
-                    : 'text-gray-300 hover:text-white'
+                    ? 'gradient-button-premium-variant' 
+                    : ''
                 }`}
               >
                 {t('today.workout.gym')}
@@ -776,25 +778,25 @@ const TodayTab = () => {
                   {isChecked && (
                     <div className="text-green-400 text-sm font-medium">✓ {t('today.exercises.completed')}</div>
                   )}
-                  <Button
-                    variant="primary"
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={() => {
                       setSelectedExercise(exercise);
                       setShowExerciseVariations(true);
                     }}
-                    icon={Zap}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  />
+                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
+                  >
+                    <Zap className="w-4 h-4" />
+                  </button>
                   {/* ✅ NOUVEAU : Bouton pour supprimer l'exercice pour aujourd'hui */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={() => handleSuppressExercise(exercise.id)}
-                    icon={Trash2}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="gradient-button-premium gradient-button-premium-sm rounded-lg flex items-center gap-2"
                     title={t('today.exercises.suppressTitle')}
-                  />
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             );
@@ -883,14 +885,14 @@ const TodayTab = () => {
                           className="text-yellow-400"
                           name={`exceptional_${exercise.id}`}
                         />
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
+                          type="button"
                           onClick={() => handleRemoveExceptionalExercise(exercise.id)}
-                          icon={X}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          className="gradient-button-premium gradient-button-premium-sm rounded-lg flex items-center gap-2"
                           title={t('today.exercises.removeExceptionalTitle')}
-                        />
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   );
@@ -901,15 +903,14 @@ const TodayTab = () => {
 
           {/* ✅ NOUVEAU : Bouton pour ajouter un exercice exceptionnel */}
           <div className="mt-4 pt-4 border-t border-slate-600/50">
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => setShowAddExceptionalModal(true)}
-              icon={Plus}
-              className="w-full border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+              className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
             >
+              <Plus className="w-4 h-4" />
               {t('today.exercises.addExceptional')}
-            </Button>
+            </button>
           </div>
           
           {/* Activités complémentaires */}
@@ -953,16 +954,16 @@ const TodayTab = () => {
                   <span className="text-purple-300 text-sm font-medium">{t('today.exercises.minutesLabel')}</span>
                 </div>
                 
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={() => {
                     setSelectedExercise(workout.complementaryActivity);
                     setShowExerciseVariations(true);
                   }}
-                  icon={Zap}
-                  className="bg-purple-600 hover:bg-purple-700"
-                />
+                  className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
+                >
+                  <Zap className="w-4 h-4" />
+                </button>
               </div>
             </div>
           )}
@@ -977,24 +978,22 @@ const TodayTab = () => {
                 {t('today.exercises.unsavedChanges')}
               </div>
               <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={handleDiscardExercises}
-                  icon={X}
-                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
                 >
+                  <X className="w-4 h-4" />
                   {t('today.exercises.discard')}
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
+                </button>
+                <button
+                  type="button"
                   onClick={handleSaveExercises}
-                  icon={Save}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
                 >
+                  <Save className="w-4 h-4" />
                   {t('today.exercises.save')}
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -1047,24 +1046,22 @@ const TodayTab = () => {
                   {t('today.exercises.unsavedChanges')}
                 </div>
                 <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={handleDiscardStretches}
-                    icon={X}
-                    className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                    className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
                   >
+                    <X className="w-4 h-4" />
                     {t('today.exercises.discard')}
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
+                  </button>
+                  <button
+                    type="button"
                     onClick={handleSaveStretches}
-                    icon={Save}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
                   >
+                    <Save className="w-4 h-4" />
                     {t('today.stretches.save')}
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1194,14 +1191,14 @@ const TodayTab = () => {
 
       {/* Bouton de feedback de session */}
       <div className="text-center">
-        <Button
-          variant="primary"
+        <button
+          type="button"
           onClick={handleSessionFeedback}
-          icon={MessageSquare}
-          className="bg-green-600 hover:bg-green-700"
+          className="gradient-button-premium gradient-button-premium-lg rounded-lg flex items-center justify-center gap-2 mx-auto"
         >
+          <MessageSquare className="w-5 h-5" />
           {t('today.sessionFeedback.button')}
-        </Button>
+        </button>
       </div>
 
       {/* ✅ NOUVEAU : Modal d'ajout d'exercice exceptionnel */}

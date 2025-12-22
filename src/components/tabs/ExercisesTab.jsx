@@ -407,50 +407,49 @@ const ExercisesTab = () => {
         <CardContent>
           <div className="flex flex-wrap gap-2">
             <button
+              type="button"
               onClick={() => {
                 setDataSource('default');
                 setViewMode('exercises');
                 setSelectedProgram(null);
               }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 dataSource === 'default'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  ? 'gradient-button-premium-variant'
+                  : ''
               }`}
             >
               {t('exercisesTab.source.default')}
             </button>
             <button
+              type="button"
               onClick={() => {
                 setDataSource('active_program');
                 setViewMode('exercises');
                 setSelectedProgram(null);
               }}
               disabled={!visibleActiveProgram}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 dataSource === 'active_program'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : visibleActiveProgram
-                  ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-              }`}
+                  ? 'gradient-button-premium-variant'
+                  : ''
+              } ${!visibleActiveProgram ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {t('exercisesTab.source.activeProgram')} {visibleActiveProgram ? `(${visibleActiveProgram.name})` : t('exercisesTab.source.activeProgramNone')}
             </button>
             <button
+              type="button"
               onClick={() => {
                 setDataSource('all_programs');
                 setViewMode('programs');
                 setSelectedProgram(null);
               }}
               disabled={visiblePrograms.length === 0}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 dataSource === 'all_programs'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : visiblePrograms.length > 0
-                  ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-              }`}
+                  ? 'gradient-button-premium-variant'
+                  : ''
+              } ${visiblePrograms.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {t('exercisesTab.source.allPrograms', { count: visiblePrograms.length })}
             </button>

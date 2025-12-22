@@ -95,14 +95,16 @@ const AlertSettings = ({ position, onClose }) => {
 
       <div className="flex gap-2 mt-6">
         <button
+          type="button"
           onClick={handleSave}
-          className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1"
         >
           Sauvegarder
         </button>
         <button
+          type="button"
           onClick={onClose}
-          className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex-1"
         >
           Annuler
         </button>

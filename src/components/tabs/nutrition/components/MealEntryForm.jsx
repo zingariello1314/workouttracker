@@ -268,16 +268,14 @@ const MealEntryForm = memo(({ isOpen, onClose, meal, dateStr, onSave, nutritionD
               Aliments
             </label>
             <div className="flex items-center gap-2">
-              <Button
+              <button
                 type="button"
-                variant="default"
-                size="sm"
                 onClick={() => setShowFoodSearch(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg flex items-center gap-2"
               >
-                <Search size={16} className="mr-2" />
+                <Search size={16} />
                 Rechercher
-              </Button>
+              </button>
               <VoiceInput
                 onFoodsSelected={handleVoiceFoodsSelected}
                 autoSearch={true}

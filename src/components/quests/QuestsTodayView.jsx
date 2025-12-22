@@ -93,11 +93,12 @@ const QuestsTodayView = ({
               >
                 <div className="flex items-start gap-3">
                   <button
+                    type="button"
                     onClick={() => toggleQuestValidation(quest.id, today)}
-                    className={`mt-1 w-5 h-5 rounded-full border flex items-center justify-center text-[10px] ${
+                    className={`gradient-button-premium gradient-button-premium-sm rounded-full mt-1 w-5 h-5 flex items-center justify-center text-[10px] ${
                       completed
-                        ? 'bg-emerald-400 border-emerald-300 text-slate-900'
-                        : 'bg-slate-900 border-slate-600 text-slate-400'
+                        ? 'gradient-button-premium-variant'
+                        : ''
                     }`}
                   >
                     {completed ? '✓' : ''}

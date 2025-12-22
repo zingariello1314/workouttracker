@@ -649,15 +649,17 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
           <div className="flex gap-3">
             {currentStep > 1 && (
               <button
+                type="button"
                 onClick={prevStep}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all"
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
               >
                 {t('sessionFeedback.actions.previous')}
               </button>
             )}
             <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all"
+              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
             >
               {t('sessionFeedback.actions.skip')}
             </button>
@@ -666,16 +668,18 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
           <div className="flex gap-3">
             {currentStep < totalSteps ? (
               <button
+                type="button"
                 onClick={nextStep}
-                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg"
               >
                 {t('sessionFeedback.actions.next')}
               </button>
             ) : (
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={feedback.ressenti === 0 && feedback.difficulte === 0}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-all flex items-center gap-2"
+                className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Save size={16} />
                 {t('sessionFeedback.actions.save')}

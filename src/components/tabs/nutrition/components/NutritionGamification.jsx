@@ -192,9 +192,13 @@ const NutritionGamification = () => {
         <CardContent className="text-center py-8">
           <XCircle size={48} className="text-red-400 mx-auto mb-4" />
           <p className="text-red-400 mb-2">Erreur lors du chargement</p>
-          <Button onClick={checkBadges} variant="outline" className="mt-4">
+          <button
+            type="button"
+            onClick={checkBadges}
+            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg mt-4"
+          >
             Réessayer
-          </Button>
+          </button>
         </CardContent>
       </Card>
     );

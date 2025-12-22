@@ -364,19 +364,18 @@ const StatsTab = () => {
       <div className="flex justify-center">
         <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700">
           {periods.map(period => (
-            <Button
+            <button
               key={period.key}
-              variant={statsPeriod === period.key ? 'primary' : 'ghost'}
-              size="sm"
+              type="button"
               onClick={() => setStatsPeriod(period.key)}
-              className={`px-4 py-2 ${
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 statsPeriod === period.key 
-                  ? 'bg-purple-600 text-white' 
-                  : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  ? 'gradient-button-premium-variant' 
+                  : ''
               }`}
             >
               {period.label}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
@@ -713,13 +712,14 @@ const StatsTab = () => {
 
       {/* Bouton statistiques avancées */}
       <div className="text-center">
-        <Button
+        <button
+          type="button"
           onClick={() => setShowAdvancedStats(true)}
-          icon={Target}
-          size="lg"
+          className="gradient-button-premium gradient-button-premium-lg gradient-button-premium-variant rounded-lg flex items-center justify-center gap-2 mx-auto"
         >
+          <Target className="w-5 h-5" />
           Voir les statistiques avancées
-        </Button>
+        </button>
       </div>
       </div>
     </div>

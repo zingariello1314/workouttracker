@@ -113,42 +113,46 @@ const HistoryTab = () => {
             </div>
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => setExerciseFilter('all')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                   exerciseFilter === 'all'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    ? 'gradient-button-premium-variant'
+                    : ''
                 }`}
               >
                 {t('history.filters.all')} ({history.reduce((sum, s) => sum + (s.exercises?.length || 0), 0)})
               </button>
               <button
+                type="button"
                 onClick={() => setExerciseFilter('program')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                className={`gradient-button-premium gradient-button-premium-sm rounded-lg flex items-center gap-1 ${
                   exerciseFilter === 'program'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    ? 'gradient-button-premium-variant'
+                    : ''
                 }`}
               >
                 {t('history.filters.program')} ({stats.totalProgram})
               </button>
               <button
+                type="button"
                 onClick={() => setExerciseFilter('exceptional')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                className={`gradient-button-premium gradient-button-premium-sm rounded-lg flex items-center gap-1 ${
                   exerciseFilter === 'exceptional'
-                    ? 'bg-yellow-600 text-white'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    ? 'gradient-button-premium-variant'
+                    : ''
                 }`}
               >
                 <Star className="w-3 h-3" />
                 {t('history.filters.exceptional')} ({stats.totalExceptional})
               </button>
               <button
+                type="button"
                 onClick={() => setExerciseFilter('suppressed')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                className={`gradient-button-premium gradient-button-premium-sm rounded-lg flex items-center gap-1 ${
                   exerciseFilter === 'suppressed'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    ? 'gradient-button-premium-variant'
+                    : ''
                 }`}
               >
                 <XCircle className="w-3 h-3" />

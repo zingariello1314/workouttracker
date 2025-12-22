@@ -17,9 +17,10 @@ const SubjectSelector = React.memo(({ subjects, timer, getAssignedDay, onStartSe
         {subjects.map((subject) => (
           <button
             key={subject.id}
+            type="button"
             onClick={() => onStartSession(subject)}
             aria-label={`Démarrer une session pour ${subject.name}`}
-            className="p-4 bg-slate-900/50 border border-slate-700/50 rounded-lg hover:border-emerald-500/50 hover:bg-slate-800/70 transition-all duration-200 text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+            className="gradient-button-premium gradient-button-premium-md rounded-lg p-4 text-left"
             role="listitem"
           >
             <div className="flex items-center gap-3">

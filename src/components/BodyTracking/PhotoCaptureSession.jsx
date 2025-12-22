@@ -1176,9 +1176,13 @@ const PhotoCaptureSession = ({
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
-                <Button variant="ghost" onClick={handleClose}>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                >
                   Annuler
-                </Button>
+                </button>
               </div>
             </CardContent>
           </Card>
@@ -1315,9 +1319,14 @@ const PhotoCaptureSession = ({
                   </p>
                 )}
               </div>
-              <Button variant="ghost" onClick={handleClose} icon={X}>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
                 Fermer
-              </Button>
+              </button>
             </div>
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1465,19 +1474,21 @@ const PhotoCaptureSession = ({
                     </div>
                   )}
                   
-                  <Button
+                  <button
+                    type="button"
                     onClick={() => {
                       if (captureCountdown === null) {
                         startCaptureCountdown();
                       }
                     }}
                     disabled={!webcamReady || isCapturing || !poseDetected || captureCountdown !== null}
-                    className="w-full"
-                    size="lg"
-                    variant={qualityScore >= 70 ? 'primary' : qualityScore >= 50 ? 'secondary' : 'danger'}
-                    icon={Camera}
-                    loading={isCapturing || captureCountdown !== null}
+                    className="gradient-button-premium gradient-button-premium-lg rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
+                    {isCapturing || captureCountdown !== null ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                    ) : (
+                      <Camera className="w-5 h-5" />
+                    )}
                     {captureCountdown !== null && captureCountdown > 0 
                       ? `Capture dans ${captureCountdown}s...`
                       : captureCountdown === 0
@@ -1490,11 +1501,11 @@ const PhotoCaptureSession = ({
                       ? '📸 Capturer (Qualité moyenne)'
                       : '📸 Capturer (Ajustez la pose)'
                     }
-                  </Button>
+                  </button>
 
                   {safePoseIndex > 0 && (
-                    <Button
-                      variant="outline"
+                    <button
+                      type="button"
                       onClick={() => {
                         // ✅ FIX RACE CONDITION: Vérifier verrou avant changement pose
                         if (isCapturingRef.current) {
@@ -1506,17 +1517,17 @@ const PhotoCaptureSession = ({
                         // Reset webcam state géré automatiquement par PREV_POSE dans reducer
                         stabilityValidationsRef.current = [];
                       }}
-                      className="w-full"
-                      icon={ChevronLeft}
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={isCapturing} // Désactiver bouton pendant capture
                     >
+                      <ChevronLeft className="w-4 h-4" />
                       Précédent (Pose {safePoseIndex}/{poses.length})
-                    </Button>
+                    </button>
                   )}
                   
                   {safePoseIndex < poses.length - 1 && (
-                    <Button
-                      variant="outline"
+                    <button
+                      type="button"
                       onClick={() => {
                         // ✅ FIX RACE CONDITION: Vérifier verrou avant changement pose
                         if (isCapturingRef.current) {
@@ -1527,12 +1538,12 @@ const PhotoCaptureSession = ({
                         dispatch({ type: 'NEXT_POSE' });
                         // Reset webcam state géré automatiquement par NEXT_POSE dans reducer
                       }}
-                      className="w-full"
-                      icon={ChevronRight}
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={isCapturing} // Désactiver bouton pendant capture
                     >
+                      <ChevronRight className="w-4 h-4" />
                       Suivant (Pose {safePoseIndex + 2}/{poses.length})
-                    </Button>
+                    </button>
                   )}
 
                   {/* Compteur photos capturées */}
@@ -1551,14 +1562,13 @@ const PhotoCaptureSession = ({
                   
                   {/* Bouton re-sauvegarde manuelle (optionnel, pour réessayer si erreur) */}
                   {sessionPhotos.filter(sp => sp.status === 'captured').length > 0 && (
-                    <Button
-                      variant="outline"
+                    <button
+                      type="button"
                       onClick={saveSession}
-                      className="w-full"
-                      size="sm"
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full"
                     >
                       🔄 Re-sauvegarder toutes les photos ({sessionPhotos.filter(sp => sp.status === 'captured').length})
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -1650,9 +1660,13 @@ const PhotoCaptureSession = ({
 
               {/* Actions */}
               <div className="flex justify-end gap-3 mt-6">
-                <Button variant="ghost" onClick={handleClose}>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                >
                   Annuler
-                </Button>
+                </button>
                 {uploadedFiles.length > 0 && (
                   <Button
                     onClick={analyzeUploadedPhotos}
