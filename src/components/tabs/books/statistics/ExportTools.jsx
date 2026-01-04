@@ -18,7 +18,8 @@ import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import { useTranslation } from '../../../../utils/translations';
 
-const ExportTools = ({ 
+// Contenu des outils d'export (sans wrapper Card)
+export const ExportToolsContent = ({ 
   statisticsData, 
   selectedPeriod, 
   books = [],
@@ -348,27 +349,17 @@ const ExportTools = ({
 
   if (!statisticsData || !statisticsData.hasData) {
     return (
-      <Card variant="glass">
-        <CardContent className="p-4 text-center">
-          <FileText className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-          <p className="text-sm text-slate-400">
-            Aucune donnée à exporter
-          </p>
-        </CardContent>
-      </Card>
+      <div className="p-4 text-center">
+        <FileText className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+        <p className="text-sm text-slate-400">
+          Aucune donnée à exporter
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <Card variant="glass">
-        <CardHeader>
-          <CardTitle size="sm" className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Outils d'Export et Partage
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
           {/* Status d'export */}
           {exportStatus.message && (
             <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
@@ -461,9 +452,24 @@ const ExportTools = ({
             <p>• CSV: Données brutes pour analyse externe</p>
             <p>• PNG: Images haute résolution des graphiques</p>
           </div>
-        </CardContent>
-      </Card>
     </div>
+  );
+};
+
+// Composant wrapper avec Card pour compatibilité
+const ExportTools = (props) => {
+  return (
+    <Card variant="glass">
+      <CardHeader>
+        <CardTitle size="sm" className="flex items-center gap-2">
+          <Download className="w-4 h-4" />
+          Outils d'Export et Partage
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ExportToolsContent {...props} />
+      </CardContent>
+    </Card>
   );
 };
 

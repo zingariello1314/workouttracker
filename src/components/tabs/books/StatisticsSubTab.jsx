@@ -17,7 +17,6 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { BarChart3, Calendar, TrendingUp, Filter } from 'lucide-react';
-import Card, { CardContent } from '../../ui/Card';
 import Button from '../../ui/Button';
 import DebouncedInput from '../../ui/DebouncedInput';
 import { useTranslation } from '../../../utils/translations';
@@ -28,11 +27,13 @@ import '../../../styles/statistics-mobile.css';
 
 // Import des composants de graphiques
 import ChartsContainer from './statistics/ChartsContainer';
-import MetricsPanel from './statistics/MetricsPanel';
+import MetricsPanel, { SessionAnalysis, AccomplishmentsSection } from './statistics/MetricsPanel';
 import TimeFilters from './statistics/TimeFilters';
 import ComparisonMode from './statistics/ComparisonMode';
-import ExportTools from './statistics/ExportTools';
+import { ExportToolsContent } from './statistics/ExportTools';
 import PredictionsPanel from './statistics/PredictionsPanel';
+import Card, { CardHeader, CardTitle, CardContent } from '../../ui/Card';
+import { Activity, Trophy, Download } from 'lucide-react';
 
 // Import du moniteur de performance (dev seulement)
 import PerformanceMonitor from '../../debug/PerformanceMonitor';
@@ -310,37 +311,79 @@ const StatisticsSubTabContent = ({ books = [] }) => {
             <PredictionsPanel predictions={predictions} />
           </div>
           
-          <div className="statistics-main-layout">
-            {/* Panneau de métriques (colonne de gauche) */}
-            <div className="metrics-sidebar">
-              <MetricsPanel 
-                statisticsData={statisticsData}
-                selectedPeriod={selectedPeriod}
-                books={books}
-                userPreferences={{ isSectionExpanded, toggleSection }}
-              />
-              
-              {/* Outils d'export */}
-              <div className="export-tools">
-                <ExportTools 
+          {/* Panneau de métriques (pleine largeur) */}
+          <div className="metrics-panel-full">
+            <MetricsPanel 
+              statisticsData={statisticsData}
+              selectedPeriod={selectedPeriod}
+              books={books}
+              userPreferences={{ isSectionExpanded, toggleSection }}
+            />
+          </div>
+          
+          {/* Modules supplémentaires au-dessus des graphiques */}
+          <div className="modules-section space-y-4">
+            {/* Analyse des sessions */}
+            <Card variant="glass">
+              <CardHeader>
+                <CardTitle size="sm" className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-green-300" />
+                  Analyse des sessions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SessionAnalysis 
+                  metrics={statisticsData?.metrics} 
+                  patterns={statisticsData?.patterns} 
+                />
+              </CardContent>
+            </Card>
+            
+            {/* Accomplissements */}
+            <Card variant="glass">
+              <CardHeader>
+                <CardTitle size="sm" className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-green-300" />
+                  Accomplissements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AccomplishmentsSection 
+                  books={books} 
+                  metrics={statisticsData?.metrics} 
+                  predictions={statisticsData?.predictions} 
+                />
+              </CardContent>
+            </Card>
+            
+            {/* Outils d'export */}
+            <Card variant="glass">
+              <CardHeader>
+                <CardTitle size="sm" className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-green-300" />
+                  Outils d'Export et Partage
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ExportToolsContent 
                   statisticsData={statisticsData}
                   selectedPeriod={selectedPeriod}
                   books={books}
                 />
-              </div>
-            </div>
-            
-            {/* Container des graphiques (colonnes de droite) */}
-            <div className="charts-main">
-              <ChartsContainer
-                books={books}
-                statisticsData={statisticsData}
-                activeChart={activeChart}
-                onChartChange={handleChartChange}
-                selectedPeriod={selectedPeriod}
-                filters={filters}
-              />
-            </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Container des graphiques (pleine largeur) */}
+          <div className="charts-main-full">
+            <ChartsContainer
+              books={books}
+              statisticsData={statisticsData}
+              activeChart={activeChart}
+              onChartChange={handleChartChange}
+              selectedPeriod={selectedPeriod}
+              filters={filters}
+            />
           </div>
         </div>
       )}

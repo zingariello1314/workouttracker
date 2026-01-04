@@ -101,6 +101,13 @@ const DifficultyXPScatterChart = ({ validations, allQuests }) => {
     'Sport': '#f59e0b',
     'Ménage': '#06b6d4',
     'Spirituel': '#6366f1',
+    'Repas': '#f97316',
+    'Projets': '#14b8a6',
+    'Hobby': '#a855f7',
+    'Social': '#ef4444',
+    'Finance': '#22c55e',
+    'Créativité': '#eab308',
+    'Bien-être': '#06b6d4',
   };
 
   // Trouver le max pour normaliser la taille des points

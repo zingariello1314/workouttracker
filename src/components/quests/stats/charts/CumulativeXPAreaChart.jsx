@@ -60,7 +60,7 @@ const CumulativeXPAreaChart = ({ dailyPerformances, validations, allQuests }) =>
     });
 
     // Calculer XP cumulé par catégorie
-    const categories = ['Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Ménage', 'Spirituel'];
+    const categories = ['Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Ménage', 'Spirituel', 'Repas', 'Projets', 'Hobby', 'Social', 'Finance', 'Créativité', 'Bien-être'];
     const categoryTotals = new Map();
     categories.forEach(cat => categoryTotals.set(cat, 0));
 
@@ -94,6 +94,13 @@ const CumulativeXPAreaChart = ({ dailyPerformances, validations, allQuests }) =>
     'Sport': { from: '#f59e0b', to: '#fbbf24' },
     'Ménage': { from: '#06b6d4', to: '#22d3ee' },
     'Spirituel': { from: '#6366f1', to: '#818cf8' },
+    'Repas': { from: '#f97316', to: '#fb923c' },
+    'Projets': { from: '#14b8a6', to: '#2dd4bf' },
+    'Hobby': { from: '#a855f7', to: '#c084fc' },
+    'Social': { from: '#ef4444', to: '#f87171' },
+    'Finance': { from: '#22c55e', to: '#4ade80' },
+    'Créativité': { from: '#eab308', to: '#facc15' },
+    'Bien-être': { from: '#06b6d4', to: '#38bdf8' },
   };
 
   return (

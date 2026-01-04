@@ -198,10 +198,9 @@ const SessionAnalysis = ({ metrics, patterns }) => {
 const AccomplishmentsSection = ({ books, metrics, predictions }) => {
   const t = useTranslation();
   
-  // Filtrer les livres terminés (simulation basée sur les données disponibles)
+  // Filtrer uniquement les livres explicitement marqués comme terminés
   const completedBooks = books?.filter(book => 
-    book.status === 'completed' || 
-    (book.readingSessions && book.readingSessions.length > 0)
+    book.status === 'completed'
   ) || [];
   
   // Trier par date de dernière session (approximation de la date de fin)
@@ -348,12 +347,15 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
     };
   };
 
-  // Formater la durée en heures et minutes
+  // Formater la durée en heures et minutes (arrondi pour éviter les débordements)
   const formatDuration = (minutes) => {
-    if (minutes < 60) return `${minutes}min`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
+    if (!minutes || minutes <= 0) return '0min';
+    // Arrondir à l'entier le plus proche pour éviter les décimales
+    const roundedMinutes = Math.round(minutes);
+    if (roundedMinutes < 60) return `${roundedMinutes}min`;
+    const hours = Math.floor(roundedMinutes / 60);
+    const remainingMinutes = roundedMinutes % 60;
+    return remainingMinutes > 0 ? `${hours}h${remainingMinutes.toString().padStart(2, '0')}min` : `${hours}h`;
   };
 
   // Formater la vitesse de lecture
@@ -415,19 +417,19 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 text-center">
                 <div className="text-xs text-purple-300 mb-1">Quotidien</div>
-                <div className="text-sm font-bold text-white">
+                <div className="text-sm font-bold text-white truncate" title={formatDuration((metrics.totalTime || 0) / Math.max(1, metrics.uniqueDays || 1))}>
                   {formatDuration((metrics.totalTime || 0) / Math.max(1, metrics.uniqueDays || 1))}
                 </div>
               </div>
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-center">
                 <div className="text-xs text-blue-300 mb-1">Hebdomadaire</div>
-                <div className="text-sm font-bold text-white">
+                <div className="text-sm font-bold text-white truncate" title={formatDuration((metrics.totalTime || 0) / Math.max(1, Math.ceil((metrics.uniqueDays || 1) / 7)))}>
                   {formatDuration((metrics.totalTime || 0) / Math.max(1, Math.ceil((metrics.uniqueDays || 1) / 7)))}
                 </div>
               </div>
               <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center">
                 <div className="text-xs text-green-300 mb-1">Par session</div>
-                <div className="text-sm font-bold text-white">
+                <div className="text-sm font-bold text-white truncate" title={formatDuration(metrics.averageSessionDuration || 0)}>
                   {formatDuration(metrics.averageSessionDuration || 0)}
                 </div>
               </div>
@@ -451,7 +453,7 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
                 />
               </div>
               <div className="flex justify-between text-xs text-slate-400">
-                <span>Fréquence: {(metrics.readingFrequency || 0).toFixed(1)}/sem</span>
+                <span>Fréquence: {Math.round((metrics.readingFrequency || 0) * 10) / 10}/sem</span>
                 <span>Jours actifs: {metrics.uniqueDays || 0}</span>
               </div>
             </div>
@@ -459,29 +461,6 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
         </div>
       </ExpandableSection>
 
-      {/* Analyse des sessions */}
-      <ExpandableSection 
-        title="Analyse des sessions" 
-        icon={Activity}
-        sectionId="session-analysis"
-        userPreferences={userPreferences}
-      >
-        <SessionAnalysis metrics={metrics} patterns={patterns} />
-      </ExpandableSection>
-
-      {/* Accomplissements */}
-      <ExpandableSection 
-        title="Accomplissements" 
-        icon={Trophy}
-        sectionId="accomplishments"
-        userPreferences={userPreferences}
-      >
-        <AccomplishmentsSection 
-          books={books} 
-          metrics={metrics} 
-          predictions={predictions} 
-        />
-      </ExpandableSection>
 
       {/* Objectifs (si définis) */}
       {metrics.dailyGoal && (
@@ -520,3 +499,4 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
 };
 
 export default MetricsPanel;
+export { SessionAnalysis, AccomplishmentsSection };

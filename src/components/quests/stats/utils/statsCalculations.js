@@ -86,7 +86,7 @@ export const calculateCategoryStats = (validations, allQuests, dailyPerformances
   const periodValidations = validations.filter(v => v.date >= periodStartDate);
   const categoryMap = new Map();
 
-  const categories = ['Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Ménage', 'Spirituel'];
+  const categories = ['Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Ménage', 'Spirituel', 'Repas', 'Projets', 'Hobby', 'Social', 'Finance', 'Créativité', 'Bien-être'];
   
   categories.forEach(category => {
     // Quêtes de cette catégorie

@@ -18,6 +18,7 @@ import { useStatisticsData } from './useStatisticsData';
 import performanceOptimizationService from '../services/statistics/performanceOptimizationService';
 import dataValidationService from '../services/statistics/dataValidationService';
 import fallbackDataProvider from '../services/statistics/fallbackDataProvider';
+import { SessionAggregator, MetricsCalculator, ChartDataTransformer } from '../services/statistics/index';
 
 export const useOptimizedStatistics = (books = [], selectedPeriod = '1m', filters = {}, dataVersion = 0) => {
   const previousBooksRef = useRef(books);
@@ -90,8 +91,10 @@ export const useOptimizedStatistics = (books = [], selectedPeriod = '1m', filter
             sum + (book.readingSessions?.length || 0), 0
           );
 
-          if (totalSessions < 3) {
-            return fallbackDataProvider.getFallbackData('insufficient', { 
+          // Permettre l'affichage des statistiques même avec une seule session
+          // Les statistiques seront limitées mais visibles dès la première session
+          if (totalSessions < 1) {
+            return fallbackDataProvider.getFallbackData('empty', { 
               period: selectedPeriod,
               includeMessages: true 
             });
@@ -101,10 +104,6 @@ export const useOptimizedStatistics = (books = [], selectedPeriod = '1m', filter
           return performanceOptimizationService.getCachedResult(
             `statistics_${selectedPeriod}`,
             () => {
-              // Import dynamique pour éviter les dépendances circulaires
-              const { SessionAggregator, MetricsCalculator, ChartDataTransformer } = 
-                require('../services/statistics/index.js');
-
               // Calculer les données avec les services optimisés
               const aggregatedData = SessionAggregator.aggregateSessions(cleanedBooks, selectedPeriod, filters);
               const calculatedMetrics = MetricsCalculator.calculateAllMetrics(cleanedBooks, aggregatedData);

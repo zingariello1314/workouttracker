@@ -36,7 +36,7 @@ const ActivityRadarChart = ({ categoryStats, validations, allQuests }) => {
     if (!categoryStats || categoryStats.length === 0) return [];
 
     // Normaliser les valeurs entre 0 et 100 pour chaque métrique
-    const categories = ['Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Ménage', 'Spirituel'];
+    const categories = ['Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Ménage', 'Spirituel', 'Repas', 'Projets', 'Hobby', 'Social', 'Finance', 'Créativité', 'Bien-être'];
     
     // Calculer les max pour normalisation
     const maxValidations = Math.max(...categoryStats.map(c => c.validationsCount), 1);

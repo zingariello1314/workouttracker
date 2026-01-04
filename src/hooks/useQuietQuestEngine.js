@@ -13,6 +13,7 @@ import {
   saveAppStateToIndexedDB,
 } from '../utils/quietQuestIndexedDB';
 import { emitSidebarEvent, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
+import { useAuth } from '../context/AuthContext';
 
 // Clés de stockage QuietQuest (pour fallback localStorage)
 export const STORAGE_KEYS = {
@@ -106,16 +107,45 @@ export const getQuestsForDate = (allQuests, targetDate) => {
 };
 
 /**
+ * Quêtes codées en dur pour zingariello1314
+ */
+const HARDCODED_QUESTS_FOR_ZINGARIELLO = [
+  { id: 'hardcoded_1', nom: 'Brosser les dents (Matin)', description: '', categorie: 'Santé', difficulte: 1, duree: 15, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 1 },
+  { id: 'hardcoded_2', nom: 'Douche Matin', description: '', categorie: 'Santé', difficulte: 1, duree: 25, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 2 },
+  { id: 'hardcoded_3', nom: 'Étirements Matin', description: '', categorie: 'Santé', difficulte: 2, duree: 15, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 3 },
+  { id: 'hardcoded_4', nom: 'Codage Matin', description: 'Dev Vizora', categorie: 'Travail', difficulte: 3, duree: 65, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 4 },
+  { id: 'hardcoded_5', nom: 'Brosser les dents Midi', description: '', categorie: 'Santé', difficulte: 1, duree: 15, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 5 },
+  { id: 'hardcoded_6', nom: 'Étirements Midi', description: '', categorie: 'Santé', difficulte: 1, duree: 15, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 6 },
+  { id: 'hardcoded_7', nom: 'Repas Midi', description: '', categorie: 'Repas', difficulte: 2, duree: 65, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 7 },
+  { id: 'hardcoded_8', nom: 'Poser des cv pendant collation petits suisses', description: '', categorie: 'Travail', difficulte: 1, duree: 25, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 8 },
+  { id: 'hardcoded_9', nom: 'Codage', description: 'DEV Vizora', categorie: 'Projets', difficulte: 3, duree: 125, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 9 },
+  { id: 'hardcoded_10', nom: 'Sport', description: 'Séance du jour.', categorie: 'Sport', difficulte: 4, duree: 95, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 10 },
+  { id: 'hardcoded_11', nom: 'Douche', description: 'Douche d\'après sport', categorie: 'Bien-être', difficulte: 1, duree: 25, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 11 },
+  { id: 'hardcoded_12', nom: 'Lecture plaisir', description: 'Lecture post repas', categorie: 'Santé', difficulte: 3, duree: 65, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 12 },
+  { id: 'hardcoded_13', nom: 'Codage Soir', description: 'Dev Projet perso et/ou Vizora', categorie: 'Projets', difficulte: 3, duree: 125, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 13 },
+  { id: 'hardcoded_14', nom: 'Lecture Spécifique', description: 'Lecture Technique sur un sujet pointu le soir', categorie: 'Lecture', difficulte: 4, duree: 65, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 14 },
+  { id: 'hardcoded_15', nom: 'Brosser les dents Soir', description: '', categorie: 'Santé', difficulte: 1, duree: 15, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 15 },
+  { id: 'hardcoded_16', nom: 'Étirements soir', description: '', categorie: 'Santé', difficulte: 1, duree: 15, type: 'recurrente', jours: [1, 2, 3, 4, 5, 6, 7], active: true, ordre: 16 },
+].map(quest => ({
+  ...quest,
+  xp: calculateQuestXP(quest)
+}));
+
+/**
  * Hook centralisant toute la logique QuietQuest (état + persistance + calculs).
  * 
  * Objectif : isoler le "moteur" pour le rendre réutilisable et testable,
  * tout en laissant les composants d'UI se concentrer sur le rendu.
  */
 export function useQuietQuestEngine() {
+  const { currentUser, isAuthenticated } = useAuth();
   const [allQuests, setAllQuests] = useState([]);
   const [userData, setUserData] = useState(defaultUserData);
   const [validations, setValidations] = useState([]);
   const [dailyPerformances, setDailyPerformances] = useState([]);
+  
+  // Vérifier si c'est l'utilisateur zingariello1314
+  const isZingariello = currentUser?.username === 'zingariello1314';
 
   // Détection du mode de stockage
   const storageModeRef = useRef('localstorage'); // 'indexeddb' | 'localstorage'
@@ -125,6 +155,19 @@ export function useQuietQuestEngine() {
   // Cache mémo pour getQuestsForDate (clé: date, valeur: quêtes)
   const questsCacheRef = useRef(new Map());
   const questsVersionRef = useRef(0);
+  
+  // Pour zingariello1314 : utiliser les quêtes hardcodées
+  // Pour les autres utilisateurs connectés : utiliser les vraies quêtes
+  // Pour les non-connectés : retourner un tableau vide
+  const effectiveQuests = useMemo(() => {
+    if (isZingariello) {
+      return HARDCODED_QUESTS_FOR_ZINGARIELLO;
+    }
+    if (!isAuthenticated) {
+      return [];
+    }
+    return allQuests;
+  }, [isZingariello, isAuthenticated, allQuests]);
 
   // Timers pour debounce des sauvegardes
   const saveQuestsTimerRef = useRef(null);
@@ -135,6 +178,66 @@ export function useQuietQuestEngine() {
   // Chargement initial avec migration automatique
   useEffect(() => {
     const loadData = async () => {
+      // Pour zingariello1314, charger seulement validations et userData (pas les quêtes)
+      if (isZingariello) {
+        const db = await openQuietQuestDB();
+        if (db) {
+          storageModeRef.current = 'indexeddb';
+          dbRef.current = db;
+          const indexedUser = await loadUserDataFromIndexedDB(db, userId);
+          const indexedValidations = await loadValidationsFromIndexedDB(db, userId);
+          const indexedDaily = await loadDailyPerformancesFromIndexedDB(db, userId);
+          
+          // Si IndexedDB vide, essayer localStorage
+          if (!indexedUser && indexedValidations.length === 0) {
+            const localUser = loadFromStorage(STORAGE_KEYS.userData, null);
+            const localValidations = loadFromStorage(STORAGE_KEYS.validations, []);
+            const localDaily = loadFromStorage(STORAGE_KEYS.dailyPerformances, []);
+            
+            if (localUser || localValidations.length > 0 || localDaily.length > 0) {
+              // Migrer vers IndexedDB
+              try {
+                if (localUser) await saveUserDataToIndexedDB(db, localUser, userId);
+                if (localValidations.length > 0) await saveValidationsToIndexedDB(db, localValidations, userId);
+                if (localDaily.length > 0) await saveDailyPerformancesToIndexedDB(db, localDaily, userId);
+                // Nettoyer localStorage
+                if (typeof window !== 'undefined') {
+                  window.localStorage.removeItem(STORAGE_KEYS.userData);
+                  window.localStorage.removeItem(STORAGE_KEYS.validations);
+                  window.localStorage.removeItem(STORAGE_KEYS.dailyPerformances);
+                }
+              } catch (error) {
+                console.error('[useQuietQuestEngine] Erreur migration zingariello:', error);
+              }
+              // Charger les données migrées
+              setUserData({ ...defaultUserData, ...(localUser || {}) });
+              setValidations(Array.isArray(localValidations) ? localValidations : []);
+              setDailyPerformances(Array.isArray(localDaily) ? localDaily : []);
+            } else {
+              // Pas de données, utiliser les valeurs par défaut
+              setUserData(defaultUserData);
+              setValidations([]);
+              setDailyPerformances([]);
+            }
+          } else {
+            // Données dans IndexedDB
+            setUserData({ ...defaultUserData, ...(indexedUser || {}) });
+            setValidations(Array.isArray(indexedValidations) ? indexedValidations : []);
+            setDailyPerformances(Array.isArray(indexedDaily) ? indexedDaily : []);
+          }
+        } else {
+          // Fallback localStorage pour zingariello
+          storageModeRef.current = 'localstorage';
+          const storedUser = loadFromStorage(STORAGE_KEYS.userData, defaultUserData);
+          const storedValidations = loadFromStorage(STORAGE_KEYS.validations, []);
+          const storedDaily = loadFromStorage(STORAGE_KEYS.dailyPerformances, []);
+          setUserData({ ...defaultUserData, ...(storedUser || {}) });
+          setValidations(Array.isArray(storedValidations) ? storedValidations : []);
+          setDailyPerformances(Array.isArray(storedDaily) ? storedDaily : []);
+        }
+        return;
+      }
+    
       const db = await openQuietQuestDB();
 
       if (db) {
@@ -214,7 +317,7 @@ export function useQuietQuestEngine() {
     };
 
     loadData();
-  }, []);
+  }, [isZingariello]);
 
   // Invalider le cache quand allQuests change
   useEffect(() => {
@@ -373,7 +476,7 @@ export function useQuietQuestEngine() {
       const cacheKey = `${targetDate}:${questsVersionRef.current}`;
       const cached = questsCacheRef.current.get(cacheKey);
       if (cached) return cached;
-      const result = getQuestsForDate(allQuests, targetDate);
+      const result = getQuestsForDate(effectiveQuests, targetDate);
       questsCacheRef.current.set(cacheKey, result);
       // Limiter la taille du cache à 100 entrées (LRU simple)
       if (questsCacheRef.current.size > 100) {
@@ -382,7 +485,7 @@ export function useQuietQuestEngine() {
       }
       return result;
     };
-  }, [allQuests]);
+  }, [effectiveQuests]);
 
   const recalcDailyPerformanceForDate = (date) => {
     if (!date) return;
@@ -422,7 +525,7 @@ export function useQuietQuestEngine() {
 
   const toggleQuestValidation = (questId, rawDate) => {
     const date = rawDate || getTodayDateStr();
-    const quest = allQuests.find((q) => q.id === questId);
+    const quest = effectiveQuests.find((q) => q.id === questId);
     if (!quest) return;
 
     const xp = quest.xp ?? calculateQuestXP(quest);
@@ -466,6 +569,8 @@ export function useQuietQuestEngine() {
   };
 
   // Maintenance automatique (changement de jour + cleanup > 1 an)
+  // NOTE: Seules les quêtes exceptionnelles passées sont supprimées automatiquement
+  // Les quêtes récurrentes restent pour toujours tant qu'elles ne sont pas supprimées manuellement
   useEffect(() => {
     const today = getTodayDateStr();
 
@@ -473,12 +578,14 @@ export function useQuietQuestEngine() {
       (typeof window !== 'undefined' && window.localStorage.getItem(META_KEYS.lastVisit)) ||
       null;
     if (!lastVisit || lastVisit !== today) {
+      // Supprimer uniquement les quêtes exceptionnelles dont la date est passée
+      // Les quêtes récurrentes (q.type !== 'exceptionnelle') ne sont JAMAIS supprimées ici
       setAllQuests((prev) =>
         prev.filter(
           (q) =>
-            q.type !== 'exceptionnelle' ||
-            !q.date ||
-            q.date >= today
+            q.type !== 'exceptionnelle' || // Garde toutes les récurrentes
+            !q.date || // Garde les exceptionnelles sans date
+            q.date >= today // Garde les exceptionnelles futures ou aujourd'hui
         )
       );
       if (typeof window !== 'undefined') {
@@ -504,15 +611,15 @@ export function useQuietQuestEngine() {
   }, []);
 
   return {
-    allQuests,
-    setAllQuests,
+    allQuests: effectiveQuests,
+    setAllQuests: isZingariello ? () => {} : setAllQuests, // Pas de modification pour zingariello (quêtes hardcodées)
     userData,
     setUserData,
-    validations,
-    dailyPerformances,
+    validations, // Les validations fonctionnent pour zingariello aussi
+    dailyPerformances, // Les performances fonctionnent pour zingariello aussi
     validationsByDate,
     isQuestCompletedOnDate,
-    toggleQuestValidation,
+    toggleQuestValidation, // La validation fonctionne pour zingariello aussi
     recalcDailyPerformanceForDate,
     getQuestsForDate: getQuestsForDateMemoized,
   };

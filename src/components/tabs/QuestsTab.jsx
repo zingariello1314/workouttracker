@@ -31,7 +31,7 @@ function formatDuration(minutes) {
   return `${h}h${m.toString().padStart(2, '0')}`;
 }
 
-const CATEGORIES = ['Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Ménage', 'Spirituel'];
+const CATEGORIES = ['Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Ménage', 'Spirituel', 'Repas', 'Projets', 'Hobby', 'Social', 'Finance', 'Créativité', 'Bien-être'];
 
 const DIFFICULTIES = [
   { value: 1, label: 'Facile' },
@@ -826,6 +826,7 @@ const QuestsTab = () => {
       isQuestCompletedOnDate={isQuestCompletedOnDate}
       toggleQuestValidation={toggleQuestValidation}
       getQuestsForDate={getQuestsForDateMemoized}
+      userData={userData}
     />
   );
 
@@ -1509,7 +1510,7 @@ const QuestsTab = () => {
                 <div>
                   <label className="block text-slate-300 mb-1">Durée</label>
                   <select
-                    value={questForm.duree}
+                    value={Number(questForm.duree) || 30}
                     onChange={(e) =>
                       setQuestForm((prev) => ({
                         ...prev,

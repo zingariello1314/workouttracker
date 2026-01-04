@@ -304,7 +304,7 @@ const WorkoutTrackerContent = () => {
             className={`${(activeTab === 'home' || activeTab === 'dashboard') ? 'overflow-hidden' : ''}`}
             style={{
               marginLeft: shouldShowSidebar ? '300px' : '0',
-              marginTop: activeTab === 'settings' ? '-742px' : activeTab === 'finance' ? '-710px' : (activeTab === 'quests' || activeTab === 'apprentissage' || activeTab === 'books') ? '-690px' : (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing') ? '-642px' : '0',
+              marginTop: activeTab === 'settings' ? '-680px' : activeTab === 'finance' ? '-650px' : (activeTab === 'quests' || activeTab === 'apprentissage' || activeTab === 'books') ? '-630px' : (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing') ? '-580px' : '0',
               transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               minHeight: '100vh',
               position: 'relative',

@@ -181,3 +181,4 @@ useEffect(() => {
 - **Pas de conflits** : Les deux modes de navigation ne s'interfèrent pas
 
 
+
