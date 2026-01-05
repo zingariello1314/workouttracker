@@ -74,9 +74,10 @@ export const loadTranslationNamespace = async (language, namespace) => {
         const namespacePath = namespace.replace(/\//g, '/');
         const modulePath = `./${baseLang}/${namespacePath}.json`;
         
-        try {
-          const module = await import(modulePath);
-          translations = module.default || module;
+          try {
+            // @vite-ignore: Dynamic import nécessaire pour chargement des traductions par langue
+            const module = await import(/* @vite-ignore */ modulePath);
+            translations = module.default || module;
         } catch (error) {
           // Si le sous-namespace n'existe pas, essayer de charger depuis le namespace parent
           // Ex: si 'calendar/heatmap' n'existe pas, essayer 'calendarHeatmap'

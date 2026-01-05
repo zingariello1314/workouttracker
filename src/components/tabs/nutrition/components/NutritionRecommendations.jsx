@@ -25,6 +25,7 @@ import {
   Apple,
   Target
 } from 'lucide-react';
+import { useTranslation } from '../../../../utils/translations';
 import { useNutritionRecommendations } from '../../../../hooks/useNutritionRecommendations';
 
 // ✅ OPTIMISATION 2.5 : React.memo pour éviter re-renders inutiles (50-80% réduction)

@@ -28,6 +28,8 @@
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@mediapipe/pose": "^0.5.1635988167",
+    "@splinetool/react-spline": "^4.1.0",
+    "@splinetool/runtime": "^1.12.29",
     "@tensorflow-models/body-pix": "^2.2.1",
     "@tensorflow/tfjs": "^4.11.0",
     "date-fns": "^4.1.0",

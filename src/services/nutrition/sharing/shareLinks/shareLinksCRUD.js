@@ -706,7 +706,9 @@ export async function cleanupRevokedLinks() {
       });
     } catch (error) {
       // Index manquant : utiliser getAll + filter (fallback)
-      log.warn('[cleanupRevokedLinks] Index locked manquant, utilisation fallback');
+      // Note: Index 'locked' intentionnellement non créé car IndexedDB ne supporte pas bien les index booléens
+      // Le fallback getAll + filter est acceptable pour ce cas d'usage (peu de liens révoqués)
+      log.debug('[cleanupRevokedLinks] Index locked non disponible, utilisation fallback (comportement normal)');
       const allLinks = await new Promise((resolve, reject) => {
         const request = store.getAll();
         request.onsuccess = () => {

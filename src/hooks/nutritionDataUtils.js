@@ -522,6 +522,8 @@ const handleUpgrade = (event) => {
       shareLinksStore.createIndex('expiresAt', 'expiresAt', { unique: false }); // Pour nettoyage liens expirés
       shareLinksStore.createIndex('scope', 'scope', { unique: false }); // Pour filtrage par scope
       shareLinksStore.createIndex('createdAt', 'createdAt', { unique: false }); // Tri par date création
+      // Note: Index 'locked' non créé car IndexedDB ne supporte pas bien les index booléens
+      // Le code utilise un fallback getAll + filter qui est acceptable pour ce cas d'usage
       
       log.debug(`Store ${STORE_SHARE_LINKS} créé avec indexes`);
     } else {
@@ -539,6 +541,7 @@ const handleUpgrade = (event) => {
           }
         }
       });
+      // Note: Index 'locked' intentionnellement non créé (IndexedDB ne supporte pas bien les booléens)
     }
 
     // ==================== STORE 10: nutrition_progressPhotos ====================
