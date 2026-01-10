@@ -4,6 +4,8 @@ import {
   calculateQuestXP,
 } from '../../hooks/useQuietQuestEngine';
 
+// ✅ PHASE 2 : Memoization pour éviter re-renders inutiles
+
 // Formatage durée (ex : 90 → "1h30")
 function formatDuration(minutes) {
   if (!minutes || minutes <= 0) return '0 min';
@@ -211,5 +213,15 @@ const QuestsTodayView = ({
   );
 };
 
-export default QuestsTodayView;
+// ✅ PHASE 2 : Memoization pour éviter re-renders inutiles
+export default React.memo(QuestsTodayView, (prevProps, nextProps) => {
+  // Comparaison personnalisée : re-render seulement si props critiques changent
+  return (
+    prevProps.allQuests === nextProps.allQuests &&
+    prevProps.userData === nextProps.userData &&
+    prevProps.isQuestCompletedOnDate === nextProps.isQuestCompletedOnDate &&
+    prevProps.toggleQuestValidation === nextProps.toggleQuestValidation &&
+    prevProps.getQuestsForDate === nextProps.getQuestsForDate
+  );
+});
 

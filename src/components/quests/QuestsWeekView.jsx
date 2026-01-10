@@ -156,5 +156,14 @@ const QuestsWeekView = ({
   );
 };
 
-export default QuestsWeekView;
+// ✅ PHASE 2 : Memoization pour éviter re-renders inutiles
+export default React.memo(QuestsWeekView, (prevProps, nextProps) => {
+  // Comparaison personnalisée : re-render seulement si props critiques changent
+  return (
+    prevProps.allQuests === nextProps.allQuests &&
+    prevProps.validations === nextProps.validations &&
+    prevProps.toggleQuestValidation === nextProps.toggleQuestValidation &&
+    prevProps.getQuestsForDate === nextProps.getQuestsForDate
+  );
+});
 

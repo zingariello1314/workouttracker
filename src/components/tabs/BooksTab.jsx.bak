@@ -1,0 +1,2347 @@
+/**
+ * BooksTab Component
+ * 
+ * Gère l'affichage et la manipulation de la bibliothèque de livres.
+ * 
+ * Événements Sidebar émis:
+ * - BOOK_ADDED: Émis après l'ajout d'un nouveau livre
+ * - BOOK_UPDATED: Émis après la modification d'un livre ou changement de statut
+ * - BOOK_DELETED: Émis après la suppression d'un livre
+ * - PAGES_READ: Émis après l'ajout d'une session de lecture
+ * 
+ * Ces événements permettent à la sidebar de se synchroniser automatiquement
+ * avec les changements de données sans couplage fort.
+ * 
+ * @see Requirements 2.1, 2.2, 2.3, 4.1, 4.2
+ */
+
+import React, { Suspense, useEffect, useMemo, useRef, useState, memo, useCallback } from 'react';
+import { BookOpen, Download, Search, Upload, BarChart3, Library } from 'lucide-react';
+import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
+import { Input, TextArea, Select } from '../ui/Input';
+import ErrorBoundary from '../ui/ErrorBoundary';
+import './booksLiquidGlass.css';
+import { useTranslation } from '../../utils/translations';
+import { importBooksFromFile, saveBooks, loadBooks } from '../../utils/booksStorage';
+import {
+  prepareBooksExportData,
+  processBooksImportData,
+  downloadBooksExportFile,
+} from '../../utils/booksExportImport';
+import {
+  saveBookPdf,
+  deleteBookPdf,
+  saveBookCover,
+  deleteBookCover,
+  getBookCover,
+} from '../../utils/booksAssetsStorage';
+import { useBooksStorage } from '../../hooks/useBooksStorage';
+import { saveBooksToIndexedDB, getAllBooksFromIndexedDB } from '../../utils/booksIndexedDB';
+import BookCard from '../books/BookCard';
+import { sidebarEvents, SIDEBAR_EVENTS } from '../../utils/sidebarEvents';
+import { bookSchema, readingSessionSchema, validateWithSchema } from '../../utils/validation/schemas';
+
+// Import du sous-onglet statistiques
+import StatisticsSubTab from './books/StatisticsSubTab';
+
+const BooksDomeGallery = React.lazy(() =>
+  import('../books/BooksDomeGallery')
+);
+
+const emptyBookForm = {
+  id: null,
+  title: '',
+  author: '',
+  year: '',
+  genre: '',
+  pages: '',
+  status: 'in-progress', // 'in-progress' | 'completed' | 'to-read' | 'abandoned' | 'paused'
+  shortSummary: '',
+  longSummary: '',
+  personalScore: 0,
+};
+
+const emptySessionForm = {
+  date: '',
+  durationMinutes: '',
+  pagesRead: '',
+  note: '',
+};
+
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve) => {
+    if (!file) {
+      resolve(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(typeof reader.result === 'string' ? reader.result : null);
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+
+const BooksTab = () => {
+  const t = useTranslation();
+  const { books, setBooks, isLoading } = useBooksStorage();
+  
+  // ✅ PHASE 1 : Persistance de l'état actif dans localStorage
+  const [activeSubTab, setActiveSubTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem('books.activeSubTab');
+      return saved || 'library';
+    } catch (error) {
+      console.warn('[BooksTab] Erreur lecture localStorage:', error);
+      return 'library';
+    }
+  });
+  
+  // ✅ PHASE 1 : Sauvegarder l'état actif dans localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('books.activeSubTab', activeSubTab);
+    } catch (error) {
+      console.warn('[BooksTab] Erreur sauvegarde localStorage:', error);
+    }
+  }, [activeSubTab]);
+
+  // Émettre un événement lors du changement de sous-onglet pour la rotation des images de profil
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tab-change', { 
+      detail: { tab: activeSubTab, isSubTab: true, parentTab: 'books' } 
+    }));
+  }, [activeSubTab]);
+  
+  const [selectedBookId, setSelectedBookId] = useState(null);
+  const [form, setForm] = useState(emptyBookForm);
+  const [sessionForm, setSessionForm] = useState(emptySessionForm);
+  const [search, setSearch] = useState('');
+  const [filterGenre, setFilterGenre] = useState('');
+  const [filterMinYear, setFilterMinYear] = useState('');
+  const [filterMaxYear, setFilterMaxYear] = useState('');
+  const [filterMinScore, setFilterMinScore] = useState('');
+  const [sortMode, setSortMode] = useState('recent'); // recent | title | author | pages | score
+
+  // Solution 13: Hook useDebounce pour optimiser les filtres
+  const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+
+    return debouncedValue;
+  };
+
+  // Debouncer les valeurs de filtres
+  const debouncedSearch = useDebounce(search, 300);
+  const debouncedMinYear = useDebounce(filterMinYear, 200);
+  const debouncedMaxYear = useDebounce(filterMaxYear, 200);
+  const debouncedMinScore = useDebounce(filterMinScore, 200);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
+  const coverInputRef = useRef(null);
+  const coverFormInputRef = useRef(null);
+  const [formCoverFile, setFormCoverFile] = useState(null);
+  const [coverUrls, setCoverUrls] = useState({});
+  const coverUrlsRef = useRef({});
+
+  const [pageInProgress, setPageInProgress] = useState(0);
+  const [pageCompleted, setPageCompleted] = useState(0);
+  const [pageToRead, setPageToRead] = useState(0);
+  const [show3D, setShow3D] = useState(true);
+  const [isFormExpanded, setIsFormExpanded] = useState(false);
+
+  // Debug: Log les livres quand ils changent (uniquement en développement)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && books.length > 0) {
+      console.log('[BooksTab] Livres dans l\'état:', books.length);
+      console.log('[BooksTab] Répartition par statut:', {
+        'in-progress': books.filter(b => b.status === 'in-progress').length,
+        'completed': books.filter(b => b.status === 'completed').length,
+        'to-read': books.filter(b => b.status === 'to-read').length,
+        'abandoned': books.filter(b => b.status === 'abandoned').length,
+        'paused': books.filter(b => b.status === 'paused').length,
+        'sans-statut': books.filter(b => !b.status || !['in-progress', 'completed', 'to-read', 'abandoned', 'paused'].includes(b.status)).map(b => ({ id: b.id, title: b.title, status: b.status })),
+      });
+    }
+  }, [books]);
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSessionChange = (field, value) => {
+    setSessionForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const resetForm = () => {
+    setForm(emptyBookForm);
+    setFormCoverFile(null);
+    if (coverFormInputRef.current) {
+      coverFormInputRef.current.value = '';
+    }
+  };
+
+  const resetSessionForm = () => {
+    setSessionForm({
+      ...emptySessionForm,
+      date: new Date().toISOString().slice(0, 10),
+    });
+  };
+
+  useEffect(() => {
+    // initialiser la date par défaut de la session
+    resetSessionForm();
+  }, []);
+
+  // Charger paresseusement les miniatures de couverture pour les livres qui en ont une
+  // Charger d'abord les coverInline (synchrone), puis IndexedDB (asynchrone) si show3D est activé
+  useEffect(() => {
+    let cancelled = false;
+
+    // Étape 1 : Charger immédiatement les coverInline (dataURL) pour tous les livres
+    const loadInlineCovers = () => {
+      const newCoverUrls = { ...coverUrlsRef.current };
+      let hasChanges = false;
+      
+      books.forEach((book) => {
+        if (book.coverInline && !newCoverUrls[book.id]) {
+          newCoverUrls[book.id] = book.coverInline;
+          hasChanges = true;
+        }
+      });
+      
+      if (hasChanges) {
+        coverUrlsRef.current = newCoverUrls;
+        setCoverUrls(newCoverUrls);
+      }
+    };
+
+    // Charger les coverInline immédiatement (synchrone)
+    loadInlineCovers();
+
+    // Étape 2 : Charger depuis IndexedDB pour toutes les couvertures manquantes
+    // (même si show3D est désactivé, pour afficher les couvertures dans les cartes)
+    // OPTIMISATION : Chargement par batch pour éviter les re-renders excessifs
+    const loadCoversFromIndexedDB = async () => {
+      const toLoad = books.filter((book) => {
+        // Ne charger que si on n'a pas déjà une URL (ni coverInline, ni IndexedDB)
+        return !coverUrlsRef.current[book.id] && book.hasCover;
+      });
+      
+      if (toLoad.length === 0) return;
+      
+      const BATCH_SIZE = 8; // Charger 8 couvertures à la fois
+      const batches = [];
+      for (let i = 0; i < toLoad.length; i += BATCH_SIZE) {
+        batches.push(toLoad.slice(i, i + BATCH_SIZE));
+      }
+      
+      // Traiter chaque batch avec un délai pour ne pas bloquer le thread
+      for (const batch of batches) {
+        if (cancelled) return;
+        
+        const batchResults = await Promise.allSettled(
+          batch.map(async (book) => {
+            try {
+              const record = await getBookCover(`cover_${book.id}`);
+              if (!record || !record.blob) return null;
+              
+              const objectUrl = URL.createObjectURL(record.blob);
+              if (cancelled) {
+                URL.revokeObjectURL(objectUrl);
+                return null;
+              }
+              
+              return { bookId: book.id, src: objectUrl };
+            } catch {
+              return null;
+            }
+          })
+        );
+        
+        if (cancelled) return;
+        
+        // Accumuler toutes les URLs du batch avant de mettre à jour le state
+        const newCoverUrls = { ...coverUrlsRef.current };
+        let hasChanges = false;
+        
+        batchResults.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value) {
+            const { bookId, src } = result.value;
+            const existing = newCoverUrls[bookId];
+            
+            // Nettoyer l'ancienne URL si c'est un blob
+            if (existing && existing.startsWith('blob:')) {
+              try {
+                URL.revokeObjectURL(existing);
+              } catch {
+                // ignore
+              }
+            }
+            
+            newCoverUrls[bookId] = src;
+            hasChanges = true;
+          }
+        });
+        
+        // Mettre à jour le state une seule fois par batch
+        if (hasChanges) {
+          coverUrlsRef.current = newCoverUrls;
+          setCoverUrls(newCoverUrls);
+        }
+        
+        // Petit délai entre les batches pour ne pas bloquer le thread
+        if (batches.indexOf(batch) < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
+    };
+
+    if (books && books.length > 0) {
+      loadCoversFromIndexedDB();
+    }
+
+    return () => {
+      cancelled = true;
+      // Nettoyer les ObjectURL créés pour éviter les fuites mémoire
+      Object.values(coverUrlsRef.current).forEach((url) => {
+        if (url && typeof url === 'string' && url.startsWith('blob:')) {
+          try {
+            URL.revokeObjectURL(url);
+          } catch {
+            // ignore
+          }
+        }
+      });
+    };
+  }, [books, show3D]);
+
+  // Cleanup des ObjectURLs à la fermeture de l’onglet
+  useEffect(
+    () => () => {
+      Object.values(coverUrlsRef.current || {}).forEach((url) => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch {
+          // ignore
+        }
+      });
+    },
+    []
+  );
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // ✅ PHASE 1 : Validation avec Zod
+    const validation = validateWithSchema(bookSchema, form);
+    
+    if (!validation.success) {
+      // Afficher la première erreur
+      const firstError = Object.values(validation.errors)[0];
+      alert(firstError || 'Erreur de validation');
+      return;
+    }
+    
+    const isEditing = !!form.id;
+    const id = isEditing ? form.id : `book_${Date.now()}`;
+
+    const nowIso = new Date().toISOString();
+
+    // Utiliser les données validées
+    const validatedBook = validation.data;
+
+    const baseBook = {
+      id,
+      title: validatedBook.title,
+      author: validatedBook.author,
+      year: validatedBook.year || '',
+      genre: validatedBook.genre || '',
+      pages: validatedBook.pages || '',
+      status: validatedBook.status,
+      shortSummary: validatedBook.shortSummary || '',
+      longSummary: validatedBook.longSummary || '',
+      // Compat : on garde notes comme alias du résumé court
+      notes: validatedBook.shortSummary || '',
+      personalScore: validatedBook.personalScore || 0,
+    };
+
+    // Préparer coverInline AVANT setBooks pour garantir la persistance atomique
+    let coverInlineDataUrl = null;
+    if (formCoverFile) {
+      coverInlineDataUrl = await readFileAsDataUrl(formCoverFile);
+    }
+
+    // Mettre à jour le livre avec hasCover et coverInline en une seule opération
+    setBooks((prev) => {
+      if (isEditing) {
+        return prev.map((book) =>
+          book.id === id
+            ? {
+                ...book,
+                ...baseBook,
+                hasCover: book.hasCover || !!formCoverFile,
+                coverInline: coverInlineDataUrl || book.coverInline || null,
+                // préserve createdAt si déjà présent
+                createdAt: book.createdAt || nowIso,
+              }
+            : book
+        );
+      }
+
+      return [
+        {
+          ...baseBook,
+          hasCover: !!formCoverFile,
+          coverInline: coverInlineDataUrl || null,
+          readingSessions: [],
+          createdAt: nowIso,
+        },
+        ...prev,
+      ];
+    });
+
+    // Mettre à jour l'aperçu immédiatement pour l'affichage
+    if (formCoverFile) {
+      const localUrl = URL.createObjectURL(formCoverFile);
+      setCoverUrls((prev) => {
+        const existing = prev[id];
+        if (existing) {
+          URL.revokeObjectURL(existing);
+        }
+        const next = { ...prev, [id]: localUrl };
+        coverUrlsRef.current = next;
+        return next;
+      });
+    }
+
+    // Essayer de sauvegarder dans IndexedDB en arrière-plan (non bloquant)
+    if (formCoverFile) {
+      const coverId = `cover_${id}`;
+      saveBookCover(coverId, formCoverFile, {
+        name: formCoverFile.name || null,
+        from: 'book-form',
+      }).catch(() => {
+        // Échec silencieux : on a déjà coverInline comme fallback
+      });
+    }
+
+    setFormCoverFile(null);
+    if (coverFormInputRef.current) {
+      coverFormInputRef.current.value = '';
+    }
+
+    // Émettre l'événement sidebar approprié
+    if (isEditing) {
+      sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_UPDATED, { bookId: id });
+    } else {
+      sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_ADDED, { bookId: id });
+    }
+
+    resetForm();
+  };
+
+  const handleEdit = (book) => {
+    setForm({
+      id: book.id,
+      title: book.title || '',
+      author: book.author || '',
+      year: book.year || '',
+      genre: book.genre || '',
+      pages: book.pages || '',
+      status: book.status || 'in-progress',
+      shortSummary: book.shortSummary || book.notes || '',
+      longSummary: book.longSummary || '',
+      personalScore: book.personalScore || 0,
+    });
+    setSelectedBookId(book.id);
+    setFormCoverFile(null);
+    if (coverFormInputRef.current) {
+      coverFormInputRef.current.value = '';
+    }
+  };
+
+  const handleDelete = (book) => {
+    if (!window.confirm(`Supprimer définitivement "${book.title}" ?`)) {
+      return;
+    }
+    setBooks((prev) => prev.filter((b) => b.id !== book.id));
+    if (selectedBookId === book.id) {
+      setSelectedBookId(null);
+    }
+    
+    // Émettre l'événement sidebar
+    sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_DELETED, { bookId: book.id });
+  };
+
+  // useCallback pour stabiliser handleStatusChange
+  const handleStatusChange = useCallback((bookId, newStatus) => {
+    setBooks((prevBooks) =>
+      prevBooks.map((b) =>
+        b.id === bookId ? { ...b, status: newStatus } : b
+      )
+    );
+    
+    // Émettre l'événement sidebar
+    sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_UPDATED, { bookId, statusChanged: true });
+  }, []);
+
+  const selectedBook = useMemo(
+    () => books.find((b) => b.id === selectedBookId) || null,
+    [books, selectedBookId]
+  );
+
+  const PAGE_SIZE = 30;
+
+  const filteredAndSortedBooks = useMemo(() => {
+    // Utiliser les valeurs debounced pour éviter les recalculs excessifs
+    const q = debouncedSearch.trim().toLowerCase();
+    const minYear = debouncedMinYear ? Number(debouncedMinYear) || null : null;
+    const maxYear = debouncedMaxYear ? Number(debouncedMaxYear) || null : null;
+    const minScore = debouncedMinScore ? Number(debouncedMinScore) || 0 : 0;
+    const genreQuery = filterGenre.trim().toLowerCase(); // Pas de debounce pour genre (select)
+
+    const matchesSearch = (book) => {
+      if (!q) return true;
+      const haystack = `${book.title || ''} ${book.author || ''} ${book.genre || ''}`.toLowerCase();
+      return haystack.includes(q);
+    };
+
+    const matchesGenre = (book) => {
+      if (!genreQuery) return true;
+      return (book.genre || '').toLowerCase().includes(genreQuery);
+    };
+
+    const matchesYear = (book) => {
+      const y = Number(book.year) || null;
+      if (!y) return true;
+      if (minYear !== null && y < minYear) return false;
+      if (maxYear !== null && y > maxYear) return false;
+      return true;
+    };
+
+    const matchesScore = (book) => {
+      const score = Number(book.personalScore) || 0;
+      if (!minScore) return true;
+      return score >= minScore;
+    };
+
+    const sortFn = (a, b) => {
+      switch (sortMode) {
+        case 'title': {
+          return (a.title || '').localeCompare(b.title || '', undefined, {
+            sensitivity: 'base',
+          });
+        }
+        case 'author': {
+          return (a.author || '').localeCompare(b.author || '', undefined, {
+            sensitivity: 'base',
+          });
+        }
+        case 'pages': {
+          const pa = Number(a.pages) || 0;
+          const pb = Number(b.pages) || 0;
+          return pb - pa;
+        }
+        case 'score': {
+          const sa = Number(a.personalScore) || 0;
+          const sb = Number(b.personalScore) || 0;
+          return sb - sa;
+        }
+        case 'recent':
+        default: {
+          const da = a.createdAt ? Date.parse(a.createdAt) : 0;
+          const db = b.createdAt ? Date.parse(b.createdAt) : 0;
+          return db - da;
+        }
+      }
+    };
+
+    return [...books]
+      .filter(matchesSearch)
+      .filter(matchesGenre)
+      .filter(matchesYear)
+      .filter(matchesScore)
+      .sort(sortFn);
+  }, [books, debouncedSearch, filterGenre, debouncedMinYear, debouncedMaxYear, debouncedMinScore, sortMode]);
+
+  // Pré-calculer progressPercent pour tous les livres (optimisation performance)
+  // DOIT être défini AVANT filteredAndSortedBooksWithProgress
+  const booksWithProgress = useMemo(() => {
+    return books.map((book) => {
+      const totalPages = Number(book.pages) || 0;
+      let progressPercent = null;
+      
+      if (totalPages > 0) {
+        const totalPagesRead = (book.readingSessions || []).reduce(
+          (sum, s) => sum + (Number(s.pagesRead) || 0),
+          0
+        );
+        if (totalPagesRead > 0) {
+          progressPercent = Math.min(100, Math.round((totalPagesRead / totalPages) * 100));
+        } else {
+          progressPercent = 0;
+        }
+      }
+      
+      return {
+        ...book,
+        _progressPercent: progressPercent, // Pré-calculé pour éviter les recalculs dans renderBookCard
+      };
+    });
+  }, [books]);
+
+  // Utiliser booksWithProgress pour avoir progressPercent pré-calculé
+  const filteredAndSortedBooksWithProgress = useMemo(() => {
+    return filteredAndSortedBooks.map((book) => {
+      const bookWithProgress = booksWithProgress.find((b) => b.id === book.id);
+      return bookWithProgress || book;
+    });
+  }, [filteredAndSortedBooks, booksWithProgress]);
+
+  const filteredLibraryBooks = useMemo(
+    () => filteredAndSortedBooksWithProgress.filter((b) => b.status === 'in-progress'),
+    [filteredAndSortedBooksWithProgress]
+  );
+
+  const filteredCompletedBooks = useMemo(
+    () => filteredAndSortedBooksWithProgress.filter((b) => b.status === 'completed'),
+    [filteredAndSortedBooksWithProgress]
+  );
+
+  const filteredToReadBooks = useMemo(
+    () => filteredAndSortedBooksWithProgress.filter((b) => b.status === 'to-read'),
+    [filteredAndSortedBooksWithProgress]
+  );
+
+  const paginatedInProgressBooks = useMemo(() => {
+    const start = pageInProgress * PAGE_SIZE;
+    return filteredLibraryBooks.slice(start, start + PAGE_SIZE);
+  }, [filteredLibraryBooks, pageInProgress]);
+
+  const paginatedCompletedBooks = useMemo(() => {
+    const start = pageCompleted * PAGE_SIZE;
+    return filteredCompletedBooks.slice(start, start + PAGE_SIZE);
+  }, [filteredCompletedBooks, pageCompleted]);
+
+  const paginatedToReadBooks = useMemo(() => {
+    const start = pageToRead * PAGE_SIZE;
+    return filteredToReadBooks.slice(start, start + PAGE_SIZE);
+  }, [filteredToReadBooks, pageToRead]);
+
+  const domeBooks = useMemo(
+    () =>
+      booksWithProgress
+        .filter((b) => b.hasCover && coverUrls[b.id]) // Tous les livres avec couverture, peu importe le statut
+        .map((b) => ({
+          id: b.id,
+          title: b.title || t('books.detail.noTitle', 'Livre sans titre'),
+          author: b.author || '',
+          genre: b.genre || '',
+          year: b.year || null,
+          pages: b.pages || null,
+          personalScore: typeof b.personalScore === 'number' ? b.personalScore : 0,
+          status: b.status || 'in-progress',
+          shortSummary: b.shortSummary || b.notes || '',
+          coverUrl: coverUrls[b.id],
+        })),
+    [booksWithProgress, coverUrls, t]
+  );
+
+  const handleAddSession = (e) => {
+    e.preventDefault();
+    if (!selectedBook) {
+      alert('Sélectionne un livre pour y ajouter une session de lecture.');
+      return;
+    }
+
+    if (!sessionForm.durationMinutes && !sessionForm.pagesRead) {
+      alert('Merci de renseigner au moins la durée ou les pages lues.');
+      return;
+    }
+
+    const session = {
+      id: `session_${Date.now()}`,
+      date: sessionForm.date || new Date().toISOString().slice(0, 10),
+      durationMinutes: sessionForm.durationMinutes
+        ? Number(sessionForm.durationMinutes) || 0
+        : 0,
+      pagesRead: sessionForm.pagesRead
+        ? Number(sessionForm.pagesRead) || 0
+        : 0,
+      note: sessionForm.note?.trim() || '',
+    };
+
+    setBooks((prev) =>
+      prev.map((book) =>
+        book.id === selectedBook.id
+          ? {
+              ...book,
+              readingSessions: [...(book.readingSessions || []), session],
+            }
+          : book
+      )
+    );
+
+    // Émettre l'événement sidebar
+    sidebarEvents.emit(SIDEBAR_EVENTS.PAGES_READ, { 
+      bookId: selectedBook.id, 
+      sessionId: session.id,
+      date: session.date,
+      pagesRead: session.pagesRead,
+      durationMinutes: session.durationMinutes
+    });
+
+    resetSessionForm();
+  };
+
+  const getTotalReadingTime = (book) =>
+    (book.readingSessions || []).reduce(
+      (sum, s) => sum + (Number(s.durationMinutes) || 0),
+      0
+    );
+
+  const getTotalPagesRead = (book) =>
+    (book.readingSessions || []).reduce(
+      (sum, s) => sum + (Number(s.pagesRead) || 0),
+      0
+    );
+
+  const getAveragePagesPerSession = (book) => {
+    const sessions = book.readingSessions || [];
+    if (sessions.length === 0) return 0;
+    return Math.round((getTotalPagesRead(book) / sessions.length) * 10) / 10;
+  };
+
+  const getAverageDurationPerSession = (book) => {
+    const sessions = book.readingSessions || [];
+    if (sessions.length === 0) return 0;
+    return Math.round((getTotalReadingTime(book) / sessions.length) * 10) / 10;
+  };
+
+  const getReadingProgressPercent = (book) => {
+    const totalPages = Number(book.pages) || 0;
+    if (!totalPages || totalPages <= 0) return null;
+    const read = getTotalPagesRead(book);
+    if (read <= 0) return 0;
+    return Math.min(100, Math.round((read / totalPages) * 100));
+  };
+
+  const getEstimatedRemainingTimeMinutes = (book) => {
+    const totalPages = Number(book.pages) || 0;
+    if (!totalPages || totalPages <= 0) return null;
+
+    const totalReadPages = getTotalPagesRead(book);
+    const totalMinutes = getTotalReadingTime(book);
+    const remainingPages = Math.max(totalPages - totalReadPages, 0);
+
+    if (remainingPages <= 0 || totalReadPages <= 0 || totalMinutes <= 0) {
+      return null;
+    }
+
+    // Vitesse moyenne de lecture (pages par minute) basée sur l’historique
+    const pagesPerMinute = totalReadPages / totalMinutes;
+    if (pagesPerMinute <= 0) return null;
+
+    const estimated = remainingPages / pagesPerMinute;
+    // Arrondi à la minute la plus proche
+    return Math.round(estimated);
+  };
+
+  const MAX_BOOK_CARDS = 50;
+
+  // Navigation clavier basique dans les carrousels (← / →)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+
+      // Ne pas interférer quand on est dans un champ de formulaire
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
+        return;
+      }
+
+      const inProgress = filteredLibraryBooks;
+      const completed = filteredCompletedBooks;
+
+      const allInProgressIds = inProgress.slice(0, MAX_BOOK_CARDS).map((b) => b.id);
+      const allCompletedIds = completed.slice(0, MAX_BOOK_CARDS).map((b) => b.id);
+
+      const move = (listIds, currentId, direction) => {
+        if (listIds.length === 0) return null;
+        if (!currentId) return direction === 'next' ? listIds[0] : listIds[listIds.length - 1];
+        const idx = listIds.indexOf(currentId);
+        if (idx === -1) return direction === 'next' ? listIds[0] : listIds[listIds.length - 1];
+        const nextIdx =
+          direction === 'next'
+            ? Math.min(idx + 1, listIds.length - 1)
+            : Math.max(idx - 1, 0);
+        return listIds[nextIdx];
+      };
+
+      const direction = event.key === 'ArrowRight' ? 'next' : 'prev';
+
+      let nextId = null;
+
+      if (selectedBookId && allInProgressIds.includes(selectedBookId)) {
+        nextId = move(allInProgressIds, selectedBookId, direction);
+      } else if (selectedBookId && allCompletedIds.includes(selectedBookId)) {
+        nextId = move(allCompletedIds, selectedBookId, direction);
+      } else if (allInProgressIds.length > 0) {
+        nextId = move(allInProgressIds, null, direction);
+      } else if (allCompletedIds.length > 0) {
+        nextId = move(allCompletedIds, null, direction);
+      }
+
+      if (nextId && nextId !== selectedBookId) {
+        setSelectedBookId(nextId);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filteredLibraryBooks, filteredCompletedBooks, selectedBookId]);
+
+  // Réinitialiser les pages quand les filtres changent
+  useEffect(() => {
+    setPageInProgress(0);
+    setPageCompleted(0);
+    setPageToRead(0);
+  }, [search, filterGenre, filterMinYear, filterMaxYear, filterMinScore, sortMode]);
+
+  const handleAttachPdfClick = () => {
+    if (!selectedBook || !pdfInputRef.current) return;
+    pdfInputRef.current.value = '';
+    pdfInputRef.current.click();
+  };
+
+  const handlePdfFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedBook) return;
+
+    const pdfId = `pdf_${selectedBook.id}`;
+    const ok = await saveBookPdf(pdfId, file);
+    if (!ok) {
+      alert("Erreur lors de l'enregistrement du PDF du livre.");
+      return;
+    }
+
+    setBooks((prev) =>
+      prev.map((book) =>
+        book.id === selectedBook.id
+          ? { ...book, hasPdf: true }
+          : book
+      )
+    );
+  };
+
+  const handleAttachCoverClick = () => {
+    if (!selectedBook || !coverInputRef.current) return;
+    coverInputRef.current.value = '';
+    coverInputRef.current.click();
+  };
+
+  const handleCoverFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedBook) return;
+
+    // Préparer coverInline AVANT setBooks pour garantir la persistance atomique
+    const inlineDataUrl = await readFileAsDataUrl(file);
+
+    // Mettre à jour le livre avec hasCover et coverInline en une seule opération
+    setBooks((prev) =>
+      prev.map((book) =>
+        book.id === selectedBook.id
+          ? {
+              ...book,
+              hasCover: true,
+              coverInline: inlineDataUrl || book.coverInline || null,
+            }
+          : book
+      )
+    );
+
+    // Mettre à jour l'aperçu immédiatement pour l'affichage
+    const localUrl = URL.createObjectURL(file);
+    setCoverUrls((prev) => {
+      const existing = prev[selectedBook.id];
+      if (existing) {
+        URL.revokeObjectURL(existing);
+      }
+      const next = { ...prev, [selectedBook.id]: localUrl };
+      coverUrlsRef.current = next;
+      return next;
+    });
+
+    // Essayer de sauvegarder dans IndexedDB en arrière-plan (non bloquant)
+    const coverId = `cover_${selectedBook.id}`;
+    const ok = await saveBookCover(coverId, file, { name: file.name || null });
+
+    if (!ok && inlineDataUrl) {
+      // Alerte informative si IndexedDB échoue (mais on a déjà coverInline)
+      alert(
+        "IndexedDB ne permet pas de stocker cette couverture (quota ou compatibilité). " +
+          'Une version intégrée sera utilisée pour la persistance dans tes sauvegardes.'
+      );
+    } else if (!ok) {
+      alert(
+        "Erreur lors de l'enregistrement de la couverture du livre. Tu peux réessayer avec une image plus légère."
+      );
+    }
+  };
+
+  const handleRemoveCover = async () => {
+    if (!selectedBook) return;
+    const coverId = `cover_${selectedBook.id}`;
+
+    const ok = await deleteBookCover(coverId);
+    if (!ok) {
+      alert('Erreur lors de la suppression de la couverture.');
+      return;
+    }
+
+    setBooks((prev) =>
+      prev.map((book) =>
+        book.id === selectedBook.id
+          ? { ...book, hasCover: false, coverInline: null }
+          : book
+      )
+    );
+
+    setCoverUrls((prev) => {
+      const existing = prev[selectedBook.id];
+      if (existing) {
+        try {
+          // Ne révoquer que les ObjectURL, pas les dataURL
+          if (existing.startsWith('blob:')) {
+            URL.revokeObjectURL(existing);
+          }
+        } catch {
+          // ignore
+        }
+      }
+      const next = { ...prev };
+      delete next[selectedBook.id];
+      coverUrlsRef.current = next;
+      return next;
+    });
+  };
+
+  const handleViewCover = async () => {
+    if (!selectedBook) return;
+
+    // 1) Si on a déjà une URL en mémoire (coverUrls), on l’utilise directement
+    const cachedUrl = coverUrls[selectedBook.id];
+    if (cachedUrl) {
+      try {
+        window.open(cachedUrl, '_blank', 'noopener');
+        return;
+      } catch {
+        // on tente alors la voie IndexedDB ci‑dessous
+      }
+    }
+
+    // 2) Sinon, on essaie de récupérer le blob depuis IndexedDB
+    const coverId = `cover_${selectedBook.id}`;
+
+    const record = await getBookCover(coverId);
+    if (!record || !record.blob) {
+      alert('Aucune couverture trouvée pour ce livre.');
+      return;
+    }
+
+    try {
+      const url = URL.createObjectURL(record.blob);
+      window.open(url, '_blank', 'noopener');
+      // Libérer l’URL après un délai raisonnable pour éviter les fuites mémoire
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60_000);
+    } catch {
+      alert('Impossible dafficher la couverture.');
+    }
+  };
+
+  const handleRemovePdf = async () => {
+    if (!selectedBook) return;
+    const pdfId = `pdf_${selectedBook.id}`;
+
+    const ok = await deleteBookPdf(pdfId);
+    if (!ok) {
+      alert('Erreur lors de la suppression du PDF.');
+      return;
+    }
+
+    setBooks((prev) =>
+      prev.map((book) =>
+        book.id === selectedBook.id
+          ? { ...book, hasPdf: false }
+          : book
+      )
+    );
+  };
+
+  const handleExport = () => {
+    const exportData = prepareBooksExportData(books, {
+      includeSessions: true,
+      includeMetadata: true,
+    });
+    downloadBooksExportFile(exportData);
+  };
+
+  const handleImportClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImportFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      // Lire le fichier brut pour laisser processBooksImportData gérer tous les formats
+      const fileText = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file, 'utf-8');
+      });
+
+      let parsedData;
+      try {
+        parsedData = JSON.parse(fileText);
+      } catch (parseError) {
+        alert("Le fichier n'est pas un JSON valide.");
+        return;
+      }
+
+      // Gérer les différents formats possibles :
+      // 1. Format nouveau : { version: '1.1', data: { books: [...] } }
+      // 2. Format ancien simple : { version: 1, books: [...] }
+      // 3. Format tableau direct : [...]
+      let dataToProcess = parsedData;
+      
+      // Si c'est le format ancien avec books à la racine, le convertir
+      if (parsedData && !parsedData.data && Array.isArray(parsedData.books)) {
+        dataToProcess = {
+          version: parsedData.version || '1.0',
+          data: { books: parsedData.books },
+        };
+      }
+      // Si c'est un tableau direct (format très ancien)
+      else if (Array.isArray(parsedData)) {
+        dataToProcess = {
+          version: '1.0',
+          data: { books: parsedData },
+        };
+      }
+
+      const result = processBooksImportData(dataToProcess);
+
+      console.log('[BooksTab] Résultat import:', {
+        valid: result.valid,
+        booksCount: result.books?.length || 0,
+        errors: result.errors,
+        warnings: result.warnings,
+        stats: result.stats,
+      });
+
+      if (!result.valid) {
+        console.error('[BooksTab] Erreurs d\'import:', result.errors);
+        alert(
+          `Erreur lors de l'import Livres: ${result.errors?.join(', ') || 'inconnu'}`
+        );
+        return;
+      }
+
+      if (result.books.length === 0) {
+        console.warn('[BooksTab] Aucun livre valide dans le fichier');
+        alert('Aucun livre valide trouvé dans le fichier.');
+        return;
+      }
+
+      console.log('[BooksTab] Import réussi, sauvegarde de', result.books.length, 'livres');
+      
+      // Log détaillé du premier livre pour debug
+      if (result.books.length > 0) {
+        const firstBook = result.books[0];
+        console.log('[BooksTab] Premier livre (détails complets):', {
+          id: firstBook.id,
+          title: firstBook.title,
+          author: firstBook.author,
+          year: firstBook.year,
+          pages: firstBook.pages,
+          genre: firstBook.genre,
+          status: firstBook.status,
+          shortSummary: firstBook.shortSummary ? `${firstBook.shortSummary.substring(0, 100)}...` : 'VIDE',
+          shortSummaryLength: firstBook.shortSummary ? firstBook.shortSummary.length : 0,
+          longSummary: firstBook.longSummary ? `${firstBook.longSummary.substring(0, 100)}...` : 'VIDE',
+          longSummaryLength: firstBook.longSummary ? firstBook.longSummary.length : 0,
+          notes: firstBook.notes ? `${firstBook.notes.substring(0, 100)}...` : 'VIDE',
+          personalScore: firstBook.personalScore,
+          hasCover: firstBook.hasCover,
+          hasPdf: firstBook.hasPdf,
+          coverInline: firstBook.coverInline ? `${firstBook.coverInline.substring(0, 100)}...` : 'ABSENT',
+          coverInlineLength: firstBook.coverInline ? firstBook.coverInline.length : 0,
+          readingSessions: firstBook.readingSessions?.length || 0,
+          allKeys: Object.keys(firstBook),
+        });
+      }
+      
+      console.log('[BooksTab] Détails de tous les livres importés:', result.books.map(b => ({
+        id: b.id,
+        title: b.title,
+        author: b.author,
+        year: b.year,
+        pages: b.pages,
+        genre: b.genre,
+        status: b.status,
+        shortSummary: b.shortSummary ? `${b.shortSummary.substring(0, 50)}...` : '',
+        longSummary: b.longSummary ? `${b.longSummary.substring(0, 50)}...` : '',
+        personalScore: b.personalScore,
+        hasCover: b.hasCover,
+        hasPdf: b.hasPdf,
+        coverInline: b.coverInline ? `présent (${b.coverInline.length} chars)` : 'absent',
+        readingSessions: b.readingSessions?.length || 0,
+      })));
+      
+      // Vérifier que tous les livres ont un statut valide et charger les couvertures
+      const booksWithValidStatus = result.books.map(book => {
+        const validStatuses = ['in-progress', 'completed', 'to-read', 'abandoned', 'paused'];
+        let normalizedBook = book;
+        if (!book.status || !validStatuses.includes(book.status)) {
+          console.warn('[BooksTab] Livre sans statut valide, utilisation de "in-progress" par défaut:', book.id, book.title, 'statut actuel:', book.status);
+          normalizedBook = { ...book, status: 'in-progress' };
+        }
+        
+        // S'assurer que hasCover est true si coverInline existe
+        if (normalizedBook.coverInline && !normalizedBook.hasCover) {
+          normalizedBook.hasCover = true;
+        }
+        
+        return normalizedBook;
+      });
+      
+      // Fonction helper pour convertir dataURL en Blob
+      const dataURLtoBlob = (dataURL) => {
+        try {
+          const arr = dataURL.split(',');
+          const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          return new Blob([u8arr], { type: mime });
+        } catch (error) {
+          console.error('[BooksTab] Erreur conversion dataURL vers Blob:', error);
+          return null;
+        }
+      };
+
+      // Charger immédiatement les couvertures coverInline dans coverUrls
+      const newCoverUrls = { ...coverUrls };
+      const coverSavePromises = [];
+      
+      booksWithValidStatus.forEach(book => {
+        if (book.coverInline && !newCoverUrls[book.id]) {
+          // coverInline est déjà une dataURL, on peut l'utiliser directement pour l'affichage
+          newCoverUrls[book.id] = book.coverInline;
+          
+          // Convertir en Blob et sauvegarder dans IndexedDB pour la persistance
+          const blob = dataURLtoBlob(book.coverInline);
+          if (blob) {
+            coverSavePromises.push(
+              saveBookCover(book.id, blob, { 
+                name: `cover_${book.id}.${blob.type.split('/')[1] || 'jpg'}` 
+              }).then(success => {
+                if (success) {
+                  console.log(`[BooksTab] Couverture sauvegardée pour livre ${book.id}`);
+                } else {
+                  console.warn(`[BooksTab] Échec sauvegarde couverture pour livre ${book.id}`);
+                }
+                return success;
+              })
+            );
+          }
+        }
+      });
+      
+      setCoverUrls(newCoverUrls);
+      coverUrlsRef.current = newCoverUrls;
+      
+      console.log('[BooksTab] Couvertures chargées:', Object.keys(newCoverUrls).length, 'livres avec couverture');
+      
+      // IMPORTANT: Sauvegarder d'abord dans IndexedDB AVANT de mettre à jour le state
+      // Cela garantit la persistance même si l'utilisateur rafraîchit la page immédiatement
+      console.log('[BooksTab] Début sauvegarde pour', booksWithValidStatus.length, 'livres');
+      
+      // 1. Sauvegarder d'abord dans IndexedDB (BLOQUANT)
+      const saveIndexedDBSuccess = await saveBooksToIndexedDB(booksWithValidStatus);
+      if (!saveIndexedDBSuccess) {
+        console.error('[BooksTab] ❌ Échec sauvegarde IndexedDB');
+        alert('❌ Erreur : Impossible de sauvegarder les livres dans IndexedDB. L\'import a été annulé.');
+        return;
+      }
+      console.log('[BooksTab] ✅ Sauvegarde IndexedDB réussie');
+      
+      // 2. Vérifier que les données sont bien sauvegardées
+      const verifyIndexedDB = await getAllBooksFromIndexedDB();
+      if (verifyIndexedDB.length !== booksWithValidStatus.length) {
+        console.error('[BooksTab] ❌ Vérification échouée :', verifyIndexedDB.length, 'livres au lieu de', booksWithValidStatus.length);
+        alert(`❌ Erreur : Vérification échouée. ${verifyIndexedDB.length} livres sauvegardés au lieu de ${booksWithValidStatus.length}. L'import a été annulé.`);
+        return;
+      }
+      console.log('[BooksTab] ✅ Vérification IndexedDB réussie :', verifyIndexedDB.length, 'livres');
+      
+      // 3. NE PLUS sauvegarder dans localStorage (saturé, utilisé uniquement en fallback de lecture)
+      // Les données sont maintenant uniquement dans IndexedDB
+      
+      // 4. SEULEMENT MAINTENANT mettre à jour le state (les données sont déjà persistées)
+      setBooks(booksWithValidStatus);
+      console.log('[BooksTab] ✅ State mis à jour,', booksWithValidStatus.length, 'livres importés');
+      
+      // Attendre que toutes les couvertures soient sauvegardées
+      const coverResults = await Promise.allSettled(coverSavePromises);
+      const successfulCovers = coverResults.filter(r => r.status === 'fulfilled' && r.value).length;
+      console.log(`[BooksTab] Couvertures sauvegardées dans IndexedDB: ${successfulCovers}/${coverSavePromises.length}`);
+      
+      setSelectedBookId(null);
+      resetForm();
+      resetSessionForm();
+      
+      // Afficher un message de succès (seulement si tout s'est bien passé)
+      alert(`✅ ${result.books.length} livre(s) importé(s) et sauvegardé(s) avec succès !\n${successfulCovers} couverture(s) sauvegardée(s).\n\nLes données sont maintenant persistées et survivront à un rafraîchissement.`);
+    } catch (error) {
+      console.error('Erreur import livres:', error);
+      alert(`Erreur lors de l'import: ${error.message || 'Vérifie le fichier JSON.'}`);
+    } finally {
+      setIsImporting(false);
+      // Réinitialiser l'input pour permettre de réimporter le même fichier
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // useCallback pour stabiliser la fonction handleBookClick
+  const handleBookClick = useCallback((bookId) => {
+    setSelectedBookId(bookId);
+  }, []);
+
+  // useCallback pour stabiliser handleAddSession (version pour le bouton dans BookCard)
+  const handleAddSessionFromCard = useCallback((bookId) => {
+    setSelectedBookId(bookId);
+    // Scroll vers le formulaire de session
+    setTimeout(() => {
+      const sessionForm = document.querySelector('[data-session-form]');
+      if (sessionForm) {
+        sessionForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  }, []);
+
+  // OPTIMISATION: Utiliser le composant BookCard mémoizé au lieu de renderBookCard
+  const renderBookCard = (book, isCompleted = false) => {
+    const coverUrl = coverUrls[book.id];
+    // Utiliser progressPercent pré-calculé si disponible, sinon calculer (fallback)
+    const progressPercent = book._progressPercent !== undefined 
+      ? book._progressPercent 
+      : getReadingProgressPercent(book);
+
+    return (
+      <BookCard
+        key={book.id}
+        book={book}
+        coverUrl={coverUrl}
+        progressPercent={progressPercent}
+        selectedBookId={selectedBookId}
+        onBookClick={handleBookClick}
+        onStatusChange={handleStatusChange}
+        onAddSession={handleAddSessionFromCard}
+      />
+    );
+  };
+
+  return (
+    <div className="relative min-h-screen">
+      {/* Contenu avec z-index relatif */}
+      <div className="relative z-10 space-y-8 p-8">
+        {isLoading && (
+        <Card variant="glass">
+          <CardContent>
+            <p className="text-sm text-slate-300">
+              {t('common.loading', 'Chargement de la bibliothèque de livres...')}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Header avec navigation par sous-onglets */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <BookOpen className="w-8 h-8 text-purple-300" />
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+                {t('nav.books', 'Livres')}
+              </h1>
+              <p className="text-sm text-slate-400">
+                {t(
+                  'books.subtitle',
+                  'Gère ta bibliothèque personnelle, tes sessions de lecture et tes sauvegardes — tout est stocké localement dans ton navigateur.'
+                )}
+              </p>
+            </div>
+          </div>
+          {activeSubTab === 'library' && (
+            <button
+              type="button"
+              onClick={() => setShow3D(!show3D)}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg"
+            >
+              {show3D
+                ? t('books.dome.hide', 'Masquer la vue 3D')
+                : t('books.dome.show', 'Afficher la vue 3D')}
+            </button>
+          )}
+        </div>
+
+        {/* Navigation par sous-onglets */}
+        <div className="flex gap-2 mb-6">
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('library')}
+            className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
+              activeSubTab === 'library' ? 'gradient-button-premium-variant' : ''
+            }`}
+          >
+            <Library className="w-4 h-4" />
+            {t('books.subtabs.library', 'Bibliothèque')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('statistics')}
+            className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
+              activeSubTab === 'statistics' ? 'gradient-button-premium-variant' : ''
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            {t('books.subtabs.statistics', 'Statistiques')}
+          </button>
+        </div>
+      </div>
+
+      {/* Contenu conditionnel selon le sous-onglet actif */}
+      <ErrorBoundary
+        context={{ activeSubTab, tab: 'books', booksCount: books.length }}
+        title={`Erreur dans ${activeSubTab === 'statistics' ? 'Statistiques' : 'Bibliothèque'}`}
+        message="Une erreur s'est produite dans ce sous-onglet. Vous pouvez réessayer ou changer de sous-onglet."
+      >
+        {activeSubTab === 'statistics' ? (
+          <StatisticsSubTab books={books} />
+        ) : (
+          // Contenu de la bibliothèque (code existant)
+          <div className="space-y-6">
+
+      {/* Formulaire et Recherche/Filtres en grille */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Formulaire collapsible */}
+        <Card variant="glass" padding="lg">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle size="md" className="books-glass-card-title">
+                {t('books.form.title', 'Ajouter/Modifier un livre')}
+              </CardTitle>
+              <button
+                type="button"
+                onClick={() => setIsFormExpanded(!isFormExpanded)}
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+              >
+                {isFormExpanded ? t('common.hide', 'Masquer') : t('common.show', 'Afficher')}
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent className="books-glass-card-content">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Champs toujours visibles */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  id="book-title"
+                  variant="glass"
+                  label={t('books.form.title', 'Titre du livre')}
+                  required
+                  value={form.title}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                />
+                <Input
+                  id="book-author"
+                  variant="glass"
+                  label={t('books.form.author', 'Auteur')}
+                  value={form.author}
+                  onChange={(e) => handleChange('author', e.target.value)}
+                />
+              </div>
+              
+              {/* Champs toujours visibles : Année, Genre, Pages, Couverture, Statut */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input
+                  id="book-year"
+                  type="number"
+                  variant="glass"
+                  label={t('books.form.year', 'Année')}
+                  value={form.year}
+                  onChange={(e) => handleChange('year', e.target.value)}
+                />
+                <Input
+                  id="book-genre"
+                  variant="glass"
+                  label={t('books.form.genre', 'Genre')}
+                  placeholder={t(
+                    'books.form.genre.placeholder',
+                    'Ex : Science-Fiction, Essai...'
+                  )}
+                  value={form.genre}
+                  onChange={(e) => handleChange('genre', e.target.value)}
+                />
+                <Input
+                  id="book-pages"
+                  type="number"
+                  variant="glass"
+                  label={t('books.form.pages', 'Nombre de pages')}
+                  value={form.pages}
+                  onChange={(e) => handleChange('pages', e.target.value)}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                <div>
+                  <label
+                    htmlFor="book-cover-upload"
+                    className="block text-xs font-medium text-slate-300 mb-1"
+                  >
+                    {t(
+                      'books.form.coverUpload',
+                      'Image de couverture (upload)'
+                    )}
+                  </label>
+                  <input
+                    id="book-cover-upload"
+                    ref={coverFormInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="books-glass-file-input block w-full text-xs cursor-pointer"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      setFormCoverFile(file);
+                    }}
+                  />
+                </div>
+                <Select
+                  id="book-status"
+                  variant="glass"
+                  label={t('books.form.status', 'Statut')}
+                  value={form.status}
+                  onChange={(e) => handleChange('status', e.target.value)}
+                >
+                  <option value="in-progress">
+                    {t('books.status.inProgress', 'En cours')}
+                  </option>
+                  <option value="completed">
+                    {t('books.status.completed', 'Terminé')}
+                  </option>
+                  <option value="to-read">
+                    {t('books.status.toRead', 'À lire')}
+                  </option>
+                  <option value="paused">
+                    {t('books.status.paused', 'En pause')}
+                  </option>
+                  <option value="abandoned">
+                    {t('books.status.abandoned', 'Abandonné')}
+                  </option>
+                </Select>
+              </div>
+              
+              {/* Bouton toujours visible */}
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="submit"
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                >
+                  {form.id
+                    ? t('books.actions.updateBook', 'Mettre à jour le livre')
+                    : t('books.actions.addBook', 'Ajouter le livre')}
+                </button>
+                {form.id && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+                  >
+                    {t('books.actions.cancelEdit', 'Annuler la modification')}
+                  </button>
+                )}
+              </div>
+              
+              {/* Champs supplémentaires (affichés seulement si expanded) */}
+              {isFormExpanded && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)] gap-4">
+                    <TextArea
+                      id="book-short-summary"
+                      variant="glass"
+                      label={t('books.form.shortSummary', 'Résumé court')}
+                      rows={4}
+                      maxLength={500}
+                      value={form.shortSummary}
+                      onChange={(e) => handleChange('shortSummary', e.target.value)}
+                    />
+                    <TextArea
+                      id="book-long-summary"
+                      variant="glass"
+                      label={t('books.form.longSummary', 'Résumé détaillé')}
+                      rows={4}
+                      maxLength={5000}
+                      value={form.longSummary}
+                      onChange={(e) => handleChange('longSummary', e.target.value)}
+                    />
+                  </div>
+                  <Input
+                    id="book-score"
+                    type="number"
+                    variant="glass"
+                    min={0}
+                    max={5}
+                    label={t('books.form.score', 'Note perso (0–5 étoiles)')}
+                    value={form.personalScore}
+                    onChange={(e) => handleChange('personalScore', e.target.value)}
+                    help={t(
+                      'books.form.score.help',
+                      'Cette note est purement indicative et reste locale.'
+                    )}
+                  />
+                </>
+              )}
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Recherche & Filtres */}
+        <Card variant="glass" padding="lg" className="books-glass-card">
+          <CardHeader className="books-glass-card-header">
+            <CardTitle size="md" className="books-glass-card-title">
+              {t('books.filters.title', 'Recherche & Filtres')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="books-glass-card-content">
+            <div className="space-y-4">
+              <Input
+                id="book-search"
+                variant="glass"
+                label={t('books.search.label', 'Recherche')}
+                placeholder={t(
+                  'books.search.placeholder',
+                  'Filtrer par titre ou auteur...'
+                )}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                containerClassName="space-y-2"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-200">
+                <div className="space-y-2">
+                  <p className="font-semibold">
+                    {t('books.filters.title', 'Filtres avancés')}
+                  </p>
+                  <Input
+                    id="filter-genre"
+                    variant="glass"
+                    label={t('books.filters.genre', 'Filtrer par genre')}
+                    value={filterGenre}
+                    onChange={(e) => setFilterGenre(e.target.value)}
+                  />
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1 min-w-0">
+                      <Input
+                        id="filter-min-year"
+                        type="number"
+                        variant="glass"
+                        label={t('books.filters.minYear', 'Année min')}
+                        value={filterMinYear}
+                        onChange={(e) => setFilterMinYear(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Input
+                        id="filter-max-year"
+                        type="number"
+                        variant="glass"
+                        label={t('books.filters.maxYear', 'Année max')}
+                        value={filterMaxYear}
+                        onChange={(e) => setFilterMaxYear(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <Input
+                    id="filter-min-score"
+                    type="number"
+                    variant="glass"
+                    min={0}
+                    max={5}
+                    label={t('books.filters.minScore', 'Note minimale')}
+                    value={filterMinScore}
+                    onChange={(e) => setFilterMinScore(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="font-semibold">
+                    {t('books.filters.sortTitle', 'Tri')}
+                  </p>
+                  <Select
+                    id="sort-mode"
+                    variant="glass"
+                    label={t('books.filters.sortBy', 'Trier par')}
+                    value={sortMode}
+                    onChange={(e) => setSortMode(e.target.value)}
+                  >
+                    <option value="recent">
+                      {t('books.filters.sort.recent', "Plus récents d'abord")}
+                    </option>
+                    <option value="title">
+                      {t('books.filters.sort.title', 'Titre (A → Z)')}
+                    </option>
+                    <option value="author">
+                      {t('books.filters.sort.author', 'Auteur (A → Z)')}
+                    </option>
+                    <option value="pages">
+                      {t('books.filters.sort.pages', 'Nombre de pages (décroissant)')}
+                    </option>
+                    <option value="score">
+                      {t('books.filters.sort.score', 'Note perso (décroissante)')}
+                    </option>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Actions Export/Import */}
+      <Card variant="glass" padding="lg" className="mb-6">
+        <CardHeader>
+          <CardTitle size="md">
+            {t('books.actions.title', 'Actions')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4">
+            <button
+              type="button"
+              onClick={handleExport}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center justify-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              {t('books.actions.export', 'Exporter JSON')}
+            </button>
+            <button
+              type="button"
+              onClick={handleImportClick}
+              disabled={isImporting}
+              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center justify-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              {isImporting ? t('common.loading', 'Chargement...') : t('books.actions.import', 'Importer JSON')}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={handleImportFileChange}
+            />
+          </div>
+          <p className="text-xs text-slate-400 mt-4 flex items-center gap-2">
+            <Search className="w-4 h-4" />
+            {t(
+              'books.hint.localStorage',
+              'Toutes les données sont stockées localement (IndexedDB). Tu peux les sauvegarder ou les restaurer via les boutons ci-dessus.'
+            )}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Vue 3D */}
+      {show3D && (
+        <Suspense
+          fallback={
+            <Card variant="glass">
+              <CardContent>
+                <p className="text-sm text-slate-300">
+                  {t('books.dome.loading', 'Chargement de la vue 3D...')}
+                </p>
+              </CardContent>
+            </Card>
+          }
+        >
+          <BooksDomeGallery
+            books={domeBooks}
+            onBookOpen={(id) => setSelectedBookId(id)}
+            dragSensitivity={50}
+            dragDampening={0.3}
+            maxVerticalRotationDeg={8}
+            fit={1.0}
+            minRadius={700}
+            maxRadius={1600}
+            padFactor={0.02}
+          />
+        </Suspense>
+      )}
+
+      {/* Carrousels */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card variant="glass" className="books-glass-card">
+          <CardHeader className="books-glass-card-header">
+            <CardTitle size="md" className="books-glass-card-title">
+              {t('books.sections.inProgress', 'Livres en cours')}
+              {filteredLibraryBooks.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-slate-400">
+                  ({filteredLibraryBooks.length})
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 books-glass-card-content">
+            {filteredLibraryBooks.length === 0 ? (
+              <p className="text-sm text-slate-400/70 text-center py-4 px-3 rounded-lg bg-white/2 border border-white/5">
+                {t(
+                  'books.empty.inProgress',
+                  'Aucun livre en cours pour le moment. Ajoute un livre avec le formulaire ci-dessus.'
+                )}
+              </p>
+            ) : (
+              <>
+                <div className="flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20 books-carousel-container">
+                  {paginatedInProgressBooks.map((book) => renderBookCard(book, false))}
+                </div>
+                {filteredLibraryBooks.length > PAGE_SIZE && (
+                  <div className="flex items-center justify-between text-xs text-slate-400/80 mt-2 pt-2 border-t border-white/5">
+                    <span>
+                      Page {pageInProgress + 1} /{' '}
+                      {Math.max(1, Math.ceil(filteredLibraryBooks.length / PAGE_SIZE))}
+                    </span>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                        onClick={() =>
+                          setPageInProgress((p) => Math.max(0, p - 1))
+                        }
+                        disabled={pageInProgress === 0}
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                        onClick={() =>
+                          setPageInProgress((p) =>
+                            Math.min(
+                              Math.max(0, Math.ceil(filteredLibraryBooks.length / PAGE_SIZE) - 1),
+                              p + 1
+                            )
+                          )
+                        }
+                        disabled={
+                          pageInProgress >=
+                          Math.max(0, Math.ceil(filteredLibraryBooks.length / PAGE_SIZE) - 1)
+                        }
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card variant="glass" className="books-glass-card">
+          <CardHeader className="books-glass-card-header">
+            <CardTitle size="md" className="books-glass-card-title">
+              {t('books.sections.completed', 'Livres terminés')}
+              {filteredCompletedBooks.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-slate-400">
+                  ({filteredCompletedBooks.length})
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 books-glass-card-content">
+            {filteredCompletedBooks.length === 0 ? (
+              <p className="text-sm text-slate-400/70 text-center py-4 px-3 rounded-lg bg-white/2 border border-white/5">
+                {t(
+                  'books.empty.completed',
+                  "Tu n'as pas encore marqué de livre comme terminé."
+                )}
+              </p>
+            ) : (
+              <>
+                <div className="flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20 books-carousel-container">
+                  {paginatedCompletedBooks.map((book) => renderBookCard(book, true))}
+                </div>
+                {filteredCompletedBooks.length > PAGE_SIZE && (
+                  <div className="flex items-center justify-between text-xs text-slate-400/80 mt-2 pt-2 border-t border-white/5">
+                    <span>
+                      Page {pageCompleted + 1} /{' '}
+                      {Math.max(1, Math.ceil(filteredCompletedBooks.length / PAGE_SIZE))}
+                    </span>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                        onClick={() =>
+                          setPageCompleted((p) => Math.max(0, p - 1))
+                        }
+                        disabled={pageCompleted === 0}
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                        onClick={() =>
+                          setPageCompleted((p) =>
+                            Math.min(
+                              Math.max(0, Math.ceil(filteredCompletedBooks.length / PAGE_SIZE) - 1),
+                              p + 1
+                            )
+                          )
+                        }
+                        disabled={
+                          pageCompleted >=
+                          Math.max(
+                            0,
+                            Math.ceil(filteredCompletedBooks.length / PAGE_SIZE) - 1
+                          )
+                        }
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card variant="glass" className="books-glass-card">
+          <CardHeader className="books-glass-card-header">
+            <CardTitle size="md" className="books-glass-card-title">
+              {t('books.sections.toRead', 'Livres à lire')}
+              {filteredToReadBooks.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-slate-400">
+                  ({filteredToReadBooks.length})
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 books-glass-card-content">
+            {filteredToReadBooks.length === 0 ? (
+              <p className="text-sm text-slate-400/70 text-center py-4 px-3 rounded-lg bg-white/2 border border-white/5">
+                {t(
+                  'books.empty.toRead',
+                  "Tu n'as pas encore de livres marqués comme \"À lire\"."
+                )}
+              </p>
+            ) : (
+              <>
+                <div className="flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent hover:scrollbar-thumb-white/20 books-carousel-container">
+                  {paginatedToReadBooks.map((book) => renderBookCard(book, false))}
+                </div>
+                {filteredToReadBooks.length > PAGE_SIZE && (
+                  <div className="flex items-center justify-between text-xs text-slate-400/80 mt-2 pt-2 border-t border-white/5">
+                    <span>
+                      Page {pageToRead + 1} /{' '}
+                      {Math.max(1, Math.ceil(filteredToReadBooks.length / PAGE_SIZE))}
+                    </span>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                        onClick={() =>
+                          setPageToRead((p) => Math.max(0, p - 1))
+                        }
+                        disabled={pageToRead === 0}
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                        onClick={() =>
+                          setPageToRead((p) =>
+                            Math.min(
+                              Math.max(0, Math.ceil(filteredToReadBooks.length / PAGE_SIZE) - 1),
+                              p + 1
+                            )
+                          )
+                        }
+                        disabled={
+                          pageToRead >=
+                          Math.max(0, Math.ceil(filteredToReadBooks.length / PAGE_SIZE) - 1)
+                        }
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Détail du livre sélectionné + sessions */}
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <div>
+            <CardTitle size="md">
+              {selectedBook
+                ? selectedBook.title || t('books.detail.noTitle', 'Livre sans titre')
+                : t('books.detail.noSelection', 'Aucun livre sélectionné')}
+            </CardTitle>
+            <p className="text-sm text-slate-400 mt-1">
+              {selectedBook
+                ? t(
+                    'books.detail.subtitle',
+                    'Historique de lecture et statistiques pour ce livre.'
+                  )
+                : t(
+                    'books.detail.subtitle.empty',
+                    'Clique sur un livre dans les carrousels pour voir son détail et ajouter des sessions de lecture.'
+                  )}
+            </p>
+          </div>
+          {selectedBook && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <button
+                type="button"
+                onClick={() => handleEdit(selectedBook)}
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+              >
+                {t('books.actions.editBook', 'Éditer')}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(selectedBook)}
+                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+              >
+                {t('books.actions.deleteBook', 'Supprimer')}
+              </button>
+              <span className="text-xs text-slate-400 ml-2">
+                {selectedBook.hasPdf
+                  ? t('books.assets.pdfAttached', 'PDF associé')
+                  : t('books.assets.noPdf', 'Aucun PDF associé')}
+              </span>
+              <button
+                type="button"
+                onClick={handleAttachPdfClick}
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+              >
+                {t('books.assets.attachPdf', 'Joindre un PDF')}
+              </button>
+              {selectedBook.hasPdf && (
+                <button
+                  type="button"
+                  onClick={handleRemovePdf}
+                  className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                >
+                  {t('books.assets.removePdf', 'Supprimer le PDF')}
+                </button>
+              )}
+              <input
+                ref={pdfInputRef}
+                type="file"
+                accept="application/pdf"
+                className="hidden"
+                onChange={handlePdfFileChange}
+              />
+              <span className="text-xs text-slate-400 ml-4">
+                {selectedBook.hasCover
+                  ? t('books.assets.coverAttached', 'Couverture associée')
+                  : t('books.assets.noCover', 'Aucune couverture associée')}
+              </span>
+              <button
+                type="button"
+                onClick={handleAttachCoverClick}
+                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+              >
+                {selectedBook.hasCover
+                  ? t('books.assets.changeCover', 'Changer la couverture')
+                  : t('books.assets.attachCover', 'Ajouter une couverture')}
+              </button>
+              {selectedBook.hasCover && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleViewCover}
+                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+                  >
+                    {t('books.assets.viewCover', 'Voir la couverture')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCover}
+                    className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                  >
+                    {t('books.assets.removeCover', 'Supprimer la couverture')}
+                  </button>
+                </>
+              )}
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleCoverFileChange}
+              />
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {selectedBook ? (
+            <>
+              <div className="grid gap-3 md:grid-cols-3 text-sm text-slate-300">
+                <div>
+                  <p className="font-semibold">
+                    {t('books.detail.author', 'Auteur')}
+                  </p>
+                  <p>{selectedBook.author || '—'}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">
+                    {t('books.detail.genre', 'Genre')}
+                  </p>
+                  <p>{selectedBook.genre || '—'}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">
+                    {t('books.detail.year', 'Année')}
+                  </p>
+                  <p>{selectedBook.year || '—'}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">
+                    {t('books.detail.pages', 'Pages')}
+                  </p>
+                  <p>{selectedBook.pages || '—'}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">
+                    {t('books.stats.sessionsCount', 'Nombre de sessions')}
+                  </p>
+                  <p>{(selectedBook.readingSessions || []).length}</p>
+                </div>
+              </div>
+
+              {selectedBook.shortSummary && (
+                <div className="text-sm text-slate-300">
+                  <p className="font-semibold mb-1">
+                    {t('books.detail.shortSummary', 'Résumé court')}
+                  </p>
+                  <p className="whitespace-pre-line">{selectedBook.shortSummary}</p>
+                </div>
+              )}
+
+              {selectedBook.longSummary && (
+                <div className="text-sm text-slate-300">
+                  <p className="font-semibold mb-1">
+                    {t('books.detail.longSummary', 'Résumé détaillé')}
+                  </p>
+                  <p className="whitespace-pre-line">{selectedBook.longSummary}</p>
+                </div>
+              )}
+
+              {selectedBook.notes && (
+                <div className="text-sm text-slate-300">
+                  <p className="font-semibold mb-1">
+                    {t('books.detail.notes', 'Notes')}
+                  </p>
+                  <p className="whitespace-pre-line">{selectedBook.notes}</p>
+                </div>
+              )}
+
+              <div className="grid gap-3 md:grid-cols-3 text-sm text-slate-300">
+                <div>
+                  <p className="font-semibold">
+                    {t('books.stats.totalTime', 'Temps total de lecture')}
+                  </p>
+                  <p>
+                    {getTotalReadingTime(selectedBook)}{' '}
+                    {t('books.stats.minutes', 'minutes')}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-semibold">
+                    {t('books.stats.totalPages', 'Pages lues au total')}
+                  </p>
+                  <p>{getTotalPagesRead(selectedBook)}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">
+                    {t(
+                      'books.stats.avgPagesPerSession',
+                      'Pages moyennes par session'
+                    )}
+                  </p>
+                  <p>{getAveragePagesPerSession(selectedBook)}</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3 text-sm text-slate-300">
+                <div>
+                  <p className="font-semibold">
+                    {t(
+                      'books.stats.avgDurationPerSession',
+                      'Durée moyenne par session (minutes)'
+                    )}
+                  </p>
+                  <p>{getAverageDurationPerSession(selectedBook)}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">
+                    {t(
+                      'books.stats.progress',
+                      'Progression estimée du livre (%)'
+                    )}
+                  </p>
+                  <p>
+                    {getReadingProgressPercent(selectedBook) ?? '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-semibold">
+                    {t(
+                      'books.stats.estimatedRemaining',
+                      'Temps estimé restant'
+                    )}
+                  </p>
+                  <p>
+                    {(() => {
+                      const value = getEstimatedRemainingTimeMinutes(
+                        selectedBook
+                      );
+                      if (value == null) return '—';
+                      return `${value} ${t('books.stats.minutes', 'minutes')}`;
+                    })()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+                {/* Liste des sessions */}
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm text-slate-200">
+                    {t('books.sessions.listTitle', 'Sessions de lecture')}
+                  </p>
+                  {(selectedBook.readingSessions || []).length === 0 ? (
+                    <p className="text-sm text-slate-400">
+                      {t(
+                        'books.sessions.empty',
+                        'Aucune session enregistrée pour le moment.'
+                      )}
+                    </p>
+                  ) : (
+                    <ul className="space-y-2 text-sm text-slate-200 max-h-56 overflow-y-auto pr-1">
+                      {selectedBook.readingSessions.map((session) => (
+                        <li
+                          key={session.id}
+                          className="flex items-start justify-between gap-3 border border-slate-700/60 rounded-md px-3 py-2 bg-slate-900/40"
+                        >
+                          <div>
+                            <p className="font-semibold text-xs text-slate-200">
+                              {session.date || '—'}
+                            </p>
+                            <p className="text-xs text-slate-300 mt-0.5">
+                              {session.durationMinutes > 0 && (
+                                <span className="mr-2">
+                                  {session.durationMinutes}{' '}
+                                  {t('books.stats.minutes', 'minutes')}
+                                </span>
+                              )}
+                              {session.pagesRead > 0 && (
+                                <span>
+                                  • {session.pagesRead}{' '}
+                                  {t('books.pages', 'pages')}
+                                </span>
+                              )}
+                            </p>
+                            {session.note && (
+                              <p className="text-[11px] text-slate-400 mt-1">
+                                {session.note}
+                              </p>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* Formulaire session */}
+                <form
+                  data-session-form
+                  onSubmit={handleAddSession}
+                  className="space-y-3 border border-slate-700/60 rounded-md p-3 bg-slate-900/40"
+                >
+                  <p className="font-semibold text-sm text-slate-200">
+                    {t(
+                      'books.sessions.addTitle',
+                      'Ajouter une session de lecture'
+                    )}
+                  </p>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Input
+                      id="session-date"
+                      type="date"
+                      label={t('books.sessions.date', 'Date')}
+                      value={sessionForm.date}
+                      onChange={(e) =>
+                        handleSessionChange('date', e.target.value)
+                      }
+                    />
+                    <Input
+                      id="session-duration"
+                      type="number"
+                      min={0}
+                      label={t(
+                        'books.sessions.duration',
+                        'Durée (minutes)'
+                      )}
+                      value={sessionForm.durationMinutes}
+                      onChange={(e) =>
+                        handleSessionChange('durationMinutes', e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Input
+                      id="session-pages"
+                      type="number"
+                      min={0}
+                      label={t(
+                        'books.sessions.pages',
+                        'Pages lues pendant la session'
+                      )}
+                      value={sessionForm.pagesRead}
+                      onChange={(e) =>
+                        handleSessionChange('pagesRead', e.target.value)
+                      }
+                    />
+                    <TextArea
+                      id="session-note"
+                      rows={3}
+                      label={t('books.sessions.note', 'Note (optionnel)')}
+                      value={sessionForm.note}
+                      onChange={(e) =>
+                        handleSessionChange('note', e.target.value)
+                      }
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                  >
+                    {t(
+                      'books.sessions.addButton',
+                      'Ajouter la session de lecture'
+                    )}
+                  </button>
+                </form>
+              </div>
+
+              {/* Sélecteur de statut en bas de la page */}
+              <div className="mt-6 pt-6 border-t border-slate-700">
+                <div className="flex items-center gap-4">
+                  <label
+                    htmlFor="book-status-detail"
+                    className="text-sm font-semibold text-slate-300 whitespace-nowrap"
+                  >
+                    {t('books.detail.status', 'Statut du livre')}:
+                  </label>
+                  <Select
+                    id="book-status-detail"
+                    value={selectedBook.status || 'in-progress'}
+                    onChange={(e) => handleStatusChange(selectedBook.id, e.target.value)}
+                    className="flex-1 max-w-xs"
+                  >
+                    <option value="in-progress">
+                      {t('books.status.inProgress', 'En cours')}
+                    </option>
+                    <option value="completed">
+                      {t('books.status.completed', 'Terminé')}
+                    </option>
+                    <option value="to-read">
+                      {t('books.status.toRead', 'À lire')}
+                    </option>
+                    <option value="paused">
+                      {t('books.status.paused', 'En pause')}
+                    </option>
+                    <option value="abandoned">
+                      {t('books.status.abandoned', 'Abandonné')}
+                    </option>
+                  </Select>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-slate-400">
+              {t(
+                'books.detail.noSelectionLong',
+                'Sélectionne un livre dans les listes ci-dessus pour voir ses détails, son historique de lecture et ajouter des sessions.'
+              )}
+            </p>
+          )}
+        </CardContent>
+        <CardFooter>
+          <p className="text-[11px] text-slate-500">
+            {t(
+              'books.footer.info',
+              "Cette première version de l’onglet Livres implémente la gestion locale des livres et des sessions de lecture. Les fonctionnalités avancées décrites dans la documentation (sphère 3D, PDFs en IndexedDB, sauvegardes multi‑formats) pourront être ajoutées progressivement sans impacter le reste du site."
+            )}
+          </p>
+        </CardFooter>
+      </Card>
+        </div>
+      )}
+      </ErrorBoundary>
+      </div>
+    </div>
+  );
+};
+
+export default BooksTab;
+

@@ -1,16 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useTranslation } from '../../utils/translations';
 import { FinanceProvider } from '../../context/FinanceContext';
-import BourseSubTab from '../finance/bourse/BourseSubTab';
-import BudgetSubTab from '../finance/budget/BudgetSubTab';
-import InvestissementsSubTab from '../finance/investissements/InvestissementsSubTab';
-import SmartShoppingSubTab from '../finance/smartShopping/SmartShoppingSubTab';
-import PlanificateurSubTab from '../finance/planificateur/PlanificateurSubTab';
-import SyntheseSubTab from '../finance/synthese/SyntheseSubTab';
+import ErrorBoundary from '../ui/ErrorBoundary';
+
+// ✅ PHASE 2 : Lazy loading des sous-onglets Finance
+const BourseSubTab = lazy(() => import('../finance/bourse/BourseSubTab'));
+const BudgetSubTab = lazy(() => import('../finance/budget/BudgetSubTab'));
+const InvestissementsSubTab = lazy(() => import('../finance/investissements/InvestissementsSubTab'));
+const SmartShoppingSubTab = lazy(() => import('../finance/smartShopping/SmartShoppingSubTab'));
+const PlanificateurSubTab = lazy(() => import('../finance/planificateur/PlanificateurSubTab'));
+const SyntheseSubTab = lazy(() => import('../finance/synthese/SyntheseSubTab'));
+
+// Skeleton loader pour les sous-onglets
+const FinanceSubTabSkeleton = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <div className="text-4xl mb-4 animate-spin">💰</div>
+      <div className="text-slate-400 font-semibold uppercase tracking-wide">CHARGEMENT...</div>
+    </div>
+  </div>
+);
 
 const FinanceTab = () => {
   const t = useTranslation();
-  const [activeSubTab, setActiveSubTab] = useState('bourse');
+  
+  // ✅ PHASE 1 : Persistance de l'état actif dans localStorage
+  const [activeSubTab, setActiveSubTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem('finance.activeSubTab');
+      return saved || 'bourse';
+    } catch (error) {
+      console.warn('[FinanceTab] Erreur lecture localStorage:', error);
+      return 'bourse';
+    }
+  });
+
+  // ✅ PHASE 1 : Sauvegarder l'état actif dans localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('finance.activeSubTab', activeSubTab);
+    } catch (error) {
+      console.warn('[FinanceTab] Erreur sauvegarde localStorage:', error);
+    }
+  }, [activeSubTab]);
 
   // Émettre un événement lors du changement de sous-onglet pour la rotation des images de profil
   useEffect(() => {
@@ -84,9 +116,17 @@ const FinanceTab = () => {
           </nav>
         </div>
 
-        {/* Contenu sous-onglet actif */}
+        {/* Contenu sous-onglet actif avec ErrorBoundary et Suspense */}
         <div className="finance-main-content bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-          {renderSubTabContent()}
+          <ErrorBoundary
+            context={{ activeSubTab, tab: 'finance' }}
+            title={`Erreur dans ${t(`finance.subTabs.${activeSubTab}`)}`}
+            message="Une erreur s'est produite dans ce sous-onglet. Vous pouvez réessayer ou changer de sous-onglet."
+          >
+            <Suspense fallback={<FinanceSubTabSkeleton />}>
+              {renderSubTabContent()}
+            </Suspense>
+          </ErrorBoundary>
         </div>
         </div>
         </div>

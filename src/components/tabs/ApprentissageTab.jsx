@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useTranslation } from '../../utils/translations';
+import ErrorBoundary from '../ui/ErrorBoundary';
 
 // Code splitting : Lazy load des vues pour améliorer les performances initiales
 const MatièresView = lazy(() => import('../apprentissage/MatièresView'));
@@ -24,8 +25,25 @@ const LoadingFallback = () => (
 const ApprentissageTab = () => {
   const t = useTranslation();
   
-  // Sous-onglet actif (matieres par défaut)
-  const [currentSubView, setCurrentSubView] = useState('matieres');
+  // ✅ PHASE 1 : Persistance de l'état actif dans localStorage
+  const [currentSubView, setCurrentSubView] = useState(() => {
+    try {
+      const saved = localStorage.getItem('apprentissage.activeSubView');
+      return saved || 'matieres';
+    } catch (error) {
+      console.warn('[ApprentissageTab] Erreur lecture localStorage:', error);
+      return 'matieres';
+    }
+  });
+
+  // ✅ PHASE 1 : Sauvegarder l'état actif dans localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('apprentissage.activeSubView', currentSubView);
+    } catch (error) {
+      console.warn('[ApprentissageTab] Erreur sauvegarde localStorage:', error);
+    }
+  }, [currentSubView]);
 
   // Émettre un événement lors du changement de sous-vue pour la rotation des images de profil
   useEffect(() => {
@@ -85,11 +103,17 @@ const ApprentissageTab = () => {
         </div>
       </div>
 
-      {/* Contenu du sous-onglet */}
+      {/* Contenu du sous-onglet avec ErrorBoundary */}
       <div className="py-6">
-        <Suspense fallback={<LoadingFallback />}>
-          {renderSubView()}
-        </Suspense>
+        <ErrorBoundary
+          context={{ currentSubView, tab: 'apprentissage' }}
+          title={`Erreur dans ${currentSubView}`}
+          message="Une erreur s'est produite dans ce sous-onglet. Vous pouvez réessayer ou changer de sous-onglet."
+        >
+          <Suspense fallback={<LoadingFallback />}>
+            {renderSubView()}
+          </Suspense>
+        </ErrorBoundary>
       </div>
       </div>
     </div>

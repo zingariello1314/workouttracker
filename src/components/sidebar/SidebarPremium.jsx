@@ -69,6 +69,16 @@ const SidebarPremium = memo(() => {
       measureSync(SIDEBAR_OPERATIONS.SIDEBAR_REFRESH, () => {
         if (!sidebarRef.current) return;
 
+        // Vérifier si on est sur le dashboard (via la classe dashboard-active sur le body)
+        const isDashboard = document.body.classList.contains('dashboard-active');
+        
+        // Sur le dashboard, la sidebar doit commencer à 127px du haut
+        if (isDashboard) {
+          sidebarRef.current.style.top = '127px';
+          sidebarRef.current.style.height = 'calc(100vh - 127px)';
+          return;
+        }
+
         const header = document.querySelector('header');
         const navigation = document.querySelector('nav');
         
@@ -94,7 +104,8 @@ const SidebarPremium = memo(() => {
     });
   }, []);
 
-  // Calculer dynamiquement la hauteur du header pour positionner la sidebar
+  // ✅ PHASE 1 : Calculer dynamiquement la hauteur du header pour positionner la sidebar
+  // ✅ Cleanup complet : event listeners, timers, observers
   React.useEffect(() => {
     // Mettre à jour au montage
     throttledUpdatePosition();
@@ -127,6 +138,7 @@ const SidebarPremium = memo(() => {
       attributeFilter: ['class', 'style']
     });
 
+    // ✅ PHASE 1 : Cleanup complet
     return () => {
       window.removeEventListener('resize', handleResize);
       observer.disconnect();

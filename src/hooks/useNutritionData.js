@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { openNutritionDB, isNutritionDBReady } from './nutritionDataUtils';
 import { useDebouncedSave } from './useDebouncedSave';
 // ✅ OPTIMISATION : Configuration centralisée (valeurs par défaut pour debounce)
-import { NutritionConfig } from '../config/nutrition.config';
+import { NutritionConfig, getConfigForExport } from '../config/nutrition.config';
 import { useAuth } from '../context/AuthContext';
 import {
   // DailyMeals

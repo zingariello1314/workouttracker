@@ -213,7 +213,7 @@ const HomePageScrollTransition = () => {
               style={{ 
                 position: 'fixed', 
                 left: 0, 
-                top: '116px', 
+                top: '0px', 
                 bottom: 0, 
                 width: '300px', 
                 zIndex: 60,
