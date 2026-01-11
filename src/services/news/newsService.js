@@ -343,12 +343,26 @@ async function fetchMediaStack(options = {}) {
   const response = await fetch(url);
   
   if (!response.ok) {
-    throw new Error(`MediaStack API error: ${response.status}`);
+    // ✅ CORRECTION : Gestion spécifique des erreurs 429 (rate limit)
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After');
+      const errorMsg = retryAfter 
+        ? `MediaStack API rate limit exceeded. Retry after ${retryAfter} seconds.`
+        : 'MediaStack API rate limit exceeded. Please try again later.';
+      throw new Error(errorMsg);
+    }
+    // ✅ CORRECTION : Gestion autres erreurs HTTP
+    const errorText = await response.text().catch(() => 'Unknown error');
+    throw new Error(`MediaStack API error: ${response.status} - ${errorText.substring(0, 100)}`);
   }
   
   const data = await response.json();
   
   if (data.error) {
+    // ✅ CORRECTION : Gestion erreur rate limit dans body
+    if (data.error.code === 429 || data.error.info?.includes('rate limit')) {
+      throw new Error('MediaStack API rate limit exceeded');
+    }
     throw new Error(`MediaStack API error: ${data.error.info || 'Unknown error'}`);
   }
   
@@ -418,12 +432,38 @@ async function fetchNewsData(options = {}) {
   const response = await fetch(url);
   
   if (!response.ok) {
-    throw new Error(`NewsData.io API error: ${response.status}`);
+    // ✅ CORRECTION : Gestion spécifique des erreurs 422 (requête invalide)
+    if (response.status === 422) {
+      const errorText = await response.text().catch(() => '');
+      try {
+        const errorData = JSON.parse(errorText);
+        // Vérifier si c'est un problème de paramètres
+        if (errorData.message?.includes('category') || errorData.message?.includes('country')) {
+          log.warn(`NewsData.io invalid parameters for category=${category}, country=${country}`);
+          // Retourner tableau vide plutôt que throw (fallback vers autre source)
+          return [];
+        }
+      } catch (e) {
+        // Ignorer erreur parsing
+      }
+      throw new Error(`NewsData.io API error: Invalid request parameters (422)`);
+    }
+    // ✅ CORRECTION : Gestion autres erreurs HTTP
+    if (response.status === 429) {
+      throw new Error('NewsData.io API rate limit exceeded');
+    }
+    const errorText = await response.text().catch(() => 'Unknown error');
+    throw new Error(`NewsData.io API error: ${response.status} - ${errorText.substring(0, 100)}`);
   }
   
   const data = await response.json();
   
   if (data.status !== 'success') {
+    // ✅ CORRECTION : Si erreur mais pas critique, retourner tableau vide
+    if (data.status === 'error' && data.results?.length === 0) {
+      log.warn('NewsData.io returned no results');
+      return [];
+    }
     throw new Error(`NewsData.io API error: ${data.message || 'Unknown error'}`);
   }
   
@@ -670,6 +710,13 @@ class NewsService {
       NEWSDATA: { count: 0, resetAt: this.getMidnightTimestamp() }
     };
     
+    // ✅ CORRECTION : Circuit breaker pour éviter spammer les APIs
+    this.circuitBreakers = {
+      MEDIASTACK: { failures: 0, threshold: 3, state: 'CLOSED', nextAttempt: 0 },
+      NEWSDATA: { failures: 0, threshold: 3, state: 'CLOSED', nextAttempt: 0 },
+      NEWSAPI: { failures: 0, threshold: 3, state: 'CLOSED', nextAttempt: 0 }
+    };
+    
     this.loadCounters();
     this.checkDailyReset();
   }
@@ -788,6 +835,21 @@ class NewsService {
           continue;
         }
         
+        // ✅ CORRECTION : Vérifier circuit breaker avant d'appeler l'API
+        const breaker = this.circuitBreakers[sourceUpper];
+        if (breaker) {
+          if (breaker.state === 'OPEN') {
+            if (Date.now() < breaker.nextAttempt) {
+              log.debug(`Skipping ${source}: circuit breaker OPEN (retry after ${Math.round((breaker.nextAttempt - Date.now()) / 1000)}s)`);
+              continue;
+            } else {
+              // Tenter de rouvrir le circuit (half-open)
+              breaker.state = 'HALF_OPEN';
+              log.debug(`Circuit breaker HALF_OPEN for ${source}, attempting request`);
+            }
+          }
+        }
+        
         let articles = [];
         
         switch (source.toLowerCase()) {
@@ -796,6 +858,11 @@ class NewsService {
               log.debug('Fetching from NewsAPI...');
               articles = await fetchNewsAPI({ category, country, query, page, pageSize });
               this.recordAPIUsage('NEWSAPI');
+              // ✅ CORRECTION : Réinitialiser circuit breaker en cas de succès
+              if (breaker) {
+                breaker.failures = 0;
+                breaker.state = 'CLOSED';
+              }
               log.debug(`NewsAPI returned ${articles.length} articles`);
             }
             break;
@@ -814,6 +881,11 @@ class NewsService {
               log.debug('Fetching from MediaStack...');
               articles = await fetchMediaStack({ category, country, query, page, pageSize });
               this.recordAPIUsage('MEDIASTACK');
+              // ✅ CORRECTION : Réinitialiser circuit breaker en cas de succès
+              if (breaker) {
+                breaker.failures = 0;
+                breaker.state = 'CLOSED';
+              }
               log.debug(`MediaStack returned ${articles.length} articles`);
             }
             break;
@@ -823,6 +895,11 @@ class NewsService {
               log.debug('Fetching from NewsData...');
               articles = await fetchNewsData({ category, country, query, page, pageSize });
               this.recordAPIUsage('NEWSDATA');
+              // ✅ CORRECTION : Réinitialiser circuit breaker en cas de succès
+              if (breaker) {
+                breaker.failures = 0;
+                breaker.state = 'CLOSED';
+              }
               log.debug(`NewsData returned ${articles.length} articles`);
             }
             break;
@@ -854,7 +931,29 @@ class NewsService {
         }
       } catch (error) {
         errors.push({ source, error: error.message });
-        log.warn(`Error fetching from ${source}:`, error.message);
+        
+        // ✅ CORRECTION : Gérer circuit breaker en cas d'erreur
+        const breaker = this.circuitBreakers[source.toUpperCase()];
+        if (breaker) {
+          // Si erreur rate limit (429), ouvrir le circuit breaker
+          if (error.message.includes('rate limit') || error.message.includes('429')) {
+            breaker.failures++;
+            if (breaker.failures >= breaker.threshold) {
+              breaker.state = 'OPEN';
+              breaker.nextAttempt = Date.now() + (5 * 60 * 1000); // Réessayer dans 5 minutes
+              log.warn(`Circuit breaker OPEN for ${source} (rate limit exceeded)`);
+            } else {
+              log.warn(`Circuit breaker: ${breaker.failures}/${breaker.threshold} failures for ${source}`);
+            }
+          }
+        }
+        
+        // ✅ CORRECTION : Ne logger que les erreurs critiques (pas les 422 si on a d'autres sources)
+        if (error.message.includes('422') && sources.length > 1) {
+          log.debug(`Error fetching from ${source}: ${error.message} (skipping, trying other sources)`);
+        } else {
+          log.warn(`Error fetching from ${source}:`, error.message);
+        }
         // Continuer avec la source suivante
       }
     }

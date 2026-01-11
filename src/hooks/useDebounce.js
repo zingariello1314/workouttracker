@@ -1,46 +1,54 @@
+import { useRef, useCallback, useEffect } from 'react';
+
 /**
- * Hook useDebounce - Débounce valeur
+ * Hook pour créer une fonction debounced
  * 
- * ✅ OPTIMISATION Phase 11.3 : Hook debounce réutilisable et optimisé
+ * ✅ PHASE 1 - Étape 1.2 : Hook useDebounce optimisé
  * 
- * Retarde la mise à jour d'une valeur jusqu'à ce qu'un délai se soit écoulé
- * depuis le dernier changement. Utile pour inputs, recherches, API calls.
- * 
- * @param {any} value - Valeur à débouncer
- * @param {number} delay - Délai en ms (défaut: 300ms)
- * @returns {any} Valeur débouncée
+ * @param {Function} fn - Fonction à debouncer
+ * @param {number} delay - Délai en millisecondes (défaut: 300ms)
+ * @returns {Function} Fonction debounced
  * 
  * @example
- * const [query, setQuery] = useState('');
- * const debouncedQuery = useDebounce(query, 500);
+ * const debouncedRefresh = useDebounce(refreshYahooData, 500);
  * 
- * useEffect(() => {
- *   if (debouncedQuery) {
- *     performSearch(debouncedQuery);
- *   }
- * }, [debouncedQuery]);
+ * // Utilisation
+ * debouncedRefresh(); // S'exécutera après 500ms d'inactivité
  */
+export const useDebounce = (fn, delay = 300) => {
+  const timeoutRef = useRef(null);
+  const fnRef = useRef(fn);
 
-import { useState, useEffect } from 'react';
-
-export const useDebounce = (value, delay = 300) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
+  // Mettre à jour la référence de la fonction à chaque changement
   useEffect(() => {
-    // Créer timer pour retarder mise à jour
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
+    fnRef.current = fn;
+  }, [fn]);
 
-    // Cleanup: annuler timer si value change avant delay
+  const debouncedFn = useCallback(
+    (...args) => {
+      // Annuler le timeout précédent si existe
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Créer un nouveau timeout
+      timeoutRef.current = setTimeout(() => {
+        fnRef.current(...args);
+      }, delay);
+    },
+    [delay]
+  );
+
+  // Nettoyer le timeout au démontage
+  useEffect(() => {
     return () => {
-      clearTimeout(handler);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
-  }, [value, delay]);
+  }, []);
 
-  return debouncedValue;
+  return debouncedFn;
 };
 
 export default useDebounce;
-
-

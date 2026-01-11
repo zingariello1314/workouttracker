@@ -8,7 +8,7 @@ import './styles/sidebar-dashboard-offset.css'
 // L'erreur "Module.arguments" vient du WebAssembly et n'est pas capturée par console.error
 // On doit utiliser les event listeners globaux pour la filtrer
 if (typeof window !== 'undefined') {
-  // ✅ OPTIMISATION : Intercepter console.warn pour filtrer warnings TensorFlow.js
+  // ✅ OPTIMISATION : Intercepter console.warn pour filtrer warnings TensorFlow.js et Three.js
   // Le warning "Platform browser has already been set" peut venir de installHook.js (Vite)
   // Doit être fait très tôt, avant tout chargement TensorFlow.js
   const originalWarn = console.warn;
@@ -28,7 +28,7 @@ if (typeof window !== 'undefined') {
       })
       .join(' ');
     
-    // Filtrer warning TensorFlow.js platform (plusieurs variantes)
+    // ✅ CORRECTION : Filtrer warning TensorFlow.js platform (plusieurs variantes)
     // Ce warning peut venir de installHook.js (Vite/React DevTools) ou directement de TensorFlow.js
     if (message.includes('Platform browser has already been set') ||
         message.includes('Overwriting the platform with browser') ||
@@ -38,6 +38,27 @@ if (typeof window !== 'undefined') {
         (message.includes('Overwriting') && message.includes('platform') && message.includes('browser'))) {
       // Ne pas afficher ce warning (normal si TensorFlow.js est chargé plusieurs fois)
       // Peut venir de installHook.js (Vite) qui intercepte les appels TensorFlow.js
+      return;
+    }
+    
+    // ✅ CORRECTION : Filtrer warnings Three.js (multiple instances, version updates)
+    // Ces warnings sont gérés par vite.config.js avec déduplication
+    if (message.includes('Multiple instances of Three.js') ||
+        message.includes('Multiple instances of Three.js being imported') ||
+        message.includes('updating from') && message.includes('to') && (message.includes('114') || message.includes('121'))) {
+      // Ne pas afficher ces warnings (gérés par la configuration Vite)
+      return;
+    }
+    
+    // ✅ CORRECTION : Filtrer warnings Finance attendus (fallbacks normaux, cache stale)
+    // Ces warnings sont normaux dans le fonctionnement du système
+    if (message.includes('Alpha Vantage unexpected response structure') ||
+        message.includes('Alpha Vantage API limitation') ||
+        (message.includes('Finnhub API token invalid') && message.includes('trying Polygon fallback')) ||
+        (message.includes('Polygon historical data delayed') && message.includes('may be available later')) ||
+        (message.includes('Temporary error fetching historical data') && message.includes('DELAYED')) ||
+        (message.includes('Using stale cache') && message.includes('age:'))) {
+      // Ne pas afficher ces warnings (comportement normal du système avec fallbacks)
       return;
     }
     

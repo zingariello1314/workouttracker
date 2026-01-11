@@ -16,6 +16,8 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { intelligentRefresh } from '../services/finance/intelligentRefresh';
+import { financeDataSync } from '../services/finance/financeDataSync';
 
 /**
  * @typedef {Object} FinanceContextValue
@@ -292,25 +294,21 @@ export const FinanceProvider = ({ children }) => {
                 return null;
               }
 
-              // ✅ PHASE 3.10 : Comparaison intelligente (Solution 3)
-              const currentPrice = position.yahooData?.prixActuel;
-              const newPrice = yahooData.prixActuel;
-              const currentVariation = position.yahooData?.variationJour;
-              const newVariation = yahooData.variationJour;
+              // ✅ PHASE 3 - Étape 3.1 : Refresh intelligent avec vérification changements
+              // Utiliser le service intelligentRefresh pour une comparaison deep
+              const shouldRefresh = intelligentRefresh.shouldRefresh(
+                ticker,
+                position.yahooData,
+                yahooData,
+                { maxAge: 60 * 1000, priceThreshold: 0.1 } // 1 minute, 0.1% seuil
+              );
               
-              // Vérifier si données ont vraiment changé
-              const hasChanged = !position.yahooData || 
-                currentPrice !== newPrice ||
-                currentVariation !== newVariation;
-              
-              // Si pas de changement et données récentes (< 1 min), skip
-              if (!hasChanged && position.yahooData?.timestamp) {
-                const dataAge = Date.now() - position.yahooData.timestamp;
-                if (dataAge < 60000) {
-                  log.debug(`Skipping ${ticker} - no changes, data age: ${dataAge}ms`);
-                  skipped.push(ticker);
-                  return null;
-                }
+              if (!shouldRefresh) {
+                log.debug(`Skipping ${ticker} - no significant changes detected`);
+                skipped.push(ticker);
+                // Enregistrer quand même dans l'historique
+                intelligentRefresh.recordRefresh(ticker, yahooData);
+                return null;
               }
 
               invalidatePositionCache(position.id);
@@ -326,6 +324,9 @@ export const FinanceProvider = ({ children }) => {
                   // Ne pas inclure de placeholders pour éviter signaux techniques incorrects
                 }
               };
+
+              // ✅ PHASE 3 - Étape 3.1 : Enregistrer refresh dans l'historique
+              intelligentRefresh.recordRefresh(ticker, yahooData);
 
               return updated;
             } catch (err) {
@@ -787,9 +788,16 @@ export const FinanceProvider = ({ children }) => {
           portfolioRef.current = withCalculations;
           
           // ✅ PHASE 3.12 : Sauvegarder de manière atomique
-          financeStorage.savePortfolio(withCalculations).catch(err => {
-            log.error('Error saving portfolio after add:', err);
-          });
+          await financeStorage.savePortfolio(withCalculations);
+          
+          // ✅ FIX : Synchroniser avec bourseCrypto (InvestissementsSubTab)
+          try {
+            await financeDataSync.syncPortfolioToBourseCrypto(withCalculations);
+            log.debug('[addPosition] Portfolio synchronisé avec bourseCrypto');
+          } catch (syncError) {
+            log.warn('[addPosition] Erreur synchronisation bourseCrypto (non bloquant):', syncError);
+            // Ne pas bloquer l'ajout si synchronisation échoue
+          }
           
           // ✅ PHASE 3.12 : Vérifier que position a été ajoutée (sécurité supplémentaire)
           if (!addedPosition) {

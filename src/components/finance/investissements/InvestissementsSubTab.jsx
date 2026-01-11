@@ -1,6 +1,16 @@
-import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
-import { useTranslation } from '../../../utils/translations';
+import React, { useMemo, lazy } from 'react';
 import { useInvestissements } from '../../../hooks/useInvestissements';
+import InvestissementsErrorBoundary from './InvestissementsErrorBoundary';
+import SubTabWrapper from '../common/SubTabWrapper';
+
+/**
+ * ✅ PHASE 2 - Étape 2.1 : Refactorisé pour utiliser SubTabWrapper
+ * 
+ * Améliorations :
+ * - Code réduit de ~80 lignes à ~30 lignes
+ * - Réutilisation composant générique
+ * - Maintenance facilitée
+ */
 
 // Lazy loading pour performance
 const OrPhysiqueSubTab = lazy(() => import('./OrPhysiqueSubTab'));
@@ -19,17 +29,9 @@ const InvestissementsSubTabSkeleton = () => (
 );
 
 const InvestissementsSubTab = () => {
-  const t = useTranslation();
   const { loading } = useInvestissements();
-  const [activeSubTab, setActiveSubTab] = useState('dashboard');
 
-  // Émettre un événement lors du changement de sous-onglet pour la rotation des images de profil
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('tab-change', { 
-      detail: { tab: activeSubTab, isSubTab: true } 
-    }));
-  }, [activeSubTab]);
-
+  // ✅ PHASE 2 : Définition des sous-onglets
   const subTabs = useMemo(() => [
     { id: 'dashboard', labelKey: 'finance.investissements.subTabs.dashboard', icon: '📊', component: DashboardUnifieSubTab },
     { id: 'or', labelKey: 'finance.investissements.subTabs.or', icon: '🥇', component: OrPhysiqueSubTab },
@@ -37,39 +39,21 @@ const InvestissementsSubTab = () => {
     { id: 'bourse-crypto', labelKey: 'finance.investissements.subTabs.bourseCrypto', icon: '📈', component: BourseCryptoSubTab }
   ], []);
 
-  const ActiveComponent = subTabs.find(tab => tab.id === activeSubTab)?.component;
-
   if (loading) {
     return <InvestissementsSubTabSkeleton />;
   }
 
   return (
     <div className="investissements-sub-tab-container flex flex-col h-full">
-      {/* Sub-navigation */}
-      <nav className="sub-tabs-navigation flex gap-4 p-4 bg-slate-800/50 rounded-t-lg border-b border-slate-700/50 mb-4">
-        {subTabs.map(tab => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveSubTab(tab.id)}
-            className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
-              activeSubTab === tab.id
-                ? 'gradient-button-premium-variant'
-                : ''
-            }`}
-          >
-            <span className="text-lg">{tab.icon}</span>
-            <span className="text-sm font-medium">{t(tab.labelKey)}</span>
-          </button>
-        ))}
-      </nav>
-
-      {/* Main content area */}
-      <main className="investissements-main-content flex-1 p-6 bg-slate-800/50 rounded-b-lg">
-        <Suspense fallback={<InvestissementsSubTabSkeleton />}>
-          {ActiveComponent && <ActiveComponent />}
-        </Suspense>
-      </main>
+      {/* ✅ PHASE 2 : Utilisation du composant générique */}
+      <SubTabWrapper
+        subTabs={subTabs}
+        defaultSubTab="dashboard"
+        Skeleton={InvestissementsSubTabSkeleton}
+        ErrorBoundary={InvestissementsErrorBoundary}
+        storageKey="finance.investissements.activeSubTab"
+        enablePrefetch={true}
+      />
     </div>
   );
 };

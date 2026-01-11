@@ -5,7 +5,7 @@ import { workoutProgram } from '../data/workoutProgram';
 import { findExerciseInDatabase } from '../data/exerciseDatabase';
 import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 // ✅ PHASE 4 : Import des utilitaires de l'historique
-import {
+import { 
   getWorkoutHistoryFromData,
   getUniqueExercisesFromData,
   getTodayRepsFromData,
@@ -383,7 +383,7 @@ const WorkoutProvider = ({ children }) => {
     }
     
     // Dernier fallback
-      return {
+      return { 
         name: null,
         focus: null,
         exercices: [],

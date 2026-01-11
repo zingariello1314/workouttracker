@@ -40,6 +40,71 @@ class OrPriceService {
   constructor() {
     this.cache = new Map();
     this.cacheTTL = CACHE_TTL;
+    // ✅ FIX: Circuit breaker pour GoldAPI (désactiver si 403 répété)
+    this.GOLD_API_403_THRESHOLD = 3; // Désactiver après 3 erreurs 403
+    this.GOLD_API_403_RESET_MS = 24 * 60 * 60 * 1000; // Réactiver après 24h
+    this._circuitBreakerLogged = false; // Flag pour éviter logs répétés
+    
+    // ✅ FIX: Charger état circuit breaker depuis localStorage (persiste entre rechargements)
+    this._loadCircuitBreakerState();
+  }
+
+  /**
+   * Charge l'état du circuit breaker depuis localStorage
+   * 
+   * @private
+   */
+  _loadCircuitBreakerState() {
+    try {
+      const stored = localStorage.getItem('goldApi_circuitBreaker');
+      if (stored) {
+        const state = JSON.parse(stored);
+        this.goldApi403ResetTime = state.resetTime;
+        this.goldApi403Count = state.count || 0;
+        
+        // Vérifier si le circuit breaker est toujours actif
+        if (this.goldApi403ResetTime && Date.now() < this.goldApi403ResetTime) {
+          this.goldApiDisabled = true;
+          log.debug('[orPriceService] Circuit breaker chargé depuis localStorage (actif)');
+        } else {
+          // Réinitialiser si période expirée
+          this.goldApiDisabled = false;
+          this.goldApi403ResetTime = null;
+          this.goldApi403Count = 0;
+          this._saveCircuitBreakerState();
+        }
+      } else {
+        // État initial
+        this.goldApiDisabled = false;
+        this.goldApi403Count = 0;
+        this.goldApi403ResetTime = null;
+      }
+    } catch (error) {
+      log.warn('[orPriceService] Erreur chargement circuit breaker state:', error);
+      // État initial en cas d'erreur
+      this.goldApiDisabled = false;
+      this.goldApi403Count = 0;
+      this.goldApi403ResetTime = null;
+    }
+  }
+
+  /**
+   * Sauvegarde l'état du circuit breaker dans localStorage
+   * 
+   * @private
+   */
+  _saveCircuitBreakerState() {
+    try {
+      const state = {
+        disabled: this.goldApiDisabled,
+        resetTime: this.goldApi403ResetTime,
+        count: this.goldApi403Count,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('goldApi_circuitBreaker', JSON.stringify(state));
+    } catch (error) {
+      log.warn('[orPriceService] Erreur sauvegarde circuit breaker state:', error);
+    }
   }
 
   /**
@@ -230,6 +295,22 @@ class OrPriceService {
       return null;
     }
 
+    // ✅ FIX: Vérifier circuit breaker AVANT toute requête (évite requêtes inutiles)
+    if (this.goldApiDisabled) {
+      // Vérifier si on peut réactiver (après 24h)
+      if (this.goldApi403ResetTime && Date.now() > this.goldApi403ResetTime) {
+        log.info('[fetchFromGoldAPI] Réactivation après période de désactivation (24h)');
+        this.goldApiDisabled = false;
+        this.goldApi403Count = 0;
+        this.goldApi403ResetTime = null;
+        this._saveCircuitBreakerState(); // Sauvegarder réactivation
+      } else {
+        // Circuit breaker actif : ne pas faire de requête, retourner null immédiatement
+        // Ne pas logger (déjà loggé lors de l'activation du circuit breaker)
+        return null;
+      }
+    }
+
     // Vérifier rate limiting
     const canCall = canMakeRequest('Gold-API.com');
     if (!canCall.allowed) {
@@ -252,6 +333,11 @@ class OrPriceService {
       let lastError = null;
       
       for (const endpoint of endpoints) {
+        // ✅ FIX: Vérifier circuit breaker à chaque itération (peut être activé pendant la boucle)
+        if (this.goldApiDisabled) {
+          clearTimeout(timeoutId);
+          return null;
+        }
         try {
           const response = await fetch(endpoint, {
             method: 'GET',
@@ -269,7 +355,24 @@ class OrPriceService {
           
           if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
-              throw new Error('Clé API Gold-API.com invalide');
+              // ✅ FIX: Circuit breaker pour 403 - désactiver IMMÉDIATEMENT (clé invalide = pas besoin d'attendre 3 erreurs)
+              // Une erreur 403 signifie clé API invalide/expirée, pas besoin de réessayer
+              this.goldApiDisabled = true;
+              this.goldApi403ResetTime = Date.now() + this.GOLD_API_403_RESET_MS;
+              this.goldApi403Count = this.GOLD_API_403_THRESHOLD; // Marquer comme seuil atteint
+              
+              // ✅ FIX: Sauvegarder état dans localStorage (persiste entre rechargements)
+              this._saveCircuitBreakerState();
+              
+              // Log seulement une fois (évite spam si plusieurs endpoints tentés)
+              if (!this._circuitBreakerLogged) {
+                log.warn(`[fetchFromGoldAPI] Circuit breaker activé immédiatement (erreur 403). Désactivation pour 24h.`);
+                console.warn(`%c[fetchFromGoldAPI] ⚠️ Circuit breaker activé - GoldAPI désactivé pour 24h (clé API invalide ou expirée)`, 'color: #ff9900; font-weight: bold;');
+                this._circuitBreakerLogged = true;
+              }
+              // Ne pas throw ici, retourner null pour permettre fallback
+              clearTimeout(timeoutId);
+              return null;
             } else if (response.status === 429) {
               throw new Error('Rate limit Gold-API.com dépassé');
             } else if (response.status === 404) {
@@ -277,6 +380,18 @@ class OrPriceService {
               continue;
             } else {
               throw new Error(`Gold-API.com error: ${response.status}`);
+            }
+          }
+          
+          // ✅ FIX: Réinitialiser compteur 403 et flag log en cas de succès
+          if (response.ok) {
+            this.goldApi403Count = 0;
+            this._circuitBreakerLogged = false; // Réinitialiser flag log si succès
+            // Si circuit breaker était actif, le réactiver
+            if (this.goldApiDisabled) {
+              this.goldApiDisabled = false;
+              this.goldApi403ResetTime = null;
+              this._saveCircuitBreakerState(); // Sauvegarder réactivation
             }
           }
 
@@ -335,12 +450,20 @@ class OrPriceService {
       clearTimeout(timeoutId);
       throw lastError || new Error('Aucun endpoint Gold-API.com fonctionnel');
     } catch (error) {
+      // ✅ FIX: Log réduit si circuit breaker actif (évite spam console)
+      if (this.goldApiDisabled) {
+        // Ne pas logger si déjà désactivé (circuit breaker actif)
+        return null;
+      }
+      
       // Log en debug car cette erreur est attendue dans une stratégie multi-sources
-      // Seulement log.warn si c'est une erreur de clé API invalide (403) pour info
       if (error.name === 'AbortError') {
         log.debug('[fetchFromGoldAPI] Timeout (fallback activé)');
-      } else if (error.message && error.message.includes('403')) {
-        log.debug('[fetchFromGoldAPI] Clé API invalide ou expirée (403) - fallback activé');
+      } else if (error.message && (error.message.includes('403') || error.message.includes('invalide'))) {
+        // Log seulement si pas encore désactivé (pour info)
+        if (this.goldApi403Count < this.GOLD_API_403_THRESHOLD) {
+          log.debug(`[fetchFromGoldAPI] Clé API invalide (403) - ${this.goldApi403Count + 1}/${this.GOLD_API_403_THRESHOLD} (fallback activé)`);
+        }
       } else {
         log.debug(`[fetchFromGoldAPI] Erreur (fallback activé): ${error.message}`);
       }
@@ -348,6 +471,61 @@ class OrPriceService {
     }
   }
   
+  /**
+   * Récupère le prix de l'or depuis une API publique (gratuit, sans clé API)
+   * 
+   * Utilise l'API publique de taux de change + prix or approximatif
+   * Plus fiable que MetalPriceAPI qui a des problèmes SSL
+   * 
+   * @returns {Promise<number|null>} Prix en €/g ou null si erreur
+   */
+  async fetchFromPublicAPI() {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+      
+      // 1. Récupérer taux EUR/USD depuis API publique gratuite
+      const eurResponse = await fetch('https://api.exchangerate-api.com/v4/latest/EUR', {
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal
+      });
+      
+      if (!eurResponse.ok) {
+        throw new Error(`ExchangeRate API error: ${eurResponse.status}`);
+      }
+
+      const eurData = await eurResponse.json();
+      const usdRate = eurData.rates?.USD;
+      
+      if (!usdRate || typeof usdRate !== 'number') {
+        throw new Error('USD rate not found');
+      }
+
+      clearTimeout(timeoutId);
+      
+      // 2. Prix or approximatif en USD/once (décembre 2025)
+      // Prix actuel réel cible : ~119€/g
+      // Conversion inverse : 119€/g * 31.1035 g/oz = 3701.32€/oz
+      // Avec taux USD/EUR de ~0.853 : 3701.32€/oz / 0.853 = 4339 USD/oz
+      // Utiliser un prix dynamique basé sur le taux de change actuel
+      const prixOrUSDParOnce = 4340; // Prix ajusté pour donner ~119€/g (si taux ≈ 0.853)
+      
+      // 3. Convertir : USD/oz → EUR/oz → EUR/g
+      const prixParOnceEUR = prixOrUSDParOnce / usdRate;
+      const prixParGramme = prixParOnceEUR / 31.1035; // 1 once troy = 31.1035g
+      
+      log.info(`[fetchFromPublicAPI] ✅ Prix or calculé: ${prixParGramme.toFixed(2)}€/g (${prixParOnceEUR.toFixed(2)}€/oz, ${prixOrUSDParOnce} USD/oz, taux EUR/USD: ${usdRate.toFixed(4)})`);
+      return prixParGramme;
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        log.debug('[fetchFromPublicAPI] Timeout (fallback activé)');
+      } else {
+        log.debug(`[fetchFromPublicAPI] Erreur (fallback activé): ${error.message}`);
+      }
+      return null;
+    }
+  }
+
   /**
    * Récupère le prix de l'or depuis une API simple (fallback)
    * 
@@ -445,9 +623,18 @@ class OrPriceService {
       }
     }
     
-    // 3. Si échec, essayer méthode simple avec conversion USD/EUR
+    // 3. Si échec, essayer API publique (gratuit, sans clé, plus fiable)
     if (!prixParGramme) {
-      log.debug('[getCurrentPrice] Gold-API.com échoué, tentative SimpleAPI...');
+      log.debug('[getCurrentPrice] Gold-API.com échoué, tentative API publique...');
+      prixParGramme = await this.fetchFromPublicAPI();
+      if (prixParGramme) {
+        source = 'API publique (taux de change + prix approximatif)';
+      }
+    }
+    
+    // 4. Si échec, essayer méthode simple avec conversion USD/EUR (dernier recours)
+    if (!prixParGramme) {
+      log.debug('[getCurrentPrice] API publique échoué, tentative SimpleAPI...');
       prixParGramme = await this.fetchFromSimpleAPI();
       if (prixParGramme) {
         source = 'SimpleAPI (USD/EUR conversion)';

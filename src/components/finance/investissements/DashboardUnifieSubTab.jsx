@@ -22,17 +22,29 @@ const DashboardUnifieSubTab = () => {
     initialLoad: true
   });
 
-  // ✅ FIX: Calculer allocation directement (cache interne évite recalculs)
-  const allocation = calculateAllocation();
+  // ✅ FIX: Utiliser useMemo pour allocation (évite recalculs et boucles infinies)
+  // calculateAllocation est déjà mémorisé avec useCallback dans useInvestissements
+  // On utilise useMemo ici pour éviter que l'objet allocation change de référence à chaque render
+  // calculateAllocation change seulement si or, liquidites, bourseCrypto ou prixOr changent
+  const allocation = useMemo(() => {
+    return calculateAllocation();
+  }, [calculateAllocation]);
 
-  // Générer alertes
-  useEffect(() => {
+  // ✅ FIX: Générer alertes avec useMemo (évite recalculs et boucles infinies)
+  // Retirer calculateAllocation des dépendances (fonction, ne devrait pas être dans deps)
+  // Utiliser allocation directement (déjà mémorisé ci-dessus)
+  const alertsMemo = useMemo(() => {
     if (!loading && allocation) {
       const data = { or, liquidites, bourseCrypto, allocation };
-      const generatedAlerts = investissementsAlerts.analyze(data);
-      setAlerts(generatedAlerts);
+      return investissementsAlerts.analyze(data);
     }
-  }, [or, liquidites, bourseCrypto, allocation, loading, calculateAllocation]);
+    return [];
+  }, [or, liquidites, bourseCrypto, allocation, loading]);
+
+  // ✅ FIX: Synchroniser alertsMemo avec state seulement si différent
+  useEffect(() => {
+    setAlerts(alertsMemo);
+  }, [alertsMemo]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -64,11 +76,44 @@ const DashboardUnifieSubTab = () => {
   // Utiliser allocation calculée directement (déjà calculé ci-dessus)
   const allocationData = allocation;
   
+  // ✅ FIX: Gérer cas où allocation est null (ne devrait plus arriver avec le fix dans useInvestissements)
+  // Mais garder cette vérification pour robustesse
   if (!allocationData) {
+    // Si données existent mais allocation null, c'est un problème de calcul
+    // Afficher message d'erreur au lieu de rester bloqué
     return (
       <div className="text-center py-12 text-slate-400">
         <div className="text-6xl mb-4">📊</div>
-        <p className="text-lg mb-2">Calcul de l'allocation en cours...</p>
+        <p className="text-lg mb-2">Impossible de calculer l'allocation</p>
+        <p className="text-sm">Vérifiez vos données d'investissements</p>
+      </div>
+    );
+  }
+  
+  // ✅ FIX: Gérer cas patrimoineTotal === 0 (pas encore d'investissements)
+  if (allocationData.total === 0) {
+    return (
+      <div className="text-center py-12 text-slate-400">
+        <div className="text-6xl mb-4">📊</div>
+        <p className="text-lg mb-2 mb-4">Aucun investissement enregistré</p>
+        <p className="text-sm mb-6">Commencez par ajouter vos investissements :</p>
+        <div className="flex flex-wrap gap-4 justify-center">
+          <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 text-left">
+            <div className="text-2xl mb-2">🥇</div>
+            <div className="text-sm font-medium text-white mb-1">Or Physique</div>
+            <div className="text-xs text-slate-400">Ajoutez vos acquisitions d'or</div>
+          </div>
+          <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 text-left">
+            <div className="text-2xl mb-2">💰</div>
+            <div className="text-sm font-medium text-white mb-1">Liquidités</div>
+            <div className="text-xs text-slate-400">Enregistrez vos liquidités</div>
+          </div>
+          <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-4 text-left">
+            <div className="text-2xl mb-2">📈</div>
+            <div className="text-sm font-medium text-white mb-1">Bourse & Crypto</div>
+            <div className="text-xs text-slate-400">Ajoutez vos positions</div>
+          </div>
+        </div>
       </div>
     );
   }

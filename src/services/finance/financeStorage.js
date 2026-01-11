@@ -5,6 +5,7 @@
 
 import { openDB } from 'idb';
 import logger from '../../utils/logger';
+import { compressFinanceData, decompressFinanceData, isCompressed } from './financeCompression';
 
 const log = logger.module('financeStorage');
 
@@ -185,7 +186,8 @@ class FinanceStorage {
    * @returns {Promise<Object|null>} Données en cache ou null si expiré/inexistant
    */
   async getYahooCache(ticker, options = {}) {
-    const { ttl = 15 * 60 * 1000, allowStale = false } = options;
+    const { ttl = 15 * 60 * 1000, allowStale = false, maxStaleAge = 7 * 24 * 60 * 60 * 1000 } = options;
+    // maxStaleAge par défaut : 7 jours (évite utiliser cache trop vieux)
     
     try {
       await this.initPromise;
@@ -197,10 +199,25 @@ class FinanceStorage {
         return null;
       }
       
-      // ✅ PHASE 3.14 : Vérification TTL stricte
+      // ✅ CORRECTION : Vérification TTL stricte + limite âge max pour stale
       const now = Date.now();
       const age = now - cached.timestamp;
       const isExpired = age >= ttl;
+      const isTooOld = age >= maxStaleAge;
+      
+      // Si cache trop vieux, ne pas l'utiliser même si allowStale
+      if (isTooOld) {
+        log.warn(`Cache too old for ${ticker} (age: ${Math.round(age / (24 * 60 * 60 * 1000))} days, max: ${Math.round(maxStaleAge / (24 * 60 * 60 * 1000))} days), ignoring`);
+        // Supprimer le cache trop vieux
+        try {
+          const deleteTx = this.db.transaction(STORES.YAHOO_CACHE, 'readwrite');
+          const deleteStore = deleteTx.objectStore(STORES.YAHOO_CACHE);
+          await deleteStore.delete(ticker);
+        } catch (deleteError) {
+          log.warn('Error deleting old cache:', deleteError);
+        }
+        return null;
+      }
       
       if (isExpired && !allowStale) {
         // Cache expiré et stale non autorisé : retourner null
@@ -209,13 +226,20 @@ class FinanceStorage {
       }
       
       if (isExpired && allowStale) {
-        // Cache expiré mais stale autorisé : logger warning
-        log.warn(`Using stale cache for ${ticker} (age: ${Math.round(age / 1000)}s, TTL: ${Math.round(ttl / 1000)}s)`);
+        // ✅ CORRECTION : Cache stale = logger en debug seulement (pas de warning répétitif)
+        // Le cache stale est une fonctionnalité normale, pas une erreur
+        log.debug(`Using stale cache for ${ticker} (age: ${Math.round(age / 1000)}s, TTL: ${Math.round(ttl / 1000)}s)`);
       } else {
         log.debug(`Cache hit for ${ticker} (age: ${Math.round(age / 1000)}s)`);
       }
       
-      return cached.data;
+      // ✅ PHASE 3 - Étape 3.5 : Décompression automatique si données compressées
+      const data = cached.data;
+      if (isCompressed(data)) {
+        return decompressFinanceData(data);
+      }
+      
+      return data;
     } catch (error) {
       log.error('Error getting Yahoo cache:', error);
       return null;
@@ -227,9 +251,14 @@ class FinanceStorage {
       await this.initPromise;
       const tx = this.db.transaction(STORES.YAHOO_CACHE, 'readwrite');
       const store = tx.objectStore(STORES.YAHOO_CACHE);
+      
+      // ✅ PHASE 3 - Étape 3.5 : Compression automatique pour données volumineuses
+      // Compression seulement si données > 10KB (évite overhead pour petites données)
+      const compressedData = compressFinanceData(data, { threshold: 10 * 1024 });
+      
       await store.put({
         ticker,
-        data,
+        data: compressedData,
         timestamp: Date.now()
       });
     } catch (error) {

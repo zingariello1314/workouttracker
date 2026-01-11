@@ -15,6 +15,7 @@ import { investissementsStorage } from '../services/finance/investissementsStora
 import { useOrPrice } from './useOrPrice';
 import { LRUCache } from '../utils/lruCache';
 import { syncAll as syncAllIncremental } from '../services/finance/investissementsSyncService';
+import { financeDataSync } from '../services/finance/financeDataSync';
 import logger from '../utils/logger';
 
 const log = logger.module('useInvestissements');
@@ -267,6 +268,18 @@ export const useInvestissements = () => {
         positions
       });
       setBourseCrypto(updated);
+      
+      // ✅ FIX : Synchroniser avec portfolio (BourseSubTab) si position de type action/etf
+      if (position.type === 'action' || position.type === 'etf' || !position.type) {
+        try {
+          await financeDataSync.syncBourseCryptoToPortfolio(updated);
+          log.debug('[addPosition] bourseCrypto synchronisé avec portfolio');
+        } catch (syncError) {
+          log.warn('[addPosition] Erreur synchronisation portfolio (non bloquant):', syncError);
+          // Ne pas bloquer l'ajout si synchronisation échoue
+        }
+      }
+      
       return updated;
     } catch (err) {
       log.error('Error adding position:', err);
@@ -321,8 +334,27 @@ export const useInvestissements = () => {
 
     const patrimoineTotal = valorisationOr + totalLiquidites + valorisationBourseCrypto;
 
+    // ✅ FIX: Retourner allocation avec valeurs à 0 au lieu de null si patrimoineTotal === 0
+    // Permet d'afficher le dashboard même si pas encore d'investissements
     if (patrimoineTotal === 0) {
-      return null;
+      const emptyAllocation = {
+        or: 0,
+        liquidites: 0,
+        bourseCrypto: 0,
+        total: 0,
+        details: {
+          valorisationOr: 0,
+          totalLiquidites: 0,
+          valorisationBourseCrypto: 0,
+          prixOr: prixOrActuel
+        },
+        _cached: true,
+        _cacheKey: `allocation_empty_${dataHash}`,
+        _calculatedAt: Date.now()
+      };
+      // Mettre en cache pour éviter recalculs
+      allocationCache.set(`allocation_empty_${dataHash}`, emptyAllocation);
+      return emptyAllocation;
     }
 
     // ✅ SOLUTION 2.2 : Calculs de pourcentages avec division sécurisée

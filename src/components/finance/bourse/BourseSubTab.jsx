@@ -26,6 +26,7 @@
 import React, { useState, Suspense, lazy, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useFinance } from '../../../context/FinanceContext';
+import { useDebounce } from '../../../hooks/useDebounce';
 import PortfolioTable from './PortfolioTable';
 import AddPositionForm from './AddPositionForm';
 import PortfolioSummary from './PortfolioSummary';
@@ -54,13 +55,19 @@ const BourseSubTab = () => {
   // ✅ PHASE 6 - Étape 6.1 : État pour navigation vers page détail
   const [selectedPositionId, setSelectedPositionId] = useState(null);
   
-  // ✅ OPTIMISATION Phase 2.2 : Memoization portfolio pour éviter re-renders enfants
-  // Hash basé sur données critiques seulement (ID, quantite, prixActuel, plusValueEuro)
-  const memoizedPortfolio = useMemo(() => portfolio, [
+  // ✅ PHASE 1 - Étape 1.3 : Memoization portfolio optimisée
+  // Utiliser références d'objets plutôt que string hash pour meilleure performance
+  const memoizedPortfolio = useMemo(() => {
+    return portfolio;
+  }, [
     portfolio.length,
-    portfolio.map(p => 
-      `${p.id}_${p.quantite}_${p.prixEntree}_${p.yahooData?.prixActuel || 0}_${p.calculs?.plusValueEuro || 0}`
-    ).join(',')
+    // Hash basé sur IDs seulement (plus rapide que string complet)
+    portfolio.map(p => p.id).join(','),
+    // Hash basé sur valeurs critiques (sans recréer string à chaque render)
+    portfolio.reduce((sum, p) => {
+      return sum + (p.quantite || 0) + (p.prixEntree || 0) + 
+             (p.yahooData?.prixActuel || 0) + (p.calculs?.plusValueEuro || 0);
+    }, 0)
   ]);
 
   // ✅ OPTIMISATION Phase 2.2 : useCallback pour handlers (évite re-création fonctions)
@@ -76,9 +83,14 @@ const BourseSubTab = () => {
     setViewMode(mode);
   }, []);
 
-  const handleRefresh = useCallback(async () => {
+  // ✅ PHASE 1 - Étape 1.2 : Debounce refresh pour éviter multiples appels
+  const debouncedRefresh = useDebounce(async () => {
     await refreshYahooData();
-  }, [refreshYahooData]);
+  }, 500);
+
+  const handleRefresh = useCallback(() => {
+    debouncedRefresh();
+  }, [debouncedRefresh]);
 
   // ✅ PHASE 6 - Étape 6.1 : Handlers pour navigation vers page détail
   const handlePositionClick = useCallback((positionId) => {

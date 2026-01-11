@@ -5,9 +5,33 @@
 
 import { getApiKey, hasApiKey } from '../../config/apiKeys';
 import { financeStorage } from './financeStorage';
+import { intelligentCache } from './intelligentCache';
+import ImprovedCircuitBreaker from './improvedCircuitBreaker';
 import logger from '../../utils/logger';
 
 const log = logger.module('yahooFinanceService');
+
+// ✅ PHASE 4 - Étape 4.1 : Métriques API pour validation
+const apiMetrics = {
+  calls: [],
+  getStats: () => {
+    if (apiMetrics.calls.length === 0) return null;
+    const durations = apiMetrics.calls.map(c => c.duration);
+    return {
+      total: apiMetrics.calls.length,
+      avgDuration: durations.reduce((a, b) => a + b, 0) / durations.length,
+      minDuration: Math.min(...durations),
+      maxDuration: Math.max(...durations)
+    };
+  },
+  record: (endpoint, duration) => {
+    apiMetrics.calls.push({ endpoint, duration, timestamp: Date.now() });
+    // Garder seulement les 100 derniers appels
+    if (apiMetrics.calls.length > 100) {
+      apiMetrics.calls.shift();
+    }
+  }
+};
 
 class YahooFinanceService {
   constructor() {
@@ -22,40 +46,111 @@ class YahooFinanceService {
       backoffBase: 1000,
       backoffMultiplier: 2
     };
-    this.circuitBreaker = {
-      failures: 0,
+    // ✅ PHASE 3 - Étape 3.4 : Circuit breaker amélioré
+    this.circuitBreaker = new ImprovedCircuitBreaker({
       threshold: 5,
       timeout: 60000,
-      state: 'CLOSED' // CLOSED, OPEN, HALF_OPEN
-    };
+      halfOpenTimeout: 30000,
+      halfOpenMaxAttempts: 3,
+      rateLimitTimeout: 5 * 60 * 1000,
+      name: 'YahooFinanceService'
+    });
+    
+    // ✅ FIX: Circuit breaker pour Finnhub (désactiver si 403 répété)
+    this.finnhubDisabled = false;
+    this.finnhub403ResetTime = null;
+    this.FINNHUB_403_RESET_MS = 24 * 60 * 60 * 1000; // 24h
+    this._finnhubCircuitBreakerLogged = false;
+    this._loadFinnhubCircuitBreakerState();
+  }
+
+  /**
+   * Charge l'état du circuit breaker Finnhub depuis localStorage
+   * 
+   * @private
+   */
+  _loadFinnhubCircuitBreakerState() {
+    try {
+      const stored = localStorage.getItem('finnhub_circuitBreaker');
+      if (stored) {
+        const state = JSON.parse(stored);
+        this.finnhub403ResetTime = state.resetTime;
+        
+        // Vérifier si le circuit breaker est toujours actif
+        if (this.finnhub403ResetTime && Date.now() < this.finnhub403ResetTime) {
+          this.finnhubDisabled = true;
+          log.debug('[yahooFinanceService] Circuit breaker Finnhub chargé depuis localStorage (actif)');
+        } else {
+          // Réinitialiser si période expirée
+          this.finnhubDisabled = false;
+          this.finnhub403ResetTime = null;
+          this._saveFinnhubCircuitBreakerState();
+        }
+      } else {
+        // État initial
+        this.finnhubDisabled = false;
+        this.finnhub403ResetTime = null;
+      }
+    } catch (error) {
+      log.warn('[yahooFinanceService] Erreur chargement circuit breaker Finnhub:', error);
+      this.finnhubDisabled = false;
+      this.finnhub403ResetTime = null;
+    }
+  }
+
+  /**
+   * Sauvegarde l'état du circuit breaker Finnhub dans localStorage
+   * 
+   * @private
+   */
+  _saveFinnhubCircuitBreakerState() {
+    try {
+      const state = {
+        disabled: this.finnhubDisabled,
+        resetTime: this.finnhub403ResetTime,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('finnhub_circuitBreaker', JSON.stringify(state));
+    } catch (error) {
+      log.warn('[yahooFinanceService] Erreur sauvegarde circuit breaker Finnhub:', error);
+    }
   }
 
   async getQuoteData(ticker, options = {}) {
     const { useCache = true, forceRefresh = false } = options;
     
-    // ✅ PHASE 3 - Étape 3.14 : Vérifier cache IndexedDB avec TTL strict
+    // ✅ PHASE 2 - Étape 2.3 : Cache intelligent avec comparaison deep
     if (useCache && !forceRefresh) {
+      // Vérifier cache intelligent d'abord (plus rapide)
+      const intelligentCached = intelligentCache.get(ticker, {
+        ttl: this.cacheTTL.quote,
+        allowStale: false
+      });
+      if (intelligentCached) {
+        return intelligentCached;
+      }
+
+      // Fallback vers IndexedDB cache
       const cached = await financeStorage.getYahooCache(ticker, {
         ttl: this.cacheTTL.quote,
         allowStale: false // TTL strict : pas de cache expiré
       });
       if (cached) {
+        // Mettre en cache intelligent aussi
+        intelligentCache.set(ticker, cached, { ttl: this.cacheTTL.quote });
         return cached;
       }
     }
 
-    // ✅ PHASE 3.14 : Vérifier circuit breaker (peut utiliser cache stale en dernier recours)
-    if (this.circuitBreaker.state === 'OPEN') {
-      if (Date.now() < this.circuitBreaker.nextAttempt) {
-        log.warn('Circuit breaker OPEN, trying stale cache as last resort');
-        const cached = await financeStorage.getYahooCache(ticker, {
-          ttl: this.cacheTTL.quote,
-          allowStale: true // Circuit breaker : autoriser stale cache
-        });
-        if (cached) return cached;
-        throw new Error('Circuit breaker is OPEN and no cache available');
-      }
-      this.circuitBreaker.state = 'HALF_OPEN';
+    // ✅ PHASE 3 - Étape 3.4 : Circuit breaker amélioré avec vérification
+    if (!this.circuitBreaker.isAvailable()) {
+      log.warn('Circuit breaker not available, trying stale cache as last resort');
+      const cached = await financeStorage.getYahooCache(ticker, {
+        ttl: this.cacheTTL.quote,
+        allowStale: true // Circuit breaker : autoriser stale cache
+      });
+      if (cached) return cached;
+      throw new Error('Circuit breaker is not available and no cache available');
     }
 
     // 3. Essayer Alpha Vantage (priorité)
@@ -67,7 +162,17 @@ class YahooFinanceService {
         if (!normalized || !normalized.prixActuel || normalized.prixActuel <= 0) {
           throw new Error(`Invalid normalized data from Alpha Vantage for ${ticker}`);
         }
-        await financeStorage.setYahooCache(ticker, normalized);
+        
+        // ✅ PHASE 2 - Étape 2.3 : Vérifier si données identiques avant cache
+        const existingCache = intelligentCache.get(ticker, { allowStale: true });
+        if (!existingCache || !intelligentCache.get(ticker, { dataToCompare: normalized })) {
+          // Données différentes ou pas de cache : mettre à jour
+          await financeStorage.setYahooCache(ticker, normalized);
+          intelligentCache.set(ticker, normalized, { ttl: this.cacheTTL.quote });
+        } else {
+          log.debug(`Data unchanged for ${ticker}, using existing cache`);
+        }
+        
         this.onSuccess();
         return normalized;
       } catch (error) {
@@ -83,26 +188,57 @@ class YahooFinanceService {
             log.debug(`Alpha Vantage failed for ${ticker}:`, error.message);
           }
         }
-        this.onFailure();
+        this.onFailure(error);
       }
     }
 
     // 4. Fallback Finnhub
     if (hasApiKey('FINNHUB')) {
-      try {
-        const data = await this.fetchFinnhub(ticker);
-        await financeStorage.setYahooCache(ticker, data);
-        this.onSuccess();
-        return this.normalizeQuoteData(data, 'finnhub');
-      } catch (error) {
-        // ✅ OPTIMISATION : Logger seulement en debug si d'autres APIs disponibles
-        const hasOtherApis = hasApiKey('POLYGON');
-        if (hasOtherApis) {
-          log.debug(`Finnhub failed for ${ticker}, trying fallback:`, error.message);
+      // ✅ FIX: Vérifier circuit breaker Finnhub AVANT requête
+      if (this.finnhubDisabled) {
+        // Vérifier si on peut réactiver (après 24h)
+        if (this.finnhub403ResetTime && Date.now() > this.finnhub403ResetTime) {
+          log.info('[yahooFinanceService] Réactivation Finnhub après période de désactivation (24h)');
+          this.finnhubDisabled = false;
+          this.finnhub403ResetTime = null;
+          this._saveFinnhubCircuitBreakerState();
         } else {
-          log.warn(`Finnhub failed for ${ticker}:`, error.message);
+          // Circuit breaker actif : skip Finnhub, essayer Polygon
+          log.debug(`[yahooFinanceService] Circuit breaker Finnhub actif (403) - skip pour ${ticker}`);
         }
-        this.onFailure();
+      }
+      
+      // Essayer seulement si circuit breaker non actif
+      if (!this.finnhubDisabled) {
+        try {
+          const data = await this.fetchFinnhub(ticker);
+          const normalized = this.normalizeQuoteData(data, 'finnhub');
+          // ✅ PHASE 2 - Étape 2.3 : Cache intelligent
+          await financeStorage.setYahooCache(ticker, normalized);
+          intelligentCache.set(ticker, normalized, { ttl: this.cacheTTL.quote });
+          this.onSuccess();
+          return normalized;
+        } catch (error) {
+          // ✅ FIX: Désactiver Finnhub si erreur 403
+          if (error.message && (error.message.includes('403') || error.message.includes('Forbidden'))) {
+            this.finnhubDisabled = true;
+            this.finnhub403ResetTime = Date.now() + this.FINNHUB_403_RESET_MS;
+            this._saveFinnhubCircuitBreakerState();
+            if (!this._finnhubCircuitBreakerLogged) {
+              log.warn(`[yahooFinanceService] Circuit breaker Finnhub activé (erreur 403). Désactivation pour 24h.`);
+              this._finnhubCircuitBreakerLogged = true;
+            }
+          }
+          
+          // ✅ OPTIMISATION : Logger seulement en debug si d'autres APIs disponibles
+          const hasOtherApis = hasApiKey('POLYGON');
+          if (hasOtherApis) {
+            log.debug(`Finnhub failed for ${ticker}, trying fallback:`, error.message);
+          } else {
+            log.warn(`Finnhub failed for ${ticker}:`, error.message);
+          }
+          this.onFailure(error);
+        }
       }
     }
 
@@ -110,12 +246,15 @@ class YahooFinanceService {
     if (hasApiKey('POLYGON')) {
       try {
         const data = await this.fetchPolygon(ticker);
-        await financeStorage.setYahooCache(ticker, data);
+        const normalized = this.normalizeQuoteData(data, 'polygon');
+        // ✅ PHASE 2 - Étape 2.3 : Cache intelligent
+        await financeStorage.setYahooCache(ticker, normalized);
+        intelligentCache.set(ticker, normalized, { ttl: this.cacheTTL.quote });
         this.onSuccess();
-        return this.normalizeQuoteData(data, 'polygon');
+        return normalized;
       } catch (error) {
         log.warn(`Polygon failed for ${ticker}:`, error.message);
-        this.onFailure();
+        this.onFailure(error);
       }
     }
 
@@ -220,16 +359,44 @@ class YahooFinanceService {
   }
 
   async fetchFinnhub(ticker) {
+    // ✅ FIX: Vérifier circuit breaker Finnhub AVANT requête
+    if (this.finnhubDisabled) {
+      // Vérifier si on peut réactiver (après 24h)
+      if (this.finnhub403ResetTime && Date.now() > this.finnhub403ResetTime) {
+        log.info('[yahooFinanceService] Réactivation Finnhub après période de désactivation (24h)');
+        this.finnhubDisabled = false;
+        this.finnhub403ResetTime = null;
+        this._saveFinnhubCircuitBreakerState();
+      } else {
+        // Circuit breaker actif : throw pour permettre fallback
+        throw new Error('Finnhub circuit breaker active (403)');
+      }
+    }
+    
     const apiKey = getApiKey('FINNHUB');
     const url = `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`;
     
-    const response = await this.fetchWithRetry(url);
-    
-    if (response.error) {
-      throw new Error(response.error);
+    try {
+      const response = await this.fetchWithRetry(url);
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      return response;
+    } catch (error) {
+      // ✅ FIX: Désactiver Finnhub si erreur 403
+      if (error.message && (error.message.includes('403') || error.message.includes('Forbidden'))) {
+        this.finnhubDisabled = true;
+        this.finnhub403ResetTime = Date.now() + this.FINNHUB_403_RESET_MS;
+        this._saveFinnhubCircuitBreakerState();
+        if (!this._finnhubCircuitBreakerLogged) {
+          log.warn(`[yahooFinanceService] Circuit breaker Finnhub activé (erreur 403). Désactivation pour 24h.`);
+          this._finnhubCircuitBreakerLogged = true;
+        }
+      }
+      throw error;
     }
-    
-    return response;
   }
 
   async fetchPolygon(ticker) {
@@ -338,6 +505,12 @@ class YahooFinanceService {
             throw new Error(`HTTP 401 Unauthorized - Invalid API key or token expired`);
           }
           if (status === 403) {
+            // ✅ FIX: Détecter si c'est une requête Finnhub pour activer circuit breaker
+            if (url.includes('finnhub.io')) {
+              // Ne pas retry, activer circuit breaker immédiatement
+              throw new Error('HTTP 403 Forbidden - Finnhub API token invalid or expired');
+            }
+            
             // Essayer de récupérer le message d'erreur du body si disponible
             let errorMsg = 'HTTP 403 Forbidden';
             try {
@@ -395,18 +568,13 @@ class YahooFinanceService {
     }
   }
 
+  // ✅ PHASE 3 - Étape 3.4 : Circuit breaker amélioré
   onSuccess() {
-    this.circuitBreaker.failures = 0;
-    this.circuitBreaker.state = 'CLOSED';
+    this.circuitBreaker.onSuccess();
   }
 
-  onFailure() {
-    this.circuitBreaker.failures++;
-    if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
-      this.circuitBreaker.state = 'OPEN';
-      this.circuitBreaker.nextAttempt = Date.now() + this.circuitBreaker.timeout;
-      log.warn('Circuit breaker OPEN');
-    }
+  onFailure(error = null) {
+    this.circuitBreaker.onFailure(error);
   }
 
   async getHistoricalData(ticker, period = '1mo', options = {}) {
@@ -455,10 +623,11 @@ class YahooFinanceService {
           // ✅ CORRECTION : Logger en debug si fallback disponible, error si pas de fallback
           const hasFallback = hasApiKey('POLYGON');
           
-          // Gérer les erreurs 403 différemment (token invalide, ne pas spammer)
+          // ✅ CORRECTION : Gérer les erreurs 403 différemment (token invalide, logger en debug si fallback)
           if (error.message && error.message.includes('403')) {
             if (hasFallback) {
-              log.warn(`Finnhub API token invalid or expired for ${ticker} (403), trying Polygon fallback`);
+              // Fallback disponible = logger en debug seulement (pas de warning répétitif)
+              log.debug(`Finnhub API token invalid or expired for ${ticker} (403), trying Polygon fallback`);
             } else {
               log.error(`Finnhub API token invalid or expired for ${ticker} (403) - ${error.message}`);
               throw error;
@@ -482,9 +651,10 @@ class YahooFinanceService {
           this.onSuccess();
           return this.normalizeHistoricalData(data, 'polygon');
         } catch (error) {
-          // Gérer les erreurs DELAYED différemment (peut être temporaire)
+          // ✅ CORRECTION : Gérer les erreurs DELAYED (temporaire, logger en debug)
           if (error.message && error.message.includes('DELAYED')) {
-            log.warn(`Polygon historical data delayed for ${ticker}, may be available later:`, error.message);
+            // Erreur DELAYED = temporaire, logger en debug seulement
+            log.debug(`Polygon historical data delayed for ${ticker}, may be available later:`, error.message);
           } else {
             log.error(`Polygon historical failed for ${ticker}:`, error.message);
           }
@@ -494,26 +664,43 @@ class YahooFinanceService {
 
       return [];
     } catch (error) {
-      // ✅ CORRECTION : Logger en ERROR seulement si vraiment toutes les APIs ont échoué
-      // Si on arrive ici, c'est qu'une erreur a été re-throwée (pas de fallback disponible)
-      // ou qu'aucune API n'est configurée
+      // ✅ CORRECTION : Logger selon type d'erreur (rate limit/temporaire = warn, critique = error)
       const hasAnyApi = hasApiKey('ALPHA_VANTAGE') || hasApiKey('FINNHUB') || hasApiKey('POLYGON');
+      const errorMsg = error?.message || String(error);
+      
+      // Erreurs temporaires (rate limit, delayed, network) = warn seulement
+      const isTemporaryError = errorMsg.includes('rate limit') || 
+                               errorMsg.includes('DELAYED') || 
+                               errorMsg.includes('network') ||
+                               errorMsg.includes('429') ||
+                               errorMsg.includes('timeout');
+      
       if (hasAnyApi) {
-        // Une API était configurée mais a échoué sans fallback
-        log.error(`Error fetching historical data for ${ticker} (no fallback available):`, error.message);
+        if (isTemporaryError) {
+          // ✅ CORRECTION : Erreur temporaire = logger en debug seulement (pas de warning répétitif)
+          log.debug(`Temporary error fetching historical data for ${ticker}:`, errorMsg);
+        } else {
+          // Erreur critique : logger en error
+          log.error(`Error fetching historical data for ${ticker} (no fallback available):`, errorMsg);
+        }
       } else {
         // Aucune API configurée
         log.warn(`No API keys configured for historical data for ${ticker}`);
       }
       
-      this.onFailure();
+      // Ne pas déclencher circuit breaker pour erreurs temporaires
+      if (!isTemporaryError) {
+        this.onFailure();
+      }
       
-      // ✅ PHASE 3.14 : Fallback cache (stale autorisé seulement en cas d'erreur)
+      // ✅ CORRECTION : Fallback cache avec limite d'âge max (7 jours)
       const cached = await financeStorage.getYahooCache(cacheKey, {
         ttl: this.cacheTTL.historical,
-        allowStale: true // Erreur : autoriser stale cache comme fallback
+        allowStale: true, // Erreur : autoriser stale cache comme fallback
+        maxStaleAge: 7 * 24 * 60 * 60 * 1000 // Max 7 jours pour cache stale
       });
       if (cached) {
+        log.debug(`Using stale cache as fallback for ${ticker}`);
         return cached;
       }
       
@@ -572,6 +759,14 @@ class YahooFinanceService {
     }
     
     // ✅ CORRECTION : Validation Time Series avec vérifications détaillées
+    // Vérifier d'abord les messages d'erreur/limitation AVANT de chercher timeSeries
+    if (response['Information']) {
+      const infoMsg = response['Information'];
+      // Message d'information/limitation = logger en debug seulement (pas de warning)
+      log.debug(`Alpha Vantage API limitation for ${ticker}:`, infoMsg);
+      throw new Error(`Alpha Vantage API limitation: ${infoMsg}`);
+    }
+    
     const timeSeries = response['Time Series (Daily)'];
     
     if (!timeSeries) {
@@ -583,12 +778,17 @@ class YahooFinanceService {
       // Vérifier si métadonnées existent mais pas de données (ticker invalide ou autre problème)
       if (response['Meta Data']) {
         const metaData = response['Meta Data'];
-        log.warn(`Alpha Vantage returned metadata but no time series for ${ticker}:`, metaData);
+        log.debug(`Alpha Vantage returned metadata but no time series for ${ticker}`);
         throw new Error(`No time series data available for ${ticker}`);
       }
       
-      // Réponse inattendue
-      log.warn(`Alpha Vantage unexpected response structure for ${ticker}:`, Object.keys(response));
+      // Réponse inattendue - logger en debug seulement si fallback disponible
+      const hasFallback = hasApiKey('FINNHUB') || hasApiKey('POLYGON');
+      if (hasFallback) {
+        log.debug(`Alpha Vantage unexpected response structure for ${ticker}, trying fallback`);
+      } else {
+        log.warn(`Alpha Vantage unexpected response structure for ${ticker}:`, Object.keys(response));
+      }
       throw new Error('No time series data in response');
     }
     
@@ -607,6 +807,20 @@ class YahooFinanceService {
   }
 
   async fetchFinnhubHistorical(ticker, period) {
+    // ✅ FIX: Vérifier circuit breaker Finnhub AVANT requête
+    if (this.finnhubDisabled) {
+      // Vérifier si on peut réactiver (après 24h)
+      if (this.finnhub403ResetTime && Date.now() > this.finnhub403ResetTime) {
+        log.info('[yahooFinanceService] Réactivation Finnhub après période de désactivation (24h)');
+        this.finnhubDisabled = false;
+        this.finnhub403ResetTime = null;
+        this._saveFinnhubCircuitBreakerState();
+      } else {
+        // Circuit breaker actif : throw pour permettre fallback
+        throw new Error('Finnhub circuit breaker active (403)');
+      }
+    }
+    
     const apiKey = getApiKey('FINNHUB');
     const endDate = Math.floor(Date.now() / 1000);
     const startDateObj = this.getStartDateForPeriod(period);
@@ -616,22 +830,36 @@ class YahooFinanceService {
     
     const url = `https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=D&from=${startDate}&to=${endDate}&token=${apiKey}`;
     
-    const response = await this.fetchWithRetry(url);
-    
-    // ✅ CORRECTION : Gestion améliorée des erreurs Finnhub
-    if (response.error) {
-      const errorMsg = response.error;
-      // Messages d'erreur plus informatifs
-      if (errorMsg.includes('Invalid API key') || errorMsg.includes('token')) {
-        throw new Error(`Finnhub API error: Invalid token or API key`);
+    try {
+      const response = await this.fetchWithRetry(url);
+      
+      // ✅ CORRECTION : Gestion améliorée des erreurs Finnhub
+      if (response.error) {
+        const errorMsg = response.error;
+        // Messages d'erreur plus informatifs
+        if (errorMsg.includes('Invalid API key') || errorMsg.includes('token')) {
+          throw new Error(`Finnhub API error: Invalid token or API key`);
+        }
+        if (errorMsg.includes('limit') || errorMsg.includes('rate')) {
+          throw new Error(`Finnhub API error: Rate limit exceeded`);
+        }
+        throw new Error(`Finnhub API error: ${errorMsg}`);
       }
-      if (errorMsg.includes('limit') || errorMsg.includes('rate')) {
-        throw new Error(`Finnhub API error: Rate limit exceeded`);
+      
+      return response;
+    } catch (error) {
+      // ✅ FIX: Désactiver Finnhub si erreur 403
+      if (error.message && (error.message.includes('403') || error.message.includes('Forbidden'))) {
+        this.finnhubDisabled = true;
+        this.finnhub403ResetTime = Date.now() + this.FINNHUB_403_RESET_MS;
+        this._saveFinnhubCircuitBreakerState();
+        if (!this._finnhubCircuitBreakerLogged) {
+          log.warn(`[yahooFinanceService] Circuit breaker Finnhub activé (erreur 403). Désactivation pour 24h.`);
+          this._finnhubCircuitBreakerLogged = true;
+        }
       }
-      throw new Error(`Finnhub API error: ${errorMsg}`);
+      throw error;
     }
-    
-    return response;
   }
 
   async fetchPolygonHistorical(ticker, period) {

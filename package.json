@@ -23,7 +23,8 @@
     "bench:network": "node scripts/bench/networkResilience.js",
     "bench:metrics": "node scripts/bench/exportServerMetrics.js",
     "bench:metrics:diff": "node scripts/bench/compareMetrics.js",
-    "i18n:extract": "node scripts/extract-translations.js"
+    "i18n:extract": "node scripts/extract-translations.js",
+    "fix:three": "node scripts/fix-three-warnings.js"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -79,5 +80,10 @@
   "license": "MIT",
   "overrides": {
     "three": "^0.181.2"
+  },
+  "resolutions": {
+    "three": "^0.181.2",
+    "@splinetool/react-spline/three": "^0.181.2",
+    "@splinetool/runtime/three": "^0.181.2"
   }
 }

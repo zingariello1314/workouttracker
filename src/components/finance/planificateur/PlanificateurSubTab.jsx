@@ -1,8 +1,17 @@
-import React, { useState, useMemo, Suspense, lazy } from 'react';
-import { useTranslation } from '../../../utils/translations';
+import React, { useMemo, lazy } from 'react';
 import { usePlanificateur } from '../../../hooks/usePlanificateur';
 import SkeletonLoader from '../bourse/SkeletonLoader';
 import PlanificateurErrorBoundary from './PlanificateurErrorBoundary';
+import SubTabWrapper from '../common/SubTabWrapper';
+
+/**
+ * ✅ PHASE 2 - Étape 2.1 : Refactorisé pour utiliser SubTabWrapper
+ * 
+ * Améliorations :
+ * - Code réduit de ~105 lignes à ~50 lignes
+ * - Réutilisation composant générique
+ * - Maintenance facilitée
+ */
 
 // Lazy loading pour performance
 const RepartitionSalaireSubTab = lazy(() => import('./RepartitionSalaireSubTab'));
@@ -21,10 +30,9 @@ const PlanificateurSubTabSkeleton = () => (
 );
 
 const PlanificateurSubTab = () => {
-  const t = useTranslation();
   const { loading, error } = usePlanificateur();
-  const [activeSection, setActiveSection] = useState('repartition');
 
+  // ✅ PHASE 2 : Définition des sections
   const sections = useMemo(() => [
     { 
       id: 'repartition', 
@@ -52,8 +60,6 @@ const PlanificateurSubTab = () => {
     }
   ], []);
 
-  const ActiveComponent = sections.find(section => section.id === activeSection)?.component;
-
   if (loading) {
     return <SkeletonLoader />;
   }
@@ -72,33 +78,15 @@ const PlanificateurSubTab = () => {
   return (
     <PlanificateurErrorBoundary>
       <div className="planificateur-sub-tab-container flex flex-col h-full">
-        {/* Navigation sections */}
-        <nav className="sub-sections-navigation flex gap-4 p-4 bg-slate-800/50 rounded-t-lg border-b border-slate-700/50 mb-4">
-          {sections.map(section => (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => setActiveSection(section.id)}
-              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
-                activeSection === section.id
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              }`}
-              aria-label={`Naviguer vers ${t(section.labelKey)}`}
-              aria-current={activeSection === section.id ? 'page' : undefined}
-            >
-              <span className="text-lg" aria-hidden="true">{section.icon}</span>
-              <span className="text-sm font-medium">{t(section.labelKey)}</span>
-            </button>
-          ))}
-        </nav>
-
-        {/* Main content area */}
-        <main className="planificateur-main-content flex-1 p-6 bg-slate-800/50 rounded-b-lg" role="main">
-          <Suspense fallback={<SkeletonLoader />}>
-            {ActiveComponent && <ActiveComponent />}
-          </Suspense>
-        </main>
+        {/* ✅ PHASE 2 : Utilisation du composant générique */}
+        <SubTabWrapper
+          subTabs={sections}
+          defaultSubTab="repartition"
+          Skeleton={SkeletonLoader}
+          ErrorBoundary={null} // Déjà wrappé par PlanificateurErrorBoundary
+          storageKey="finance.planificateur.activeSection"
+          enablePrefetch={true}
+        />
       </div>
     </PlanificateurErrorBoundary>
   );

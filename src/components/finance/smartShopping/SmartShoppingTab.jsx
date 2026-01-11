@@ -1,16 +1,14 @@
 /**
  * Smart Shopping Tab - Module principal
  * Command Center + Mode Exécution + Orchestrateur + Analytics
+ * 
+ * ✅ PHASE 2 - Étape 2.2 : Refactorisé avec sous-composants
+ * ✅ PHASE 2 - Étape 2.4 : Memoization métriques
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSmartShopping } from '../../../hooks/useSmartShopping';
-import { 
-  ShoppingCart, AlertTriangle, Package, TrendingUp, 
-  List, BarChart3, Settings, Zap, Target, Activity,
-  DollarSign, CheckCircle
-} from 'lucide-react';
-import { formatCurrency } from '../../../utils/planificateurUtils';
+import { ShoppingCart, AlertTriangle } from 'lucide-react';
 import ListesManager from './ListesManager';
 import ExecutionMode from './ExecutionMode';
 import InventaireManager from './InventaireManager';
@@ -18,13 +16,15 @@ import AnalyticsPerformance from './AnalyticsPerformance';
 import WorkflowManager from './WorkflowManager';
 import ModesAdaptatifs from './ModesAdaptatifs';
 import SettingsManager from './SettingsManager';
+import CommandCenter from './CommandCenter';
+import NavigationSections from './NavigationSections';
 
 const SmartShoppingTab = () => {
   const {
     budget,
     listes,
     inventaire,
-    metrics,
+    metrics: rawMetrics,
     alertes,
     loading,
     error,
@@ -42,6 +42,20 @@ const SmartShoppingTab = () => {
 
   const [activeSection, setActiveSection] = useState('command-center');
   const [modeActuel, setModeActuel] = useState('strategie'); // strategie | tactique | execution | analysis
+
+  // ✅ PHASE 2 - Étape 2.4 : Memoization métriques pour éviter recalculs
+  const metrics = useMemo(() => {
+    if (!rawMetrics) return null;
+    
+    // Calculer listesEnCours si non présent
+    const listesEnCours = rawMetrics.listesEnCours ?? 
+      (listes?.filter(liste => liste.statut === 'en_cours' || liste.statut === 'active').length || 0);
+    
+    return {
+      ...rawMetrics,
+      listesEnCours
+    };
+  }, [rawMetrics, listes]);
 
   if (loading) {
     return (
@@ -130,136 +144,14 @@ const SmartShoppingTab = () => {
         </div>
       )}
 
-      {/* Command Center - Métriques Budget */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Budget Mensuel */}
-        <div className="group relative overflow-hidden bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-2 border-blue-500/50 rounded-2xl p-6 hover:border-blue-400 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20 hover:scale-105 transform cursor-pointer">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-400/0 to-blue-600/0 group-hover:from-blue-400/10 group-hover:to-blue-600/10 transition-all duration-300"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-blue-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                <DollarSign className="w-6 h-6 text-blue-400" />
-              </div>
-              <span className="text-xs text-blue-400 font-bold tracking-wider px-2 py-1 bg-blue-500/20 rounded-lg">BUDGET</span>
-            </div>
-            <div className="text-3xl font-bold text-white mb-2 group-hover:text-blue-100 transition-colors">
-              {formatCurrency(budget?.mensuel || 0)}
-            </div>
-            <div className="text-sm text-slate-300 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-              Budget mensuel
-            </div>
-          </div>
-        </div>
+      {/* ✅ PHASE 2 - Étape 2.2 : Command Center extrait en composant */}
+      <CommandCenter budget={budget} listes={listes} metrics={metrics} />
 
-        {/* Dépensé */}
-        <div className="group relative overflow-hidden bg-gradient-to-br from-orange-500/20 to-orange-600/20 border-2 border-orange-500/50 rounded-2xl p-6 hover:border-orange-400 transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/20 hover:scale-105 transform cursor-pointer">
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-400/0 to-orange-600/0 group-hover:from-orange-400/10 group-hover:to-orange-600/10 transition-all duration-300"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-orange-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                <TrendingUp className="w-6 h-6 text-orange-400" />
-              </div>
-              <span className="text-xs text-orange-400 font-bold tracking-wider px-2 py-1 bg-orange-500/20 rounded-lg">DÉPENSÉ</span>
-            </div>
-            <div className="text-3xl font-bold text-white mb-2 group-hover:text-orange-100 transition-colors">
-              {formatCurrency(budget?.depenseCeMois || 0)}
-            </div>
-            <div className="text-sm text-slate-300 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>
-              Ce mois-ci
-            </div>
-          </div>
-        </div>
-
-        {/* Restant */}
-        <div className={`group relative overflow-hidden bg-gradient-to-br ${
-          (budget?.restant || 0) >= 0 
-            ? 'from-green-500/20 to-green-600/20 border-green-500/50 hover:border-green-400 hover:shadow-green-500/20' 
-            : 'from-red-500/20 to-red-600/20 border-red-500/50 hover:border-red-400 hover:shadow-red-500/20'
-        } border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 transform cursor-pointer`}>
-          <div className={`absolute inset-0 bg-gradient-to-br ${
-            (budget?.restant || 0) >= 0
-              ? 'from-green-400/0 to-green-600/0 group-hover:from-green-400/10 group-hover:to-green-600/10'
-              : 'from-red-400/0 to-red-600/0 group-hover:from-red-400/10 group-hover:to-red-600/10'
-          } transition-all duration-300`}></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-2 ${
-                (budget?.restant || 0) >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'
-              } rounded-xl group-hover:scale-110 transition-transform duration-300`}>
-                <Target className={`w-6 h-6 ${
-                  (budget?.restant || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                }`} />
-              </div>
-              <span className={`text-xs ${
-                (budget?.restant || 0) >= 0 ? 'text-green-400' : 'text-red-400'
-              } font-bold tracking-wider px-2 py-1 ${
-                (budget?.restant || 0) >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'
-              } rounded-lg`}>RESTANT</span>
-            </div>
-            <div className={`text-3xl font-bold text-white mb-2 ${
-              (budget?.restant || 0) >= 0 ? 'group-hover:text-green-100' : 'group-hover:text-red-100'
-            } transition-colors`}>
-              {formatCurrency(budget?.restant || 0)}
-            </div>
-            <div className="text-sm text-slate-300 flex items-center gap-2">
-              <span className={`w-1.5 h-1.5 ${
-                (budget?.restant || 0) >= 0 ? 'bg-green-400' : 'bg-red-400'
-              } rounded-full`}></span>
-              {(budget?.restant || 0) >= 0 ? 'Disponible' : 'Dépassement'}
-            </div>
-          </div>
-        </div>
-
-        {/* Listes Actives */}
-        <div className="group relative overflow-hidden bg-gradient-to-br from-purple-500/20 to-purple-600/20 border-2 border-purple-500/50 rounded-2xl p-6 hover:border-purple-400 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:scale-105 transform cursor-pointer">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-400/0 to-purple-600/0 group-hover:from-purple-400/10 group-hover:to-purple-600/10 transition-all duration-300"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-purple-500/20 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                <List className="w-6 h-6 text-purple-400" />
-              </div>
-              <span className="text-xs text-purple-400 font-bold tracking-wider px-2 py-1 bg-purple-500/20 rounded-lg">LISTES</span>
-            </div>
-            <div className="text-3xl font-bold text-white mb-2 group-hover:text-purple-100 transition-colors">
-              {listes?.length || 0}
-            </div>
-            <div className="text-sm text-slate-300 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></span>
-              {metrics?.listesEnCours || 0} en cours
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Sections en grille */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {[
-          { id: 'command-center', icon: BarChart3, label: 'Command Center', ariaLabel: 'Afficher le command center' },
-          { id: 'workflow', icon: Target, label: 'Workflow', ariaLabel: 'Workflow complet' },
-          { id: 'listes', icon: List, label: 'Mes Listes', ariaLabel: 'Afficher les listes' },
-          { id: 'execution', icon: Zap, label: 'Exécution', ariaLabel: 'Mode exécution' },
-          { id: 'inventaire', icon: Package, label: 'Inventaire', ariaLabel: 'Gérer inventaire' },
-          { id: 'analytics', icon: Activity, label: 'Analytics', ariaLabel: 'Voir analytics' },
-          { id: 'settings', icon: Settings, label: 'Paramètres', ariaLabel: 'Paramètres' }
-        ].map(({ id, icon: Icon, label, ariaLabel }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setActiveSection(id)}
-            className={`gradient-button-premium gradient-button-premium-md rounded-lg flex flex-col items-center gap-2 ${
-              activeSection === id
-                ? 'gradient-button-premium-variant'
-                : ''
-            }`}
-            aria-label={ariaLabel}
-          >
-            <Icon className={`w-5 h-5 transition-transform duration-300 ${activeSection === id ? 'rotate-12' : 'group-hover:rotate-12'}`} />
-            <span className="text-xs sm:text-sm">{label}</span>
-          </button>
-        ))}
-      </div>
+      {/* ✅ PHASE 2 - Étape 2.2 : Navigation Sections extraite en composant */}
+      <NavigationSections 
+        activeSection={activeSection} 
+        onSectionChange={setActiveSection} 
+      />
 
       {/* Contenu selon section active */}
       {activeSection === 'command-center' && (

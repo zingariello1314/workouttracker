@@ -1,7 +1,9 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useEffect, Suspense, lazy, useMemo } from 'react';
 import { useTranslation } from '../../utils/translations';
 import { FinanceProvider } from '../../context/FinanceContext';
 import ErrorBoundary from '../ui/ErrorBoundary';
+import { useNavigationCache } from '../../hooks/useNavigationCache';
+import { useFinancePerformance } from '../../hooks/useFinancePerformance';
 
 // ✅ PHASE 2 : Lazy loading des sous-onglets Finance
 const BourseSubTab = lazy(() => import('../finance/bourse/BourseSubTab'));
@@ -24,25 +26,14 @@ const FinanceSubTabSkeleton = () => (
 const FinanceTab = () => {
   const t = useTranslation();
   
-  // ✅ PHASE 1 : Persistance de l'état actif dans localStorage
-  const [activeSubTab, setActiveSubTab] = useState(() => {
-    try {
-      const saved = localStorage.getItem('finance.activeSubTab');
-      return saved || 'bourse';
-    } catch (error) {
-      console.warn('[FinanceTab] Erreur lecture localStorage:', error);
-      return 'bourse';
-    }
+  // ✅ PHASE 4 - Étape 4.1 : Mesure performance
+  const { measureOperation } = useFinancePerformance('FinanceTab');
+  
+  // ✅ PHASE 3 - Étape 3.2 : Cache navigation avec hook réutilisable
+  const [activeSubTab, setActiveSubTab] = useNavigationCache('finance.activeSubTab', 'bourse', {
+    enableCache: true,
+    maxRetries: 3
   });
-
-  // ✅ PHASE 1 : Sauvegarder l'état actif dans localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('finance.activeSubTab', activeSubTab);
-    } catch (error) {
-      console.warn('[FinanceTab] Erreur sauvegarde localStorage:', error);
-    }
-  }, [activeSubTab]);
 
   // Émettre un événement lors du changement de sous-onglet pour la rotation des images de profil
   useEffect(() => {
@@ -51,32 +42,39 @@ const FinanceTab = () => {
     }));
   }, [activeSubTab]);
 
-  const subTabs = [
+  // ✅ PHASE 1 : Memoization subTabs pour éviter re-renders
+  // ✅ CORRECTION : Mapping ID -> labelKey pour éviter erreur traduction
+  const subTabs = useMemo(() => [
     { id: 'bourse', labelKey: 'finance.subTabs.bourse', icon: '📈' },
     { id: 'budget', labelKey: 'finance.subTabs.budget', icon: '💰' },
     { id: 'investissements', labelKey: 'finance.subTabs.investissements', icon: '🥇' },
     { id: 'smart-shopping', labelKey: 'finance.subTabs.smartShopping', icon: '🛒' },
     { id: 'planificateur', labelKey: 'finance.subTabs.planificateur', icon: '📅' },
     { id: 'synthese', labelKey: 'finance.subTabs.synthese', icon: '📊' }
-  ];
+  ], []);
+
+  // ✅ CORRECTION : Map pour convertir ID en labelKey (évite erreur traduction)
+  const labelKeyMap = useMemo(() => {
+    const map = {};
+    subTabs.forEach(tab => {
+      map[tab.id] = tab.labelKey;
+    });
+    return map;
+  }, [subTabs]);
+
+  // ✅ PHASE 1 : Map des composants pour lookup dynamique (évite switch redondant)
+  const componentMap = useMemo(() => ({
+    'bourse': BourseSubTab,
+    'budget': BudgetSubTab,
+    'investissements': InvestissementsSubTab,
+    'smart-shopping': SmartShoppingSubTab,
+    'planificateur': PlanificateurSubTab,
+    'synthese': SyntheseSubTab
+  }), []);
 
   const renderSubTabContent = () => {
-    switch (activeSubTab) {
-      case 'bourse':
-        return <BourseSubTab />;
-      case 'budget':
-        return <BudgetSubTab />;
-      case 'investissements':
-        return <InvestissementsSubTab />;
-      case 'smart-shopping':
-        return <SmartShoppingSubTab />;
-      case 'planificateur':
-        return <PlanificateurSubTab />;
-      case 'synthese':
-        return <SyntheseSubTab />;
-      default:
-        return <BourseSubTab />;
-    }
+    const ActiveComponent = componentMap[activeSubTab] || BourseSubTab;
+    return <ActiveComponent />;
   };
 
   return (
@@ -120,7 +118,7 @@ const FinanceTab = () => {
         <div className="finance-main-content bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
           <ErrorBoundary
             context={{ activeSubTab, tab: 'finance' }}
-            title={`Erreur dans ${t(`finance.subTabs.${activeSubTab}`)}`}
+            title={`Erreur dans ${t(labelKeyMap[activeSubTab] || 'finance.subTabs.bourse')}`}
             message="Une erreur s'est produite dans ce sous-onglet. Vous pouvez réessayer ou changer de sous-onglet."
           >
             <Suspense fallback={<FinanceSubTabSkeleton />}>
