@@ -73,7 +73,8 @@ const WorkoutTrackerContent = () => {
     showSessionFeedback,
     setShowSessionFeedback,
     sessionData,
-    getWorkoutHistory
+    getWorkoutHistory,
+    saveSessionFeedback
   } = useWorkout();
   const { currentUser, isAuthenticated } = useAuth();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
@@ -371,8 +372,18 @@ const WorkoutTrackerContent = () => {
             <SessionFeedback
               isOpen={showSessionFeedback}
               onClose={() => setShowSessionFeedback(false)}
-              onSave={(feedbackData) => {
-                console.log('Session feedback sauvegardé:', feedbackData);
+              onSave={async (feedbackData) => {
+                // ✅ Sauvegarder le feedback avec la date comme clé
+                if (feedbackData.date && saveSessionFeedback) {
+                  try {
+                    await saveSessionFeedback(feedbackData.date, feedbackData);
+                    console.log('✅ Session feedback sauvegardé:', feedbackData);
+                  } catch (error) {
+                    console.error('❌ Erreur lors de la sauvegarde du feedback:', error);
+                  }
+                } else {
+                  console.error('❌ Erreur: date ou saveSessionFeedback manquant', { date: feedbackData.date, saveSessionFeedback });
+                }
                 setShowSessionFeedback(false);
               }}
               sessionData={sessionData}

@@ -1063,7 +1063,10 @@ const WorkoutProvider = ({ children }) => {
     // ✅ NOUVEAU : Gestion des justifications des jours sans activité
     setDayJustification,
     removeDayJustification,
-    getDayJustification
+    getDayJustification,
+    
+    // ✅ Fonction pour sauvegarder les feedbacks de session
+    saveSessionFeedback
   };
 
   // Sauvegarde automatique du contexte

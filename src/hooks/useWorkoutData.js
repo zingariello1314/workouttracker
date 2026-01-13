@@ -756,7 +756,7 @@ export const useWorkoutData = (options = {}) => {
   }, []);
 
   // Fonction pour sauvegarder un feedback de session
-  const saveSessionFeedback = useCallback((date, feedbackData) => {
+  const saveSessionFeedback = useCallback(async (date, feedbackData) => {
     const newData = {
       ...data,
       sessionFeedbacks: {
@@ -768,9 +768,19 @@ export const useWorkoutData = (options = {}) => {
       }
     };
     
+    // ✅ Sauvegarder immédiatement sans attendre le debounce
     setData(newData);
-    autoSave(newData);
-  }, [data, autoSave]);
+    
+    // Sauvegarde immédiate pour garantir la persistance
+    try {
+      await saveToDB(newData);
+      console.log('✅ Feedback de session sauvegardé immédiatement:', date);
+    } catch (error) {
+      console.error('❌ Erreur lors de la sauvegarde immédiate du feedback:', error);
+      // Fallback vers autoSave si la sauvegarde immédiate échoue
+      autoSave(newData);
+    }
+  }, [data, autoSave, saveToDB]);
 
   return {
     data,

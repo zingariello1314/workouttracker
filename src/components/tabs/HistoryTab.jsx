@@ -7,6 +7,7 @@ import { formatDate } from '../../utils/dateUtils';
 import { typography } from '../../styles/typography';
 import { calculateTotalRepsExcludingJumps, calculateValidReps } from '../../utils/enduranceUtils';
 import { useTranslation } from '../../utils/translations';
+import SessionFeedbackDisplay from '../sport/SessionFeedbackDisplay';
 
 const HistoryTab = () => {
   const { getWorkoutHistory } = useWorkout();
@@ -413,6 +414,11 @@ const HistoryTab = () => {
                     {session.notes}
                   </p>
                 </div>
+              )}
+
+              {/* ✅ Feedback de session */}
+              {session.feedback && (
+                <SessionFeedbackDisplay feedback={session.feedback} date={session.date} />
               )}
             </CardContent>
           </Card>

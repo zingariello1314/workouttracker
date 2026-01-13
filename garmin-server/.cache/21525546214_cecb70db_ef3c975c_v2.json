@@ -1,0 +1,58 @@
+{
+  "id": 21525546214,
+  "date": "2026-01-12 17:48:45",
+  "time": "",
+  "duration": 4658,
+  "calories": {
+    "total": 580,
+    "resting": 92,
+    "active": 488
+  },
+  "avgHR": 127,
+  "maxHR": 171,
+  "minHR": null,
+  "sweatLoss": null,
+  "intensityMinutes": {
+    "moderate": 45,
+    "vigorous": 27,
+    "total": 72
+  },
+  "startTimeLocal": "2026-01-12T18:48:45Z",
+  "startTimeGMT": "2026-01-12T17:48:45Z",
+  "location": {
+    "start": {
+      "lat": 44.792437674477696,
+      "lng": -0.624932236969471
+    },
+    "end": {
+      "lat": 44.79167651385069,
+      "lng": -0.62254230491817
+    }
+  },
+  "elevation": {
+    "gain": 1,
+    "loss": 3,
+    "max": 39.711063385009766,
+    "min": 35.16769790649414
+  },
+  "deviceInfo": {
+    "deviceId": null,
+    "deviceTypePk": null,
+    "deviceVersionPk": null
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Pessac Cardio",
+  "activityType": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "ef3c975c",
+  "_cached_at": 1768258779.5487587,
+  "_cache_version": 2
+}

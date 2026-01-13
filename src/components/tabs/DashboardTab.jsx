@@ -6,6 +6,7 @@
 import { LayoutDashboard, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
 import NewsBlock from '../dashboard/NewsBlock';
+import GlobalXPBar from '../dashboard/GlobalXPBar';
 
 const DashboardTab = () => {
   const {
@@ -80,6 +81,9 @@ const DashboardTab = () => {
 
           {/* Module du Dashboard */}
           <div className="space-y-6">
+            {/* Barre XP Globale */}
+            <GlobalXPBar />
+            
             {/* News - Full width */}
             <NewsBlock newsData={newsData} onRefresh={refreshNews} />
           </div>

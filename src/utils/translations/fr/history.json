@@ -48,6 +48,9 @@
   },
   "notes": {
     "label": "Notes:"
+  },
+  "feedback": {
+    "title": "Feedback de Session"
   }
 }
 

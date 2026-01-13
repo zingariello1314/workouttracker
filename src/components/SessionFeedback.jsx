@@ -134,9 +134,14 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
   };
 
   const handleSave = () => {
+    // ✅ Utiliser la date de la session si disponible, sinon la date d'aujourd'hui
+    const sessionDate = sessionData?.date 
+      ? (typeof sessionData.date === 'string' ? sessionData.date : getDateStr(new Date(sessionData.date)))
+      : getDateStr(new Date());
+    
     const feedbackData = {
       ...feedback,
-      date: getDateStr(new Date()),
+      date: sessionDate,
       timestamp: new Date().toISOString(),
       sessionId: sessionData?.id || Date.now(),
       sessionDuration: sessionData?.duration || 0,
