@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useToast } from '../../components/ui/Toast';
@@ -16,6 +16,8 @@ import { isMockEnduranceSession } from '../../utils/calendarUtils';
 import DayJustificationButton from './TodayTab/components/DayJustificationButton.jsx';
 import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
+import SportXPBar from './TodayTab/components/SportXPBar';
+import { loadEnduranceData as loadEnduranceDataService } from '../../services/endurance/enduranceDataService';
 
 const TodayTab = () => {
   const {
@@ -53,9 +55,19 @@ const TodayTab = () => {
   const { showSuccess, showError } = useToast();
   const t = useTranslation();
 
+  const normalizedEndurance = useMemo(() => {
+    try {
+      const { sessions, challenges } = loadEnduranceDataService(data?.enduranceData || {});
+      return { sessions, challenges };
+    } catch (error) {
+      console.error('[TodayTab] Erreur normalisation endurance:', error);
+      return { sessions: data?.enduranceData?.sessions || {}, challenges: data?.enduranceData?.challenges || [] };
+    }
+  }, [data?.enduranceData]);
+
   // Récupérer les défis actifs
   const getActiveChallenges = () => {
-    const challenges = data?.enduranceData?.challenges || [];
+    const challenges = normalizedEndurance.challenges || [];
     const todayStr = getDateStr(currentDate);
     const now = new Date();
     
@@ -611,6 +623,7 @@ const TodayTab = () => {
     
     return (
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        <SportXPBar />
         <div className="text-center py-12 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700">
           <div className="text-gray-400 mb-4">
             <div className="text-6xl mb-4">🎉</div>
@@ -654,6 +667,7 @@ const TodayTab = () => {
     <div className="relative min-h-screen">
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 space-y-6">
+        <SportXPBar />
         {/* Workout Header */}
       <div className={`p-6 rounded-lg shadow-xl border border-slate-700 ${
         workout.focus.includes('Repos') 
@@ -1082,8 +1096,7 @@ const TodayTab = () => {
 
       {/* Sessions d'endurance du jour */}
       {(() => {
-        const enduranceData = data?.enduranceData || {};
-        const sessions = enduranceData.sessions || {};
+        const sessions = normalizedEndurance.sessions || {};
         const todayEnduranceSessions = [];
         
         // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils

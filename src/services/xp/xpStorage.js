@@ -6,11 +6,32 @@
 const DB_NAME = 'QuietQuestDB';
 const STORE_NAME = 'xpSystem';
 
+const createXPStore = (db) => {
+  if (!db.objectStoreNames.contains(STORE_NAME)) {
+    const store = db.createObjectStore(STORE_NAME, { keyPath: 'userId' });
+    store.createIndex('lastUpdated', 'lastUpdated', { unique: false });
+  }
+};
+
+const upgradeXPDB = (nextVersion) =>
+  new Promise((resolve) => {
+    const upgradeRequest = indexedDB.open(DB_NAME, nextVersion);
+    upgradeRequest.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      createXPStore(db);
+    };
+    upgradeRequest.onsuccess = () => resolve(upgradeRequest.result);
+    upgradeRequest.onerror = () => {
+      console.warn('[XPStorage] Erreur IndexedDB (upgrade), utilisation localStorage');
+      resolve(null);
+    };
+  });
+
 /**
- * Ouvre la base de données IndexedDB
+ * Ouvre la base de données IndexedDB et garantit l'existence du store XP.
  */
 export const openXPDB = async () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!window.indexedDB) {
       console.warn('[XPStorage] IndexedDB non disponible, utilisation localStorage');
       resolve(null);
@@ -21,13 +42,20 @@ export const openXPDB = async () => {
     
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'userId' });
-        store.createIndex('lastUpdated', 'lastUpdated', { unique: false });
-      }
+      createXPStore(db);
     };
     
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = async () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const nextVersion = (db.version || 1) + 1;
+        db.close();
+        const upgraded = await upgradeXPDB(nextVersion);
+        resolve(upgraded);
+        return;
+      }
+      resolve(db);
+    };
     request.onerror = () => {
       console.warn('[XPStorage] Erreur IndexedDB, utilisation localStorage');
       resolve(null);

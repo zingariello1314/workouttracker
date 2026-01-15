@@ -2,11 +2,18 @@
 
 ## 📋 Vue d'Ensemble
 
-Ce document détaille l'implémentation d'un système XP centralisé qui agrège l'expérience de tous les onglets de l'application. Le système est conçu pour être :
-- **Persistant** : Toutes les données XP sont sauvegardées dans IndexedDB
-- **Proportionnel** : L'XP est calculée en fonction de l'effort réel fourni
-- **Intelligent** : Migration automatique des données existantes
-- **Performant** : Calculs optimisés avec cache et memoization
+Ce document décrit **l'état réel** du système XP centralisé dans le code actuel, ainsi que les écarts par rapport à l'objectif initial.
+
+**Objectif visé :**
+- **Persistant** : toutes les données XP sont sauvegardées dans IndexedDB, avec fallback localStorage.
+- **Proportionnel** : l'XP est calculée en fonction de l'effort réel fourni.
+- **Centralisé** : une barre globale agrège toutes les catégories.
+
+**Statut actuel (important) :**
+- L'infrastructure **stockage + calculs** existe (`xpStorage`, `xpCalculations`).
+- Le hook global **n'est pas encore branché** aux vrais systèmes (quêtes, apprentissage, nutrition, livres, sport).
+- Les hooks spécialisés **Books/Sport** et les barres associées **n'existent pas** dans le code.
+- La migration automatique **n'est pas implémentée**.
 
 ---
 
@@ -273,16 +280,19 @@ const calculateNutritionXP = (gamificationData) => {
 ### Fonctions de Persistance
 
 ```javascript
-// src/services/xp/xpStorage.js
-import { openDB } from '../indexedDB';
-
+// src/services/xp/xpStorage.js (extrait fidèle au code actuel)
 const DB_NAME = 'QuietQuestDB';
 const STORE_NAME = 'xpSystem';
 
 export const openXPDB = async () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
+    if (!window.indexedDB) {
+      console.warn('[XPStorage] IndexedDB non disponible, utilisation localStorage');
+      resolve(null);
+      return;
+    }
+
     const request = indexedDB.open(DB_NAME);
-    
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -290,42 +300,27 @@ export const openXPDB = async () => {
         store.createIndex('lastUpdated', 'lastUpdated', { unique: false });
       }
     };
-    
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => resolve(null);
   });
 };
 
 export const saveXPData = async (xpData) => {
   const db = await openXPDB();
-  const transaction = db.transaction([STORE_NAME], 'readwrite');
-  const store = transaction.objectStore(STORE_NAME);
-  
-  return new Promise((resolve, reject) => {
-    const request = store.put({
-      ...xpData,
-      lastUpdated: new Date().toISOString()
-    });
-    
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
+  if (!db) {
+    localStorage.setItem(`xpData_${xpData.userId}`, JSON.stringify(xpData));
+    return;
+  }
+  // ... écriture IndexedDB + backup localStorage
 };
 
 export const loadXPData = async (userId) => {
   const db = await openXPDB();
-  const transaction = db.transaction([STORE_NAME], 'readonly');
-  const store = transaction.objectStore(STORE_NAME);
-  
-  return new Promise((resolve, reject) => {
-    const request = store.get(userId);
-    
-    request.onsuccess = () => {
-      resolve(request.result || null);
-    };
-    
-    request.onerror = () => reject(request.error);
-  });
+  if (!db) {
+    const raw = localStorage.getItem(`xpData_${userId}`);
+    return raw ? JSON.parse(raw) : null;
+  }
+  // ... lecture IndexedDB + fallback localStorage
 };
 ```
 
@@ -333,7 +328,7 @@ export const loadXPData = async (userId) => {
 
 ## 🎨 Composants UI
 
-### 1. Barre XP Dashboard
+### 1. Barre XP Dashboard (existant)
 
 ```javascript
 // src/components/dashboard/GlobalXPBar.jsx
@@ -375,7 +370,7 @@ const GlobalXPBar = () => {
         <div className="w-full bg-slate-700 rounded-full h-4 overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500"
-            style={{ width: `${progress.percent}%` }}
+            style={{ width: `${Math.min(100, Math.max(0, progress.percent))}%` }}
           />
         </div>
       </div>
@@ -409,444 +404,53 @@ const GlobalXPBar = () => {
 export default GlobalXPBar;
 ```
 
-### 2. Barre XP Livres
+### 2. Barres XP Livres / Sport (absentes)
 
-```javascript
-// src/components/tabs/BooksTab/components/BooksXPBar.jsx
-import React from 'react';
-import { useBooksXP } from '../../../hooks/useBooksXP';
-import { BookOpen, Clock, FileText, TrendingUp } from 'lucide-react';
-
-const BooksXPBar = () => {
-  const { totalXP, level, breakdown, progress } = useBooksXP();
-  
-  return (
-    <div className="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-indigo-500/30 rounded-xl p-4 mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-indigo-400" />
-          <span className="font-semibold text-white">Niveau {level}</span>
-        </div>
-        <span className="text-sm text-slate-300">{totalXP.toLocaleString('fr-FR')} XP</span>
-      </div>
-      
-      <div className="w-full bg-slate-700 rounded-full h-2 mb-3">
-        <div
-          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all"
-          style={{ width: `${progress.percent}%` }}
-        />
-      </div>
-      
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <div className="flex items-center gap-1">
-          <FileText className="w-3 h-3 text-indigo-400" />
-          <span className="text-slate-400">{breakdown.sessions} sessions</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <BookOpen className="w-3 h-3 text-indigo-400" />
-          <span className="text-slate-400">{breakdown.pages} pages</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <TrendingUp className="w-3 h-3 text-indigo-400" />
-          <span className="text-slate-400">{breakdown.pagesPerHour.toFixed(1)} p/h</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default BooksXPBar;
-```
-
-### 3. Barre XP Sport
-
-```javascript
-// src/components/tabs/TodayTab/components/SportXPBar.jsx
-import React from 'react';
-import { useSportXP } from '../../../hooks/useSportXP';
-import { Dumbbell, Flame, Footprints, Target, CheckCircle } from 'lucide-react';
-
-const SportXPBar = () => {
-  const { totalXP, level, breakdown, progress } = useSportXP();
-  
-  return (
-    <div className="bg-gradient-to-r from-red-900/30 to-orange-900/30 border border-red-500/30 rounded-xl p-4 mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Dumbbell className="w-5 h-5 text-red-400" />
-          <span className="font-semibold text-white">Niveau {level}</span>
-        </div>
-        <span className="text-sm text-slate-300">{totalXP.toLocaleString('fr-FR')} XP</span>
-      </div>
-      
-      <div className="w-full bg-slate-700 rounded-full h-2 mb-3">
-        <div
-          className="h-full bg-gradient-to-r from-red-500 to-orange-500 transition-all"
-          style={{ width: `${progress.percent}%` }}
-        />
-      </div>
-      
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-        <div className="flex items-center gap-1">
-          <Dumbbell className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.reps.toLocaleString('fr-FR')} reps</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <CheckCircle className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.exercises} exercices</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Flame className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.calories.toLocaleString('fr-FR')} cal</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Footprints className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.steps.toLocaleString('fr-FR')} pas</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Target className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.challenges} défis</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default SportXPBar;
-```
+Les composants `BooksXPBar` et `SportXPBar` ne sont pas présents dans le code actuel.
 
 ---
 
 ## 🪝 Hooks Personnalisés
 
-### 1. Hook Global XP
+### 1. Hook Global XP (existant, **partiellement branché**)
+
+Le hook existe mais **ne consomme pas encore** les données réelles des autres modules. Il utilise des données temporaires (`tempData`) et calcule donc une XP à 0 tant que l'intégration n'est pas faite.
 
 ```javascript
-// src/hooks/useGlobalXP.js
-import { useState, useEffect, useCallback, useMemo } from 'react';
+// src/hooks/useGlobalXP.js (extrait)
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useQuietQuestEngine } from './useQuietQuestEngine';
-import { useApprentissageEngine } from './useApprentissageEngine';
-import { useNutritionGamification } from './useNutritionGamification';
-import { useBooksXP } from './useBooksXP';
-import { useSportXP } from './useSportXP';
 import { loadXPData, saveXPData } from '../services/xp/xpStorage';
 import { calculateXPForAllCategories } from '../services/xp/xpCalculations';
 
-export const useGlobalXP = () => {
+// TODO: connecter useQuietQuestEngine / useApprentissageEngine / useNutritionGamification
+// TODO: ajouter des hooks Books/Sport dédiés si besoin
+const useGlobalXP = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const userId = currentUser?.id || 'main';
-  
   const [xpData, setXPData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Récupérer les données de chaque système
-  const { userData: questsData, validations, effectiveQuests } = useQuietQuestEngine();
-  const { progressionData } = useApprentissageEngine();
-  const { gamificationData } = useNutritionGamification();
-  const { totalXP: booksXP, breakdown: booksBreakdown } = useBooksXP();
-  const { totalXP: sportXP, breakdown: sportBreakdown } = useSportXP();
-  
-  // Calculer l'XP totale
-  const calculatedXP = useMemo(() => {
-    return calculateXPForAllCategories({
-      quests: { validations, allQuests: effectiveQuests },
-      learning: progressionData,
-      nutrition: gamificationData,
-      books: { totalXP: booksXP, breakdown: booksBreakdown },
-      sport: { totalXP: sportXP, breakdown: sportBreakdown }
-    });
-  }, [validations, effectiveQuests, progressionData, gamificationData, booksXP, sportXP]);
-  
-  // Charger les données sauvegardées
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setIsLoading(false);
-      return;
-    }
-    
-    const loadData = async () => {
-      try {
-        const saved = await loadXPData(userId);
-        if (saved) {
-          setXPData(saved);
-        } else {
-          // Première fois : calculer depuis les données existantes
-          const initialXP = calculatedXP;
-          const newData = {
-            userId,
-            ...initialXP,
-            version: '1.0'
-          };
-          await saveXPData(newData);
-          setXPData(newData);
-        }
-      } catch (error) {
-        console.error('Erreur chargement XP:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadData();
-  }, [userId, isAuthenticated]);
-  
-  // Sauvegarder quand l'XP change
-  useEffect(() => {
-    if (!xpData || !isAuthenticated || isLoading) return;
-    
-    // Comparer avec les données calculées
-    const needsUpdate = 
-      calculatedXP.totalXP !== xpData.totalXP ||
-      JSON.stringify(calculatedXP.xpByCategory) !== JSON.stringify(xpData.xpByCategory);
-    
-    if (needsUpdate) {
-      const updated = {
-        ...xpData,
-        ...calculatedXP,
-        lastUpdated: new Date().toISOString()
-      };
-      
-      saveXPData(updated).then(() => {
-        setXPData(updated);
-      }).catch(error => {
-        console.error('Erreur sauvegarde XP:', error);
-      });
-    }
-  }, [calculatedXP, xpData, isAuthenticated, isLoading]);
-  
-  // Calculer le niveau et la progression
-  const levelInfo = useMemo(() => {
-    if (!xpData) return { level: 1, xpForNextLevel: 100, progress: { percent: 0, xpNeeded: 100 } };
-    
-    const totalXP = xpData.totalXP;
-    const level = Math.floor(totalXP / 1000) + 1;
-    const xpForCurrentLevel = (level - 1) * 1000;
-    const xpForNextLevel = level * 1000;
-    const xpProgress = totalXP - xpForCurrentLevel;
-    const xpNeeded = xpForNextLevel - totalXP;
-    const percent = ((xpProgress / (xpForNextLevel - xpForCurrentLevel)) * 100);
-    
-    return {
-      level,
-      xpForNextLevel,
-      progress: {
-        percent: Math.min(100, Math.max(0, percent)),
-        xpNeeded
-      }
-    };
-  }, [xpData]);
-  
-  return {
-    totalXP: xpData?.totalXP || 0,
-    level: levelInfo.level,
-    xpByCategory: xpData?.xpByCategory || {},
-    progress: levelInfo.progress,
-    details: xpData?.details || {},
-    isLoading
+
+  const tempData = {
+    quests: { validations: [], allQuests: [] },
+    learning: { globalXP: 0 },
+    nutrition: { experience: { currentXP: 0 } },
+    books: { totalXP: 0, breakdown: { sessions: 0, pages: 0, pagesPerHour: 0 } },
+    sport: { totalXP: 0, breakdown: { reps: 0, exercises: 0, calories: 0, steps: 0, challenges: 0, sessions: 0 } }
   };
+
+  const calculatedXP = useMemo(() => calculateXPForAllCategories(tempData), []);
+  // ... chargement/écriture via loadXPData/saveXPData
 };
 ```
 
-### 2. Hook Books XP
+### 2. Hooks Books/Sport XP (absents)
 
-```javascript
-// src/hooks/useBooksXP.js
-import { useState, useEffect, useMemo } from 'react';
-import { useBooksStorage } from './useBooksStorage';
-import { calculateBooksXP } from '../services/xp/xpCalculations';
-import { loadXPData, saveXPData } from '../services/xp/xpStorage';
-import { useAuth } from '../context/AuthContext';
-
-export const useBooksXP = () => {
-  const { currentUser, isAuthenticated } = useAuth();
-  const userId = currentUser?.id || 'main';
-  const { books } = useBooksStorage();
-  
-  const [xpData, setXPData] = useState(null);
-  
-  // Calculer l'XP depuis les sessions
-  const calculatedXP = useMemo(() => {
-    if (!books || books.length === 0) return { totalXP: 0, breakdown: { sessions: 0, pages: 0, pagesPerHour: 0 } };
-    
-    const allSessions = [];
-    let totalPages = 0;
-    let totalMinutes = 0;
-    
-    books.forEach(book => {
-      if (book.readingSessions && Array.isArray(book.readingSessions)) {
-        book.readingSessions.forEach(session => {
-          allSessions.push(session);
-          totalPages += session.pagesRead || 0;
-          totalMinutes += session.durationMinutes || 0;
-        });
-      }
-    });
-    
-    const totalXP = calculateBooksXP(allSessions);
-    const pagesPerHour = totalMinutes > 0 ? (totalPages / totalMinutes) * 60 : 0;
-    
-    return {
-      totalXP,
-      breakdown: {
-        sessions: allSessions.length,
-        pages: totalPages,
-        pagesPerHour: Math.round(pagesPerHour * 10) / 10
-      }
-    };
-  }, [books]);
-  
-  // Charger/sauvegarder
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    const syncXP = async () => {
-      const saved = await loadXPData(userId);
-      const booksXPData = saved?.details?.books || null;
-      
-      if (!booksXPData || booksXPData.totalXP !== calculatedXP.totalXP) {
-        // Mettre à jour dans les données globales
-        const globalData = saved || { userId, totalXP: 0, xpByCategory: {}, details: {}, version: '1.0' };
-        globalData.details.books = {
-          totalXP: calculatedXP.totalXP,
-          lastCalculated: new Date().toISOString(),
-          breakdown: calculatedXP.breakdown
-        };
-        globalData.xpByCategory.books = calculatedXP.totalXP;
-        globalData.totalXP = Object.values(globalData.xpByCategory).reduce((sum, xp) => sum + xp, 0);
-        
-        await saveXPData(globalData);
-        setXPData(calculatedXP);
-      } else {
-        setXPData({ totalXP: booksXPData.totalXP, breakdown: booksXPData.breakdown });
-      }
-    };
-    
-    syncXP();
-  }, [calculatedXP, userId, isAuthenticated]);
-  
-  // Calculer niveau et progression
-  const levelInfo = useMemo(() => {
-    const totalXP = xpData?.totalXP || 0;
-    const level = Math.floor(totalXP / 500) + 1;
-    const xpForCurrentLevel = (level - 1) * 500;
-    const xpForNextLevel = level * 500;
-    const xpProgress = totalXP - xpForCurrentLevel;
-    const xpNeeded = xpForNextLevel - totalXP;
-    const percent = ((xpProgress / (xpForNextLevel - xpForCurrentLevel)) * 100);
-    
-    return {
-      level,
-      progress: {
-        percent: Math.min(100, Math.max(0, percent)),
-        xpNeeded
-      }
-    };
-  }, [xpData]);
-  
-  return {
-    totalXP: xpData?.totalXP || 0,
-    level: levelInfo.level,
-    breakdown: xpData?.breakdown || { sessions: 0, pages: 0, pagesPerHour: 0 },
-    progress: levelInfo.progress
-  };
-};
-```
-
-### 3. Hook Sport XP
-
-```javascript
-// src/hooks/useSportXP.js
-import { useState, useEffect, useMemo } from 'react';
-import { useWorkout } from '../context/WorkoutContext';
-import { useGarminData } from './useGarminData';
-import { calculateSportXP } from '../services/xp/xpCalculations';
-import { loadXPData, saveXPData } from '../services/xp/xpStorage';
-import { useAuth } from '../context/AuthContext';
-
-export const useSportXP = () => {
-  const { currentUser, isAuthenticated } = useAuth();
-  const userId = currentUser?.id || 'main';
-  const { data: workoutData } = useWorkout();
-  const { loadAllData: loadGarminData } = useGarminData();
-  
-  const [xpData, setXPData] = useState(null);
-  const [garminData, setGarminData] = useState(null);
-  
-  // Charger données Garmin
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    loadGarminData().then(data => {
-      setGarminData(data);
-    }).catch(error => {
-      console.error('Erreur chargement Garmin:', error);
-    });
-  }, [isAuthenticated, loadGarminData]);
-  
-  // Calculer l'XP
-  const calculatedXP = useMemo(() => {
-    if (!workoutData) return { totalXP: 0, breakdown: { reps: 0, exercises: 0, calories: 0, steps: 0, challenges: 0, sessions: 0 } };
-    
-    const result = calculateSportXP(workoutData, garminData, workoutData.enduranceData);
-    return result;
-  }, [workoutData, garminData]);
-  
-  // Charger/sauvegarder
-  useEffect(() => {
-    if (!isAuthenticated || !calculatedXP) return;
-    
-    const syncXP = async () => {
-      const saved = await loadXPData(userId);
-      const sportXPData = saved?.details?.sport || null;
-      
-      if (!sportXPData || sportXPData.totalXP !== calculatedXP.totalXP) {
-        const globalData = saved || { userId, totalXP: 0, xpByCategory: {}, details: {}, version: '1.0' };
-        globalData.details.sport = {
-          totalXP: calculatedXP.totalXP,
-          lastCalculated: new Date().toISOString(),
-          breakdown: calculatedXP.breakdown
-        };
-        globalData.xpByCategory.sport = calculatedXP.totalXP;
-        globalData.totalXP = Object.values(globalData.xpByCategory).reduce((sum, xp) => sum + xp, 0);
-        
-        await saveXPData(globalData);
-        setXPData(calculatedXP);
-      } else {
-        setXPData({ totalXP: sportXPData.totalXP, breakdown: sportXPData.breakdown });
-      }
-    };
-    
-    syncXP();
-  }, [calculatedXP, userId, isAuthenticated]);
-  
-  // Calculer niveau et progression
-  const levelInfo = useMemo(() => {
-    const totalXP = xpData?.totalXP || 0;
-    const level = Math.floor(totalXP / 1000) + 1;
-    const xpForCurrentLevel = (level - 1) * 1000;
-    const xpForNextLevel = level * 1000;
-    const xpProgress = totalXP - xpForCurrentLevel;
-    const xpNeeded = xpForNextLevel - totalXP;
-    const percent = ((xpProgress / (xpForNextLevel - xpForCurrentLevel)) * 100);
-    
-    return {
-      level,
-      progress: {
-        percent: Math.min(100, Math.max(0, percent)),
-        xpNeeded
-      }
-    };
-  }, [xpData]);
-  
-  return {
-    totalXP: xpData?.totalXP || 0,
-    level: levelInfo.level,
-    breakdown: xpData?.breakdown || { reps: 0, exercises: 0, calories: 0, steps: 0, challenges: 0, sessions: 0 },
-    progress: levelInfo.progress
-  };
-};
-```
+Il n'existe **pas** de hooks `useBooksXP` ou `useSportXP` dans le code.  
+Si besoin, ils devront :
+- agréger les données réelles (`readingSessions` pour les livres, `useWorkout` + `useGarminData` pour le sport),
+- écrire dans `xpStorage` via `saveXPData`,
+- mettre à jour `xpByCategory` et `details`.
 
 ---
 
@@ -980,11 +584,11 @@ export const calculateNutritionXP = (gamificationData) => {
 
 // Calcul global de toutes les catégories
 export const calculateXPForAllCategories = (data) => {
-  const questsXP = calculateQuestsXP(data.quests.validations, data.quests.allQuests);
+  const questsXP = calculateQuestsXP(data.quests?.validations, data.quests?.allQuests);
   const learningXP = calculateLearningXP(data.learning);
   const nutritionXP = calculateNutritionXP(data.nutrition);
-  const booksXP = data.books.totalXP || 0;
-  const sportXP = data.sport.totalXP || 0;
+  const booksXP = data.books?.totalXP || 0;
+  const sportXP = data.sport?.totalXP || 0;
   
   const totalXP = questsXP + learningXP + nutritionXP + booksXP + sportXP;
   
@@ -1002,7 +606,7 @@ export const calculateXPForAllCategories = (data) => {
         totalXP: questsXP,
         lastCalculated: new Date().toISOString(),
         breakdown: {
-          completed: data.quests.validations.filter(v => v.completed).length,
+          completed: data.quests?.validations?.filter(v => v.completed).length || 0,
           difficulty: {
             1: 0, 2: 0, 3: 0, 4: 0
           }
@@ -1012,8 +616,8 @@ export const calculateXPForAllCategories = (data) => {
         totalXP: learningXP,
         lastCalculated: new Date().toISOString(),
         breakdown: {
-          studyTime: data.learning.totalStudyTime || 0,
-          sessions: Object.values(data.learning.subjects || {}).reduce((sum, s) => sum + (s.sessions || 0), 0),
+          studyTime: data.learning?.totalStudyTime || 0,
+          sessions: Object.values(data.learning?.subjects || {}).reduce((sum, s) => sum + (s.sessions || 0), 0),
           subjects: {}
         }
       },
@@ -1029,12 +633,12 @@ export const calculateXPForAllCategories = (data) => {
       books: {
         totalXP: booksXP,
         lastCalculated: new Date().toISOString(),
-        breakdown: data.books.breakdown || { sessions: 0, pages: 0, pagesPerHour: 0 }
+        breakdown: data.books?.breakdown || { sessions: 0, pages: 0, pagesPerHour: 0 }
       },
       sport: {
         totalXP: sportXP,
         lastCalculated: new Date().toISOString(),
-        breakdown: data.sport.breakdown || { reps: 0, exercises: 0, calories: 0, steps: 0, challenges: 0, sessions: 0 }
+        breakdown: data.sport?.breakdown || { reps: 0, exercises: 0, calories: 0, steps: 0, challenges: 0, sessions: 0 }
       }
     }
   };
@@ -1045,74 +649,12 @@ export const calculateXPForAllCategories = (data) => {
 
 ## 🔄 Migration des Données Existantes
 
-### Script de Migration
+**Non implémenté dans le code actuel.**  
+Le document précédent proposait un script qui appelait des hooks React depuis un service : ce n'est **pas valide** (les hooks ne peuvent être utilisés que dans des composants ou d'autres hooks).
 
-```javascript
-// src/services/xp/xpMigration.js
-import { loadXPData, saveXPData } from './xpStorage';
-import { calculateXPForAllCategories } from './xpCalculations';
-import { useQuietQuestEngine } from '../../hooks/useQuietQuestEngine';
-import { useApprentissageEngine } from '../../hooks/useApprentissageEngine';
-import { useNutritionGamification } from '../../hooks/useNutritionGamification';
-import { useBooksStorage } from '../../hooks/useBooksStorage';
-import { useWorkout } from '../../context/WorkoutContext';
-import { useGarminData } from '../../hooks/useGarminData';
-
-export const migrateExistingXPData = async (userId) => {
-  // Récupérer toutes les données existantes
-  const questsData = useQuietQuestEngine();
-  const learningData = useApprentissageEngine();
-  const nutritionData = useNutritionGamification();
-  const { books } = useBooksStorage();
-  const { data: workoutData } = useWorkout();
-  const { loadAllData: loadGarminData } = useGarminData();
-  
-  const garminData = await loadGarminData();
-  
-  // Calculer l'XP pour chaque catégorie
-  const allSessions = [];
-  books.forEach(book => {
-    if (book.readingSessions) {
-      allSessions.push(...book.readingSessions);
-    }
-  });
-  
-  const booksXP = calculateBooksXP(allSessions);
-  const sportXP = calculateSportXP(workoutData, garminData, workoutData.enduranceData);
-  
-  const xpData = calculateXPForAllCategories({
-    quests: {
-      validations: questsData.validations,
-      allQuests: questsData.effectiveQuests
-    },
-    learning: learningData.progressionData,
-    nutrition: nutritionData.gamificationData,
-    books: {
-      totalXP: booksXP,
-      breakdown: {
-        sessions: allSessions.length,
-        pages: allSessions.reduce((sum, s) => sum + (s.pagesRead || 0), 0),
-        pagesPerHour: 0 // Calculé dynamiquement
-      }
-    },
-    sport: {
-      totalXP: sportXP.totalXP,
-      breakdown: sportXP.breakdown
-    }
-  });
-  
-  // Sauvegarder
-  const finalData = {
-    userId,
-    ...xpData,
-    version: '1.0',
-    lastUpdated: new Date().toISOString()
-  };
-  
-  await saveXPData(finalData);
-  return finalData;
-};
-```
+Si une migration est nécessaire, il faut :
+- l'exécuter **dans un hook** (ex : `useGlobalXP` au premier chargement),
+- ou injecter les données **déjà préparées** (sans utiliser de hooks dans le service).
 
 ---
 
@@ -1131,54 +673,38 @@ import GlobalXPBar from '../dashboard/GlobalXPBar';
 </div>
 ```
 
-### BooksTab.jsx
+### BooksTab.jsx / TodayTab.jsx
 
-```javascript
-// Ajouter la barre XP en haut de l'onglet
-import BooksXPBar from './components/BooksXPBar';
-
-// Dans le return, en haut :
-<BooksXPBar />
-```
-
-### TodayTab.jsx (Sport)
-
-```javascript
-// Ajouter la barre XP en haut de l'onglet
-import SportXPBar from './components/SportXPBar';
-
-// Dans le return, en haut :
-<SportXPBar />
-```
+Pas d'intégration XP spécifique actuellement (les barres `BooksXPBar` / `SportXPBar` n'existent pas).
 
 ---
 
-## ✅ Checklist d'Implémentation
+## ✅ Checklist d'Implémentation (état réel)
 
-- [ ] Créer le service de stockage XP (`src/services/xp/xpStorage.js`)
-- [ ] Créer les fonctions de calcul (`src/services/xp/xpCalculations.js`)
-- [ ] Créer le hook `useGlobalXP`
+- [x] Créer le service de stockage XP (`src/services/xp/xpStorage.js`)
+- [x] Créer les fonctions de calcul (`src/services/xp/xpCalculations.js`)
+- [x] Créer le hook `useGlobalXP` (actuellement **non branché** aux vrais modules)
 - [ ] Créer le hook `useBooksXP`
 - [ ] Créer le hook `useSportXP`
-- [ ] Créer le composant `GlobalXPBar`
+- [x] Créer le composant `GlobalXPBar`
 - [ ] Créer le composant `BooksXPBar`
 - [ ] Créer le composant `SportXPBar`
-- [ ] Intégrer `GlobalXPBar` dans `DashboardTab`
+- [x] Intégrer `GlobalXPBar` dans `DashboardTab`
 - [ ] Intégrer `BooksXPBar` dans `BooksTab`
 - [ ] Intégrer `SportXPBar` dans `TodayTab`
-- [ ] Tester la migration des données existantes
-- [ ] Vérifier la persistance après rafraîchissement
+- [ ] Mettre en place une migration (dans un hook, sans hooks dans un service)
+- [ ] Vérifier la persistance après rafraîchissement avec données réelles
 - [ ] Tester les calculs avec des données réelles
 
 ---
 
-## 🎯 Points d'Attention
+## 🎯 Points d'Attention (écarts et risques)
 
-1. **Performance** : Les calculs sont memoizés pour éviter les recalculs inutiles
-2. **Persistance** : Toutes les données sont sauvegardées dans IndexedDB avec backup localStorage
-3. **Migration** : Les données existantes sont automatiquement migrées au premier chargement
-4. **Synchronisation** : L'XP est recalculée automatiquement quand les données sources changent
-5. **Isolation** : Chaque utilisateur a ses propres données XP (multi-utilisateurs)
+1. **Branchement incomplet** : `useGlobalXP` utilise `tempData`, donc l'XP globale est à 0 tant que les vrais hooks ne sont pas connectés.
+2. **Migration absente** : aucune migration automatique n'existe actuellement.
+3. **Synchronisation partielle** : l'XP globale ne réagit pas aux données réelles (quêtes, apprentissage, nutrition, livres, sport).
+4. **Persistance** : IndexedDB + fallback localStorage OK, mais la donnée persistée peut rester figée sans recalcul réel.
+5. **Multi-utilisateur** : `userId` utilise `currentUser?.id || 'main'` (comportement à valider côté auth).
 
 ---
 

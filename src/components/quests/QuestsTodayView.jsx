@@ -3,6 +3,7 @@ import {
   getTodayDateStr,
   calculateQuestXP,
 } from '../../hooks/useQuietQuestEngine';
+import QuestsXPBar from './QuestsXPBar';
 
 // ✅ PHASE 2 : Memoization pour éviter re-renders inutiles
 
@@ -22,6 +23,7 @@ const QuestsTodayView = ({
   toggleQuestValidation,
   getQuestsForDate,
   userData,
+  validations,
 }) => {
   const today = getTodayDateStr();
   const questsToday = getQuestsForDate(today);
@@ -37,73 +39,9 @@ const QuestsTodayView = ({
       ? Math.round((completedCount / questsToday.length) * 100)
       : 0;
 
-  // Calculer l'XP total cumulé
-  const calculateTotalCumulativeXP = () => {
-    if (!userData) return 0;
-    const { level, currentXP } = userData;
-    
-    // Calculer l'XP total nécessaire pour atteindre le niveau actuel
-    // Niveau 1: 0 XP requis (on commence au niveau 1)
-    // Niveau 2: 2500 XP requis
-    // Niveau 3: 2500 + 2750 = 5250 XP requis
-    // Niveau 4: 5250 + 3025 = 8275 XP requis
-    // etc.
-    let totalXPForCurrentLevel = 0;
-    let xpForLevel = 2500; // XP nécessaire pour passer du niveau 1 au niveau 2
-    
-    // Pour chaque niveau de 2 à (level - 1), on ajoute l'XP nécessaire
-    for (let l = 2; l < level; l++) {
-      totalXPForCurrentLevel += xpForLevel;
-      xpForLevel = Math.round(xpForLevel * 1.1);
-    }
-    
-    // Ajouter l'XP actuel du niveau courant
-    return totalXPForCurrentLevel + (currentXP || 0);
-  };
-
-  const totalCumulativeXP = calculateTotalCumulativeXP();
-  const level = userData?.level || 1;
-  const currentXP = userData?.currentXP || 0;
-  const xpForNextLevel = userData?.xpForNextLevel || 2500;
-  const progressPercent = xpForNextLevel > 0 
-    ? Math.min(Math.round((currentXP / xpForNextLevel) * 100), 100)
-    : 0;
-
   return (
     <div className="space-y-4">
-      {/* Panneau de niveau et XP */}
-      <div className="bg-gradient-to-br from-slate-900/90 via-slate-800/50 to-slate-900/90 border border-emerald-500/20 rounded-2xl px-6 py-4 shadow-xl shadow-emerald-500/10">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="text-3xl font-bold text-emerald-400">
-                Niveau {level}
-              </div>
-              <div className="h-8 w-px bg-slate-700"></div>
-              <div>
-                <div className="text-xs text-slate-400 mb-1">XP total cumulé</div>
-                <div className="text-xl font-semibold text-emerald-300">
-                  {totalCumulativeXP.toLocaleString('fr-FR')} XP
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400">Progression vers le niveau {level + 1}</span>
-                <span className="text-slate-300 font-semibold">
-                  {currentXP.toLocaleString('fr-FR')} / {xpForNextLevel.toLocaleString('fr-FR')} XP
-                </span>
-              </div>
-              <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-cyan-400 transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <QuestsXPBar userData={userData} validations={validations} allQuests={allQuests} />
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

@@ -73,6 +73,36 @@ const EnduranceTab = () => {
     editingChallenge: null
   };
 
+  const buildChallengeKey = useCallback((challenge) => {
+    return [
+      challenge?.name || '',
+      challenge?.activityType || '',
+      challenge?.type || '',
+      challenge?.targetDate || '',
+      challenge?.startDate || '',
+      challenge?.endDate || '',
+      challenge?.frequency || '',
+      challenge?.dayOfWeek ?? '',
+      challenge?.goalCount ?? '',
+      challenge?.goalDuration ?? '',
+      challenge?.goalDistance ?? '',
+      challenge?.goalJumps ?? '',
+      challenge?.status || ''
+    ].join('|');
+  }, []);
+
+  const uniqueChallenges = useMemo(() => {
+    const seen = new Set();
+    const unique = [];
+    challenges.forEach((challenge) => {
+      const key = buildChallengeKey(challenge);
+      if (seen.has(key)) return;
+      seen.add(key);
+      unique.push(challenge);
+    });
+    return unique;
+  }, [challenges, buildChallengeKey]);
+
   // Setters optimisés
   const setActiveTab = useCallback((tab) => {
     setEnduranceState(prev => ({ ...prev, activeTab: tab }));
@@ -301,7 +331,8 @@ const EnduranceTab = () => {
   // Système de rappel des défis actifs
   const getActiveChallenges = useCallback(() => {
     const now = new Date();
-    return challenges.filter(challenge => {
+    const todayStr = now.toISOString().slice(0, 10);
+    return uniqueChallenges.filter(challenge => {
       if (challenge.status !== 'active') return false;
       
       // Vérifier si le défi est encore valide selon son type
@@ -310,13 +341,16 @@ const EnduranceTab = () => {
           return new Date(challenge.targetDate) > now;
         case 'periode':
           return new Date(challenge.endDate) > now;
-        case 'recurrent':
-          return true; // Les défis récurrents sont toujours actifs
+        case 'recurrent': {
+          // Un défi récurrent ne compte plus comme "actif" s'il est déjà fait aujourd'hui
+          if (challenge.lastCompletedDate === todayStr) return false;
+          return true;
+        }
         default:
           return true;
       }
     });
-  }, [challenges]);
+  }, [uniqueChallenges]);
 
   // Fonction pour obtenir les défis urgents (échéance < 24h)
   const getUrgentChallenges = useCallback(() => {
@@ -1066,7 +1100,7 @@ const EnduranceTab = () => {
         <nav className="px-4">
           {menuItems.map(item => {
             const Icon = item.icon;
-            const count = challenges.filter(c => c.activityType === item.id && c.status === 'active').length;
+            const count = activeChallenges.filter(c => c.activityType === item.id).length;
             return (
               <button
                 key={item.id}
@@ -1302,11 +1336,11 @@ const EnduranceTab = () => {
               )}
 
               {/* Liste des défis */}
-              {challenges.filter(c => c.activityType === 'pushups').length > 0 && (
+              {uniqueChallenges.filter(c => c.activityType === 'pushups').length > 0 && (
                 <div className="mb-8">
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
                   <div className="grid gap-4">
-                    {challenges.filter(c => c.activityType === 'pushups').map((challenge, idx) => (
+                    {uniqueChallenges.filter(c => c.activityType === 'pushups').map((challenge, idx) => (
                       <div key={`pushups-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
@@ -2468,6 +2502,7 @@ const EnduranceTab = () => {
                   onChange={(e) => setChallengeForm({...challengeForm, activityType: e.target.value})}
                   className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
                 >
+                  <option value="boxing">{t('endurance.menu.boxing')}</option>
                   <option value="pushups">{t('endurance.menu.pushups')}</option>
                   <option value="swimming">{t('endurance.menu.swimming')}</option>
                   <option value="jumprope">{t('endurance.menu.jumprope')}</option>

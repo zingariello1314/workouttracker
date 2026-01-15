@@ -213,27 +213,62 @@ function dedupeSessions(sessionsByType, { logger = DEFAULT_LOGGER } = {}) {
   return { sessions: result, duplicateCount };
 }
 
+function buildChallengeSignature(challenge = {}) {
+  return [
+    challenge.name || '',
+    challenge.activityType || '',
+    challenge.type || '',
+    challenge.targetDate || '',
+    challenge.startDate || '',
+    challenge.endDate || '',
+    challenge.frequency || '',
+    challenge.dayOfWeek ?? '',
+    challenge.goalCount ?? '',
+    challenge.goalDuration ?? '',
+    challenge.goalDistance ?? '',
+    challenge.goalJumps ?? '',
+    challenge.status || ''
+  ].join('|');
+}
+
 function dedupeChallenges(challenges, { logger = DEFAULT_LOGGER } = {}) {
   const idMap = new Map();
+  const signatureMap = new Map();
   let duplicateCount = 0;
+  let signatureDuplicates = 0;
 
-  const deduped = challenges.map((challenge, index) => {
+  const deduped = [];
+
+  challenges.forEach((challenge, index) => {
     const challengeId = String(challenge.id);
-    if (!idMap.has(challengeId)) {
-      idMap.set(challengeId, index);
-      return challenge;
+    if (idMap.has(challengeId)) {
+      duplicateCount += 1;
+      const newId = generateStableId('challenge');
+      logger.warn?.(`[enduranceDataService] Duplicate challenge id detected: ${challengeId} → ${newId}`);
+      const next = { ...challenge, id: newId };
+      const signature = buildChallengeSignature(next);
+      if (signatureMap.has(signature)) {
+        signatureDuplicates += 1;
+        return;
+      }
+      idMap.set(newId, index);
+      signatureMap.set(signature, true);
+      deduped.push(next);
+      return;
     }
 
-    duplicateCount += 1;
-    const newId = generateStableId('challenge');
-    logger.warn?.(`[enduranceDataService] Duplicate challenge id detected: ${challengeId} → ${newId}`);
-    return {
-      ...challenge,
-      id: newId
-    };
+    const signature = buildChallengeSignature(challenge);
+    if (signatureMap.has(signature)) {
+      signatureDuplicates += 1;
+      return;
+    }
+
+    idMap.set(challengeId, index);
+    signatureMap.set(signature, true);
+    deduped.push(challenge);
   });
 
-  return { challenges: deduped, duplicateCount };
+  return { challenges: deduped, duplicateCount: duplicateCount + signatureDuplicates };
 }
 
 function normalizeSession(activityType, session = {}) {

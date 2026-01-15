@@ -26,6 +26,7 @@ import { useBooksSessions } from './BooksTab/hooks/useBooksSessions';
 import { useBooksImportExport } from './BooksTab/hooks/useBooksImportExport';
 import { useBooksCovers } from './BooksTab/hooks/useBooksCovers';
 import { useBooksAssets } from './BooksTab/hooks/useBooksAssets';
+import BooksXPBar from './BooksTab/components/BooksXPBar';
 
 // Utilitaires
 import {
@@ -314,6 +315,7 @@ const BooksTab = () => {
   return (
     <div className="relative min-h-screen">
       <div className="relative z-10 space-y-8 p-8">
+        <BooksXPBar />
         {isLoading && (
           <Card variant="glass">
             <CardContent>

@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'QuietQuestDB';
-const DB_VERSION = 2; // Incrémenté pour créer le nouvel object store
+const DB_VERSION = null; // Laisser IndexedDB gérer la version actuelle
 const STORE_NAME = 'sidebarPreferences';
 const PREFERENCES_KEY = 'preferences';
 
@@ -41,17 +41,51 @@ const DEFAULT_PREFERENCES = {
  * Initialise la base de données IndexedDB
  * @returns {Promise<IDBDatabase>} Instance de la base de données
  */
+const upgradeSidebarDB = (nextVersion) =>
+  new Promise((resolve, reject) => {
+    const upgradeRequest = indexedDB.open(DB_NAME, nextVersion);
+
+    upgradeRequest.onerror = () => {
+      console.error('[SidebarStorage] Erreur lors de l\'upgrade DB:', upgradeRequest.error);
+      reject(upgradeRequest.error);
+    };
+
+    upgradeRequest.onsuccess = () => {
+      resolve(upgradeRequest.result);
+    };
+
+    upgradeRequest.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+        console.log('[SidebarStorage] Object store créé:', STORE_NAME);
+      }
+    };
+  });
+
 const initDB = () => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = DB_VERSION ? indexedDB.open(DB_NAME, DB_VERSION) : indexedDB.open(DB_NAME);
 
     request.onerror = () => {
       console.error('[SidebarStorage] Erreur lors de l\'ouverture de la base de données:', request.error);
       reject(request.error);
     };
 
-    request.onsuccess = () => {
-      resolve(request.result);
+    request.onsuccess = async () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const nextVersion = (db.version || 1) + 1;
+        db.close();
+        try {
+          const upgraded = await upgradeSidebarDB(nextVersion);
+          resolve(upgraded);
+        } catch (error) {
+          reject(error);
+        }
+        return;
+      }
+      resolve(db);
     };
 
     request.onupgradeneeded = (event) => {

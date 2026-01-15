@@ -2,6 +2,9 @@
  * Fonctions de calcul XP pour chaque catégorie
  */
 
+import { loadEnduranceData as loadEnduranceDataService } from '../endurance/enduranceDataService';
+import { evaluateChallenges } from '../endurance/enduranceChallengesService';
+
 // XP par difficulté pour les quêtes (réutilisé depuis useQuietQuestEngine)
 const DIFFICULTY_XP_BASE = {
   1: 250,
@@ -105,12 +108,42 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
     totalXP += Math.round(totalSteps * 0.01);
   }
   
-  // 5. XP des défis d'endurance : 50 XP par défi complété
-  if (enduranceData?.challenges) {
-    const completedChallenges = enduranceData.challenges.filter(c => c.status === 'completed').length;
-    breakdown.challenges = completedChallenges;
-    totalXP += completedChallenges * 50;
-  }
+  // 5. XP des défis d'endurance : 50 XP par défi validé
+  const normalizedEndurance = loadEnduranceDataService(enduranceData || {});
+  const sessionsByType = normalizedEndurance?.sessions || {};
+  const allChallenges = Array.isArray(normalizedEndurance?.challenges)
+    ? normalizedEndurance.challenges
+    : [];
+
+  const evaluationChallenges = allChallenges.map((challenge) => ({
+    ...challenge,
+    status: 'active'
+  }));
+
+  const sessionValidations = Object.values(sessionsByType).reduce((sum, list) => {
+    if (!Array.isArray(list)) return sum;
+    return sum + list.reduce((innerSum, session) => {
+      if (Array.isArray(session?.validatedChallenges) && session.validatedChallenges.length > 0) {
+        const uniqueIds = new Set(
+          session.validatedChallenges
+            .filter((id) => id !== null && id !== undefined)
+            .map((id) => String(id))
+        );
+        return innerSum + uniqueIds.size;
+      }
+      const activityType = session?.activityType;
+      if (!activityType) return innerSum;
+      const evaluation = evaluateChallenges(evaluationChallenges, session, activityType);
+      return innerSum + (evaluation.validatedIds?.length || 0);
+    }, 0);
+  }, 0);
+  
+  const completedChallenges = allChallenges.filter(c => c.status === 'completed').length;
+  
+  const totalChallengeCompletions = sessionValidations > 0 ? sessionValidations : completedChallenges;
+  
+  breakdown.challenges = totalChallengeCompletions;
+  totalXP += totalChallengeCompletions * 50;
   
   // 6. XP des sessions complètes : 25 XP par session avec feedback
   if (workoutData.sessionFeedbacks) {
@@ -132,19 +165,25 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
  * @returns {number} XP totale
  */
 export const calculateQuestsXP = (validations, allQuests) => {
-  if (!validations || !allQuests) return 0;
+  if (!validations || validations.length === 0) return 0;
+  
+  // QuietQuest stocke souvent xpGagne directement dans les validations.
+  const xpFromValidations = validations.reduce((sum, v) => {
+    return sum + (v?.xpGagne || 0);
+  }, 0);
+  if (xpFromValidations > 0) return xpFromValidations;
+  
+  if (!allQuests || allQuests.length === 0) return 0;
   
   let totalXP = 0;
-  
-  validations.forEach(validation => {
-    if (!validation.completed) return;
-    
-    const quest = allQuests.find(q => q.id === validation.questId);
-    if (quest) {
-      const base = DIFFICULTY_XP_BASE[quest.difficulte] || DIFFICULTY_XP_BASE[1];
-      const multiplier = (quest.duree || 60) / 60;
-      totalXP += Math.round(base * multiplier);
-    }
+  validations.forEach((validation) => {
+    const questId = validation?.queteId ?? validation?.questId;
+    if (!questId) return;
+    const quest = allQuests.find(q => q.id === questId);
+    if (!quest) return;
+    const base = DIFFICULTY_XP_BASE[quest.difficulte] || DIFFICULTY_XP_BASE[1];
+    const multiplier = (quest.duree || 60) / 60;
+    totalXP += Math.round(base * multiplier);
   });
   
   return totalXP;
@@ -198,7 +237,7 @@ export const calculateXPForAllCategories = (data) => {
         totalXP: questsXP,
         lastCalculated: new Date().toISOString(),
         breakdown: {
-          completed: data.quests?.validations?.filter(v => v.completed).length || 0,
+          completed: data.quests?.validations?.length || 0,
           difficulty: {
             1: 0, 2: 0, 3: 0, 4: 0
           }

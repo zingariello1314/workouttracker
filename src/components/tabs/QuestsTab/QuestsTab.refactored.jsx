@@ -164,6 +164,7 @@ const QuestsTab = () => {
       toggleQuestValidation={toggleQuestValidation}
       getQuestsForDate={getQuestsForDateMemoized}
       userData={userData}
+      validations={validations}
     />
   );
 
