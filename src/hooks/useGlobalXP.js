@@ -13,12 +13,14 @@ import { useSportXP } from './useSportXP';
 import { loadXPData, saveXPData } from '../services/xp/xpStorage';
 import { calculateXPForAllCategories } from '../services/xp/xpCalculations';
 
+let globalXpCache = { signature: null, calculated: null, data: null };
+
 // Hook de base - sera complété avec les hooks existants
 const useGlobalXP = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const userId = currentUser?.id || 'main';
   
-  const [xpData, setXPData] = useState(null);
+  const [xpData, setXPData] = useState(globalXpCache.data);
   const [isLoading, setIsLoading] = useState(true);
   
   const { validations, effectiveQuests } = useQuietQuestEngine();
@@ -43,6 +45,10 @@ const useGlobalXP = () => {
     if (cacheRef.current.signature === signature && cacheRef.current.result) {
       return cacheRef.current.result;
     }
+    if (globalXpCache.signature === signature && globalXpCache.calculated) {
+      cacheRef.current = { signature, result: globalXpCache.calculated };
+      return globalXpCache.calculated;
+    }
 
     const result = calculateXPForAllCategories({
       quests: { validations, allQuests: effectiveQuests },
@@ -52,6 +58,7 @@ const useGlobalXP = () => {
       sport: { totalXP: sportXP, breakdown: sportBreakdown }
     });
     cacheRef.current = { signature, result };
+    globalXpCache = { ...globalXpCache, signature, calculated: result };
     return result;
   }, [
     validations,
@@ -115,6 +122,7 @@ const useGlobalXP = () => {
       
       saveXPData(updated).then(() => {
         setXPData(updated);
+        globalXpCache = { ...globalXpCache, data: updated };
       }).catch(error => {
         console.error('Erreur sauvegarde XP:', error);
       });

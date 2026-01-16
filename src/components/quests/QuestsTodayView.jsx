@@ -24,6 +24,7 @@ const QuestsTodayView = ({
   getQuestsForDate,
   userData,
   validations,
+  isLoading,
 }) => {
   const today = getTodayDateStr();
   const questsToday = getQuestsForDate(today);
@@ -41,7 +42,7 @@ const QuestsTodayView = ({
 
   return (
     <div className="space-y-4">
-      <QuestsXPBar userData={userData} validations={validations} allQuests={allQuests} />
+      <QuestsXPBar userData={userData} validations={validations} allQuests={allQuests} isLoading={isLoading} />
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

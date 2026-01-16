@@ -146,6 +146,7 @@ export function useQuietQuestEngine() {
   const [userData, setUserData] = useState(defaultUserData);
   const [validations, setValidations] = useState([]);
   const [dailyPerformances, setDailyPerformances] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Vérifier si c'est l'utilisateur zingariello1314
   const isZingariello = currentUser?.username === 'zingariello1314';
@@ -304,6 +305,7 @@ export function useQuietQuestEngine() {
   // Chargement initial avec migration automatique
   useEffect(() => {
     isLoadingRef.current = true;
+    setIsLoading(true);
     
     const loadData = async () => {
       console.log('[useQuietQuestEngine] 🔄 Début chargement données...');
@@ -389,6 +391,7 @@ export function useQuietQuestEngine() {
           setDailyPerformances(Array.isArray(storedDaily) ? storedDaily : []);
         }
         isLoadingRef.current = false;
+        setIsLoading(false);
         return;
       }
     
@@ -496,6 +499,7 @@ export function useQuietQuestEngine() {
       }
       
       isLoadingRef.current = false;
+      setIsLoading(false);
       console.log('[useQuietQuestEngine] ✅ Chargement terminé');
     };
 
@@ -903,6 +907,7 @@ export function useQuietQuestEngine() {
     toggleQuestValidation, // La validation fonctionne pour zingariello aussi
     recalcDailyPerformanceForDate,
     getQuestsForDate: getQuestsForDateMemoized,
+    isLoading,
   };
 }
 

@@ -75,6 +75,7 @@ const QuestsTab = () => {
     isQuestCompletedOnDate,
     toggleQuestValidation,
     getQuestsForDate: getQuestsForDateMemoized,
+    isLoading,
   } = useQuietQuestEngine();
 
   // ✅ PHASE 4 : Hooks personnalisés pour la logique métier
@@ -165,6 +166,7 @@ const QuestsTab = () => {
       getQuestsForDate={getQuestsForDateMemoized}
       userData={userData}
       validations={validations}
+      isLoading={isLoading}
     />
   );
 

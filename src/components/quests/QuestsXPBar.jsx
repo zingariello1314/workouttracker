@@ -2,20 +2,88 @@
  * Barre XP dédiée aux quêtes (QuietQuest)
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Target, TrendingUp } from 'lucide-react';
 import { calculateQuestsXP } from '../../services/xp/xpCalculations';
 
-const QuestsXPBar = ({ userData, validations, allQuests }) => {
+let questsXpCache = {
+  signature: null,
+  totalXP: 0,
+  percent: 0,
+  display: { level: 1, currentXP: 0, xpForNextLevel: 2500 }
+};
+
+const QuestsXPBar = ({ userData, validations, allQuests, isLoading = false }) => {
+  const cacheRef = useRef({
+    total: { signature: null, totalXP: 0 },
+    percent: { signature: null, percent: 0 },
+    display: { signature: null, value: { level: 1, currentXP: 0, xpForNextLevel: 2500 } }
+  });
   const totalXP = useMemo(
-    () => calculateQuestsXP(validations, allQuests),
-    [validations, allQuests]
+    () => {
+      const validationsCount = Array.isArray(validations) ? validations.length : 0;
+      const validationsXP = Array.isArray(validations)
+        ? validations.reduce((sum, v) => sum + (v?.xpGagne || 0), 0)
+        : 0;
+      const signature = [
+        validationsCount,
+        validationsXP,
+        Array.isArray(allQuests) ? allQuests.length : 0
+      ].join('|');
+
+      if (validationsCount === 0 && isLoading && questsXpCache.signature) {
+        return questsXpCache.totalXP;
+      }
+      if (cacheRef.current.total.signature === signature) {
+        return cacheRef.current.total.totalXP;
+      }
+      if (questsXpCache.signature === signature) {
+        cacheRef.current.total = { signature, totalXP: questsXpCache.totalXP };
+        return questsXpCache.totalXP;
+      }
+
+      const value = calculateQuestsXP(validations, allQuests);
+      cacheRef.current.total = { signature, totalXP: value };
+      questsXpCache = { ...questsXpCache, signature, totalXP: value };
+      return value;
+    },
+    [validations, allQuests, isLoading]
   );
 
-  const level = userData?.level || 1;
-  const currentXP = userData?.currentXP || 0;
-  const xpForNextLevel = userData?.xpForNextLevel || 2500;
-  const percent = xpForNextLevel > 0 ? (currentXP / xpForNextLevel) * 100 : 0;
+  const display = useMemo(() => {
+    const value = {
+      level: userData?.level || 1,
+      currentXP: userData?.currentXP || 0,
+      xpForNextLevel: userData?.xpForNextLevel || 2500
+    };
+    const signature = `${value.level}|${value.currentXP}|${value.xpForNextLevel}`;
+
+    if (isLoading && questsXpCache.display) {
+      return questsXpCache.display;
+    }
+    if (cacheRef.current.display.signature === signature) {
+      return cacheRef.current.display.value;
+    }
+    cacheRef.current.display = { signature, value };
+    questsXpCache = { ...questsXpCache, display: value };
+    return value;
+  }, [userData, isLoading]);
+
+  const { level, currentXP, xpForNextLevel } = display;
+  const percent = useMemo(() => {
+    const signature = [currentXP, xpForNextLevel].join('|');
+    if (cacheRef.current.percent.signature === signature) {
+      return cacheRef.current.percent.percent;
+    }
+    if (questsXpCache.signature === signature && questsXpCache.percent !== undefined) {
+      cacheRef.current.percent = { signature, percent: questsXpCache.percent };
+      return questsXpCache.percent;
+    }
+    const value = xpForNextLevel > 0 ? (currentXP / xpForNextLevel) * 100 : 0;
+    cacheRef.current.percent = { signature, percent: value };
+    questsXpCache = { ...questsXpCache, signature, percent: value };
+    return value;
+  }, [currentXP, xpForNextLevel]);
 
   return (
     <div className="bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 border border-emerald-500/30 rounded-2xl px-6 py-4 shadow-xl shadow-emerald-500/10">

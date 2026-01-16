@@ -7,6 +7,7 @@ import { useBooksStorage } from './useBooksStorage';
 import { calculateBooksXP } from '../services/xp/xpCalculations';
 
 const DEFAULT_BREAKDOWN = { sessions: 0, pages: 0, pagesPerHour: 0 };
+let booksXpCache = { signature: null, result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN } };
 
 export const useBooksXP = () => {
   const { books, isLoading } = useBooksStorage();
@@ -14,6 +15,9 @@ export const useBooksXP = () => {
 
   const calculated = useMemo(() => {
     if (!Array.isArray(books) || books.length === 0) {
+      if (isLoading && booksXpCache.signature) {
+        return booksXpCache.result;
+      }
       return { totalXP: 0, breakdown: DEFAULT_BREAKDOWN };
     }
 
@@ -36,6 +40,10 @@ export const useBooksXP = () => {
     if (cacheRef.current.signature === signature) {
       return cacheRef.current.result;
     }
+    if (booksXpCache.signature === signature) {
+      cacheRef.current = booksXpCache;
+      return booksXpCache.result;
+    }
 
     const totalXP = calculateBooksXP(sessions);
     const pagesPerHour = totalMinutes > 0 ? (totalPages / totalMinutes) * 60 : 0;
@@ -49,8 +57,9 @@ export const useBooksXP = () => {
       }
     };
     cacheRef.current = { signature, result };
+    booksXpCache = { signature, result };
     return result;
-  }, [books]);
+  }, [books, isLoading]);
 
   const levelInfo = useMemo(() => {
     const totalXP = calculated.totalXP || 0;

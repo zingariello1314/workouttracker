@@ -16,11 +16,17 @@ const DEFAULT_BREAKDOWN = {
   sessions: 0
 };
 
+let sportXpCache = {
+  signature: null,
+  result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN },
+  garminData: null
+};
+
 export const useSportXP = () => {
   const { data: workoutData } = useWorkout();
   const { dbReady, loadAllData } = useGarminData();
-  const [garminData, setGarminData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [garminData, setGarminData] = useState(sportXpCache.garminData || null);
+  const [isLoading, setIsLoading] = useState(!sportXpCache.garminData);
   const cacheRef = useRef({ signature: null, result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN } });
 
   useEffect(() => {
@@ -28,10 +34,18 @@ export const useSportXP = () => {
 
     const loadGarmin = async () => {
       if (!dbReady) return;
+      if (sportXpCache.garminData) {
+        if (isMounted) {
+          setGarminData(sportXpCache.garminData);
+          setIsLoading(false);
+        }
+        return;
+      }
       try {
         const data = await loadAllData();
         if (isMounted) {
           setGarminData(data || null);
+          sportXpCache.garminData = data || null;
         }
       } catch (error) {
         console.error('[useSportXP] Erreur chargement Garmin:', error);
@@ -96,9 +110,14 @@ export const useSportXP = () => {
     if (cacheRef.current.signature === signature) {
       return cacheRef.current.result;
     }
+    if (sportXpCache.signature === signature) {
+      cacheRef.current = { signature, result: sportXpCache.result };
+      return sportXpCache.result;
+    }
 
     const result = calculateSportXP(workoutData, garminData, enduranceData);
     cacheRef.current = { signature, result };
+    sportXpCache = { ...sportXpCache, signature, result };
     return result;
   }, [workoutData, garminData]);
 
