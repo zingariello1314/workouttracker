@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { convertTickerToTradingViewSymbol, generateTradingViewSymbolVariants } from '../../../utils/tradingViewSymbol';
 
 /**
  * Composant TradingView Widget
@@ -10,6 +11,12 @@ const TradingViewWidget = ({ ticker, interval = 'D', height = 500 }) => {
   const widgetInstanceRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentSymbolIndex, setCurrentSymbolIndex] = useState(0);
+
+  // ✅ FIX TSMC : Générer les variantes de symboles TradingView
+  const symbolVariants = useMemo(() => {
+    return generateTradingViewSymbolVariants(ticker);
+  }, [ticker]);
 
   // Générer un ID unique pour ce widget (mémorisé pour éviter les changements)
   const widgetId = useMemo(() => {
@@ -19,8 +26,11 @@ const TradingViewWidget = ({ ticker, interval = 'D', height = 500 }) => {
   useEffect(() => {
     if (!ticker || !containerRef.current) return;
 
+    // Réinitialiser l'index de symbole quand le ticker change
+    setCurrentSymbolIndex(0);
+
     // Fonction pour créer le widget
-    const createWidget = () => {
+    const createWidget = (symbolIndex = 0) => {
       const containerElement = containerRef.current;
       if (!containerElement) {
         setError('Container non trouvé');
@@ -28,15 +38,8 @@ const TradingViewWidget = ({ ticker, interval = 'D', height = 500 }) => {
         return;
       }
 
-      // Format du symbole pour TradingView
-      // Si le ticker ne contient pas de ':', essayer de détecter l'exchange
-      // Pour les actions US communes, TradingView les détecte automatiquement
-      let symbol = ticker;
-      if (!ticker.includes(':')) {
-        // TradingView peut détecter automatiquement, mais on peut aussi essayer NASDAQ ou NYSE
-        // Pour l'instant, on laisse TradingView détecter automatiquement
-        symbol = ticker;
-      }
+      // ✅ FIX TSMC : Utiliser le symbole TradingView converti
+      const symbol = symbolVariants[symbolIndex] || convertTickerToTradingViewSymbol(ticker);
 
       const widgetConfig = {
         autosize: true,
@@ -149,7 +152,7 @@ const TradingViewWidget = ({ ticker, interval = 'D', height = 500 }) => {
     // Utiliser requestAnimationFrame pour s'assurer que le rendu est terminé
     const rafId = requestAnimationFrame(() => {
       setTimeout(() => {
-        createWidget();
+        createWidget(currentSymbolIndex);
       }, 200);
     });
 

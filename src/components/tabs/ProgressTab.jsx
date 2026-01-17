@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { 
   User, 
   Camera, 
@@ -25,9 +25,10 @@ import ProgressComments from '../BodyTracking/ProgressComments';
 import BodyActivityInsights from '../BodyTracking/components/BodyActivityInsights';
 import BodyTrackingErrorBoundary from '../BodyTracking/ErrorBoundary';
 import CleanupNotification from '../BodyTracking/components/CleanupNotification';
+import { useNavigationCache } from '../../hooks/useNavigationCache';
 
 const ProgressTab = () => {
-  const [activeSection, setActiveSection] = useState('metrics');
+  const [activeSection, setActiveSection] = useNavigationCache('progress.activeSection', 'metrics');
   const t = useTranslation();
 
   const sections = useMemo(() => [
@@ -45,6 +46,12 @@ const ProgressTab = () => {
 
   const basicSections = sections.filter(s => s.category === 'basic');
   const advancedSections = sections.filter(s => s.category === 'advanced');
+
+  useEffect(() => {
+    if (!sections.find(section => section.id === activeSection)) {
+      setActiveSection('metrics');
+    }
+  }, [activeSection, sections, setActiveSection]);
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -73,25 +80,61 @@ const ProgressTab = () => {
     }
   };
 
-  const renderSectionGrid = (sectionList, title) => (
+  const handleSectionKeyDown = (sectionList, currentId, event) => {
+    const currentIndex = sectionList.findIndex(section => section.id === currentId);
+    if (currentIndex === -1) return;
+
+    let nextIndex = currentIndex;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIndex = (currentIndex + 1) % sectionList.length;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIndex = (currentIndex - 1 + sectionList.length) % sectionList.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = sectionList.length - 1;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    const nextSection = sectionList[nextIndex];
+    setActiveSection(nextSection.id);
+  };
+
+  const renderSectionGrid = (sectionList, title, listId) => (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">{title}</h3>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div
+        className="grid grid-cols-2 md:grid-cols-5 gap-3"
+        role="tablist"
+        aria-label={title}
+        id={listId}
+      >
         {sectionList.map((section) => {
           const Icon = section.icon;
+          const isActive = activeSection === section.id;
+          const hasActiveInList = sectionList.some(item => item.id === activeSection);
+          const shouldTabFocus = isActive || (!hasActiveInList && sectionList[0]?.id === section.id);
           return (
             <button
               key={section.id}
               type="button"
               onClick={() => setActiveSection(section.id)}
+              onKeyDown={(event) => handleSectionKeyDown(sectionList, section.id, event)}
+              role="tab"
+              id={`progress-tab-${section.id}`}
+              aria-selected={isActive}
+              aria-controls={`progress-section-${section.id}`}
+              tabIndex={shouldTabFocus ? 0 : -1}
               className={`gradient-button-premium rounded-lg p-4 text-left ${
-                activeSection === section.id
+                isActive
                   ? 'gradient-button-premium-variant'
                   : ''
               }`}
             >
               <Icon className={`w-5 h-5 mb-2 ${
-                activeSection === section.id ? 'text-white' : 'text-slate-400'
+                isActive ? 'text-white' : 'text-slate-400'
               }`} />
               <div className="font-medium text-sm">{section.label}</div>
               <div className="text-xs text-slate-400 mt-1">{section.description}</div>
@@ -118,8 +161,8 @@ const ProgressTab = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {renderSectionGrid(basicSections, t('progress.categories.basic'))}
-          {renderSectionGrid(advancedSections, t('progress.categories.advanced'))}
+          {renderSectionGrid(basicSections, t('progress.categories.basic'), 'progress-basic-tabs')}
+          {renderSectionGrid(advancedSections, t('progress.categories.advanced'), 'progress-advanced-tabs')}
         </CardContent>
       </Card>
 
@@ -128,7 +171,13 @@ const ProgressTab = () => {
 
       {/* Contenu de la section active - Protégé par Error Boundary */}
       <BodyTrackingErrorBoundary>
-        {renderActiveSection()}
+        <div
+          role="tabpanel"
+          id={`progress-section-${activeSection}`}
+          aria-labelledby={`progress-tab-${activeSection}`}
+        >
+          {renderActiveSection()}
+        </div>
       </BodyTrackingErrorBoundary>
       </div>
     </div>

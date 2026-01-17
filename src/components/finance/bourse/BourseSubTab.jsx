@@ -33,6 +33,7 @@ import PortfolioSummary from './PortfolioSummary';
 import StockCard from './StockCard';
 import ExportCSV from './ExportCSV';
 import StockDetailPage from './StockDetailPage';
+import { groupPositionsByTicker, createGroupedPosition } from '../../../utils/financeGrouping';
 import { 
   PortfolioTableSkeleton, 
   SummarySkeleton, 
@@ -102,8 +103,22 @@ const BourseSubTab = () => {
   }, []);
 
   // ✅ PHASE 6 - Étape 6.1 : Trouver la position sélectionnée
+  // ✅ FIX : Gérer positions groupées (vue Cartes) et positions individuelles (vue Tableau)
   const selectedPosition = useMemo(() => {
     if (!selectedPositionId) return null;
+    
+    // Si c'est une position groupée (commence par "grouped-")
+    if (selectedPositionId.startsWith('grouped-')) {
+      const ticker = selectedPositionId.replace('grouped-', '');
+      const positions = portfolio.filter(p => p.ticker?.toUpperCase() === ticker.toUpperCase());
+      if (positions.length > 0) {
+        // Créer une position "virtuelle" groupée avec toutes les positions
+        const grouped = createGroupedPosition(ticker, positions);
+        return grouped;
+      }
+    }
+    
+    // Sinon, chercher position individuelle
     return portfolio.find(p => p.id === selectedPositionId);
   }, [portfolio, selectedPositionId]);
 
@@ -253,11 +268,25 @@ const BourseSubTab = () => {
         viewMode === 'table' ? (
           <PortfolioTable portfolio={memoizedPortfolio} onPositionClick={handlePositionClick} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {memoizedPortfolio.map((position) => (
-              <StockCard key={position.id} position={position} onPositionClick={handlePositionClick} />
-            ))}
-          </div>
+          (() => {
+            // ✅ FIX : Grouper positions par ticker pour vue Cartes
+            const grouped = groupPositionsByTicker(memoizedPortfolio);
+            const groupedPositions = Array.from(grouped.entries()).map(([ticker, positions]) =>
+              createGroupedPosition(ticker, positions)
+            );
+            
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedPositions.map((groupedPosition) => (
+                  <StockCard 
+                    key={groupedPosition.id} 
+                    position={groupedPosition} 
+                    onPositionClick={handlePositionClick}
+                  />
+                ))}
+              </div>
+            );
+          })()
         )
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-slate-800/30 rounded-lg border border-slate-700/50">

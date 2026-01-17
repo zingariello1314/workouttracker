@@ -30,7 +30,6 @@ export const useSessionDuration = (options = {}) => {
   const {
     currentDate,
     isGymMode: contextIsGymMode,
-    data,
     getCurrentData
   } = useWorkout();
 
@@ -66,7 +65,7 @@ export const useSessionDuration = (options = {}) => {
       timePerRep,
       restBetweenSets
     });
-  }, [workout, data, dateStr, isGymMode, weekVariant, getCurrentData, date, timePerRep, restBetweenSets]);
+  }, [workout, dateStr, isGymMode, weekVariant, getCurrentData, date, timePerRep, restBetweenSets]);
 
   return duration;
 };

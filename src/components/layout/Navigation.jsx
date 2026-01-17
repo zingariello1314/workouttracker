@@ -47,10 +47,18 @@ const Navigation = () => {
     []
   );
 
+  const getLastSportSubTab = () => {
+    const stored = localStorage.getItem('sport.lastSubTab');
+    if (stored && sportSubTabs.includes(stored)) {
+      return stored;
+    }
+    return 'today';
+  };
+
   const handleClick = (tabId) => {
     if (tabId === 'sport') {
-      // Pour l'instant, le cœur du sport reste l'onglet "Aujourd'hui"
-      setActiveTab('today');
+      // Aller au dernier sous-onglet Sport visité (fallback: Aujourd'hui)
+      setActiveTab(getLastSportSubTab());
       return;
     }
     if (tabId === 'home') {
@@ -82,11 +90,14 @@ const Navigation = () => {
     }}>
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
         {/* Barre principale : Sport / Quêtes / Livres / Paramètres */}
-        <div className="flex gap-0.5 sm:gap-1 py-2 sm:py-3 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-0.5 sm:gap-1 py-2 sm:py-3 overflow-x-auto scrollbar-hide" role="tablist" aria-label={t('nav.mainTabs')}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleClick(tab.id)}
+              role="tab"
+              aria-selected={isTabActive(tab.id)}
+              aria-current={isTabActive(tab.id) ? 'page' : undefined}
               className={`
                 flex items-center space-x-1 px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-md font-medium 
                 transition-all duration-200 whitespace-nowrap text-xs flex-shrink-0
@@ -104,11 +115,17 @@ const Navigation = () => {
 
         {/* Sous-barre Sport : visible uniquement quand on est dans une vue sport */}
         {sportSubTabs.includes(activeTab) && (
-          <div className="flex gap-1 sm:gap-1.5 pb-2 sm:pb-3 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 sm:gap-1.5 pb-2 sm:pb-3 overflow-x-auto scrollbar-hide" role="tablist" aria-label={t('nav.sportTabs')}>
             {sportTabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  localStorage.setItem('sport.lastSubTab', tab.id);
+                  setActiveTab(tab.id);
+                }}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-current={activeTab === tab.id ? 'page' : undefined}
                 className={`
                   flex items-center space-x-1 px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium
                   transition-all duration-200 whitespace-nowrap flex-shrink-0

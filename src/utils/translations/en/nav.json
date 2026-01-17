@@ -19,6 +19,9 @@
   "smartBalancing": "AI Balancing",
   "coach": "Coach",
   "books": "Books",
-  "settings": "Settings"
+  "settings": "Settings",
+  "mainTabs": "Main navigation",
+  "dashboard": "Dashboard",
+  "finance": "Finance"
 }
 

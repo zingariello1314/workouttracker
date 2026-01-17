@@ -246,6 +246,25 @@ class FinanceStorage {
     }
   }
 
+  /**
+   * Supprime le cache Yahoo pour un ticker spécifique
+   * Utile pour forcer un refresh complet
+   * 
+   * @param {string} ticker - Ticker à supprimer du cache
+   * @returns {Promise<void>}
+   */
+  async deleteYahooCache(ticker) {
+    try {
+      await this.initPromise;
+      const tx = this.db.transaction(STORES.YAHOO_CACHE, 'readwrite');
+      const store = tx.objectStore(STORES.YAHOO_CACHE);
+      await store.delete(ticker);
+      log.debug(`Cache deleted for ${ticker}`);
+    } catch (error) {
+      log.error(`Error deleting Yahoo cache for ${ticker}:`, error);
+    }
+  }
+
   async setYahooCache(ticker, data) {
     try {
       await this.initPromise;

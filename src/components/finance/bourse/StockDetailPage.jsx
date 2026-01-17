@@ -97,8 +97,17 @@ const StockDetailPage = memo(({ position, onBack }) => {
   }, []);
 
   // Calculer valeur totale de la position (en devise originale)
+  // ✅ FIX : Pour positions groupées, utiliser les métriques agrégées
   const valeurTotale = useMemo(() => {
-    if (!position || !metrics) return null;
+    if (!position) return null;
+    
+    // Si position groupée, utiliser valeur totale agrégée
+    if (position._grouped && position.calculs?.valeurPosition) {
+      return position.calculs.valeurPosition;
+    }
+    
+    // Sinon, calculer pour position individuelle
+    if (!metrics) return null;
     const prixActuel = metrics.currentPrice || position.yahooData?.prixActuel || position.prixEntree;
     return position.quantite * prixActuel;
   }, [position, metrics]);
@@ -140,11 +149,62 @@ const StockDetailPage = memo(({ position, onBack }) => {
               </span>
             )}
           </h1>
-          <p className="text-slate-400 mt-1">Détails de la position</p>
+          <p className="text-slate-400 mt-1">
+            {position._grouped ? `Détails de l'entreprise (${position._positions?.length || 0} position${(position._positions?.length || 0) > 1 ? 's' : ''})` : 'Détails de la position'}
+          </p>
         </div>
       </div>
 
       <div className="space-y-6">
+        {/* ✅ FIX : Afficher toutes les positions si position groupée */}
+        {position._grouped && position._positions && position._positions.length > 1 && (
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6">
+            <h2 className="text-xl font-bold text-white mb-4">Toutes les positions</h2>
+            <div className="space-y-4">
+              {position._positions.map((pos, index) => (
+                <div key={pos.id || index} className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-sm text-slate-400 mb-1">Quantité</div>
+                      <div className="text-lg font-semibold text-white">{pos.quantite}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-400 mb-1">Prix d'achat</div>
+                      <div className="text-lg font-semibold text-white">
+                        {formatPrice(pos.prixEntree)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-400 mb-1">Date d'achat</div>
+                      <div className="text-lg font-semibold text-white">
+                        {pos.dateAchat ? new Date(pos.dateAchat).toLocaleDateString('fr-FR') : 'N/A'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-400 mb-1">Plus-value</div>
+                      <div className={`text-lg font-semibold ${
+                        (pos.calculs?.plusValueEuro || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {pos.calculs?.plusValueEuro !== undefined 
+                          ? `${pos.calculs.plusValueEuro >= 0 ? '+' : ''}${formatCurrencyEUR(pos.calculs.plusValueEuro)}`
+                          : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                  {pos.calculs?.plusValuePourcent !== undefined && (
+                    <div className="mt-2 text-center">
+                      <span className={`text-sm font-semibold ${
+                        pos.calculs.plusValuePourcent >= 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {formatPercent(pos.calculs.plusValuePourcent)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Graphique TradingView */}
         <div>
           <h3 className="text-lg font-semibold text-white mb-3">Graphique TradingView</h3>
@@ -159,7 +219,14 @@ const StockDetailPage = memo(({ position, onBack }) => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-slate-300">Quantité:</span>
-                <span className="text-white font-semibold">{position.quantite}</span>
+                <span className="text-white font-semibold">
+                  {position._grouped ? (position.totalQuantite || position.quantite) : position.quantite}
+                  {position._grouped && position._positions && position._positions.length > 1 && (
+                    <span className="text-slate-400 text-sm ml-2">
+                      ({position._positions.length} position{(position._positions.length > 1 ? 's' : '')})
+                    </span>
+                  )}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-300">Valeur totale:</span>

@@ -56,19 +56,31 @@ class RecommendationEngine {
    * @private
    */
   validateMomentumData(position) {
-    const { prixActuel, ma50, ma200, volume } = position.yahooData || {};
+    // ✅ FIX: Utiliser calculs.prixActuel ou prixEntree comme fallback pour prixActuel
+    const { prixActuel: yahooPrixActuel, ma50, ma200, volume } = position.yahooData || {};
+    const { prixActuel: calculsPrixActuel } = position.calculs || {};
     const { prixEntree } = position;
     
-    const requiredFields = ['prixActuel', 'prixEntree'];
-    const optionalFields = ['ma50', 'ma200', 'volume'];
+    // Déterminer le prix actuel disponible (priorité: yahooData > calculs > prixEntree)
+    const prixActuel = (yahooPrixActuel && yahooPrixActuel > 0 && !position.yahooData?._fallback) 
+      ? yahooPrixActuel 
+      : (calculsPrixActuel && calculsPrixActuel > 0) 
+        ? calculsPrixActuel 
+        : (prixEntree && prixEntree > 0) 
+          ? prixEntree 
+          : null;
+    
+    // prixEntree est toujours requis, mais prixActuel peut être remplacé par prixEntree
+    const requiredFields = ['prixEntree'];
+    const optionalFields = ['prixActuel', 'ma50', 'ma200', 'volume'];
     
     const missingRequired = requiredFields.filter(field => {
-      if (field === 'prixActuel') return !prixActuel || prixActuel <= 0;
       if (field === 'prixEntree') return !prixEntree || prixEntree <= 0;
       return false;
     });
     
     const missingOptional = optionalFields.filter(field => {
+      if (field === 'prixActuel') return !prixActuel || prixActuel <= 0;
       if (field === 'ma50') return !ma50 || ma50 <= 0;
       if (field === 'ma200') return !ma200 || ma200 <= 0;
       if (field === 'volume') return !volume || volume <= 0;
@@ -80,7 +92,7 @@ class RecommendationEngine {
     const completeness = availableFields / totalFields;
     
     return {
-      isValid: missingRequired.length === 0,
+      isValid: missingRequired.length === 0, // Valide si prixEntree existe
       missingFields: [...missingRequired, ...missingOptional],
       missingRequired,
       missingOptional,
@@ -134,17 +146,31 @@ class RecommendationEngine {
    * @private
    */
   validateTechnicalData(position, historicalData = []) {
-    const { prixActuel, ma50, ma200 } = position.yahooData || {};
+    // ✅ FIX: Utiliser calculs.prixActuel ou prixEntree comme fallback pour prixActuel
+    const { prixActuel: yahooPrixActuel, ma50, ma200 } = position.yahooData || {};
+    const { prixActuel: calculsPrixActuel } = position.calculs || {};
+    const { prixEntree } = position;
     
-    const requiredFields = ['prixActuel'];
-    const optionalFields = ['ma50', 'ma200', 'historicalData'];
+    // Déterminer le prix actuel disponible (priorité: yahooData > calculs > prixEntree)
+    const prixActuel = (yahooPrixActuel && yahooPrixActuel > 0 && !position.yahooData?._fallback) 
+      ? yahooPrixActuel 
+      : (calculsPrixActuel && calculsPrixActuel > 0) 
+        ? calculsPrixActuel 
+        : (prixEntree && prixEntree > 0) 
+          ? prixEntree 
+          : null;
+    
+    // ✅ FIX: prixActuel peut être remplacé par prixEntree, donc optionnel
+    const requiredFields = []; // Aucun champ strictement requis (prixActuel peut être prixEntree)
+    const optionalFields = ['prixActuel', 'ma50', 'ma200', 'historicalData'];
     
     const missingRequired = requiredFields.filter(field => {
-      if (field === 'prixActuel') return !prixActuel || prixActuel <= 0;
+      // Plus de champs requis stricts
       return false;
     });
     
     const missingOptional = optionalFields.filter(field => {
+      if (field === 'prixActuel') return !prixActuel || prixActuel <= 0;
       if (field === 'ma50') return !ma50 || ma50 <= 0;
       if (field === 'ma200') return !ma200 || ma200 <= 0;
       if (field === 'historicalData') return !historicalData || !Array.isArray(historicalData) || historicalData.length < 15;
@@ -155,8 +181,9 @@ class RecommendationEngine {
     const availableFields = totalFields - missingRequired.length - missingOptional.length;
     const completeness = availableFields / totalFields;
     
+    // ✅ FIX: Toujours valide car prixActuel peut être remplacé par prixEntree
     return {
-      isValid: missingRequired.length === 0,
+      isValid: true, // Toujours valide car prixActuel peut être prixEntree
       missingFields: [...missingRequired, ...missingOptional],
       missingRequired,
       missingOptional,
@@ -333,18 +360,36 @@ class RecommendationEngine {
     // ✅ PHASE 4.5 : Valider données avant calculs
     const validation = this.validateMomentumData(position);
     
-    if (!validation.isValid) {
-      log.warn(`[analyzeMomentum] Données insuffisantes pour ${position.ticker}:`, validation.missingRequired);
-      return { 
-        score: 50, 
-        confidence: 0, 
-        signals: [],
-        missingData: validation.missingRequired
-      };
+    // ✅ FIX: Ne pas échouer si seulement prixActuel est manquant (il peut être remplacé par prixEntree)
+    // La validation est valide si prixEntree existe, même si prixActuel manque
+    if (!validation.isValid && validation.missingRequired.length > 0) {
+      // Si seulement prixActuel manque (dans missingOptional), continuer quand même
+      const onlyPrixActuelMissing = validation.missingRequired.length === 0 && 
+                                     validation.missingOptional.includes('prixActuel');
+      if (!onlyPrixActuelMissing) {
+        log.warn(`[analyzeMomentum] Données insuffisantes pour ${position.ticker}:`, validation.missingRequired);
+        return { 
+          score: 50, 
+          confidence: 0, 
+          signals: [],
+          missingData: validation.missingRequired
+        };
+      }
     }
 
-    const { prixActuel, ma50, ma200, volume } = position.yahooData || {};
+    // ✅ FIX: Utiliser calculs.prixActuel ou prixEntree comme fallback pour prixActuel
+    const { prixActuel: yahooPrixActuel, ma50, ma200, volume } = position.yahooData || {};
+    const { prixActuel: calculsPrixActuel } = position.calculs || {};
     const { prixEntree } = position;
+    
+    // Déterminer le prix actuel disponible (priorité: yahooData > calculs > prixEntree)
+    const prixActuel = (yahooPrixActuel && yahooPrixActuel > 0 && !position.yahooData?._fallback) 
+      ? yahooPrixActuel 
+      : (calculsPrixActuel && calculsPrixActuel > 0) 
+        ? calculsPrixActuel 
+        : (prixEntree && prixEntree > 0) 
+          ? prixEntree 
+          : null;
 
     let score = 50; // Base neutre
     let signals = [];
@@ -479,17 +524,22 @@ class RecommendationEngine {
     // ✅ PHASE 4.5 : Valider données avant calculs
     const validation = this.validateTechnicalData(position, historicalData);
     
-    if (!validation.isValid) {
-      log.warn(`[analyzeTechnical] Données insuffisantes pour ${position.ticker}:`, validation.missingRequired);
-      return { 
-        score: 50, 
-        confidence: 0, 
-        signals: [],
-        missingData: validation.missingRequired
-      };
-    }
+    // ✅ FIX: Ne plus échouer car validation est toujours valide (prixActuel peut être prixEntree)
+    // La validation est toujours valide maintenant car prixActuel peut être remplacé par prixEntree
 
-    const { prixActuel, ma50, ma200 } = position.yahooData || {};
+    // ✅ FIX: Utiliser calculs.prixActuel ou prixEntree comme fallback pour prixActuel
+    const { prixActuel: yahooPrixActuel, ma50, ma200 } = position.yahooData || {};
+    const { prixActuel: calculsPrixActuel } = position.calculs || {};
+    const { prixEntree } = position;
+    
+    // Déterminer le prix actuel disponible (priorité: yahooData > calculs > prixEntree)
+    const prixActuel = (yahooPrixActuel && yahooPrixActuel > 0 && !position.yahooData?._fallback) 
+      ? yahooPrixActuel 
+      : (calculsPrixActuel && calculsPrixActuel > 0) 
+        ? calculsPrixActuel 
+        : (prixEntree && prixEntree > 0) 
+          ? prixEntree 
+          : null;
 
     let score = 50;
     let signals = [];

@@ -31,10 +31,10 @@ export const useActiveChallenges = (options = {}) => {
 
   const date = options.date || currentDate;
   const todayStr = getDateStr(date);
-  const now = new Date();
 
   // Memoizer les défis actifs (dépend de data.enduranceData et date)
   const activeChallenges = useMemo(() => {
+    const now = new Date();
     const challenges = data?.enduranceData?.challenges || [];
     
     return challenges.filter(challenge => {
@@ -64,7 +64,7 @@ export const useActiveChallenges = (options = {}) => {
           return false;
       }
     });
-  }, [data?.enduranceData?.challenges, todayStr, now]);
+  }, [data?.enduranceData?.challenges, todayStr]);
 
   return activeChallenges;
 };

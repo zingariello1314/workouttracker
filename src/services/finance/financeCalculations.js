@@ -1304,11 +1304,18 @@ async function calculatePositionMetrics(position, totalPortfolio, historicalData
   // Priorité: yahooData.prixActuel si disponible et valide (> 0 et différent de prixEntree)
   // Si prixActuel === prixEntree, cela peut indiquer des données non rafraîchies
   let prixActuel;
+  let isPrixActuelFallback = false;
   
-  if (position.yahooData?.prixActuel !== undefined && 
-      position.yahooData?.prixActuel !== null && 
-      position.yahooData?.prixActuel > 0) {
+  // ✅ FIX: Vérifier aussi si yahooData a le flag _fallback pour détecter données de fallback
+  const hasValidYahooData = position.yahooData && 
+                            !position.yahooData._fallback &&
+                            position.yahooData.prixActuel !== undefined && 
+                            position.yahooData.prixActuel !== null && 
+                            position.yahooData.prixActuel > 0;
+  
+  if (hasValidYahooData) {
     prixActuel = position.yahooData.prixActuel;
+    isPrixActuelFallback = false;
     
     // Convertir prix actuel si nécessaire
     if (positionCurrency !== 'EUR') {
@@ -1325,10 +1332,11 @@ async function calculatePositionMetrics(position, totalPortfolio, historicalData
       prixActuelConverti = prixActuel;
     }
   } else {
-    // Si yahooData n'existe pas ou prixActuel n'est pas valide, utiliser prixEntree converti
+    // Si yahooData n'existe pas, a le flag _fallback, ou prixActuel n'est pas valide, utiliser prixEntree converti
     // Cela donnera une plus-value de 0 temporairement jusqu'à ce que les données soient chargées
     prixActuel = position.prixEntree;
     prixActuelConverti = prixEntreeConverti;
+    isPrixActuelFallback = true; // ✅ FIX: Marquer explicitement comme fallback
   }
   
   // ✅ PHASE 4 - Étape 4.9 : Utiliser prix convertis en EUR pour calculs
@@ -1417,7 +1425,10 @@ async function calculatePositionMetrics(position, totalPortfolio, historicalData
     poidsPortfolio,
     signal,
     currency: positionCurrency, // ✅ PHASE 4 - Étape 4.9 : Exposer devise de la position
-    investissementConverti // ✅ PHASE 4 - Étape 4.9 : Investissement en EUR (pour calculs cohérents)
+    investissementConverti, // ✅ PHASE 4 - Étape 4.9 : Investissement en EUR (pour calculs cohérents)
+    prixActuel: prixActuel, // ✅ FIX: Stocker prixActuel calculé (yahooData ou prixEntree en fallback) pour affichage
+    prixActuelConverti: prixActuelConverti, // ✅ FIX: Stocker prixActuel converti en EUR pour affichage
+    isPrixActuelFallback: isPrixActuelFallback // ✅ FIX: Indicateur si on utilise prixEntree comme fallback (calculé explicitement)
   };
 
   // ✅ PHASE 4 - Étape 4.8 : Ajouter détails calcul complet si disponible

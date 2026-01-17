@@ -172,41 +172,7 @@ const TodayTab = () => {
     }
   };
 
-  // Script temporaire pour inspecter IndexedDB
-  const inspectIndexedDB = async () => {
-    try {
-      const request = indexedDB.open('WorkoutTrackerDB', 3);
-      request.onsuccess = () => {
-        const db = request.result;
-        const transaction = db.transaction(['workoutData'], 'readonly');
-        const store = transaction.objectStore('workoutData');
-        const getRequest = store.get('main');
-        
-        getRequest.onsuccess = () => {
-          const result = getRequest.result;
-          if (result) {
-            // Afficher quelques exemples de clés
-            const repsKeys = Object.keys(result.reps || {});
-            const exerciseKeys = Object.keys(result.checkedExercises || {});
-            
-            // Vérifier les dates récentes
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
-            const todayStr = getDateStr(today);
-            const yesterdayStr = getDateStr(yesterday);
-          }
-        };
-      };
-    } catch (error) {
-      // Erreur lors de l'inspection de la base de données
-    }
-  };
-
-  // Exécuter l'inspection au chargement du composant (DÉSACTIVÉ)
-  // React.useEffect(() => {
-  //   inspectIndexedDB();
-  // }, []);
+  // Debug IndexedDB supprimé (réservé au mode dev si nécessaire)
 
   // Note: calculateAutoReps est maintenant importé depuis utils/exerciseCalculations
 

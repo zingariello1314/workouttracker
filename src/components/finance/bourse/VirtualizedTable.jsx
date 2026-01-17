@@ -81,14 +81,30 @@ const TableRow = React.memo(({ index, style, data }) => {
         <div className="text-white">{formatPrice(position.prixEntree)}</div>
         <div>
           {/* ✅ PHASE 4 - Étape 4.9 : Afficher prix actuel dans devise originale */}
-          <div className="text-white">
-            {yahooData.prixActuel ? formatPrice(yahooData.prixActuel) : 'N/A'}
-          </div>
-          {yahooData.variationJour !== undefined && (
-            <div className={`text-sm ${variationColor}`}>
-              {formatPercent(yahooData.variationJour)}
-            </div>
-          )}
+          {/* ✅ FIX: Utiliser prixActuel depuis calculs si yahooData.prixActuel n'est pas disponible */}
+          {(() => {
+            const hasValidPrixActuel = yahooData.prixActuel && yahooData.prixActuel > 0 && !yahooData._fallback;
+            const prixActuelToDisplay = hasValidPrixActuel 
+              ? yahooData.prixActuel 
+              : (calculs.prixActuel || position.prixEntree);
+            const isFallback = !hasValidPrixActuel;
+            
+            return (
+              <>
+                <div className={`text-white ${isFallback ? 'italic text-slate-400' : ''}`}>
+                  {prixActuelToDisplay ? formatPrice(prixActuelToDisplay) : 'N/A'}
+                  {isFallback && (
+                    <span className="text-xs text-slate-500 ml-1">(prix d'entrée)</span>
+                  )}
+                </div>
+                {yahooData.variationJour !== undefined && (
+                  <div className={`text-sm ${variationColor}`}>
+                    {formatPercent(yahooData.variationJour)}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
         {/* ✅ PHASE 4 - Étape 4.9 : Valeur position en EUR (convertie) */}
         <div className="text-white">

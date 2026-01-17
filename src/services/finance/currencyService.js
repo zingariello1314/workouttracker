@@ -36,6 +36,13 @@ const EXCHANGE_RATE_CACHE_TTL = 60 * 60 * 1000; // 1 heure
  * Patterns sont testés dans l'ordre, premier match gagne
  */
 const TICKER_CURRENCY_MAP = [
+  // ✅ FIX TSMC : TSMC/TSM est en USD (ADR US), pas TWD
+  // Seulement les variantes .TW sont en TWD
+  { pattern: /^TSM$/i, currency: 'USD' }, // ADR US en USD
+  { pattern: /^TSMC$/i, currency: 'USD' }, // TSMC sans suffixe = USD (ADR)
+  { pattern: /^2330$/i, currency: 'TWD' }, // Code Taiwan en TWD
+  { pattern: /\.(TW|TWO)$/i, currency: 'TWD' }, // Taiwan Stock Exchange (suffixe .TW)
+  
   // US Markets (NYSE, NASDAQ)
   { pattern: /^[A-Z]{1,5}$/, exchanges: ['NYSE', 'NASDAQ', 'AMEX'], currency: 'USD' },
   

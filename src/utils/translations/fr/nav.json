@@ -19,6 +19,9 @@
   "smartBalancing": "Équilibrage IA",
   "coach": "Coach",
   "books": "Livres",
-  "settings": "Paramètres"
+  "settings": "Paramètres",
+  "mainTabs": "Navigation principale",
+  "dashboard": "Tableau de bord",
+  "finance": "Finance"
 }
 

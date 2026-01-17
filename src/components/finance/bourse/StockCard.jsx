@@ -102,9 +102,23 @@ const StockCard = memo(({ position, onPositionClick }) => {
         </div>
         <div className="text-right">
           {/* ✅ PHASE 4 - Étape 4.9 : Afficher prix actuel dans devise originale */}
-          <div className="text-2xl font-bold text-white">
-            {yahooData.prixActuel ? formatPrice(yahooData.prixActuel) : 'N/A'}
-          </div>
+          {/* ✅ FIX: Utiliser prixActuel depuis calculs si yahooData.prixActuel n'est pas disponible */}
+          {(() => {
+            const hasValidPrixActuel = yahooData.prixActuel && yahooData.prixActuel > 0 && !yahooData._fallback;
+            const prixActuelToDisplay = hasValidPrixActuel 
+              ? yahooData.prixActuel 
+              : (calculs.prixActuel || position.prixEntree);
+            const isFallback = !hasValidPrixActuel;
+            
+            return (
+              <div className={`text-2xl font-bold ${isFallback ? 'text-slate-400 italic' : 'text-white'}`}>
+                {prixActuelToDisplay ? formatPrice(prixActuelToDisplay) : 'N/A'}
+                {isFallback && (
+                  <span className="text-xs text-slate-500 ml-1 font-normal">(prix d'entrée)</span>
+                )}
+              </div>
+            );
+          })()}
           {yahooData.variationJour !== undefined && (
             <div className={`text-sm ${variationColor}`}>
               {formatPercent(yahooData.variationJour)}

@@ -85,18 +85,20 @@ export const useExerciseTracking = (options = {}) => {
     }
     
     // Sinon, simple toggle de la case (uncheck supprime aussi les reps)
+    const nextReps = { ...(currentData.reps || {}) };
+    if (!isCurrentlyChecked) {
+      nextReps[key] = currentData.reps?.[key] || '';
+    } else {
+      delete nextReps[key];
+    }
+
     const newData = {
       ...currentData,
       checkedExercises: {
         ...currentData.checkedExercises,
         [key]: !isCurrentlyChecked
       },
-      reps: {
-        ...currentData.reps,
-        // Si on décoche, on peut garder les reps ou les supprimer
-        // Logique actuelle : garder les reps si on décoche (pour permettre re-check)
-        [key]: !isCurrentlyChecked ? (currentData.reps?.[key] || '') : undefined
-      }
+      reps: nextReps
     };
     updateTempExerciseData(newData);
   }, [date, isGymMode, workout, weekVariant, getCurrentData, updateTempExerciseData]);

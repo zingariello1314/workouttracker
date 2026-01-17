@@ -79,6 +79,20 @@ const WorkoutTrackerContent = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
 
+  const mainOffsetByTab = {
+    settings: '-811px',
+    finance: '-781px',
+    apprentissage: '-761px',
+    quests: '-780px',
+    books: '-780px'
+  };
+
+  const defaultMainOffset = (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing')
+    ? '-730px'
+    : '0';
+
+  const mainMarginTop = mainOffsetByTab[activeTab] || defaultMainOffset;
+
   // Masquer la scrollbar du body quand on est sur home/dashboard
   // + Ajouter classe dashboard-active pour le CSS de la sidebar
   React.useEffect(() => {
@@ -310,7 +324,7 @@ const WorkoutTrackerContent = () => {
             className={`${(activeTab === 'home' || activeTab === 'dashboard') ? 'overflow-hidden' : ''}`}
             style={{
               marginLeft: shouldShowSidebar ? '300px' : '0',
-              marginTop: activeTab === 'settings' ? '-811px' : activeTab === 'finance' ? '-781px' : activeTab === 'apprentissage' ? '-761px' : (activeTab === 'quests' || activeTab === 'books') ? '-780px' : (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing') ? '-730px' : '0',
+              marginTop: mainMarginTop,
               transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               minHeight: '100vh',
               position: 'relative',

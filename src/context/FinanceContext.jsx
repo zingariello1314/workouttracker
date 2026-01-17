@@ -286,6 +286,14 @@ export const FinanceProvider = ({ children }) => {
               });
               
               // ✅ PHASE 3.10 : Validation robuste des données
+              // ✅ FIX: Accepter données de fallback (quand toutes APIs indisponibles) mais ne pas les traiter comme refresh valide
+              if (yahooData?._fallback) {
+                // Données de fallback : pas de prix actuel disponible, utiliser prixEntree dans calculs
+                log.debug(`Fallback data for ${ticker} (no APIs available), using prixEntree for calculations`);
+                skipped.push(ticker);
+                return null; // Ne pas mettre à jour la position, garder l'état actuel
+              }
+              
               if (!yahooData || !yahooData.prixActuel || yahooData.prixActuel <= 0) {
                 const error = new Error(`Invalid Yahoo data for ${ticker}: prixActuel missing or invalid`);
                 const classified = classifyError(error, ticker);
@@ -460,8 +468,60 @@ export const FinanceProvider = ({ children }) => {
           const enrichedBatch = await Promise.all(
             batch.map(async (position) => {
               try {
-                // Utiliser forceRefresh: true au chargement initial pour obtenir les vraies données
-                const yahooData = await yahooFinanceService.getQuoteData(position.ticker, { forceRefresh: true });
+                // ✅ FIX TSMC : Supprimer le cache si c'est un prix d'entrée ou prix TWD non converti
+                const cached = await financeStorage.getYahooCache(position.ticker, {
+                  ttl: 15 * 60 * 1000, // 15 minutes TTL
+                  allowStale: true
+                });
+                
+                // Si le cache contient un prix d'entrée, le supprimer pour forcer un vrai refresh
+                if (cached?._isPrixEntree) {
+                  log.info(`[FinanceContext] Suppression cache avec prix d'entrée pour ${position.ticker}, forçant refresh complet`);
+                  await financeStorage.deleteYahooCache(position.ticker);
+                  // Supprimer aussi du cache intelligent
+                  const { intelligentCache } = await import('../services/finance/intelligentCache');
+                  intelligentCache.delete(position.ticker);
+                }
+                
+                // ✅ FIX CRITIQUE : Si prix actuel > 500 et prix d'entrée < 200, probablement TWD non converti
+                // Supprimer le cache pour forcer reconversion
+                if (cached?.prixActuel && cached.prixActuel > 500 && position.prixEntree < 200) {
+                  log.warn(`[FinanceContext] Prix suspect (${cached.prixActuel}) pour ${position.ticker}, probablement TWD non converti. Suppression cache.`);
+                  await financeStorage.deleteYahooCache(position.ticker);
+                  const { intelligentCache } = await import('../services/finance/intelligentCache');
+                  intelligentCache.delete(position.ticker);
+                }
+                
+                // ✅ FIX CRITIQUE : Forcer refresh si cache contient prix d'entrée OU prix suspect (TWD)
+                const shouldForceRefresh = cached?._isPrixEntree || !cached || (cached?.prixActuel && cached.prixActuel > 500 && position.prixEntree < 200);
+                
+                const yahooData = await yahooFinanceService.getQuoteData(position.ticker, { 
+                  forceRefresh: shouldForceRefresh, // ✅ FIX : Forcer refresh si cache suspect
+                  prixEntree: position.prixEntree // Fournir prixEntree pour fallback
+                });
+                
+                // ✅ FIX CRITIQUE : Vérifier que le prix récupéré est cohérent (pas TWD)
+                if (yahooData?.prixActuel && yahooData.prixActuel > 500 && position.prixEntree < 200) {
+                  log.error(`[FinanceContext] Prix récupéré suspect (${yahooData.prixActuel}) pour ${position.ticker}, probablement TWD non converti. Suppression cache et retry.`);
+                  await financeStorage.deleteYahooCache(position.ticker);
+                  const { intelligentCache } = await import('../services/finance/intelligentCache');
+                  intelligentCache.delete(position.ticker);
+                  // Retry avec forceRefresh
+                  const retryData = await yahooFinanceService.getQuoteData(position.ticker, { 
+                    forceRefresh: true,
+                    prixEntree: position.prixEntree
+                  });
+                  if (retryData && retryData.prixActuel && retryData.prixActuel < 500) {
+                    // Prix correct après retry
+                    return { ...position, yahooData: retryData };
+                  }
+                }
+                
+                // ✅ FIX: Accepter données de fallback mais ne pas les traiter comme données valides
+                if (yahooData?._fallback) {
+                  log.debug(`Fallback data for ${position.ticker} (no APIs available), will use prixEntree for calculations`);
+                  return position; // Retourner position sans yahooData, utilisera prixEntree dans calculs
+                }
                 
                 // Vérifier que les données sont valides
                 if (!yahooData || !yahooData.prixActuel || yahooData.prixActuel <= 0) {
@@ -703,15 +763,10 @@ export const FinanceProvider = ({ children }) => {
       throw new Error('Données incomplètes');
     }
 
-    // ✅ PHASE 3.12 : Vérifier si ticker existe déjà (évite doublons)
+    // ✅ FIX : Permettre plusieurs positions pour le même ticker
+    // L'utilisateur peut avoir plusieurs positions pour la même action (achats à différents prix/dates)
     const tickerUpper = newPosition.ticker.toUpperCase().trim();
-    const currentPortfolio = portfolioRef.current;
-    const existingPosition = currentPortfolio.find(p => p.ticker === tickerUpper);
-    
-    if (existingPosition) {
-      log.warn(`Position ${tickerUpper} already exists in portfolio`);
-      throw new Error(`La position ${tickerUpper} existe déjà dans le portfolio`);
-    }
+    // Pas de vérification de doublon - on permet plusieurs positions par ticker
 
     // ✅ PHASE 3.16 : Mettre à jour loading state centralisé
     setLoadingStates(prev => ({ ...prev, adding: true }));
@@ -720,13 +775,8 @@ export const FinanceProvider = ({ children }) => {
     return new Promise((resolve, reject) => {
       const processAdd = async () => {
         try {
-          // ✅ PHASE 3.12 : Double-check dans process (vérification finale avant ajout)
-          const currentPortfolioInProcess = portfolioRef.current;
-          const duplicateInProcess = currentPortfolioInProcess.find(p => p.ticker === tickerUpper);
-          if (duplicateInProcess) {
-            log.warn(`Position ${tickerUpper} already exists (race condition detected in process)`);
-            throw new Error(`La position ${tickerUpper} existe déjà`);
-          }
+          // ✅ FIX : Pas de vérification de doublon - on permet plusieurs positions par ticker
+          // L'utilisateur peut avoir plusieurs positions pour la même action
 
           // Normalisation ticker (uppercase)
           const normalized = {
@@ -739,12 +789,41 @@ export const FinanceProvider = ({ children }) => {
             updatedAt: new Date().toISOString()
           };
 
-          // Récupérer données Yahoo avec forceRefresh pour obtenir les vraies données
+          // ✅ SOLUTION #2 : Créer cache initial avec prixEntree pour affichage immédiat
+          // Créer un cache avec prixEntree pour que l'UI puisse afficher le prix immédiatement
+          const initialCache = {
+            prixActuel: normalized.prixEntree,
+            variationJour: 0,
+            volume: 0,
+            capitalisation: 0,
+            previousClose: normalized.prixEntree,
+            open: normalized.prixEntree,
+            high: normalized.prixEntree,
+            low: normalized.prixEntree,
+            _fallback: true,
+            _isPrixEntree: true,
+            _timestamp: Date.now()
+          };
+          
+          // Sauvegarder cache initial pour utilisation immédiate
+          await financeStorage.setYahooCache(normalized.ticker, initialCache);
+          log.debug(`Created initial cache for ${normalized.ticker} with prixEntree`);
+          
+          // ✅ SOLUTION #4 : Ne pas forcer refresh, utiliser cache si disponible
+          // Tenter récupération API en arrière-plan sans bloquer
           let yahooDataLoaded = false;
           try {
-            const yahooData = await yahooFinanceService.getQuoteData(normalized.ticker, { forceRefresh: true });
+            // Utiliser cache si disponible, sinon tenter API (sans forcer refresh)
+            const yahooData = await yahooFinanceService.getQuoteData(normalized.ticker, { 
+              forceRefresh: false, // Utiliser cache si disponible
+              prixEntree: normalized.prixEntree // Fournir prixEntree pour fallback
+            });
             
-            if (yahooData && yahooData.prixActuel && yahooData.prixActuel > 0) {
+            // ✅ FIX: Accepter données de fallback mais ne pas les traiter comme données valides
+            if (yahooData?._fallback || yahooData?._isPrixEntree) {
+              log.debug(`Fallback data for ${normalized.ticker} (no APIs available), will use prixEntree for calculations`);
+              normalized.yahooData = undefined; // Ne pas définir yahooData, utilisera prixEntree dans calculs
+            } else if (yahooData && yahooData.prixActuel && yahooData.prixActuel > 0) {
               // ✅ PHASE 3 - Étape 3.15 : Ne pas inclure MA si pas de données historiques
               // Les MA seront calculées plus tard quand on aura les données historiques
               normalized.yahooData = {
@@ -761,16 +840,26 @@ export const FinanceProvider = ({ children }) => {
             log.warn(`Yahoo data unavailable for ${normalized.ticker}, will retry on refresh:`, err.message);
             normalized.yahooData = undefined;
           }
+          
+          // ✅ SOLUTION #2 : Tenter récupération API en arrière-plan pour mettre à jour le cache
+          // Ne pas bloquer l'ajout de position, récupération asynchrone
+          yahooFinanceService.getQuoteData(normalized.ticker, { 
+            forceRefresh: true,
+            prixEntree: normalized.prixEntree
+          }).then(updatedData => {
+            if (updatedData && !updatedData._fallback && !updatedData._isPrixEntree && updatedData.prixActuel > 0) {
+              log.debug(`Background refresh successful for ${normalized.ticker}, cache updated`);
+            }
+          }).catch(err => {
+            log.debug(`Background refresh failed for ${normalized.ticker}, using prixEntree cache:`, err.message);
+          });
 
           // ✅ PHASE 3.12 : Utiliser fonction updater uniquement (évite stale closure)
           let addedPosition;
           
           // ✅ PHASE 4 - Étape 4.9 : Calculer métriques AVANT setPortfolio (car async)
           const currentPortfolio = portfolioRef.current;
-          const duplicate = currentPortfolio.find(p => p.ticker === normalized.ticker);
-          if (duplicate) {
-            throw new Error(`La position ${normalized.ticker} existe déjà`);
-          }
+          // ✅ FIX : Pas de vérification de doublon - on permet plusieurs positions par ticker
           
           // Créer nouveau portfolio avec position ajoutée
           const newPortfolio = [...currentPortfolio, normalized];
@@ -1031,6 +1120,34 @@ export const FinanceProvider = ({ children }) => {
     refreshYahooData,
     calculateMetrics
   }), [portfolio, loading, error, refreshing, loadingStates, addPosition, updatePosition, deletePosition, refreshYahooData, calculateMetrics]);
+
+  // ✅ FIX: S'assurer que value est toujours défini pour éviter erreur lors du hot reload
+  if (!value) {
+    log.error('FinanceContext value is undefined, providing fallback');
+    const fallbackValue = {
+      portfolio: [],
+      loading: true,
+      error: null,
+      refreshing: false,
+      loadingStates: {
+        initial: true,
+        refreshing: false,
+        adding: false,
+        updating: false,
+        deleting: false
+      },
+      addPosition: async () => {},
+      updatePosition: async () => {},
+      deletePosition: async () => {},
+      refreshYahooData: async () => {},
+      calculateMetrics: async () => []
+    };
+    return (
+      <FinanceContext.Provider value={fallbackValue}>
+        {children}
+      </FinanceContext.Provider>
+    );
+  }
 
   return (
     <FinanceContext.Provider value={value}>

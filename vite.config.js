@@ -27,6 +27,32 @@ export default defineConfig({
         target: 'http://localhost:3031',
         changeOrigin: true,
         secure: false
+      },
+      // ✅ FIX CORS : Proxy pour Yahoo Finance pour contourner les erreurs CORS
+      '/api/yahoo-finance': {
+        target: 'https://query1.finance.yahoo.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => {
+          // Retirer /api/yahoo-finance du début du path
+          const newPath = path.replace(/^\/api\/yahoo-finance/, '');
+          console.log(`[Proxy] Rewriting ${path} to ${newPath}`);
+          return newPath;
+        },
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.error('[Proxy] Yahoo Finance proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            // Ajouter les headers nécessaires
+            proxyReq.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+            proxyReq.setHeader('Accept', 'application/json');
+            console.log(`[Proxy] Proxying request to: ${proxyReq.path}`);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log(`[Proxy] Response status: ${proxyRes.statusCode} for ${req.url}`);
+          });
+        }
       }
     }
   },

@@ -47,7 +47,7 @@ const QUOTA_CONFIG = {
 /**
  * Priorités des appels (plus élevé = plus prioritaire)
  */
-const PRIORITY = {
+export const PRIORITY = {
   PORTFOLIO_REFRESH: 10,      // Portfolio utilisateur (le plus important)
   MARKET_INDICES: 8,          // Indices boursiers
   COMMODITIES: 7,             // Matières premières
@@ -215,8 +215,17 @@ class FinanceQuotaManager {
     if (!config) return false;
     
     const dailyLimit = config.free?.requestsPerDay || config.premium?.requestsPerDay || 100;
+    // ✅ FIX CRITIQUE : Vérifier que le compteur ne dépasse pas la limite
+    // Si le compteur est déjà à la limite ou au-dessus, refuser
     if (counter.count >= dailyLimit) {
       log.warn(`Daily quota exceeded for ${apiName}: ${counter.count}/${dailyLimit}`);
+      return false;
+    }
+    
+    // ✅ FIX CRITIQUE : Si le compteur est proche de la limite (à 1 de la limite), refuser aussi
+    // Cela évite de dépasser la limite
+    if (counter.count >= dailyLimit - 1) {
+      log.debug(`Daily quota nearly exceeded for ${apiName}: ${counter.count}/${dailyLimit}, preventing last request`);
       return false;
     }
     
@@ -235,6 +244,19 @@ class FinanceQuotaManager {
     const bucket = this.tokenBuckets[apiName];
     if (bucket) {
       await bucket.consume();
+    }
+    
+    // ✅ FIX CRITIQUE : Vérifier à nouveau avant d'incrémenter (double-check pour éviter dépassement)
+    const config = QUOTA_CONFIG[apiName];
+    if (config) {
+      const dailyLimit = config.free?.requestsPerDay || config.premium?.requestsPerDay || 100;
+      const counter = this.dailyCounters[apiName];
+      
+      // Si on est déjà à la limite, ne pas incrémenter
+      if (counter.count >= dailyLimit) {
+        log.warn(`[financeQuotaManager] Quota already exceeded for ${apiName}: ${counter.count}/${dailyLimit}, not consuming`);
+        throw new Error(`Cannot use ${apiName}: quota already exceeded`);
+      }
     }
     
     // Incrémenter compteur journalier
