@@ -14,6 +14,7 @@ import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import Input from '../ui/Input';
 import LazyFile from '../ui/LazyFile';
+import FileEditor from './FileEditor';
 
 const MatièresView = () => {
   const {
@@ -22,6 +23,9 @@ const MatièresView = () => {
     progressionData,
     addSubject,
     deleteSubject,
+    updateFile,
+    addFileToSubject,
+    deleteFileFromSubject,
     getSubjectProgression,
     getSubjectBadge,
     getXPForNextLevel,
@@ -105,18 +109,95 @@ const MatièresView = () => {
   const [filterLevel, setFilterLevel] = useState('all'); // 'all', 'novice', 'apprenti', 'etudiant', etc.
   const [sortBy, setSortBy] = useState('name'); // 'name', 'level', 'xp', 'recent'
 
-  // Gestion upload fichiers
-  const handleFileUpload = useCallback((event) => {
+  // Gestion upload fichiers avec lecture du contenu
+  const handleFileUpload = useCallback(async (event) => {
     const files = Array.from(event.target.files || []);
-    setNewSubject((prev) => ({
-      ...prev,
-      files: [...prev.files, ...files],
-    }));
-  }, []);
+    const processedFiles = [];
+
+    for (const file of files) {
+      try {
+        // Vérifier la taille
+        if (file.size > 10 * 1024 * 1024) {
+          showError(`Le fichier ${file.name} est trop volumineux (max 10MB)`);
+          continue;
+        }
+
+        // Lire le contenu pour les fichiers texte
+        let content = null;
+        let originalBlob = null; // Pour les fichiers .odt, on garde le blob original
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const textExtensions = ['txt', 'md', 'json', 'js', 'jsx', 'ts', 'tsx', 'css', 'html', 'xml'];
+        
+        if (textExtensions.includes(fileExt)) {
+          content = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsText(file);
+          });
+        } else if (fileExt === 'odt') {
+          // Extraire le texte des fichiers .odt
+          try {
+            const { extractTextFromODT } = await import('../../utils/odtHandler');
+            content = await extractTextFromODT(file);
+            // Convertir le blob original en base64 pour le stockage
+            originalBlob = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+          } catch (error) {
+            console.error(`[MatièresView] Erreur extraction .odt ${file.name}:`, error);
+            showError(`Impossible d'extraire le texte de ${file.name}`);
+            continue;
+          }
+        } else if (fileExt === 'pdf') {
+          // Pour PDF, on stocke juste les métadonnées
+          content = null;
+        } else {
+          // Pour autres formats, essayer de lire comme texte
+          try {
+            content = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target.result);
+              reader.onerror = () => resolve(null); // Ne pas échouer si on ne peut pas lire
+              reader.readAsText(file);
+            });
+          } catch {
+            content = null;
+          }
+        }
+
+        processedFiles.push({
+          id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: file.name,
+          size: file.size,
+          type: file.type || fileExt,
+          content: content,
+          originalBlob: originalBlob, // Pour les .odt, garder le blob original en base64
+          fileExt: fileExt,
+          lastModified: Date.now(),
+          createdAt: Date.now(),
+        });
+      } catch (error) {
+        console.error(`[MatièresView] Erreur traitement fichier ${file.name}:`, error);
+        showError(`Erreur lors du traitement de ${file.name}`);
+      }
+    }
+
+    if (processedFiles.length > 0) {
+      setNewSubject((prev) => ({
+        ...prev,
+        files: [...prev.files, ...processedFiles],
+      }));
+      showSuccess(`${processedFiles.length} fichier(s) ajouté(s)`);
+    }
+  }, [showSuccess, showError]);
 
   // Ajouter une matière
   const handleAddSubject = useCallback(
-    (e) => {
+    async (e) => {
       e.preventDefault();
 
       if (!newSubject.name || !newSubject.name.trim()) {
@@ -134,12 +215,12 @@ const MatièresView = () => {
       }
 
       try {
-        addSubject(newSubject);
+        await addSubject(newSubject);
         showSuccess('Matière ajoutée avec succès');
         setNewSubject({ name: '', files: [], summary: '' });
       } catch (error) {
         showError('Erreur lors de l\'ajout de la matière');
-        console.error(error);
+        console.error('[MatièresView] Erreur addSubject:', error);
       }
     },
     [newSubject, subjects, addSubject, showSuccess, showError]
@@ -159,21 +240,118 @@ const MatièresView = () => {
     [subjects]
   );
 
-  const confirmDeleteSubject = useCallback(() => {
+  const confirmDeleteSubject = useCallback(async () => {
     if (subjectToDelete) {
-      deleteSubject(subjectToDelete.id);
-      showSuccess('Matière supprimée');
-      setShowDeleteModal(false);
-      setSubjectToDelete(null);
+      try {
+        await deleteSubject(subjectToDelete.id);
+        showSuccess('Matière supprimée');
+        setShowDeleteModal(false);
+        setSubjectToDelete(null);
+      } catch (error) {
+        showError('Erreur lors de la suppression de la matière');
+        console.error('[MatièresView] Erreur deleteSubject:', error);
+      }
     }
-  }, [subjectToDelete, deleteSubject, showSuccess]);
+  }, [subjectToDelete, deleteSubject, showSuccess, showError]);
+
+  // État pour l'éditeur de fichiers
+  const [editingFile, setEditingFile] = useState(null);
+  const [editingSubjectId, setEditingSubjectId] = useState(null);
+  const [editingSubjectName, setEditingSubjectName] = useState(null);
+
+  // Ouvrir un fichier dans l'éditeur
+  const handleOpenFile = useCallback((file, subjectId, subjectName) => {
+    setEditingFile(file);
+    setEditingSubjectId(subjectId);
+    setEditingSubjectName(subjectName);
+  }, []);
+
+  // Fermer l'éditeur
+  const handleCloseEditor = useCallback(() => {
+    setEditingFile(null);
+    setEditingSubjectId(null);
+    setEditingSubjectName(null);
+  }, []);
 
   // Gestion fichiers supplémentaires
-  const handleAdditionalFiles = useCallback((event, subjectId) => {
+  const handleAdditionalFiles = useCallback(async (event, subjectId) => {
     const files = Array.from(event.target.files || []);
-    // TODO: Implémenter l'ajout de fichiers à une matière existante
-    console.log('Ajout fichiers supplémentaires pour matière:', subjectId, files);
-  }, []);
+    const processedFiles = [];
+
+    for (const file of files) {
+      try {
+        if (file.size > 10 * 1024 * 1024) {
+          showError(`Le fichier ${file.name} est trop volumineux (max 10MB)`);
+          continue;
+        }
+
+        let content = null;
+        let originalBlob = null;
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const textExtensions = ['txt', 'md', 'json', 'js', 'jsx', 'ts', 'tsx', 'css', 'html', 'xml'];
+        
+        if (textExtensions.includes(fileExt)) {
+          content = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsText(file);
+          });
+        } else if (fileExt === 'odt') {
+          // Extraire le texte des fichiers .odt
+          try {
+            const { extractTextFromODT } = await import('../../utils/odtHandler');
+            content = await extractTextFromODT(file);
+            originalBlob = file; // Garder le blob original pour la reconstruction
+          } catch (error) {
+            console.error(`[MatièresView] Erreur extraction .odt ${file.name}:`, error);
+            showError(`Impossible d'extraire le texte de ${file.name}`);
+            continue;
+          }
+        }
+
+        processedFiles.push({
+          id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: file.name,
+          size: file.size,
+          type: file.type || fileExt,
+          content: content,
+          originalBlob: originalBlob, // Pour les .odt, garder le blob original
+          fileExt: fileExt,
+          lastModified: Date.now(),
+          createdAt: Date.now(),
+        });
+      } catch (error) {
+        console.error(`[MatièresView] Erreur traitement fichier ${file.name}:`, error);
+        showError(`Erreur lors du traitement de ${file.name}`);
+      }
+    }
+
+    if (processedFiles.length > 0) {
+      try {
+        for (const processedFile of processedFiles) {
+          await addFileToSubject(subjectId, processedFile);
+        }
+        showSuccess(`${processedFiles.length} fichier(s) ajouté(s)`);
+      } catch (error) {
+        showError('Erreur lors de l\'ajout des fichiers');
+        console.error('[MatièresView] Erreur addFileToSubject:', error);
+      }
+    }
+  }, [addFileToSubject, showSuccess, showError]);
+
+  // Supprimer un fichier
+  const handleDeleteFile = useCallback(async (subjectId, fileId, fileName) => {
+    if (window.confirm(`Voulez-vous vraiment supprimer le fichier "${fileName}" ?`)) {
+      try {
+        await deleteFileFromSubject(subjectId, fileId);
+        showSuccess('Fichier supprimé');
+      } catch (error) {
+        showError('Erreur lors de la suppression du fichier');
+        console.error('[MatièresView] Erreur deleteFileFromSubject:', error);
+      }
+    }
+  }, [deleteFileFromSubject, showSuccess, showError]);
 
   // Filtrer et trier les matières
   const filteredAndSortedSubjects = useMemo(() => {
@@ -575,20 +753,48 @@ const MatièresView = () => {
                       ➕ FICHIERS TÉLÉVERSÉS :
                     </div>
                     <div className="space-y-2">
-                      {subject.files.map((file, index) => (
-                        <LazyFile
-                          key={index}
-                          file={file}
-                          index={index}
-                          onDelete={(fileIndex) => {
-                            // TODO: Implémenter la suppression de fichier
-                            console.log('Supprimer fichier:', fileIndex);
-                          }}
-                          onAccess={() => {
-                            // Tracking d'accès si nécessaire
-                          }}
-                        />
-                      ))}
+                      {subject.files.map((file, index) => {
+                        const fileId = file.id || index;
+                        return (
+                          <div
+                            key={fileId}
+                            className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700/50 hover:border-emerald-500/30 transition-all duration-200"
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <span className="text-lg">
+                                {file.name?.endsWith('.txt') || file.name?.endsWith('.md') ? '📝' : 
+                                 file.name?.endsWith('.pdf') ? '📄' : 
+                                 file.name?.endsWith('.xlsx') || file.name?.endsWith('.ods') ? '📊' : '📎'}
+                              </span>
+                              <div>
+                                <div className="text-sm font-semibold text-slate-200 uppercase">
+                                  {file.name || 'FICHIER SANS NOM'}
+                                </div>
+                                {file.size && (
+                                  <div className="text-xs text-slate-500 mt-0.5">
+                                    {(file.size / 1024).toFixed(1)} KB
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleOpenFile(file, subject.id, subject.name)}
+                                className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/50 rounded text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all duration-200 text-xs font-semibold uppercase"
+                              >
+                                {file.content ? '✏️ ÉDITER' : '👁️ VOIR'}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteFile(subject.id, fileId, file.name)}
+                                className="px-2 py-1.5 bg-red-900/30 border border-red-500/50 rounded text-red-400 hover:bg-red-500/20 hover:border-red-400 transition-all duration-200"
+                                title="SUPPRIMER LE FICHIER"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -728,6 +934,15 @@ const MatièresView = () => {
           Cette action est irréversible. Toutes les données associées (progression, sessions) seront également supprimées.
         </p>
       </Modal>
+
+      {/* Éditeur de fichiers */}
+      <FileEditor
+        isOpen={editingFile !== null}
+        onClose={handleCloseEditor}
+        file={editingFile}
+        subjectId={editingSubjectId}
+        subjectName={editingSubjectName}
+      />
     </div>
   );
 };

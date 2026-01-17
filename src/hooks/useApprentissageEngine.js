@@ -227,29 +227,49 @@ export const useApprentissageEngine = () => {
 
         // Charger depuis IndexedDB
         const db = await openApprentissageDB();
+        let loadedSubjects = [];
+        let loadedProgression = null;
+
         if (db) {
-          const loadedSubjects = await loadSubjectsFromIndexedDB(db, userId);
-          const loadedProgression = await loadProgressionFromIndexedDB(db, userId);
-
-          if (loadedSubjects) {
-            setSubjects(loadedSubjects);
-          } else {
-            setSubjects(loadFromStorage(STORAGE_KEYS.SUBJECTS, []));
+          try {
+            loadedSubjects = await loadSubjectsFromIndexedDB(db, userId) || [];
+            loadedProgression = await loadProgressionFromIndexedDB(db, userId);
+          } catch (error) {
+            console.warn('[useApprentissageEngine] Erreur chargement IndexedDB, fallback localStorage:', error);
           }
-
-          if (loadedProgression) {
-            setProgressionData(loadedProgression);
-          } else {
-            const localProgression = loadFromStorage(STORAGE_KEYS.PROGRESSION, progressionData);
-            setProgressionData(localProgression);
-          }
-        } else {
-          // Fallback localStorage
-          const loadedSubjects = loadFromStorage(STORAGE_KEYS.SUBJECTS, []);
-          const loadedProgression = loadFromStorage(STORAGE_KEYS.PROGRESSION, progressionData);
-          setSubjects(loadedSubjects);
-          setProgressionData(loadedProgression);
         }
+
+        // Si IndexedDB est vide ou a échoué, essayer localStorage
+        if (!loadedSubjects || loadedSubjects.length === 0) {
+          const localSubjects = loadFromStorage(STORAGE_KEYS.SUBJECTS, []);
+          if (localSubjects && localSubjects.length > 0) {
+            loadedSubjects = localSubjects;
+            // Synchroniser vers IndexedDB si possible
+            if (db) {
+              saveSubjectsToIndexedDB(db, localSubjects, userId).catch(() => {
+                console.warn('[useApprentissageEngine] Impossible de synchroniser localStorage vers IndexedDB');
+              });
+            }
+          }
+        }
+
+        if (!loadedProgression) {
+          const localProgression = loadFromStorage(STORAGE_KEYS.PROGRESSION, null);
+          if (localProgression) {
+            loadedProgression = localProgression;
+            // Synchroniser vers IndexedDB si possible
+            if (db) {
+              saveProgressionToIndexedDB(db, localProgression, userId).catch(() => {
+                console.warn('[useApprentissageEngine] Impossible de synchroniser progression vers IndexedDB');
+              });
+            }
+          } else {
+            loadedProgression = progressionData;
+          }
+        }
+
+        setSubjects(loadedSubjects);
+        setProgressionData(loadedProgression);
       } catch (error) {
         handleStorageError(error, { operation: 'loadData' }, {
           severity: ERROR_SEVERITY.HIGH,
@@ -272,7 +292,10 @@ export const useApprentissageEngine = () => {
   const saveSubjects = useCallback(async (subjectsToSave) => {
     const toSave = subjectsToSave || subjects;
     
-    // Sauvegarder dans IndexedDB
+    // Sauvegarder IMMÉDIATEMENT dans localStorage (pas de débounce pour la sécurité)
+    saveToStorage(STORAGE_KEYS.SUBJECTS, toSave);
+    
+    // Sauvegarder dans IndexedDB avec débounce (pour les modifications fréquentes)
     const db = await openApprentissageDB();
     if (db) {
       if (saveDebounceRef.current) {
@@ -281,12 +304,11 @@ export const useApprentissageEngine = () => {
       saveDebounceRef.current = setTimeout(async () => {
         const saveDb = await openApprentissageDB();
         if (saveDb) {
-          await saveSubjectsToIndexedDB(saveDb, toSave, userId);
+          await saveSubjectsToIndexedDB(saveDb, toSave, userId).catch((error) => {
+            console.error('[useApprentissageEngine] Erreur sauvegarde IndexedDB (saveSubjects):', error);
+          });
         }
       }, 300);
-    } else {
-      // Fallback localStorage
-      saveToStorage(STORAGE_KEYS.SUBJECTS, toSave);
     }
   }, [subjects, userId]);
 
@@ -294,7 +316,10 @@ export const useApprentissageEngine = () => {
   const saveProgression = useCallback(async (progressionToSave) => {
     const toSave = progressionToSave || progressionData;
     
-    // Sauvegarder dans IndexedDB
+    // Sauvegarder IMMÉDIATEMENT dans localStorage (pas de débounce pour la sécurité)
+    saveToStorage(STORAGE_KEYS.PROGRESSION, toSave);
+    
+    // Sauvegarder dans IndexedDB avec débounce (pour les modifications fréquentes)
     const db = await openApprentissageDB();
     if (db) {
       if (saveDebounceRef.current) {
@@ -303,17 +328,16 @@ export const useApprentissageEngine = () => {
       saveDebounceRef.current = setTimeout(async () => {
         const saveDb = await openApprentissageDB();
         if (saveDb) {
-          await saveProgressionToIndexedDB(saveDb, toSave, userId);
+          await saveProgressionToIndexedDB(saveDb, toSave, userId).catch((error) => {
+            console.error('[useApprentissageEngine] Erreur sauvegarde progression IndexedDB (saveProgression):', error);
+          });
         }
       }, 300);
-    } else {
-      // Fallback localStorage
-      saveToStorage(STORAGE_KEYS.PROGRESSION, toSave);
     }
   }, [progressionData, userId]);
 
   // Ajouter une matière
-  const addSubject = useCallback((subjectData) => {
+  const addSubject = useCallback(async (subjectData) => {
     // Sanitizer les données d'entrée
     const sanitizedData = sanitizeSubject({
       name: subjectData.name,
@@ -340,54 +364,130 @@ export const useApprentissageEngine = () => {
 
     const newSubject = validation.data;
 
-    setSubjects((prev) => {
-      const updated = [...prev, newSubject];
-      // Sauvegarder dans IndexedDB
-      saveSubjectsToIndexedDB(updated, userId).catch(() => {
-        // Fallback localStorage
-        saveToStorage(STORAGE_KEYS.SUBJECTS, updated);
-      });
-      return updated;
-    });
+    // Mettre à jour l'état immédiatement
+    const updatedSubjects = [...subjects, newSubject];
+    setSubjects(updatedSubjects);
+
+    // Sauvegarder IMMÉDIATEMENT dans IndexedDB ET localStorage en parallèle
+    const db = await openApprentissageDB();
+    
+    // Double sauvegarde : IndexedDB + localStorage en parallèle pour robustesse maximale
+    const savePromises = [];
+    
+    if (db) {
+      savePromises.push(
+        saveSubjectsToIndexedDB(db, updatedSubjects, userId).catch((error) => {
+          console.error('[useApprentissageEngine] Erreur sauvegarde IndexedDB:', error);
+          // Fallback localStorage si IndexedDB échoue
+          saveToStorage(STORAGE_KEYS.SUBJECTS, updatedSubjects);
+          throw error;
+        })
+      );
+    }
+    
+    // Toujours sauvegarder dans localStorage en parallèle (double sécurité)
+    savePromises.push(
+      Promise.resolve(saveToStorage(STORAGE_KEYS.SUBJECTS, updatedSubjects))
+    );
+
+    // Attendre que toutes les sauvegardes soient terminées
+    await Promise.allSettled(savePromises);
 
     // Initialiser progression pour cette matière
-    setProgressionData((prev) => {
-      const updated = {
-        ...prev,
-        subjects: {
-          ...prev.subjects,
-          [newSubject.name]: {
-            xp: 0,
-            level: 1,
-            sessions: 0,
-            totalTime: 0,
-            perfectSessions: 0,
-            earlyMorningSessions: 0,
-            lateEveningSessions: 0,
-            weekendSessions: 0,
-            longSessions: 0,
-            quickSessions: 0,
-            lastStudyDate: null,
-            weeklyXP: [],
-            monthlyXP: [],
-          },
+    const updatedProgression = {
+      ...progressionData,
+      subjects: {
+        ...progressionData.subjects,
+        [newSubject.name]: {
+          xp: 0,
+          level: 1,
+          sessions: 0,
+          totalTime: 0,
+          perfectSessions: 0,
+          earlyMorningSessions: 0,
+          lateEveningSessions: 0,
+          weekendSessions: 0,
+          longSessions: 0,
+          quickSessions: 0,
+          lastStudyDate: null,
+          weeklyXP: [],
+          monthlyXP: [],
         },
-      };
-      // Sauvegarder dans IndexedDB
-      saveProgressionToIndexedDB(updated, userId).catch(() => {
-        // Fallback localStorage
-        saveToStorage(STORAGE_KEYS.PROGRESSION, updated);
-      });
-      return updated;
-    });
+      },
+    };
+    
+    setProgressionData(updatedProgression);
+
+    // Sauvegarder progression IMMÉDIATEMENT
+    const progressionSavePromises = [];
+    
+    if (db) {
+      progressionSavePromises.push(
+        saveProgressionToIndexedDB(db, updatedProgression, userId).catch((error) => {
+          console.error('[useApprentissageEngine] Erreur sauvegarde progression IndexedDB:', error);
+          saveToStorage(STORAGE_KEYS.PROGRESSION, updatedProgression);
+          throw error;
+        })
+      );
+    }
+    
+    progressionSavePromises.push(
+      Promise.resolve(saveToStorage(STORAGE_KEYS.PROGRESSION, updatedProgression))
+    );
+
+    await Promise.allSettled(progressionSavePromises);
 
     return newSubject;
-  }, []);
+  }, [subjects, progressionData, userId]);
 
   // Supprimer une matière (avec undo/redo)
-  const deleteSubject = useCallback((subjectId) => {
+  const deleteSubject = useCallback(async (subjectId) => {
     const subject = subjects.find((s) => s.id === subjectId);
     if (!subject) return;
+
+    // Fonction helper pour sauvegarder les matières
+    const saveSubjectsHelper = async (subjectsToSave) => {
+      const db = await openApprentissageDB();
+      const savePromises = [];
+      
+      if (db) {
+        savePromises.push(
+          saveSubjectsToIndexedDB(db, subjectsToSave, userId).catch((error) => {
+            console.error('[useApprentissageEngine] Erreur sauvegarde IndexedDB:', error);
+            saveToStorage(STORAGE_KEYS.SUBJECTS, subjectsToSave);
+            throw error;
+          })
+        );
+      }
+      
+      savePromises.push(
+        Promise.resolve(saveToStorage(STORAGE_KEYS.SUBJECTS, subjectsToSave))
+      );
+      
+      await Promise.allSettled(savePromises);
+    };
+
+    // Fonction helper pour sauvegarder la progression
+    const saveProgressionHelper = async (progressionToSave) => {
+      const db = await openApprentissageDB();
+      const savePromises = [];
+      
+      if (db) {
+        savePromises.push(
+          saveProgressionToIndexedDB(db, progressionToSave, userId).catch((error) => {
+            console.error('[useApprentissageEngine] Erreur sauvegarde progression IndexedDB:', error);
+            saveToStorage(STORAGE_KEYS.PROGRESSION, progressionToSave);
+            throw error;
+          })
+        );
+      }
+      
+      savePromises.push(
+        Promise.resolve(saveToStorage(STORAGE_KEYS.PROGRESSION, progressionToSave))
+      );
+      
+      await Promise.allSettled(savePromises);
+    };
 
     // Sauvegarder l'action pour undo
     pushAction({
@@ -396,52 +496,150 @@ export const useApprentissageEngine = () => {
         subjectId,
         subject: { ...subject }, // Copie pour undo
       },
-      undoFn: (data) => {
-        setSubjects((prev) => {
-          const restored = [...prev, data.subject];
-          // Sauvegarder dans IndexedDB
-          saveSubjectsToIndexedDB(restored, userId).catch(() => {
-            // Fallback localStorage
-            saveToStorage(STORAGE_KEYS.SUBJECTS, restored);
-          });
-          return restored;
-        });
+      undoFn: async (data) => {
+        const restored = [...subjects, data.subject];
+        setSubjects(restored);
+        await saveSubjectsHelper(restored);
       },
-      redoFn: (data) => {
-        setSubjects((prev) => {
-          const updated = prev.filter((s) => s.id !== data.subjectId);
-          // Sauvegarder dans IndexedDB
-          saveSubjectsToIndexedDB(updated, userId).catch(() => {
-            // Fallback localStorage
-            saveToStorage(STORAGE_KEYS.SUBJECTS, updated);
-          });
-          return updated;
-        });
+      redoFn: async (data) => {
+        const updated = subjects.filter((s) => s.id !== data.subjectId);
+        setSubjects(updated);
+        await saveSubjectsHelper(updated);
       },
     });
 
-    setSubjects((prev) => {
-      const updated = prev.filter((s) => s.id !== subjectId);
-      // Sauvegarder dans IndexedDB
-      saveSubjectsToIndexedDB(updated, userId).catch(() => {
-        // Fallback localStorage
-        saveToStorage(STORAGE_KEYS.SUBJECTS, updated);
-      });
-      return updated;
-    });
+    // Supprimer la matière
+    const updated = subjects.filter((s) => s.id !== subjectId);
+    setSubjects(updated);
+    await saveSubjectsHelper(updated);
 
     // Supprimer progression
-    setProgressionData((prev) => {
-      const { [subject.name]: removed, ...rest } = prev.subjects || {};
-      const updated = { ...prev, subjects: rest };
-      // Sauvegarder dans IndexedDB
-      saveProgressionToIndexedDB(updated, userId).catch(() => {
-        // Fallback localStorage
-        saveToStorage(STORAGE_KEYS.PROGRESSION, updated);
-      });
-      return updated;
+    const { [subject.name]: removed, ...rest } = progressionData.subjects || {};
+    const updatedProgression = { ...progressionData, subjects: rest };
+    setProgressionData(updatedProgression);
+    await saveProgressionHelper(updatedProgression);
+  }, [subjects, progressionData, pushAction, userId]);
+
+  // Mettre à jour un fichier dans une matière
+  const updateFile = useCallback(async (subjectId, fileId, updatedFile) => {
+    const subject = subjects.find((s) => s.id === subjectId);
+    if (!subject) {
+      throw new Error('Matière non trouvée');
+    }
+
+    const updatedSubjects = subjects.map((s) => {
+      if (s.id === subjectId) {
+        const updatedFiles = s.files.map((f) => 
+          f.id === fileId ? updatedFile : f
+        );
+        return { ...s, files: updatedFiles };
+      }
+      return s;
     });
-  }, [subjects, pushAction]);
+
+    setSubjects(updatedSubjects);
+
+    // Sauvegarder IMMÉDIATEMENT
+    const db = await openApprentissageDB();
+    const savePromises = [];
+    
+    if (db) {
+      savePromises.push(
+        saveSubjectsToIndexedDB(db, updatedSubjects, userId).catch((error) => {
+          console.error('[useApprentissageEngine] Erreur sauvegarde IndexedDB:', error);
+          saveToStorage(STORAGE_KEYS.SUBJECTS, updatedSubjects);
+          throw error;
+        })
+      );
+    }
+    
+    savePromises.push(
+      Promise.resolve(saveToStorage(STORAGE_KEYS.SUBJECTS, updatedSubjects))
+    );
+
+    await Promise.allSettled(savePromises);
+  }, [subjects, userId]);
+
+  // Ajouter un fichier à une matière existante
+  const addFileToSubject = useCallback(async (subjectId, file) => {
+    const subject = subjects.find((s) => s.id === subjectId);
+    if (!subject) {
+      throw new Error('Matière non trouvée');
+    }
+
+    const fileWithId = {
+      ...file,
+      id: file.id || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: file.createdAt || Date.now(),
+      lastModified: Date.now(),
+    };
+
+    const updatedSubjects = subjects.map((s) => {
+      if (s.id === subjectId) {
+        return { ...s, files: [...s.files, fileWithId] };
+      }
+      return s;
+    });
+
+    setSubjects(updatedSubjects);
+
+    // Sauvegarder IMMÉDIATEMENT
+    const db = await openApprentissageDB();
+    const savePromises = [];
+    
+    if (db) {
+      savePromises.push(
+        saveSubjectsToIndexedDB(db, updatedSubjects, userId).catch((error) => {
+          console.error('[useApprentissageEngine] Erreur sauvegarde IndexedDB:', error);
+          saveToStorage(STORAGE_KEYS.SUBJECTS, updatedSubjects);
+          throw error;
+        })
+      );
+    }
+    
+    savePromises.push(
+      Promise.resolve(saveToStorage(STORAGE_KEYS.SUBJECTS, updatedSubjects))
+    );
+
+    await Promise.allSettled(savePromises);
+  }, [subjects, userId]);
+
+  // Supprimer un fichier d'une matière
+  const deleteFileFromSubject = useCallback(async (subjectId, fileId) => {
+    const subject = subjects.find((s) => s.id === subjectId);
+    if (!subject) {
+      throw new Error('Matière non trouvée');
+    }
+
+    const updatedSubjects = subjects.map((s) => {
+      if (s.id === subjectId) {
+        return { ...s, files: s.files.filter((f) => f.id !== fileId) };
+      }
+      return s;
+    });
+
+    setSubjects(updatedSubjects);
+
+    // Sauvegarder IMMÉDIATEMENT
+    const db = await openApprentissageDB();
+    const savePromises = [];
+    
+    if (db) {
+      savePromises.push(
+        saveSubjectsToIndexedDB(db, updatedSubjects, userId).catch((error) => {
+          console.error('[useApprentissageEngine] Erreur sauvegarde IndexedDB:', error);
+          saveToStorage(STORAGE_KEYS.SUBJECTS, updatedSubjects);
+          throw error;
+        })
+      );
+    }
+    
+    savePromises.push(
+      Promise.resolve(saveToStorage(STORAGE_KEYS.SUBJECTS, updatedSubjects))
+    );
+
+    await Promise.allSettled(savePromises);
+  }, [subjects, userId]);
 
   // Calculer XP de session
   const calculateSessionXP = useCallback((sessionData) => {
@@ -784,6 +982,11 @@ export const useApprentissageEngine = () => {
     saveProgression,
     addXP,
     calculateSessionXP,
+
+    // Gestion fichiers
+    updateFile,
+    addFileToSubject,
+    deleteFileFromSubject,
 
     // Utilitaires
     getSubjectProgression,

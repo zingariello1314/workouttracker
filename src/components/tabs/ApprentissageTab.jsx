@@ -11,6 +11,7 @@ import ErrorBoundary from '../ui/ErrorBoundary';
 const MatièresView = lazy(() => import('../apprentissage/MatièresView'));
 const SessionsView = lazy(() => import('../apprentissage/SessionsView'));
 const TrophéesView = lazy(() => import('../apprentissage/TrophéesView'));
+const ApprentissageXPBar = lazy(() => import('../apprentissage/ApprentissageXPBar'));
 
 // Composant de chargement
 const LoadingFallback = () => (
@@ -105,6 +106,13 @@ const ApprentissageTab = () => {
 
       {/* Contenu du sous-onglet avec ErrorBoundary */}
       <div className="py-6">
+        {/* Barre XP Apprentissage */}
+        <div className="max-w-7xl mx-auto px-4 mb-6">
+          <Suspense fallback={<div className="h-24 bg-slate-800/50 rounded-xl animate-pulse" />}>
+            <ApprentissageXPBar />
+          </Suspense>
+        </div>
+
         <ErrorBoundary
           context={{ currentSubView, tab: 'apprentissage' }}
           title={`Erreur dans ${currentSubView}`}
