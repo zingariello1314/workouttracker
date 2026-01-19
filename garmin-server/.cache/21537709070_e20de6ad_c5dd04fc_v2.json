@@ -1,24 +1,24 @@
 {
-  "id": 21258841472,
-  "date": "2025-12-14 15:40:40",
+  "id": 21537709070,
+  "date": "2026-01-13 20:05:47",
   "time": "",
-  "duration": 315,
+  "duration": 1660,
   "calories": {
-    "total": 39,
-    "resting": 5,
-    "active": 34
+    "total": 133,
+    "resting": 31,
+    "active": 102
   },
-  "avgHR": 118,
+  "avgHR": 111,
   "maxHR": 135,
   "minHR": null,
   "sweatLoss": null,
   "intensityMinutes": {
-    "moderate": 3,
-    "vigorous": 1,
-    "total": 4
+    "moderate": 23,
+    "vigorous": null,
+    "total": 23
   },
-  "startTimeLocal": "2025-12-14T16:40:40Z",
-  "startTimeGMT": "2025-12-14T15:40:40Z",
+  "startTimeLocal": "2026-01-13T21:05:47Z",
+  "startTimeGMT": "2026-01-13T20:05:47Z",
   "location": null,
   "elevation": null,
   "deviceInfo": {
@@ -39,6 +39,6 @@
   "activityType": "indoor_cardio",
   "type": "cardio",
   "_classification_hash": "c5dd04fc",
-  "_cached_at": 1765748592.4227264,
+  "_cached_at": 1768677401.9177413,
   "_cache_version": 2
 }

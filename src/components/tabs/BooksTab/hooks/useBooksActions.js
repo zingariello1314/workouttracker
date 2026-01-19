@@ -47,8 +47,10 @@ export const useBooksActions = (books = [], setBooks, coverUrls, setCoverUrls, c
     const validation = validateWithSchema(bookSchema, form);
     
     if (!validation.success) {
-      const firstError = Object.values(validation.errors)[0];
-      alert(firstError || 'Erreur de validation');
+      const firstError = validation.errors && Object.values(validation.errors).length > 0 
+        ? Object.values(validation.errors)[0] 
+        : 'Erreur de validation';
+      alert(firstError);
       return;
     }
     

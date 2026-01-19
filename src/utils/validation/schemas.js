@@ -369,17 +369,17 @@ export const validateWithSchema = (schema, data) => {
     const validated = schema.parse(data);
     return { success: true, data: validated };
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z.ZodError && error.errors && Array.isArray(error.errors)) {
       const errors = {};
       error.errors.forEach((err) => {
-        const field = err.path[0];
+        const field = err.path && err.path.length > 0 ? err.path[0] : null;
         if (field) {
           errors[field] = err.message;
         }
       });
       return { success: false, errors };
     }
-    return { success: false, errors: { _global: error.message || 'Erreur de validation' } };
+    return { success: false, errors: { _global: error?.message || 'Erreur de validation' } };
   }
 };
 
