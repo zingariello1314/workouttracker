@@ -7,7 +7,6 @@ import logger from '../utils/logger';
 import LanguageSelector from './ui/LanguageSelector';
 import NavigationHeader from './ui/NavigationHeader';
 import { useTranslation } from '../utils/translations';
-import { useLanguage } from '../context/LanguageContext';
 import { useSwipeNavigation } from '../hooks/useSwipeNavigation';
 import SwipeIndicator from './ui/SwipeIndicator';
 import { getSettings } from '../services/swipeNavigationSettings';
@@ -20,7 +19,9 @@ const HomePage = () => {
   const { setActiveTab, activeTab } = useWorkout();
   const { isAuthenticated } = useAuth();
   const t = useTranslation();
-  const { language } = useLanguage();
+  // ✅ Récupérer la langue depuis useTranslation pour éviter le double appel de useLanguage
+  // useTranslation utilise déjà useLanguage en interne
+  const language = t.language || 'fr'; // Fallback vers 'fr' si non disponible
   const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
   const { displayQuote, loading: quoteLoading, handleInteraction: handleQuoteInteraction } = useQuoteDisplay();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);

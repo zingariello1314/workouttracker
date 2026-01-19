@@ -13,9 +13,15 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from './ui/Toast';
 import { getDateStr, getDayName } from '../utils/dateUtils';
 import JustificationModal from './modals/JustificationModal';
 import { workoutProgram } from '../data/workoutProgram';
+import { calculateAutoReps } from '../utils/exerciseCalculations';
+import Input from './ui/Input';
+import Button from './ui/Button';
+import { Check, Save } from 'lucide-react';
 import { calculateDayIntensityWithGarmin, getGarminActivityIcons } from '../utils/garminCalendarUtils';
 import { 
   isMockEnduranceSession, 
@@ -42,13 +48,119 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
   const [viewMode, setViewMode] = useState('year'); // 'month', 'year', 'streaks'
   const [selectedDate, setSelectedDate] = useState(null);
   const [showStats, setShowStats] = useState(false);
-  // ✅ NOUVEAU : État pour la modal de justification
+  // ✅ NOUVEAU : État pour la modal de justification (gardée pour l'édition)
   const [justificationModalDate, setJustificationModalDate] = useState(null);
+  // ✅ NOUVEAU : Mode d'affichage du panneau : 'details' | 'choice' | 'workout-entry' | 'justification'
+  const [panelMode, setPanelMode] = useState('details');
+  const [panelDate, setPanelDate] = useState(null);
+  // ✅ États pour la saisie de séance
+  const [selectedProgramId, setSelectedProgramId] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null); // 'maison' | 'salle_semaineA' | 'salle_semaineB'
+  const [workout, setWorkout] = useState(null);
+  const [repsData, setRepsData] = useState({});
+  const [checkedExercises, setCheckedExercises] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [dataUpdateTrigger, setDataUpdateTrigger] = useState(0); // ✅ NOUVEAU : Pour forcer le re-render après sauvegarde
 
   // Récupérer les données du contexte pour le calcul du temps réel
-  const { data, getCurrentData, getTodayWorkout, programs, getExerciseNameById } = useWorkout();
+  const { data, getCurrentData, getTodayWorkout, programs, getExerciseNameById, activeProgram, updateReps, toggleCheck, updateData } = useWorkout();
+  const { currentUser, isAuthenticated } = useAuth();
+  const { showSuccess, showError } = useToast();
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  
+  // ✅ Initialiser le programme actif quand on entre en mode workout-entry
+  useEffect(() => {
+    if (panelMode === 'workout-entry' && !selectedProgramId) {
+      if (activeProgram) {
+        setSelectedProgramId(activeProgram.id);
+      } else if (isAdmin && isAuthenticated) {
+        setSelectedProgramId('default');
+      }
+    }
+  }, [panelMode, selectedProgramId, activeProgram, isAdmin, isAuthenticated]);
+  
+  // ✅ NOUVEAU : Initialiser selectedVariant quand on entre en mode workout-entry et qu'un programme est sélectionné
+  useEffect(() => {
+    if (panelMode === 'workout-entry' && selectedProgramId && panelDate && !selectedVariant) {
+      const dayName = getDayName(panelDate);
+      let firstVariantId = null;
+      
+      if (selectedProgramId === 'default' && isAdmin && isAuthenticated) {
+        const dayWorkout = workoutProgram[dayName];
+        if (dayWorkout) {
+          firstVariantId = 'maison'; // Toujours commencer par maison
+        }
+      } else if (selectedProgramId && programs) {
+        const program = programs.find(p => p.id === selectedProgramId);
+        if (program && program.schedule && program.schedule[dayName]) {
+          firstVariantId = 'maison'; // Toujours commencer par maison
+        }
+      }
+      
+      if (firstVariantId) {
+        setSelectedVariant(firstVariantId);
+      }
+    }
+  }, [panelMode, selectedProgramId, panelDate, isAdmin, isAuthenticated, programs, selectedVariant]);
+  
+  // ✅ Initialiser les données de reps quand le workout change
+  useEffect(() => {
+    if (panelMode === 'workout-entry' && workout && workout.exercices && panelDate) {
+      const dateStr = getDateStr(panelDate);
+      const allDataForEntry = getCurrentData();
+      const initialReps = {};
+      const initialChecked = {};
+      
+      workout.exercices.forEach(exercise => {
+        const baseKey = `${dateStr}_${exercise.id}`;
+        
+        // ✅ CORRECTION : Chercher TOUTES les variantes possibles (base, _semaineA, _semaineB)
+        // et prendre celle qui a des données valides, exactement comme dans getIntensityForDate
+        const possibleKeys = [
+          baseKey,
+          `${baseKey}_semaineA`,
+          `${baseKey}_semaineB`
+        ];
+        
+        let bestKey = null;
+        let bestReps = 0;
+        let foundKey = null;
+        
+        // Parcourir toutes les variantes pour trouver la meilleure
+        for (const key of possibleKeys) {
+          const keyReps = allDataForEntry.reps?.[key];
+          const keyChecked = allDataForEntry.checkedExercises?.[key];
+          
+          // Si cette clé a des données valides (checked ET reps > 0), c'est la meilleure
+          if (keyChecked === true && keyReps !== undefined && parseInt(keyReps) > 0) {
+            const parsedReps = parseInt(keyReps) || 0;
+            if (parsedReps > bestReps) {
+              bestKey = key;
+              bestReps = parsedReps;
+            }
+          }
+          
+          // Si on n'a pas encore trouvé de clé et que celle-ci existe, la garder en fallback
+          if (!foundKey && (keyReps !== undefined || keyChecked !== undefined)) {
+            foundKey = key;
+          }
+        }
+        
+        // Utiliser la meilleure clé si trouvée, sinon utiliser la première clé trouvée, sinon clé de base
+        const finalKey = bestKey || foundKey || baseKey;
+        
+        // Récupérer les valeurs depuis la clé finale
+        initialReps[exercise.id] = allDataForEntry.reps?.[finalKey] || '';
+        initialChecked[exercise.id] = allDataForEntry.checkedExercises?.[finalKey] || false;
+      });
+      
+      setRepsData(initialReps);
+      setCheckedExercises(initialChecked);
+    }
+  }, [panelMode, workout, panelDate, selectedVariant, getCurrentData, getDateStr, dataUpdateTrigger]);
   // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées)
-  const allData = getCurrentData();
+  // ✅ NOUVEAU : Recalculer allData quand dataUpdateTrigger change pour avoir les données les plus récentes
+  const allData = useMemo(() => getCurrentData(), [dataUpdateTrigger, getCurrentData]);
   
   // ✅ NOUVEAU : Traductions
   const t = useTranslation();
@@ -193,10 +305,89 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     return { min, max, thresholds };
   }, [allData?.checkedExercises, allData?.enduranceData?.sessions, allData?.reps]);
 
+  // ✅ NOUVEAU : Fonction pour détecter une vraie activité Garmin (vs pas quotidiens)
+  // Détecte une activité d'entraînement réelle basée sur des critères stricts
+  const detectRealGarminActivity = (dateStr, garminData) => {
+    if (!garminData || !dateStr) return { hasActivity: false, intensity: null, duration: 0 };
+    
+    // Critère 1 : Activités Garmin enregistrées (swimming, jumpRope, cardio) avec durée significative
+    const swimming = (garminData.activities?.swimming || []).filter(a => a.date === dateStr);
+    const jumpRope = (garminData.activities?.jumpRope || []).filter(a => a.date === dateStr);
+    const cardio = (garminData.activities?.cardio || []).filter(a => a.date === dateStr);
+    
+    let totalActivityDuration = 0;
+    
+    // Calculer la durée totale des activités enregistrées
+    [...swimming, ...jumpRope, ...cardio].forEach(act => {
+      const duration = parseDurationToMinutes(act.duration || act.totalTime || 0, 'detectRealGarminActivity');
+      if (duration > 0) {
+        totalActivityDuration += duration;
+      }
+    });
+    
+    // Si on a des activités enregistrées avec durée > 10 minutes, c'est une vraie activité
+    if (totalActivityDuration >= 10) {
+      // Calculer l'intensité basée sur la durée
+      const { thresholds: timeThresholds } = dynamicTimeThresholds;
+      const intensity = calculateTimeIntensityLevel(totalActivityDuration, timeThresholds);
+      return { hasActivity: true, intensity, duration: totalActivityDuration, source: 'activities' };
+    }
+    
+    // Critère 2 : Calories actives significativement supérieures à la moyenne
+    const dailyMetrics = garminData.dailyMetrics?.[dateStr];
+    if (dailyMetrics?.calories?.active) {
+      // Calculer la moyenne des calories actives sur 7 jours
+      const dateObj = new Date(dateStr);
+      const calories7Jours = [];
+      for (let i = 1; i <= 7; i++) {
+        const checkDate = new Date(dateObj);
+        checkDate.setDate(checkDate.getDate() - i);
+        const checkDateStr = getDateStr(checkDate);
+        const cal = garminData.dailyMetrics?.[checkDateStr]?.calories?.active || 0;
+        if (cal > 0) calories7Jours.push(cal);
+      }
+      const avgCalories = calories7Jours.length > 0 
+        ? calories7Jours.reduce((sum, c) => sum + c, 0) / calories7Jours.length 
+        : 0;
+      
+      // Si calories actives > 1.5x la moyenne ET > 300, c'est une vraie activité
+      const currentCalories = dailyMetrics.calories.active;
+      if (avgCalories > 0 && currentCalories > avgCalories * 1.5 && currentCalories > 300) {
+        // Estimer la durée basée sur les calories (approximation : 10 cal/min pour activité modérée)
+        const estimatedDuration = Math.round(currentCalories / 10);
+        const { thresholds: timeThresholds } = dynamicTimeThresholds;
+        const intensity = calculateTimeIntensityLevel(estimatedDuration, timeThresholds);
+        return { hasActivity: true, intensity, duration: estimatedDuration, source: 'calories' };
+      }
+    }
+    
+    // Critère 3 : Minutes d'intensité significatives (> 20 minutes)
+    if (dailyMetrics?.intensityMinutes?.total && dailyMetrics.intensityMinutes.total >= 20) {
+      const intensityMinutes = dailyMetrics.intensityMinutes.total;
+      // Utiliser les minutes d'intensité comme durée
+      const { thresholds: timeThresholds } = dynamicTimeThresholds;
+      const intensity = calculateTimeIntensityLevel(intensityMinutes, timeThresholds);
+      return { hasActivity: true, intensity, duration: intensityMinutes, source: 'intensityMinutes' };
+    }
+    
+    // Critère 4 : ActiveTime significatif (> 30 minutes)
+    if (dailyMetrics?.activeTime && dailyMetrics.activeTime >= 30) {
+      const activeTime = dailyMetrics.activeTime;
+      const { thresholds: timeThresholds } = dynamicTimeThresholds;
+      const intensity = calculateTimeIntensityLevel(activeTime, timeThresholds);
+      return { hasActivity: true, intensity, duration: activeTime, source: 'activeTime' };
+    }
+    
+    return { hasActivity: false, intensity: null, duration: 0 };
+  };
+  
   // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
   // calculateDynamicTimeIntensityLevel remplacé par calculateTimeIntensityLevel (importée)
   const getIntensityForDate = (date) => {
     const dateStr = getDateStr(date);
+    
+    // ✅ NOUVEAU : Récupérer les données fraîches à chaque appel pour éviter les problèmes de closure
+    const currentData = getCurrentData();
     
     // ✅ PHASE 2.3 : Vérifier le cache avant de calculer
     const cacheKey = dateStr;
@@ -204,7 +395,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       const cached = intensityCache.current[cacheKey];
       // ✅ NOUVEAU : Ajouter justification si absente du cache (pour éviter recalcul)
       if (!cached.justification) {
-        cached.justification = getDayJustification(allData, dateStr);
+        cached.justification = getDayJustification(currentData, dateStr);
       }
       return cached;
     }
@@ -302,7 +493,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     // NOTE: Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
     // Elles servent uniquement à fournir des détails sur ce qui s'est passé
     const getEnduranceDataForDate = () => {
-      const enduranceData = allData?.enduranceData || {};
+      const enduranceData = currentData?.enduranceData || {};
       const sessions = enduranceData.sessions || {};
       
       let enduranceReps = 0;
@@ -434,46 +625,96 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     
     // ✅ ÉTAPE 1 : Calculer les répétitions des exercices classiques COCHÉS
     // Seulement les exercices avec checkedExercises = true ET reps > 0
+    // 🔍 DEBUG : Logs pour diagnostiquer le problème de lecture (toujours actif pour janvier 2026)
+    const debugThisDate = dateStr === '2026-01-17' || dateStr.startsWith('2026-01');
+    if (debugThisDate) {
+      console.log('[DEBUG getIntensityForDate] === LECTURE DONNÉES ===');
+      console.log('[DEBUG getIntensityForDate] dateStr:', dateStr);
+      console.log('[DEBUG getIntensityForDate] exercisesList:', exercisesList.map(ex => ({ id: ex.id, name: ex.name, idType: typeof ex.id })));
+      const allRepsKeys = Object.keys(currentData?.reps || {}).filter(k => k.startsWith(dateStr));
+      const allCheckedKeys = Object.keys(currentData?.checkedExercises || {}).filter(k => k.startsWith(dateStr));
+      console.log('[DEBUG getIntensityForDate] Clés dans currentData.reps:', allRepsKeys);
+      console.log('[DEBUG getIntensityForDate] Clés dans currentData.checkedExercises:', allCheckedKeys);
+      console.log('[DEBUG getIntensityForDate] Valeurs des clés reps:', allRepsKeys.reduce((acc, k) => ({ ...acc, [k]: currentData?.reps?.[k] }), {}));
+      console.log('[DEBUG getIntensityForDate] Valeurs des clés checked:', allCheckedKeys.reduce((acc, k) => ({ ...acc, [k]: currentData?.checkedExercises?.[k] }), {}));
+    }
+    
     exercisesList.forEach(exercise => {
       const baseKey = `${dateStr}_${exercise.id}`;
       
-      // Chercher la clé avec les suffixes possibles (_semaineA, _semaineB, ou sans suffixe)
-      let actualKey = baseKey;
-      let reps = 0;
-      let isCompleted = false;
+      // ✅ CORRECTION : Chercher toutes les variantes possibles et choisir celle qui a des données valides
+      // Ordre de priorité : variante avec données valides > variante avec données > aucune
+      const possibleKeys = [
+        baseKey,
+        `${baseKey}_semaineA`,
+        `${baseKey}_semaineB`
+      ];
       
-      // Vérifier d'abord la clé de base
-      if (allData?.reps?.[baseKey] !== undefined || allData?.checkedExercises?.[baseKey] !== undefined) {
-        actualKey = baseKey;
-      } else {
-        // Chercher avec les suffixes
-        const possibleKeys = [
-          `${baseKey}_semaineA`,
-          `${baseKey}_semaineB`
-        ];
+      let actualKey = null;
+      let bestKey = null; // Clé avec les meilleures données (checked = true et reps > 0)
+      let bestReps = 0;
+      
+      // Parcourir toutes les variantes pour trouver la meilleure
+      for (const key of possibleKeys) {
+        const keyReps = currentData?.reps?.[key];
+        const keyChecked = currentData?.checkedExercises?.[key];
         
-        for (const possibleKey of possibleKeys) {
-          if (allData?.reps?.[possibleKey] !== undefined || allData?.checkedExercises?.[possibleKey] !== undefined) {
-            actualKey = possibleKey;
-            break;
+        // Si cette clé a des données valides (checked ET reps > 0), c'est la meilleure
+        if (keyChecked === true && keyReps !== undefined && parseInt(keyReps) > 0) {
+          const parsedReps = parseInt(keyReps) || 0;
+          if (parsedReps > bestReps) {
+            bestKey = key;
+            bestReps = parsedReps;
           }
+        }
+        
+        // Si on n'a pas encore trouvé de clé et que celle-ci existe, la garder en fallback
+        if (!actualKey && (keyReps !== undefined || keyChecked !== undefined)) {
+          actualKey = key;
         }
       }
       
-      const rawReps = allData?.reps?.[actualKey] || 0;
-      isCompleted = allData?.checkedExercises?.[actualKey] || false;
+      // Utiliser la meilleure clé si trouvée, sinon utiliser la première clé trouvée
+      const finalKey = bestKey || actualKey || baseKey;
+      
+      const rawReps = currentData?.reps?.[finalKey] || 0;
+      const isCompleted = currentData?.checkedExercises?.[finalKey] || false;
+      
+      // 🔍 DEBUG : Logs pour chaque exercice (toujours actif pour diagnostiquer)
+      const debugThisExercise = dateStr === '2026-01-17' || dateStr.startsWith('2026-01');
+      if (debugThisExercise) {
+        console.log(`[DEBUG getIntensityForDate] Exercice: ${exercise.name} (id: ${exercise.id}, type: ${typeof exercise.id})`);
+        console.log(`[DEBUG getIntensityForDate]   baseKey: ${baseKey}`);
+        console.log(`[DEBUG getIntensityForDate]   finalKey: ${finalKey}, bestKey: ${bestKey}, actualKey: ${actualKey}`);
+        console.log(`[DEBUG getIntensityForDate]   rawReps: ${rawReps}, isCompleted: ${isCompleted}`);
+        console.log(`[DEBUG getIntensityForDate]   Clés possibles vérifiées:`, possibleKeys);
+        console.log(`[DEBUG getIntensityForDate]   Valeurs trouvées pour chaque clé:`, possibleKeys.map(k => ({
+          key: k,
+          reps: currentData?.reps?.[k],
+          checked: currentData?.checkedExercises?.[k]
+        })));
+      }
       
       // ✅ PHASE 4 : Valider la valeur numérique (rejette négatif, NaN)
       const repsValidation = validateNumericValue(rawReps, `getIntensityForDate.${dateStr}.${exercise.id}.reps`, false);
-      reps = repsValidation.normalizedValue;
+      const reps = repsValidation.normalizedValue;
       
       // ✅ CORRECTION : Seulement si complété ET avec des reps > 0
       if (isCompleted && reps > 0) {
         completedExercises++;
         exercisesReps += reps;
         totalReps += reps;
+        if (debugThisExercise) {
+          console.log(`[DEBUG getIntensityForDate] ✅ Exercice compté: ${exercise.name} (${reps} reps, clé: ${finalKey})`);
+        }
+      } else if (debugThisExercise) {
+        console.log(`[DEBUG getIntensityForDate] ❌ Exercice NON compté: ${exercise.name} (isCompleted: ${isCompleted}, reps: ${reps}, finalKey: ${finalKey})`);
       }
     });
+    
+    if (debugThisDate) {
+      console.log('[DEBUG getIntensityForDate] Résultat final:', { completedExercises, totalReps, exercisesReps, totalPlannedExercises });
+    }
     
     // ✅ ÉTAPE 2 : Ajouter les reps d'endurance (pompes, boxe, défis complétés)
     // Les défis complétés sont déjà inclus dans enduranceData.reps via les sessions d'endurance
@@ -539,7 +780,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     
     // 🔍 DEBUG : Logger les détails du calcul pour diagnostiquer les problèmes
     // ✅ CORRECTION : Définir enduranceDataRaw avant le bloc if pour éviter les erreurs de scope
-    const enduranceDataRaw = allData?.enduranceData || {}; // ✅ CORRECTION : Renommer pour éviter conflit avec enduranceData du getEnduranceDataForDate
+    const enduranceDataRaw = currentData?.enduranceData || {}; // ✅ CORRECTION : Renommer pour éviter conflit avec enduranceData du getEnduranceDataForDate
     
     if (dateStr === '2025-11-03' || dateStr === '2025-11-04' || totalReps > 1000 || enduranceRepsValue > 1000) { // Log pour les dates problématiques ou valeurs suspectes
       // 🔍 DEBUG DÉTAILLÉ : Tracer chaque exercice compté
@@ -547,19 +788,19 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       exercisesList.forEach(exercise => {
         const baseKey = `${dateStr}_${exercise.id}`;
         let actualKey = baseKey;
-        if (allData?.reps?.[baseKey] !== undefined || allData?.checkedExercises?.[baseKey] !== undefined) {
+        if (currentData?.reps?.[baseKey] !== undefined || currentData?.checkedExercises?.[baseKey] !== undefined) {
           actualKey = baseKey;
         } else {
           const possibleKeys = [`${baseKey}_semaineA`, `${baseKey}_semaineB`];
           for (const possibleKey of possibleKeys) {
-            if (allData?.reps?.[possibleKey] !== undefined || allData?.checkedExercises?.[possibleKey] !== undefined) {
+            if (currentData?.reps?.[possibleKey] !== undefined || currentData?.checkedExercises?.[possibleKey] !== undefined) {
               actualKey = possibleKey;
               break;
             }
           }
         }
-        const reps = parseInt(allData?.reps?.[actualKey] || 0);
-        const isCompleted = allData?.checkedExercises?.[actualKey] || false;
+        const reps = parseInt(currentData?.reps?.[actualKey] || 0);
+        const isCompleted = currentData?.checkedExercises?.[actualKey] || false;
         if (isCompleted && reps > 0) {
           exercisesDetails.push({ exerciseId: exercise.id, name: exercise.name, key: actualKey, reps, isCompleted });
         }
@@ -888,7 +1129,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       return 0;
     };
 
-    const realDuration = calculateRealDuration();
+    let realDuration = calculateRealDuration();
     
     // Vérifier si une activité complémentaire est cochée (depuis le programme par défaut ou actif)
     const defaultWorkout = workoutProgram[dayName];
@@ -901,7 +1142,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     
     const complementaryActivity = activeWorkout?.complementaryActivity || defaultWorkout?.complementaryActivity;
     const isComplementaryChecked = complementaryActivity && 
-      allData?.checkedExercises?.[`${dateStr}_complementary_${complementaryActivity.name.toLowerCase()}`];
+      currentData?.checkedExercises?.[`${dateStr}_complementary_${complementaryActivity.name.toLowerCase()}`];
     
         // Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
         // Seules les activités complémentaires de l'onglet Aujourd'hui comptent
@@ -960,6 +1201,16 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             //   console.log('Final intensity level:', intensityLevel);
             // }
           }
+        } else {
+          // ✅ NOUVEAU : Si pas d'exercices mais vraie activité Garmin détectée, utiliser Garmin
+          const garminActivity = detectRealGarminActivity(dateStr, garminData);
+          if (garminActivity.hasActivity && garminActivity.intensity !== null) {
+            intensityLevel = garminActivity.intensity;
+            // Mettre à jour realDuration avec la durée détectée depuis Garmin
+            if (garminActivity.duration > realDuration) {
+              realDuration = garminActivity.duration;
+            }
+          }
         }
         
         // PHASE 5.3 : Appliquer les ajustements Garmin (recalibrage, records, etc.)
@@ -991,6 +1242,9 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     // PHASE 5.3 : Récupérer les icônes Garmin pour cette date
     const garminIcons = garminData ? getGarminActivityIcons(garminData, dateStr) : [];
     
+    // ✅ NOUVEAU : Récupérer la justification pour ce jour
+    const justification = getDayJustification(currentData, dateStr);
+    
     const result = {
       level: adjustedIntensity, // Utiliser le niveau ajusté par Garmin
       reps: totalReps,
@@ -1004,6 +1258,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       garminIcons: garminIcons,
       // Garder la compatibilité avec l'ancien format
       exercises: completedExercises,
+      // ✅ NOUVEAU : Ajouter la justification si elle existe
+      ...(justification && { justification }),
       // ✅ CORRECTION : Utiliser la même logique que pour le calcul du total
       // (chercher les variantes _semaineA, _semaineB, et vérifier reps > 0)
       session: completedExercises > 0 ? { 
@@ -1013,43 +1269,61 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
             const baseKey = `${dateStr}_${ex.id}`;
             let actualKey = baseKey;
             
-            if (allData?.reps?.[baseKey] !== undefined || allData?.checkedExercises?.[baseKey] !== undefined) {
+            if (currentData?.reps?.[baseKey] !== undefined || currentData?.checkedExercises?.[baseKey] !== undefined) {
               actualKey = baseKey;
             } else {
               const possibleKeys = [`${baseKey}_semaineA`, `${baseKey}_semaineB`];
               for (const possibleKey of possibleKeys) {
-                if (allData?.reps?.[possibleKey] !== undefined || allData?.checkedExercises?.[possibleKey] !== undefined) {
+                if (currentData?.reps?.[possibleKey] !== undefined || currentData?.checkedExercises?.[possibleKey] !== undefined) {
                   actualKey = possibleKey;
                   break;
                 }
               }
             }
             
-            const reps = parseInt(allData?.reps?.[actualKey] || 0);
-            const isCompleted = allData?.checkedExercises?.[actualKey] || false;
+            const reps = parseInt(currentData?.reps?.[actualKey] || 0);
+            const isCompleted = currentData?.checkedExercises?.[actualKey] || false;
             // ✅ CORRECTION : Seulement si complété ET avec des reps > 0 (même logique que le calcul)
             return isCompleted && reps > 0;
           })
           .map(ex => {
-            // Chercher la clé avec les variantes (même logique que pour le calcul)
+            // ✅ CORRECTION : Utiliser la même logique améliorée que pour le calcul principal
             const baseKey = `${dateStr}_${ex.id}`;
-            let actualKey = baseKey;
+            const possibleKeys = [
+              baseKey,
+              `${baseKey}_semaineA`,
+              `${baseKey}_semaineB`
+            ];
             
-            if (allData?.reps?.[baseKey] !== undefined || allData?.checkedExercises?.[baseKey] !== undefined) {
-              actualKey = baseKey;
-            } else {
-              const possibleKeys = [`${baseKey}_semaineA`, `${baseKey}_semaineB`];
-              for (const possibleKey of possibleKeys) {
-                if (allData?.reps?.[possibleKey] !== undefined || allData?.checkedExercises?.[possibleKey] !== undefined) {
-                  actualKey = possibleKey;
-                  break;
+            let actualKey = null;
+            let bestKey = null;
+            let bestReps = 0;
+            
+            // Parcourir toutes les variantes pour trouver la meilleure
+            for (const key of possibleKeys) {
+              const keyReps = currentData?.reps?.[key];
+              const keyChecked = currentData?.checkedExercises?.[key];
+              
+              // Si cette clé a des données valides (checked ET reps > 0), c'est la meilleure
+              if (keyChecked === true && keyReps !== undefined && parseInt(keyReps) > 0) {
+                const parsedReps = parseInt(keyReps) || 0;
+                if (parsedReps > bestReps) {
+                  bestKey = key;
+                  bestReps = parsedReps;
                 }
+              }
+              
+              // Si on n'a pas encore trouvé de clé et que celle-ci existe, la garder en fallback
+              if (!actualKey && (keyReps !== undefined || keyChecked !== undefined)) {
+                actualKey = key;
               }
             }
             
+            const finalKey = bestKey || actualKey || baseKey;
+            
             return {
               name: ex.name,
-              reps: parseInt(allData?.reps?.[actualKey] || 0),
+              reps: parseInt(currentData?.reps?.[finalKey] || 0),
               exerciseId: ex.id,
               programName: ex.programName || 'Programme inconnu',
               programId: ex.programId
@@ -1194,6 +1468,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       [JUSTIFICATION_REASONS.MALADIE]: 0,
       [JUSTIFICATION_REASONS.FLEMME]: 0,
       [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 0,
+      [JUSTIFICATION_REASONS.REPOS]: 0,
       [JUSTIFICATION_REASONS.AUTRE]: 0
     };
     
@@ -1445,11 +1720,15 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                   const isWhiteDay = day.intensity.level === 0 && !hasJustification;
                   
                   if (isWhiteDay && isDayWithoutActivity(allData, dateStr)) {
-                    // Jour blanc sans activité → ouvrir modal de justification
-                    setJustificationModalDate(day.date);
+                    // Jour blanc sans activité → afficher panneau de choix (justifier OU saisir)
+                    setPanelDate(day.date);
+                    setPanelMode('choice');
+                    setSelectedDate(null);
                   } else {
                     // Jour avec activité OU justifié → afficher le recap normal
                     setSelectedDate(day);
+                    setPanelMode('details');
+                    setPanelDate(null);
                   }
                 }}
                 className={`
@@ -1526,6 +1805,13 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
                       <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
                       <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.PAS_LE_TEMPS}`)}</span>
+                    </div>
+                  )}
+                  {monthStats[JUSTIFICATION_REASONS.REPOS] > 0 && (
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.REPOS]}`}>
+                      <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.REPOS]}</span>
+                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.REPOS]}</span>
+                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.REPOS}`)}</span>
                     </div>
                   )}
                   {monthStats[JUSTIFICATION_REASONS.AUTRE] > 0 && (
@@ -1672,6 +1958,12 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                               <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
                             </div>
                           )}
+                          {monthStats[JUSTIFICATION_REASONS.REPOS] > 0 && (
+                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.REPOS]}`}>
+                              <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.REPOS]}</span>
+                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.REPOS]}</span>
+                            </div>
+                          )}
                           {monthStats[JUSTIFICATION_REASONS.AUTRE] > 0 && (
                             <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]}`}>
                               <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.AUTRE]}</span>
@@ -1712,32 +2004,687 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
         </div>
       )}
 
-      {/* Détails de la date sélectionnée */}
-      {selectedDate && (() => {
-        const dateStr = getDateStr(selectedDate.date);
-        const dailyMetrics = garminData?.dailyMetrics?.[dateStr];
-        const swimming = (garminData?.activities?.swimming || []).filter(a => a.date === dateStr);
-        const jumpRope = (garminData?.activities?.jumpRope || []).filter(a => a.date === dateStr);
-        const cardio = (garminData?.activities?.cardio || []).filter(a => a.date === dateStr);
-        // ✅ NOUVEAU : Récupérer la justification pour ce jour
-        const justification = selectedDate.intensity?.justification || getDayJustification(allData, dateStr);
+      {/* Panneau de détails / choix / saisie */}
+      {((selectedDate && panelMode === 'details') || panelMode === 'choice' || panelMode === 'workout-entry' || panelMode === 'justification') && (() => {
+        // Déterminer la date à afficher
+        const displayDate = selectedDate?.date || panelDate;
+        if (!displayDate) return null;
         
-        // Calculer les ajustements Garmin pour cette date
-        let garminAdjustments = null;
-        if (garminData && selectedDate.intensity.level > 0) {
-          const workoutIntensity = {
-            level: selectedDate.intensity.level,
-            duration: selectedDate.intensity.duration,
-            reps: selectedDate.intensity.reps
-          };
-          const adjusted = calculateDayIntensityWithGarmin(dateStr, workoutIntensity, garminData);
-          if (adjusted.multiplier !== 1.0) {
-            garminAdjustments = adjusted;
-          }
+        const dateStr = getDateStr(displayDate);
+        const formattedDate = formatLocaleDate(displayDate, { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        
+        // MODE CHOIX : Afficher les options (Justifier OU Saisir)
+        if (panelMode === 'choice') {
+          return (
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-white">{formattedDate}</h3>
+                <button
+                  onClick={() => {
+                    setPanelMode('details');
+                    setPanelDate(null);
+                  }}
+                  className="text-slate-400 hover:text-white text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="text-center mb-6">
+                <p className="text-slate-300 text-sm mb-6">
+                  {t('calendar.workoutChoice.message', 'Que souhaitez-vous faire pour ce jour ?')}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => {
+                    setJustificationModalDate(displayDate);
+                    setPanelMode('details');
+                    setPanelDate(null);
+                  }}
+                  className="flex flex-col items-center justify-center gap-3 p-6 bg-red-900/30 border-2 border-red-500 rounded-lg hover:bg-red-900/50 hover:border-red-400 transition-colors"
+                >
+                  <span className="text-4xl">🔴</span>
+                  <span className="text-white font-semibold">{t('calendar.workoutChoice.justify', 'Justifier l\'absence')}</span>
+                </button>
+                
+                <button
+                  onClick={() => setPanelMode('workout-entry')}
+                  className="flex flex-col items-center justify-center gap-3 p-6 bg-emerald-900/30 border-2 border-emerald-500 rounded-lg hover:bg-emerald-900/50 hover:border-emerald-400 transition-colors"
+                >
+                  <span className="text-4xl">💪</span>
+                  <span className="text-white font-semibold">{t('calendar.workoutChoice.enterWorkout', 'Saisir une séance')}</span>
+                </button>
+              </div>
+            </div>
+          );
         }
         
-        return (
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 space-y-6">
+        // MODE WORKOUT-ENTRY : Formulaire de saisie inline
+        if (panelMode === 'workout-entry') {
+          const dayName = getDayName(displayDate);
+          const allDataForEntry = getCurrentData();
+          
+          // Liste des programmes disponibles (calcul simple, pas de hook)
+          const availablePrograms = (() => {
+            const programList = [];
+            if (isAdmin && isAuthenticated) {
+              programList.push({ id: 'default', name: t('calendar.workoutEntry.program.default', 'Programme par défaut') });
+            }
+            if (programs && programs.length > 0) {
+              programs.forEach(program => {
+                programList.push({
+                  id: program.id,
+                  name: program.name || t('calendar.workoutEntry.program.unnamed', 'Programme sans nom'),
+                  isActive: program.id === activeProgram?.id
+                });
+              });
+            }
+            return programList;
+          })();
+          
+          // ✅ NOUVEAU : Obtenir toutes les variantes disponibles pour ce jour
+          const availableVariants = (() => {
+            if (!selectedProgramId) return [];
+            
+            const variants = [];
+            
+            if (selectedProgramId === 'default' && isAdmin && isAuthenticated) {
+              const dayWorkout = workoutProgram[dayName];
+              if (dayWorkout) {
+                // Toujours ajouter la variante Maison (exercices de base)
+                variants.push({
+                  id: 'maison',
+                  label: 'Maison',
+                  name: dayWorkout.name || 'Maison',
+                  exercices: dayWorkout.exercices || []
+                });
+                
+                // Ajouter les variantes salle si disponibles
+                if (dayWorkout.salleVariants) {
+                  if (dayWorkout.salleVariants.semaineA) {
+                    variants.push({
+                      id: 'salle_semaineA',
+                      label: 'Salle - Semaine A',
+                      name: dayWorkout.salleVariants.semaineA.name || 'Salle - Semaine A',
+                      exercices: dayWorkout.salleVariants.semaineA.exercices || []
+                    });
+                  }
+                  if (dayWorkout.salleVariants.semaineB) {
+                    variants.push({
+                      id: 'salle_semaineB',
+                      label: 'Salle - Semaine B',
+                      name: dayWorkout.salleVariants.semaineB.name || 'Salle - Semaine B',
+                      exercices: dayWorkout.salleVariants.semaineB.exercices || []
+                    });
+                  }
+                }
+              }
+            } else if (selectedProgramId && programs) {
+              const program = programs.find(p => p.id === selectedProgramId);
+              if (program && program.schedule) {
+                const daySchedule = program.schedule[dayName];
+                if (daySchedule) {
+                  // ✅ NOUVEAU : Fonction helper pour convertir les IDs string en IDs numériques
+                  // (même logique que dans getIntensityForDate)
+                  const convertExerciseId = (exId) => {
+                    if (typeof exId === 'string') {
+                      let hash = 0;
+                      for (let i = 0; i < exId.length; i++) {
+                        const char = exId.charCodeAt(i);
+                        hash = ((hash << 5) - hash) + char;
+                        hash = hash & hash;
+                      }
+                      return Math.abs(hash) + 10000;
+                    }
+                    return exId;
+                  };
+                  
+                  // ✅ NOUVEAU : Convertir les IDs des exercices pour la variante maison
+                  const maisonExercices = (daySchedule.exercises || daySchedule.exercices || []).map(ex => ({
+                    ...ex,
+                    id: convertExerciseId(ex.id)
+                  }));
+                  
+                  // Variante maison (exercices de base)
+                  variants.push({
+                    id: 'maison',
+                    label: 'Maison',
+                    name: daySchedule.name || program.name || 'Maison',
+                    exercices: maisonExercices
+                  });
+                  
+                  // Variantes salle si disponibles
+                  if (daySchedule.salleVariants) {
+                    if (daySchedule.salleVariants.semaineA) {
+                      const semaineAExercices = (daySchedule.salleVariants.semaineA.exercises || daySchedule.salleVariants.semaineA.exercices || []).map(ex => ({
+                        ...ex,
+                        id: convertExerciseId(ex.id)
+                      }));
+                      variants.push({
+                        id: 'salle_semaineA',
+                        label: 'Salle - Semaine A',
+                        name: daySchedule.salleVariants.semaineA.name || 'Salle - Semaine A',
+                        exercices: semaineAExercices
+                      });
+                    }
+                    if (daySchedule.salleVariants.semaineB) {
+                      const semaineBExercices = (daySchedule.salleVariants.semaineB.exercises || daySchedule.salleVariants.semaineB.exercices || []).map(ex => ({
+                        ...ex,
+                        id: convertExerciseId(ex.id)
+                      }));
+                      variants.push({
+                        id: 'salle_semaineB',
+                        label: 'Salle - Semaine B',
+                        name: daySchedule.salleVariants.semaineB.name || 'Salle - Semaine B',
+                        exercices: semaineBExercices
+                      });
+                    }
+                  }
+                }
+              }
+            }
+            
+            return variants;
+          })();
+          
+          // ✅ NOUVEAU : Initialiser selectedVariant avec la première variante disponible
+          // Utiliser selectedVariant directement, ou la première variante disponible si null
+          const effectiveVariant = selectedVariant || (availableVariants.length > 0 ? availableVariants[0].id : null);
+          
+          // Charger le workout selon la variante sélectionnée
+          const currentWorkout = (() => {
+            if (!selectedProgramId || !effectiveVariant) return null;
+            
+            const variant = availableVariants.find(v => v.id === effectiveVariant);
+            if (variant) {
+              return {
+                name: variant.name,
+                exercices: variant.exercices || []
+              };
+            }
+            
+            return null;
+          })();
+          
+          // Mettre à jour l'état workout si nécessaire (pour useEffect)
+          if (currentWorkout && JSON.stringify(currentWorkout) !== JSON.stringify(workout)) {
+            setWorkout(currentWorkout);
+          }
+          
+          // Handlers
+          const handleRepsChange = (exerciseId, value) => {
+            setRepsData(prev => ({ ...prev, [exerciseId]: value }));
+          };
+          
+          const handleToggleCheck = (exerciseId) => {
+            setCheckedExercises(prev => ({ ...prev, [exerciseId]: !prev[exerciseId] }));
+          };
+          
+          const handleInputFocus = (exerciseId, exercise) => {
+            const currentValue = repsData[exerciseId] || '';
+            if (!currentValue && exercise.series) {
+              const autoReps = calculateAutoReps(exercise.series);
+              if (autoReps) {
+                handleRepsChange(exerciseId, autoReps.toString());
+              }
+            }
+          };
+          
+          const handleSave = async () => {
+            if (!currentWorkout) {
+              showError(t('calendar.workoutEntry.errors.noWorkout', 'Aucun programme sélectionné'));
+              return;
+            }
+            
+            // ✅ NOUVEAU : Permettre la sauvegarde même si aucun exercice n'est coché
+            // Cela permet de décocher tous les exercices pour réinitialiser le compte à 0
+            const hasCheckedExercise = Object.values(checkedExercises).some(v => v === true);
+            
+            setIsSaving(true);
+            
+            try {
+              // ✅ NOUVEAU : S'assurer que dateStr est défini (il devrait l'être depuis le scope parent)
+              const saveDateStr = getDateStr(displayDate);
+              
+              // ✅ NOUVEAU : Déterminer le suffixe selon la variante sélectionnée
+              const weekSuffix = effectiveVariant === 'salle_semaineA' ? '_semaineA' : 
+                                 effectiveVariant === 'salle_semaineB' ? '_semaineB' : '';
+              
+              // 🔍 DEBUG : Logs pour diagnostiquer le problème (toujours actif pour janvier 2026)
+              const isDebugDate = saveDateStr === '2026-01-17' || saveDateStr.startsWith('2026-01');
+              if (isDebugDate) {
+                console.log('[DEBUG handleSave] === DÉBUT SAUVEGARDE ===');
+                console.log('[DEBUG handleSave] selectedProgramId:', selectedProgramId);
+                console.log('[DEBUG handleSave] effectiveVariant:', effectiveVariant);
+                console.log('[DEBUG handleSave] weekSuffix:', weekSuffix);
+                console.log('[DEBUG handleSave] saveDateStr:', saveDateStr);
+                console.log('[DEBUG handleSave] currentWorkout.exercices:', currentWorkout.exercices.map(ex => ({ id: ex.id, name: ex.name, idType: typeof ex.id })));
+                console.log('[DEBUG handleSave] repsData keys:', Object.keys(repsData));
+                console.log('[DEBUG handleSave] checkedExercises keys:', Object.keys(checkedExercises));
+              }
+              
+              // Préparer les données à sauvegarder
+              const updatedReps = { ...allDataForEntry.reps || {} };
+              const updatedCheckedExercises = { ...allDataForEntry.checkedExercises || {} };
+              
+              // ✅ CORRECTION : Unifier la logique de sauvegarde en utilisant uniquement currentWorkout.exercices
+              // Cela garantit que les IDs utilisés correspondent exactement à ceux du workout
+              const savedKeys = [];
+              currentWorkout.exercices.forEach(exercise => {
+                const exerciseId = exercise.id; // ID converti si programme personnalisé
+                const isChecked = checkedExercises[exerciseId] || false;
+                const reps = repsData[exerciseId] || '';
+                
+                const baseKey = `${saveDateStr}_${exerciseId}`;
+                const key = weekSuffix ? `${baseKey}${weekSuffix}` : baseKey;
+                
+                if (isDebugDate) {
+                  console.log(`[DEBUG handleSave] Exercice: ${exercise.name} (id: ${exerciseId}, type: ${typeof exerciseId}), checked: ${isChecked}, reps: ${reps}, key: ${key}`);
+                }
+                
+                if (isChecked && reps && reps !== '') {
+                  // Si l'exercice est coché ET a des reps, sauvegarder
+                  const parsedReps = parseInt(reps);
+                  if (parsedReps >= 0 && parsedReps <= 999) {
+                    updatedReps[key] = parsedReps;
+                    updatedCheckedExercises[key] = true;
+                    savedKeys.push(key);
+                    if (isDebugDate) {
+                      console.log(`[DEBUG handleSave] ✅ Sauvegardé: ${key} = ${parsedReps} reps`);
+                    }
+                  }
+                } else {
+                  // ✅ CORRECTION : Si l'exercice est décoché ou n'a pas de reps, supprimer UNIQUEMENT la variante actuelle
+                  // Ne pas supprimer les autres variantes qui pourraient avoir des données valides
+                  if (updatedReps[key] !== undefined || updatedCheckedExercises[key] !== undefined) {
+                    delete updatedReps[key];
+                    delete updatedCheckedExercises[key];
+                    if (isDebugDate) {
+                      console.log(`[DEBUG handleSave] 🗑️ Supprimé: ${key} (variante actuelle uniquement)`);
+                    }
+                  }
+                }
+              });
+              
+              if (isDebugDate) {
+                console.log('[DEBUG handleSave] Clés sauvegardées:', savedKeys);
+                console.log('[DEBUG handleSave] updatedReps (après traitement):', Object.keys(updatedReps).filter(k => k.startsWith(saveDateStr)));
+                console.log('[DEBUG handleSave] updatedCheckedExercises (après traitement):', Object.keys(updatedCheckedExercises).filter(k => k.startsWith(saveDateStr)));
+              }
+              
+              // Sauvegarder toutes les modifications en une seule fois
+              await updateData({
+                ...allDataForEntry,
+                reps: updatedReps,
+                checkedExercises: updatedCheckedExercises
+              });
+              
+              // ✅ NOUVEAU : Invalider le cache d'intensité pour cette date pour forcer le recalcul
+              // Invalider de manière agressive pour être sûr
+              if (intensityCache.current[saveDateStr]) {
+                delete intensityCache.current[saveDateStr];
+              }
+              // Invalider aussi les variantes possibles au cas où
+              const cacheKeysToDelete = Object.keys(intensityCache.current).filter(k => k.startsWith(saveDateStr));
+              cacheKeysToDelete.forEach(k => delete intensityCache.current[k]);
+              
+              if (isDebugDate) {
+                console.log('[DEBUG handleSave] Cache invalidé pour:', saveDateStr, 'et variantes');
+              }
+              
+              // Nettoyer les états du formulaire
+              setWorkout(null);
+              setRepsData({});
+              setCheckedExercises({});
+              setSelectedProgramId(null);
+              setSelectedVariant(null);
+              
+              // ✅ NOUVEAU : Déclencher un re-render pour que allData soit recalculé avec les nouvelles données
+              setDataUpdateTrigger(prev => prev + 1);
+              
+              if (isDebugDate) {
+                console.log('[DEBUG handleSave] dataUpdateTrigger incrémenté, allData sera recalculé');
+              }
+              
+              // ✅ NOUVEAU : Attendre que le contexte soit mis à jour et que le re-render soit fait
+              // On utilise plusieurs tentatives pour s'assurer que les données sont bien mises à jour
+              const updateSelectedDate = (attempt = 0) => {
+                // Récupérer les données fraîches depuis le contexte
+                const freshData = getCurrentData();
+                
+                // ✅ CORRECTION : Vérifier que les données sauvegardées sont bien présentes dans freshData
+                // Récupérer toutes les clés pour cette date dans freshData
+                const freshDataRepsKeys = Object.keys(freshData.reps || {}).filter(k => k.startsWith(saveDateStr));
+                const freshDataCheckedKeys = Object.keys(freshData.checkedExercises || {}).filter(k => k.startsWith(saveDateStr));
+                const allKeysForDate = [...new Set([...freshDataRepsKeys, ...freshDataCheckedKeys])];
+                
+                // Vérifier si les clés sauvegardées sont présentes (ou si toutes les clés ont été supprimées)
+                const savedKeysInFreshData = savedKeys.filter(key => {
+                  return freshData.reps?.[key] !== undefined || freshData.checkedExercises?.[key] !== undefined;
+                });
+                
+                // Si on a sauvegardé des clés, vérifier qu'elles sont présentes
+                // Si on n'a pas sauvegardé de clés (tous exercices décochés), vérifier que les anciennes clés ont été supprimées
+                const dataMatches = savedKeys.length > 0 
+                  ? savedKeysInFreshData.length === savedKeys.length
+                  : allKeysForDate.length === 0; // Si rien n'a été sauvegardé, vérifier que tout a été supprimé
+                
+                if (isDebugDate) {
+                  console.log(`[DEBUG handleSave] Tentative ${attempt + 1}:`, {
+                    savedKeys,
+                    savedKeysInFreshData,
+                    allKeysForDate,
+                    freshDataRepsKeys,
+                    freshDataCheckedKeys,
+                    dataMatches
+                  });
+                }
+                
+                // Si les données correspondent (soit sauvegardées, soit supprimées), recalculer l'intensité
+                if (dataMatches || attempt >= 4) {
+                  // ✅ CORRECTION : Invalider le cache de manière agressive avant de recalculer
+                  if (intensityCache.current[saveDateStr]) {
+                    delete intensityCache.current[saveDateStr];
+                  }
+                  // Invalider aussi toutes les variantes possibles
+                  const cacheKeysToDelete = Object.keys(intensityCache.current).filter(k => k.startsWith(saveDateStr));
+                  cacheKeysToDelete.forEach(k => delete intensityCache.current[k]);
+                  
+                  if (isDebugDate) {
+                    console.log(`[DEBUG handleSave] Cache invalidé avant recalcul (tentative ${attempt + 1})`);
+                    console.log(`[DEBUG handleSave] Données fraîches avant recalcul:`, {
+                      repsKeys: Object.keys(freshData.reps || {}).filter(k => k.startsWith(saveDateStr)),
+                      checkedKeys: Object.keys(freshData.checkedExercises || {}).filter(k => k.startsWith(saveDateStr))
+                    });
+                  }
+                  
+                  // Recalculer l'intensité avec les données fraîches
+                  const dayIntensity = getIntensityForDate(displayDate);
+                  
+                  if (isDebugDate) {
+                    console.log(`[DEBUG handleSave] Intensité recalculée:`, {
+                      completedCount: dayIntensity.completedCount,
+                      reps: dayIntensity.reps,
+                      level: dayIntensity.level
+                    });
+                  }
+                  
+                  // Créer un objet day similaire à celui utilisé dans generateMonthDays
+                  const updatedDay = {
+                    date: displayDate,
+                    intensity: dayIntensity
+                  };
+                  
+                  setSelectedDate(updatedDay);
+                  setPanelMode('details');
+                  setPanelDate(null);
+                } else {
+                  // Les données ne correspondent pas encore, réessayer après un délai
+                  if (isDebugDate) {
+                    console.log(`[DEBUG handleSave] Données pas encore synchronisées, nouvelle tentative dans 200ms...`);
+                  }
+                  setTimeout(() => updateSelectedDate(attempt + 1), 200);
+                }
+              };
+              
+              // Démarrer la mise à jour après un court délai pour laisser le temps au contexte de se mettre à jour
+              setTimeout(() => updateSelectedDate(0), 200);
+              
+              showSuccess(t('calendar.workoutEntry.messages.saveSuccess', 'Séance enregistrée avec succès'));
+            } catch (error) {
+              console.error('[CalendarHeatmap] Erreur lors de la sauvegarde:', error);
+              showError(t('calendar.workoutEntry.messages.saveError', 'Erreur lors de la sauvegarde'));
+            } finally {
+              setIsSaving(false);
+            }
+          };
+          
+          return (
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 overflow-hidden">
+              {/* En-tête fixe */}
+              <div className="sticky top-0 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 px-6 py-4 z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-white truncate">
+                      {t('calendar.workoutEntry.title', 'Saisie de séance - {{date}}', { date: formattedDate })}
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setPanelMode('details');
+                      setPanelDate(null);
+                      setWorkout(null);
+                      setRepsData({});
+                      setCheckedExercises({});
+                      setSelectedProgramId(null);
+                      setSelectedVariant(null);
+                    }}
+                    className="flex-shrink-0 ml-4 text-slate-400 hover:text-white text-2xl leading-none w-8 h-8 flex items-center justify-center rounded hover:bg-slate-700/50 transition-colors"
+                    aria-label="Fermer"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              
+              {/* Contenu scrollable */}
+              <div className="px-6 py-6 space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto">
+                {/* Sélection du programme */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-300">
+                    {t('calendar.workoutEntry.program.label', 'Programme')}
+                  </label>
+                  <select
+                    value={selectedProgramId || ''}
+                    onChange={(e) => {
+                      setSelectedProgramId(e.target.value);
+                      setSelectedVariant(null); // Réinitialiser la variante quand on change de programme
+                    }}
+                    disabled={isSaving}
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50 transition-all"
+                  >
+                    <option value="">{t('calendar.workoutEntry.program.select', 'Sélectionner un programme')}</option>
+                    {availablePrograms.map(program => (
+                      <option key={program.id} value={program.id}>
+                        {program.name} {program.isActive ? `(${t('calendar.workoutEntry.program.active', 'Actif')})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* ✅ NOUVEAU : Sélection de la variante (Maison / Salle Semaine A / Salle Semaine B) */}
+                {selectedProgramId && availableVariants.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-300">
+                      {t('calendar.workoutEntry.variant.label', 'Variante')}
+                    </label>
+                    <select
+                      value={effectiveVariant || ''}
+                      onChange={(e) => setSelectedVariant(e.target.value)}
+                      disabled={isSaving}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50 transition-all"
+                    >
+                      {availableVariants.map(variant => (
+                        <option key={variant.id} value={variant.id}>
+                          {variant.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                {/* Titre du workout */}
+                {currentWorkout && currentWorkout.name && (
+                  <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg px-4 py-3">
+                    <h4 className="text-emerald-300 font-semibold text-base">
+                      {currentWorkout.name}
+                    </h4>
+                  </div>
+                )}
+                
+                {/* Liste des exercices */}
+                {currentWorkout && currentWorkout.exercices && currentWorkout.exercices.length > 0 ? (
+                  <div className="space-y-3">
+                    <h4 className="text-white font-medium text-sm uppercase tracking-wide mb-4">
+                      {t('calendar.workoutEntry.exercises.title', 'Exercices')}
+                    </h4>
+                    <div className="space-y-2">
+                      {currentWorkout.exercices.map((exercise) => {
+                        const exerciseId = exercise.id;
+                        const currentReps = repsData[exerciseId] || '';
+                        const isChecked = checkedExercises[exerciseId] || false;
+                        
+                        return (
+                          <div 
+                            key={exerciseId} 
+                            className={`flex items-start gap-3 p-4 rounded-lg border transition-all ${
+                              isChecked 
+                                ? 'bg-emerald-900/20 border-emerald-500/50' 
+                                : 'bg-slate-900/50 border-slate-700 hover:border-slate-600'
+                            }`}
+                          >
+                            {/* Checkbox */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCheck(exerciseId)}
+                              disabled={isSaving}
+                              className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all mt-0.5 ${
+                                isChecked
+                                  ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/50'
+                                  : 'bg-slate-800 border-slate-600 hover:border-slate-500 hover:bg-slate-700'
+                              } disabled:opacity-50`}
+                              aria-label={isChecked ? 'Décocher' : 'Cocher'}
+                            >
+                              {isChecked && <Check size={12} className="text-white" />}
+                            </button>
+                            
+                            {/* Informations de l'exercice */}
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <h5 className={`font-medium text-sm ${
+                                isChecked ? 'text-emerald-200' : 'text-white'
+                              }`}>
+                                {exercise.name}
+                              </h5>
+                              <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <span className="bg-slate-800/50 px-2 py-0.5 rounded">
+                                  {exercise.series}
+                                </span>
+                                {exercise.materiel && (
+                                  <span className="text-slate-500">
+                                    • {exercise.materiel}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Input pour les reps */}
+                            <div className="flex-shrink-0">
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={currentReps}
+                                onChange={(e) => handleRepsChange(exerciseId, e.target.value)}
+                                onFocus={() => handleInputFocus(exerciseId, exercise)}
+                                disabled={isSaving || !isChecked}
+                                className={`w-20 text-center font-semibold ${
+                                  isChecked 
+                                    ? 'bg-emerald-600/30 border-emerald-500 text-emerald-200 focus:ring-emerald-500' 
+                                    : 'bg-slate-800/50 border-slate-600 text-slate-500 cursor-not-allowed'
+                                }`}
+                                min="0"
+                                max="999"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : currentWorkout ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <p className="text-sm">{t('calendar.workoutEntry.noExercises', 'Aucun exercice prévu pour ce jour')}</p>
+                  </div>
+                ) : selectedProgramId ? (
+                  <div className="text-center py-12 text-slate-400">
+                    <p className="text-sm">{t('calendar.workoutEntry.loading', 'Chargement...')}</p>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-slate-400">
+                    <p className="text-sm">{t('calendar.workoutEntry.selectProgram', 'Veuillez sélectionner un programme')}</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Footer fixe avec les boutons */}
+              <div className="sticky bottom-0 bg-slate-800/95 backdrop-blur-sm border-t border-slate-700 px-6 py-4 z-10">
+                <div className="flex gap-3">
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    onClick={() => {
+                      setPanelMode('details');
+                      setPanelDate(null);
+                      setWorkout(null);
+                      setRepsData({});
+                      setCheckedExercises({});
+                      setSelectedProgramId(null);
+                      setSelectedVariant(null);
+                    }}
+                    disabled={isSaving}
+                    className="flex-1"
+                  >
+                    {t('common.cancel', 'Annuler')}
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={handleSave}
+                    disabled={isSaving || !currentWorkout}
+                    icon={Save}
+                    className="flex-1"
+                    loading={isSaving}
+                  >
+                    {t('common.save', 'Sauvegarder')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
+        // MODE DETAILS : Afficher les détails du jour (code existant)
+        if (selectedDate && panelMode === 'details') {
+          const selectedDateStr = getDateStr(selectedDate.date);
+          const dailyMetrics = garminData?.dailyMetrics?.[selectedDateStr];
+          const swimming = (garminData?.activities?.swimming || []).filter(a => a.date === selectedDateStr);
+          const jumpRope = (garminData?.activities?.jumpRope || []).filter(a => a.date === selectedDateStr);
+          const cardio = (garminData?.activities?.cardio || []).filter(a => a.date === selectedDateStr);
+          // ✅ NOUVEAU : Récupérer la justification pour ce jour
+          const justification = selectedDate.intensity?.justification || getDayJustification(allData, selectedDateStr);
+          
+          // Calculer les ajustements Garmin pour cette date
+          let garminAdjustments = null;
+          if (garminData && selectedDate.intensity.level > 0) {
+            const workoutIntensity = {
+              level: selectedDate.intensity.level,
+              duration: selectedDate.intensity.duration,
+              reps: selectedDate.intensity.reps
+            };
+            const adjusted = calculateDayIntensityWithGarmin(selectedDateStr, workoutIntensity, garminData);
+            if (adjusted.multiplier !== 1.0) {
+              garminAdjustments = adjusted;
+            }
+          }
+          
+          return (
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 space-y-6">
             {/* En-tête */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white">
@@ -1783,8 +2730,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
             )}
             
-            {/* Statistiques principales - Masquer si jour justifié */}
-            {!justification && (
+            {/* Statistiques principales - Masquer si jour justifié (sauf repos) */}
+            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
                   <Activity className="mr-2" size={16} />
@@ -1816,8 +2763,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
             )}
             
-            {/* ✅ NOUVEAU : Message si jour justifié (pas d'entraînement) */}
-            {justification && (
+            {/* ✅ NOUVEAU : Message si jour justifié (pas d'entraînement) - Sauf repos */}
+            {justification && justification.reason !== JUSTIFICATION_REASONS.REPOS && (
               <div className="bg-slate-700/30 rounded-lg p-4 text-center">
                 <div className="text-slate-400 text-sm">
                   {t('calendar.heatmap.dayDetails.noWorkoutJustified')}
@@ -1825,8 +2772,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
             )}
 
-            {/* Ajustements Garmin appliqués - Masquer si jour justifié */}
-            {!justification && garminAdjustments && (
+            {/* Ajustements Garmin appliqués - Masquer si jour justifié (sauf repos) */}
+            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && garminAdjustments && (
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                 <h4 className="text-green-400 font-medium mb-2 flex items-center">
                   <Target className="mr-2" size={16} />
@@ -1869,8 +2816,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
             )}
             
-            {/* Activités Garmin - Masquer si jour justifié */}
-            {!justification && (swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) && (
+            {/* Activités Garmin - Masquer si jour justifié (sauf repos) */}
+            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) && (
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
                   <Zap className="mr-2 text-green-400" size={16} />
@@ -2047,8 +2994,8 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
               </div>
             )}
           
-            {/* Exercices réalisés - Masquer si jour justifié */}
-            {!justification && selectedDate.intensity.session && selectedDate.intensity.session.exercises.length > 0 && (
+            {/* Exercices réalisés - Masquer si jour justifié (sauf repos) */}
+            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && selectedDate.intensity.session && selectedDate.intensity.session.exercises.length > 0 && (
               <div>
                 <h4 className="text-white font-medium mb-2">{t('calendar.heatmap.dayDetails.exercisesCompleted')}</h4>
                 <div className="space-y-2">
@@ -2075,8 +3022,51 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
                 </div>
               </div>
             )}
-          </div>
-        );
+            
+            {/* ✅ NOUVEAU : Bouton pour saisir/modifier la séance - Toujours disponible */}
+            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (
+              <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h4 className="text-emerald-300 font-medium mb-1 flex items-center gap-2">
+                      <Activity className="w-5 h-5" />
+                      {selectedDate.intensity.completedCount === 0 
+                        ? t('calendar.heatmap.dayDetails.garminActivityDetected', 'Activité Garmin détectée')
+                        : t('calendar.heatmap.dayDetails.modifyWorkout', 'Modifier ma séance')
+                      }
+                    </h4>
+                    <p className="text-slate-300 text-sm">
+                      {selectedDate.intensity.completedCount === 0 
+                        ? t('calendar.heatmap.dayDetails.noExercisesButActivity', 'Une activité a été enregistrée sur votre montre Garmin mais aucun exercice n\'a été saisi. Souhaitez-vous enregistrer votre séance maintenant ?')
+                        : t('calendar.heatmap.dayDetails.modifyWorkoutMessage', 'Vous pouvez modifier ou compléter votre séance enregistrée.')
+                      }
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={() => {
+                      setPanelMode('workout-entry');
+                      setPanelDate(selectedDate.date);
+                      setSelectedDate(null);
+                    }}
+                    icon={Save}
+                    className="ml-4"
+                  >
+                    {selectedDate.intensity.completedCount === 0
+                      ? t('calendar.heatmap.dayDetails.enterWorkout', 'Saisir ma séance')
+                      : t('calendar.heatmap.dayDetails.modifyWorkout', 'Modifier ma séance')
+                    }
+                  </Button>
+                </div>
+              </div>
+            )}
+            </div>
+          );
+        }
+        
+        // Si aucun mode ne correspond, retourner null
+        return null;
       })()}
       
       {/* ✅ NOUVEAU : Modal de justification */}
@@ -2088,6 +3078,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
           existingJustification={getDayJustification(allData, getDateStr(justificationModalDate))}
         />
       )}
+      
     </div>
   );
 };

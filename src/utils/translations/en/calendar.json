@@ -112,7 +112,12 @@
       "exercisesCompleted": "Exercises completed",
       "reps": "reps",
       "modifyJustification": "Modify justification",
-      "modify": "Modify"
+      "modify": "Modify",
+      "garminActivityDetected": "Garmin activity detected",
+      "noExercisesButActivity": "An activity was recorded on your Garmin watch but no exercises were entered. Would you like to record your session now?",
+      "enterWorkout": "Enter my workout",
+      "modifyWorkout": "Modify my session",
+      "modifyWorkoutMessage": "You can modify or complete your recorded session."
     },
     "monthNames": {
       "january": "January",
@@ -127,6 +132,40 @@
       "october": "October",
       "november": "November",
       "december": "December"
+    }
+  },
+  "workoutChoice": {
+    "title": "Entry for {{date}}",
+    "message": "What would you like to do for this day?",
+    "justify": "Justify absence",
+    "enterWorkout": "Enter workout"
+  },
+  "workoutEntry": {
+    "title": "Workout entry - {{date}}",
+    "program": {
+      "label": "Program",
+      "select": "Select a program",
+      "default": "Default program",
+      "unnamed": "Unnamed program",
+      "active": "Active"
+    },
+    "variant": {
+      "label": "Variant"
+    },
+    "exercises": {
+      "title": "Exercises"
+    },
+    "noExercises": "No exercises planned for this day",
+    "loading": "Loading...",
+    "selectProgram": "Please select a program",
+    "errors": {
+      "noWorkout": "No program selected",
+      "noExerciseChecked": "Please check at least one exercise"
+    },
+    "messages": {
+      "saveSuccess": "Workout saved successfully",
+      "savePartial": "Workout partially saved",
+      "saveError": "Error saving workout"
     }
   }
 }

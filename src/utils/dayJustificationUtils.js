@@ -26,6 +26,7 @@ export const JUSTIFICATION_REASONS = {
   MALADIE: 'maladie',
   FLEMME: 'flemme',
   PAS_LE_TEMPS: 'pas_le_temps',
+  REPOS: 'repos',
   AUTRE: 'autre'
 };
 
@@ -37,6 +38,7 @@ export const JUSTIFICATION_LABELS = {
   [JUSTIFICATION_REASONS.MALADIE]: 'Maladie',
   [JUSTIFICATION_REASONS.FLEMME]: 'Flemme',
   [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'Pas le temps',
+  [JUSTIFICATION_REASONS.REPOS]: 'Repos',
   [JUSTIFICATION_REASONS.AUTRE]: 'Autre'
 };
 
@@ -48,6 +50,7 @@ export const JUSTIFICATION_COLORS = {
   [JUSTIFICATION_REASONS.MALADIE]: 'bg-red-600 border-red-500',      // Rouge pour maladie
   [JUSTIFICATION_REASONS.FLEMME]: 'bg-orange-600 border-orange-500',  // Orange pour flemme
   [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'bg-yellow-600 border-yellow-500', // Jaune pour pas le temps
+  [JUSTIFICATION_REASONS.REPOS]: 'bg-blue-600 border-blue-500',      // Bleu pour repos
   [JUSTIFICATION_REASONS.AUTRE]: 'bg-gray-600 border-gray-500'        // Gris pour autre
 };
 
@@ -59,6 +62,7 @@ export const JUSTIFICATION_ICONS = {
   [JUSTIFICATION_REASONS.MALADIE]: '🤒',
   [JUSTIFICATION_REASONS.FLEMME]: '😴',
   [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: '⏰',
+  [JUSTIFICATION_REASONS.REPOS]: '💤',
   [JUSTIFICATION_REASONS.AUTRE]: '📝'
 };
 

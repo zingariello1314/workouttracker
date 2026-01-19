@@ -2,6 +2,7 @@
   "maladie": "Maladie",
   "flemme": "Flemme",
   "pas_le_temps": "Pas le temps",
+  "repos": "Repos",
   "autre": "Autre",
   "title": "Justifier l'absence d'activité",
   "titleWithDate": "Justifier l'absence d'activité - {{date}}",

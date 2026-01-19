@@ -96,8 +96,8 @@ const Input = ({
   );
 };
 
-// Composant TextArea
-const TextArea = ({
+// Composant TextArea avec forwardRef pour supporter les refs
+const TextArea = React.forwardRef(({
   label,
   error,
   helperText,
@@ -105,7 +105,7 @@ const TextArea = ({
   fullWidth = true,
   className = '',
   ...props
-}) => {
+}, ref) => {
   const sizeStyles = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2 md:py-3 text-base',
@@ -132,6 +132,7 @@ const TextArea = ({
         </label>
       )}
       <textarea
+        ref={ref}
         id={textAreaId}
         className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${className}`}
         aria-invalid={error ? 'true' : 'false'}
@@ -150,7 +151,9 @@ const TextArea = ({
       )}
     </div>
   );
-};
+});
+
+TextArea.displayName = 'TextArea';
 
 // Composant Select
 const Select = ({

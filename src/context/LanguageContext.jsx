@@ -95,8 +95,16 @@ export const LanguageProvider = ({ children }) => {
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
+  // ✅ FIX : Retourner une valeur par défaut au lieu de lancer une erreur
+  // Cela permet d'éviter les erreurs pendant l'initialisation du provider
   if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    console.warn('[useLanguage] Context not available, using default language (fr)');
+    return {
+      language: LANGUAGES.FR,
+      setLanguage: () => {},
+      isFrench: true,
+      isEnglish: false
+    };
   }
   return context;
 };

@@ -112,7 +112,12 @@
       "exercisesCompleted": "Exercices réalisés",
       "reps": "reps",
       "modifyJustification": "Modifier la justification",
-      "modify": "Modifier"
+      "modify": "Modifier",
+          "garminActivityDetected": "Activité Garmin détectée",
+          "noExercisesButActivity": "Une activité a été enregistrée sur votre montre Garmin mais aucun exercice n'a été saisi. Souhaitez-vous enregistrer votre séance maintenant ?",
+          "modifyWorkout": "Modifier ma séance",
+          "modifyWorkoutMessage": "Vous pouvez modifier ou compléter votre séance enregistrée.",
+      "enterWorkout": "Saisir ma séance"
     },
     "monthNames": {
       "january": "Janvier",
@@ -127,6 +132,40 @@
       "october": "Octobre",
       "november": "Novembre",
       "december": "Décembre"
+    }
+  },
+  "workoutChoice": {
+    "title": "Saisie pour le {{date}}",
+    "message": "Que souhaitez-vous faire pour ce jour ?",
+    "justify": "Justifier l'absence",
+    "enterWorkout": "Saisir une séance"
+  },
+  "workoutEntry": {
+    "title": "Saisie de séance - {{date}}",
+    "program": {
+      "label": "Programme",
+      "select": "Sélectionner un programme",
+      "default": "Programme par défaut",
+      "unnamed": "Programme sans nom",
+      "active": "Actif"
+    },
+    "variant": {
+      "label": "Variante"
+    },
+    "exercises": {
+      "title": "Exercices"
+    },
+    "noExercises": "Aucun exercice prévu pour ce jour",
+    "loading": "Chargement...",
+    "selectProgram": "Veuillez sélectionner un programme",
+    "errors": {
+      "noWorkout": "Aucun programme sélectionné",
+      "noExerciseChecked": "Veuillez cocher au moins un exercice"
+    },
+    "messages": {
+      "saveSuccess": "Séance enregistrée avec succès",
+      "savePartial": "Séance partiellement enregistrée",
+      "saveError": "Erreur lors de la sauvegarde"
     }
   }
 }
