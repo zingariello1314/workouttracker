@@ -272,6 +272,76 @@
   border-color: rgba(255, 215, 0, 0.4);
 }
 
+/* ===== MODULE QUÊTES INTERACTIVES - LOOK PREMIUM ===== */
+
+.interactive-quest-card {
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.18), transparent 55%),
+              radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.16), transparent 55%),
+              var(--sidebar-bg-card);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.interactive-quest-card.completed {
+  border-color: rgba(34, 197, 94, 0.8);
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.35);
+}
+
+.interactive-quest-card .sidebar-quest-checkbox {
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8);
+}
+
+.interactive-quest-card .sidebar-quest-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.interactive-quest-card .stat-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+/* Ligne de statistiques Quêtes (3 blocs alignés) */
+.sidebar-quests-stats-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.sidebar-quests-stats-row .stat-card-premium {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: radial-gradient(circle at top right, rgba(248, 250, 252, 0.06), transparent 60%),
+              var(--sidebar-bg-card);
+}
+
+.sidebar-quests-stats-row .stat-period-row {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sidebar-quests-stats-row .stat-period-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(248, 250, 252, 0.7);
+}
+
+.sidebar-quests-stats-row .sidebar-period-selector {
+  flex-shrink: 0;
+}
+
 /* ===== SÉLECTEURS ENRICHIS ===== */
 
 /* Correction des sélecteurs de période (fix carrés blancs) */

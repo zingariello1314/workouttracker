@@ -94,7 +94,7 @@ const QuestsXPBar = ({ userData, validations, allQuests, isLoading = false }) =>
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-300">
           <TrendingUp className="w-4 h-4 text-emerald-300" />
-          <span>{totalXP.toLocaleString('fr-FR')} XP total</span>
+          <span>{currentXP.toLocaleString('fr-FR')} XP actuel</span>
         </div>
       </div>
 

@@ -50,15 +50,19 @@ class SidebarEventEmitter {
    * @param {*} data - Données à transmettre
    */
   emit(event, data) {
-    if (this.listeners[event]) {
-      this.listeners[event].forEach(callback => {
+    const listeners = this.listeners[event];
+    if (!listeners || listeners.length === 0) return;
+
+    // Exécuter les callbacks de manière asynchrone pour éviter les setState pendant le rendu
+    listeners.forEach(callback => {
+      Promise.resolve().then(() => {
         try {
           callback(data);
         } catch (error) {
           console.error(`[SidebarEvents] Error in listener for ${event}:`, error);
         }
       });
-    }
+    });
   }
 
   /**

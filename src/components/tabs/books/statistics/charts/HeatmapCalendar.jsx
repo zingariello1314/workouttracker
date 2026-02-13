@@ -146,7 +146,8 @@ const DayTooltip = ({ date, data, onClose }) => {
 // Composant de cellule du calendrier
 const CalendarDay = ({ date, data, intensity, onClick, onMouseEnter, onMouseLeave }) => {
   const intensityColors = {
-    0: 'bg-slate-800/30', // Pas d'activité
+    // Teinte légèrement visible même sans activité pour garder la grille alignée sous les mois
+    0: 'bg-slate-700/40', // Pas d'activité
     1: 'bg-purple-900/40', // Faible
     2: 'bg-purple-700/60', // Modéré
     3: 'bg-purple-500/80', // Actif
@@ -245,6 +246,47 @@ const HeatmapCalendar = ({ books, statisticsData, selectedPeriod, filters }) => 
     return weeks;
   }, [selectedYear, activityData, maxPages]);
 
+  // Calculer pour chaque mois la colonne (semaine) de début
+  const monthStartWeeks = useMemo(() => {
+    const starts = Array(12).fill(null);
+    weeklyData.forEach((week, weekIndex) => {
+      week.forEach((day) => {
+        if (!day || !day.date) return;
+        const monthIndex = new Date(day.date).getMonth();
+        if (starts[monthIndex] === null) {
+          starts[monthIndex] = weekIndex;
+        }
+      });
+    });
+    return starts;
+  }, [weeklyData]);
+
+  const weekCount = weeklyData.length || 53;
+
+  // Générer un label éventuel pour chaque colonne de semaine (style GitHub)
+  const monthLabelsByWeek = useMemo(() => {
+    const labels = Array(weekCount).fill('');
+    const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const usedMonths = new Set();
+
+    weeklyData.forEach((week, weekIndex) => {
+      const firstDay = week.find((d) => d && d.date);
+      if (!firstDay) return;
+      const dateObj = new Date(firstDay.date);
+      const monthIndex = dateObj.getMonth();
+      const dayOfMonth = dateObj.getDate();
+
+      // Même logique que GitHub : afficher le label sur la première semaine
+      // où le mois commence (premier jour du mois dans la 1ère semaine de ce mois)
+      if (!usedMonths.has(monthIndex) && dayOfMonth <= 7) {
+        labels[weekIndex] = monthNames[monthIndex];
+        usedMonths.add(monthIndex);
+      }
+    });
+
+    return labels;
+  }, [weeklyData, weekCount]);
+
   const handleDayClick = (date, data) => {
     if (data && data.pages > 0) {
       // Émettre un événement pour afficher les détails du jour
@@ -342,32 +384,53 @@ const HeatmapCalendar = ({ books, statisticsData, selectedPeriod, filters }) => 
       {/* Calendrier heatmap */}
       <div className="bg-slate-800/30 rounded-lg p-4">
         <div className="flex flex-col items-center">
-          {/* Étiquettes des mois */}
-          <div className="flex justify-between w-full mb-2 text-xs text-slate-400">
-            {['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'].map((month, index) => (
-              <span key={index} className="flex-1 text-center">{month}</span>
-            ))}
+          {/* Étiquettes des mois alignées sur les colonnes de semaines (style GitHub) */}
+          <div className="w-full mb-2 text-xs text-slate-400">
+            <div
+              className="grid"
+              style={{ gridTemplateColumns: `repeat(${weekCount}, minmax(0, 1fr))` }}
+            >
+              {monthLabelsByWeek.map((label, index) => (
+                <div key={index} className="text-center">
+                  {label}
+                </div>
+              ))}
+            </div>
           </div>
           
           {/* Grille du calendrier */}
-          <div className="grid grid-cols-53 gap-1 mb-4">
-            {weeklyData.map((week, weekIndex) => 
-              week.map((day, dayIndex) => (
-                <div key={`${weekIndex}-${dayIndex}`}>
-                  {day ? (
-                    <CalendarDay
-                      date={day.date}
-                      data={day.data}
-                      intensity={day.intensity}
-                      onClick={handleDayClick}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
-                    />
-                  ) : (
-                    <div className="w-3 h-3" />
-                  )}
-                </div>
-              ))
+          <div
+            className="grid gap-1 mb-4"
+            style={{
+              gridTemplateColumns: `repeat(${weekCount}, minmax(0, 1fr))`,
+              gridTemplateRows: 'repeat(7, minmax(0, 1fr))',
+            }}
+          >
+            {weeklyData.map((week, weekIndex) =>
+              week.map((day, dayIndex) => {
+                const gridColumn = weekIndex + 1; // 1 colonne = 1 semaine
+                const gridRow = dayIndex + 1;     // 7 lignes = 7 jours
+
+                return (
+                  <div
+                    key={`${weekIndex}-${dayIndex}`}
+                    style={{ gridColumn, gridRow }}
+                  >
+                    {day ? (
+                      <CalendarDay
+                        date={day.date}
+                        data={day.data}
+                        intensity={day.intensity}
+                        onClick={handleDayClick}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
+                      />
+                    ) : (
+                      <div className="w-3 h-3" />
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
 

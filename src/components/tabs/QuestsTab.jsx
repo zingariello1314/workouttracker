@@ -6,7 +6,7 @@
  * @module components/tabs/QuestsTab/QuestsTab.refactored
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import { useQuietQuestEngine } from '../../hooks/useQuietQuestEngine';
 import QuestsTodayView from '../quests/QuestsTodayView';
@@ -25,6 +25,7 @@ import { useQuestsDragDrop } from './QuestsTab/hooks/useQuestsDragDrop';
 import { QuestFormModal } from './QuestsTab/components/QuestFormModal';
 import { QuestsTableView } from './QuestsTab/components/QuestsTableView';
 import { SecurityView } from './QuestsTab/components/SecurityView';
+import { useSidebarEvents, SIDEBAR_EVENTS } from '../../utils/sidebarEvents';
 
 /**
  * Composant principal QuestsTab refactorisé
@@ -130,6 +131,17 @@ const QuestsTab = () => {
     onDrop,
   } = useQuestsDragDrop(allQuests, setAllQuests);
 
+  // Synchroniser les toggles effectués depuis la sidebar (InteractiveQuestsModule)
+  const handleExternalQuestToggle = useCallback((data) => {
+    if (!data || data.origin !== 'interactive-quests') return;
+    if (!data.questId || !data.date) return;
+    // Rejouer le toggle dans ce moteur d'onglet (sans origine pour éviter les boucles)
+    toggleQuestValidation(data.questId, data.date);
+  }, [toggleQuestValidation]);
+
+  useSidebarEvents(SIDEBAR_EVENTS.QUEST_COMPLETED, handleExternalQuestToggle);
+  useSidebarEvents(SIDEBAR_EVENTS.QUEST_UPDATED, handleExternalQuestToggle);
+
   // --- Rendu des onglets QuietQuest ---------------------------------------
 
   const renderSubTabNav = () => (
@@ -164,6 +176,8 @@ const QuestsTab = () => {
       toggleQuestValidation={toggleQuestValidation}
       getQuestsForDate={getQuestsForDateMemoized}
       userData={userData}
+      validations={validations}
+      isLoading={false}
     />
   );
 

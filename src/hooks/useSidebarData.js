@@ -65,8 +65,17 @@ export const useSidebarData = () => {
     shopping: 0
   });
 
-  // Date du jour - calculée une seule fois
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  // Date du jour - dynamique (mise à jour automatique après minuit)
+  const [today, setToday] = useState(() => new Date().toISOString().slice(0, 10));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const current = new Date().toISOString().slice(0, 10);
+      setToday((prev) => (prev === current ? prev : current));
+    }, 60 * 1000); // vérifie chaque minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Charger données Garmin avec gestion d'erreur robuste et monitoring de performance
   useEffect(() => {

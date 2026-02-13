@@ -102,9 +102,9 @@ const QuestesJourSection = memo(({ isExpanded, onToggle, quests = [], navigation
               <span>Aucune quête active aujourd'hui</span>
             </div>
           ) : (
-            quests.map(quest => (
+            quests.map((quest, index) => (
               <div 
-                key={quest.id}
+                key={`sidebar-quest-${String(quest.id)}-${index}`}
                 className={`sidebar-quest-item clickable ${quest.completed ? 'completed' : ''}`}
                 role="button"
                 tabIndex={0}

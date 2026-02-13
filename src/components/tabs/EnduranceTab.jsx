@@ -1089,7 +1089,7 @@ const EnduranceTab = () => {
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 flex h-screen">
         {/* Menu latéral */}
-      <div className="w-72 bg-slate-900/50 backdrop-blur-xl border-r border-slate-700/50">
+      <div className="w-72 bg-slate-900/50 backdrop-blur-xl border-r border-slate-700/50 pt-20">
         <div className="p-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-violet-500 bg-clip-text text-transparent">
             {t('endurance.title')}

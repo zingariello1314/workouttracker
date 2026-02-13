@@ -79,12 +79,30 @@ const WorkoutTrackerContent = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
 
+  // Alignement vertical du contenu principal :
+  // on compense uniquement la hauteur du header + navigation (~127px),
+  // de façon uniforme pour tous les onglets applicables.
   const mainOffsetByTab = {
-    settings: '-811px',
-    finance: '-781px',
-    apprentissage: '-761px',
-    quests: '-780px',
-    books: '-780px'
+    // Onglets généraux
+    settings: '-720px',
+    finance: '-720px',
+    // Quêtes & Apprentissage un tout petit peu plus bas
+    apprentissage: '-700px',
+    quests: '-700px',
+    books: '-720px',
+    // Onglets Sport : même alignement vertical sous la sous-nav
+    today: '-640px',
+    'data-entry': '-640px',
+    progress: '-640px',
+    endurance: '-640px',
+    calendar: '-640px',
+    program: '-640px',
+    nutrition: '-640px',
+    charts: '-640px',
+    stats: '-640px',
+    exercises: '-640px',
+    history: '-640px',
+    predictions: '-640px'
   };
 
   const defaultMainOffset = (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing')

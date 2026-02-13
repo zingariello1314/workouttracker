@@ -6,9 +6,10 @@
  * @module components/tabs/QuestsTab/QuestsTab.refactored
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import ErrorBoundary from '../../ui/ErrorBoundary';
 import { useQuietQuestEngine } from '../../../hooks/useQuietQuestEngine';
+import { useSidebarEvents, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
 import QuestsTodayView from '../../quests/QuestsTodayView';
 import QuestsWeekView from '../../quests/QuestsWeekView';
 import QuestsStatsView from '../../quests/stats/QuestsStatsView';
@@ -130,6 +131,17 @@ const QuestsTab = () => {
     startDrag,
     onDrop,
   } = useQuestsDragDrop(allQuests, setAllQuests);
+
+  // Synchroniser les toggles effectués depuis la sidebar (InteractiveQuestsModule)
+  const handleExternalQuestToggle = useCallback((data) => {
+    if (!data || data.origin !== 'interactive-quests') return;
+    if (!data.questId || !data.date) return;
+    // Reproduire le toggle côté onglet Quêtes sans reboucler (origin non transmis)
+    toggleQuestValidation(data.questId, data.date);
+  }, [toggleQuestValidation]);
+
+  useSidebarEvents(SIDEBAR_EVENTS.QUEST_COMPLETED, handleExternalQuestToggle);
+  useSidebarEvents(SIDEBAR_EVENTS.QUEST_UPDATED, handleExternalQuestToggle);
 
   // --- Rendu des onglets QuietQuest ---------------------------------------
 

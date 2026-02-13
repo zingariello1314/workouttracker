@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useState, useMemo } from 'react';
 import { useQuietQuestEngine, getTodayDateStr } from '../../../hooks/useQuietQuestEngine';
-import { emitSidebarEvent, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
+import { emitSidebarEvent, SIDEBAR_EVENTS, useSidebarEvents } from '../../../utils/sidebarEvents';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
 import AnimatedProgressBar from '../enhanced/AnimatedProgressBar';
 import PremiumBadge from '../enhanced/PremiumBadge';
@@ -116,18 +116,23 @@ const InteractiveQuestsModule = memo(({
   const handleQuestToggle = useCallback(async (questId) => {
     try {
       const today = getTodayDateStr();
-      await toggleQuestValidation(questId, today);
-      
-      // Émettre événement pour synchronisation sidebar
-      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_COMPLETED, {
-        questId,
-        date: today,
-        moduleId: 'interactive-quests'
-      });
+      await toggleQuestValidation(questId, today, { origin: 'interactive-quests' });
     } catch (error) {
       console.error('[InteractiveQuestsModule] Erreur toggle quête:', error);
     }
   }, [toggleQuestValidation]);
+
+  // Synchroniser les toggles effectués depuis l'onglet Quêtes ou ailleurs
+  const handleExternalQuestToggle = useCallback((data) => {
+    if (!data || !data.questId || !data.date) return;
+    // Ignorer les événements déjà issus de ce module ou d'une synchro précédente
+    if (data.origin === 'interactive-quests' || data.origin === 'sync-from-tab') return;
+    // Rejouer le toggle dans ce moteur avec une origine spécifique pour éviter les boucles
+    toggleQuestValidation(data.questId, data.date, { origin: 'sync-from-tab' });
+  }, [toggleQuestValidation]);
+
+  useSidebarEvents(SIDEBAR_EVENTS.QUEST_COMPLETED, handleExternalQuestToggle);
+  useSidebarEvents(SIDEBAR_EVENTS.QUEST_UPDATED, handleExternalQuestToggle);
 
   // Navigation vers création de quête
   const handleCreateQuest = useCallback(async () => {
@@ -176,7 +181,7 @@ const InteractiveQuestsModule = memo(({
   ];
 
   return (
-    <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
+    <section className={`sidebar-section sidebar-section-enhanced ${isExpanded ? 'expanded' : ''}`}>
       <header 
         className="sidebar-section-header"
         onClick={onToggle}
@@ -241,21 +246,14 @@ const InteractiveQuestsModule = memo(({
             </div>
           ) : (
             <div className="sidebar-quest-list">
-              {todayQuests.map(quest => {
+              {todayQuests.map((quest, index) => {
                 const isCompleted = isQuestCompletedOnDate ? 
                   isQuestCompletedOnDate(quest.id, getTodayDateStr()) : false;
                 
                 return (
                   <div 
-                    key={quest.id} 
-                    className={`stat-card-premium quest-item ${isCompleted ? 'completed' : ''}`}
-                    style={{ 
-                      padding: '12px',
-                      marginBottom: '8px',
-                      background: isCompleted 
-                        ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%)'
-                        : 'var(--sidebar-bg-card)'
-                    }}
+                    key={`interactive-quest-${String(quest.id)}-${index}`} 
+                    className={`stat-card-premium interactive-quest-card ${isCompleted ? 'completed' : ''}`}
                   >
                     <div className="stat-header">
                       <div 
@@ -320,7 +318,7 @@ const InteractiveQuestsModule = memo(({
           </div>
 
           {/* Statistiques avec échelles configurables - VERSION ENRICHIE */}
-          <div className="sidebar-content-dense">
+          <div className="sidebar-quests-stats-row">
             <div className="stat-card-premium">
               <div className="stat-header">
                 <span className="stat-icon" style={{ color: 'var(--sidebar-green)' }}>📊</span>
@@ -332,13 +330,16 @@ const InteractiveQuestsModule = memo(({
                 {statistics.completionRate}%
               </div>
               <div className="stat-title">Taux de réussite</div>
-              <PeriodSelector
-                value={completionRatePeriod}
-                onChange={setCompletionRatePeriod}
-                options={periodOptions}
-                label=""
-                icon=""
-              />
+              <div className="stat-period-row">
+                <span className="stat-period-label">Période</span>
+                <PeriodSelector
+                  value={completionRatePeriod}
+                  onChange={setCompletionRatePeriod}
+                  options={periodOptions}
+                  label=""
+                  icon=""
+                />
+              </div>
             </div>
 
             <div className="stat-card-premium">
@@ -354,13 +355,16 @@ const InteractiveQuestsModule = memo(({
                 {statistics.currentStreak}
               </div>
               <div className="stat-title">Série actuelle</div>
-              <PeriodSelector
-                value={streakPeriod}
-                onChange={setStreakPeriod}
-                options={periodOptions}
-                label=""
-                icon=""
-              />
+              <div className="stat-period-row">
+                <span className="stat-period-label">Fenêtre</span>
+                <PeriodSelector
+                  value={streakPeriod}
+                  onChange={setStreakPeriod}
+                  options={periodOptions}
+                  label=""
+                  icon=""
+                />
+              </div>
             </div>
 
             <div className="stat-card-premium">
@@ -372,13 +376,16 @@ const InteractiveQuestsModule = memo(({
                 {statistics.totalXP.toLocaleString()}
               </div>
               <div className="stat-title">XP total</div>
-              <PeriodSelector
-                value={xpPeriod}
-                onChange={setXpPeriod}
-                options={periodOptions}
-                label=""
-                icon=""
-              />
+              <div className="stat-period-row">
+                <span className="stat-period-label">Période</span>
+                <PeriodSelector
+                  value={xpPeriod}
+                  onChange={setXpPeriod}
+                  options={periodOptions}
+                  label=""
+                  icon=""
+                />
+              </div>
             </div>
           </div>
 

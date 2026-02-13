@@ -89,12 +89,12 @@ const QuestsTodayView = ({
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {questsToday.map((quest) => {
+          {questsToday.map((quest, index) => {
             const completed = isQuestCompletedOnDate(quest.id, today);
             const xp = quest.xp ?? calculateQuestXP(quest);
             return (
               <div
-                key={quest.id}
+                key={`quest-today-${String(quest.id)}-${index}`}
                 className={`relative rounded-2xl border px-4 py-3 text-xs bg-slate-900/70 border-slate-700/80 hover:border-emerald-400/70 hover:bg-slate-900 transition-all ${
                   completed ? 'ring-1 ring-emerald-400/60' : ''
                 }`}
@@ -153,14 +153,16 @@ const QuestsTodayView = ({
 };
 
 // ✅ PHASE 2 : Memoization pour éviter re-renders inutiles
+// Inclure les validations pour que les coche/décoche se répercutent immédiatement
 export default React.memo(QuestsTodayView, (prevProps, nextProps) => {
-  // Comparaison personnalisée : re-render seulement si props critiques changent
   return (
     prevProps.allQuests === nextProps.allQuests &&
     prevProps.userData === nextProps.userData &&
+    prevProps.validations === nextProps.validations &&
     prevProps.isQuestCompletedOnDate === nextProps.isQuestCompletedOnDate &&
     prevProps.toggleQuestValidation === nextProps.toggleQuestValidation &&
-    prevProps.getQuestsForDate === nextProps.getQuestsForDate
+    prevProps.getQuestsForDate === nextProps.getQuestsForDate &&
+    prevProps.isLoading === nextProps.isLoading
   );
 });
 

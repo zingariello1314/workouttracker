@@ -8,7 +8,7 @@
  * @see Requirements 7.1, 7.2, 7.3
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   BookOpen, Clock, Target, TrendingUp, Calendar, Award, 
   BarChart3, PieChart, Users, Zap, Star, Trophy,
@@ -17,7 +17,7 @@ import {
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { useTranslation } from '../../../../utils/translations';
 
-const MetricCard = ({ icon: Icon, title, value, subtitle, trend, color = 'purple' }) => {
+const MetricCard = ({ icon: Icon, title, value, subtitle, trend, color = 'purple', onClick, isExpandable = false, isExpanded = false }) => {
   const colorClasses = {
     purple: 'text-purple-300 bg-purple-500/10 border-purple-500/20',
     blue: 'text-blue-300 bg-blue-500/10 border-blue-500/20',
@@ -28,7 +28,7 @@ const MetricCard = ({ icon: Icon, title, value, subtitle, trend, color = 'purple
   };
 
   return (
-    <Card variant="glass" className={`border ${colorClasses[color]}`}>
+    <Card variant="glass" className={`border ${colorClasses[color]} ${isExpandable ? 'cursor-pointer' : ''}`} onClick={onClick}>
       <CardContent className="metric-card">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -47,17 +47,24 @@ const MetricCard = ({ icon: Icon, title, value, subtitle, trend, color = 'purple
               </div>
             )}
           </div>
-          {trend && (
-            <div className={`text-xs px-2 py-1 rounded-full ${
-              trend.type === 'positive' 
-                ? 'bg-green-500/20 text-green-300' 
-                : trend.type === 'negative'
-                ? 'bg-red-500/20 text-red-300'
-                : 'bg-slate-500/20 text-slate-300'
-            }`}>
-              {trend.value}
-            </div>
-          )}
+          <div className="flex flex-col items-end gap-1">
+            {trend && (
+              <div className={`text-xs px-2 py-1 rounded-full ${
+                trend.type === 'positive' 
+                  ? 'bg-green-500/20 text-green-300' 
+                  : trend.type === 'negative'
+                  ? 'bg-red-500/20 text-red-300'
+                  : 'bg-slate-500/20 text-slate-300'
+              }`}>
+                {trend.value}
+              </div>
+            )}
+            {isExpandable && (
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              />
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -319,6 +326,7 @@ const AccomplishmentsSection = ({ books, metrics, predictions }) => {
 
 const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferences }) => {
   const t = useTranslation();
+  const [expandedMetric, setExpandedMetric] = useState(null); // 'pages' | 'time' | 'speed' | null
 
   if (!statisticsData || !statisticsData.hasData) {
     return (
@@ -363,6 +371,29 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
     return `${pagesPerHour.toFixed(1)} p/h`;
   };
 
+  // Livres ayant réellement contribué aux métriques (au moins une session)
+  const booksWithStats = useMemo(() => {
+    if (!Array.isArray(books) || books.length === 0) return [];
+
+    const withActivity = books
+      .map((book) => {
+        const sessions = Array.isArray(book.readingSessions) ? book.readingSessions : [];
+        const totalPages = sessions.reduce((sum, s) => sum + (s.pagesRead || 0), 0);
+        const totalMinutes = sessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+        return {
+          ...book,
+          _statsTotalPages: totalPages,
+          _statsTotalMinutes: totalMinutes,
+          _statsSessions: sessions.length,
+        };
+      })
+      .filter((b) => b._statsTotalPages > 0 || b._statsTotalMinutes > 0);
+
+    return withActivity.sort((a, b) => b._statsTotalPages - a._statsTotalPages);
+  }, [books]);
+
+  const topBooks = useMemo(() => booksWithStats.slice(0, 4), [booksWithStats]);
+
   return (
     <div className="space-y-4">
       {/* Métriques de base - Vue compacte */}
@@ -373,6 +404,9 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
           value={metrics.totalPages?.toLocaleString() || '0'}
           subtitle={`${metrics.booksCompleted || 0} livre(s) terminé(s)`}
           color="purple"
+          isExpandable
+          isExpanded={expandedMetric === 'pages'}
+          onClick={() => setExpandedMetric(expandedMetric === 'pages' ? null : 'pages')}
         />
 
         <MetricCard
@@ -381,6 +415,9 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
           value={formatDuration(metrics.totalTime || 0)}
           subtitle={`${metrics.sessionsCount || 0} session(s)`}
           color="blue"
+          isExpandable
+          isExpanded={expandedMetric === 'time'}
+          onClick={() => setExpandedMetric(expandedMetric === 'time' ? null : 'time')}
         />
       </div>
 
@@ -391,6 +428,9 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
           value={formatSpeed(metrics.averageSpeed || 0)}
           subtitle={`${(metrics.averageSessionDuration || 0).toFixed(1)}min/session`}
           color="green"
+          isExpandable
+          isExpanded={expandedMetric === 'speed'}
+          onClick={() => setExpandedMetric(expandedMetric === 'speed' ? null : 'speed')}
         />
 
         <MetricCard
@@ -401,6 +441,107 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
           color="orange"
         />
       </div>
+
+      {/* Détail lié aux métriques principales */}
+      {expandedMetric && booksWithStats.length > 0 && (
+        <Card variant="glass">
+          <CardHeader>
+            <CardTitle size="sm" className="flex items-center gap-2 text-slate-200">
+              {expandedMetric === 'pages' && (
+                <>
+                  <BookOpen className="w-4 h-4" />
+                  <span>Pages lues par livre</span>
+                </>
+              )}
+              {expandedMetric === 'time' && (
+                <>
+                  <Clock className="w-4 h-4" />
+                  <span>Temps total par livre</span>
+                </>
+              )}
+              {expandedMetric === 'speed' && (
+                <>
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Vitesse moyenne par livre</span>
+                </>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <div className="space-y-2 text-xs text-slate-300 max-h-64 overflow-y-auto">
+              <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3 pb-1 border-b border-slate-700/60">
+                <div className="font-semibold text-slate-400">Livre</div>
+                {expandedMetric === 'pages' && (
+                  <div className="font-semibold text-slate-400 text-right">Pages</div>
+                )}
+                {expandedMetric === 'time' && (
+                  <div className="font-semibold text-slate-400 text-right">Temps</div>
+                )}
+                {expandedMetric === 'speed' && (
+                  <div className="font-semibold text-slate-400 text-right">Vitesse</div>
+                )}
+              </div>
+
+              {booksWithStats.map((book) => {
+                const initials = (book.title || '?')
+                  .split(' ')
+                  .slice(0, 2)
+                  .map((w) => w[0]?.toUpperCase() || '')
+                  .join('');
+
+                const speed =
+                  book._statsTotalMinutes > 0
+                    ? (book._statsTotalPages / (book._statsTotalMinutes / 60)).toFixed(1)
+                    : null;
+
+                return (
+                  <div
+                    key={book.id}
+                    className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3 items-center"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-12 rounded-md overflow-hidden bg-slate-800 flex items-center justify-center text-[10px] text-slate-300 border border-slate-700/60 flex-shrink-0">
+                        {book.hasCover && book.coverInline ? (
+                          <img
+                            src={book.coverInline}
+                            alt={book.title || 'Couverture'}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span>{initials}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-100 truncate">
+                          {book.title || t('books.detail.noTitle', 'Livre sans titre')}
+                        </div>
+                        {book.author && (
+                          <div className="text-slate-400 truncate">
+                            {book.author}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {expandedMetric === 'pages' && (
+                      <div className="text-right">{book._statsTotalPages}</div>
+                    )}
+                    {expandedMetric === 'time' && (
+                      <div className="text-right">
+                        {formatDuration(book._statsTotalMinutes || 0)}
+                      </div>
+                    )}
+                    {expandedMetric === 'speed' && (
+                      <div className="text-right">
+                        {speed ? `${speed} p/h` : '—'}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Temps total avec répartition par période */}
       <ExpandableSection 
@@ -460,6 +601,130 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
           </div>
         </div>
       </ExpandableSection>
+
+      {/* Détail par livre (pages / temps / vitesse) */}
+      {booksWithStats.length > 0 && (
+        <ExpandableSection
+          title="Détail par livre"
+          icon={BookOpen}
+          sectionId="books-detail"
+          defaultExpanded={false}
+          userPreferences={userPreferences}
+        >
+          <div className="space-y-3 text-xs text-slate-300">
+            <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 pb-1 border-b border-slate-700/60">
+              <div className="font-semibold text-slate-400">Livre</div>
+              <div className="font-semibold text-slate-400 text-right">Pages lues</div>
+              <div className="font-semibold text-slate-400 text-right">Temps total</div>
+              <div className="font-semibold text-slate-400 text-right">Vitesse</div>
+            </div>
+            {booksWithStats.map((book) => {
+              const initials = (book.title || '?')
+                .split(' ')
+                .slice(0, 2)
+                .map((w) => w[0]?.toUpperCase() || '')
+                .join('');
+
+              const speed =
+                book._statsTotalMinutes > 0
+                  ? (book._statsTotalPages / (book._statsTotalMinutes / 60)).toFixed(1)
+                  : null;
+
+              return (
+                <div
+                  key={book.id}
+                  className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 items-center"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-12 rounded-md overflow-hidden bg-slate-800 flex items-center justify-center text-[10px] text-slate-300 border border-slate-700/60 flex-shrink-0">
+                      {book.hasCover && book.coverInline ? (
+                        <img
+                          src={book.coverInline}
+                          alt={book.title || 'Couverture'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{initials}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-100 truncate">
+                        {book.title || t('books.detail.noTitle', 'Livre sans titre')}
+                      </div>
+                      {book.author && (
+                        <div className="text-slate-400 truncate">
+                          {book.author}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">{book._statsTotalPages}</div>
+                  <div className="text-right">
+                    {formatDuration(book._statsTotalMinutes || 0)}
+                  </div>
+                  <div className="text-right">
+                    {speed ? `${speed} p/h` : '—'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ExpandableSection>
+      )}
+
+      {/* Aperçu des livres concernés par les stats */}
+      {topBooks.length > 0 && (
+        <Card variant="glass">
+          <CardHeader>
+            <CardTitle size="sm" className="text-slate-200">
+              {t('books.statistics.metrics.relatedBooks', 'Livres concernés')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 overflow-x-auto py-1">
+              {topBooks.map((book) => {
+                const initials = (book.title || '?')
+                  .split(' ')
+                  .slice(0, 2)
+                  .map((w) => w[0]?.toUpperCase() || '')
+                  .join('');
+
+                return (
+                  <div
+                    key={book.id}
+                    className="flex items-center gap-3 min-w-[170px]"
+                  >
+                    <div className="w-10 h-14 rounded-md overflow-hidden bg-slate-800 flex items-center justify-center text-xs text-slate-300 border border-slate-700/60">
+                      {book.hasCover && book.coverInline ? (
+                        <img
+                          src={book.coverInline}
+                          alt={book.title || 'Couverture'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{initials}</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-300 space-y-0.5">
+                      <div className="font-semibold text-slate-100 truncate max-w-[140px]">
+                        {book.title || t('books.detail.noTitle', 'Livre sans titre')}
+                      </div>
+                      {book.author && (
+                        <div className="text-slate-400 truncate max-w-[140px]">
+                          {book.author}
+                        </div>
+                      )}
+                      <div className="text-slate-400">
+                        {book._statsTotalPages} pages • {book._statsSessions} session(s)
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
 
       {/* Objectifs (si définis) */}
