@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   openQuietQuestDB,
   loadQuestsFromIndexedDB,
@@ -12,7 +12,7 @@ import {
   loadAppStateFromIndexedDB,
   saveAppStateToIndexedDB,
 } from '../utils/quietQuestIndexedDB';
-import { emitSidebarEvent, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
+import { emitSidebarEvent, SIDEBAR_EVENTS, sidebarEvents } from '../utils/sidebarEvents';
 import { useAuth } from '../context/AuthContext';
 
 // Clés de stockage QuietQuest (pour fallback localStorage)
@@ -85,7 +85,16 @@ export const addDays = (dateStr, delta) => {
   return d.toISOString().slice(0, 10);
 };
 
-// Récupère les quêtes actives pour une date donnée (récurrentes + exceptionnelles)
+// Convertit "HH:mm" en minutes depuis minuit pour le tri. Sans heure = fin de journée.
+function heureToMinutes(heure) {
+  if (!heure || typeof heure !== 'string') return 24 * 60;
+  const m = heure.trim().match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/);
+  if (!m) return 24 * 60;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+}
+
+// Récupère les quêtes actives pour une date donnée (récurrentes + exceptionnelles).
+// Tri : d'abord par heure prévue (emploi du temps), puis par ordre.
 export const getQuestsForDate = (allQuests, targetDate) => {
   if (!targetDate) return [];
   const dayOfWeek = getDayOfWeekFromDateStr(targetDate);
@@ -100,10 +109,14 @@ export const getQuestsForDate = (allQuests, targetDate) => {
         if (!Array.isArray(quest.jours)) return false;
         return quest.jours.includes(dayOfWeek);
       }
-      // Fallback : considérer comme récurrente tous les jours
       return true;
     })
-    .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    .sort((a, b) => {
+      const minA = heureToMinutes(a.heure);
+      const minB = heureToMinutes(b.heure);
+      if (minA !== minB) return minA - minB;
+      return (a.ordre || 0) - (b.ordre || 0);
+    });
 };
 
 /**
@@ -119,6 +132,28 @@ export function useQuietQuestEngine() {
   const [validations, setValidations] = useState([]);
   const [dailyPerformances, setDailyPerformances] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Date du jour : mise à jour après minuit pour que l’onglet Quêtes affiche le nouveau jour (quêtes décochées)
+  const [todayDate, setTodayDate] = useState(() => getTodayDateStr());
+  // Mise à jour de la date du jour : intervalle 10 s + au focus/visibilité (ex. retour après minuit)
+  useEffect(() => {
+    const refreshToday = () => {
+      const current = getTodayDateStr();
+      setTodayDate((prev) => (prev === current ? prev : current));
+    };
+    const interval = setInterval(refreshToday, 10 * 1000);
+    const onVisibility = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') refreshToday();
+    };
+    const onFocus = () => refreshToday();
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
 
   // Détection du mode de stockage
   const storageModeRef = useRef('localstorage'); // 'indexeddb' | 'localstorage'
@@ -382,6 +417,34 @@ export function useQuietQuestEngine() {
     questsVersionRef.current += 1;
     questsCacheRef.current.clear();
   }, [allQuests]);
+
+  // Réagir aux créations/suppressions de quêtes (onglet ou autre instance) pour garder la sidebar et les autres vues à jour
+  useEffect(() => {
+    const refetchQuests = async () => {
+      if (!isAuthenticated) return;
+      try {
+        if (dbRef.current && storageModeRef.current === 'indexeddb') {
+          const fresh = await loadQuestsFromIndexedDB(dbRef.current, userId);
+          setAllQuests(Array.isArray(fresh) ? fresh : []);
+        } else {
+          const stored = loadFromStorage(STORAGE_KEYS.quests, []);
+          setAllQuests(Array.isArray(stored) ? stored : []);
+        }
+      } catch (e) {
+        console.warn('[useQuietQuestEngine] Refetch quêtes après événement:', e);
+      }
+    };
+    const onQuestListChange = () => {
+      // Court délai pour laisser le temps à la sauvegarde (debounce 300ms) de s'écrire
+      setTimeout(refetchQuests, 400);
+    };
+    const unsubCreate = sidebarEvents.on(SIDEBAR_EVENTS.QUEST_CREATED, onQuestListChange);
+    const unsubUpdate = sidebarEvents.on(SIDEBAR_EVENTS.QUEST_UPDATED, onQuestListChange);
+    return () => {
+      unsubCreate();
+      unsubUpdate();
+    };
+  }, [isAuthenticated]);
 
   // Créer automatiquement les quêtes "Ménage toute la semaine" et "Repas du soir" si elles n'existent pas
   useEffect(() => {
@@ -689,13 +752,17 @@ export function useQuietQuestEngine() {
       );
 
       if (index !== -1) {
-        // Uncompleting quest
+        // Décocher : interdire pour les jours passés pour ne pas perdre l'XP déjà gagné
+        const realToday = getTodayDateStr();
+        if (date < realToday) {
+          return prev; // ne pas modifier : la validation passée reste cochée, l'XP est conservé
+        }
+        // Uncompleting quest (date = aujourd'hui uniquement)
         const copy = [...prev];
         const [removed] = copy.splice(index, 1);
         updateUserXP(-(removed?.xpGagne || xp));
         setTimeout(() => recalcDailyPerformanceForDate(date), 0);
         
-        // Emit sidebar event for quest update (désynchronisation externe)
         emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { 
           questId, 
           date, 
@@ -730,6 +797,21 @@ export function useQuietQuestEngine() {
       return next;
     });
   };
+
+  const deleteQuest = useCallback((id) => {
+    const quest = effectiveQuests.find((q) => q.id === id);
+    const name = quest?.nom || 'cette quête';
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm(
+        `Supprimer définitivement "${name}" ?\n\nCette action est irréversible. Toutes les validations associées resteront en base.`
+      )
+    ) {
+      return;
+    }
+    setAllQuests((prev) => prev.filter((q) => q.id !== id));
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: id, deleted: true });
+  }, [effectiveQuests, setAllQuests]);
 
   // Maintenance automatique (changement de jour + cleanup > 1 an)
   // NOTE: Seules les quêtes exceptionnelles passées sont supprimées automatiquement
@@ -783,9 +865,11 @@ export function useQuietQuestEngine() {
     validationsByDate,
     isQuestCompletedOnDate,
     toggleQuestValidation, // La validation fonctionne pour zingariello aussi
+    deleteQuest,
     recalcDailyPerformanceForDate,
     getQuestsForDate: getQuestsForDateMemoized,
     isLoading,
+    todayDate, // Date du jour, mise à jour après minuit (quêtes “aujourd’hui” décochées)
   };
 }
 

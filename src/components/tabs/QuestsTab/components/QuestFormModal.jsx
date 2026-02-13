@@ -147,6 +147,20 @@ export const QuestFormModal = ({
             </div>
           </div>
 
+          <div>
+            <label className="block text-slate-300 mb-1">Heure prévue (emploi du temps)</label>
+            <input
+              type="time"
+              value={questForm.heure || ''}
+              onChange={(e) =>
+                setQuestForm((prev) => ({ ...prev, heure: e.target.value || '' }))
+              }
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+              title="Optionnel : affiche la quête à cette heure dans la vue Aujourd'hui"
+            />
+            <p className="text-xs text-slate-500 mt-0.5">Optionnel. Les quêtes sont triées par heure dans la vue Aujourd'hui.</p>
+          </div>
+
           {questForm.type === 'recurrente' ? (
             <div className="space-y-2">
               <label className="block text-slate-300">Jours</label>

@@ -1,11 +1,11 @@
 import React, { memo, useCallback, useState, useMemo } from 'react';
-import { useQuietQuestEngine, getTodayDateStr } from '../../../hooks/useQuietQuestEngine';
+import { Trash2 } from 'lucide-react';
+import { useQuietQuestEngine } from '../../../hooks/useQuietQuestEngine';
 import { emitSidebarEvent, SIDEBAR_EVENTS, useSidebarEvents } from '../../../utils/sidebarEvents';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
 import AnimatedProgressBar from '../enhanced/AnimatedProgressBar';
 import PremiumBadge from '../enhanced/PremiumBadge';
 import StatCard from '../enhanced/StatCard';
-import PeriodSelector from '../enhanced/PeriodSelector';
 import '../../../styles/sidebar-visual-enhancements.css';
 
 /**
@@ -33,7 +33,9 @@ const InteractiveQuestsModule = memo(({
     getQuestsForDate,
     isQuestCompletedOnDate,
     toggleQuestValidation,
-    dailyPerformances = []
+    deleteQuest,
+    dailyPerformances = [],
+    todayDate,
   } = useQuietQuestEngine();
 
   // États locaux pour les périodes de statistiques configurables individuellement
@@ -41,17 +43,16 @@ const InteractiveQuestsModule = memo(({
   const [streakPeriod, setStreakPeriod] = useState('30d');
   const [xpPeriod, setXpPeriod] = useState('30d');
 
-  // Récupération des quêtes du jour
+  // Récupération des quêtes du jour (todayDate mis à jour après minuit)
   const todayQuests = useMemo(() => {
     try {
-      if (!getQuestsForDate) return [];
-      const today = getTodayDateStr();
-      return getQuestsForDate(today) || [];
+      if (!getQuestsForDate || !todayDate) return [];
+      return getQuestsForDate(todayDate) || [];
     } catch (error) {
       console.error('[InteractiveQuestsModule] Erreur chargement quêtes:', error);
       return [];
     }
-  }, [getQuestsForDate]);
+  }, [getQuestsForDate, todayDate]);
 
   // Calcul de la progression XP
   const xpProgress = useMemo(() => {
@@ -101,26 +102,25 @@ const InteractiveQuestsModule = memo(({
       }
     }
 
-    // XP total
+    // XP sur la période (source : dailyPerformances.xpTotal, mis à jour par le moteur)
     const xpData = getPeriodData(xpPeriod);
-    const totalXP = xpData.reduce((sum, d) => sum + (d.xpEarned || 0), 0);
+    const totalXPPeriod = xpData.reduce((sum, d) => sum + (d.xpTotal ?? d.xpEarned ?? 0), 0);
 
     return {
       completionRate: avgCompletionRate,
       currentStreak,
-      totalXP
+      totalXPPeriod
     };
   }, [dailyPerformances, completionRatePeriod, streakPeriod, xpPeriod]);
 
   // Gestion du toggle des quêtes avec synchronisation
   const handleQuestToggle = useCallback(async (questId) => {
     try {
-      const today = getTodayDateStr();
-      await toggleQuestValidation(questId, today, { origin: 'interactive-quests' });
+      await toggleQuestValidation(questId, todayDate, { origin: 'interactive-quests' });
     } catch (error) {
       console.error('[InteractiveQuestsModule] Erreur toggle quête:', error);
     }
-  }, [toggleQuestValidation]);
+  }, [toggleQuestValidation, todayDate]);
 
   // Synchroniser les toggles effectués depuis l'onglet Quêtes ou ailleurs
   const handleExternalQuestToggle = useCallback((data) => {
@@ -181,7 +181,7 @@ const InteractiveQuestsModule = memo(({
   ];
 
   return (
-    <section className={`sidebar-section sidebar-section-enhanced ${isExpanded ? 'expanded' : ''}`}>
+    <section className={`sidebar-section sidebar-section-enhanced sidebar-module-interactive-quests ${isExpanded ? 'expanded' : ''}`}>
       <header 
         className="sidebar-section-header"
         onClick={onToggle}
@@ -248,7 +248,7 @@ const InteractiveQuestsModule = memo(({
             <div className="sidebar-quest-list">
               {todayQuests.map((quest, index) => {
                 const isCompleted = isQuestCompletedOnDate ? 
-                  isQuestCompletedOnDate(quest.id, getTodayDateStr()) : false;
+                  isQuestCompletedOnDate(quest.id, todayDate) : false;
                 
                 return (
                   <div 
@@ -288,6 +288,20 @@ const InteractiveQuestsModule = memo(({
                         value={`${quest.xp || 0} XP`}
                         animated={false}
                       />
+                      {deleteQuest && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteQuest(quest.id);
+                          }}
+                          className="ml-auto p-1 rounded text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                          title="Supprimer la quête"
+                          aria-label={`Supprimer ${quest.nom}`}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                     <div className="sidebar-quest-info">
                       <div className="stat-value" style={{ 
@@ -296,6 +310,9 @@ const InteractiveQuestsModule = memo(({
                         textDecoration: isCompleted ? 'line-through' : 'none',
                         opacity: isCompleted ? 0.7 : 1
                       }}>
+                        {quest.heure && (
+                          <span className="text-amber-400/90 text-[10px] font-mono mr-1.5">{quest.heure}</span>
+                        )}
                         {quest.nom}
                       </div>
                       <div className="stat-title">{quest.categorie}</div>
@@ -306,10 +323,11 @@ const InteractiveQuestsModule = memo(({
             </div>
           )}
 
-          {/* Bouton Créer Quête */}
-          <div className="sidebar-actions-grid">
+          {/* Bouton Créer Quête - horizontal */}
+          <div className="sidebar-actions-grid sidebar-actions-grid-single">
             <button 
-              className="sidebar-action-button"
+              type="button"
+              className="sidebar-action-button sidebar-action-button-horizontal"
               onClick={handleCreateQuest}
             >
               <span className="sidebar-action-icon">➕</span>
@@ -317,81 +335,95 @@ const InteractiveQuestsModule = memo(({
             </button>
           </div>
 
-          {/* Statistiques avec échelles configurables - VERSION ENRICHIE */}
+          {/* Statistiques : 2 carrés côte à côte + 1 rectangle en dessous, largeur maîtrisée */}
           <div className="sidebar-quests-stats-row">
-            <div className="stat-card-premium">
-              <div className="stat-header">
-                <span className="stat-icon" style={{ color: 'var(--sidebar-green)' }}>📊</span>
-                <span className="stat-trend">
-                  {statistics.completionRate >= 80 ? '🔥' : statistics.completionRate >= 60 ? '📈' : '📉'}
-                </span>
+            <div className="sidebar-quests-stats-grid">
+              <div className="stat-card-premium stat-card-square">
+                <div className="stat-header">
+                  <span className="stat-icon" style={{ color: 'var(--sidebar-green)' }}>📊</span>
+                  <span className="stat-trend">
+                    {statistics.completionRate >= 80 ? '🔥' : statistics.completionRate >= 60 ? '📈' : '📉'}
+                  </span>
+                </div>
+                <div className="stat-value" style={{ color: 'var(--sidebar-green)' }}>
+                  {statistics.completionRate}%
+                </div>
+                <div className="stat-title">Taux de réussite</div>
+                <div className="stat-period-row">
+                  <span className="stat-period-label">Pér.</span>
+                  <select
+                    value={completionRatePeriod}
+                    onChange={(e) => setCompletionRatePeriod(e.target.value)}
+                    className="sidebar-period-selector-compact"
+                    aria-label="Période taux de réussite"
+                  >
+                    {periodOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="stat-value" style={{ color: 'var(--sidebar-green)' }}>
-                {statistics.completionRate}%
-              </div>
-              <div className="stat-title">Taux de réussite</div>
-              <div className="stat-period-row">
-                <span className="stat-period-label">Période</span>
-                <PeriodSelector
-                  value={completionRatePeriod}
-                  onChange={setCompletionRatePeriod}
-                  options={periodOptions}
-                  label=""
-                  icon=""
-                />
-              </div>
-            </div>
 
-            <div className="stat-card-premium">
-              <div className="stat-header">
-                <span className="stat-icon" style={{ color: 'var(--sidebar-orange)' }}>🔥</span>
-                <PremiumBadge 
-                  type="warning" 
-                  value="jours"
-                  animated={statistics.currentStreak > 0}
-                />
+              <div className="stat-card-premium stat-card-square">
+                <div className="stat-header">
+                  <span className="stat-icon" style={{ color: 'var(--sidebar-orange)' }}>🔥</span>
+                  <PremiumBadge 
+                    type="warning" 
+                    value="jours"
+                    animated={statistics.currentStreak > 0}
+                  />
+                </div>
+                <div className="stat-value" style={{ color: 'var(--sidebar-orange)' }}>
+                  {statistics.currentStreak}
+                </div>
+                <div className="stat-title">Série actuelle</div>
+                <div className="stat-period-row">
+                  <span className="stat-period-label">Fen.</span>
+                  <select
+                    value={streakPeriod}
+                    onChange={(e) => setStreakPeriod(e.target.value)}
+                    className="sidebar-period-selector-compact"
+                    aria-label="Fenêtre série"
+                  >
+                    {periodOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="stat-value" style={{ color: 'var(--sidebar-orange)' }}>
-                {statistics.currentStreak}
-              </div>
-              <div className="stat-title">Série actuelle</div>
-              <div className="stat-period-row">
-                <span className="stat-period-label">Fenêtre</span>
-                <PeriodSelector
-                  value={streakPeriod}
-                  onChange={setStreakPeriod}
-                  options={periodOptions}
-                  label=""
-                  icon=""
-                />
-              </div>
-            </div>
 
-            <div className="stat-card-premium">
-              <div className="stat-header">
-                <span className="stat-icon" style={{ color: 'var(--sidebar-magenta)' }}>💎</span>
-                <span className="stat-trend">⚡</span>
-              </div>
+              <div className="stat-card-premium stat-card-wide">
+                <div className="stat-header">
+                  <span className="stat-icon" style={{ color: 'var(--sidebar-magenta)' }}>💎</span>
+                  <span className="stat-trend">⚡</span>
+                </div>
               <div className="stat-value" style={{ color: 'var(--sidebar-magenta)' }}>
-                {statistics.totalXP.toLocaleString()}
+                {userData.currentXP != null ? userData.currentXP.toLocaleString() : '0'}
               </div>
-              <div className="stat-title">XP total</div>
+              <div className="stat-title">XP actuel</div>
               <div className="stat-period-row">
-                <span className="stat-period-label">Période</span>
-                <PeriodSelector
+                <span className="stat-period-label">Sur période</span>
+                <select
                   value={xpPeriod}
-                  onChange={setXpPeriod}
-                  options={periodOptions}
-                  label=""
-                  icon=""
-                />
+                  onChange={(e) => setXpPeriod(e.target.value)}
+                  className="sidebar-period-selector-compact"
+                  aria-label="Période XP"
+                >
+                  {periodOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="stat-period-xp-sub">
+                {statistics.totalXPPeriod.toLocaleString()} XP
+              </div>
               </div>
             </div>
           </div>
 
-          {/* Navigation vers Quêtes */}
+          {/* Navigation vers Quêtes - espacement clair au-dessus */}
           <button 
-            className="sidebar-action-button clickable"
+            className="sidebar-action-button sidebar-action-button-spaced clickable"
             onClick={handleNavigateToQuests}
           >
             <span className="sidebar-action-icon">🎯</span>

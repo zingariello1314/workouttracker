@@ -24,6 +24,7 @@ const DailyTrainingModule = lazy(() => import('./historical/DailyTrainingModule'
 const CreativityProjectsModule = lazy(() => import('./historical/CreativityProjectsModule'));
 const GlobalPerformanceModule = lazy(() => import('./historical/GlobalPerformanceModule'));
 const ExpressLearningModule = lazy(() => import('./historical/ExpressLearningModule'));
+const LectureUnifiedModule = lazy(() => import('./historical/LectureUnifiedModule'));
 
 /**
  * Mapping des composants par nom
@@ -50,7 +51,8 @@ const COMPONENT_MAP = {
   'DailyTrainingModule': DailyTrainingModule,
   'CreativityProjectsModule': CreativityProjectsModule,
   'GlobalPerformanceModule': GlobalPerformanceModule,
-  'ExpressLearningModule': ExpressLearningModule
+  'ExpressLearningModule': ExpressLearningModule,
+  'LectureUnifiedModule': LectureUnifiedModule
 };
 
 /**
@@ -155,6 +157,17 @@ const ModuleItem = memo(({
             navigation: sidebarProps.navigation,
             todayDate: sidebarProps.todayDate
           };
+        case 'LectureUnifiedModule':
+          return {
+            isExpanded: sidebarProps.isSectionExpanded('lecture-unifie'),
+            onToggle: () => sidebarProps.toggleSection('lecture-unifie'),
+            data: {
+              ...sidebarProps.data,
+              activeReadingSession: sidebarProps.data?.learning?.activeReadingSession
+            },
+            navigation: sidebarProps.navigation,
+            todayDate: sidebarProps.todayDate
+          };
         case 'FinancesSection':
           return {
             isExpanded: sidebarProps.isSectionExpanded('finance'),
@@ -182,6 +195,8 @@ const ModuleItem = memo(({
     const finalData = {
       books: historicalData.learning?.books || [],
       subjects: historicalData.learning?.subjects || [],
+      learning: historicalData.learning || {},
+      activeReadingSession: historicalData.learning?.activeReadingSession || {},
       metrics: historicalData.metrics || {},
       quests: historicalData.quests || [],
       sport: historicalData.sport || {},

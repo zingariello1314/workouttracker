@@ -9,6 +9,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { loadFromStorage, saveToStorage, STORAGE_KEYS, calculateQuestXP } from '../../../../hooks/useQuietQuestEngine';
 
+function heureToMinutes(heure) {
+  if (!heure || typeof heure !== 'string') return 24 * 60;
+  const m = heure.trim().match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/);
+  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : 24 * 60;
+}
+
 /**
  * Hook pour gérer le tri des quêtes
  * 
@@ -64,6 +70,8 @@ export const useQuestsSort = (filteredQuests = []) => {
             return a.xp ?? calculateQuestXP(a);
           case 'recurrence':
             return Array.isArray(a.jours) ? a.jours.length : 0;
+          case 'heure':
+            return heureToMinutes(a.heure);
           default:
             return 0;
         }
@@ -83,6 +91,8 @@ export const useQuestsSort = (filteredQuests = []) => {
             return b.xp ?? calculateQuestXP(b);
           case 'recurrence':
             return Array.isArray(b.jours) ? b.jours.length : 0;
+          case 'heure':
+            return heureToMinutes(b.heure);
           default:
             return 0;
         }

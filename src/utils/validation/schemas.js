@@ -150,6 +150,10 @@ export const questSchema = z.object({
   date: z.string()
     .optional()
     .default(''),
+  heure: z.string()
+    .optional()
+    .default('')
+    .refine((v) => !v || /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v), 'Format attendu : HH:mm'),
   active: z.boolean()
     .default(true)
 });

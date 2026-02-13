@@ -460,20 +460,21 @@ const SessionRecorderModule = memo(({
 
 
   return (
-    <div className={`session-recorder-module ${isExpanded ? 'entering' : ''}`}>
+    <section className={`sidebar-section sidebar-section-enhanced ${isExpanded ? 'expanded' : ''}`}>
       <header 
-        className="session-recorder-header"
+        className="sidebar-section-header"
         onClick={onToggle}
         role="button"
         tabIndex={0}
         aria-expanded={isExpanded}
+        aria-label="Section Enregistrer Session"
       >
-        <h2 className="session-recorder-title">
-          <span className="session-recorder-icon" aria-hidden="true">🎯</span>
+        <h2 className="sidebar-section-title">
+          <span className="sidebar-section-icon" aria-hidden="true">🎯</span>
           Enregistrer Session
         </h2>
         <span 
-          className={`session-recorder-toggle ${isExpanded ? 'expanded' : ''}`}
+          className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
           aria-hidden="true"
         >
           ▼
@@ -481,6 +482,7 @@ const SessionRecorderModule = memo(({
       </header>
 
       {isExpanded && (
+        <div className="sidebar-section-content session-recorder-module-content">
         <>
           {/* Sélecteur d'activités */}
           <ActivitySelector
@@ -517,8 +519,9 @@ const SessionRecorderModule = memo(({
             books={books}
           />
         </>
+        </div>
       )}
-    </div>
+    </section>
   );
 });
 

@@ -31,7 +31,9 @@ const ActiveReadingSessionModule = memo(({
   isExpanded,
   onToggle,
   data = {},
-  navigation
+  navigation,
+  todayDate,
+  embedded = false
 }) => {
   // État local pour le timer actif (si une session est en cours)
   const [activeTimer, setActiveTimer] = useState(null);
@@ -58,7 +60,7 @@ const ActiveReadingSessionModule = memo(({
   }, []);
 
   /**
-   * Navigation vers Livres > module session
+   * Navigation vers Livres > module session (timer, livre en cours, CTA principal)
    */
   const handleNavigation = useCallback(async () => {
     if (!navigation?.setActiveTab) return;
@@ -73,10 +75,36 @@ const ActiveReadingSessionModule = memo(({
       }, navigation.setActiveTab);
     } catch (error) {
       console.error('Erreur de navigation vers module session:', error);
-      // Fallback
       navigation.setActiveTab('books');
     }
   }, [navigation]);
+
+  /** Livres > Statistiques (progression du jour, objectifs) */
+  const handleStatsProgression = useCallback(() => {
+    if (typeof navigation?.toBooks === 'function') {
+      navigation.toBooks({ tab: 'statistics', section: 'progression', date: todayDate });
+    } else {
+      handleNavigation();
+    }
+  }, [navigation, todayDate, handleNavigation]);
+
+  /** Livres > Statistiques > sessions */
+  const handleStatsSessions = useCallback(() => {
+    if (typeof navigation?.toBooks === 'function') {
+      navigation.toBooks({ tab: 'statistics', section: 'sessions' });
+    } else {
+      handleNavigation();
+    }
+  }, [navigation, handleNavigation]);
+
+  /** Livres > Bibliothèque > fiche du livre (sélectionner le livre pour afficher sa fiche) */
+  const handleBookFicheClick = useCallback((bookId) => {
+    if (typeof navigation?.toBooks === 'function' && bookId != null) {
+      navigation.toBooks({ bookId, subtab: 'library' });
+    } else {
+      handleNavigation();
+    }
+  }, [navigation, handleNavigation]);
 
   // Extraire les données du module
   const moduleData = data?.activeReadingSession || {};
@@ -105,33 +133,12 @@ const ActiveReadingSessionModule = memo(({
   const hasActiveSession = currentBook || sessionTimer;
   const hasData = moduleData.hasData !== false;
 
-  return (
-    <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
-      <header 
-        className="sidebar-section-header"
-        onClick={onToggle}
-        role="button"
-        tabIndex={0}
-        aria-expanded={isExpanded}
-      >
-        <h2 className="sidebar-section-title">
-          <span className="sidebar-section-icon" aria-hidden="true">📖</span>
-          Session Lecture Active
-        </h2>
-        <span 
-          className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
-          aria-hidden="true"
-        >
-          ▼
-        </span>
-      </header>
-
-      {isExpanded && (
+  const content = (
         <div className="sidebar-section-content">
           {!hasData ? (
-            // État de chargement ou pas de données
+            // État de chargement ou pas de données - cliquable → Sessions
             <div className="sidebar-data-grid">
-              <div className="sidebar-data-card">
+              <div className="sidebar-data-card clickable" onClick={handleNavigation} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNavigation(); } }} role="button" tabIndex={0} aria-label="Aucune session. Cliquer pour aller aux sessions de lecture" title="Aller aux sessions">
                 <span className="sidebar-data-icon">📚</span>
                 <div className="sidebar-data-value">--</div>
                 <div className="sidebar-data-label">Aucune session</div>
@@ -140,16 +147,24 @@ const ActiveReadingSessionModule = memo(({
             </div>
           ) : (
             <div className="sidebar-data-grid">
-              {/* Livre en cours avec progression */}
+              {/* Livre en cours → clic = fiche du livre (Bibliothèque) */}
               {currentBook ? (
-                <div className="sidebar-data-card clickable" onClick={handleNavigation}>
+                <div 
+                  className="sidebar-data-card clickable" 
+                  onClick={() => handleBookFicheClick(currentBook.id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBookFicheClick(currentBook.id); } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Livre en cours: ${currentBook.title}. Cliquer pour ouvrir la fiche du livre`}
+                  title="Ouvrir la fiche du livre"
+                >
                   <span className="sidebar-data-icon">📚</span>
                   <div className="sidebar-data-value">{currentBook.title}</div>
                   <div className="sidebar-data-label">
                     {currentBook.currentPage || 0}/{currentBook.totalPages || '?'} pages
                   </div>
                   <div className="sidebar-data-hint">
-                    {currentBook.progress ? `${Math.round(currentBook.progress)}% terminé` : 'Voir détails'}
+                    {currentBook.progress ? `${Math.round(currentBook.progress)}% terminé` : 'Voir la fiche'}
                   </div>
                 </div>
               ) : (
@@ -161,9 +176,17 @@ const ActiveReadingSessionModule = memo(({
                 </div>
               )}
 
-              {/* Timer de session actuelle */}
+              {/* Timer de session actuelle - cliquable → Sessions */}
               {sessionTimer ? (
-                <div className="sidebar-data-card">
+                <div 
+                  className="sidebar-data-card clickable" 
+                  onClick={handleNavigation}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNavigation(); } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Session en cours. Cliquer pour aller au module de lecture"
+                  title="Aller aux sessions"
+                >
                   <span className="sidebar-data-icon">
                     {sessionTimer.isActive ? '⏱️' : '⏸️'}
                   </span>
@@ -184,8 +207,8 @@ const ActiveReadingSessionModule = memo(({
                 </div>
               )}
 
-              {/* Objectif pages du jour */}
-              <div className="sidebar-data-card clickable" onClick={handleNavigation}>
+              {/* Objectif pages du jour → Livres > Statistiques */}
+              <div className="sidebar-data-card clickable" onClick={handleStatsProgression} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleStatsProgression(); } }} role="button" tabIndex={0} aria-label={`Pages aujourd'hui ${todayProgress.pages}/${dailyGoals.pages}. Voir la progression`} title="Voir la progression du jour">
                 <span className="sidebar-data-icon">
                   {pagesProgress >= 100 ? '✅' : '📄'}
                 </span>
@@ -198,8 +221,8 @@ const ActiveReadingSessionModule = memo(({
                 </div>
               </div>
 
-              {/* Objectif temps du jour */}
-              <div className="sidebar-data-card clickable" onClick={handleNavigation}>
+              {/* Objectif temps du jour → Livres > Statistiques */}
+              <div className="sidebar-data-card clickable" onClick={handleStatsProgression} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleStatsProgression(); } }} role="button" tabIndex={0} aria-label={`Temps aujourd'hui ${todayProgress.minutes}/${dailyGoals.minutes} min. Voir la progression`} title="Voir la progression du jour">
                 <span className="sidebar-data-icon">
                   {timeProgress >= 100 ? '✅' : '⏰'}
                 </span>
@@ -212,8 +235,8 @@ const ActiveReadingSessionModule = memo(({
                 </div>
               </div>
 
-              {/* Progression globale */}
-              <div className="sidebar-data-card clickable" onClick={handleNavigation}>
+              {/* Progression globale → Livres > Statistiques */}
+              <div className="sidebar-data-card clickable" onClick={handleStatsProgression} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleStatsProgression(); } }} role="button" tabIndex={0} aria-label="Progression globale. Voir les statistiques" title="Voir les statistiques">
                 <span className="sidebar-data-icon">📊</span>
                 <div className="sidebar-data-value">
                   {Math.round((pagesProgress + timeProgress) / 2)}%
@@ -222,8 +245,8 @@ const ActiveReadingSessionModule = memo(({
                 <div className="sidebar-data-hint">Voir statistiques</div>
               </div>
 
-              {/* Statistiques de la semaine */}
-              <div className="sidebar-data-card clickable" onClick={handleNavigation}>
+              {/* Sessions cette semaine → Livres > Statistiques > sessions */}
+              <div className="sidebar-data-card clickable" onClick={handleStatsSessions} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleStatsSessions(); } }} role="button" tabIndex={0} aria-label={`${moduleData.weeklyStats?.sessionsCount || 0} sessions cette semaine. Voir le détail`} title="Voir les sessions de lecture">
                 <span className="sidebar-data-icon">📈</span>
                 <div className="sidebar-data-value">
                   {moduleData.weeklyStats?.sessionsCount || 0}
@@ -250,7 +273,33 @@ const ActiveReadingSessionModule = memo(({
             </button>
           </div>
         </div>
-      )}
+  );
+
+  if (embedded) {
+    return isExpanded ? content : null;
+  }
+
+  return (
+    <section className={`sidebar-section ${isExpanded ? 'expanded' : ''}`}>
+      <header 
+        className="sidebar-section-header"
+        onClick={onToggle}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+      >
+        <h2 className="sidebar-section-title">
+          <span className="sidebar-section-icon" aria-hidden="true">📖</span>
+          Session Lecture Active
+        </h2>
+        <span 
+          className={`sidebar-section-toggle ${isExpanded ? 'expanded' : ''}`}
+          aria-hidden="true"
+        >
+          ▼
+        </span>
+      </header>
+      {isExpanded && content}
     </section>
   );
 });

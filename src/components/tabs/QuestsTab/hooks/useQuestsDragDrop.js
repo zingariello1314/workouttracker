@@ -47,9 +47,14 @@ export const useQuestsDragDrop = (allQuests = [], setAllQuests) => {
     setDraggedQuestId(null);
   }, [draggedQuestId, setAllQuests]);
 
+  const clearDrag = useCallback(() => {
+    setDraggedQuestId(null);
+  }, []);
+
   return {
     draggedQuestId,
     startDrag,
     onDrop,
+    clearDrag,
   };
 };

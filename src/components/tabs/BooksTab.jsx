@@ -6,7 +6,7 @@
  * @module components/tabs/BooksTab/BooksTab.refactored
  */
 
-import React, { Suspense, useEffect, useMemo, useState, useCallback } from 'react';
+import React, { Suspense, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { BookOpen, Download, Search, Upload, BarChart3, Library } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
 import { Input, TextArea, Select } from '../ui/Input';
@@ -87,7 +87,29 @@ const BooksTab = () => {
       detail: { tab: activeSubTab, isSubTab: true, parentTab: 'books' } 
     }));
   }, [activeSubTab]);
-  
+
+  const scrollToBookFicheRef = useRef(false);
+
+  // Appliquer les paramètres de navigation envoyés par la sidebar (Lecture, etc.)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('nav_params_books');
+      if (!raw) return;
+      const params = JSON.parse(raw);
+      if (!params) return;
+      if (params.bookId != null) {
+        setSelectedBookId(params.bookId);
+        setActiveSubTab('library');
+        scrollToBookFicheRef.current = true;
+      } else if (params.tab === 'statistics' || params.tab === 'stats') {
+        setActiveSubTab('statistics');
+      }
+      sessionStorage.removeItem('nav_params_books');
+    } catch (_) {
+      sessionStorage.removeItem('nav_params_books');
+    }
+  }, []);
+
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [show3D, setShow3D] = useState(true);
   const [isFormExpanded, setIsFormExpanded] = useState(false);
@@ -149,6 +171,19 @@ const BooksTab = () => {
     () => books.find((b) => b.id === selectedBookId) || null,
     [books, selectedBookId]
   );
+
+  // Descendre jusqu'à la fiche du livre quand on arrive depuis la sidebar (clic sur le livre en cours)
+  useEffect(() => {
+    if (!scrollToBookFicheRef.current || !selectedBook) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById('book-fiche');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      scrollToBookFicheRef.current = false;
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [selectedBookId, selectedBook]);
 
   const {
     sessionForm,
@@ -953,8 +988,8 @@ const BooksTab = () => {
                 </Card>
               </div>
 
-              {/* Détail du livre sélectionné + sessions */}
-              <Card>
+              {/* Détail du livre sélectionné + sessions (ancre pour scroll depuis la sidebar) */}
+              <Card id="book-fiche">
                 <CardHeader className="flex items-center justify-between">
                   <div>
                     <CardTitle size="md">

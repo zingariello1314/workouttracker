@@ -457,9 +457,25 @@ export const useSidebarData = () => {
   // Apprentissage (Books) - Utilise useBooksStatistics avec gestion d'erreur
   const learning = useMemo(() => {
     try {
-      // Trouver le livre actuellement en cours de lecture
-      const currentBook = books?.find(book => book.status === 'in-progress') || null;
-      
+      // Dernier livre en cours (le plus récemment actif : dernière session de lecture)
+      const inProgress = (books || []).filter(book => book && book.status === 'in-progress');
+      const currentBook = (() => {
+        if (!inProgress.length) return null;
+        if (inProgress.length === 1) return inProgress[0];
+        const withLastSession = inProgress.map(book => {
+          const sessions = Array.isArray(book.readingSessions) ? book.readingSessions : [];
+          const lastDate = sessions.length
+            ? sessions.reduce((max, s) => {
+                const d = s?.date ? new Date(s.date).getTime() : 0;
+                return d > max ? d : max;
+              }, 0)
+            : 0;
+          return { book, lastDate };
+        });
+        withLastSession.sort((a, b) => b.lastDate - a.lastDate);
+        return withLastSession[0]?.book || inProgress[inProgress.length - 1];
+      })();
+
       // Calculer la progression du livre actuel
       let bookProgress = null;
       if (currentBook) {

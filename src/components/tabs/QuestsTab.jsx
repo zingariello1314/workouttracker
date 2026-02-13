@@ -66,7 +66,7 @@ const QuestsTab = () => {
     }));
   }, [currentSubTab]);
 
-  // Moteur QuietQuest centralisé
+  // Moteur QuietQuest centralisé (todayDate mis à jour après minuit)
   const {
     allQuests,
     setAllQuests,
@@ -76,6 +76,7 @@ const QuestsTab = () => {
     isQuestCompletedOnDate,
     toggleQuestValidation,
     getQuestsForDate: getQuestsForDateMemoized,
+    todayDate,
   } = useQuietQuestEngine();
 
   // ✅ PHASE 4 : Hooks personnalisés pour la logique métier
@@ -129,7 +130,34 @@ const QuestsTab = () => {
     draggedQuestId,
     startDrag,
     onDrop,
+    clearDrag,
   } = useQuestsDragDrop(allQuests, setAllQuests);
+
+  // Réordonnancement des quêtes du jour uniquement (vue Aujourd'hui)
+  const reorderTodayQuests = useCallback((draggedId, targetId) => {
+    if (!draggedId || !targetId || draggedId === targetId) return;
+    const questsToday = getQuestsForDateMemoized(todayDate);
+    const fromIdx = questsToday.findIndex((q) => q.id === draggedId);
+    const toIdx = questsToday.findIndex((q) => q.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const reordered = [...questsToday];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
+    const todayIds = new Set(reordered.map((q) => q.id));
+    const fullSorted = [...allQuests].sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    const todayIndices = [];
+    fullSorted.forEach((q, i) => {
+      if (todayIds.has(q.id)) todayIndices.push(i);
+    });
+    const newFull = [...fullSorted];
+    for (let j = 0; j < reordered.length; j++) {
+      newFull[todayIndices[j]] = reordered[j];
+    }
+    setAllQuests(newFull.map((q, i) => ({ ...q, ordre: i + 1 })));
+    clearDrag();
+  }, [allQuests, setAllQuests, getQuestsForDateMemoized, todayDate, clearDrag]);
 
   // Synchroniser les toggles effectués depuis la sidebar (InteractiveQuestsModule)
   const handleExternalQuestToggle = useCallback((data) => {
@@ -178,6 +206,13 @@ const QuestsTab = () => {
       userData={userData}
       validations={validations}
       isLoading={false}
+      openNewQuestPopup={openNewQuestPopup}
+      startDrag={startDrag}
+      onReorderToday={reorderTodayQuests}
+      draggedQuestId={draggedQuestId}
+      clearDrag={clearDrag}
+      deleteQuest={deleteQuest}
+      todayDate={todayDate}
     />
   );
 

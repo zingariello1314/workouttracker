@@ -198,6 +198,13 @@ export const QuestsTableView = ({
               </th>
               <th
                 className="px-3 py-2 text-left cursor-pointer select-none"
+                onClick={() => sortQuests('heure')}
+                title="Heure prévue (emploi du temps)"
+              >
+                Heure {getSortIcon('heure')}
+              </th>
+              <th
+                className="px-3 py-2 text-left cursor-pointer select-none"
                 onClick={() => sortQuests('categorie')}
               >
                 Catégorie {getSortIcon('categorie')}
@@ -233,7 +240,7 @@ export const QuestsTableView = ({
             {sortedQuests.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="px-4 py-6 text-center text-sm text-slate-400 bg-slate-900/60"
                 >
                   Aucune quête trouvée. Ajuste tes filtres ou crée une nouvelle quête.
@@ -266,6 +273,9 @@ export const QuestsTableView = ({
                         {quest.description}
                       </div>
                     )}
+                  </td>
+                  <td className="px-3 py-2 align-top text-amber-400/90 text-[11px] font-mono">
+                    {quest.heure || '—'}
                   </td>
                   <td className="px-3 py-2 align-top text-slate-200 text-[11px]">
                     {quest.categorie}

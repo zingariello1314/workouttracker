@@ -34,6 +34,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
     type: 'recurrente',
     jours: [1, 2, 3, 4, 5],
     date: '',
+    heure: '',
     active: true,
   });
 
@@ -48,6 +49,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       type: 'recurrente',
       jours: [1, 2, 3, 4, 5],
       date: '',
+      heure: '',
       active: true,
     });
     setShowQuestPopup(true);
@@ -66,6 +68,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       type: quest.type || 'recurrente',
       jours: Array.isArray(quest.jours) ? [...quest.jours] : [],
       date: quest.date || '',
+      heure: quest.heure || '',
       active: quest.active !== false,
     });
     setShowQuestPopup(true);

@@ -33,7 +33,7 @@ const LEGACY_MODULES = [
     component: 'QuestesJourSection',
     position: 8,
     type: 'legacy',
-    isVisible: true
+    isVisible: false
   },
   {
     id: 'activite-physique',
@@ -43,8 +43,8 @@ const LEGACY_MODULES = [
     isVisible: true
   },
   {
-    id: 'lecture',
-    component: 'LectureSection',
+    id: 'lecture-unifie',
+    component: 'LectureUnifiedModule',
     position: 12,
     type: 'legacy',
     isVisible: true
@@ -87,7 +87,7 @@ const HISTORICAL_MODULES = [
     component: 'ReadingProgressModule',
     position: 3,
     type: 'historical',
-    isVisible: true,
+    isVisible: false,
     navigationTarget: {
       tab: 'books',
       subtab: 'progress',
@@ -100,7 +100,7 @@ const HISTORICAL_MODULES = [
     component: 'GarminMetricsModule',
     position: 5,
     type: 'historical',
-    isVisible: true,
+    isVisible: false,
     navigationTarget: {
       tab: 'sport',
       subtab: 'aujourdhui',
@@ -139,7 +139,7 @@ const HISTORICAL_MODULES = [
     component: 'ShoppingListModule',
     position: 11,
     type: 'historical',
-    isVisible: true,
+    isVisible: false,
     navigationTarget: {
       tab: 'finance',
       subtab: 'smart-shopping',
@@ -152,7 +152,7 @@ const HISTORICAL_MODULES = [
     component: 'ActiveReadingSessionModule',
     position: 13,
     type: 'historical',
-    isVisible: true,
+    isVisible: false,
     navigationTarget: {
       tab: 'books',
       subtab: 'session',
@@ -178,7 +178,7 @@ const HISTORICAL_MODULES = [
     component: 'CreativityProjectsModule',
     position: 17,
     type: 'historical',
-    isVisible: true,
+    isVisible: false,
     navigationTarget: {
       tab: 'homepage',
       moduleId: 'creativity-projects',
@@ -190,7 +190,7 @@ const HISTORICAL_MODULES = [
     component: 'GlobalPerformanceModule',
     position: 19,
     type: 'historical',
-    isVisible: true,
+    isVisible: false,
     navigationTarget: {
       tab: 'homepage',
       moduleId: 'global-performance',
@@ -202,7 +202,7 @@ const HISTORICAL_MODULES = [
     component: 'ExpressLearningModule',
     position: 21,
     type: 'historical',
-    isVisible: true,
+    isVisible: false,
     navigationTarget: {
       tab: 'settings',
       subtab: 'learning',

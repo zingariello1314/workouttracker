@@ -307,39 +307,187 @@
   letter-spacing: 0.06em;
 }
 
-/* Ligne de statistiques Quêtes (3 blocs alignés) */
+/* Module Quêtes Interactives : stats en 2 carrés + 1 rectangle, même largeur que les quêtes */
 .sidebar-quests-stats-row {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
+  margin-top: 10px;
+  width: 100%;
+  min-width: 0;
 }
 
-.sidebar-quests-stats-row .stat-card-premium {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
+.sidebar-quests-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sidebar-quests-stats-grid .stat-card-square {
+  grid-column: span 1;
+  min-height: 120px;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 10px;
+  border-radius: 10px;
   background: radial-gradient(circle at top right, rgba(248, 250, 252, 0.06), transparent 60%),
               var(--sidebar-bg-card);
 }
 
+.sidebar-quests-stats-grid .stat-card-square .stat-period-row {
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.sidebar-quests-stats-grid .stat-card-wide {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: radial-gradient(circle at top right, rgba(248, 250, 252, 0.06), transparent 60%),
+              var(--sidebar-bg-card);
+  min-height: 0;
+}
+
+.sidebar-quests-stats-grid .stat-card-premium .stat-header {
+  margin-bottom: 6px;
+}
+
+.sidebar-quests-stats-grid .stat-card-premium .stat-value {
+  font-size: 1.25rem;
+  margin-bottom: 2px;
+}
+
+.sidebar-quests-stats-grid .stat-card-premium .stat-title {
+  font-size: 0.7rem;
+  margin-bottom: 0;
+}
+
+/* Ligne Période/Fenêtre : espacement clair entre label et select */
 .sidebar-quests-stats-row .stat-period-row {
-  margin-top: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
+  min-height: 26px;
+  min-width: 0;
 }
 
 .sidebar-quests-stats-row .stat-period-label {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(248, 250, 252, 0.7);
+  letter-spacing: 0.05em;
+  color: rgba(248, 250, 252, 0.65);
+  flex-shrink: 0;
 }
 
-.sidebar-quests-stats-row .sidebar-period-selector {
+/* Select compact : reste dans la carte (ne dépasse pas) */
+.sidebar-period-selector-compact {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  max-width: 100%;
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 5px;
+  padding: 2px 18px 2px 4px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12' fill='rgba(255,255,255,0.7)'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 3px center;
+  box-sizing: border-box;
+}
+
+.sidebar-period-selector-compact:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
+.sidebar-period-selector-compact:focus {
+  border-color: rgba(0, 245, 255, 0.5);
+  box-shadow: 0 0 0 1px rgba(0, 245, 255, 0.2);
+}
+
+.sidebar-period-selector-compact option {
+  background: #1e293b;
+  color: white;
+}
+
+.sidebar-quests-stats-row .stat-period-xp-sub {
+  font-size: 0.65rem;
+  color: rgba(248, 250, 252, 0.6);
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Bouton Créer horizontal (icône + texte côte à côte) */
+.sidebar-action-button-horizontal {
+  flex-direction: row !important;
+  gap: 8px !important;
+  padding: 10px 14px !important;
+}
+
+.sidebar-action-button-horizontal .sidebar-action-icon {
+  font-size: 1.1rem !important;
+}
+
+.sidebar-actions-grid-single {
+  grid-template-columns: 1fr !important;
+}
+
+/* Module Quêtes : Niveau actuel et Progression XP = même largeur que les modules quêtes */
+.sidebar-module-interactive-quests .sidebar-content-dense {
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+
+.sidebar-module-interactive-quests .sidebar-content-dense .stat-card-premium {
+  min-height: 92px;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+}
+
+.sidebar-module-interactive-quests .sidebar-content-dense > * {
+  max-width: 100%;
+}
+
+/* Bouton "Voir toutes les quêtes" : marge au-dessus pour ne pas coller au bloc XP */
+.sidebar-action-button-spaced {
+  margin-top: 16px !important;
+}
+
+/* Module Quêtes Interactives : même largeur horizontale pour tout (Niveau, Progression XP, stats, quêtes, boutons) */
+.sidebar-module-interactive-quests .sidebar-actions-grid {
+  width: 100%;
+  min-width: 0;
+}
+
+.sidebar-module-interactive-quests .sidebar-action-button-spaced {
+  display: block;
+  width: 100%;
+}
+
+.sidebar-module-interactive-quests .sidebar-quest-list {
+  width: 100%;
+  min-width: 0;
+}
+
+.sidebar-module-interactive-quests .sidebar-content-dense {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sidebar-module-interactive-quests .sidebar-quests-stats-row {
+  width: 100%;
+  max-width: none;
 }
 
 /* ===== SÉLECTEURS ENRICHIS ===== */
@@ -2000,4 +2148,11 @@
   .stress-stats .advice-content {
     margin-left: 16px;
   }
+}
+
+/* Bloc Lecture unifié : éviter double bordure entre les deux contenus */
+.sidebar-section-unified-content .sidebar-section-content + .sidebar-section-content {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
