@@ -89,12 +89,61 @@ const QuestsStatsView = () => {
       {/* KPIs */}
       <KPICards stats={stats} />
 
-      {/* Score de performance global */}
-      <PerformanceGaugeChart stats={stats} />
+      {/* Calendrier d'activité — au-dessus des insights, année en cours */}
+      {stats.calendarHeatmap && stats.calendarHeatmap.length > 0 && (
+        <CalendarHeatmap 
+          calendarHeatmap={stats.calendarHeatmap}
+          calendarMonthSpans={stats.calendarMonthSpans || []}
+          dailyPerformances={stats.filteredPerformances}
+        />
+      )}
 
-      {/* Graphique taux de complétion par période */}
-      {stats.filteredPerformances.length > 0 && (
-        <CompletionRateChart dailyPerformances={stats.filteredPerformances} />
+      {/* Insights automatiques — en haut */}
+      {stats.insights && stats.insights.length > 0 && (
+        <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3">
+          <div className="text-xs text-slate-400 mb-2 font-semibold">💡 Insights automatiques</div>
+          <div className="space-y-2">
+            {stats.insights.map((insight, idx) => {
+              const getTypeStyles = (type) => {
+                switch (type) {
+                  case 'success':
+                    return 'bg-emerald-900/30 border-emerald-700 text-emerald-200';
+                  case 'warning':
+                    return 'bg-amber-900/30 border-amber-700 text-amber-200';
+                  case 'info':
+                    return 'bg-blue-900/30 border-blue-700 text-blue-200';
+                  default:
+                    return 'bg-slate-800/50 border-slate-700 text-slate-200';
+                }
+              };
+
+              return (
+                <div
+                  key={idx}
+                  className={`p-3 rounded-lg border ${getTypeStyles(insight.type)}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">{insight.icon}</span>
+                    <p
+                      className="text-sm leading-relaxed flex-1"
+                      dangerouslySetInnerHTML={{
+                        __html: insight.text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-emerald-300">$1</strong>'),
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Top 10 quêtes + Quêtes à relancer — en haut */}
+      {(stats.topQuests.length > 0 || stats.bottomQuests.length > 0) && (
+        <TopBottomQuestsTable 
+          topQuests={stats.topQuests} 
+          bottomQuests={stats.bottomQuests}
+        />
       )}
 
       {/* Graphique moyennes quotidiennes */}
@@ -249,60 +298,12 @@ const QuestsStatsView = () => {
         <DifficultyAnalysisChart difficultyStats={stats.difficultyStats} />
       )}
 
-      {/* Heatmap calendrier */}
-      {stats.calendarHeatmap && stats.calendarHeatmap.length > 0 && (
-        <CalendarHeatmap 
-          calendarHeatmap={stats.calendarHeatmap} 
-          dailyPerformances={stats.filteredPerformances}
-        />
-      )}
+      {/* Score de performance global — en bas */}
+      <PerformanceGaugeChart stats={stats} />
 
-      {/* Top/Bottom quêtes */}
-      {(stats.topQuests.length > 0 || stats.bottomQuests.length > 0) && (
-        <TopBottomQuestsTable 
-          topQuests={stats.topQuests} 
-          bottomQuests={stats.bottomQuests}
-        />
-      )}
-
-      {/* Insights */}
-      {stats.insights && stats.insights.length > 0 && (
-        <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3">
-          <div className="text-xs text-slate-400 mb-2 font-semibold">💡 Insights automatiques</div>
-          <div className="space-y-2">
-            {stats.insights.map((insight, idx) => {
-              const getTypeStyles = (type) => {
-                switch (type) {
-                  case 'success':
-                    return 'bg-emerald-900/30 border-emerald-700 text-emerald-200';
-                  case 'warning':
-                    return 'bg-amber-900/30 border-amber-700 text-amber-200';
-                  case 'info':
-                    return 'bg-blue-900/30 border-blue-700 text-blue-200';
-                  default:
-                    return 'bg-slate-800/50 border-slate-700 text-slate-200';
-                }
-              };
-
-              return (
-                <div
-                  key={idx}
-                  className={`p-3 rounded-lg border ${getTypeStyles(insight.type)}`}
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">{insight.icon}</span>
-                    <p
-                      className="text-sm leading-relaxed flex-1"
-                      dangerouslySetInnerHTML={{
-                        __html: insight.text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-emerald-300">$1</strong>'),
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {/* Taux de complétion par période — en bas */}
+      {stats.filteredPerformances.length > 0 && (
+        <CompletionRateChart dailyPerformances={stats.filteredPerformances} />
       )}
     </div>
   );

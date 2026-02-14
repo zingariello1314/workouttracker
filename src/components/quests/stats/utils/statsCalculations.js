@@ -284,6 +284,76 @@ export const generateCalendarHeatmap = (dailyPerformances, selectedPeriod) => {
   return weeks;
 };
 
+const MONTH_NAMES = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+/**
+ * Génère le heatmap pour l'année en cours uniquement (indépendant de la plage sélectionnée).
+ * @param {Array} dailyPerformances - Toutes les performances quotidiennes
+ * @returns {{ weeks: Array, monthSpans: Array }} weeks = grille (semaines × 7 jours), monthSpans = [{ month, label, span }] pour afficher les mois au-dessus des colonnes
+ */
+export const generateCalendarHeatmapCurrentYear = (dailyPerformances) => {
+  const today = getTodayDateStr();
+  const currentYear = today.slice(0, 4);
+  const yearStart = `${currentYear}-01-01`;
+  const yearEnd = `${currentYear}-12-31`;
+
+  const dateMap = new Map();
+  dailyPerformances
+    .filter(p => p.date >= yearStart && p.date <= yearEnd)
+    .forEach(p => {
+      dateMap.set(p.date, p.completedQuests || 0);
+    });
+
+  const startDate = new Date(yearStart + 'T12:00:00');
+  const endDate = new Date(yearEnd + 'T12:00:00');
+  const dayOfWeek = startDate.getDay();
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  startDate.setDate(startDate.getDate() + diff);
+
+  const weeks = [];
+  let currentDate = new Date(startDate);
+  let currentWeek = [];
+
+  while (currentDate <= endDate) {
+    const dateStr = currentDate.toISOString().slice(0, 10);
+    const completed = dateMap.get(dateStr) || 0;
+    currentWeek.push({
+      date: dateStr,
+      completed,
+      day: currentDate.getDate(),
+      month: currentDate.getMonth(),
+    });
+    if (currentWeek.length === 7) {
+      weeks.push([...currentWeek]);
+      currentWeek = [];
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  if (currentWeek.length > 0) {
+    weeks.push(currentWeek);
+  }
+
+  // Mois à afficher au-dessus des colonnes : pour chaque semaine, mois du lundi ; puis fusion des spans
+  const monthSpans = [];
+  let lastMonth = -1;
+  let spanStart = 0;
+  weeks.forEach((week, weekIndex) => {
+    const month = week[0].month;
+    if (month !== lastMonth) {
+      if (lastMonth >= 0) {
+        monthSpans.push({ month: lastMonth, label: MONTH_NAMES[lastMonth], span: weekIndex - spanStart });
+      }
+      spanStart = weekIndex;
+      lastMonth = month;
+    }
+  });
+  if (lastMonth >= 0) {
+    monthSpans.push({ month: lastMonth, label: MONTH_NAMES[lastMonth], span: weeks.length - spanStart });
+  }
+
+  return { weeks, monthSpans };
+};
+
 /**
  * Calcule le streak actuel et le meilleur streak
  * @param {Array} dailyPerformances - Performances quotidiennes

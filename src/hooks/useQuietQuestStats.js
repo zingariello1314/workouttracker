@@ -13,7 +13,7 @@ import {
   calculateCategoryStats,
   calculateDifficultyStats,
   calculateQuestStats,
-  generateCalendarHeatmap,
+  generateCalendarHeatmapCurrentYear,
   calculateStreaks,
   calculateDayOfWeekStats,
   generateInsights,
@@ -35,6 +35,12 @@ export const useQuietQuestStats = (selectedPeriod = '30d') => {
   const periodStartDate = useMemo(() => {
     return getPeriodStartDate(selectedPeriod);
   }, [selectedPeriod]);
+
+  // Calendrier : toujours année en cours (indépendant de la plage)
+  const calendarData = useMemo(
+    () => generateCalendarHeatmapCurrentYear(dailyPerformances),
+    [dailyPerformances]
+  );
 
   // Calculer toutes les métriques en une fois (memoized)
   const stats = useMemo(() => {
@@ -62,7 +68,8 @@ export const useQuietQuestStats = (selectedPeriod = '30d') => {
         topQuests: [],
         bottomQuests: [],
         neverCompletedQuests: [],
-        calendarHeatmap: [],
+        calendarHeatmap: calendarData.weeks,
+        calendarMonthSpans: calendarData.monthSpans,
         dayOfWeekStats: [],
         mostProductiveDay: null,
         insights: [],
@@ -106,9 +113,6 @@ export const useQuietQuestStats = (selectedPeriod = '30d') => {
     const topQuests = sortedQuests.slice(0, 10);
     const bottomQuests = sortedQuests.slice(-10).reverse();
     const neverCompletedQuests = questStats.filter(q => q.validationsCount === 0);
-
-    // Calendrier
-    const calendarHeatmap = generateCalendarHeatmap(dailyPerformances, selectedPeriod);
 
     // Streaks
     const { currentStreak, bestStreak } = calculateStreaks(dailyPerformances, periodStartDate);
@@ -171,8 +175,9 @@ export const useQuietQuestStats = (selectedPeriod = '30d') => {
       bottomQuests,
       neverCompletedQuests,
 
-      // Calendrier
-      calendarHeatmap,
+      // Calendrier (année en cours)
+      calendarHeatmap: calendarData.weeks,
+      calendarMonthSpans: calendarData.monthSpans,
 
       // Jour de la semaine
       dayOfWeekStats,
@@ -185,7 +190,7 @@ export const useQuietQuestStats = (selectedPeriod = '30d') => {
       filteredPerformances,
       filteredValidations,
     };
-  }, [allQuests, validations, dailyPerformances, periodStartDate, selectedPeriod]);
+  }, [allQuests, validations, dailyPerformances, periodStartDate, calendarData]);
 
   return stats;
 };
