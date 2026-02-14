@@ -77,6 +77,7 @@ const QuestsTab = () => {
     toggleQuestValidation,
     getQuestsForDate: getQuestsForDateMemoized,
     todayDate,
+    prayerLocation,
   } = useQuietQuestEngine();
 
   // ✅ PHASE 4 : Hooks personnalisés pour la logique métier
@@ -94,7 +95,7 @@ const QuestsTab = () => {
     sortQuests,
     getSortIcon,
     sortedQuests,
-  } = useQuestsSort(filteredQuests);
+  } = useQuestsSort(filteredQuests, todayDate, prayerLocation);
 
   const {
     questForm,
@@ -207,12 +208,14 @@ const QuestsTab = () => {
       validations={validations}
       isLoading={false}
       openNewQuestPopup={openNewQuestPopup}
+      openEditQuestPopup={openEditQuestPopup}
       startDrag={startDrag}
       onReorderToday={reorderTodayQuests}
       draggedQuestId={draggedQuestId}
       clearDrag={clearDrag}
       deleteQuest={deleteQuest}
       todayDate={todayDate}
+      prayerLocation={prayerLocation}
     />
   );
 
@@ -231,6 +234,7 @@ const QuestsTab = () => {
         return (
           <QuestsTableView
             sortedQuests={sortedQuests}
+            sortConfig={sortConfig}
             questFilters={questFilters}
             setQuestFilters={setQuestFilters}
             searchQuery={searchQuery}
@@ -251,6 +255,8 @@ const QuestsTab = () => {
             deleteQuest={deleteQuest}
             startDrag={startDrag}
             onDrop={onDrop}
+            todayDate={todayDate}
+            prayerLocation={prayerLocation}
           />
         );
       case 'today':

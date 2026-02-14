@@ -14,6 +14,7 @@ import {
 } from '../utils/quietQuestIndexedDB';
 import { emitSidebarEvent, SIDEBAR_EVENTS, sidebarEvents } from '../utils/sidebarEvents';
 import { useAuth } from '../context/AuthContext';
+import { getHeureSortMinutes } from '../utils/quests';
 
 // Clés de stockage QuietQuest (pour fallback localStorage)
 export const STORAGE_KEYS = {
@@ -85,17 +86,9 @@ export const addDays = (dateStr, delta) => {
   return d.toISOString().slice(0, 10);
 };
 
-// Convertit "HH:mm" en minutes depuis minuit pour le tri. Sans heure = fin de journée.
-function heureToMinutes(heure) {
-  if (!heure || typeof heure !== 'string') return 24 * 60;
-  const m = heure.trim().match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/);
-  if (!m) return 24 * 60;
-  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-}
-
 // Récupère les quêtes actives pour une date donnée (récurrentes + exceptionnelles).
-// Tri : d'abord par heure prévue (emploi du temps), puis par ordre.
-export const getQuestsForDate = (allQuests, targetDate) => {
+// Tri : d'abord par heure prévue (prière calculée, créneau ou heure précise), puis par ordre.
+export const getQuestsForDate = (allQuests, targetDate, prayerLocation = null) => {
   if (!targetDate) return [];
   const dayOfWeek = getDayOfWeekFromDateStr(targetDate);
 
@@ -112,8 +105,8 @@ export const getQuestsForDate = (allQuests, targetDate) => {
       return true;
     })
     .sort((a, b) => {
-      const minA = heureToMinutes(a.heure);
-      const minB = heureToMinutes(b.heure);
+      const minA = getHeureSortMinutes(a, targetDate, prayerLocation);
+      const minB = getHeureSortMinutes(b, targetDate, prayerLocation);
       if (minA !== minB) return minA - minB;
       return (a.ordre || 0) - (b.ordre || 0);
     });
@@ -132,6 +125,16 @@ export function useQuietQuestEngine() {
   const [validations, setValidations] = useState([]);
   const [dailyPerformances, setDailyPerformances] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [prayerLocation, setPrayerLocationState] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const appState = loadFromStorage(STORAGE_KEYS.appState, {});
+      const loc = appState.prayerLocation;
+      return loc && typeof loc.lat === 'number' && typeof loc.lng === 'number' ? loc : null;
+    } catch {
+      return null;
+    }
+  });
 
   // Date du jour : mise à jour après minuit pour que l’onglet Quêtes affiche le nouveau jour (quêtes décochées)
   const [todayDate, setTodayDate] = useState(() => getTodayDateStr());
@@ -685,23 +688,25 @@ export function useQuietQuestEngine() {
     });
   };
 
-  // Version memoized de getQuestsForDate avec cache
+  // Version memoized de getQuestsForDate avec cache (inclut prayerLocation pour tri des quêtes prière)
   const getQuestsForDateMemoized = useMemo(() => {
     return (targetDate) => {
       if (!targetDate) return [];
-      const cacheKey = `${targetDate}:${questsVersionRef.current}`;
+      const locKey = prayerLocation
+        ? `${prayerLocation.lat},${prayerLocation.lng},${prayerLocation.method || ''},${JSON.stringify(prayerLocation.adjustments || {})}`
+        : '';
+      const cacheKey = `${targetDate}:${questsVersionRef.current}:${locKey}`;
       const cached = questsCacheRef.current.get(cacheKey);
       if (cached) return cached;
-      const result = getQuestsForDate(effectiveQuests, targetDate);
+      const result = getQuestsForDate(effectiveQuests, targetDate, prayerLocation);
       questsCacheRef.current.set(cacheKey, result);
-      // Limiter la taille du cache à 100 entrées (LRU simple)
       if (questsCacheRef.current.size > 100) {
         const firstKey = questsCacheRef.current.keys().next().value;
         questsCacheRef.current.delete(firstKey);
       }
       return result;
     };
-  }, [effectiveQuests]);
+  }, [effectiveQuests, prayerLocation]);
 
   const recalcDailyPerformanceForDate = (date) => {
     if (!date) return;
@@ -855,6 +860,27 @@ export function useQuietQuestEngine() {
     }
   }, []);
 
+  // Réagir à la mise à jour de la position prière (depuis Paramètres)
+  useEffect(() => {
+    const onPrayerLocationUpdated = () => {
+      try {
+        const appState = loadFromStorage(STORAGE_KEYS.appState, {});
+        const loc = appState.prayerLocation;
+        setPrayerLocationState(loc && typeof loc.lat === 'number' && typeof loc.lng === 'number' ? loc : null);
+      } catch {
+        setPrayerLocationState(null);
+      }
+    };
+    window.addEventListener('prayerLocationUpdated', onPrayerLocationUpdated);
+    return () => window.removeEventListener('prayerLocationUpdated', onPrayerLocationUpdated);
+  }, []);
+
+  const setPrayerLocation = useCallback((loc) => {
+    setPrayerLocationState(loc);
+    const appState = loadFromStorage(STORAGE_KEYS.appState, {});
+    saveToStorage(STORAGE_KEYS.appState, { ...appState, prayerLocation: loc || undefined });
+  }, []);
+
   return {
     allQuests: effectiveQuests,
     setAllQuests,
@@ -870,6 +896,8 @@ export function useQuietQuestEngine() {
     getQuestsForDate: getQuestsForDateMemoized,
     isLoading,
     todayDate, // Date du jour, mise à jour après minuit (quêtes “aujourd’hui” décochées)
+    prayerLocation,
+    setPrayerLocation,
   };
 }
 

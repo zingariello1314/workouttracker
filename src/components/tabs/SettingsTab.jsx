@@ -8,7 +8,7 @@
  * @module components/tabs/SettingsTab
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Settings, Image, User } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
@@ -33,6 +33,7 @@ import { useAllDataExportImport } from './SettingsTab/hooks/useAllDataExportImpo
 import ProfileSettings from './SettingsTab/components/ProfileSettings';
 import SwipeNavigationSettings from './SettingsTab/components/SwipeNavigationSettings';
 import LanguageSettings from './SettingsTab/components/LanguageSettings';
+import PrayerLocationSettings from './SettingsTab/components/PrayerLocationSettings';
 import InfoCards from './SettingsTab/components/InfoCards';
 import DataCleanupSection from './SettingsTab/components/DataCleanupSection';
 import { BodyTrackingImportPreviewModal, AllDataImportPreviewModal } from './SettingsTab/components/ImportPreviewModal';
@@ -49,12 +50,38 @@ import { QuoteManager } from '../quotes/QuoteManager';
 import { QuotesErrorBoundary } from '../quotes/QuotesErrorBoundary';
 import ProfileCardSettings from '../sidebar/ProfileCardSettings';
 
+const SETTINGS_ANCHORS = [
+  { id: 'settings-profil', label: 'Profil' },
+  { id: 'settings-carte', label: 'Carte profil' },
+  { id: 'settings-accueil', label: 'Page d\'accueil' },
+  { id: 'settings-bannieres', label: 'Bannières' },
+  { id: 'settings-citations', label: 'Citations' },
+  { id: 'settings-export', label: 'Export' },
+  { id: 'settings-quests', label: 'Quêtes' },
+  { id: 'settings-livres', label: 'Livres' },
+  { id: 'settings-budget', label: 'Budget' },
+  { id: 'settings-apprentissage', label: 'Apprentissage' },
+  { id: 'settings-import', label: 'Import' },
+  { id: 'settings-nettoyage', label: 'Nettoyage' },
+  { id: 'settings-navigation', label: 'Navigation' },
+  { id: 'settings-langue', label: 'Langue' },
+  { id: 'settings-priere', label: 'Prière' },
+  { id: 'settings-infos', label: 'Infos' },
+];
+
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions, setActiveTab } = useWorkout();
   const { currentUser, updateAvatar, updateProfile, updatePassword, linkAnonymousDataToUser } = useAuth();
   const t = useTranslation();
   const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
   const { exportAll: exportNutritionData } = useNutritionData();
+
+  const scrollToSection = useCallback((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   // États locaux pour les modals
   const [showProfileCardSettings, setShowProfileCardSettings] = useState(false);
@@ -175,15 +202,32 @@ const SettingsTab = () => {
           </h2>
         </div>
 
+        {/* Ancres : liens rapides vers les sections */}
+        <div className="flex flex-wrap gap-2 mb-6 p-3 bg-slate-800/60 border border-slate-700 rounded-xl">
+          {SETTINGS_ANCHORS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => scrollToSection(id)}
+              className="px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-700/80 hover:bg-slate-600/90 hover:text-white rounded-lg transition-colors"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Section Mon Profil */}
+        <div id="settings-profil" className="scroll-mt-4">
         <ProfileSettings
           currentUser={currentUser}
           profileSettings={profileSettings}
           setActiveTab={setActiveTab}
           migrationSettings={migrationSettings}
         />
+        </div>
 
-        {/* Section Carte de Profil - Image Centrale */}
+        {/* Section Carte de Profil - Image Centrale + Handle */}
+        <div id="settings-carte" className="scroll-mt-4">
         <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
           <CardHeader>
             <CardTitle className="flex items-center text-white">
@@ -254,8 +298,10 @@ const SettingsTab = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
 
         {/* Section Page d'Accueil */}
+        <div id="settings-accueil" className="scroll-mt-4">
         <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
           <CardHeader>
             <CardTitle className="flex items-center text-white">
@@ -291,23 +337,31 @@ const SettingsTab = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
 
         {/* Section Export/Import Bannières */}
+        <div id="settings-bannieres" className="scroll-mt-4">
         <BannerExportImport />
+        </div>
 
         {/* Section Citations Page d'Accueil */}
+        <div id="settings-citations" className="scroll-mt-4">
         <QuotesErrorBoundary>
           <QuoteManager />
         </QuotesErrorBoundary>
+        </div>
 
         {/* Section Export */}
+        <div id="settings-export" className="scroll-mt-4">
         <ExportSection
           data={data}
           stats={stats}
           exportSettings={exportSettings}
         />
+        </div>
 
         {/* Sections Export/Import individuelles */}
+        <div id="settings-quests" className="scroll-mt-4">
         <QuietQuestExportImport
           quietQuestStats={stats.quietQuestStats}
           quietQuestExportStatus={exportSettings.quietQuestExportStatus}
@@ -315,7 +369,9 @@ const SettingsTab = () => {
           handleExportQuietQuest={exportSettings.handleExportQuietQuest}
           handleImportQuietQuest={importSettings.handleImportQuietQuest}
         />
+        </div>
 
+        <div id="settings-livres" className="scroll-mt-4">
         <BooksExportImport
           booksStats={stats.booksStats}
           booksExportStatus={exportSettings.booksExportStatus}
@@ -323,14 +379,18 @@ const SettingsTab = () => {
           handleExportBooksData={exportSettings.handleExportBooksData}
           handleImportBooksData={handleImportBooksData}
         />
+        </div>
 
+        <div id="settings-budget" className="scroll-mt-4">
         <BudgetExportImport
           budgetExportStatus={exportSettings.budgetExportStatus}
           budgetImportStatus={importSettings.budgetImportStatus}
           handleExportBudgetData={exportSettings.handleExportBudgetData}
           handleImportBudgetData={handleImportBudgetData}
         />
+        </div>
 
+        <div id="settings-apprentissage" className="scroll-mt-4">
         <ApprentissageExportImport
           apprentissageStats={stats.apprentissageStats}
           apprentissageExportStatus={exportSettings.apprentissageExportStatus}
@@ -338,13 +398,16 @@ const SettingsTab = () => {
           handleExportApprentissage={exportSettings.handleExportApprentissage}
           handleImportApprentissage={importSettings.handleImportApprentissage}
         />
+        </div>
 
         {/* Section Import */}
+        <div id="settings-import" className="scroll-mt-4">
         <ImportSection
           allDataImportSettings={allDataImportSettings}
           importSettings={importSettings}
           restorePreImportBackup={allDataImportSettings.restorePreImportBackup}
         />
+        </div>
 
         {/* Modals de prévisualisation */}
         <BodyTrackingImportPreviewModal
@@ -364,20 +427,33 @@ const SettingsTab = () => {
         />
 
         {/* Section Nettoyage des données */}
+        <div id="settings-nettoyage" className="scroll-mt-4">
         <DataCleanupSection
           cleanupSettings={cleanupSettings}
           updateData={updateData}
           debugMockSessions={debugMockSessions}
         />
+        </div>
 
         {/* Section Navigation */}
+        <div id="settings-navigation" className="scroll-mt-4">
         <SwipeNavigationSettings swipeSettings={swipeSettings} />
+        </div>
 
         {/* Section Langue */}
+        <div id="settings-langue" className="scroll-mt-4">
         <LanguageSettings />
+        </div>
+
+        {/* Section Horaires de prière (quêtes) */}
+        <div id="settings-priere" className="scroll-mt-4">
+        <PrayerLocationSettings />
+        </div>
 
         {/* Section Informations */}
+        <div id="settings-infos" className="scroll-mt-4">
         <InfoCards />
+        </div>
 
         {/* Modals */}
         {showHomePageSettings && (

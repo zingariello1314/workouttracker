@@ -6,10 +6,21 @@
  * @module components/tabs/QuestsTab/constants
  */
 
+export { CRENEAUX } from '../../../utils/quests';
+
 export const CATEGORIES = [
   'Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 
-  'Ménage', 'Spirituel', 'Repas', 'Projets', 'Hobby', 
+  'Ménage', 'Spirituel', 'Prière', 'Repas', 'Projets', 'Hobby', 
   'Social', 'Finance', 'Créativité', 'Bien-être'
+];
+
+/** Les 5 prières islamiques (pour quêtes catégorie Prière) */
+export const PRIERES = [
+  { value: 'fajr', label: 'Fajr' },
+  { value: 'dhuhr', label: 'Dhuhr' },
+  { value: 'asr', label: 'Asr' },
+  { value: 'maghrib', label: 'Maghrib' },
+  { value: 'isha', label: 'Isha' },
 ];
 
 export const DIFFICULTIES = [

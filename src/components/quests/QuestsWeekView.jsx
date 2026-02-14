@@ -4,6 +4,7 @@ import {
   getDayOfWeekFromDateStr,
   addDays,
 } from '../../hooks/useQuietQuestEngine';
+import { Check, Circle } from 'lucide-react';
 
 const QuestsWeekView = ({
   allQuests,
@@ -14,14 +15,13 @@ const QuestsWeekView = ({
   const today = getTodayDateStr();
   const todayDayOfWeek = getDayOfWeekFromDateStr(today);
 
-  // Construire une semaine centrée sur aujourd'hui (Lundi → Dimanche)
   const mondayOffset = 1 - todayDayOfWeek;
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const offset = mondayOffset + i;
     const date = addDays(today, offset);
     const dayOfWeek = getDayOfWeekFromDateStr(date);
     const isToday = date === today;
-    const quests = getQuestsForDate(date);
+    const quests = getQuestsForDate(date) || [];
     const completedIds = new Set(
       validations
         .filter((v) => v.date === date)
@@ -39,6 +39,7 @@ const QuestsWeekView = ({
       isToday,
       quests,
       completedIds,
+      completedCount,
       successRate,
     };
   });
@@ -46,106 +47,118 @@ const QuestsWeekView = ({
   const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
             Vue <span className="text-emerald-400">hebdomadaire</span>
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Survole ta semaine : quêtes prévues, validations et progression jour par jour.
+            Toute ta semaine : quêtes prévues, validations et progression jour par jour.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 items-start">
         {weekDays.map((day, index) => {
-          const borderColor =
-            day.successRate === 100
-              ? 'border-emerald-500/60'
-              : day.successRate >= 50
-              ? 'border-amber-500/60'
-              : day.successRate > 0
-              ? 'border-rose-500/60'
-              : 'border-slate-700/80';
+          const isFullyDone = day.successRate === 100 && day.quests.length > 0;
           return (
             <div
               key={day.date}
-              className={`flex flex-col rounded-2xl border bg-slate-900/70 ${borderColor} px-3 py-2 min-h-[140px] ${
-                day.isToday ? 'ring-1 ring-emerald-400/60' : ''
-              }`}
+              className={`flex flex-col rounded-2xl border bg-slate-900/80 backdrop-blur-sm overflow-hidden transition-all ${
+                day.isToday
+                  ? 'ring-2 ring-emerald-400/70 border-emerald-500/50 shadow-lg shadow-emerald-500/10'
+                  : 'border-slate-700/80 hover:border-slate-600'
+              } ${isFullyDone ? 'border-emerald-500/40' : ''}`}
             >
-              <div className="flex items-center justify-between mb-1.5 text-[11px] text-slate-300">
-                <div className="flex flex-col">
-                  <span className="font-semibold">
-                    {dayNames[index]}
-                    {day.isToday && ' (aujourd&apos;hui)'}
-                  </span>
-                  <span className="text-slate-500 text-[10px]">{day.date}</span>
-                </div>
-                <span className="text-[11px] text-slate-400">
-                  {day.quests.length} quêtes
-                </span>
-              </div>
-
-              <div className="mb-1.5">
-                <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all"
-                    style={{ width: `${Math.min(day.successRate, 100)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
-                  <span>{day.successRate}%</span>
-                  <span>
-                    {day.completedIds.size}/{day.quests.length} complétées
+              {/* En-tête du jour */}
+              <div
+                className={`px-4 py-3 border-b border-slate-700/80 ${
+                  day.isToday ? 'bg-emerald-500/10' : 'bg-slate-800/60'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-slate-100 text-sm flex items-center gap-1.5">
+                      {dayNames[index]}
+                      {day.isToday && (
+                        <span className="text-[10px] font-medium text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded">
+                          aujourd&apos;hui
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-slate-500 text-[11px] mt-0.5">{day.date}</span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 shrink-0">
+                    {day.quests.length} quête{day.quests.length !== 1 ? 's' : ''}
                   </span>
                 </div>
+
+                {/* Barre de progression */}
+                <div className="mt-3">
+                  <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>{day.successRate}%</span>
+                    <span className="font-medium text-slate-300">
+                      {day.completedCount}/{day.quests.length} complétées
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isFullyDone
+                          ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+                          : 'bg-gradient-to-r from-emerald-400/80 to-cyan-400/80'
+                      }`}
+                      style={{ width: `${Math.min(day.successRate, 100)}%` }}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="flex-1 overflow-auto space-y-0.5 pr-1">
+              {/* Liste de toutes les quêtes : hauteur naturelle, pas de scroll dans le bloc */}
+              <div className="flex-1 min-h-[80px] p-2">
                 {day.quests.length === 0 ? (
-                  <div className="text-[10px] text-slate-500 italic mt-1">
-                    Aucune quête.
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Circle className="w-8 h-8 text-slate-600 mb-2" strokeWidth={1.5} />
+                    <span className="text-xs text-slate-500">Aucune quête ce jour</span>
                   </div>
                 ) : (
-                  <>
-                    {day.quests.slice(0, 6).map((quest) => {
+                  <ul className="space-y-1.5">
+                    {day.quests.map((quest) => {
                       const completed = day.completedIds.has(quest.id);
                       return (
-                        <button
-                          key={quest.id}
-                          type="button"
-                          onClick={() => toggleQuestValidation(quest.id, day.date)}
-                          className={`gradient-button-premium gradient-button-premium-sm rounded-lg w-full flex items-center justify-between text-[10px] px-2 py-1 mb-0.5 ${
-                            completed
-                              ? 'gradient-button-premium-variant'
-                              : ''
-                          }`}
-                        >
-                          <span className="line-clamp-1 mr-1 text-left">
-                            {quest.nom}
-                          </span>
-                          <span className="flex items-center gap-1 flex-shrink-0">
+                        <li key={quest.id}>
+                          <button
+                            type="button"
+                            onClick={() => toggleQuestValidation(quest.id, day.date)}
+                            className={`w-full text-left rounded-xl border px-3 py-2.5 transition-all flex items-center gap-3 group ${
+                              completed
+                                ? 'bg-emerald-500/15 border-emerald-500/40 text-slate-300'
+                                : 'bg-slate-800/50 border-slate-700/80 text-slate-200 hover:border-slate-600 hover:bg-slate-800/80'
+                            }`}
+                          >
                             <span
-                              className={`w-3 h-3 rounded-full border flex items-center justify-center ${
+                              className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center border-2 transition-colors ${
                                 completed
-                                  ? 'bg-emerald-400 border-emerald-300 text-slate-900'
-                                  : 'bg-slate-900 border-slate-600 text-slate-500'
+                                  ? 'bg-emerald-500 border-emerald-400 text-white'
+                                  : 'border-slate-500 bg-slate-800/80 group-hover:border-slate-400'
                               }`}
                             >
-                              {completed ? '✓' : ''}
+                              {completed ? <Check className="w-3 h-3" strokeWidth={3} /> : null}
                             </span>
-                          </span>
-                        </button>
+                            <span className="flex-1 min-w-0 text-xs font-medium truncate">
+                              {quest.nom}
+                            </span>
+                            {quest.categorie && (
+                              <span className="flex-shrink-0 text-[10px] text-slate-500 truncate max-w-[4rem]">
+                                {quest.categorie}
+                              </span>
+                            )}
+                          </button>
+                        </li>
                       );
                     })}
-                    {day.quests.length > 6 && (
-                      <div className="text-[10px] text-slate-500 italic mt-1 text-center">
-                        … +{day.quests.length - 6} autre{day.quests.length - 6 > 1 ? 's' : ''}
-                      </div>
-                    )}
-                  </>
+                  </ul>
                 )}
               </div>
             </div>
@@ -156,9 +169,7 @@ const QuestsWeekView = ({
   );
 };
 
-// ✅ PHASE 2 : Memoization pour éviter re-renders inutiles
 export default React.memo(QuestsWeekView, (prevProps, nextProps) => {
-  // Comparaison personnalisée : re-render seulement si props critiques changent
   return (
     prevProps.allQuests === nextProps.allQuests &&
     prevProps.validations === nextProps.validations &&
@@ -166,4 +177,3 @@ export default React.memo(QuestsWeekView, (prevProps, nextProps) => {
     prevProps.getQuestsForDate === nextProps.getQuestsForDate
   );
 });
-

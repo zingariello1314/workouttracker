@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { calculateQuestXP } from '../../../../hooks/useQuietQuestEngine';
+import { getHeureDisplay, getCreneauForQuest, CRENEAU_ORDER, CRENEAUX } from '../../../../utils/quests';
 import { formatDuration } from '../utils';
 import { CATEGORIES, DIFFICULTIES, JOUR_OPTIONS } from '../constants';
 
@@ -36,9 +37,19 @@ import { CATEGORIES, DIFFICULTIES, JOUR_OPTIONS } from '../constants';
  * @param {Function} props.deleteQuest - Fonction pour supprimer une quête
  * @param {Function} props.startDrag - Fonction pour démarrer le drag
  * @param {Function} props.onDrop - Fonction pour gérer le drop
+ * @param {string} [props.todayDate] - Date du jour (pour affichage heure des quêtes prière)
+ * @param {{ lat: number, lng: number }} [props.prayerLocation] - Position pour horaires prière
+ * @param {Object} [props.sortConfig] - Config de tri (pour grouper par créneau quand tri par heure)
  */
+function getCreneauLabel(value) {
+  if (value === 'sans-heure') return 'Sans heure';
+  const c = CRENEAUX.find((x) => x.value === value);
+  return c ? c.label : value;
+}
+
 export const QuestsTableView = ({
   sortedQuests,
+  sortConfig = {},
   questFilters,
   setQuestFilters,
   searchQuery,
@@ -59,7 +70,116 @@ export const QuestsTableView = ({
   deleteQuest,
   startDrag,
   onDrop,
+  todayDate,
+  prayerLocation,
 }) => {
+  const groupByHeure = sortConfig.column === 'heure';
+  const groupedByCreneau = groupByHeure
+    ? (() => {
+        const groups = {};
+        CRENEAU_ORDER.forEach((c) => { groups[c] = []; });
+        sortedQuests.forEach((quest) => {
+          const creneau = getCreneauForQuest(quest, todayDate, prayerLocation);
+          if (groups[creneau]) groups[creneau].push(quest);
+          else groups[creneau] = [quest];
+        });
+        return groups;
+      })()
+    : null;
+
+  const renderQuestRow = (quest) => (
+    <tr
+      key={quest.id}
+      className={`border-t border-slate-800/70 hover:bg-slate-800/80 transition-colors ${
+        quest.active === false ? 'opacity-60' : ''
+      }`}
+      draggable
+      onDragStart={() => startDrag(quest.id)}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={() => onDrop(quest.id)}
+    >
+      <td className="px-3 py-2 align-top">
+        <input
+          type="checkbox"
+          checked={selectedQuests.has(quest.id)}
+          onChange={() => toggleQuestSelection(quest.id)}
+          className="rounded border-slate-600 bg-slate-900"
+        />
+      </td>
+      <td className="px-3 py-2 align-top">
+        <div className="font-semibold text-slate-100">{quest.nom}</div>
+        {quest.description && (
+          <div className="text-[11px] text-slate-400 line-clamp-2">
+            {quest.description}
+          </div>
+        )}
+      </td>
+      <td className="px-3 py-2 align-top text-amber-400/90 text-[11px] font-mono">
+        {getHeureDisplay(quest, todayDate, prayerLocation) || '—'}
+      </td>
+      <td className="px-3 py-2 align-top text-slate-200 text-[11px]">
+        {quest.categorie}
+      </td>
+      <td className="px-3 py-2 align-top">
+        {'★'.repeat(quest.difficulte || 1)}
+        <span className="text-slate-500 text-[10px] ml-1">
+          ({quest.difficulte || 1})
+        </span>
+      </td>
+      <td className="px-3 py-2 align-top text-[11px] text-slate-200">
+        {formatDuration(quest.duree || 0)}
+      </td>
+      <td className="px-3 py-2 align-top text-[11px] text-slate-200">
+        {quest.type === 'exceptionnelle'
+          ? `Exceptionnelle – ${quest.date || 'date ?'}`
+          : Array.isArray(quest.jours) && quest.jours.length
+          ? `Jours : ${quest.jours.join(', ')}`
+          : 'Récurrente'}
+      </td>
+      <td className="px-3 py-2 align-top text-[11px] text-emerald-300 font-semibold">
+        {(quest.xp ?? calculateQuestXP(quest))} XP
+      </td>
+      <td className="px-3 py-2 align-top text-right">
+        <div className="inline-flex gap-1">
+          <button
+            type="button"
+            onClick={() => toggleQuestActive(quest.id)}
+            title={quest.active === false ? 'Activer' : 'Désactiver'}
+            className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
+              quest.active === false ? '' : 'gradient-button-premium-variant'
+            }`}
+          >
+            {quest.active === false ? '▶️' : '⏸️'}
+          </button>
+          <button
+            type="button"
+            onClick={() => openEditQuestPopup(quest.id)}
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+            title="Éditer"
+          >
+            ✏️
+          </button>
+          <button
+            type="button"
+            onClick={() => duplicateQuest(quest.id)}
+            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+            title="Dupliquer"
+          >
+            📋
+          </button>
+          <button
+            type="button"
+            onClick={() => deleteQuest(quest.id)}
+            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+            title="Supprimer"
+          >
+            🗑️
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -246,101 +366,21 @@ export const QuestsTableView = ({
                   Aucune quête trouvée. Ajuste tes filtres ou crée une nouvelle quête.
                 </td>
               </tr>
+            ) : groupByHeure && groupedByCreneau ? (
+              CRENEAU_ORDER.flatMap((creneau) => {
+                const quests = groupedByCreneau[creneau] || [];
+                if (quests.length === 0) return [];
+                return [
+                  <tr key={`section-${creneau}`} className="bg-slate-800/90 border-t border-slate-700/80">
+                    <td colSpan={9} className="px-4 py-2 text-sm font-semibold text-amber-400/95">
+                      {getCreneauLabel(creneau)}
+                    </td>
+                  </tr>,
+                  ...quests.map((quest) => renderQuestRow(quest)),
+                ];
+              })
             ) : (
-              sortedQuests.map((quest) => (
-                <tr
-                  key={quest.id}
-                  className={`border-t border-slate-800/70 hover:bg-slate-800/80 transition-colors ${
-                    quest.active === false ? 'opacity-60' : ''
-                  }`}
-                  draggable
-                  onDragStart={() => startDrag(quest.id)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => onDrop(quest.id)}
-                >
-                  <td className="px-3 py-2 align-top">
-                    <input
-                      type="checkbox"
-                      checked={selectedQuests.has(quest.id)}
-                      onChange={() => toggleQuestSelection(quest.id)}
-                      className="rounded border-slate-600 bg-slate-900"
-                    />
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    <div className="font-semibold text-slate-100">{quest.nom}</div>
-                    {quest.description && (
-                      <div className="text-[11px] text-slate-400 line-clamp-2">
-                        {quest.description}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 align-top text-amber-400/90 text-[11px] font-mono">
-                    {quest.heure || '—'}
-                  </td>
-                  <td className="px-3 py-2 align-top text-slate-200 text-[11px]">
-                    {quest.categorie}
-                  </td>
-                  <td className="px-3 py-2 align-top">
-                    {'★'.repeat(quest.difficulte || 1)}
-                    <span className="text-slate-500 text-[10px] ml-1">
-                      ({quest.difficulte || 1})
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 align-top text-[11px] text-slate-200">
-                    {formatDuration(quest.duree || 0)}
-                  </td>
-                  <td className="px-3 py-2 align-top text-[11px] text-slate-200">
-                    {quest.type === 'exceptionnelle'
-                      ? `Exceptionnelle – ${quest.date || 'date ?'}`
-                      : Array.isArray(quest.jours) && quest.jours.length
-                      ? `Jours : ${quest.jours.join(', ')}`
-                      : 'Récurrente'}
-                  </td>
-                  <td className="px-3 py-2 align-top text-[11px] text-emerald-300 font-semibold">
-                    {(quest.xp ?? calculateQuestXP(quest))} XP
-                  </td>
-                  <td className="px-3 py-2 align-top text-right">
-                    <div className="inline-flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => toggleQuestActive(quest.id)}
-                        title={quest.active === false ? 'Activer' : 'Désactiver'}
-                        className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                          quest.active === false
-                            ? ''
-                            : 'gradient-button-premium-variant'
-                        }`}
-                      >
-                        {quest.active === false ? '▶️' : '⏸️'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openEditQuestPopup(quest.id)}
-                        className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
-                        title="Éditer"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => duplicateQuest(quest.id)}
-                        className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
-                        title="Dupliquer"
-                      >
-                        📋
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteQuest(quest.id)}
-                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
-                        title="Supprimer"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              sortedQuests.map((quest) => renderQuestRow(quest))
             )}
           </tbody>
         </table>

@@ -8,20 +8,17 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { loadFromStorage, saveToStorage, STORAGE_KEYS, calculateQuestXP } from '../../../../hooks/useQuietQuestEngine';
-
-function heureToMinutes(heure) {
-  if (!heure || typeof heure !== 'string') return 24 * 60;
-  const m = heure.trim().match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/);
-  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : 24 * 60;
-}
+import { getHeureSortMinutes } from '../../../../utils/quests';
 
 /**
  * Hook pour gérer le tri des quêtes
  * 
  * @param {Array} filteredQuests - Liste de quêtes filtrées
+ * @param {string} [todayDateStr] - Date du jour YYYY-MM-DD (pour tri par heure des quêtes prière)
+ * @param {{ lat: number, lng: number }} [prayerLocation] - Position pour calcul horaires prière
  * @returns {Object} { sortConfig, setSortConfig, sortQuests, getSortIcon, sortedQuests }
  */
-export const useQuestsSort = (filteredQuests = []) => {
+export const useQuestsSort = (filteredQuests = [], todayDateStr = null, prayerLocation = null) => {
   const [sortConfig, setSortConfig] = useState({
     column: null,
     direction: 'asc',
@@ -71,7 +68,7 @@ export const useQuestsSort = (filteredQuests = []) => {
           case 'recurrence':
             return Array.isArray(a.jours) ? a.jours.length : 0;
           case 'heure':
-            return heureToMinutes(a.heure);
+            return getHeureSortMinutes(a, todayDateStr, prayerLocation);
           default:
             return 0;
         }
@@ -92,7 +89,7 @@ export const useQuestsSort = (filteredQuests = []) => {
           case 'recurrence':
             return Array.isArray(b.jours) ? b.jours.length : 0;
           case 'heure':
-            return heureToMinutes(b.heure);
+            return getHeureSortMinutes(b, todayDateStr, prayerLocation);
           default:
             return 0;
         }
@@ -107,7 +104,7 @@ export const useQuestsSort = (filteredQuests = []) => {
     result.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
 
     return result;
-  }, [filteredQuests, sortConfig]);
+  }, [filteredQuests, sortConfig, todayDateStr, prayerLocation]);
 
   const sortQuests = (column) => {
     setSortConfig((prev) => {

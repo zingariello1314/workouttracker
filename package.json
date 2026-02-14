@@ -33,6 +33,7 @@
     "@splinetool/runtime": "^1.12.29",
     "@tensorflow-models/body-pix": "^2.2.1",
     "@tensorflow/tfjs": "^4.11.0",
+    "adhan": "^4.4.3",
     "date-fns": "^4.1.0",
     "dompurify": "^3.3.0",
     "framer-motion": "^12.23.25",

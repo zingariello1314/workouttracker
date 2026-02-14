@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { CATEGORIES, DIFFICULTIES, JOUR_OPTIONS, RECURRENCE_PRESETS, DURATION_OPTIONS } from '../constants';
+import { CATEGORIES, CRENEAUX, PRIERES, DIFFICULTIES, JOUR_OPTIONS, RECURRENCE_PRESETS, DURATION_OPTIONS } from '../constants';
 import { formatDuration } from '../utils';
 
 /**
@@ -77,9 +77,14 @@ export const QuestFormModal = ({
               <label className="block text-slate-300 mb-1">Catégorie</label>
               <select
                 value={questForm.categorie}
-                onChange={(e) =>
-                  setQuestForm((prev) => ({ ...prev, categorie: e.target.value }))
-                }
+                onChange={(e) => {
+                  const cat = e.target.value;
+                  setQuestForm((prev) => ({
+                    ...prev,
+                    categorie: cat,
+                    priere: cat === 'Prière' ? (prev.priere || 'fajr') : '',
+                  }));
+                }}
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
               >
                 {CATEGORIES.map((cat) => (
@@ -147,19 +152,93 @@ export const QuestFormModal = ({
             </div>
           </div>
 
-          <div>
-            <label className="block text-slate-300 mb-1">Heure prévue (emploi du temps)</label>
-            <input
-              type="time"
-              value={questForm.heure || ''}
-              onChange={(e) =>
-                setQuestForm((prev) => ({ ...prev, heure: e.target.value || '' }))
-              }
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
-              title="Optionnel : affiche la quête à cette heure dans la vue Aujourd'hui"
-            />
-            <p className="text-xs text-slate-500 mt-0.5">Optionnel. Les quêtes sont triées par heure dans la vue Aujourd'hui.</p>
-          </div>
+          {questForm.categorie === 'Prière' && (
+            <div>
+              <label className="block text-slate-300 mb-1">Quelle prière ?</label>
+              <select
+                value={questForm.priere || 'fajr'}
+                onChange={(e) =>
+                  setQuestForm((prev) => ({ ...prev, priere: e.target.value }))
+                }
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+              >
+                {PRIERES.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-0.5">Heure calculée automatiquement selon ta position (Paramètres).</p>
+            </div>
+          )}
+
+          {questForm.categorie !== 'Prière' && (
+            <div className="space-y-2">
+              <label className="block text-slate-300">Heure prévue (emploi du temps)</label>
+              <div className="flex gap-3 flex-wrap">
+                <label className="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="heureType"
+                    checked={questForm.heureType === 'creneau'}
+                    onChange={() =>
+                      setQuestForm((prev) => ({
+                        ...prev,
+                        heureType: 'creneau',
+                        heure: '',
+                        creneau: prev.creneau || 'matin',
+                      }))
+                    }
+                    className="rounded border-slate-600"
+                  />
+                  <span>Plage</span>
+                </label>
+                <label className="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="heureType"
+                    checked={questForm.heureType === 'precise'}
+                    onChange={() =>
+                      setQuestForm((prev) => ({
+                        ...prev,
+                        heureType: 'precise',
+                        creneau: '',
+                      }))
+                    }
+                    className="rounded border-slate-600"
+                  />
+                  <span>Heure / Période</span>
+                </label>
+              </div>
+              {questForm.heureType === 'creneau' ? (
+                <select
+                  value={questForm.creneau || 'matin'}
+                  onChange={(e) =>
+                    setQuestForm((prev) => ({ ...prev, creneau: e.target.value }))
+                  }
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                >
+                  {CRENEAUX.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <>
+                  <input
+                    type="time"
+                    value={questForm.heure || ''}
+                    onChange={(e) =>
+                      setQuestForm((prev) => ({ ...prev, heure: e.target.value || '' }))
+                    }
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                    title="Optionnel : heure de début ; la fin = début + durée de la quête"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Optionnel. Heure de début ; pour une période, la fin est calculée automatiquement (début + durée).
+                  </p>
+                </>
+              )}
+              <p className="text-xs text-slate-500">Les quêtes sont triées par heure dans la vue Aujourd'hui.</p>
+            </div>
+          )}
 
           {questForm.type === 'recurrente' ? (
             <div className="space-y-2">

@@ -150,13 +150,29 @@ export const questSchema = z.object({
   date: z.string()
     .optional()
     .default(''),
+  heureType: z.enum(['creneau', 'precise'])
+    .optional()
+    .default('precise'),
+  creneau: z.string()
+    .optional()
+    .default(''),
+  priere: z.string()
+    .optional()
+    .default('')
+    .refine((v) => !v || ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].includes(v), 'Prière invalide'),
   heure: z.string()
     .optional()
     .default('')
     .refine((v) => !v || /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v), 'Format attendu : HH:mm'),
   active: z.boolean()
     .default(true)
-});
+}).refine(
+  (data) => data.heureType !== 'creneau' || ['matin', 'midi', 'apres-midi', 'soir', 'nuit'].includes(data.creneau || ''),
+  { message: 'Choisis un créneau (matin, midi, après-midi, soir, nuit)', path: ['creneau'] }
+).refine(
+  (data) => data.categorie !== 'Prière' || ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].includes(data.priere || ''),
+  { message: 'Choisis une prière (Fajr, Dhuhr, Asr, Maghrib, Isha)', path: ['priere'] }
+);
 
 // ============================================================================
 // SCHÉMAS LIVRES

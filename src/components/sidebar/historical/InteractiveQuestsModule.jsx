@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useState, useMemo } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useQuietQuestEngine } from '../../../hooks/useQuietQuestEngine';
+import { getHeureDisplay } from '../../../utils/quests';
 import { emitSidebarEvent, SIDEBAR_EVENTS, useSidebarEvents } from '../../../utils/sidebarEvents';
 import deepLinkService from '../../../services/navigation/DeepLinkService';
 import AnimatedProgressBar from '../enhanced/AnimatedProgressBar';
@@ -36,6 +37,7 @@ const InteractiveQuestsModule = memo(({
     deleteQuest,
     dailyPerformances = [],
     todayDate,
+    prayerLocation,
   } = useQuietQuestEngine();
 
   // États locaux pour les périodes de statistiques configurables individuellement
@@ -310,9 +312,10 @@ const InteractiveQuestsModule = memo(({
                         textDecoration: isCompleted ? 'line-through' : 'none',
                         opacity: isCompleted ? 0.7 : 1
                       }}>
-                        {quest.heure && (
-                          <span className="text-amber-400/90 text-[10px] font-mono mr-1.5">{quest.heure}</span>
-                        )}
+                        {(() => {
+                          const h = getHeureDisplay(quest, todayDate, prayerLocation);
+                          return h ? <span className="text-amber-400/90 text-[10px] font-mono mr-1.5">{h}</span> : null;
+                        })()}
                         {quest.nom}
                       </div>
                       <div className="stat-title">{quest.categorie}</div>

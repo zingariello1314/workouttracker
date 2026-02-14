@@ -34,6 +34,9 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
     type: 'recurrente',
     jours: [1, 2, 3, 4, 5],
     date: '',
+    heureType: 'precise',
+    creneau: '',
+    priere: '',
     heure: '',
     active: true,
   });
@@ -49,6 +52,9 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       type: 'recurrente',
       jours: [1, 2, 3, 4, 5],
       date: '',
+      heureType: 'precise',
+      creneau: '',
+      priere: '',
       heure: '',
       active: true,
     });
@@ -68,6 +74,9 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       type: quest.type || 'recurrente',
       jours: Array.isArray(quest.jours) ? [...quest.jours] : [],
       date: quest.date || '',
+      heureType: quest.creneau ? 'creneau' : 'precise',
+      creneau: quest.creneau || '',
+      priere: quest.priere || '',
       heure: quest.heure || '',
       active: quest.active !== false,
     });

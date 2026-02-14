@@ -60,6 +60,10 @@ export default defineConfig({
   publicDir: 'public',
   optimizeDeps: {
     include: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'prop-types',
       '@hello-pangea/dnd', 
       'three', 
       '@splinetool/react-spline',
@@ -76,10 +80,11 @@ export default defineConfig({
     }
   },
   build: {
-    // ✅ CORRECTION : Forcer la déduplication lors du build
+    // ✅ CORRECTION : Forcer la déduplication lors du build + CJS interop pour React
     commonjsOptions: {
-      include: [/three/, /@splinetool/],
-      transformMixedEsModules: true
+      include: [/node_modules/],
+      transformMixedEsModules: true,
+      defaultIsModuleExports: 'auto'
     },
     rollupOptions: {
       output: {
