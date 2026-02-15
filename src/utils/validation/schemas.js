@@ -243,25 +243,20 @@ export const bookSchema = z.object({
 
 /**
  * Schéma pour une session de lecture
+ * Accepte string ou number pour durationMinutes/pagesRead (formulaire envoie souvent un number).
  */
 export const readingSessionSchema = z.object({
   date: dateSchema,
-  durationMinutes: z.string()
-    .regex(/^\d+$/, 'La durée doit être un nombre')
-    .refine((dur) => {
-      const d = parseInt(dur);
-      return d > 0 && d <= 1440; // Max 24h
-    }, 'La durée doit être entre 1 et 1440 minutes')
+  durationMinutes: z.union([z.string(), z.number()])
+    .transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v))
+    .refine((d) => !Number.isNaN(d) && d > 0 && d <= 1440, 'La durée doit être entre 1 et 1440 minutes')
     .optional()
-    .default(''),
-  pagesRead: z.string()
-    .regex(/^\d+$/, 'Le nombre de pages doit être un nombre')
-    .refine((pages) => {
-      const p = parseInt(pages);
-      return p > 0 && p <= 10000;
-    }, 'Le nombre de pages doit être entre 1 et 10000')
+    .default(0),
+  pagesRead: z.union([z.string(), z.number()])
+    .transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v))
+    .refine((p) => !Number.isNaN(p) && p >= 0 && p <= 10000, 'Le nombre de pages doit être entre 0 et 10000')
     .optional()
-    .default(''),
+    .default(0),
   note: z.string()
     .max(1000, 'La note ne peut pas dépasser 1000 caractères')
     .optional()

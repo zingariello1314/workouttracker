@@ -353,6 +353,8 @@ export const useSidebarData = () => {
         todaySteps: todayMetrics?.steps || garminData?.sport?.todayMetrics?.steps || 0,
         avgHeartRate: todayMetrics?.restingHeartRate || garminData?.sport?.todayMetrics?.heartRate?.resting || 72,
         hasGarminData: garminData !== null,
+        stepsGoal: garminData?.stepsGoal ?? 8500,
+        caloriesGoal: garminData?.caloriesGoal ?? 1650,
         // Passer les métriques complètes pour les modules historiques
         todayMetrics: todayMetrics || garminData?.sport?.todayMetrics || null,
         // IMPORTANT: Passer toutes les données Garmin enrichies pour les graphiques

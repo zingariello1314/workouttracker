@@ -7,7 +7,12 @@
     "trainingMode": "Mode d'entraînement:",
     "home": "🏠 Maison",
     "gym": "🏋️ Salle",
-    "week": "Semaine {{week}}"
+    "week": "Semaine {{week}}",
+    "useWorkoutOf": "Utiliser l'entraînement de :",
+    "today": "Aujourd'hui",
+    "todayWorkout": "Entraînement du jour",
+    "useDayWorkout": "Afficher et faire l'entraînement du {{day}}",
+    "overrideHint": "Tu affiches l'entraînement du {{day}}. La session sera enregistrée pour aujourd'hui."
   },
   "exercises": {
     "title": "Exercices",

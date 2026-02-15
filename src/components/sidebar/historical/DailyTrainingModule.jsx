@@ -1,7 +1,10 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import useMuscleGroups from '../../../hooks/useMuscleGroups';
 import useWeeklyMissions from '../../../hooks/useWeeklyMissions';
-import deepLinkService from '../../../services/navigation/DeepLinkService';
+import { useWorkout } from '../../../context/WorkoutContext';
+import { getTodayWorkoutsFromData } from '../../../context/WorkoutContext/utils/workoutHistoryUtils';
+import { getDateStr, getAutoWeekVariant } from '../../../utils/dateUtils';
+import '../../../styles/sidebar-visual-enhancements.css';
 
 /**
  * DailyTrainingModule - Module Entraînement du Jour (Position 15)
@@ -22,27 +25,121 @@ const DailyTrainingModule = memo(({
   data = {},
   navigation
 }) => {
-  // Hooks pour les données d'entraînement
   const { muscleGroups, loading: muscleLoading } = useMuscleGroups();
-  const { missions, getMissionsForDay } = useWeeklyMissions();
+  const { getMissionsForDay } = useWeeklyMissions();
+  const {
+    getTodayWorkout,
+    getCurrentData,
+    updateTempExerciseData,
+    workoutDayOverride,
+    isGymMode,
+    tempData
+  } = useWorkout();
+  // tempData en dépendance pour réactivité : coche dans Sport > Aujourd'hui se reflète ici (et inversement)
 
-  // Obtenir le jour actuel
+  const currentDate = new Date();
+  const dateStr = getDateStr(currentDate);
+
   const today = useMemo(() => {
     const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
     return days[new Date().getDay()];
   }, []);
 
-  // Récupérer les missions sportives du jour
-  const todayMissions = useMemo(() => {
+  // Séance planifiée : programme en cours + jour en cours (ou jour choisi si "Utiliser l'entraînement de : Lundi")
+  // getTodayWorkout utilise déjà workoutDayOverride en interne → on affiche la bonne séance
+  const plannedWorkout = useMemo(() => {
+    try {
+      const workout = getTodayWorkout?.(new Date(), isGymMode ?? false);
+      const list = workout?.exercices ?? workout?.exercises;
+      if (list?.length > 0) {
+        return {
+          name: workout.name || 'Séance du jour',
+          count: list.length,
+          dayLabel: workoutDayOverride || today
+        };
+      }
+    } catch (_) {}
     const dayData = getMissionsForDay(today);
-    return dayData.missions?.filter(mission => 
+    const missions = dayData.missions?.filter(mission => 
       mission.name?.toLowerCase().includes('sport') ||
       mission.name?.toLowerCase().includes('entraînement') ||
       mission.name?.toLowerCase().includes('musculation') ||
       mission.name?.toLowerCase().includes('cardio') ||
       mission.name?.toLowerCase().includes('fitness')
     ) || [];
-  }, [getMissionsForDay, today]);
+    if (missions.length > 0) return { name: missions[0].name, count: missions.length, missions };
+    return null;
+  }, [getTodayWorkout, getMissionsForDay, today, workoutDayOverride, isGymMode]);
+
+  // Workout complet avec liste d'exercices pour les cartes (même source que plannedWorkout)
+  const todayWorkoutWithExercices = useMemo(() => {
+    try {
+      const workout = getTodayWorkout?.(new Date(), isGymMode ?? false);
+      const list = workout?.exercices ?? workout?.exercises ?? [];
+      if (list?.length > 0) return { ...workout, exercices: list };
+    } catch (_) {}
+    return null;
+  }, [getTodayWorkout, isGymMode, workoutDayOverride, dateStr]);
+
+  // Clé d'exercice (alignée avec TodayTab : _semaineA/_semaineB en mode salle)
+  const getExerciseKey = useCallback((exerciseId) => {
+    let key = `${dateStr}_${exerciseId}`;
+    if (isGymMode && todayWorkoutWithExercices?.isGymMode) {
+      const variant = getAutoWeekVariant(currentDate);
+      key += variant === 'A' ? '_semaineA' : '_semaineB';
+    }
+    return key;
+  }, [dateStr, isGymMode, todayWorkoutWithExercices?.isGymMode, currentDate]);
+
+  // Toggle cocher / décocher un exercice (avec auto-reps si série fournie)
+  const handleExerciseCheck = useCallback((exerciseId, exercise) => {
+    const currentData = getCurrentData?.() || {};
+    const key = getExerciseKey(exerciseId);
+    const isChecked = currentData.checkedExercises?.[key] || false;
+    if (isChecked) {
+      updateTempExerciseData?.({
+        ...currentData,
+        checkedExercises: { ...currentData.checkedExercises, [key]: false },
+        reps: { ...currentData.reps, [key]: undefined }
+      });
+      return;
+    }
+    let autoReps = null;
+    if (exercise?.series?.includes('×')) {
+      const m = exercise.series.match(/(\d+)×(\d+)(?:-(\d+))?/);
+      if (m) {
+        const sets = parseInt(m[1]);
+        const minR = parseInt(m[2]);
+        const maxR = m[3] ? parseInt(m[3]) : minR;
+        autoReps = sets * Math.round((minR + maxR) / 2);
+      }
+    }
+    updateTempExerciseData?.({
+      ...currentData,
+      checkedExercises: { ...currentData.checkedExercises, [key]: true },
+      reps: { ...currentData.reps, [key]: autoReps != null ? String(autoReps) : (currentData.reps?.[key] || '') }
+    });
+  }, [getCurrentData, getExerciseKey, updateTempExerciseData]);
+
+  // Mise à jour des reps
+  const handleUpdateReps = useCallback((exerciseId, value) => {
+    const currentData = getCurrentData?.() || {};
+    const key = getExerciseKey(exerciseId);
+    const clean = value === '' || value == null ? '' : String(Math.min(999, Math.max(0, parseInt(value) || 0)));
+    updateTempExerciseData?.({
+      ...currentData,
+      reps: { ...currentData.reps, [key]: clean }
+    });
+  }, [getCurrentData, getExerciseKey, updateTempExerciseData]);
+
+  // Détection unité (reps / sec / min) pour le placeholder
+  const getExerciseUnit = useCallback((ex) => {
+    if (!ex?.series) return { unit: 'reps', label: 'Reps' };
+    const s = ex.series.toLowerCase();
+    if (s.includes('sec') || s.includes('séc')) return { unit: 'sec', label: 'sec' };
+    if (s.includes('min')) return { unit: 'min', label: 'min' };
+    return { unit: 'reps', label: 'Reps' };
+  }, []);
 
   // Calculer les groupes musculaires ciblés aujourd'hui
   const todayMuscleGroups = useMemo(() => {
@@ -59,72 +156,65 @@ const DailyTrainingModule = memo(({
     }));
   }, [muscleGroups]);
 
-  // Calculer les objectifs sportifs quotidiens
+  // Séances réalisées aujourd'hui (données workout cochées)
+  const todaySessionsCount = useMemo(() => {
+    try {
+      const currentData = getCurrentData?.();
+      return getTodayWorkoutsFromData(currentData || {}, new Date()).length;
+    } catch (_) {
+      return 0;
+    }
+  }, [getCurrentData, data?.sport, tempData]);
+
+  // Objectifs du jour : pas et calories (Garmin/sidebar), séances (workout data)
   const dailyObjectives = useMemo(() => {
     const sportData = data?.sport || {};
     const todayMetrics = sportData.todayMetrics || {};
-    
-    // Objectifs par défaut
+    const stepsCurrent = todayMetrics.steps ?? sportData.todaySteps ?? 0;
+    const caloriesCurrent = todayMetrics.totalCaloriesBurned ?? sportData.todayCalories ?? 0;
+    const stepsTarget = sportData.stepsGoal ?? 8500;
+    const caloriesTarget = sportData.caloriesGoal ?? 1650;
+
     const objectives = {
       steps: {
-        current: todayMetrics.steps || sportData.todaySteps || 0,
-        target: 10000,
-        unit: 'pas'
+        current: stepsCurrent,
+        target: stepsTarget,
+        unit: 'pas',
+        progressPercent: stepsTarget > 0 ? Math.min(100, Math.round((stepsCurrent / stepsTarget) * 100)) : 0
       },
       calories: {
-        current: todayMetrics.totalCaloriesBurned || sportData.todayCalories || 0,
-        target: 500,
-        unit: 'cal'
+        current: caloriesCurrent,
+        target: caloriesTarget,
+        unit: 'cal',
+        progressPercent: caloriesTarget > 0 ? Math.min(100, Math.round((caloriesCurrent / caloriesTarget) * 100)) : 0
       },
       workouts: {
-        current: todayMissions.filter(m => m.completed).length,
-        target: Math.max(1, todayMissions.length),
-        unit: 'séances'
+        current: todaySessionsCount,
+        target: 1,
+        unit: 'séances',
+        progressPercent: Math.min(100, todaySessionsCount * 100)
       }
     };
-
-    // Calculer les pourcentages de progression
-    Object.keys(objectives).forEach(key => {
-      const obj = objectives[key];
-      obj.progressPercent = obj.target > 0 ? Math.min(Math.round((obj.current / obj.target) * 100), 100) : 0;
-    });
-
     return objectives;
-  }, [data, todayMissions]);
+  }, [data, todaySessionsCount, plannedWorkout]);
 
-  // Navigation vers Sport > module entraînement (Requirement 8.4)
-  const handleNavigateToSport = useCallback(async () => {
+  // Navigation vers Sport > Aujourd'hui (onglet principal = 'today')
+  const handleNavigateToSport = useCallback(() => {
     if (!navigation?.setActiveTab) return;
-    
     try {
-      const target = {
-        tab: 'sport',
-        subtab: 'entraînement',
-        moduleId: 'training-module',
-        scrollBehavior: 'smooth',
-        highlightDuration: 2000
-      };
-
-      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
+      localStorage.setItem('sport.lastSubTab', 'today');
+      navigation.setActiveTab('today');
     } catch (error) {
       console.error('[DailyTrainingModule] Erreur navigation sport:', error);
     }
   }, [navigation]);
 
-  // Navigation vers les groupes musculaires
-  const handleNavigateToMuscles = useCallback(async () => {
+  // Navigation vers Sport > Aujourd'hui (muscles = même onglet pour l'instant)
+  const handleNavigateToMuscles = useCallback(() => {
     if (!navigation?.setActiveTab) return;
-    
     try {
-      const target = {
-        tab: 'sport',
-        subtab: 'muscles',
-        moduleId: 'muscle-groups-grid',
-        scrollBehavior: 'smooth',
-        highlightDuration: 2000
-      };
-
-      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
+      localStorage.setItem('sport.lastSubTab', 'today');
+      navigation.setActiveTab('today');
     } catch (error) {
       console.error('[DailyTrainingModule] Erreur navigation muscles:', error);
     }
@@ -170,12 +260,13 @@ const DailyTrainingModule = memo(({
       
       {isExpanded && (
         <div className="sidebar-section-content">
-          {/* Séances planifiées aujourd'hui */}
-          {todayMissions.length === 0 ? (
+          {/* Liste des exercices du jour – cartes style quêtes avec coche + reps */}
+          {!todayWorkoutWithExercices ? (
             <div className="sidebar-info-box">
-              <span className="sidebar-info-icon">🏋️</span>
+              <span className="sidebar-info-icon">🏆</span>
               <span>Aucune séance planifiée</span>
               <button 
+                type="button"
                 className="sidebar-action-button-small"
                 onClick={handleNavigateToSport}
               >
@@ -184,26 +275,82 @@ const DailyTrainingModule = memo(({
             </div>
           ) : (
             <div className="sidebar-training-sessions">
-              <div className="sidebar-subsection-title">Séances du jour</div>
-              {todayMissions.map(mission => (
-                <div 
-                  key={mission.id} 
-                  className={`sidebar-training-item ${mission.completed ? 'completed' : ''}`}
-                >
-                  <div className="sidebar-training-status">
-                    {mission.completed ? '✅' : '⏳'}
-                  </div>
-                  <div className="sidebar-training-info">
-                    <div className="sidebar-training-name">{mission.name}</div>
-                    <div className="sidebar-training-meta">
-                      <span className="sidebar-training-target">
-                        {mission.targetValue} {mission.unit}
-                      </span>
-                      <span className="sidebar-training-xp">{mission.xp || 10} XP</span>
+              <div className="sidebar-workout-name-badge">
+                <span className="sidebar-workout-name-icon" aria-hidden="true">
+                  {(todayWorkoutWithExercices.name || '').toLowerCase().includes('repos') ? '🏠' : '💪'}
+                </span>
+                <span className="sidebar-workout-name-text">{todayWorkoutWithExercices.name || 'Séance du jour'}</span>
+              </div>
+              <div className="sidebar-quest-list" style={{ marginBottom: 10 }}>
+                {todayWorkoutWithExercices.exercices.map((exercise) => {
+                  const key = getExerciseKey(exercise.id);
+                  const currentData = getCurrentData?.() || {};
+                  const isChecked = currentData.checkedExercises?.[key] || false;
+                  const repsValue = currentData.reps?.[key] ?? '';
+                  const unit = getExerciseUnit(exercise);
+                  return (
+                    <div
+                      key={`ex-${exercise.id}-${key}`}
+                      className={`stat-card-premium interactive-quest-card ${isChecked ? 'completed' : ''}`}
+                    >
+                      <div className="stat-header" style={{ alignItems: 'flex-start', gap: 8 }}>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleExerciseCheck(exercise.id, exercise)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleExerciseCheck(exercise.id, exercise)}
+                          aria-label={isChecked ? 'Décocher' : 'Cocher'}
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            background: isChecked ? 'var(--sidebar-premium-gradient-3)' : 'rgba(255,255,255,0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          {isChecked ? '✓' : '○'}
+                        </div>
+                        <div className="sidebar-quest-info" style={{ flex: 1, minWidth: 0 }}>
+                          <div className="stat-value" style={{ fontSize: '0.875rem', marginBottom: 2, textDecoration: isChecked ? 'line-through' : 'none', opacity: isChecked ? 0.85 : 1 }}>
+                            {exercise.name}
+                          </div>
+                          <div className="stat-title" style={{ fontSize: '0.7rem', marginBottom: 6 }}>
+                            {exercise.series}
+                            {exercise.materiel && ` • ${exercise.materiel}`}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <input
+                              type="number"
+                              min={0}
+                              max={999}
+                              placeholder={unit.label}
+                              value={repsValue}
+                              onChange={(e) => handleUpdateReps(exercise.id, e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                width: 56,
+                                padding: '4px 6px',
+                                fontSize: 12,
+                                textAlign: 'center',
+                                borderRadius: 6,
+                                border: '1px solid rgba(148,163,184,0.4)',
+                                background: isChecked ? 'rgba(34,197,94,0.2)' : 'rgba(15,23,42,0.8)',
+                                color: 'white'
+                              }}
+                            />
+                            <span className="stat-title" style={{ fontSize: 10 }}>{unit.label}</span>
+                            {isChecked && <span style={{ color: 'var(--sidebar-green)', fontSize: 11 }}>✓ Fait</span>}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -243,7 +390,10 @@ const DailyTrainingModule = memo(({
 
           {/* Objectifs sportifs quotidiens */}
           <div className="sidebar-daily-objectives">
-            <div className="sidebar-subsection-title">Objectifs du jour</div>
+            <div className="sidebar-objectives-header">
+              <span className="sidebar-objectives-icon" aria-hidden="true">🎯</span>
+              <span className="sidebar-objectives-title">Objectifs du jour</span>
+            </div>
             <div className="sidebar-data-grid">
               <div className="sidebar-data-card clickable" onClick={handleNavigateToSport}>
                 <span className="sidebar-data-icon">👟</span>
@@ -268,7 +418,7 @@ const DailyTrainingModule = memo(({
               <div className="sidebar-data-card clickable" onClick={handleNavigateToSport}>
                 <span className="sidebar-data-icon">🔥</span>
                 <div className="sidebar-data-value">
-                  {dailyObjectives.calories.current}
+                  {Math.round(Number(dailyObjectives.calories.current) || 0)}
                 </div>
                 <div className="sidebar-data-label">Calories</div>
                 <div className="sidebar-data-progress">

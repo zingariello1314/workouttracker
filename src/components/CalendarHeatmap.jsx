@@ -465,7 +465,31 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       return allExercises;
     };
     
-    const allExercisesForDate = getAllExercisesForDate();
+    let allExercisesForDate = getAllExercisesForDate();
+    const plannedIds = new Set(allExercisesForDate.map(ex => ex.id));
+    
+    // ✅ Inclure les exercices enregistrés pour cette date mais d'un autre jour (ex. entraînement du lundi fait le vendredi)
+    const prefix = `${dateStr}_`;
+    const reps = currentData?.reps || {};
+    const checked = currentData?.checkedExercises || {};
+    [...Object.keys(reps), ...Object.keys(checked)].forEach(key => {
+      if (!key.startsWith(prefix)) return;
+      const rest = key.slice(prefix.length);
+      const match = rest.match(/^(\d+)(?:_semaineA|_semaineB)?$/);
+      if (match) {
+        const id = parseInt(match[1], 10);
+        if (!plannedIds.has(id)) {
+          plannedIds.add(id);
+          allExercisesForDate = [...allExercisesForDate, {
+            id,
+            name: getExerciseNameById ? getExerciseNameById(id) : `Exercice ${id}`,
+            series: '',
+            programName: 'Séance enregistrée',
+            programId: 'recorded'
+          }];
+        }
+      }
+    });
     
     // Pour compatibilité avec le code existant, créer un workout "virtuel" avec tous les exercices
     const workout = allExercisesForDate.length > 0 ? {

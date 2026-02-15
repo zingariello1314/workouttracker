@@ -171,6 +171,21 @@ const QuestsTab = () => {
   useSidebarEvents(SIDEBAR_EVENTS.QUEST_COMPLETED, handleExternalQuestToggle);
   useSidebarEvents(SIDEBAR_EVENTS.QUEST_UPDATED, handleExternalQuestToggle);
 
+  // Ouvrir le modal de création quand on arrive depuis la sidebar (bouton "Créer")
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('nav_params_quests');
+      if (!raw) return;
+      const params = JSON.parse(raw);
+      if (params?.action === 'openCreate') {
+        sessionStorage.removeItem('nav_params_quests');
+        openNewQuestPopup();
+      }
+    } catch (_) {
+      try { sessionStorage.removeItem('nav_params_quests'); } catch (_) {}
+    }
+  }, [openNewQuestPopup]);
+
   // --- Rendu des onglets QuietQuest ---------------------------------------
 
   const renderSubTabNav = () => (

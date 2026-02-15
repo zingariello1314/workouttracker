@@ -55,6 +55,18 @@ const WorkoutProvider = ({ children }) => {
   const [weekVariant, setWeekVariant] = useState('A');
   const [statsPeriod, setStatsPeriod] = useState('week');
   const [isGymMode, setIsGymMode] = useState(false);
+  /** Remplacement du jour pour afficher l'entraînement d'un autre jour (ex. faire lundi un vendredi). null = jour actuel. */
+  const [workoutDayOverride, setWorkoutDayOverride] = useState(null);
+  const lastDateStrRef = useRef(getDateStr(currentDate));
+
+  // Réinitialiser l'override quand le jour calendrier change (ex. après minuit)
+  useEffect(() => {
+    const dateStr = getDateStr(currentDate);
+    if (lastDateStrRef.current !== dateStr) {
+      lastDateStrRef.current = dateStr;
+      setWorkoutDayOverride(null);
+    }
+  }, [currentDate]);
   
   // Wrapper pour setActiveTab qui stocke la page précédente
   const setActiveTab = useCallback((newTab) => {
@@ -331,7 +343,7 @@ const WorkoutProvider = ({ children }) => {
   const getTodayWorkoutWrapper = useCallback((currentDate, isGymMode = false) => {
     // Si un programme actif existe, utiliser son schedule
     if (activeProgram && activeProgram.schedule) {
-      const dayName = getDayName(currentDate);
+      const dayName = workoutDayOverride || getDayName(currentDate);
       const daySchedule = activeProgram.schedule[dayName];
       
       if (daySchedule) {
@@ -395,8 +407,15 @@ const WorkoutProvider = ({ children }) => {
       }
     }
     
-    // Fallback vers la fonction originale de workoutLogic
+    // Fallback vers la fonction originale de workoutLogic (avec jour override si besoin)
     if (workoutLogic && workoutLogic.getTodayWorkout) {
+      const dayToUse = workoutDayOverride || getDayName(currentDate);
+      const virtualDate = new Date(currentDate);
+      const dayIndex = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'].indexOf(dayToUse);
+      if (dayIndex >= 0) {
+        virtualDate.setDate(virtualDate.getDate() - virtualDate.getDay() + dayIndex);
+        return workoutLogic.getTodayWorkout(virtualDate, isGymMode);
+      }
       return workoutLogic.getTodayWorkout(currentDate, isGymMode);
     }
     
@@ -409,7 +428,7 @@ const WorkoutProvider = ({ children }) => {
         isGymMode: false,
         weekVariant: getAutoWeekVariant(currentDate)
       };
-  }, [activeProgram, workoutLogic, convertToStableNumericId]);
+  }, [activeProgram, workoutLogic, convertToStableNumericId, workoutDayOverride]);
 
   // ✅ PHASE 4 : addProgressEntry, updateProgressEntry, deleteProgressEntry, deleteProgressEntryField,
   // addProgressPhoto, updateProgressPhoto, deleteProgressPhoto sont maintenant dans useWorkoutProgress
@@ -982,6 +1001,8 @@ const WorkoutProvider = ({ children }) => {
     setStatsPeriod,
     isGymMode,
     setIsGymMode,
+    workoutDayOverride,
+    setWorkoutDayOverride,
     
     // Données et fonctions de données
     data,

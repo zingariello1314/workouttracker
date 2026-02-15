@@ -136,20 +136,12 @@ const InteractiveQuestsModule = memo(({
   useSidebarEvents(SIDEBAR_EVENTS.QUEST_COMPLETED, handleExternalQuestToggle);
   useSidebarEvents(SIDEBAR_EVENTS.QUEST_UPDATED, handleExternalQuestToggle);
 
-  // Navigation vers création de quête
-  const handleCreateQuest = useCallback(async () => {
+  // Navigation vers création de quête : ouvrir l'onglet Quêtes puis le modal de création
+  const handleCreateQuest = useCallback(() => {
     if (!navigation?.setActiveTab) return;
-    
     try {
-      const target = {
-        tab: 'quests',
-        subtab: 'quests',
-        moduleId: 'quest-creation-form',
-        scrollBehavior: 'smooth',
-        highlightDuration: 3000
-      };
-
-      await deepLinkService.navigateToModule(target, navigation.setActiveTab);
+      sessionStorage.setItem('nav_params_quests', JSON.stringify({ action: 'openCreate' }));
+      navigation.setActiveTab('quests');
     } catch (error) {
       console.error('[InteractiveQuestsModule] Erreur navigation création:', error);
     }

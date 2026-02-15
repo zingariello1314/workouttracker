@@ -33,6 +33,8 @@ const TodayTab = () => {
     setShowSessionFeedback,
     isGymMode,
     setIsGymMode,
+    workoutDayOverride,
+    setWorkoutDayOverride,
     hasUnsavedExercises,
     hasUnsavedStretches,
     saveExerciseChanges,
@@ -679,6 +681,37 @@ const TodayTab = () => {
             )}
           </div>
         )}
+        {/* Choix d'afficher l'entraînement d'un autre jour (ex. faire lundi un vendredi) */}
+        <div className="mt-4 pt-4 border-t border-slate-600/50">
+          <p className="text-xs text-slate-400 mb-2">{t('today.workout.useWorkoutOf', "Utiliser l'entraînement de :")}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].map((d) => {
+              const label = d.charAt(0).toUpperCase() + d.slice(1);
+              const isCurrentDay = d === dayName;
+              const isSelected = workoutDayOverride ? workoutDayOverride === d : isCurrentDay;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setWorkoutDayOverride(isCurrentDay ? null : d)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    isSelected
+                      ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/50'
+                      : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:border-slate-500'
+                  }`}
+                  title={isCurrentDay ? t('today.workout.todayWorkout', "Entraînement du jour") : t('today.workout.useDayWorkout', "Afficher et faire l'entraînement du {{day}}", { day: label })}
+                >
+                  {isCurrentDay ? t('today.workout.today', "Aujourd'hui") : label}
+                </button>
+              );
+            })}
+          </div>
+          {workoutDayOverride && (
+            <p className="text-xs text-amber-400/90 mt-2">
+              {t('today.workout.overrideHint', "Tu affiches l'entraînement du {{day}}. La session sera enregistrée pour aujourd'hui.", { day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1) })}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* ✅ NOUVEAU : Bouton/Badge de justification si jour sans activité (même avec exercices prévus) */}

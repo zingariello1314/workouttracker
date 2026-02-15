@@ -151,6 +151,7 @@ export const useNavigation = () => {
   return {
     navigateTo,
     navigateWithParams,
+    setActiveTab,
     ...navigation,
     
     // Navigation précise avec scroll automatique et mise en évidence

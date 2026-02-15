@@ -112,6 +112,16 @@ export const translations = {
     'nav.history': 'Historique',
     'nav.settings': 'Paramètres',
     'nav.finance': 'Finance',
+    'nav.mainTabs': 'Onglets principaux',
+    'nav.sportTabs': 'Onglets Sport',
+    'nav.dataEntry': 'Saisie données',
+    'nav.nutrition': 'Nutrition',
+    'nav.progress': 'Progression',
+    'nav.endurance': 'Endurance',
+    'nav.charts': 'Graphiques',
+    'nav.predictions': 'Prédictions',
+    'nav.smartBalancing': 'Smart Balancing',
+    'nav.garmin': 'Garmin',
     
     // Finance
     'finance.title': 'Finance',
@@ -359,6 +369,16 @@ export const translations = {
     'nav.history': 'History',
     'nav.settings': 'Settings',
     'nav.finance': 'Finance',
+    'nav.mainTabs': 'Main tabs',
+    'nav.sportTabs': 'Sport tabs',
+    'nav.dataEntry': 'Data entry',
+    'nav.nutrition': 'Nutrition',
+    'nav.progress': 'Progress',
+    'nav.endurance': 'Endurance',
+    'nav.charts': 'Charts',
+    'nav.predictions': 'Predictions',
+    'nav.smartBalancing': 'Smart Balancing',
+    'nav.garmin': 'Garmin',
     
     // Finance
     'finance.title': 'Finance',
