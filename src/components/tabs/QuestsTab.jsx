@@ -26,6 +26,7 @@ import { QuestFormModal } from './QuestsTab/components/QuestFormModal';
 import { QuestsTableView } from './QuestsTab/components/QuestsTableView';
 import { SecurityView } from './QuestsTab/components/SecurityView';
 import { useSidebarEvents, SIDEBAR_EVENTS } from '../../utils/sidebarEvents';
+import { getHeureSortMinutes } from '../../utils/quests';
 
 /**
  * Composant principal QuestsTab refactorisé
@@ -134,31 +135,108 @@ const QuestsTab = () => {
     clearDrag,
   } = useQuestsDragDrop(allQuests, setAllQuests);
 
-  // Réordonnancement des quêtes du jour uniquement (vue Aujourd'hui)
+  // Réordonnancement / déplacement des quêtes pour une date donnée
+  // - Sans targetStartMin : réordonnancement simple (vue "Aujourd'hui" par créneau/catégorie)
+  // - Avec targetStartMin (vue emploi du temps) : modification d'heure pour ce jour précis (+ swap si targetId)
+  const reorderQuestsForDate = useCallback(
+    (dateStr, draggedId, targetId, targetStartMin) => {
+      if (!draggedId || draggedId === targetId) return;
+
+      // Mode "emploi du temps" : on veut bouger/swapper les heures pour CE jour uniquement
+      if (typeof targetStartMin === 'number') {
+        // On ignore volontairement la ligne "Sans horaire" (24*60) pour le déplacement d'heure
+        if (targetStartMin >= 24 * 60) {
+          clearDrag();
+          return;
+        }
+
+        setAllQuests((prev) => {
+          if (!Array.isArray(prev) || prev.length === 0) return prev;
+
+          const next = prev.map((q) => ({ ...q }));
+          const sourceIndex = next.findIndex((q) => q.id === draggedId);
+          if (sourceIndex === -1) return prev;
+
+          const sourceQuest = { ...next[sourceIndex] };
+          const sourceMinutes = getHeureSortMinutes(sourceQuest, dateStr, prayerLocation);
+
+          const minutesToHeure = (min) => {
+            const safeMin = Math.max(0, Math.min(min, 23 * 60 + 59));
+            const h = Math.floor(safeMin / 60);
+            const m = safeMin % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+          };
+
+          const ensureOverrides = (quest) => {
+            const current = quest.heureOverrides && typeof quest.heureOverrides === 'object'
+              ? quest.heureOverrides
+              : {};
+            quest.heureOverrides = { ...current };
+          };
+
+          if (targetId != null) {
+            const targetIndex = next.findIndex((q) => q.id === targetId);
+            if (targetIndex === -1) return prev;
+            const targetQuest = { ...next[targetIndex] };
+
+            const targetMinutesExisting = getHeureSortMinutes(targetQuest, dateStr, prayerLocation);
+
+            ensureOverrides(sourceQuest);
+            ensureOverrides(targetQuest);
+
+            // Le dragged prend l'heure du slot cible (targetStartMin),
+            // la cible prend l'heure d'origine du dragged (swap pour ce jour)
+            sourceQuest.heureOverrides[dateStr] = minutesToHeure(targetStartMin);
+            targetQuest.heureOverrides[dateStr] = minutesToHeure(sourceMinutes);
+
+            next[sourceIndex] = sourceQuest;
+            next[targetIndex] = targetQuest;
+          } else {
+            // Drop dans une case vide : on ne fait que déplacer l'heure du dragged pour ce jour
+            ensureOverrides(sourceQuest);
+            sourceQuest.heureOverrides[dateStr] = minutesToHeure(targetStartMin);
+            next[sourceIndex] = sourceQuest;
+          }
+
+          return next;
+        });
+
+        clearDrag();
+        return;
+      }
+
+      // Mode réordonnancement "classique" (liste du jour, par créneau / catégorie)
+      if (!targetId) return;
+
+      const questsForDate = getQuestsForDateMemoized(dateStr);
+      const fromIdx = questsForDate.findIndex((q) => q.id === draggedId);
+      const toIdx = questsForDate.findIndex((q) => q.id === targetId);
+      if (fromIdx === -1 || toIdx === -1) return;
+
+      const reordered = [...questsForDate];
+      const [moved] = reordered.splice(fromIdx, 1);
+      reordered.splice(toIdx, 0, moved);
+
+      const dayIds = new Set(reordered.map((q) => q.id));
+      const fullSorted = [...allQuests].sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+      const dayIndices = [];
+      fullSorted.forEach((q, i) => {
+        if (dayIds.has(q.id)) dayIndices.push(i);
+      });
+      const newFull = [...fullSorted];
+      for (let j = 0; j < reordered.length; j++) {
+        newFull[dayIndices[j]] = reordered[j];
+      }
+      setAllQuests(newFull.map((q, i) => ({ ...q, ordre: i + 1 })));
+      clearDrag();
+    },
+    [allQuests, setAllQuests, getQuestsForDateMemoized, clearDrag, prayerLocation]
+  );
+
+  // Réordonnancement des quêtes du jour (wrapper pratique pour la vue "Aujourd'hui")
   const reorderTodayQuests = useCallback((draggedId, targetId) => {
-    if (!draggedId || !targetId || draggedId === targetId) return;
-    const questsToday = getQuestsForDateMemoized(todayDate);
-    const fromIdx = questsToday.findIndex((q) => q.id === draggedId);
-    const toIdx = questsToday.findIndex((q) => q.id === targetId);
-    if (fromIdx === -1 || toIdx === -1) return;
-
-    const reordered = [...questsToday];
-    const [moved] = reordered.splice(fromIdx, 1);
-    reordered.splice(toIdx, 0, moved);
-
-    const todayIds = new Set(reordered.map((q) => q.id));
-    const fullSorted = [...allQuests].sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
-    const todayIndices = [];
-    fullSorted.forEach((q, i) => {
-      if (todayIds.has(q.id)) todayIndices.push(i);
-    });
-    const newFull = [...fullSorted];
-    for (let j = 0; j < reordered.length; j++) {
-      newFull[todayIndices[j]] = reordered[j];
-    }
-    setAllQuests(newFull.map((q, i) => ({ ...q, ordre: i + 1 })));
-    clearDrag();
-  }, [allQuests, setAllQuests, getQuestsForDateMemoized, todayDate, clearDrag]);
+    reorderQuestsForDate(todayDate, draggedId, targetId);
+  }, [reorderQuestsForDate, todayDate]);
 
   // Synchroniser les toggles effectués depuis la sidebar (InteractiveQuestsModule)
   const handleExternalQuestToggle = useCallback((data) => {
@@ -226,6 +304,7 @@ const QuestsTab = () => {
       openEditQuestPopup={openEditQuestPopup}
       startDrag={startDrag}
       onReorderToday={reorderTodayQuests}
+      onReorderForDate={reorderQuestsForDate}
       draggedQuestId={draggedQuestId}
       clearDrag={clearDrag}
       deleteQuest={deleteQuest}

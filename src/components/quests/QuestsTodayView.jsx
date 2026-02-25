@@ -37,6 +37,7 @@ const QuestsTodayView = ({
   openEditQuestPopup,
   startDrag,
   onReorderToday,
+  onReorderForDate,
   draggedQuestId,
   clearDrag,
   deleteQuest,
@@ -71,11 +72,20 @@ const QuestsTodayView = ({
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e, targetId) => {
+  const handleDrop = (e, targetId, dateStr, slotStartMin) => {
     e.preventDefault();
     const raw = e.dataTransfer.getData('text/plain');
     const draggedId = draggedQuestId ?? (raw ? (Number(raw) || raw) : null);
-    if (onReorderToday && draggedId && targetId && draggedId !== targetId) onReorderToday(draggedId, targetId);
+    if (draggedId && draggedId !== targetId) {
+      // Vue emploi du temps : on passe aussi le créneau cible (slotStartMin)
+      if (dateStr && typeof slotStartMin === 'number' && onReorderForDate) {
+        onReorderForDate(dateStr, draggedId, targetId || null, slotStartMin);
+      } else if (dateStr && targetId && onReorderForDate) {
+        onReorderForDate(dateStr, draggedId, targetId);
+      } else if (targetId && onReorderToday) {
+        onReorderToday(draggedId, targetId);
+      }
+    }
     if (clearDrag) clearDrag();
   };
 
@@ -132,43 +142,206 @@ const QuestsTodayView = ({
     }
     const dates = timetableScope === 'day' ? [today] : weekDates;
     const uniqueStartMinutes = new Set();
+    const importantMinutes = new Set(); // heures exactes de début/fin des quêtes
     dates.forEach((dateStr) => {
       const quests = getQuestsForDate(dateStr) || [];
       quests.forEach((quest) => {
         const startMin = getHeureSortMinutes(quest, dateStr, prayerLocation);
-        if (startMin < 24 * 60) uniqueStartMinutes.add(startMin);
+        if (startMin >= 0 && startMin < 24 * 60) {
+          uniqueStartMinutes.add(startMin);
+          importantMinutes.add(startMin);
+        }
+
+        // Ajouter aussi les heures de fin exactes pour les tâches avec durée
+        const dureeMin =
+          typeof quest.duree === 'number' && quest.duree > 0 ? quest.duree : 0;
+        if (startMin >= 0 && startMin < 24 * 60 && dureeMin > 0) {
+          const endMin = startMin + dureeMin;
+          if (endMin > 0 && endMin < 24 * 60) {
+            uniqueStartMinutes.add(endMin);
+            importantMinutes.add(endMin);
+          }
+        }
       });
     });
-    const sortedMinutes = Array.from(uniqueStartMinutes).sort((a, b) => a - b);
+    // Grille de 15 minutes pour un rendu continu (de 06h00 à ~22h45)
+    const dayStartMin = 6 * 60;
+    const dayEndMin = 22 * 60 + 45;
+    for (let min = dayStartMin; min <= dayEndMin; min += 15) {
+      uniqueStartMinutes.add(min);
+    }
     const minutesForSlots =
-      sortedMinutes.length > 0 ? sortedMinutes : [8 * 60, 12 * 60, 18 * 60];
+      uniqueStartMinutes.size > 0
+        ? Array.from(uniqueStartMinutes).sort((a, b) => a - b)
+        : [8 * 60, 12 * 60, 18 * 60];
     const slots = minutesForSlots.map((min) => {
       const h = Math.floor(min / 60);
       const m = min % 60;
       return {
-        label: `${String(h).padStart(2, '0')}h${String(m).padStart(2, '0')}`,
         startMin: min,
+        isImportant: importantMinutes.has(min),
+        label: `${String(h).padStart(2, '0')}h${String(m).padStart(2, '0')}`,
       };
     });
-    slots.push({ label: 'Sans horaire', startMin: 24 * 60 });
+    slots.push({ startMin: 24 * 60, isImportant: false, label: 'Sans horaire' });
 
     const grid = dates.map((dateStr) => {
       const quests = getQuestsForDate(dateStr) || [];
       const row = slots.map(() => []);
+
+      // Intervalles bloquants pour les prières (Maghrib, Isha, etc.)
+      const prayerBlocks = [];
+      quests.forEach((quest) => {
+        const isPrayer = quest.priere || quest.categorie === 'Prière';
+        if (!isPrayer) return;
+        const startMin = getHeureSortMinutes(quest, dateStr, prayerLocation);
+        if (startMin < 0 || startMin >= 24 * 60) return;
+        const dureeMin =
+          typeof quest.duree === 'number' && quest.duree > 0 ? quest.duree : 15;
+        const endMin = Math.min(24 * 60, startMin + dureeMin);
+        prayerBlocks.push({ start: startMin, end: endMin });
+      });
+
       quests.forEach((quest) => {
         const startMin = getHeureSortMinutes(quest, dateStr, prayerLocation);
-        if (startMin >= 24 * 60) {
-          row[row.length - 1].push(quest);
-        } else {
-          const slotIndex = slots.findIndex((s) => s.startMin === startMin);
-          if (slotIndex >= 0) row[slotIndex].push(quest);
-          else row[row.length - 1].push(quest);
+        const dureeMin =
+          typeof quest.duree === 'number' && quest.duree > 0 ? quest.duree : 0;
+
+        // Pas d'heure valide ou "sans horaire" → dernière ligne
+        if (startMin >= 24 * 60 || startMin < 0) {
+          row[row.length - 1].push({ quest, isStart: true });
+          return;
         }
+
+        const totalEndMin = Math.min(24 * 60, startMin + dureeMin);
+        if (!dureeMin || totalEndMin <= startMin) {
+          const startIndex = slots.findIndex((s) => s.startMin === startMin);
+          if (startIndex >= 0) {
+            row[startIndex].push({ quest, isStart: true });
+          } else {
+            row[row.length - 1].push({ quest, isStart: true });
+          }
+          return;
+        }
+
+        const isPrayerQuest = quest.priere || quest.categorie === 'Prière';
+
+        // Construire des segments [segStart, segEnd] en soustrayant les blocs de prière
+        const segments = [];
+        if (isPrayerQuest || prayerBlocks.length === 0) {
+          segments.push({ start: startMin, end: totalEndMin });
+        } else {
+          let currentStart = startMin;
+          const sortedBlocks = [...prayerBlocks].sort((a, b) => a.start - b.start);
+          sortedBlocks.forEach((b) => {
+            if (b.end <= currentStart || b.start >= totalEndMin) {
+              return;
+            }
+            if (b.start > currentStart) {
+              segments.push({ start: currentStart, end: Math.min(b.start, totalEndMin) });
+            }
+            currentStart = Math.max(currentStart, b.end);
+          });
+          if (currentStart < totalEndMin) {
+            segments.push({ start: currentStart, end: totalEndMin });
+          }
+        }
+
+        segments.forEach(({ start, end }) => {
+          slots.forEach((slot, idx) => {
+            const t = slot.startMin;
+            if (t < start || t >= end) return;
+            const isStartSeg = t === start;
+            row[idx].push({ quest, isStart: isStartSeg });
+          });
+        });
       });
+
       return row;
     });
+
+    // Plages vides > 3 h : dans la marge, n'afficher que les heures (HHh00)
+    const LONG_EMPTY_SLOTS = 12; // 12 × 15 min = 3 h
+    const inLongEmptyGap = new Set();
+    const numSlots = slots.length - 1; // exclure la ligne "Sans horaire"
+    grid.forEach((dayRows) => {
+      let runStart = -1;
+      for (let i = 0; i < numSlots; i++) {
+        const isEmpty = !(dayRows[i] && dayRows[i].length > 0);
+        if (isEmpty) {
+          if (runStart === -1) runStart = i;
+        } else {
+          if (runStart !== -1) {
+            if (i - runStart >= LONG_EMPTY_SLOTS) {
+              for (let j = runStart; j < i; j++) inLongEmptyGap.add(j);
+            }
+            runStart = -1;
+          }
+        }
+      }
+      if (runStart !== -1 && numSlots - runStart >= LONG_EMPTY_SLOTS) {
+        for (let j = runStart; j < numSlots; j++) inLongEmptyGap.add(j);
+      }
+    });
+    // Lignes globalement vides (aucune quête sur aucun jour)
+    const fullyEmptySlots = Array.from({ length: slots.length }, () => true);
+    grid.forEach((dayRows) => {
+      dayRows.forEach((cellList, slotIndex) => {
+        if (cellList && cellList.length > 0) {
+          fullyEmptySlots[slotIndex] = false;
+        }
+      });
+    });
+
+    slots.forEach((slot, i) => {
+      slot.inLongEmptyGap = inLongEmptyGap.has(i);
+      slot.isFullyEmpty = i < numSlots ? fullyEmptySlots[i] : false;
+    });
+
     return { timetableSlots: slots, timetableGrid: grid, timetableDates: dates };
   }, [viewMode, timetableScope, today, weekDates, getQuestsForDate, prayerLocation]);
+
+  // Pré-calcul des cellules avec rowSpan pour que chaque quête apparaisse
+  // comme un seul bloc vertical continu entre son heure de début et de fin.
+  const timetableCells = useMemo(() => {
+    if (!timetableGrid || !timetableSlots.length || !timetableDates.length) return null;
+
+    const slotCount = timetableSlots.length;
+    const dayCount = timetableDates.length;
+
+    const cells = Array.from({ length: slotCount }, () =>
+      Array.from({ length: dayCount }, () => ({ type: 'empty', span: 1, quest: null }))
+    );
+
+    for (let dayIndex = 0; dayIndex < dayCount; dayIndex += 1) {
+      const dayRows = timetableGrid[dayIndex] || [];
+      for (let slotIndex = 0; slotIndex < slotCount; slotIndex += 1) {
+        if (cells[slotIndex][dayIndex].type !== 'empty') continue;
+        const list = (dayRows[slotIndex] || []);
+        if (!list.length) continue;
+        const startCell = list.find((c) => c.isStart);
+        if (!startCell) continue;
+
+        const questId = startCell.quest.id;
+        let span = 1;
+        for (let nextSlot = slotIndex + 1; nextSlot < slotCount; nextSlot += 1) {
+          const nextList = (dayRows[nextSlot] || []);
+          if (nextList.some((c) => c.quest && c.quest.id === questId)) {
+            span += 1;
+          } else {
+            break;
+          }
+        }
+
+        cells[slotIndex][dayIndex] = { type: 'start', span, quest: startCell.quest };
+        for (let covered = slotIndex + 1; covered < slotIndex + span; covered += 1) {
+          cells[covered][dayIndex] = { type: 'skip', span: 0, quest: null };
+        }
+      }
+    }
+
+    return cells;
+  }, [timetableGrid, timetableSlots, timetableDates]);
 
   const renderQuestCard = (quest, index, listForDrag) => {
     const completed = isQuestCompletedOnDate(quest.id, today);
@@ -257,33 +430,58 @@ const QuestsTodayView = ({
   );
   };
 
-  const renderTimetableQuestChip = (quest, dateStr) => {
+  const renderTimetableQuestBlock = (quest, dateStr, rowSpan) => {
     const completed = isQuestCompletedOnDate(quest.id, dateStr);
     const xp = quest.xp ?? calculateQuestXP(quest);
+    const isDragging = draggedQuestId != null && draggedQuestId === quest.id;
+    const canDrag = Boolean((onReorderForDate || onReorderToday) && (timetableGrid?.length ?? 0) > 0);
+
+    // Hauteur basée sur un nombre fixe de pixels par créneau pour rester parfaitement aligné à la grille
+    const span = rowSpan && rowSpan > 0 ? rowSpan : 1;
+    const baseRowHeight = 40; // doit correspondre à min-h-[2.5rem] des cellules
+    const minHeight = 40;
+    const blockHeight = Math.max(minHeight, span * baseRowHeight);
+
+    const heureDisplay = getHeureDisplay(quest, dateStr, prayerLocation);
+
     return (
       <div
-        key={quest.id}
+        key={`${quest.id}-${dateStr}`}
         role="button"
         tabIndex={0}
+        draggable={canDrag}
+        onDragStart={(e) => canDrag && handleDragStart(e, quest.id)}
+        onDragOver={(e) => canDrag && handleDragOver(e, quest.id)}
+        onDragEnd={handleDragEnd}
         onClick={() => openEditQuestPopup?.(quest.id)}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditQuestPopup?.(quest.id); } }}
-        className={`group flex items-center gap-2 rounded-lg border px-2 py-1.5 text-[11px] bg-slate-800/90 border-slate-600 hover:border-emerald-400/60 cursor-pointer transition-colors ${
+        className={`group flex items-center gap-2 rounded-lg border px-2 py-1 text-[10px] bg-slate-800/90 border-slate-600 hover:border-emerald-400/60 transition-colors ${
           completed ? 'ring-1 ring-emerald-400/50' : ''
-        }`}
+        } ${canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${isDragging ? 'opacity-60 scale-[0.98]' : ''}`}
+        style={{ minHeight: `${blockHeight}px` }}
         title={`${quest.nom} – Cliquer pour modifier`}
       >
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); toggleQuestValidation(quest.id, dateStr); }}
-          className={`shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
+          className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] ${
             completed ? 'bg-emerald-500/80 text-white' : 'bg-slate-600 text-slate-400'
           }`}
           title="Cocher / décocher"
         >
           {completed ? '✓' : ''}
         </button>
-        <span className="flex-1 min-w-0 truncate font-medium text-slate-200">{quest.nom}</span>
-        <span className="shrink-0 text-emerald-400/90 text-[10px]">{xp} XP</span>
+        <div className="flex-1 min-w-0 space-y-0">
+          {heureDisplay && (
+            <div className="text-[9px] text-amber-300/90 font-mono leading-tight">
+              {heureDisplay}
+            </div>
+          )}
+          <div className="truncate font-medium text-slate-200">
+            {quest.nom}
+          </div>
+        </div>
+        <span className="shrink-0 text-emerald-400/90 text-[9px]">{xp} XP</span>
         {deleteQuest && (
           <button
             type="button"
@@ -422,7 +620,7 @@ const QuestsTodayView = ({
             <table className="w-full min-w-[320px] text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-700">
-                  <th className="sticky left-0 z-10 w-20 min-w-[5rem] bg-slate-800/95 py-3 px-2 text-left text-slate-400 font-semibold uppercase tracking-wider">
+                  <th className="sticky left-0 z-10 w-16 min-w-[4rem] bg-slate-800/95 py-1.5 px-1.5 text-left text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                     Heure
                   </th>
                   {timetableDates.map((dateStr) => {
@@ -436,7 +634,7 @@ const QuestsTodayView = ({
                     return (
                       <th
                         key={dateStr}
-                        className={`min-w-[120px] py-3 px-2 text-center font-semibold border-l border-slate-700/80 ${
+                        className={`min-w-[100px] py-1.5 px-1.5 text-center font-semibold border-l border-slate-700/80 text-[10px] ${
                           isToday ? 'bg-cyan-500/15 text-cyan-300' : 'bg-slate-800/80 text-slate-300'
                         }`}
                       >
@@ -447,34 +645,98 @@ const QuestsTodayView = ({
                 </tr>
               </thead>
               <tbody>
-                {timetableSlots.map((slot, slotIndex) => (
-                  <tr
-                    key={slot.label}
-                    className={`border-b border-slate-700/80 hover:bg-slate-800/30 ${
-                      slot.startMin >= 24 * 60 ? 'bg-slate-800/40' : ''
-                    }`}
-                  >
-                    <td className="sticky left-0 z-10 py-2 px-2 bg-slate-800/95 border-r border-slate-700/80 text-slate-400 font-mono text-[11px] whitespace-nowrap">
-                      {slot.label}
-                    </td>
-                    {timetableDates.map((dateStr, dayIndex) => {
-                      const quests = timetableGrid[dayIndex][slotIndex] || [];
+                {timetableSlots.map((slot, slotIndex) => {
+                  const isSansHoraire = slot.startMin >= 24 * 60;
+                  const inLongGap = !isSansHoraire && slot.inLongEmptyGap;
+                  const isQuarterInLongGap = inLongGap && slot.startMin % 60 !== 0;
+                  const showRowBorder =
+                    // On enlève les interlignes des 15 minutes UNIQUEMENT dans les grands trous vides (> 3h)
+                    !isQuarterInLongGap;
+                  return (
+                    <tr
+                      key={slot.label}
+                      className={`${showRowBorder ? 'border-b border-slate-700/80' : ''} hover:bg-slate-800/30 ${
+                        isSansHoraire ? 'bg-slate-800/40' : ''
+                      }`}
+                    >
+                      <td className="sticky left-0 z-10 px-1.5 py-2 bg-slate-800/95 border-r border-slate-700/80 text-slate-400 font-mono text-[10px] whitespace-nowrap">
+                        {isSansHoraire
+                          ? slot.label
+                          : slot.inLongEmptyGap
+                            ? slot.startMin % 60 === 0
+                              ? `${String(Math.floor(slot.startMin / 60)).padStart(2, '0')}h00`
+                              : '\u00A0'
+                            : slot.label}
+                      </td>
+                      {timetableDates.map((dateStr, dayIndex) => {
+                      const cellInfo =
+                        (timetableCells &&
+                          timetableCells[slotIndex] &&
+                          timetableCells[slotIndex][dayIndex]) ||
+                        { type: 'empty', span: 1, quest: null };
+
+                      // Cellule couverte par un rowSpan depuis une ligne précédente
+                      if (cellInfo.type === 'skip') {
+                        return null;
+                      }
+
                       const isToday = dateStr === today;
+
+                      if (cellInfo.type === 'start' && cellInfo.quest) {
+                        return (
+                          <td
+                            key={dateStr}
+                            rowSpan={cellInfo.span}
+                            className={`align-top py-1.5 px-1.5 border-l border-slate-700/60 min-h-[2.5rem] ${
+                              isToday ? 'bg-cyan-500/5' : ''
+                            }`}
+                            onDragOver={(e) => {
+                              if (draggedQuestId != null && (onReorderForDate || onReorderToday)) {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
+                              }
+                            }}
+                            onDrop={(e) => {
+                              if (draggedQuestId != null) {
+                                handleDrop(e, null, dateStr, slot.startMin);
+                              }
+                            }}
+                          >
+                            <div className="space-y-1">
+                              {renderTimetableQuestBlock(
+                                cellInfo.quest,
+                                dateStr,
+                                cellInfo.span
+                              )}
+                            </div>
+                          </td>
+                        );
+                      }
+
+                      // Cellule vide (aucune quête sur ce créneau pour ce jour)
                       return (
                         <td
                           key={dateStr}
                           className={`align-top py-1.5 px-1.5 border-l border-slate-700/60 min-h-[2.5rem] ${
                             isToday ? 'bg-cyan-500/5' : ''
                           }`}
-                        >
-                          <div className="space-y-1">
-                            {quests.map((quest) => renderTimetableQuestChip(quest, dateStr))}
-                          </div>
-                        </td>
+                          onDragOver={(e) => {
+                            if (draggedQuestId != null && (onReorderForDate || onReorderToday)) {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                            }
+                          }}
+                          onDrop={(e) => {
+                            if (draggedQuestId != null) {
+                              handleDrop(e, null, dateStr, slot.startMin);
+                            }
+                          }}
+                        />
                       );
                     })}
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>
@@ -543,6 +805,7 @@ export default React.memo(QuestsTodayView, (prevProps, nextProps) => {
     prevProps.todayDate === nextProps.todayDate &&
     prevProps.startDrag === nextProps.startDrag &&
     prevProps.onReorderToday === nextProps.onReorderToday &&
+    prevProps.onReorderForDate === nextProps.onReorderForDate &&
     prevProps.draggedQuestId === nextProps.draggedQuestId &&
     prevProps.clearDrag === nextProps.clearDrag &&
     prevProps.deleteQuest === nextProps.deleteQuest

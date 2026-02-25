@@ -306,3 +306,5 @@ console.log('[DEBUG] Clés sauvegardées:', Object.keys(updatedReps), Object.key
 ## Conclusion
 
 Le problème principal est une **incohérence dans l'utilisation des IDs** entre le formulaire, la sauvegarde et la lecture. La solution est d'**unifier la logique** pour utiliser `currentWorkout.exercices` comme source unique de vérité pour les IDs, et de s'assurer que ces IDs sont bien convertis pour les programmes personnalisés.
+
+

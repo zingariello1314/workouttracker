@@ -39,15 +39,26 @@ function addMinutesToTime(timeStr, deltaMinutes) {
  * @param {{ lat: number, lng: number }} [prayerLocation] - Position pour calcul prière
  */
 export function getHeureSortMinutes(quest, targetDateStr, prayerLocation) {
-  if (quest?.priere && targetDateStr && prayerLocation) {
+  if (!quest) return 24 * 60;
+  // Surcharge d'heure spécifique à une date (ex: déplacement ponctuel dans l'emploi du temps)
+  if (
+    !quest.priere &&
+    targetDateStr &&
+    quest.heureOverrides &&
+    Object.prototype.hasOwnProperty.call(quest.heureOverrides, targetDateStr)
+  ) {
+    const overrideHeure = quest.heureOverrides[targetDateStr];
+    return overrideHeure ? parseHeureToMinutes(overrideHeure) : 24 * 60;
+  }
+  if (quest.priere && targetDateStr && prayerLocation) {
     const h = getPrayerTimeForDate(targetDateStr, quest.priere, prayerLocation);
     if (h) return parseHeureToMinutes(h);
   }
-  if (quest?.heureType === 'creneau' && quest?.creneau) {
+  if (quest.heureType === 'creneau' && quest.creneau) {
     const c = CRENEAUX.find((x) => x.value === quest.creneau);
     return c ? parseHeureToMinutes(c.start) : 24 * 60;
   }
-  return parseHeureToMinutes(quest?.heure);
+  return parseHeureToMinutes(quest.heure);
 }
 
 /**
@@ -62,6 +73,22 @@ export function getHeureSortMinutes(quest, targetDateStr, prayerLocation) {
  */
 export function getHeureDisplay(quest, targetDateStr, prayerLocation) {
   if (!quest) return '';
+  // Surcharge spécifique à une date pour les quêtes à heure fixe
+  if (
+    !quest.priere &&
+    targetDateStr &&
+    quest.heureOverrides &&
+    Object.prototype.hasOwnProperty.call(quest.heureOverrides, targetDateStr)
+  ) {
+    const overrideHeure = quest.heureOverrides[targetDateStr];
+    if (!overrideHeure) return '';
+    const duree = typeof quest.duree === 'number' && quest.duree > 0 ? quest.duree : 0;
+    if (duree > 0) {
+      const end = addMinutesToTime(overrideHeure, duree);
+      return `${overrideHeure} – ${end}`;
+    }
+    return overrideHeure;
+  }
   if (quest.priere && targetDateStr && prayerLocation) {
     const h = getPrayerTimeForDate(targetDateStr, quest.priere, prayerLocation);
     if (h) return h;
