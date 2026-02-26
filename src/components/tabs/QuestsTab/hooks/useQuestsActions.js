@@ -62,7 +62,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
   }, []);
 
   const openEditQuestPopup = useCallback((id) => {
-    const quest = allQuests.find((q) => q.id === id);
+    const quest = allQuests.find((q) => String(q.id) === String(id));
     if (!quest) return;
     setEditingQuestId(id);
     setQuestForm({
@@ -113,7 +113,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
     setAllQuests((prev) => {
       if (isEditing) {
         const updated = prev.map((q) =>
-          q.id === editingQuestId
+          String(q.id) === String(editingQuestId)
             ? {
                 ...q,
                 ...validatedQuest,
@@ -148,13 +148,15 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
 
   const toggleQuestActive = useCallback((id) => {
     setAllQuests((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, active: !q.active } : q))
+      prev.map((q) =>
+        String(q.id) === String(id) ? { ...q, active: !q.active } : q
+      )
     );
     emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: id });
   }, [setAllQuests]);
 
   const deleteQuest = useCallback((id) => {
-    const quest = allQuests.find((q) => q.id === id);
+    const quest = allQuests.find((q) => String(q.id) === String(id));
     const questName = quest?.nom || 'cette quête';
     if (
       !window.confirm(
@@ -162,13 +164,13 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       )
     )
       return;
-    setAllQuests((prev) => prev.filter((q) => q.id !== id));
+    setAllQuests((prev) => prev.filter((q) => String(q.id) !== String(id)));
     emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: id, deleted: true });
     showSuccess(`Quête "${questName}" supprimée`);
   }, [allQuests, setAllQuests, showSuccess]);
 
   const duplicateQuest = useCallback((id) => {
-    const original = allQuests.find((q) => q.id === id);
+    const original = allQuests.find((q) => String(q.id) === String(id));
     if (!original) return;
 
     setAllQuests((prev) => {
