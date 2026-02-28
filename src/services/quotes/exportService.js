@@ -63,7 +63,7 @@ class ExportService {
   }
 
   /**
-   * Validate JSON structure
+   * Validate JSON structure (accepts legacy and new quote format)
    */
   validateJSON(jsonString) {
     const errors = [];
@@ -71,46 +71,38 @@ class ExportService {
     try {
       const data = JSON.parse(jsonString);
 
-      // Check version
       if (!data.version) {
         errors.push('Missing version field');
       }
 
-      // Check quotes array
       if (!Array.isArray(data.quotes)) {
         errors.push('Quotes must be an array');
       } else {
-        // Validate each quote
         data.quotes.forEach((quote, index) => {
-          const requiredFields = [
-            'id',
-            'line1Fr',
-            'line2Fr',
-            'line3Fr',
-            'line1En',
-            'line2En',
-            'line3En',
-            'isPinned',
-            'order',
-            'createdAt',
-            'updatedAt',
-          ];
-
-          requiredFields.forEach((field) => {
-            if (quote[field] === undefined) {
-              errors.push(`Quote ${index}: missing field ${field}`);
-            }
-          });
+          if (!quote || typeof quote.id !== 'string') {
+            errors.push(`Quote ${index}: missing or invalid id`);
+            return;
+          }
+          const hasLegacy = typeof quote.line1Fr === 'string' && typeof quote.line2Fr === 'string' && typeof quote.line3Fr === 'string';
+          const hasNew = typeof quote.textFr === 'string' && quote.textFr.trim() !== '';
+          if (!hasLegacy && !hasNew) {
+            errors.push(`Quote ${index}: must have either line1Fr/line2Fr/line3Fr (and EN) or textFr`);
+          }
+          if (hasLegacy) {
+            const en = ['line1En', 'line2En', 'line3En'];
+            en.forEach((f) => {
+              if (quote[f] === undefined || quote[f] === null) {
+                errors.push(`Quote ${index}: missing ${f}`);
+              }
+            });
+          }
         });
       }
 
-      // Check settings
       if (!data.settings) {
         errors.push('Missing settings object');
-      } else {
-        if (!['random', 'fixed'].includes(data.settings.mode)) {
-          errors.push('Invalid settings mode');
-        }
+      } else if (data.settings && !['random', 'fixed'].includes(data.settings.mode)) {
+        errors.push('Invalid settings mode');
       }
 
       return {

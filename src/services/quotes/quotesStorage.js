@@ -242,12 +242,16 @@ class QuotesStorage {
       throw new Error('QUOTE_NOT_FOUND');
     }
 
-    const updated = {
+    let updated = {
       ...existing,
       ...updates,
-      id, // Ensure ID doesn't change
+      id,
       updatedAt: Date.now(),
     };
+
+    if (updates.textFr !== undefined) {
+      ['line1Fr', 'line2Fr', 'line3Fr', 'line1En', 'line2En', 'line3En'].forEach((k) => delete updated[k]);
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([QUOTES_STORE], 'readwrite');

@@ -1,71 +1,62 @@
 /**
  * AddQuoteForm Component
- * Form to add new quotes with 6 fields (3 FR + 3 EN)
+ * Form to add new quotes: one text per language (FR required, EN optional) + bold line range
  */
 
 import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
-import { Input } from '../ui/Input';
+import quotesService from '../../services/quotes/quotesService';
+
+const DEFAULT_BOLD_START = 2;
+const DEFAULT_BOLD_END = 2;
 
 export function AddQuoteForm({ onAdd, onCancel }) {
   const [formData, setFormData] = useState({
-    line1Fr: '',
-    line2Fr: '',
-    line3Fr: '',
-    line1En: '',
-    line2En: '',
-    line3En: '',
+    textFr: '',
+    textEn: '',
+    boldLineStart: DEFAULT_BOLD_START,
+    boldLineEnd: DEFAULT_BOLD_END,
   });
 
   const [errors, setErrors] = useState({});
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field
+    if (field === 'boldLineStart' || field === 'boldLineEnd') {
+      const n = parseInt(value, 10);
+      setFormData((prev) => ({ ...prev, [field]: isNaN(n) ? '' : n }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
   };
 
-  const validate = () => {
-    const newErrors = {};
-    
-    // Check all fields are filled
-    Object.keys(formData).forEach((key) => {
-      if (!formData[key].trim()) {
-        newErrors[key] = 'Ce champ est requis';
-      }
-    });
-
-    // Check length limits
-    Object.keys(formData).forEach((key) => {
-      if (formData[key].length > 100) {
-        newErrors[key] = 'Maximum 100 caractères';
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validate()) {
+    setErrors({});
+
+    const payload = {
+      textFr: formData.textFr.trim(),
+      textEn: formData.textEn.trim(),
+      boldLineStart: formData.boldLineStart === '' ? DEFAULT_BOLD_START : formData.boldLineStart,
+      boldLineEnd: formData.boldLineEnd === '' ? DEFAULT_BOLD_END : formData.boldLineEnd,
+    };
+
+    const validation = quotesService.validateQuote(payload);
+    if (!validation.valid) {
+      setErrors({ submit: validation.errors.join(', ') });
       return;
     }
 
-    const result = await onAdd(formData);
-    
+    const result = await onAdd(payload);
+
     if (result.success) {
-      // Reset form
       setFormData({
-        line1Fr: '',
-        line2Fr: '',
-        line3Fr: '',
-        line1En: '',
-        line2En: '',
-        line3En: '',
+        textFr: '',
+        textEn: '',
+        boldLineStart: DEFAULT_BOLD_START,
+        boldLineEnd: DEFAULT_BOLD_END,
       });
       setErrors({});
     } else {
@@ -88,84 +79,62 @@ export function AddQuoteForm({ onAdd, onCancel }) {
         )}
       </div>
 
-      {/* French Fields */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-slate-300">Français</label>
-        
-        <div>
-          <Input
-            placeholder="Ligne 1 (ex: N'attends rien,)"
-            value={formData.line1Fr}
-            onChange={(e) => handleChange('line1Fr', e.target.value)}
-            className={errors.line1Fr ? 'border-red-500' : ''}
-          />
-          {errors.line1Fr && <p className="text-xs text-red-400 mt-1">{errors.line1Fr}</p>}
-        </div>
+      {/* Français */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-300">Français (obligatoire)</label>
+        <textarea
+          placeholder="Saisissez la phrase en entier. Vous pouvez mettre des retours à la ligne ou laisser l’app découper automatiquement (~28 caractères par ligne)."
+          value={formData.textFr}
+          onChange={(e) => handleChange('textFr', e.target.value)}
+          rows={4}
+          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
+        />
+      </div>
 
-        <div>
-          <Input
-            placeholder="Ligne 2 - Mise en valeur (ex: Apprécie)"
-            value={formData.line2Fr}
-            onChange={(e) => handleChange('line2Fr', e.target.value)}
-            className={errors.line2Fr ? 'border-red-500' : ''}
-          />
-          {errors.line2Fr && <p className="text-xs text-red-400 mt-1">{errors.line2Fr}</p>}
-        </div>
+      {/* Anglais */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-300">English (optionnel)</label>
+        <textarea
+          placeholder="Traduction optionnelle. Si vide, le français sera affiché en mode anglais."
+          value={formData.textEn}
+          onChange={(e) => handleChange('textEn', e.target.value)}
+          rows={4}
+          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
+        />
+      </div>
 
-        <div>
-          <Input
-            placeholder="Ligne 3 (ex: tout.)"
-            value={formData.line3Fr}
-            onChange={(e) => handleChange('line3Fr', e.target.value)}
-            className={errors.line3Fr ? 'border-red-500' : ''}
+      {/* Lignes en gras */}
+      <div className="space-y-2 pt-2 border-t border-slate-600">
+        <label className="text-sm font-medium text-slate-300">Lignes en gras</label>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-slate-400 text-sm">De la ligne</span>
+          <input
+            type="number"
+            min={1}
+            max={10}
+            value={formData.boldLineStart === '' ? '' : formData.boldLineStart}
+            onChange={(e) => handleChange('boldLineStart', e.target.value)}
+            className="w-14 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-center"
           />
-          {errors.line3Fr && <p className="text-xs text-red-400 mt-1">{errors.line3Fr}</p>}
+          <span className="text-slate-400 text-sm">à la ligne</span>
+          <input
+            type="number"
+            min={1}
+            max={10}
+            value={formData.boldLineEnd === '' ? '' : formData.boldLineEnd}
+            onChange={(e) => handleChange('boldLineEnd', e.target.value)}
+            className="w-14 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-center"
+          />
+          <span className="text-slate-500 text-xs">(par défaut : 2 et 2)</span>
         </div>
       </div>
 
-      {/* English Fields */}
-      <div className="space-y-3 pt-4 border-t border-slate-600">
-        <label className="text-sm font-medium text-slate-300">English</label>
-        
-        <div>
-          <Input
-            placeholder="Line 1 (ex: Expect nothing,)"
-            value={formData.line1En}
-            onChange={(e) => handleChange('line1En', e.target.value)}
-            className={errors.line1En ? 'border-red-500' : ''}
-          />
-          {errors.line1En && <p className="text-xs text-red-400 mt-1">{errors.line1En}</p>}
-        </div>
-
-        <div>
-          <Input
-            placeholder="Line 2 - Emphasized (ex: Appreciate)"
-            value={formData.line2En}
-            onChange={(e) => handleChange('line2En', e.target.value)}
-            className={errors.line2En ? 'border-red-500' : ''}
-          />
-          {errors.line2En && <p className="text-xs text-red-400 mt-1">{errors.line2En}</p>}
-        </div>
-
-        <div>
-          <Input
-            placeholder="Line 3 (ex: everything.)"
-            value={formData.line3En}
-            onChange={(e) => handleChange('line3En', e.target.value)}
-            className={errors.line3En ? 'border-red-500' : ''}
-          />
-          {errors.line3En && <p className="text-xs text-red-400 mt-1">{errors.line3En}</p>}
-        </div>
-      </div>
-
-      {/* Submit Error */}
       {errors.submit && (
         <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded p-3">
           {errors.submit}
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex gap-2 pt-2">
         <button
           type="submit"

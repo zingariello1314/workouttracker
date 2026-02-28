@@ -63,6 +63,16 @@ export function useQuotes() {
   // Update quote
   const updateQuote = useCallback(async (id, updates) => {
     try {
+      if (updates.textFr !== undefined) {
+        const validation = quotesService.validateQuote(updates);
+        if (!validation.valid) {
+          throw new Error(validation.errors.join(', '));
+        }
+        const legacyKeys = ['line1Fr', 'line2Fr', 'line3Fr', 'line1En', 'line2En', 'line3En'];
+        const clean = { ...updates };
+        legacyKeys.forEach((k) => delete clean[k]);
+        updates = clean;
+      }
       const updated = await quotesStorage.updateQuote(id, updates);
       setQuotes((prev) => prev.map((q) => (q.id === id ? updated : q)));
       return { success: true, quote: updated };

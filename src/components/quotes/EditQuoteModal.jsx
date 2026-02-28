@@ -1,70 +1,87 @@
 /**
  * EditQuoteModal Component
- * Modal for editing existing quotes
+ * Modal for editing existing quotes (legacy line1/2/3 or new textFr/textEn)
+ * Saves always in new format (textFr, textEn, boldLineStart, boldLineEnd)
  */
 
 import React, { useState, useEffect } from 'react';
 import { Save, X } from 'lucide-react';
-import { Input } from '../ui/Input';
+import quotesService from '../../services/quotes/quotesService';
+
+const DEFAULT_BOLD_START = 2;
+const DEFAULT_BOLD_END = 2;
+
+function isLegacyQuote(quote) {
+  return quote && typeof quote.line1Fr === 'string';
+}
+
+/** Build textFr/textEn from legacy line1/2/3 for form display */
+function legacyToText(quote, lang) {
+  if (!quote) return '';
+  if (lang === 'fr') {
+    return [quote.line1Fr, quote.line2Fr, quote.line3Fr].filter(Boolean).join('\n');
+  }
+  return [quote.line1En, quote.line2En, quote.line3En].filter(Boolean).join('\n');
+}
 
 export function EditQuoteModal({ quote, onSave, onClose }) {
   const [formData, setFormData] = useState({
-    line1Fr: '',
-    line2Fr: '',
-    line3Fr: '',
-    line1En: '',
-    line2En: '',
-    line3En: '',
+    textFr: '',
+    textEn: '',
+    boldLineStart: DEFAULT_BOLD_START,
+    boldLineEnd: DEFAULT_BOLD_END,
   });
 
   const [errors, setErrors] = useState({});
 
-  // Initialize form with quote data
   useEffect(() => {
     if (quote) {
-      setFormData({
-        line1Fr: quote.line1Fr || '',
-        line2Fr: quote.line2Fr || '',
-        line3Fr: quote.line3Fr || '',
-        line1En: quote.line1En || '',
-        line2En: quote.line2En || '',
-        line3En: quote.line3En || '',
-      });
+      if (isLegacyQuote(quote)) {
+        setFormData({
+          textFr: legacyToText(quote, 'fr'),
+          textEn: legacyToText(quote, 'en'),
+          boldLineStart: DEFAULT_BOLD_START,
+          boldLineEnd: DEFAULT_BOLD_END,
+        });
+      } else {
+        setFormData({
+          textFr: quote.textFr || '',
+          textEn: quote.textEn != null ? quote.textEn : '',
+          boldLineStart: quote.boldLineStart ?? DEFAULT_BOLD_START,
+          boldLineEnd: quote.boldLineEnd ?? DEFAULT_BOLD_END,
+        });
+      }
     }
   }, [quote]);
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: null }));
+    if (field === 'boldLineStart' || field === 'boldLineEnd') {
+      const n = parseInt(value, 10);
+      setFormData((prev) => ({ ...prev, [field]: isNaN(n) ? '' : n }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
     }
-  };
-
-  const validate = () => {
-    const newErrors = {};
-    
-    Object.keys(formData).forEach((key) => {
-      if (!formData[key].trim()) {
-        newErrors[key] = 'Ce champ est requis';
-      }
-      if (formData[key].length > 100) {
-        newErrors[key] = 'Maximum 100 caractères';
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validate()) {
+    setErrors({});
+
+    const payload = {
+      textFr: formData.textFr.trim(),
+      textEn: formData.textEn.trim(),
+      boldLineStart: formData.boldLineStart === '' ? DEFAULT_BOLD_START : formData.boldLineStart,
+      boldLineEnd: formData.boldLineEnd === '' ? DEFAULT_BOLD_END : formData.boldLineEnd,
+    };
+
+    const validation = quotesService.validateQuote(payload);
+    if (!validation.valid) {
+      setErrors({ submit: validation.errors.join(', ') });
       return;
     }
 
-    const result = await onSave(quote.id, formData);
-    
+    const result = await onSave(quote.id, payload);
     if (result.success) {
       onClose();
     } else {
@@ -78,7 +95,6 @@ export function EditQuoteModal({ quote, onSave, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-white">Modifier la citation</h2>
             <button
@@ -90,84 +106,58 @@ export function EditQuoteModal({ quote, onSave, onClose }) {
             </button>
           </div>
 
-          {/* French Fields */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-slate-300">Français</label>
-            
-            <div>
-              <Input
-                placeholder="Ligne 1"
-                value={formData.line1Fr}
-                onChange={(e) => handleChange('line1Fr', e.target.value)}
-                className={errors.line1Fr ? 'border-red-500' : ''}
-              />
-              {errors.line1Fr && <p className="text-xs text-red-400 mt-1">{errors.line1Fr}</p>}
-            </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300">Français (obligatoire)</label>
+            <textarea
+              placeholder="Phrase en français..."
+              value={formData.textFr}
+              onChange={(e) => handleChange('textFr', e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
+            />
+          </div>
 
-            <div>
-              <Input
-                placeholder="Ligne 2 - Mise en valeur"
-                value={formData.line2Fr}
-                onChange={(e) => handleChange('line2Fr', e.target.value)}
-                className={errors.line2Fr ? 'border-red-500' : ''}
-              />
-              {errors.line2Fr && <p className="text-xs text-red-400 mt-1">{errors.line2Fr}</p>}
-            </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300">English (optionnel)</label>
+            <textarea
+              placeholder="Traduction optionnelle..."
+              value={formData.textEn}
+              onChange={(e) => handleChange('textEn', e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
+            />
+          </div>
 
-            <div>
-              <Input
-                placeholder="Ligne 3"
-                value={formData.line3Fr}
-                onChange={(e) => handleChange('line3Fr', e.target.value)}
-                className={errors.line3Fr ? 'border-red-500' : ''}
+          <div className="space-y-2 pt-2 border-t border-slate-600">
+            <label className="text-sm font-medium text-slate-300">Lignes en gras</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-slate-400 text-sm">De la ligne</span>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={formData.boldLineStart === '' ? '' : formData.boldLineStart}
+                onChange={(e) => handleChange('boldLineStart', e.target.value)}
+                className="w-14 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-center"
               />
-              {errors.line3Fr && <p className="text-xs text-red-400 mt-1">{errors.line3Fr}</p>}
+              <span className="text-slate-400 text-sm">à la ligne</span>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={formData.boldLineEnd === '' ? '' : formData.boldLineEnd}
+                onChange={(e) => handleChange('boldLineEnd', e.target.value)}
+                className="w-14 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-center"
+              />
             </div>
           </div>
 
-          {/* English Fields */}
-          <div className="space-y-3 pt-4 border-t border-slate-600">
-            <label className="text-sm font-medium text-slate-300">English</label>
-            
-            <div>
-              <Input
-                placeholder="Line 1"
-                value={formData.line1En}
-                onChange={(e) => handleChange('line1En', e.target.value)}
-                className={errors.line1En ? 'border-red-500' : ''}
-              />
-              {errors.line1En && <p className="text-xs text-red-400 mt-1">{errors.line1En}</p>}
-            </div>
-
-            <div>
-              <Input
-                placeholder="Line 2 - Emphasized"
-                value={formData.line2En}
-                onChange={(e) => handleChange('line2En', e.target.value)}
-                className={errors.line2En ? 'border-red-500' : ''}
-              />
-              {errors.line2En && <p className="text-xs text-red-400 mt-1">{errors.line2En}</p>}
-            </div>
-
-            <div>
-              <Input
-                placeholder="Line 3"
-                value={formData.line3En}
-                onChange={(e) => handleChange('line3En', e.target.value)}
-                className={errors.line3En ? 'border-red-500' : ''}
-              />
-              {errors.line3En && <p className="text-xs text-red-400 mt-1">{errors.line3En}</p>}
-            </div>
-          </div>
-
-          {/* Submit Error */}
           {errors.submit && (
             <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded p-3">
               {errors.submit}
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex gap-2 pt-4">
             <button
               type="submit"

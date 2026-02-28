@@ -664,31 +664,35 @@ const HomePage = () => {
       {/* Contenu principal */}
       <main className="relative z-10 flex-1 flex items-center justify-start px-8 pt-12 pb-12 min-h-0 overflow-hidden">
         <div className="max-w-2xl flex-shrink-0 w-full">
-          {/* Titre principal - Citations dynamiques avec ajustement automatique de la taille */}
-          <h1 
-            key={displayQuote ? `${displayQuote.line1}-${displayQuote.line2}-${displayQuote.line3}` : 'default'}
-            className="adaptive-quote-text font-light mb-10 animate-quote-fade-in" 
-            style={{ 
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              justifyContent: 'flex-start', 
+          {/* Titre principal - Citations dynamiques (lignes variables + gras paramétrable) */}
+          <h1
+            key={displayQuote ? displayQuote.lines.join('|') : 'default'}
+            className="adaptive-quote-text font-light mb-10 animate-quote-fade-in"
+            style={{
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
               gap: '0.25rem',
               animation: 'quoteFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards',
-              lineHeight: '1.2', /* Assurer un line-height suffisant */
-              paddingTop: '0.1em' /* Espace pour les ascendantes comme f, h, l */
+              lineHeight: '1.2',
+              paddingTop: '0.1em'
             }}
           >
             {quoteLoading ? (
               <>
                 <span className="text-white opacity-50">Chargement...</span>
               </>
-            ) : displayQuote ? (
-              <>
-                <span className="text-white">{displayQuote.line1}</span>
-                <span className="text-white font-bold">{displayQuote.line2}</span>
-                <span className="text-white">{displayQuote.line3}</span>
-              </>
+            ) : displayQuote && displayQuote.lines && displayQuote.lines.length > 0 ? (
+              displayQuote.lines.map((line, index) => {
+                const oneBased = index + 1;
+                const isBold = oneBased >= (displayQuote.boldFrom || 2) && oneBased <= (displayQuote.boldTo || 2);
+                return (
+                  <span key={index} className={isBold ? 'text-white font-bold' : 'text-white'}>
+                    {line}
+                  </span>
+                );
+              })
             ) : (
               <>
                 <span className="text-white">{t('home.title.line1')}</span>

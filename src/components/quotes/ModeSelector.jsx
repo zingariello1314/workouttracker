@@ -5,6 +5,14 @@
 
 import React from 'react';
 import { Shuffle, Pin } from 'lucide-react';
+import quotesService from '../../services/quotes/quotesService';
+
+function quotePreview(quote) {
+  if (!quote) return '';
+  const display = quotesService.formatQuoteForDisplay(quote, 'fr');
+  const text = display?.lines?.join(' ') ?? '';
+  return text.length > 60 ? text.slice(0, 57) + '…' : text;
+}
 
 export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixedQuoteChange }) {
   return (
@@ -67,7 +75,7 @@ export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixed
             <option value="">Sélectionner une citation...</option>
             {quotes.map((quote) => (
               <option key={quote.id} value={quote.id}>
-                {quote.line1Fr} {quote.line2Fr} {quote.line3Fr}
+                {quotePreview(quote)}
               </option>
             ))}
           </select>
