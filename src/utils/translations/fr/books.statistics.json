@@ -1,0 +1,22 @@
+{
+  "statistics": {
+    "title": "Statistiques de Lecture",
+    "subtitle": "Analyse de tes habitudes et de ta progression de lecture",
+    "metrics": {
+      "totalPages": "Pages lues",
+      "totalTime": "Temps total",
+      "averageSpeed": "Vitesse moyenne",
+      "currentStreak": "Série actuelle",
+      "relatedBooks": "Livres concernés",
+      "dailyGoal": "Objectif quotidien"
+    },
+    "charts": {
+      "title": "Graphiques"
+    },
+    "goals": {
+      "title": "Objectifs de Lecture",
+      "subtitle": "Définis et suis tes objectifs de lecture"
+    }
+  }
+}
+

@@ -57,62 +57,64 @@ const GenreDistributionChart = ({
   const [activeView, setActiveView] = useState(VIEW_TYPES.DISTRIBUTION);
   const [selectedGenre, setSelectedGenre] = useState(null);
 
-  // Calculer les données de répartition par genre
+  // Calculer les données de répartition par genre à partir des données déjà agrégées
   const genreData = useMemo(() => {
-    if (!statisticsData?.sessions || statisticsData.sessions.length === 0) {
+    const genreDist = statisticsData?.chartData?.genreDistribution;
+    if (!genreDist || (!genreDist.pie && !genreDist.bar)) {
       return { distributionData: [], speedData: [] };
     }
 
-    // Grouper les sessions par genre de livre
-    const genreStats = {};
-    
-    statisticsData.sessions.forEach(session => {
-      const book = books.find(b => b.id === session.bookId);
-      if (!book || !book.genre) return;
-      
-      const genre = book.genre;
-      if (!genreStats[genre]) {
-        genreStats[genre] = {
-          genre,
-          totalTime: 0,
-          totalPages: 0,
-          sessionCount: 0,
-          books: new Set()
+    const pie = Array.isArray(genreDist.pie) ? genreDist.pie : [];
+    const bar = Array.isArray(genreDist.bar) ? genreDist.bar : [];
+
+    if (pie.length === 0 || bar.length === 0) {
+      return { distributionData: [], speedData: [] };
+    }
+
+    // Répartition par genre basée sur le TEMPS (minutes) pour coller au texte du tooltip
+    const totalMinutes = pie.reduce((sum, g) => sum + (g.minutes || 0), 0);
+
+    const distributionData = pie
+      .map((g, index) => ({
+        genre: g.genre,
+        time: g.minutes || 0,
+        percentage: totalMinutes > 0 ? ((g.minutes || 0) / totalMinutes) * 100 : 0,
+        pages: g.pages || 0,
+        sessions: g.sessions || 0,
+        booksCount: g.books || 0,
+        color: GENRE_COLORS[index % GENRE_COLORS.length]
+      }))
+      .sort((a, b) => b.time - a.time);
+
+    // Vitesses par genre : utiliser les données \"bar\" fournies par le transformer
+    const minutesByGenre = pie.reduce((acc, g) => {
+      acc[g.genre] = g.minutes || 0;
+      return acc;
+    }, {});
+
+    const sessionsByGenre = pie.reduce((acc, g) => {
+      acc[g.genre] = g.sessions || 0;
+      return acc;
+    }, {});
+
+    const speedData = bar
+      .map((item, index) => {
+        const totalMinutes = minutesByGenre[item.genre] || 0;
+        const sessionCount = sessionsByGenre[item.genre] || 0;
+        const avgSessionTime = sessionCount > 0 ? totalMinutes / sessionCount : 0;
+
+        return {
+          genre: item.genre,
+          speed: item.speed || 0,
+          avgSessionTime,
+          totalPages: item.pages || 0,
+          color: GENRE_COLORS[index % GENRE_COLORS.length]
         };
-      }
-      
-      genreStats[genre].totalTime += session.durationMinutes;
-      genreStats[genre].totalPages += session.pagesRead;
-      genreStats[genre].sessionCount += 1;
-      genreStats[genre].books.add(session.bookId);
-    });
-
-    // Convertir en tableaux pour les graphiques
-    const genres = Object.values(genreStats);
-    const totalTime = genres.reduce((sum, genre) => sum + genre.totalTime, 0);
-
-    // Données pour le graphique en secteurs (répartition du temps)
-    const distributionData = genres.map((genre, index) => ({
-      genre: genre.genre,
-      time: genre.totalTime,
-      percentage: totalTime > 0 ? (genre.totalTime / totalTime * 100) : 0,
-      pages: genre.totalPages,
-      sessions: genre.sessionCount,
-      booksCount: genre.books.size,
-      color: GENRE_COLORS[index % GENRE_COLORS.length]
-    })).sort((a, b) => b.time - a.time);
-
-    // Données pour le graphique en barres (vitesses par genre)
-    const speedData = genres.map((genre, index) => ({
-      genre: genre.genre,
-      speed: genre.totalTime > 0 ? (genre.totalPages / (genre.totalTime / 60)) : 0, // pages/heure
-      avgSessionTime: genre.sessionCount > 0 ? (genre.totalTime / genre.sessionCount) : 0,
-      totalPages: genre.totalPages,
-      color: GENRE_COLORS[index % GENRE_COLORS.length]
-    })).sort((a, b) => b.speed - a.speed);
+      })
+      .sort((a, b) => b.speed - a.speed);
 
     return { distributionData, speedData };
-  }, [books, statisticsData]);
+  }, [statisticsData]);
 
   // Gestionnaire de clic sur un secteur du pie chart
   const handlePieClick = (data) => {
@@ -294,11 +296,15 @@ const GenreDistributionChart = ({
               <Legend 
                 verticalAlign="bottom" 
                 height={36}
-                formatter={(value, entry) => (
-                  <span style={{ color: entry.color }}>
-                    {value} ({entry.payload.percentage.toFixed(1)}%)
-                  </span>
-                )}
+                formatter={(_, entry) => {
+                  const genreLabel = entry?.payload?.genre || '';
+                  const pct = entry?.payload?.percentage ?? 0;
+                  return (
+                    <span style={{ color: entry.color }}>
+                      {genreLabel} ({pct.toFixed(1)}%)
+                    </span>
+                  );
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -386,6 +392,123 @@ const GenreDistributionChart = ({
           </div>
         </div>
       </div>
+
+      {/* Détail des livres pour le genre sélectionné */}
+      {selectedGenre && (
+        <div className="bg-slate-800/40 rounded-lg p-4 space-y-3">
+          <h4 className="text-sm font-semibold text-slate-200">
+            {t(
+              'books.statistics.genres.booksForGenre',
+              'Livres pour le genre {{genre}}',
+              { genre: selectedGenre }
+            )}
+          </h4>
+          {(() => {
+            const booksForGenre = books
+              .filter((b) => b.genre === selectedGenre)
+              .map((book) => {
+                const sessions = Array.isArray(book.readingSessions)
+                  ? book.readingSessions
+                  : [];
+                const totalPages = sessions.reduce(
+                  (sum, s) => sum + (Number(s.pagesRead) || 0),
+                  0
+                );
+                const totalMinutes = sessions.reduce(
+                  (sum, s) => sum + (Number(s.durationMinutes) || 0),
+                  0
+                );
+                const speed =
+                  totalMinutes > 0
+                    ? (totalPages / (totalMinutes / 60)).toFixed(1)
+                    : null;
+                const declaredPages = Number(book.pages) || 0;
+                const progressPercent =
+                  declaredPages > 0
+                    ? Math.min(
+                        100,
+                        Math.round((totalPages / declaredPages) * 100)
+                      )
+                    : null;
+
+                return {
+                  id: book.id,
+                  title: book.title,
+                  author: book.author,
+                  status: book.status,
+                  totalPages,
+                  totalMinutes,
+                  speed,
+                  progressPercent,
+                  declaredPages,
+                };
+              })
+              .filter((b) => b.totalPages > 0 || b.totalMinutes > 0)
+              .sort((a, b) => b.totalPages - a.totalPages);
+
+            if (booksForGenre.length === 0) {
+              return (
+                <p className="text-sm text-slate-400">
+                  {t(
+                    'books.statistics.genres.noBooksForGenre',
+                    'Aucun livre avec sessions pour ce genre.'
+                  )}
+                </p>
+              );
+            }
+
+            return (
+              <div className="space-y-2 text-xs text-slate-300">
+                <div className="grid grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 pb-1 border-b border-slate-700/60">
+                  <div className="font-semibold text-slate-400">
+                    {t('books.statistics.genres.table.book', 'Livre')}
+                  </div>
+                  <div className="font-semibold text-slate-400 text-right">
+                    {t('books.statistics.genres.table.pages', 'Pages lues')}
+                  </div>
+                  <div className="font-semibold text-slate-400 text-right">
+                    {t('books.statistics.genres.table.speed', 'Vitesse')}
+                  </div>
+                  <div className="font-semibold text-slate-400 text-right">
+                    {t('books.statistics.genres.table.status', 'Statut')}
+                  </div>
+                </div>
+                {booksForGenre.map((book) => (
+                  <div
+                    key={book.id}
+                    className="grid grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 items-center"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-100 truncate">
+                        {book.title || 'Livre sans titre'}
+                      </div>
+                      {book.author && (
+                        <div className="text-slate-400 truncate">
+                          {book.author}
+                        </div>
+                      )}
+                      {book.progressPercent != null && (
+                        <div className="text-[11px] text-slate-500">
+                          {book.progressPercent}% de {book.declaredPages} p.
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      {book.totalPages || 0}
+                    </div>
+                    <div className="text-right">
+                      {book.speed ? `${book.speed} p/h` : '—'}
+                    </div>
+                    <div className="text-right capitalize">
+                      {book.status || 'in-progress'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 };

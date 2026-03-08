@@ -233,7 +233,7 @@ export const bookSchema = z.object({
     .max(5000, 'Le résumé long ne peut pas dépasser 5000 caractères')
     .optional()
     .default(''),
-  personalScore: z.number()
+  personalScore: z.coerce.number()
     .int('Le score doit être un entier')
     .min(0, 'Le score doit être >= 0')
     .max(10, 'Le score doit être <= 10')

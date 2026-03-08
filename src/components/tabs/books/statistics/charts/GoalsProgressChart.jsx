@@ -134,10 +134,11 @@ const GoalsProgressChart = ({
 
   // Calculer la progression des objectifs
   const goalsProgress = useMemo(() => {
-    if (!statisticsData?.sessions || goals.length === 0) {
+    if (goals.length === 0) {
       return [];
     }
 
+    const allSessions = statisticsData?.sessions || [];
     const now = new Date();
     
     return goals.map(goal => {
@@ -164,7 +165,7 @@ const GoalsProgressChart = ({
       }
 
       // Filtrer les sessions dans la période
-      const periodSessions = statisticsData.sessions.filter(session => {
+      const periodSessions = allSessions.filter(session => {
         const sessionDate = new Date(session.date);
         return sessionDate >= periodStart && sessionDate < periodEnd &&
                sessionDate >= startDate && 

@@ -42,8 +42,7 @@ import PerformanceMonitor from '../../debug/PerformanceMonitor';
 import StatisticsErrorBoundary from '../../statistics/StatisticsErrorBoundary';
 
 // Import des services de données
-import { useOptimizedStatistics } from '../../../hooks/useOptimizedStatistics';
-import { usePredictions } from '../../../hooks/usePredictions';
+import { useStatisticsData } from '../../../hooks/useStatisticsData';
 import { useUserPreferences } from '../../../hooks/useUserPreferences';
 
 /**
@@ -107,17 +106,12 @@ const StatisticsSubTabContent = ({ books = [] }) => {
     };
   }, [handleSidebarEvent]);
 
-  // Calculer les données statistiques avec le hook optimisé
-  // Inclure dataVersion dans les dépendances pour forcer le recalcul lors des événements sidebar
-  const statisticsData = useOptimizedStatistics(books, selectedPeriod, filters, dataVersion);
+  // Calculer les données statistiques (métriques + graphiques) à partir des livres et sessions
+  // Inclut déjà les prédictions et patterns calculés par MetricsCalculator
+  const statisticsData = useStatisticsData(books, selectedPeriod, filters, dataVersion);
   
-  // Calculer les prédictions et recommandations
-  const predictions = usePredictions(
-    books, 
-    statisticsData.metrics?.basic || {}, 
-    statisticsData.aggregatedData || {},
-    { maxResults: 5, minConfidence: 'medium' }
-  );
+  // Prédictions directement issues du calcul des métriques
+  const predictions = statisticsData.predictions || [];
 
   // Mémoriser les options de filtres disponibles
   const filterOptions = useMemo(() => {

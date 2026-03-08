@@ -1131,6 +1131,22 @@ const BooksTab = () => {
                         </div>
                       </div>
 
+                      {selectedBook.hasCover && coverUrls[selectedBook.id] && (
+                        <div className="mt-4">
+                          <p className="text-sm font-semibold text-slate-300 mb-2">
+                            {t('books.detail.cover', 'Couverture')}
+                          </p>
+                          <img
+                            src={coverUrls[selectedBook.id]}
+                            alt={
+                              selectedBook.title ||
+                              t('books.detail.noTitle', 'Livre sans titre')
+                            }
+                            className="max-h-72 rounded-xl shadow-xl border border-white/10 object-contain bg-black/30"
+                          />
+                        </div>
+                      )}
+
                       {selectedBook.shortSummary && (
                         <div className="text-sm text-slate-300">
                           <p className="font-semibold mb-1">

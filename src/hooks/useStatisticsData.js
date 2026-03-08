@@ -196,7 +196,10 @@ export const useStatisticsData = (books = [], selectedPeriod = '1m', filters = {
         insights: generateInsights(calculatedMetrics),
         predictions: calculatedMetrics.predictions || [],
         patterns: calculatedMetrics.patterns || {},
-        goals: calculatedMetrics.goals || {}
+        goals: calculatedMetrics.goals || {},
+        // Sessions agrégées (filtrées par période + filtres) pour les objectifs & vues détaillées
+        sessions: aggregatedData.sessions || [],
+        aggregatedData
       };
     } catch (error) {
       console.error('[useStatisticsData] Error calculating statistics:', error);

@@ -11,6 +11,7 @@
 class MetricsCalculator {
   /**
    * Calculer les métriques de base à partir des données agrégées
+   * (sans supposer le nombre de livres terminés – corrigé plus bas)
    */
   static calculateBasicMetrics(aggregatedData) {
     const {
@@ -43,7 +44,7 @@ class MetricsCalculator {
       totalTime: totalMinutes,
       averageSpeed: Math.round(averageSpeed * 10) / 10,
       sessionsCount: totalSessions,
-      booksCompleted: uniqueBooks, // Approximation - sera affiné avec le statut des livres
+      booksCompleted: uniqueBooks, // Valeur provisoire, sera corrigée dans calculateAllMetrics
       currentStreak: streaks.currentStreak,
       longestStreak: streaks.longestStreak,
       averageSessionDuration: Math.round(averageSessionDuration * 10) / 10,
@@ -295,6 +296,30 @@ class MetricsCalculator {
   static calculateAllMetrics(books, aggregatedData, goals = {}) {
     try {
       const basicMetrics = this.calculateBasicMetrics(aggregatedData);
+
+      // Corriger le nombre de livres terminés :
+      // - statut explicitement "completed"
+      // - ou toutes les pages lues (totalPagesRead >= totalPages déclarées)
+      if (Array.isArray(books) && books.length > 0) {
+        const completedCount = books.reduce((count, book) => {
+          const totalPages = Number(book.pages) || 0;
+          const sessions = Array.isArray(book.readingSessions)
+            ? book.readingSessions
+            : [];
+          const totalPagesRead = sessions.reduce(
+            (sum, s) => sum + (Number(s.pagesRead) || 0),
+            0
+          );
+
+          const completedByStatus = book.status === 'completed';
+          const completedByPages =
+            totalPages > 0 && totalPagesRead >= totalPages;
+
+          return completedByStatus || completedByPages ? count + 1 : count;
+        }, 0);
+
+        basicMetrics.booksCompleted = completedCount;
+      }
       const speedByGenre = this.calculateSpeedByGenre(aggregatedData);
       const temporalMetrics = this.calculateTemporalMetrics(aggregatedData);
       const predictions = this.calculatePredictions(books, basicMetrics);
