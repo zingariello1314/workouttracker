@@ -16,6 +16,7 @@ import { useTranslation } from '../../utils/translations';
 import { useBooksStorage } from '../../hooks/useBooksStorage';
 import BookCard from '../books/BookCard';
 import StatisticsSubTab from './books/StatisticsSubTab';
+import BookFinder from '../BookFinder/BookFinder';
 
 // Hooks personnalisés
 import { useBooksFilters } from './BooksTab/hooks/useBooksFilters';
@@ -413,17 +414,31 @@ const BooksTab = () => {
               <BarChart3 className="w-4 h-4" />
               {t('books.subtabs.statistics', 'Statistiques')}
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveSubTab('bookfinder')}
+              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
+                activeSubTab === 'bookfinder' ? 'gradient-button-premium-variant' : ''
+              }`}
+            >
+              <Search className="w-4 h-4" />
+              {t('books.subtabs.bookfinder', 'BookFinder')}
+            </button>
           </div>
         </div>
 
         {/* Contenu conditionnel selon le sous-onglet actif */}
         <ErrorBoundary
           context={{ activeSubTab, tab: 'books', booksCount: books.length }}
-          title={`Erreur dans ${activeSubTab === 'statistics' ? 'Statistiques' : 'Bibliothèque'}`}
+          title={`Erreur dans ${activeSubTab === 'statistics' ? 'Statistiques' : activeSubTab === 'bookfinder' ? 'BookFinder' : 'Bibliothèque'}`}
           message="Une erreur s'est produite dans ce sous-onglet. Vous pouvez réessayer ou changer de sous-onglet."
         >
           {activeSubTab === 'statistics' ? (
             <StatisticsSubTab books={books} />
+          ) : activeSubTab === 'bookfinder' ? (
+            <div className="max-w-3xl mx-auto">
+              <BookFinder />
+            </div>
           ) : (
             // Contenu de la bibliothèque - Le reste du code reste identique pour préserver la fonctionnalité
             // Cette partie sera remplacée progressivement par des composants extraits
@@ -1004,7 +1019,7 @@ const BooksTab = () => {
                             'Historique de lecture et statistiques pour ce livre.'
                           )
                         : t(
-                            'books.detail.subtitle.empty',
+                            'books.detail.subtitleEmpty',
                             'Clique sur un livre dans les carrousels pour voir son détail et ajouter des sessions de lecture.'
                           )}
                     </p>

@@ -1,6 +1,23 @@
 {
   "subtitle": "Gère ta bibliothèque personnelle, tes sessions de lecture et tes sauvegardes — tout est stocké localement dans ton navigateur.",
   "pages": "pages",
+  "subtabs": {
+    "library": "Bibliothèque",
+    "statistics": "Statistiques",
+    "bookfinder": "BookFinder"
+  },
+  "bookfinder": {
+    "hint": "Recherche Z-Library",
+    "hintText": "Tape un titre ou un auteur (ex. Harry Potter epub, Dostoïevski Crime et Châtiment pdf) et envoie.",
+    "placeholder": "Titre ou auteur...",
+    "download": "Télécharger",
+    "noResults": "Aucun résultat.",
+    "searching": "Recherche en cours",
+    "search": "Rechercher",
+    "format": "Format",
+    "allFormats": "Tous formats",
+    "unknownTitle": "Sans titre"
+  },
   "form": {
     "title": "Titre du livre",
     "author": "Auteur",
@@ -85,10 +102,7 @@
     "noTitle": "Livre sans titre",
     "noSelection": "Aucun livre sélectionné",
     "subtitle": "Historique de lecture et statistiques pour ce livre.",
-    "subtitle": {
-      "_": "Historique de lecture et statistiques pour ce livre.",
-      "empty": "Clique sur un livre dans les carrousels pour voir son détail et ajouter des sessions de lecture."
-    },
+    "subtitleEmpty": "Clique sur un livre dans les carrousels pour voir son détail et ajouter des sessions de lecture.",
     "author": "Auteur",
     "genre": "Genre",
     "year": "Année",
@@ -126,6 +140,99 @@
     "show": "Afficher la vue 3D",
     "hide": "Masquer la vue 3D",
     "loading": "Chargement de la vue 3D..."
+  },
+  "statistics": {
+    "title": "Statistiques de Lecture",
+    "subtitle": "Analyse de tes habitudes et de ta progression de lecture",
+    "comparison": "Comparaison",
+    "comparison.title": "Mode Comparaison",
+    "filters": "Filtres",
+    "period": "Période",
+    "allGenres": "Tous les genres",
+    "allStatuses": "Tous les statuts",
+    "allAuthors": "Tous les auteurs",
+    "noData": {
+      "title": "Aucune donnée de lecture",
+      "description": "Commence à enregistrer des sessions de lecture pour voir tes statistiques apparaître ici.",
+      "suggestions": {
+        "title": "Pour commencer:",
+        "addBook": "Ajoute un livre à ta bibliothèque",
+        "addSession": "Enregistre une session de lecture",
+        "viewStats": "Reviens ici pour voir tes statistiques"
+      }
+    },
+    "metrics": {
+      "totalPages": "Pages lues",
+      "totalTime": "Temps total",
+      "averageSpeed": "Vitesse moyenne",
+      "currentStreak": "Série actuelle",
+      "relatedBooks": "Livres concernés",
+      "dailyGoal": "Objectif quotidien",
+      "noData": "Aucune métrique disponible"
+    },
+    "charts": {
+      "title": "Graphiques",
+      "pagesPerDay": {
+        "noData": {
+          "title": "Aucune donnée disponible",
+          "description": "Enregistre des sessions de lecture pour voir tes pages par jour."
+        }
+      },
+      "heatmap": {
+        "noData": {
+          "title": "Aucune donnée d'activité",
+          "description": "Enregistre des sessions pour voir le calendrier."
+        }
+      },
+      "readingSpeed": {
+        "noData": {
+          "title": "Aucune donnée de vitesse disponible",
+          "description": "Enregistre des sessions pour voir ta vitesse de lecture."
+        }
+      }
+    },
+    "goals": {
+      "title": "Objectifs de Lecture",
+      "subtitle": "Définis et suis tes objectifs de lecture"
+    },
+    "genres": {
+      "noData": {
+        "title": "Aucune donnée par genre",
+        "description": "Enregistre des sessions avec des livres ayant un genre."
+      },
+      "distribution": "Répartition",
+      "speeds": "Vitesses",
+      "summary": {
+        "genres": "Genres lus",
+        "favorite": "Genre favori",
+        "fastestGenre": "Plus rapide",
+        "avgTime": "Temps moy./genre"
+      },
+      "booksForGenre": "Livres de ce genre",
+      "noBooksForGenre": "Aucun livre pour ce genre",
+      "table": {
+        "book": "Livre",
+        "pages": "Pages lues",
+        "speed": "Vitesse",
+        "status": "Statut"
+      }
+    },
+    "pages": "pages lues",
+    "pagesPerHour": "pages/heure",
+    "favoriteComparisons": {
+      "title": "Comparaisons favorites",
+      "save": "Sauvegarder",
+      "name": "Nom de la comparaison",
+      "namePlaceholder": "Ex: Comparaison mensuelle",
+      "confirm": "Confirmer",
+      "cancel": "Annuler",
+      "empty": "Aucune comparaison favorite",
+      "emptyHint": "Crée des comparaisons depuis le mode Comparaison pour les retrouver ici.",
+      "created": "Créé le",
+      "withFilters": "Avec filtres appliqués",
+      "load": "Charger",
+      "exportHint": "Exporte ou importe tes comparaisons favorites."
+    }
   }
 }
 

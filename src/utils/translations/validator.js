@@ -84,7 +84,8 @@ const parseKey = (key) => {
     'bodyTracking',
     'nutritionAnalyses',
     'messages',
-    'sessionFeedback'
+    'sessionFeedback',
+    'books'
   ];
   
   // Si le premier segment est un namespace connu, l'utiliser

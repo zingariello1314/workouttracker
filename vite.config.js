@@ -53,6 +53,12 @@ export default defineConfig({
             console.log(`[Proxy] Response status: ${proxyRes.statusCode} for ${req.url}`);
           });
         }
+      },
+      // Proxy BookFinder / Z-Library API (backend FastAPI sur 8000)
+      '/api/zlib': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/zlib/, '')
       }
     }
   },

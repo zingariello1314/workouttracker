@@ -629,7 +629,13 @@ export const useTranslation = () => {
   const languageRef = useRef(language);
   const [loadedNamespaces, setLoadedNamespaces] = useState({});
   const [forceUpdate, setForceUpdate] = useState(0);
-  
+  const isMountedRef = useRef(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   // ✅ OPTIMISATION : Invalider le cache si la langue change
   useEffect(() => {
     if (languageRef.current !== language) {
@@ -876,6 +882,7 @@ export const useTranslation = () => {
       } else if (!loadedNamespaces[namespace]) {
         // Le namespace n'est pas chargé, le charger maintenant
         loadTranslationNamespace(lang, namespace).then(() => {
+          if (!isMountedRef.current) return;
           setLoadedNamespaces(prev => ({
             ...prev,
             [namespace]: true

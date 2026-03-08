@@ -98,8 +98,16 @@ const GoalsProgressChart = ({
 }) => {
   const t = useTranslation();
   
-  // État local
-  const [goals, setGoals] = useState([]);
+  // Charger les objectifs depuis le localStorage dès l'init pour éviter d'écraser au premier rendu
+  const [goals, setGoals] = useState(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('reading-goals');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
   const [celebrationGoal, setCelebrationGoal] = useState(null);
@@ -115,19 +123,7 @@ const GoalsProgressChart = ({
     isActive: true
   });
 
-  // Charger les objectifs depuis le localStorage au montage
-  useEffect(() => {
-    const savedGoals = localStorage.getItem('reading-goals');
-    if (savedGoals) {
-      try {
-        setGoals(JSON.parse(savedGoals));
-      } catch (error) {
-        console.error('Erreur lors du chargement des objectifs:', error);
-      }
-    }
-  }, []);
-
-  // Sauvegarder les objectifs dans le localStorage
+  // Sauvegarder les objectifs dans le localStorage quand ils changent (pas au montage)
   useEffect(() => {
     localStorage.setItem('reading-goals', JSON.stringify(goals));
   }, [goals]);
