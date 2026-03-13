@@ -481,7 +481,7 @@ const BooksTab = () => {
           message="Une erreur s'est produite dans ce sous-onglet. Vous pouvez réessayer ou changer de sous-onglet."
         >
           {activeSubTab === 'statistics' ? (
-            <StatisticsSubTab books={books} />
+            <StatisticsSubTab books={books} setBooks={setBooks} />
           ) : activeSubTab === 'bookfinder' ? (
             <div className="max-w-3xl mx-auto">
               <BookFinder />

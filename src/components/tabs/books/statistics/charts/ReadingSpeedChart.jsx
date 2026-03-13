@@ -353,7 +353,7 @@ const ReadingSpeedChart = ({ books, statisticsData, selectedPeriod, filters }) =
         </div>
         <div className="text-xs">
           {selectedGenre ? `Genre: ${selectedGenre}` : 'Tous genres'} • 
-          Période: {selectedPeriod === 'all' ? 'Toutes les données' : `Derniers ${selectedPeriod}`}
+          Période: {selectedPeriod === 'all' ? 'Toutes les données' : /^\d{4}$/.test(selectedPeriod) ? `Année ${selectedPeriod}` : `Derniers ${selectedPeriod}`}
         </div>
       </div>
     </div>

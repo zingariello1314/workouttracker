@@ -30,7 +30,9 @@ const getDaysAgo = (days) => {
 const normalizeDate = (dateString) => {
   if (!dateString) return null;
   try {
-    return dateString.split('T')[0];
+    const str = typeof dateString === 'string' ? dateString : new Date(dateString).toISOString().split('T')[0];
+    const part = str.split('T')[0];
+    return /^\d{4}-\d{2}-\d{2}$/.test(part) ? part : null;
   } catch (error) {
     console.warn('[SessionAggregator] Invalid date format:', dateString);
     return null;
@@ -69,10 +71,39 @@ class SessionAggregator {
   }
 
   /**
+   * Vérifier si la période est une année (ex: '2026', '2025')
+   */
+  static isYearPeriod(period) {
+    return typeof period === 'string' && /^\d{4}$/.test(period);
+  }
+
+  /**
+   * Obtenir les bornes de date pour une période année
+   * @returns {{ start: string, end: string, periodDays: number }}
+   */
+  static getYearBounds(yearStr) {
+    const year = parseInt(yearStr, 10);
+    const today = getTodayString();
+    const currentYear = new Date().getFullYear();
+    const start = `${year}-01-01`;
+    const end = year === currentYear ? today : `${year}-12-31`;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const periodDays = Math.max(1, Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1);
+    return { start, end, periodDays };
+  }
+
+  /**
    * Filtrer les sessions selon une période temporelle
+   * Période peut être: '7d', '1m', '3m', '6m', '1y', 'all', ou une année '2026', '2025', etc.
    */
   static filterByPeriod(sessions, period) {
     if (period === 'all') return sessions;
+
+    if (this.isYearPeriod(period)) {
+      const { start, end } = this.getYearBounds(period);
+      return sessions.filter(session => session.normalizedDate >= start && session.normalizedDate <= end);
+    }
     
     const periodDays = {
       '7d': 7,
@@ -319,6 +350,26 @@ class SessionAggregator {
   }
 
   /**
+   * Retourner les années pour lesquelles il existe au moins une session (tri décroissant)
+   * @param {Array} books - Liste des livres
+   * @returns {string[]} Ex: ['2026', '2025', '2024']
+   */
+  static getAvailableYears(books = []) {
+    const allSessions = this.extractAllSessions(books);
+    const years = new Set();
+    allSessions.forEach(session => {
+      if (session.normalizedDate) {
+        years.add(session.normalizedDate.slice(0, 4));
+      }
+    });
+    const currentYear = new Date().getFullYear().toString();
+    if (!years.has(currentYear)) {
+      years.add(currentYear); // Toujours proposer l'année en cours
+    }
+    return Array.from(years).sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
+  }
+
+  /**
    * Méthode principale pour agréger les sessions selon les critères
    */
   static aggregateSessions(books, period = '1m', filters = {}) {
@@ -348,7 +399,10 @@ class SessionAggregator {
       
       // Calculer le nombre de jours de la période pour la consistance
       let periodDays = null;
-      if (period !== 'all' && periodDaysConfig[period]) {
+      if (this.isYearPeriod(period)) {
+        const bounds = this.getYearBounds(period);
+        periodDays = bounds.periodDays;
+      } else if (period !== 'all' && periodDaysConfig[period]) {
         periodDays = periodDaysConfig[period];
       } else if (filteredSessions.length > 0) {
         const dates = filteredSessions.map((s) => s.normalizedDate).sort();

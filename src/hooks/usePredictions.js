@@ -73,33 +73,35 @@ export const usePredictions = (books = [], userMetrics = {}, aggregatedData = {}
       .slice(0, options.maxResults || 10);
   }, [predictions.completionTimes, options.minConfidence, options.maxResults]);
 
-  // Recommandations d'objectifs formatées
+  // Recommandations d'objectifs formatées (inclut recent = aujourd'hui / cette semaine, branché aux sessions)
   const goalRecommendations = useMemo(() => {
     if (!predictions.goalRecommendations) return null;
     
-    const { daily, weekly, monthly, reasoning } = predictions.goalRecommendations;
+    const { daily, weekly, monthly, reasoning, recent } = predictions.goalRecommendations;
     
     return {
       daily: daily ? {
         ...daily,
-        reasoning: reasoning.daily,
-        isRealistic: daily.improvement <= 50, // Amélioration <= 50% considérée comme réaliste
+        reasoning: reasoning?.daily,
+        isRealistic: daily.improvement <= 50,
         difficulty: getDifficultyLevel(daily.improvement)
       } : null,
       
       weekly: weekly ? {
         ...weekly,
-        reasoning: reasoning.weekly,
+        reasoning: reasoning?.weekly,
         isRealistic: weekly.improvement <= 30,
         difficulty: getDifficultyLevel(weekly.improvement)
       } : null,
       
       monthly: monthly ? {
         ...monthly,
-        reasoning: reasoning.monthly,
+        reasoning: reasoning?.monthly,
         isRealistic: monthly.improvement <= 40,
         difficulty: getDifficultyLevel(monthly.improvement)
-      } : null
+      } : null,
+
+      recent: recent || null
     };
   }, [predictions.goalRecommendations]);
 

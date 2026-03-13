@@ -130,62 +130,143 @@ class PredictionEngine {
    * @param {Object} patterns - Patterns de lecture
    * @returns {Object} Recommandations d'objectifs
    */
-  static generateGoalRecommendations(userMetrics, patterns) {
+  /**
+   * Calculer les indicateurs "récent" (aujourd'hui, cette semaine) à partir de byDate
+   * pour que l'UI affiche des données réactives (session enregistrée = visible tout de suite).
+   */
+  static computeRecentFromByDate(byDate = {}, periodEnd = null) {
+    const today = new Date().toISOString().split('T')[0];
+    let todayMinutes = 0;
+    let thisWeekPages = 0;
+    let thisWeekMinutes = 0;
+    const end = periodEnd || today;
+    for (let d = 0; d < 7; d++) {
+      const date = new Date();
+      date.setDate(date.getDate() - d);
+      const dateStr = date.toISOString().split('T')[0];
+      if (dateStr > end) continue;
+      const dayData = byDate[dateStr];
+      if (!dayData) continue;
+      if (d === 0) todayMinutes = dayData.totalMinutes || 0;
+      thisWeekPages += dayData.totalPages || 0;
+      thisWeekMinutes += dayData.totalMinutes || 0;
+    }
+    return { todayMinutes, thisWeekPages, thisWeekMinutes };
+  }
+
+  static generateGoalRecommendations(userMetrics, aggregatedData) {
     const recommendations = {
       daily: null,
       weekly: null,
       monthly: null,
-      reasoning: {}
+      reasoning: {},
+      recent: null
     };
 
-    // Recommandation quotidienne (en minutes)
-    if (userMetrics.averageSessionDuration > 0) {
-      const currentAverage = userMetrics.averageSessionDuration;
-      const recommendedDaily = Math.max(15, Math.round(currentAverage * 1.1)); // 10% d'amélioration
-      
+    if (!aggregatedData || !aggregatedData.sessions) {
+      return recommendations;
+    }
+
+    const byDate = aggregatedData.byDate || {};
+    const periodEnd = aggregatedData.period ? (aggregatedData.period.length === 4
+      ? new Date().toISOString().split('T')[0]
+      : null) : null;
+    recommendations.recent = this.computeRecentFromByDate(byDate, periodEnd);
+
+    const totalMinutes = aggregatedData.totalMinutes || 0;
+    const totalPages = aggregatedData.totalPages || 0;
+    const totalSessions = aggregatedData.totalSessions || aggregatedData.sessions.length || 0;
+
+    const periodDays =
+      typeof aggregatedData.periodDays === 'number'
+        ? Math.max(aggregatedData.periodDays, 1)
+        : Math.max(Object.keys(byDate).length, 1);
+
+    const minutesPerDayCalendar = totalMinutes > 0 ? totalMinutes / periodDays : 0;
+    const pagesPerDayCalendar = totalPages > 0 ? totalPages / periodDays : 0;
+    const sessionsPerWeekCalendar =
+      totalSessions > 0 ? (totalSessions / periodDays) * 7 : 0;
+
+    const averageSessionDurationCalendar =
+      totalSessions > 0 ? totalMinutes / totalSessions : 0;
+
+    // Recommandation quotidienne (minutes/jour) + 3 niveaux toujours distincts et progressifs
+    if (minutesPerDayCalendar > 0) {
+      const currentAverage = minutesPerDayCalendar;
+      const currentRounded = Math.round(currentAverage);
+      const easyDaily = Math.max(10, currentRounded + 1, Math.round(currentAverage * 1.05));
+      const moderateDaily = Math.max(easyDaily + 1, Math.round(currentAverage * 1.15));
+      const challengingDaily = Math.max(moderateDaily + 1, Math.round(currentAverage * 1.30));
+      const levels = [
+        { level: 'easy', label: 'Facile', target: easyDaily, improvement: 5 },
+        { level: 'moderate', label: 'Moyen', target: moderateDaily, improvement: 15 },
+        { level: 'challenging', label: 'Difficile', target: challengingDaily, improvement: 30 }
+      ].map(l => ({ ...l, fulfilled: currentRounded >= l.target }));
       recommendations.daily = {
         type: 'minutes',
-        target: recommendedDaily,
-        current: Math.round(currentAverage),
-        improvement: Math.round(((recommendedDaily - currentAverage) / currentAverage) * 100)
+        target: moderateDaily,
+        current: currentRounded,
+        improvement: Math.round(((moderateDaily - currentAverage) / currentAverage) * 100),
+        levels
       };
-      
-      recommendations.reasoning.daily = this.generateDailyReasoning(currentAverage, recommendedDaily);
+      recommendations.reasoning.daily = this.generateDailyReasoning(
+        currentAverage,
+        moderateDaily
+      );
     }
 
-    // Recommandation hebdomadaire (en pages)
-    if (userMetrics.averagePagesPerDay > 0) {
-      const currentWeeklyPages = Math.round(userMetrics.averagePagesPerDay * 7);
-      const recommendedWeekly = Math.round(currentWeeklyPages * 1.15); // 15% d'amélioration
-      
+    // Recommandation hebdomadaire (pages/semaine) + 3 niveaux toujours distincts
+    if (pagesPerDayCalendar > 0) {
+      const currentWeeklyPages = Math.round(pagesPerDayCalendar * 7);
+      const easyWeekly = Math.max(10, currentWeeklyPages + 1, Math.round(currentWeeklyPages * 1.05));
+      const moderateWeekly = Math.max(easyWeekly + 1, Math.round(currentWeeklyPages * 1.15));
+      const challengingWeekly = Math.max(moderateWeekly + 1, Math.round(currentWeeklyPages * 1.30));
+      const levels = [
+        { level: 'easy', label: 'Facile', target: easyWeekly, improvement: 5 },
+        { level: 'moderate', label: 'Moyen', target: moderateWeekly, improvement: 15 },
+        { level: 'challenging', label: 'Difficile', target: challengingWeekly, improvement: 30 }
+      ].map(l => ({ ...l, fulfilled: currentWeeklyPages >= l.target }));
       recommendations.weekly = {
         type: 'pages',
-        target: recommendedWeekly,
+        target: moderateWeekly,
         current: currentWeeklyPages,
-        improvement: Math.round(((recommendedWeekly - currentWeeklyPages) / currentWeeklyPages) * 100)
+        improvement: Math.round(((moderateWeekly - currentWeeklyPages) / currentWeeklyPages) * 100),
+        levels
       };
-      
-      recommendations.reasoning.weekly = this.generateWeeklyReasoning(currentWeeklyPages, recommendedWeekly, patterns);
+      recommendations.reasoning.weekly = this.generateWeeklyReasoning(
+        currentWeeklyPages,
+        moderateWeekly,
+        aggregatedData.patterns || {}
+      );
     }
 
-    // Recommandation mensuelle (en livres)
-    if (userMetrics.averageSpeed > 0) {
-      // Estimer combien de livres peuvent être lus par mois
-      const averageBookPages = 250; // Estimation moyenne
-      const monthlyReadingHours = (userMetrics.averageSessionDuration / 60) * userMetrics.readingFrequency * 4.33; // 4.33 semaines par mois
+    // Recommandation mensuelle (livres/mois) + 3 niveaux toujours distincts
+    if (userMetrics.averageSpeed > 0 && averageSessionDurationCalendar > 0) {
+      const averageBookPages = 250;
+      const monthlyReadingHours =
+        (averageSessionDurationCalendar / 60) * sessionsPerWeekCalendar * 4.33;
       const monthlyPages = monthlyReadingHours * userMetrics.averageSpeed;
       const currentMonthlyBooks = Math.max(1, Math.floor(monthlyPages / averageBookPages));
-      const recommendedMonthly = Math.max(1, Math.round(currentMonthlyBooks * 1.2)); // 20% d'amélioration
-      
+      const easyMonthly = Math.max(1, currentMonthlyBooks, Math.round(currentMonthlyBooks * 1.05));
+      const moderateMonthly = Math.max(easyMonthly + 1, Math.round(currentMonthlyBooks * 1.2));
+      const challengingMonthly = Math.max(moderateMonthly + 1, Math.round(currentMonthlyBooks * 1.35));
+      const levels = [
+        { level: 'easy', label: 'Facile', target: easyMonthly, improvement: 5 },
+        { level: 'moderate', label: 'Moyen', target: moderateMonthly, improvement: 20 },
+        { level: 'challenging', label: 'Difficile', target: challengingMonthly, improvement: 35 }
+      ].map(l => ({ ...l, fulfilled: currentMonthlyBooks >= l.target }));
       recommendations.monthly = {
         type: 'books',
-        target: recommendedMonthly,
+        target: moderateMonthly,
         current: currentMonthlyBooks,
-        improvement: currentMonthlyBooks > 0 ? 
-          Math.round(((recommendedMonthly - currentMonthlyBooks) / currentMonthlyBooks) * 100) : 100
+        improvement: currentMonthlyBooks > 0 ? Math.round(((moderateMonthly - currentMonthlyBooks) / currentMonthlyBooks) * 100) : 100,
+        levels
       };
-      
-      recommendations.reasoning.monthly = this.generateMonthlyReasoning(currentMonthlyBooks, recommendedMonthly, userMetrics);
+      recommendations.reasoning.monthly = this.generateMonthlyReasoning(
+        currentMonthlyBooks,
+        moderateMonthly,
+        userMetrics
+      );
     }
 
     return recommendations;
@@ -195,13 +276,16 @@ class PredictionEngine {
    * Générer le raisonnement pour l'objectif quotidien
    */
   static generateDailyReasoning(current, recommended) {
-    if (recommended <= current) {
+    const roundedCurrent = Math.round(current);
+    const roundedRecommended = Math.round(recommended);
+    const diff = Math.max(0, roundedRecommended - roundedCurrent);
+
+    if (diff === 0) {
       return "Maintenir votre rythme actuel qui est déjà excellent.";
     }
     
-    const diff = recommended - current;
     if (diff <= 5) {
-      return `Augmenter légèrement de ${diff} minutes par jour pour progresser en douceur.`;
+      return `Augmenter légèrement de ${diff} minute(s) par jour pour progresser en douceur.`;
     } else if (diff <= 15) {
       return `Un objectif modéré de ${diff} minutes supplémentaires pour améliorer votre régularité.`;
     } else {
@@ -353,8 +437,25 @@ class PredictionEngine {
    * Analyser la consistance de lecture
    */
   static analyzeConsistency(aggregatedData) {
-    const totalDays = Object.keys(aggregatedData.byDate).length;
-    const daysWithReading = Object.values(aggregatedData.byDate).filter(d => d.totalPages > 0).length;
+    if (!aggregatedData) {
+      return {
+        rate: 0,
+        level: 'low',
+        daysWithReading: 0,
+        totalDays: 0,
+        streak: aggregatedData?.streaks || { currentStreak: 0, longestStreak: 0, streakDates: [] },
+      };
+    }
+
+    const daysWithReading = Object.values(aggregatedData.byDate || {}).filter(
+      (d) => d.totalPages > 0
+    ).length;
+
+    const totalDays =
+      typeof aggregatedData.periodDays === 'number'
+        ? aggregatedData.periodDays
+        : Object.keys(aggregatedData.byDate || {}).length;
+
     const consistencyRate = totalDays > 0 ? (daysWithReading / totalDays) * 100 : 0;
     
     let consistencyLevel = 'low';
@@ -367,7 +468,7 @@ class PredictionEngine {
       level: consistencyLevel,
       daysWithReading,
       totalDays,
-      streak: aggregatedData.streaks
+      streak: aggregatedData.streaks,
     };
   }
 

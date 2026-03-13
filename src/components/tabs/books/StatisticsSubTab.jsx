@@ -32,6 +32,7 @@ import TimeFilters from './statistics/TimeFilters';
 import ComparisonMode from './statistics/ComparisonMode';
 import { ExportToolsContent } from './statistics/ExportTools';
 import PredictionsPanel from './statistics/PredictionsPanel';
+import AllSessionsSection from './statistics/AllSessionsSection';
 import Card, { CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import { Activity, Trophy, Download } from 'lucide-react';
 
@@ -45,22 +46,32 @@ import StatisticsErrorBoundary from '../../statistics/StatisticsErrorBoundary';
 import { useStatisticsData } from '../../../hooks/useStatisticsData';
 import { usePredictions } from '../../../hooks/usePredictions';
 import { useUserPreferences } from '../../../hooks/useUserPreferences';
+import SessionAggregator from '../../../services/statistics/SessionAggregator';
 
 /**
- * Types de périodes temporelles supportées
+ * Construire les périodes par année (année courante + années avec données)
  */
-const TIME_PERIODS = {
-  '7d': { label: '7 jours', days: 7, granularity: 'day' },
-  '1m': { label: '1 mois', days: 30, granularity: 'day' },
-  '3m': { label: '3 mois', days: 90, granularity: 'week' },
-  '6m': { label: '6 mois', days: 180, granularity: 'week' },
-  '1y': { label: '1 an', days: 365, granularity: 'month' },
-  'all': { label: 'Tout', days: null, granularity: 'month' }
+const buildYearPeriods = (books) => {
+  const years = SessionAggregator.getAvailableYears(books);
+  const currentYear = new Date().getFullYear().toString();
+  const periods = {};
+  years.forEach((year) => {
+    const isCurrent = year === currentYear;
+    const days = isCurrent
+      ? Math.max(1, Math.ceil((Date.now() - new Date(`${year}-01-01`).getTime()) / (1000 * 60 * 60 * 24)) + 1)
+      : (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 366 : 365);
+    periods[year] = {
+      label: year,
+      days,
+      granularity: 'month'
+    };
+  });
+  return periods;
 };
 
 
 
-const StatisticsSubTabContent = ({ books = [] }) => {
+const StatisticsSubTabContent = ({ books = [], setBooks }) => {
   const t = useTranslation();
   
   // Gestion des préférences utilisateur
@@ -72,8 +83,18 @@ const StatisticsSubTabContent = ({ books = [] }) => {
     toggleSection
   } = useUserPreferences();
   
-  // État local du composant basé sur les préférences
-  const [selectedPeriod, setSelectedPeriod] = useState(preferences.filters.selectedPeriod);
+  // Périodes = années disponibles (année courante + années avec données)
+  const yearPeriods = useMemo(() => buildYearPeriods(books), [books]);
+  const currentYearStr = useMemo(() => new Date().getFullYear().toString(), []);
+
+  // Défaut: année courante; si préférence stockée est une année valide, l'utiliser
+  const initialPeriod = useMemo(() => {
+    const stored = preferences.filters.selectedPeriod;
+    if (yearPeriods[stored]) return stored;
+    return currentYearStr;
+  }, [preferences.filters.selectedPeriod, yearPeriods, currentYearStr]);
+
+  const [selectedPeriod, setSelectedPeriod] = useState(initialPeriod);
   const [activeChart, setActiveChart] = useState(preferences.display.activeChart);
   const [comparisonMode, setComparisonMode] = useState(preferences.display.comparisonMode);
   const [filters, setFilters] = useState({
@@ -84,6 +105,13 @@ const StatisticsSubTabContent = ({ books = [] }) => {
   
   // État pour forcer la re-calcul des données lors des événements sidebar
   const [dataVersion, setDataVersion] = useState(0);
+
+  // Garder selectedPeriod dans la liste des années disponibles (ex: après chargement, années mises à jour)
+  useEffect(() => {
+    if (yearPeriods[selectedPeriod]) return;
+    setSelectedPeriod(currentYearStr);
+    updateFilters({ selectedPeriod: currentYearStr });
+  }, [yearPeriods, selectedPeriod, currentYearStr]);
   
   // Écouter les événements sidebar pour mettre à jour les statistiques en temps réel
   const handleSidebarEvent = useCallback(() => {
@@ -195,7 +223,7 @@ const StatisticsSubTabContent = ({ books = [] }) => {
               <TimeFilters
                 selectedPeriod={selectedPeriod}
                 onPeriodChange={handlePeriodChange}
-                periods={TIME_PERIODS}
+                periods={yearPeriods}
               />
             </div>
             
@@ -308,7 +336,11 @@ const StatisticsSubTabContent = ({ books = [] }) => {
         <div className="space-y-6">
           {/* Panneau de prédictions et insights */}
           <div className="predictions-panel">
-            <PredictionsPanel predictions={predictions} />
+            <PredictionsPanel
+              predictions={predictions}
+              selectedPeriod={selectedPeriod}
+              aggregatedData={statisticsData.aggregatedData}
+            />
           </div>
           
           {/* Panneau de métriques (pleine largeur) */}
@@ -355,23 +387,6 @@ const StatisticsSubTabContent = ({ books = [] }) => {
                 />
               </CardContent>
             </Card>
-            
-            {/* Outils d'export */}
-            <Card variant="glass">
-              <CardHeader>
-                <CardTitle size="sm" className="flex items-center gap-2">
-                  <Download className="w-4 h-4 text-green-300" />
-                  Outils d'Export et Partage
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ExportToolsContent 
-                  statisticsData={statisticsData}
-                  selectedPeriod={selectedPeriod}
-                  books={books}
-                />
-              </CardContent>
-            </Card>
           </div>
           
           {/* Container des graphiques (pleine largeur) */}
@@ -385,6 +400,30 @@ const StatisticsSubTabContent = ({ books = [] }) => {
               filters={filters}
             />
           </div>
+
+          {/* Outils d'export et partage */}
+          <div className="mt-8">
+            <Card variant="glass">
+              <CardHeader>
+                <CardTitle size="sm" className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-green-300" />
+                  Outils d'Export et Partage
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ExportToolsContent
+                  statisticsData={statisticsData}
+                  selectedPeriod={selectedPeriod}
+                  books={books}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Toutes les sessions enregistrées (liste + édition) */}
+          {setBooks && (
+            <AllSessionsSection books={books} setBooks={setBooks} />
+          )}
         </div>
       )}
       
@@ -395,7 +434,7 @@ const StatisticsSubTabContent = ({ books = [] }) => {
 };
 
 // Wrapper avec Error Boundary
-const StatisticsSubTab = ({ books = [] }) => {
+const StatisticsSubTab = ({ books = [], setBooks }) => {
   return (
     <StatisticsErrorBoundary
       context={{ books: books?.length || 0 }}
@@ -414,7 +453,7 @@ const StatisticsSubTab = ({ books = [] }) => {
         }
       }}
     >
-      <StatisticsSubTabContent books={books} />
+      <StatisticsSubTabContent books={books} setBooks={setBooks} />
     </StatisticsErrorBoundary>
   );
 };

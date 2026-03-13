@@ -9,14 +9,20 @@
  */
 
 import React, { useState } from 'react';
-import { Clock, Target, TrendingUp, BookOpen, Calendar, Lightbulb, ChevronRight, Star, AlertCircle } from 'lucide-react';
+import { Clock, Target, TrendingUp, BookOpen, Calendar, Lightbulb, ChevronRight, Star, AlertCircle, CheckCircle2 } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import { useTranslation } from '../../../../utils/translations';
 
-const PredictionsPanel = ({ predictions }) => {
+const PredictionsPanel = ({ predictions, selectedPeriod, aggregatedData }) => {
   const t = useTranslation();
   const [activeTab, setActiveTab] = useState('completion');
+
+  const isYearPeriod = typeof selectedPeriod === 'string' && /^\d{4}$/.test(selectedPeriod);
+  const periodLabel = isYearPeriod ? `Année ${selectedPeriod}` : (selectedPeriod || 'Période');
+  const periodContext = aggregatedData && typeof aggregatedData.periodDays === 'number'
+    ? { daysWithReading: aggregatedData.uniqueDays || 0, totalDays: aggregatedData.periodDays }
+    : null;
 
   if (!predictions.hasData) {
     return (
@@ -99,11 +105,19 @@ const PredictionsPanel = ({ predictions }) => {
       )}
       
       {activeTab === 'goals' && (
-        <GoalRecommendationsTab predictions={predictions} />
+        <GoalRecommendationsTab
+          predictions={predictions}
+          periodLabel={periodLabel}
+          periodContext={periodContext}
+        />
       )}
       
       {activeTab === 'patterns' && (
-        <PatternsTab predictions={predictions} />
+        <PatternsTab
+          predictions={predictions}
+          periodLabel={periodLabel}
+          periodContext={periodContext}
+        />
       )}
     </div>
   );
@@ -216,7 +230,7 @@ const CompletionTimeItem = ({ prediction }) => {
 /**
  * Onglet des recommandations d'objectifs
  */
-const GoalRecommendationsTab = ({ predictions }) => {
+const GoalRecommendationsTab = ({ predictions, periodLabel, periodContext }) => {
   const goals = predictions.goalRecommendations;
 
   if (!goals || (!goals.daily && !goals.weekly && !goals.monthly)) {
@@ -225,13 +239,47 @@ const GoalRecommendationsTab = ({ predictions }) => {
         <CardContent className="text-center py-8">
           <Target className="w-12 h-12 text-slate-500 mx-auto mb-3" />
           <p className="text-slate-400">Pas assez de données pour générer des recommandations d'objectifs.</p>
+          {periodLabel && (
+            <p className="text-slate-500 text-sm mt-2">Période : {periodLabel}</p>
+          )}
         </CardContent>
       </Card>
     );
   }
 
+  const recent = goals.recent;
+
   return (
     <div className="space-y-4">
+      {periodLabel && (
+        <Card variant="glass">
+          <CardContent className="py-3">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <span className="text-slate-300 font-medium">{periodLabel}</span>
+              {periodContext && (
+                <span className="text-slate-400">
+                  {periodContext.daysWithReading} j. avec lecture / {periodContext.totalDays} j. dans la période
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {recent && (recent.todayMinutes > 0 || recent.thisWeekPages > 0) && (
+        <Card variant="glass" className="border-green-500/20">
+          <CardContent className="py-3">
+            <div className="text-xs text-slate-400 mb-1">Données branchées à tes sessions (mise à jour en direct)</div>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <span className="text-slate-200">
+                <strong className="text-white">Aujourd'hui</strong> : {recent.todayMinutes} min
+              </span>
+              <span className="text-slate-200">
+                <strong className="text-white">Cette semaine</strong> : {recent.thisWeekPages} pages
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {goals.daily && (
         <GoalRecommendationCard
           type="daily"
@@ -263,27 +311,23 @@ const GoalRecommendationsTab = ({ predictions }) => {
 };
 
 /**
- * Composant pour afficher une recommandation d'objectif
+ * Composant pour afficher une recommandation d'objectif (3 niveaux : Facile, Moyen, Difficile)
+ * Avec barre de progression pour les objectifs non atteints et indicateur visuel pour les atteints.
  */
 const GoalRecommendationCard = ({ type, goal, icon, title }) => {
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'easy': return 'text-green-400 bg-green-400/10';
-      case 'moderate': return 'text-yellow-400 bg-yellow-400/10';
-      case 'challenging': return 'text-orange-400 bg-orange-400/10';
-      case 'ambitious': return 'text-red-400 bg-red-400/10';
-      default: return 'text-slate-400 bg-slate-400/10';
-    }
-  };
-
-  const getUnitLabel = (type) => {
-    switch (type) {
+  const getUnitLabel = (goalType) => {
+    switch (goalType) {
       case 'minutes': return 'min/jour';
       case 'pages': return 'pages/semaine';
       case 'books': return 'livres/mois';
       default: return '';
     }
   };
+
+  const levels = goal.levels || [
+    { level: 'easy', label: 'Facile', target: goal.target, fulfilled: goal.current >= goal.target }
+  ];
+  const unit = getUnitLabel(goal.type);
 
   return (
     <Card variant="glass">
@@ -294,31 +338,53 @@ const GoalRecommendationCard = ({ type, goal, icon, title }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <div className="text-2xl font-bold text-white">
-              {goal.target} {getUnitLabel(goal.type)}
-            </div>
-            <div className="text-sm text-slate-400">
-              Actuellement: {goal.current} {getUnitLabel(goal.type)}
-            </div>
+        <div className="mb-4">
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm text-slate-400">Moyenne sur la période</span>
+            <span className="text-lg font-semibold text-white">{goal.current} {unit}</span>
           </div>
-          
-          <div className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(goal.difficulty)}`}>
-            +{goal.improvement}% • {goal.difficulty}
-          </div>
+          <div className="text-xs text-slate-500 mt-0.5">Adaptatif : plus tu lis dans l’année, plus les objectifs suivent.</div>
         </div>
-        
-        <div className="text-sm text-slate-300 bg-slate-800/30 p-3 rounded-lg">
+        <div className="space-y-3 mb-4">
+          {levels.map((l) => {
+            const progressPercent = l.target > 0 ? Math.min(100, Math.round((goal.current / l.target) * 100)) : 0;
+            const gap = l.fulfilled ? 0 : Math.max(0, l.target - goal.current);
+            return (
+              <div
+                key={l.level}
+                className={`rounded-xl p-3 transition-colors ${l.fulfilled ? 'bg-green-500/10 ring-1 ring-green-400/30' : 'bg-slate-800/40'}`}
+              >
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <span className="font-medium text-white">{l.label}</span>
+                  <span className="text-slate-300 text-sm tabular-nums">
+                    {goal.current} / {l.target} {unit}
+                  </span>
+                </div>
+                {l.fulfilled ? (
+                  <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    Objectif atteint
+                  </div>
+                ) : (
+                  <>
+                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {gap > 0 && `Il te manque ${gap} ${unit === 'min/jour' ? 'min' : unit === 'pages/semaine' ? 'pages' : 'livre(s)'} pour ce palier`}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="text-sm text-slate-300 bg-slate-800/30 p-3 rounded-lg border-l-2 border-purple-500/50">
           {goal.reasoning}
         </div>
-        
-        {goal.isRealistic && (
-          <div className="mt-3 flex items-center gap-2 text-green-400 text-sm">
-            <Star className="w-4 h-4" />
-            Objectif réaliste et recommandé
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -327,7 +393,7 @@ const GoalRecommendationCard = ({ type, goal, icon, title }) => {
 /**
  * Onglet des patterns temporels
  */
-const PatternsTab = ({ predictions }) => {
+const PatternsTab = ({ predictions, periodLabel, periodContext }) => {
   const patterns = predictions.temporalPatterns;
 
   if (!patterns || !patterns.insights) {
@@ -336,6 +402,9 @@ const PatternsTab = ({ predictions }) => {
         <CardContent className="text-center py-8">
           <TrendingUp className="w-12 h-12 text-slate-500 mx-auto mb-3" />
           <p className="text-slate-400">Pas assez de données pour analyser les patterns.</p>
+          {periodLabel && (
+            <p className="text-slate-500 text-sm mt-2">Période : {periodLabel}</p>
+          )}
         </CardContent>
       </Card>
     );
@@ -343,6 +412,22 @@ const PatternsTab = ({ predictions }) => {
 
   return (
     <div className="space-y-4">
+      {/* Contexte de période : Année + régularité X jours / Y jours */}
+      <Card variant="glass">
+        <CardContent className="py-3">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="text-slate-300 font-medium">{periodLabel}</span>
+            {periodContext && (
+              <span className="text-slate-400">
+                {periodContext.daysWithReading} jour{periodContext.daysWithReading !== 1 ? 's' : ''} avec lecture
+                {' / '}
+                {periodContext.totalDays} jour{periodContext.totalDays !== 1 ? 's' : ''} dans la période
+              </span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Insights principaux */}
       <Card variant="glass">
         <CardHeader>
