@@ -257,6 +257,13 @@ export const readingSessionSchema = z.object({
     .refine((p) => !Number.isNaN(p) && p >= 0 && p <= 10000, 'Le nombre de pages doit être entre 0 et 10000')
     .optional()
     .default(0),
+  startTime: z.string()
+    .optional()
+    .default('')
+    .refine(
+      (v) => !v || /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v),
+      'Heure invalide (format attendu : HH:mm)'
+    ),
   note: z.string()
     .max(1000, 'La note ne peut pas dépasser 1000 caractères')
     .optional()

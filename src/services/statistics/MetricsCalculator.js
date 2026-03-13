@@ -166,7 +166,7 @@ class MetricsCalculator {
   static analyzeReadingPatterns(aggregatedData) {
     const patterns = {
       bestDaysOfWeek: {},
-      bestTimeOfDay: {}, // Sera implémenté quand on aura les heures
+      bestTimeOfDay: {}, // Alimenté à partir des heures de début des sessions (startTime)
       mostProductiveDays: [],
       readingConsistency: 0
     };
@@ -213,11 +213,73 @@ class MetricsCalculator {
       .sort((a, b) => b.pages - a.pages)
       .slice(0, 5);
     
-    // Calculer la consistance (pourcentage de jours avec lecture dans la période)
-    const totalDaysInPeriod = Object.keys(aggregatedData.byDate).length;
+    // Calculer la consistance (pourcentage de jours avec lecture dans la période réelle)
+    const totalDaysInPeriod =
+      typeof aggregatedData.periodDays === 'number'
+        ? aggregatedData.periodDays
+        : Object.keys(aggregatedData.byDate).length;
     const daysWithReading = Object.values(aggregatedData.byDate).filter(d => d.totalPages > 0).length;
-    patterns.readingConsistency = totalDaysInPeriod > 0 ? 
-      Math.round((daysWithReading / totalDaysInPeriod) * 100) : 0;
+    patterns.readingConsistency =
+      totalDaysInPeriod > 0
+        ? Math.round((daysWithReading / totalDaysInPeriod) * 100)
+        : 0;
+
+    // Analyses des créneaux horaires (si startTime est présent)
+    if (Array.isArray(aggregatedData.sessions) && aggregatedData.sessions.length > 0) {
+      const buckets = {
+        '6h-9h':   { label: 'Matin',       sessionCount: 0, totalPages: 0, totalMinutes: 0 },
+        '9h-12h':  { label: 'Matinée',     sessionCount: 0, totalPages: 0, totalMinutes: 0 },
+        '12h-14h': { label: 'Midi',        sessionCount: 0, totalPages: 0, totalMinutes: 0 },
+        '14h-18h': { label: 'Après-midi',  sessionCount: 0, totalPages: 0, totalMinutes: 0 },
+        '18h-22h': { label: 'Soirée',      sessionCount: 0, totalPages: 0, totalMinutes: 0 },
+        '22h-6h':  { label: 'Nuit',        sessionCount: 0, totalPages: 0, totalMinutes: 0 },
+      };
+
+      const getBucketKey = (startTime) => {
+        if (!startTime || typeof startTime !== 'string') return null;
+        const m = startTime.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/);
+        if (!m) return null;
+        const hour = parseInt(m[1], 10);
+        if (hour >= 6 && hour < 9) return '6h-9h';
+        if (hour >= 9 && hour < 12) return '9h-12h';
+        if (hour >= 12 && hour < 14) return '12h-14h';
+        if (hour >= 14 && hour < 18) return '14h-18h';
+        if (hour >= 18 && hour < 22) return '18h-22h';
+        return '22h-6h';
+      };
+
+      aggregatedData.sessions.forEach((session) => {
+        const key = getBucketKey(session.startTime);
+        if (!key || !buckets[key]) return;
+        const bucket = buckets[key];
+        bucket.sessionCount += 1;
+        bucket.totalPages += Number(session.pagesRead) || 0;
+        bucket.totalMinutes += Number(session.durationMinutes) || 0;
+      });
+
+      const totalSessionsInBuckets = Object.values(buckets).reduce(
+        (sum, b) => sum + b.sessionCount,
+        0
+      );
+
+      if (totalSessionsInBuckets > 0) {
+        let favoriteKey = null;
+        let maxPages = -1;
+        Object.entries(buckets).forEach(([key, b]) => {
+          if (b.sessionCount > 0 && b.totalPages >= maxPages) {
+            maxPages = b.totalPages;
+            favoriteKey = key;
+          }
+        });
+
+        patterns.bestTimeOfDay = {
+          buckets,
+          favorite: favoriteKey
+            ? { key: favoriteKey, ...(buckets[favoriteKey] || {}) }
+            : null,
+        };
+      }
+    }
     
     return patterns;
   }

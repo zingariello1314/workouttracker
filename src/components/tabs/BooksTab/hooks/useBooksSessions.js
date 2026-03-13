@@ -21,6 +21,7 @@ import { emptySessionForm } from '../constants';
  */
 export const useBooksSessions = (books = [], setBooks, selectedBook) => {
   const [sessionForm, setSessionForm] = useState(emptySessionForm);
+  const [editingSessionId, setEditingSessionId] = useState(null);
 
   const handleSessionChange = useCallback((field, value) => {
     setSessionForm((prev) => ({ ...prev, [field]: value }));
@@ -28,7 +29,24 @@ export const useBooksSessions = (books = [], setBooks, selectedBook) => {
 
   const resetSessionForm = useCallback(() => {
     setSessionForm(emptySessionForm);
+    setEditingSessionId(null);
   }, []);
+
+  const startEditSession = useCallback((session) => {
+    if (!session) return;
+    setSessionForm({
+      date: session.date || '',
+      durationMinutes: session.durationMinutes != null ? String(session.durationMinutes) : '',
+      pagesRead: session.pagesRead != null ? String(session.pagesRead) : '',
+      startTime: session.startTime || '',
+      note: session.note || '',
+    });
+    setEditingSessionId(session.id || null);
+  }, []);
+
+  const cancelEditSession = useCallback(() => {
+    resetSessionForm();
+  }, [resetSessionForm]);
 
   const handleAddSession = useCallback((e) => {
     e.preventDefault();
@@ -47,6 +65,7 @@ export const useBooksSessions = (books = [], setBooks, selectedBook) => {
       date: sessionForm.date || new Date().toISOString().slice(0, 10),
       durationMinutes: sessionForm.durationMinutes ? Number(sessionForm.durationMinutes) || 0 : 0,
       pagesRead: sessionForm.pagesRead ? Number(sessionForm.pagesRead) || 0 : 0,
+      startTime: sessionForm.startTime || '',
       note: sessionForm.note?.trim() || '',
     });
 
@@ -56,32 +75,50 @@ export const useBooksSessions = (books = [], setBooks, selectedBook) => {
       return;
     }
 
-    const session = {
-      id: `session_${Date.now()}`,
+    const baseData = {
       ...validation.data,
     };
 
+    const newId = editingSessionId || `session_${Date.now()}`;
+
     setBooks((prev) =>
-      prev.map((book) =>
-        book.id === selectedBook.id
-          ? {
-              ...book,
-              readingSessions: [...(book.readingSessions || []), session],
-            }
-          : book
-      )
+      prev.map((book) => {
+        if (book.id !== selectedBook.id) return book;
+
+        const existingSessions = book.readingSessions || [];
+
+        if (editingSessionId) {
+          // Mise à jour d'une session existante
+          return {
+            ...book,
+            readingSessions: existingSessions.map((s) =>
+              s.id === editingSessionId ? { ...s, ...baseData } : s
+            ),
+          };
+        }
+
+        const session = {
+          id: newId,
+          ...baseData,
+        };
+
+        return {
+          ...book,
+          readingSessions: [...existingSessions, session],
+        };
+      })
     );
 
     sidebarEvents.emit(SIDEBAR_EVENTS.PAGES_READ, { 
       bookId: selectedBook.id, 
-      sessionId: session.id,
+      sessionId: newId,
       date: session.date,
       pagesRead: session.pagesRead,
       durationMinutes: session.durationMinutes
     });
 
     resetSessionForm();
-  }, [selectedBook, sessionForm, setBooks, resetSessionForm]);
+  }, [selectedBook, sessionForm, setBooks, resetSessionForm, editingSessionId]);
 
   return {
     sessionForm,
@@ -89,5 +126,8 @@ export const useBooksSessions = (books = [], setBooks, selectedBook) => {
     handleSessionChange,
     handleAddSession,
     resetSessionForm,
+    editingSessionId,
+    startEditSession,
+    cancelEditSession,
   };
 };

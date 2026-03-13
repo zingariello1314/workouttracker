@@ -113,7 +113,26 @@ const BooksTab = () => {
 
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [show3D, setShow3D] = useState(true);
-  const [isFormExpanded, setIsFormExpanded] = useState(false);
+  const [summaryTab, setSummaryTab] = useState('short'); // 'short' | 'long' | 'notes'
+  const [isEditingSummaries, setIsEditingSummaries] = useState(false);
+  const [summaryDraft, setSummaryDraft] = useState({
+    short: '',
+    long: '',
+  });
+
+  const buildBookMetaLine = (book) => {
+    if (!book) return '';
+    const parts = [];
+    if (book.author) parts.push(book.author);
+    if (book.year) parts.push(book.year);
+    if (book.genre) parts.push(book.genre);
+    if (book.pages) {
+      parts.push(
+        `${book.pages} ${t('books.detail.pagesLabel', 'pages')}`
+      );
+    }
+    return parts.join(' · ');
+  };
 
   // ✅ PHASE 4 : Hooks personnalisés
   const {
@@ -173,6 +192,31 @@ const BooksTab = () => {
     [books, selectedBookId]
   );
 
+  // Mettre à jour les brouillons quand on change de livre
+  useEffect(() => {
+    if (!selectedBook) return;
+    setSummaryDraft({
+      short: selectedBook.shortSummary || '',
+      long: selectedBook.longSummary || '',
+    });
+    setIsEditingSummaries(false);
+  }, [selectedBook]);
+
+  const handleSaveSummariesInline = () => {
+    if (!selectedBook) return;
+    const updated = books.map((b) =>
+      b.id === selectedBook.id
+        ? {
+            ...b,
+            shortSummary: summaryDraft.short.trim(),
+            longSummary: summaryDraft.long.trim(),
+          }
+        : b
+    );
+    setBooks(updated);
+    setIsEditingSummaries(false);
+  };
+
   // Descendre jusqu'à la fiche du livre quand on arrive depuis la sidebar (clic sur le livre en cours)
   useEffect(() => {
     if (!scrollToBookFicheRef.current || !selectedBook) return;
@@ -192,6 +236,9 @@ const BooksTab = () => {
     handleSessionChange,
     handleAddSession,
     resetSessionForm,
+    editingSessionId,
+    startEditSession,
+    cancelEditSession,
   } = useBooksSessions(books, setBooks, selectedBook);
 
   const {
@@ -445,21 +492,12 @@ const BooksTab = () => {
             <div className="space-y-6">
               {/* Formulaire et Recherche/Filtres en grille */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Formulaire collapsible */}
+                {/* Formulaire d'ajout / édition de livre */}
                 <Card variant="glass" padding="lg">
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle size="md" className="books-glass-card-title">
-                        {t('books.form.title', 'Ajouter/Modifier un livre')}
-                      </CardTitle>
-                      <button
-                        type="button"
-                        onClick={() => setIsFormExpanded(!isFormExpanded)}
-                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
-                      >
-                        {isFormExpanded ? t('common.hide', 'Masquer') : t('common.show', 'Afficher')}
-                      </button>
-                    </div>
+                    <CardTitle size="md" className="books-glass-card-title">
+                      {t('books.form.title', 'Ajouter/Modifier un livre')}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="books-glass-card-content">
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -561,8 +599,46 @@ const BooksTab = () => {
                         </Select>
                       </div>
                       
-                      {/* Bouton toujours visible */}
-                      <div className="flex flex-wrap items-center gap-3">
+                      {/* Résumé court / détaillé */}
+                      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)] gap-4">
+                        <TextArea
+                          id="book-short-summary"
+                          variant="glass"
+                          label={t('books.form.shortSummary', 'Résumé court')}
+                          rows={4}
+                          maxLength={500}
+                          value={form.shortSummary}
+                          onChange={(e) => handleChange('shortSummary', e.target.value)}
+                        />
+                        <TextArea
+                          id="book-long-summary"
+                          variant="glass"
+                          label={t('books.form.longSummary', 'Résumé détaillé')}
+                          rows={4}
+                          maxLength={5000}
+                          value={form.longSummary}
+                          onChange={(e) => handleChange('longSummary', e.target.value)}
+                        />
+                      </div>
+
+                      {/* Note perso */}
+                      <Input
+                        id="book-score"
+                        type="number"
+                        variant="glass"
+                        min={0}
+                        max={5}
+                        label={t('books.form.score', 'Note perso (0–5 étoiles)')}
+                        value={form.personalScore}
+                        onChange={(e) => handleChange('personalScore', e.target.value)}
+                        help={t(
+                          'books.form.score.help',
+                          'Cette note est purement indicative et reste locale.'
+                        )}
+                      />
+
+                      {/* Boutons d'action en bas du formulaire */}
+                      <div className="flex flex-wrap items-center gap-3 pt-2">
                         <button
                           type="submit"
                           className="gradient-button-premium gradient-button-premium-md rounded-lg"
@@ -581,46 +657,6 @@ const BooksTab = () => {
                           </button>
                         )}
                       </div>
-                      
-                      {/* Champs supplémentaires (affichés seulement si expanded) */}
-                      {isFormExpanded && (
-                        <>
-                          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)] gap-4">
-                            <TextArea
-                              id="book-short-summary"
-                              variant="glass"
-                              label={t('books.form.shortSummary', 'Résumé court')}
-                              rows={4}
-                              maxLength={500}
-                              value={form.shortSummary}
-                              onChange={(e) => handleChange('shortSummary', e.target.value)}
-                            />
-                            <TextArea
-                              id="book-long-summary"
-                              variant="glass"
-                              label={t('books.form.longSummary', 'Résumé détaillé')}
-                              rows={4}
-                              maxLength={5000}
-                              value={form.longSummary}
-                              onChange={(e) => handleChange('longSummary', e.target.value)}
-                            />
-                          </div>
-                          <Input
-                            id="book-score"
-                            type="number"
-                            variant="glass"
-                            min={0}
-                            max={5}
-                            label={t('books.form.score', 'Note perso (0–5 étoiles)')}
-                            value={form.personalScore}
-                            onChange={(e) => handleChange('personalScore', e.target.value)}
-                            help={t(
-                              'books.form.score.help',
-                              'Cette note est purement indicative et reste locale.'
-                            )}
-                          />
-                        </>
-                      )}
                     </form>
                   </CardContent>
                 </Card>
@@ -768,6 +804,7 @@ const BooksTab = () => {
                   </p>
                 </CardContent>
               </Card>
+
 
               {/* Vue 3D */}
               {show3D && (
@@ -1014,7 +1051,8 @@ const BooksTab = () => {
                     </CardTitle>
                     <p className="text-sm text-slate-400 mt-1">
                       {selectedBook
-                        ? t(
+                        ? buildBookMetaLine(selectedBook) ||
+                          t(
                             'books.detail.subtitle',
                             'Historique de lecture et statistiques pour ce livre.'
                           )
@@ -1113,270 +1151,525 @@ const BooksTab = () => {
                 <CardContent className="space-y-4">
                   {selectedBook ? (
                     <>
-                      <div className="grid gap-3 md:grid-cols-3 text-sm text-slate-300">
-                        <div>
-                          <p className="font-semibold">
-                            {t('books.detail.author', 'Auteur')}
-                          </p>
-                          <p>{selectedBook.author || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {t('books.detail.genre', 'Genre')}
-                          </p>
-                          <p>{selectedBook.genre || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {t('books.detail.year', 'Année')}
-                          </p>
-                          <p>{selectedBook.year || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {t('books.detail.pages', 'Pages')}
-                          </p>
-                          <p>{selectedBook.pages || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {t('books.stats.sessionsCount', 'Nombre de sessions')}
-                          </p>
-                          <p>{(selectedBook.readingSessions || []).length}</p>
-                        </div>
-                      </div>
-
-                      {selectedBook.hasCover && coverUrls[selectedBook.id] && (
-                        <div className="mt-4">
-                          <p className="text-sm font-semibold text-slate-300 mb-2">
+                      {/* Couverture à gauche, statistiques + sessions à droite */}
+                      <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] items-start">
+                        {/* Colonne gauche : carte couverture + infos */}
+                        <div className="rounded-3xl bg-slate-900/70 border border-slate-800 px-6 py-6 max-w-sm w-full">
+                          <p className="text-sm font-semibold text-slate-300 mb-3">
                             {t('books.detail.cover', 'Couverture')}
                           </p>
-                          <img
-                            src={coverUrls[selectedBook.id]}
-                            alt={
-                              selectedBook.title ||
-                              t('books.detail.noTitle', 'Livre sans titre')
-                            }
-                            className="max-h-72 rounded-xl shadow-xl border border-white/10 object-contain bg-black/30"
-                          />
-                        </div>
-                      )}
-
-                      {selectedBook.shortSummary && (
-                        <div className="text-sm text-slate-300">
-                          <p className="font-semibold mb-1">
-                            {t('books.detail.shortSummary', 'Résumé court')}
-                          </p>
-                          <p className="whitespace-pre-line">{selectedBook.shortSummary}</p>
-                        </div>
-                      )}
-
-                      {selectedBook.longSummary && (
-                        <div className="text-sm text-slate-300">
-                          <p className="font-semibold mb-1">
-                            {t('books.detail.longSummary', 'Résumé détaillé')}
-                          </p>
-                          <p className="whitespace-pre-line">{selectedBook.longSummary}</p>
-                        </div>
-                      )}
-
-                      {selectedBook.notes && (
-                        <div className="text-sm text-slate-300">
-                          <p className="font-semibold mb-1">
-                            {t('books.detail.notes', 'Notes')}
-                          </p>
-                          <p className="whitespace-pre-line">{selectedBook.notes}</p>
-                        </div>
-                      )}
-
-                      <div className="grid gap-3 md:grid-cols-3 text-sm text-slate-300">
-                        <div>
-                          <p className="font-semibold">
-                            {t('books.stats.totalTime', 'Temps total de lecture')}
-                          </p>
-                          <p>
-                            {getTotalReadingTime(selectedBook)}{' '}
-                            {t('books.stats.minutes', 'minutes')}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {t('books.stats.totalPages', 'Pages lues au total')}
-                          </p>
-                          <p>{getTotalPagesRead(selectedBook)}</p>
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {t(
-                              'books.stats.avgPagesPerSession',
-                              'Pages moyennes par session'
+                          <div className="rounded-2xl overflow-hidden shadow-xl w-full h-80 bg-slate-950 flex items-center justify-center">
+                            {selectedBook.hasCover && coverUrls[selectedBook.id] ? (
+                              <img
+                                src={coverUrls[selectedBook.id]}
+                                alt={
+                                  selectedBook.title ||
+                                  t('books.detail.noTitle', 'Livre sans titre')
+                                }
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <span className="text-xs text-slate-500">
+                                {t('books.detail.noCoverPlaceholder', 'Pas de couverture')}
+                              </span>
                             )}
-                          </p>
-                          <p>{getAveragePagesPerSession(selectedBook)}</p>
-                        </div>
-                      </div>
+                          </div>
 
-                      <div className="grid gap-3 md:grid-cols-3 text-sm text-slate-300">
-                        <div>
-                          <p className="font-semibold">
-                            {t(
-                              'books.stats.avgDurationPerSession',
-                              'Durée moyenne par session (minutes)'
-                            )}
-                          </p>
-                          <p>{getAverageDurationPerSession(selectedBook)}</p>
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {t(
-                              'books.stats.progress',
-                              'Progression estimée du livre (%)'
-                            )}
-                          </p>
-                          <p>
-                            {getReadingProgressPercent(selectedBook) ?? '—'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="font-semibold">
-                            {t(
-                              'books.stats.estimatedRemaining',
-                              'Temps estimé restant'
-                            )}
-                          </p>
-                          <p>
-                            {(() => {
-                              const value = getEstimatedRemainingTimeMinutes(
-                                selectedBook
-                              );
-                              if (value == null) return '—';
-                              return `${value} ${t('books.stats.minutes', 'minutes')}`;
-                            })()}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-                        {/* Liste des sessions */}
-                        <div className="space-y-2">
-                          <p className="font-semibold text-sm text-slate-200">
-                            {t('books.sessions.listTitle', 'Sessions de lecture')}
-                          </p>
-                          {(selectedBook.readingSessions || []).length === 0 ? (
-                            <p className="text-sm text-slate-400">
-                              {t(
-                                'books.sessions.empty',
-                                'Aucune session enregistrée pour le moment.'
-                              )}
+                          <div className="mt-6 space-y-1 text-sm text-slate-300">
+                            <p>
+                              <span className="font-semibold">
+                                {t('books.detail.genre', 'Genre')} :
+                              </span>{' '}
+                              {selectedBook.genre || '—'}
                             </p>
-                          ) : (
-                            <ul className="space-y-2 text-sm text-slate-200 max-h-56 overflow-y-auto pr-1">
-                              {selectedBook.readingSessions.map((session) => (
-                                <li
-                                  key={session.id}
-                                  className="flex items-start justify-between gap-3 border border-slate-700/60 rounded-md px-3 py-2 bg-slate-900/40"
-                                >
-                                  <div>
-                                    <p className="font-semibold text-xs text-slate-200">
-                                      {session.date || '—'}
-                                    </p>
-                                    <p className="text-xs text-slate-300 mt-0.5">
-                                      {session.durationMinutes > 0 && (
-                                        <span className="mr-2">
-                                          {session.durationMinutes}{' '}
-                                          {t('books.stats.minutes', 'minutes')}
-                                        </span>
-                                      )}
-                                      {session.pagesRead > 0 && (
-                                        <span>
-                                          • {session.pagesRead}{' '}
-                                          {t('books.pages', 'pages')}
-                                        </span>
-                                      )}
-                                    </p>
-                                    {session.note && (
-                                      <p className="text-[11px] text-slate-400 mt-1">
-                                        {session.note}
-                                      </p>
-                                    )}
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                            <p>
+                              <span className="font-semibold">
+                                {t('books.detail.year', 'Année')} :
+                              </span>{' '}
+                              {selectedBook.year || '—'}
+                            </p>
+                            <p>
+                              <span className="font-semibold">
+                                {t('books.detail.pages', 'Pages')} :
+                              </span>{' '}
+                              {selectedBook.pages || '—'}
+                            </p>
+                            <p>
+                              <span className="font-semibold">
+                                {t('books.stats.sessionsCount', 'Nombre de sessions')} :
+                              </span>{' '}
+                              {(selectedBook.readingSessions || []).length}
+                            </p>
+                          </div>
                         </div>
 
-                        {/* Formulaire session */}
-                        <form
-                          data-session-form
-                          onSubmit={handleAddSession}
-                          className="space-y-3 border border-slate-700/60 rounded-md p-3 bg-slate-900/40"
-                        >
-                          <p className="font-semibold text-sm text-slate-200">
-                            {t(
-                              'books.sessions.addTitle',
-                              'Ajouter une session de lecture'
-                            )}
-                          </p>
-                          <div className="grid gap-3 md:grid-cols-2">
-                            <Input
-                              id="session-date"
-                              type="date"
-                              label={t('books.sessions.date', 'Date')}
-                              value={sessionForm.date}
-                              onChange={(e) =>
-                                handleSessionChange('date', e.target.value)
-                              }
-                            />
-                            <Input
-                              id="session-duration"
-                              type="number"
-                              min={0}
-                              label={t(
-                                'books.sessions.duration',
-                                'Durée (minutes)'
-                              )}
-                              value={sessionForm.durationMinutes}
-                              onChange={(e) =>
-                                handleSessionChange('durationMinutes', e.target.value)
-                              }
-                            />
+                        {/* Colonne droite : stats + progression + sessions */}
+                        <div className="space-y-4">
+                          {/* Grille de stats 3 x 2 comme dans l'exemple HTML */}
+                          <div className="grid gap-4 md:grid-cols-3">
+                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
+                              <p className="text-xs text-slate-400">
+                                {t('books.stats.totalTime', 'Temps de lecture')}
+                              </p>
+                              <p className="text-lg font-semibold text-slate-50">
+                                {getTotalReadingTime(selectedBook)}{' '}
+                                {t('books.stats.minutes', 'minutes')}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {t(
+                                  'books.stats.totalTimeSubtitle',
+                                  'minutes au total'
+                                )}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
+                              <p className="text-xs text-slate-400">
+                                {t('books.stats.totalPages', 'Pages lues')}
+                              </p>
+                              <p className="text-lg font-semibold text-slate-50">
+                                {getTotalPagesRead(selectedBook)}{' '}
+                                {selectedBook.pages
+                                  ? t(
+                                      'books.stats.onTotalPages',
+                                      'sur {{pages}}',
+                                      { pages: selectedBook.pages }
+                                    )
+                                  : ''}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
+                              <p className="text-xs text-slate-400">
+                                {t('books.stats.progress', 'Progression')}
+                              </p>
+                              <p className="text-lg font-semibold text-slate-50">
+                                {(() => {
+                                  const value = getReadingProgressPercent(selectedBook);
+                                  if (value == null) return '—';
+                                  return `${value}${t('books.stats.percent', '%')}`;
+                                })()}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {t('books.stats.ofBook', 'du livre')}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
+                              <p className="text-xs text-slate-400">
+                                {t(
+                                  'books.stats.estimatedRemaining',
+                                  'Temps restant'
+                                )}
+                              </p>
+                              <p className="text-lg font-semibold text-slate-50">
+                                {(() => {
+                                  const value = getEstimatedRemainingTimeMinutes(
+                                    selectedBook
+                                  );
+                                  if (value == null) return '—';
+                                  return value;
+                                })()}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {t('books.stats.minutesEstimated', 'min estimées')}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
+                              <p className="text-xs text-slate-400">
+                                {t(
+                                  'books.stats.avgPagesPerSession',
+                                  'Moy. par session'
+                                )}
+                              </p>
+                              <p className="text-lg font-semibold text-slate-50">
+                                {getAveragePagesPerSession(selectedBook)}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {t('books.pages', 'pages')}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
+                              <p className="text-xs text-slate-400">
+                                {t(
+                                  'books.stats.avgDurationPerSession',
+                                  'Durée moy.'
+                                )}
+                              </p>
+                              <p className="text-lg font-semibold text-slate-50">
+                                {getAverageDurationPerSession(selectedBook)}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {t('books.stats.minutesPerSession', 'min / session')}
+                              </p>
+                            </div>
                           </div>
-                          <div className="grid gap-3 md:grid-cols-2">
-                            <Input
-                              id="session-pages"
-                              type="number"
-                              min={0}
-                              label={t(
-                                'books.sessions.pages',
-                                'Pages lues pendant la session'
-                              )}
-                              value={sessionForm.pagesRead}
-                              onChange={(e) =>
-                                handleSessionChange('pagesRead', e.target.value)
-                              }
-                            />
-                            <TextArea
-                              id="session-note"
-                              rows={3}
-                              label={t('books.sessions.note', 'Note (optionnel)')}
-                              value={sessionForm.note}
-                              onChange={(e) =>
-                                handleSessionChange('note', e.target.value)
-                              }
-                            />
+
+                          {/* Barre de progression comme sur le mockup */}
+                          <div className="mt-2">
+                            <p className="text-xs font-semibold text-slate-300 mb-1 tracking-wide">
+                              {t('books.detail.progressTitle', 'PROGRESSION')}
+                            </p>
+                            <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-indigo-400 to-purple-500"
+                                style={{
+                                  width: `${Math.max(
+                                    0,
+                                    Math.min(
+                                      100,
+                                      getReadingProgressPercent(selectedBook) || 0
+                                    )
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                            <p className="mt-1 text-xs text-slate-400">
+                              {(() => {
+                                const pagesRead = getTotalPagesRead(selectedBook);
+                                const totalPages = selectedBook.pages || 0;
+                                return `${pagesRead} / ${
+                                  totalPages || '—'
+                                } ${t('books.pages', 'pages')}`;
+                              })()}
+                            </p>
                           </div>
-                          <button
-                            type="submit"
-                            className="gradient-button-premium gradient-button-premium-md rounded-lg"
-                          >
-                            {t(
-                              'books.sessions.addButton',
-                              'Ajouter la session de lecture'
+
+                          {/* Liste des sessions */}
+                          <div className="mt-4 space-y-2">
+                            <p className="font-semibold text-sm text-slate-200">
+                              {t('books.sessions.listTitle', 'Sessions de lecture')}
+                            </p>
+                            {(selectedBook.readingSessions || []).length === 0 ? (
+                              <p className="text-sm text-slate-400">
+                                {t(
+                                  'books.sessions.empty',
+                                  'Aucune session enregistrée pour le moment.'
+                                )}
+                              </p>
+                            ) : (
+                              <ul className="space-y-2 text-sm text-slate-200 max-h-56 overflow-y-auto pr-1">
+                                {selectedBook.readingSessions.map((session) => (
+                                  <li
+                                    key={session.id}
+                                    className="flex items-start justify-between gap-3 border border-slate-700/60 rounded-md px-3 py-2 bg-slate-900/40"
+                                  >
+                                    <div>
+                                      <p className="font-semibold text-xs text-slate-200">
+                                        {session.date || '—'}
+                                      </p>
+                                      <p className="text-xs text-slate-300 mt-0.5">
+                                        {session.startTime && (
+                                          <span className="mr-2">
+                                            {session.startTime}
+                                          </span>
+                                        )}
+                                        {session.durationMinutes > 0 && (
+                                          <span className="mr-2">
+                                            {session.durationMinutes}{' '}
+                                            {t('books.stats.minutes', 'minutes')}
+                                          </span>
+                                        )}
+                                        {session.pagesRead > 0 && (
+                                          <span>
+                                            • {session.pagesRead}{' '}
+                                            {t('books.pages', 'pages')}
+                                          </span>
+                                        )}
+                                      </p>
+                                      {session.note && (
+                                        <p className="text-[11px] text-slate-400 mt-1">
+                                          {session.note}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => startEditSession(session)}
+                                        className="text-xs text-emerald-300 hover:text-emerald-200 underline"
+                                      >
+                                        {t('books.sessions.edit', 'Modifier')}
+                                      </button>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
                             )}
-                          </button>
-                        </form>
+                          </div>
+
+                          {/* Formulaire d'ajout / modification de session en large rectangle sous les sessions */}
+                          <div className="mt-4 space-y-3 rounded-2xl bg-slate-900/70 border border-slate-800 px-4 py-4">
+                            <p className="font-semibold text-sm text-slate-200">
+                              {editingSessionId
+                                ? t(
+                                    'books.sessions.editTitle',
+                                    'Modifier une session de lecture'
+                                  )
+                                : t(
+                                    'books.sessions.addTitle',
+                                    'Ajouter une session de lecture'
+                                  )}
+                            </p>
+                            <form
+                              data-session-form
+                              onSubmit={handleAddSession}
+                              className="space-y-3"
+                            >
+                              <div className="grid gap-3 md:grid-cols-2">
+                                <Input
+                                  id="session-date"
+                                  type="date"
+                                  label={t('books.sessions.date', 'Date')}
+                                  value={sessionForm.date}
+                                  onChange={(e) =>
+                                    handleSessionChange('date', e.target.value)
+                                  }
+                                />
+                                <Input
+                                  id="session-duration"
+                                  type="number"
+                                  min={0}
+                                  label={t(
+                                    'books.sessions.duration',
+                                    'Durée (minutes)'
+                                  )}
+                                  value={sessionForm.durationMinutes}
+                                  onChange={(e) =>
+                                    handleSessionChange(
+                                      'durationMinutes',
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              </div>
+                              <div className="grid gap-3 md:grid-cols-2">
+                                <Input
+                                  id="session-time"
+                                  type="time"
+                                  label={t(
+                                    'books.sessions.time',
+                                    'Heure (optionnel)'
+                                  )}
+                                  value={sessionForm.startTime}
+                                  onChange={(e) =>
+                                    handleSessionChange('startTime', e.target.value)
+                                  }
+                                />
+                                <Input
+                                  id="session-pages"
+                                  type="number"
+                                  min={0}
+                                  label={t(
+                                    'books.sessions.pages',
+                                    'Pages lues pendant la session'
+                                  )}
+                                  value={sessionForm.pagesRead}
+                                  onChange={(e) =>
+                                    handleSessionChange('pagesRead', e.target.value)
+                                  }
+                                />
+                              </div>
+                              <TextArea
+                                id="session-note"
+                                rows={3}
+                                label={t(
+                                  'books.sessions.note',
+                                  'Note (optionnel)'
+                                )}
+                                value={sessionForm.note}
+                                onChange={(e) =>
+                                  handleSessionChange('note', e.target.value)
+                                }
+                              />
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="submit"
+                                  className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                                >
+                                  {editingSessionId
+                                    ? t(
+                                        'books.sessions.updateButton',
+                                        'Enregistrer la session'
+                                      )
+                                    : t(
+                                        'books.sessions.addButton',
+                                        'Ajouter la session de lecture'
+                                      )}
+                                </button>
+                                {editingSessionId && (
+                                  <button
+                                    type="button"
+                                    onClick={cancelEditSession}
+                                    className="text-sm text-slate-300 underline"
+                                  >
+                                    {t(
+                                      'books.sessions.cancelEdit',
+                                      'Annuler la modification'
+                                    )}
+                                  </button>
+                                )}
+                              </div>
+                            </form>
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Résumés et notes en dessous */}
+                      {(() => {
+                        const sessionNotes =
+                          (selectedBook.readingSessions || []).filter(
+                            (s) => s.note && s.note.trim().length > 0
+                          );
+                        return (
+                          selectedBook.shortSummary ||
+                          selectedBook.longSummary ||
+                          sessionNotes.length > 0
+                        );
+                      })() && (
+                        <div className="mt-10 space-y-3">
+                          <div className="flex items-center justify-between gap-4">
+                            <p className="text-sm font-semibold text-slate-300">
+                              Résumés
+                            </p>
+                            <div className="flex items-center gap-2">
+                              {!isEditingSummaries && (
+                                <button
+                                  type="button"
+                                  onClick={() => setIsEditingSummaries(true)}
+                                  className="text-xs px-3 py-1 rounded-full border border-slate-500 text-slate-200 hover:bg-slate-800"
+                                >
+                                  {t(
+                                    'books.detail.editSummaries',
+                                    'Modifier les résumés'
+                                  )}
+                                </button>
+                              )}
+                              {isEditingSummaries && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={handleSaveSummariesInline}
+                                    className="text-xs px-3 py-1 rounded-full bg-emerald-500 text-slate-950 font-semibold"
+                                  >
+                                    {t('common.save', 'Enregistrer')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!selectedBook) return;
+                                      setSummaryDraft({
+                                        short: selectedBook.shortSummary || '',
+                                        long: selectedBook.longSummary || '',
+                                      });
+                                      setIsEditingSummaries(false);
+                                    }}
+                                    className="text-xs px-3 py-1 rounded-full border border-slate-500 text-slate-200 hover:bg-slate-800"
+                                  >
+                                    {t('common.cancel', 'Annuler')}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => setSummaryTab('short')}
+                              className={`px-3 py-1 rounded-full border ${
+                                summaryTab === 'short'
+                                  ? 'bg-slate-200 text-slate-900 border-slate-200'
+                                  : 'bg-transparent text-slate-300 border-slate-600'
+                              }`}
+                            >
+                              Court
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSummaryTab('long')}
+                              className={`px-3 py-1 rounded-full border ${
+                                summaryTab === 'long'
+                                  ? 'bg-slate-200 text-slate-900 border-slate-200'
+                                  : 'bg-transparent text-slate-300 border-slate-600'
+                              }`}
+                            >
+                              Détaillé
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSummaryTab('notes')}
+                              className={`px-3 py-1 rounded-full border ${
+                                summaryTab === 'notes'
+                                  ? 'bg-slate-200 text-slate-900 border-slate-200'
+                                  : 'bg-transparent text-slate-300 border-slate-600'
+                              }`}
+                            >
+                              Notes
+                            </button>
+                          </div>
+
+                          <div className="text-sm text-slate-200 bg-slate-900/40 border border-slate-700/60 rounded-xl p-4 whitespace-pre-line">
+                            {summaryTab === 'short' &&
+                              (isEditingSummaries ? (
+                                <textarea
+                                  rows={4}
+                                  className="w-full bg-transparent outline-none resize-none text-sm"
+                                  value={summaryDraft.short}
+                                  onChange={(e) =>
+                                    setSummaryDraft((prev) => ({
+                                      ...prev,
+                                      short: e.target.value,
+                                    }))
+                                  }
+                                />
+                              ) : (
+                                selectedBook.shortSummary ||
+                                t(
+                                  'books.detail.shortSummary',
+                                  'Aucun résumé court renseigné.'
+                                )
+                              ))}
+                            {summaryTab === 'long' &&
+                              (isEditingSummaries ? (
+                                <textarea
+                                  rows={6}
+                                  className="w-full bg-transparent outline-none resize-none text-sm"
+                                  value={summaryDraft.long}
+                                  onChange={(e) =>
+                                    setSummaryDraft((prev) => ({
+                                      ...prev,
+                                      long: e.target.value,
+                                    }))
+                                  }
+                                />
+                              ) : (
+                                selectedBook.longSummary ||
+                                t(
+                                  'books.detail.longSummary',
+                                  'Aucun résumé détaillé renseigné.'
+                                )
+                              ))}
+                            {summaryTab === 'notes' &&
+                              (() => {
+                                const notes =
+                                  (selectedBook.readingSessions || []).filter(
+                                    (s) => s.note && s.note.trim().length > 0
+                                  );
+                                if (notes.length === 0) {
+                                  return t(
+                                    'books.detail.notes',
+                                    'Aucune note de session pour ce livre.'
+                                  );
+                                }
+                                return notes
+                                  .map(
+                                    (s) =>
+                                      `${s.date || ''}${
+                                        s.date ? ' — ' : ''
+                                      }${s.note?.trim() || ''}`
+                                  )
+                                  .join('\n\n');
+                              })()}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Sélecteur de statut en bas de la page */}
                       <div className="mt-6 pt-6 border-t border-slate-700">

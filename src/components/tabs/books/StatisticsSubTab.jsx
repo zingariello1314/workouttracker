@@ -43,6 +43,7 @@ import StatisticsErrorBoundary from '../../statistics/StatisticsErrorBoundary';
 
 // Import des services de données
 import { useStatisticsData } from '../../../hooks/useStatisticsData';
+import { usePredictions } from '../../../hooks/usePredictions';
 import { useUserPreferences } from '../../../hooks/useUserPreferences';
 
 /**
@@ -110,8 +111,13 @@ const StatisticsSubTabContent = ({ books = [] }) => {
   // Inclut déjà les prédictions et patterns calculés par MetricsCalculator
   const statisticsData = useStatisticsData(books, selectedPeriod, filters, dataVersion);
   
-  // Prédictions directement issues du calcul des métriques
-  const predictions = statisticsData.predictions || [];
+  // Prédictions basées sur les métriques calculées et les données agrégées
+  const predictions = usePredictions(
+    books,
+    statisticsData.metrics || {},
+    statisticsData.aggregatedData || {},
+    {}
+  );
 
   // Mémoriser les options de filtres disponibles
   const filterOptions = useMemo(() => {

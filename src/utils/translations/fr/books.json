@@ -127,11 +127,16 @@
     "listTitle": "Sessions de lecture",
     "empty": "Aucune session enregistrée pour le moment.",
     "addTitle": "Ajouter une session de lecture",
+    "editTitle": "Modifier une session de lecture",
     "date": "Date",
     "duration": "Durée (minutes)",
+    "time": "Heure (optionnel)",
     "pages": "Pages lues pendant la session",
     "note": "Note (optionnel)",
-    "addButton": "Ajouter la session de lecture"
+    "addButton": "Ajouter la session de lecture",
+    "updateButton": "Enregistrer la session",
+    "edit": "Modifier",
+    "cancelEdit": "Annuler la modification"
   },
   "footer": {
     "info": "Cette première version de l’onglet Livres implémente la gestion locale des livres et des sessions de lecture. Les fonctionnalités avancées décrites dans la documentation (sphère 3D, PDFs en IndexedDB, sauvegardes multi‑formats) pourront être ajoutées progressivement sans impacter le reste du site."

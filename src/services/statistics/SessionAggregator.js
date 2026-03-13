@@ -323,6 +323,14 @@ class SessionAggregator {
    */
   static aggregateSessions(books, period = '1m', filters = {}) {
     try {
+      const periodDaysConfig = {
+        '7d': 7,
+        '1m': 30,
+        '3m': 90,
+        '6m': 180,
+        '1y': 365,
+      };
+
       // 1. Extraire toutes les sessions
       const allSessions = this.extractAllSessions(books);
       
@@ -338,12 +346,28 @@ class SessionAggregator {
       const byAuthor = this.groupByAuthor(filteredSessions);
       const streaks = this.calculateStreaks(filteredSessions);
       
+      // Calculer le nombre de jours de la période pour la consistance
+      let periodDays = null;
+      if (period !== 'all' && periodDaysConfig[period]) {
+        periodDays = periodDaysConfig[period];
+      } else if (filteredSessions.length > 0) {
+        const dates = filteredSessions.map((s) => s.normalizedDate).sort();
+        const first = new Date(dates[0]);
+        const last = new Date(dates[dates.length - 1]);
+        const diffMs = last.getTime() - first.getTime();
+        periodDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1);
+      } else {
+        periodDays = 0;
+      }
+      
       return {
         sessions: filteredSessions,
         byDate,
         byGenre,
         byAuthor,
         streaks,
+        period,
+        periodDays,
         totalSessions: filteredSessions.length,
         totalPages: filteredSessions.reduce((sum, s) => sum + s.pagesRead, 0),
         totalMinutes: filteredSessions.reduce((sum, s) => sum + s.durationMinutes, 0),

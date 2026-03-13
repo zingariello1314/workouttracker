@@ -23,6 +23,7 @@ export const emptySessionForm = {
   date: '',
   durationMinutes: '',
   pagesRead: '',
+  startTime: '',
   note: '',
 };
 

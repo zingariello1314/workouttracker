@@ -121,17 +121,47 @@ const ExpandableSection = ({
 const SessionAnalysis = ({ metrics, patterns }) => {
   const t = useTranslation();
   
-  // Calculer la répartition horaire (simulation basée sur les patterns)
-  const hourlyDistribution = [
-    { hour: '6h-9h', label: 'Matin', sessions: Math.round(metrics.sessionsCount * 0.15), color: 'bg-yellow-400' },
-    { hour: '9h-12h', label: 'Matinée', sessions: Math.round(metrics.sessionsCount * 0.25), color: 'bg-orange-400' },
-    { hour: '12h-14h', label: 'Midi', sessions: Math.round(metrics.sessionsCount * 0.10), color: 'bg-red-400' },
-    { hour: '14h-18h', label: 'Après-midi', sessions: Math.round(metrics.sessionsCount * 0.20), color: 'bg-blue-400' },
-    { hour: '18h-22h', label: 'Soirée', sessions: Math.round(metrics.sessionsCount * 0.25), color: 'bg-purple-400' },
-    { hour: '22h-6h', label: 'Nuit', sessions: Math.round(metrics.sessionsCount * 0.05), color: 'bg-indigo-400' }
-  ];
+  // Répartition horaire basée sur les données réelles si disponibles
+  const hourlyDistribution = React.useMemo(() => {
+    const buckets = patterns?.bestTimeOfDay?.buckets || {};
+    const order = [
+      '6h-9h',
+      '9h-12h',
+      '12h-14h',
+      '14h-18h',
+      '18h-22h',
+      '22h-6h',
+    ];
+
+    const colorByKey = {
+      '6h-9h': 'bg-yellow-400',
+      '9h-12h': 'bg-orange-400',
+      '12h-14h': 'bg-red-400',
+      '14h-18h': 'bg-blue-400',
+      '18h-22h': 'bg-purple-400',
+      '22h-6h': 'bg-indigo-400',
+    };
+
+    const items = order.map((key) => {
+      const data = buckets[key] || {};
+      return {
+        hour: key,
+        label: data.label || key,
+        sessions: data.sessionCount || 0,
+        color: colorByKey[key] || 'bg-emerald-400',
+      };
+    });
+
+    const totalSessions = items.reduce((sum, s) => sum + s.sessions, 0);
+    if (totalSessions === 0) {
+      return null;
+    }
+    return items;
+  }, [patterns]);
   
-  const maxSessions = Math.max(...hourlyDistribution.map(h => h.sessions));
+  const maxSessions = hourlyDistribution
+    ? Math.max(...hourlyDistribution.map((h) => h.sessions))
+    : 0;
   
   return (
     <div className="space-y-4">
@@ -152,25 +182,31 @@ const SessionAnalysis = ({ metrics, patterns }) => {
       </div>
       
       {/* Répartition horaire */}
-      <div>
-        <h4 className="text-sm font-medium text-slate-300 mb-3">Répartition horaire</h4>
-        <div className="space-y-2">
-          {hourlyDistribution.map((slot) => (
-            <div key={slot.hour} className="flex items-center gap-3">
-              <div className="w-16 text-xs text-slate-400">{slot.hour}</div>
-              <div className="flex-1 bg-slate-700 rounded-full h-2 relative">
-                <div 
-                  className={`${slot.color} h-2 rounded-full transition-all duration-300`}
-                  style={{ width: `${maxSessions > 0 ? (slot.sessions / maxSessions) * 100 : 0}%` }}
-                />
+      {hourlyDistribution ? (
+        <div>
+          <h4 className="text-sm font-medium text-slate-300 mb-3">Répartition horaire</h4>
+          <div className="space-y-2">
+            {hourlyDistribution.map((slot) => (
+              <div key={slot.hour} className="flex items-center gap-3">
+                <div className="w-16 text-xs text-slate-400">{slot.hour}</div>
+                <div className="flex-1 bg-slate-700 rounded-full h-2 relative">
+                  <div
+                    className={`${slot.color} h-2 rounded-full transition-all duration-300`}
+                    style={{ width: `${maxSessions > 0 ? (slot.sessions / maxSessions) * 100 : 0}%` }}
+                  />
+                </div>
+                <div className="w-8 text-xs text-slate-300 text-right">
+                  {slot.sessions}
+                </div>
               </div>
-              <div className="w-8 text-xs text-slate-300 text-right">
-                {slot.sessions}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="text-xs text-slate-400">
+          Ajoute l'heure de début de tes sessions pour voir à quels moments tu lis le plus.
+        </div>
+      )}
       
       {/* Jours les plus productifs */}
       {patterns?.bestDaysOfWeek && (
@@ -343,7 +379,13 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
     );
   }
 
-  const { metrics, patterns, predictions } = statisticsData;
+  const { metrics, patterns, predictions, aggregatedData } = statisticsData;
+
+  const totalDaysInPeriod =
+    (aggregatedData && typeof aggregatedData.periodDays === 'number'
+      ? aggregatedData.periodDays
+      : metrics.uniqueDays) || 0;
+  const daysWithReading = metrics.uniqueDays || 0;
 
   // Calculer les tendances (placeholder - sera implémenté avec les données historiques)
   const getTrend = (current, previous) => {
@@ -582,7 +624,7 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
             <h4 className="text-sm font-medium text-slate-300 mb-3">Régularité</h4>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-400">Consistance</span>
+                <span className="text-sm text-slate-400">Jours avec lecture</span>
                 <span className="text-sm text-white font-medium">
                   {patterns?.readingConsistency || 0}%
                 </span>
@@ -594,7 +636,13 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
                 />
               </div>
               <div className="flex justify-between text-xs text-slate-400">
-                <span>Fréquence: {Math.round((metrics.readingFrequency || 0) * 10) / 10}/sem</span>
+                <span>
+                  {daysWithReading} jour{daysWithReading > 1 ? 's' : ''} avec lecture
+                  {' '}sur {totalDaysInPeriod || '—'} jour{totalDaysInPeriod > 1 ? 's' : ''} de la période
+                </span>
+              </div>
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>Fréquence moyenne: {Math.round((metrics.readingFrequency || 0) * 10) / 10} session(s)/sem</span>
                 <span>Jours actifs: {metrics.uniqueDays || 0}</span>
               </div>
             </div>
