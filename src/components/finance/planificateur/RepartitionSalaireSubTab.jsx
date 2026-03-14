@@ -10,12 +10,49 @@ import SkeletonLoader from '../bourse/SkeletonLoader';
 
 const log = logger.module('RepartitionSalaireSubTab');
 
+const FIXED_DEFAULTS = [
+  { id: 'cat_loyer', key: 'loyer', label: 'Loyer', emoji: '🏠', type: 'charges', subType: 'loyer', order: 1 },
+  { id: 'cat_investissementOr', key: 'investissementOr', label: 'Or', emoji: '🥇', type: 'investissement', subType: 'or', order: 2 },
+  { id: 'cat_bourse', key: 'investissementBourse', label: 'Bourse', emoji: '📈', type: 'investissement', subType: 'bourse', order: 3 },
+  { id: 'cat_cash', key: 'cashAccumulation', label: 'Cash', emoji: '💰', type: 'epargne', subType: 'cash', order: 4 },
+  { id: 'cat_loisirs', key: 'loisirs', label: 'Loisirs', emoji: '🎮', type: 'loisirs', order: 5 }
+];
+
+function buildCategoriesFromLegacy(legacy) {
+  if (!legacy) return [];
+  const existingById = (legacy.categories || []).reduce((acc, c) => {
+    if (c && c.id) acc[c.id] = c;
+    return acc;
+  }, {});
+  const fixed = FIXED_DEFAULTS.map((def) => {
+    const existing = existingById[def.id];
+    const type = (existing && existing.type) || def.type;
+    const montant = Number(legacy[def.key] ?? existing?.montant) || 0;
+    return { ...def, type, montant, fixed: true };
+  });
+  const custom = (legacy.categories || []).filter(c => c && !FIXED_CATEGORY_IDS.includes(c.id));
+  return [...fixed, ...custom.map((c, i) => ({
+    id: c.id,
+    key: c.key,
+    label: c.label || 'Catégorie',
+    emoji: c.emoji || '🧩',
+    type: c.type || 'autre',
+    subType: c.subType,
+    montant: Number(c.montant) || 0,
+    fixed: false,
+    order: 6 + i
+  }))];
+}
+
+const FIXED_CATEGORY_IDS = ['cat_loyer', 'cat_investissementOr', 'cat_bourse', 'cat_cash', 'cat_loisirs'];
+
 const RepartitionSalaireSubTab = () => {
   const t = useTranslation();
-  const { salaire, repartition, updateSalaire, updateRepartition, loading } = usePlanificateur();
+  const { salaire, repartition, repartitionLegacy, updateSalaire, updateRepartition, loading } = usePlanificateur();
   const { showToast } = useToast();
+  const overrunToastShownRef = React.useRef(false);
   const [localSalaire, setLocalSalaire] = useState(salaire?.netMensuel || 3000);
-  const [localRepartition, setLocalRepartition] = useState(repartition || {
+  const defaultLegacy = {
     loyer: 800,
     investissementOr: 300,
     investissementBourse: 500,
@@ -23,7 +60,8 @@ const RepartitionSalaireSubTab = () => {
     loisirs: 400,
     surplus: 800,
     categories: []
-  });
+  };
+  const [localRepartition, setLocalRepartition] = useState(repartitionLegacy || defaultLegacy);
 
   // Calcul total alloué (catégories fixes + personnalisées, hors surplus)
   const totalAlloue = useMemo(() => {
@@ -55,14 +93,17 @@ const RepartitionSalaireSubTab = () => {
 
   // Debounced update pour éviter trop de requêtes
   const debouncedUpdateRepartition = useMemo(
-    () => debounce(async (finalRepartition) => {
+    () => debounce(async (finalRepartitionLegacy) => {
       try {
-        await updateRepartition(finalRepartition);
-        
-        // Synchroniser avec autres modules
+        const v2 = {
+          id: repartition?.id || 'current',
+          categories: buildCategoriesFromLegacy(finalRepartitionLegacy),
+          updatedAt: new Date().toISOString()
+        };
+        await updateRepartition(v2);
         try {
-          await planificateurSync.propagateRepartitionChange(finalRepartition);
-          const notifications = planificateurSync.getNotifications(finalRepartition);
+          await planificateurSync.propagateRepartitionChange(v2);
+          const notifications = planificateurSync.getNotifications(v2);
           if (notifications.length > 0) {
             const notif = notifications[0];
             showToast(`${notif.icon} ${notif.message}`, 'info');
@@ -73,8 +114,8 @@ const RepartitionSalaireSubTab = () => {
       } catch (error) {
         showToast('Erreur lors de la mise à jour', 'error');
       }
-    }, 500), // Attendre 500ms après dernière modification
-    [updateRepartition, showToast]
+    }, 500),
+    [updateRepartition, showToast, repartition?.id]
   );
 
   const REPARTITION_KEYS_SANS_SURPLUS = ['loyer', 'investissementOr', 'investissementBourse', 'cashAccumulation', 'loisirs'];
@@ -82,34 +123,53 @@ const RepartitionSalaireSubTab = () => {
   // Mise à jour répartition avec validation et debounce
   const handleRepartitionChange = useCallback(
     async (change) => {
-      // change = { kind: 'fixed' | 'custom', key?, id?, value }
-      const valueNum = parseFloat(change.value) || 0;
-      if (valueNum < 0) return;
-
       let baseRepartition = { ...localRepartition };
 
-      if (change.kind === 'fixed') {
-        if (change.key === 'surplus') return;
-        baseRepartition = {
-          ...baseRepartition,
-          [change.key]: valueNum
-        };
-      } else if (change.kind === 'custom') {
-        const categories = (baseRepartition.categories || []).map((cat) =>
-          cat.id === change.id ? { ...cat, montant: valueNum } : cat
+      const KEY_TO_FIXED_ID = { loyer: 'cat_loyer', investissementOr: 'cat_investissementOr', investissementBourse: 'cat_bourse', cashAccumulation: 'cat_cash', loisirs: 'cat_loisirs' };
+
+      if (change.kind === 'changeType') {
+        const { id: catId, key: catKey, type: newType } = change;
+        if (!newType || newType === 'surplus') return;
+        const categories = (baseRepartition.categories || []).map((c) =>
+          (c.id === catId || c.key === catKey) ? { ...c, type: newType } : c
         );
-        baseRepartition = {
-          ...baseRepartition,
-          categories
-        };
+        baseRepartition = { ...baseRepartition, categories };
+      } else {
+        // change = { kind: 'fixed' | 'custom', key?, id?, value }
+        const valueNum = parseFloat(change.value) || 0;
+        if (valueNum < 0) return;
+
+        if (change.kind === 'fixed') {
+          if (change.key === 'surplus') return;
+          baseRepartition = {
+            ...baseRepartition,
+            [change.key]: valueNum
+          };
+          const fixedId = KEY_TO_FIXED_ID[change.key];
+          if (fixedId && Array.isArray(baseRepartition.categories)) {
+            baseRepartition = {
+              ...baseRepartition,
+              categories: baseRepartition.categories.map(c => c.id === fixedId ? { ...c, montant: valueNum } : c)
+            };
+          }
+        } else if (change.kind === 'custom') {
+          const categories = (baseRepartition.categories || []).map((cat) =>
+            cat.id === change.id ? { ...cat, montant: valueNum } : cat
+          );
+          baseRepartition = {
+            ...baseRepartition,
+            categories
+          };
+        }
       }
 
+      // Total sans double comptage : clés fixes + uniquement catégories perso (pas les 5 fixes déjà dans les clés)
       const fixedTotal = REPARTITION_KEYS_SANS_SURPLUS
         .reduce((sum, k) => sum + (baseRepartition[k] || 0), 0);
-      const categoriesTotal = (baseRepartition.categories || [])
+      const customOnlyTotal = (baseRepartition.categories || [])
+        .filter(cat => !FIXED_CATEGORY_IDS.includes(cat.id))
         .reduce((sum, cat) => sum + (cat.montant || 0), 0);
-
-      const totalSansSurplus = fixedTotal + categoriesTotal;
+      const totalSansSurplus = fixedTotal + customOnlyTotal;
       const surplus = localSalaire - totalSansSurplus;
 
       const finalRepartition = {
@@ -120,7 +180,12 @@ const RepartitionSalaireSubTab = () => {
       setLocalRepartition(finalRepartition);
 
       if (totalSansSurplus > localSalaire) {
-        showToast('Dépassement du salaire : ajustez les autres catégories ou acceptez un surplus négatif.', 'warning');
+        if (!overrunToastShownRef.current) {
+          showToast('Dépassement du salaire : ajustez les autres catégories ou acceptez un surplus négatif.', 'warning');
+          overrunToastShownRef.current = true;
+        }
+      } else {
+        overrunToastShownRef.current = false;
       }
 
       debouncedUpdateRepartition(finalRepartition);
@@ -136,28 +201,18 @@ const RepartitionSalaireSubTab = () => {
   }, [salaire]);
 
   React.useEffect(() => {
-    if (repartition) {
-      const base = {
-        loyer: repartition.loyer || 0,
-        investissementOr: repartition.investissementOr || 0,
-        investissementBourse: repartition.investissementBourse || 0,
-        cashAccumulation: repartition.cashAccumulation || 0,
-        loisirs: repartition.loisirs || 0,
-        categories: repartition.categories || []
-      };
-      const salaireNum = salaire?.netMensuel || localSalaire;
-      const totalSansSurplus = REPARTITION_KEYS_SANS_SURPLUS
-        .reduce((sum, k) => sum + (base[k] || 0), 0);
-      const surplus = typeof repartition.surplus === 'number'
-        ? repartition.surplus
-        : salaireNum - totalSansSurplus;
-
+    if (repartitionLegacy) {
       setLocalRepartition({
-        ...base,
-        surplus
+        loyer: repartitionLegacy.loyer ?? 0,
+        investissementOr: repartitionLegacy.investissementOr ?? 0,
+        investissementBourse: repartitionLegacy.investissementBourse ?? 0,
+        cashAccumulation: repartitionLegacy.cashAccumulation ?? 0,
+        loisirs: repartitionLegacy.loisirs ?? 0,
+        surplus: repartitionLegacy.surplus ?? 0,
+        categories: repartitionLegacy.categories || []
       });
     }
-  }, [repartition, salaire, localSalaire]);
+  }, [repartitionLegacy]);
 
   // Création de catégorie personnalisée
   const [showNewCategory, setShowNewCategory] = useState(false);

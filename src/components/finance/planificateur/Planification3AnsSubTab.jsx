@@ -10,7 +10,7 @@ import Button from '../../ui/Button';
 const Planification3AnsSubTab = () => {
   const t = useTranslation();
   const { 
-    repartition, 
+    repartitionLegacy: repartition, 
     objectifs, 
     chargesFixes,
     achatsLoisirs,

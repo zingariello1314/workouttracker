@@ -384,7 +384,9 @@ export const useSidebarData = () => {
     try {
       const netWorth = patrimoine?.total?.valorise || 0;
       const monthlyBudget = salaire?.netMensuel || 0;
-      const monthlySavings = repartition?.epargne || 0;
+      const monthlySavings = repartition?.categories
+        ? repartition.categories.filter(c => c.type === 'epargne').reduce((s, c) => s + (c.montant || 0), 0)
+        : 0;
       
       // Investments = Or + Bourse (cash is liquidity, not investment)
       const investments = 

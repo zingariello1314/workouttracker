@@ -101,8 +101,36 @@ export const REPARTITION_TYPE_LABELS = {
   loisirs: 'Loisirs',
   epargne: 'Épargne / Sécurité',
   charges: 'Charges fixes',
+  surplus: 'Surplus',
   autre: 'Autre'
 };
+
+// Couleur et icône par type (pour graphiques et affichage)
+export const REPARTITION_TYPE_CONFIG = {
+  investissement: { color: '#eab308', icon: '🥇', gradient: 'from-yellow-500 to-yellow-600' },
+  loisirs: { color: '#8b5cf6', icon: '🎮', gradient: 'from-purple-500 to-purple-600' },
+  epargne: { color: '#10b981', icon: '💰', gradient: 'from-green-500 to-green-600' },
+  charges: { color: '#a855f7', icon: '🏠', gradient: 'from-purple-500 to-purple-600' },
+  surplus: { color: '#64748b', icon: '💎', gradient: 'from-gray-500 to-gray-600' },
+  autre: { color: '#f97316', icon: '🧩', gradient: 'from-orange-500 to-orange-600' }
+};
+
+// Couleur par subType pour catégories fixes (Or, Bourse, Cash distincts)
+const SUBTYPE_COLORS = {
+  loyer: '#a855f7',
+  or: '#eab308',
+  bourse: '#3b82f6',
+  cash: '#10b981',
+  loisirs: '#8b5cf6'
+};
+
+/** Retourne la couleur d'une catégorie (subType prioritaire, sinon type) */
+export function getCategoryColor(category) {
+  if (!category) return '#f97316';
+  if (category.subType && SUBTYPE_COLORS[category.subType]) return SUBTYPE_COLORS[category.subType];
+  const config = REPARTITION_TYPE_CONFIG[category.type];
+  return config?.color ?? '#f97316';
+}
 
 /**
  * Couleurs par statut d'achat

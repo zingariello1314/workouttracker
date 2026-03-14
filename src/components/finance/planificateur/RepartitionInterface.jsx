@@ -6,7 +6,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { REPARTITION_ITEMS, REPARTITION_GROUPS, REPARTITION_TYPE_LABELS, formatCurrency as formatCurrencyUtil } from '../../../utils/planificateurUtils';
+import { REPARTITION_GROUPS, REPARTITION_TYPE_LABELS, getCategoryColor, formatCurrency as formatCurrencyUtil, throttle } from '../../../utils/planificateurUtils';
 
 const RepartitionInterface = ({ 
   salaire, 
@@ -22,20 +22,19 @@ const RepartitionInterface = ({
     return Number.isFinite(n) ? n : 0;
   };
 
-  // Calcul total alloué (hors surplus) et surplus dérivé
+  // Calcul total alloué (hors surplus) et surplus dérivé — source unique : categories
   const { totalAlloue, derivedSurplus } = useMemo(() => {
     if (!repartition || typeof repartition !== 'object') {
       return { totalAlloue: 0, derivedSurplus: safeNumber(salaire) };
     }
     const salaireNum = safeNumber(salaire);
-    const totalSansSurplus = Object.entries(repartition)
-      .filter(([key]) => key !== 'surplus')
-      .reduce((sum, [, val]) => sum + safeNumber(val || 0), 0);
-
-    const total = Number.isFinite(totalSansSurplus) ? Math.max(0, totalSansSurplus) : 0;
+    const categories = repartition.categories || [];
+    const total = categories
+      .filter(c => c.type !== 'surplus')
+      .reduce((sum, c) => sum + safeNumber(c.montant || 0), 0);
     const surplusCalc = salaireNum - total;
 
-    return { totalAlloue: total, derivedSurplus: surplusCalc };
+    return { totalAlloue: Math.max(0, total), derivedSurplus: surplusCalc };
   }, [repartition, salaire]);
 
   // Écart = salaire - total alloué
@@ -44,39 +43,31 @@ const RepartitionInterface = ({
     return salaireNum - totalAlloue;
   }, [salaire, totalAlloue]);
 
-  // Données pour le graphique
+  // Données pour le graphique — uniquement les catégories (pas de doublons), couleurs par type/subType
   const chartData = useMemo(() => {
     if (!repartition) return [];
-    const fixedItems = REPARTITION_ITEMS
-      .filter(item => item.key !== 'surplus')
-      .map(item => ({
-        name: item.label,
-        value: repartition[item.key] || 0,
-        color: item.color,
-        icon: item.icon
-      }))
-      .filter(item => item.value > 0);
-
-    const customItems = (repartition.categories || [])
-      .filter(cat => cat.montant > 0)
+    const categories = repartition.categories || [];
+    const slices = categories
+      .filter(cat => cat.type !== 'surplus' && safeNumber(cat.montant) > 0)
       .map(cat => ({
         name: cat.label,
-        value: cat.montant,
-        color: '#f97316',
-        icon: cat.emoji || '🧩'
+        value: safeNumber(cat.montant),
+        color: getCategoryColor(cat),
+        icon: cat.emoji || '🧩',
+        hoverKey: cat.key || cat.id
       }));
 
     const surplusSlice = derivedSurplus > 0 ? [{
       name: 'Surplus',
       value: derivedSurplus,
       color: '#64748b',
-      icon: '💎'
+      icon: '💎',
+      hoverKey: 'surplus'
     }] : [];
 
-    return [...fixedItems, ...customItems, ...surplusSlice];
+    return [...slices, ...surplusSlice];
   }, [repartition, derivedSurplus]);
 
-  // Gestion du slider avec animations
   const handleSliderChange = useCallback((kind, keyOrId, value) => {
     const valueNum = parseFloat(value) || 0;
     if (valueNum < 0) return;
@@ -86,6 +77,17 @@ const RepartitionInterface = ({
       onRepartitionChange({ kind: 'custom', id: keyOrId, value: valueNum });
     }
   }, [onRepartitionChange]);
+
+  const handleTypeChange = useCallback((catId, catKey, newType) => {
+    if (!newType || newType === 'surplus') return;
+    onRepartitionChange({ kind: 'changeType', id: catId, key: catKey, type: newType });
+  }, [onRepartitionChange]);
+
+  // Throttle pour le range : évite des centaines de setState pendant le drag (cause du lag du curseur)
+  const handleSliderChangeThrottled = useMemo(
+    () => throttle((kind, keyOrId, value) => handleSliderChange(kind, keyOrId, value), 80),
+    [handleSliderChange]
+  );
 
   // Custom tooltip pour le graphique
   const CustomTooltip = ({ active, payload }) => {
@@ -197,18 +199,17 @@ const RepartitionInterface = ({
           <div className="space-y-6">
             <AnimatePresence>
               {[
-                // Catégories fixes (hors surplus)
-                ...REPARTITION_ITEMS.filter(i => i.key !== 'surplus'),
-                // Catégories personnalisées
-                ...(repartition.categories || []).map(cat => ({
-                  key: `cat_${cat.id}`,
+                // Uniquement les catégories (plus de liste en dur), couleurs par type/subType
+                ...(repartition.categories || []).filter(cat => cat.type !== 'surplus').map(cat => ({
+                  key: cat.key ? `fixed_${cat.key}` : cat.id,
                   label: cat.label,
                   icon: cat.emoji || '🧩',
-                  color: '#f97316',
-                  isCustom: true,
-                  catId: cat.id
+                  color: getCategoryColor(cat),
+                  isCustom: !cat.key,
+                  catId: cat.id,
+                  catKey: cat.key
                 })),
-                // Ligne de lecture pour le Surplus (auto-calculé)
+                // Surplus (lecture seule)
                 {
                   key: 'surplus',
                   label: 'Surplus',
@@ -222,24 +223,18 @@ const RepartitionInterface = ({
                 const icon = item.icon;
                 const isCustom = item.isCustom;
                 const isSurplus = item.isSurplus === true;
-                const key = isCustom ? item.catId : item.key;
-                const catForCustom = isCustom
-                  ? (repartition.categories || []).find(cat => cat.id === item.catId)
-                  : null;
-                const rawValue = isSurplus
-                  ? derivedSurplus
-                  : isCustom
-                    ? (catForCustom?.montant || 0)
-                    : (repartition[item.key] || 0);
+                const key = isSurplus ? 'surplus' : (item.catKey ? `fixed_${item.catKey}` : item.catId);
+                const catForValue = !isSurplus && (repartition.categories || []).find(cat => cat.id === item.catId || cat.key === item.catKey);
+                // Catégories fixes : lire la clé (loyer, investissementOr...) car c’est elle qui est mise à jour au changement
+                const rawValue = isSurplus ? derivedSurplus : (item.catKey ? (repartition[item.catKey] ?? catForValue?.montant ?? 0) : (catForValue?.montant ?? 0));
                 const value = safeNumber(rawValue);
                 const salaireNum = safeNumber(salaire);
                 const pourcent = salaireNum > 0 ? (value / salaireNum) * 100 : 0;
                 const isHovered = hoveredItem === key;
                 const groupLabel = isSurplus
                   ? REPARTITION_GROUPS.surplus
-                  : isCustom
-                    ? (REPARTITION_TYPE_LABELS[catForCustom?.type] || 'Autre')
-                    : (REPARTITION_GROUPS[item.key] || null);
+                  : (REPARTITION_TYPE_LABELS[catForValue?.type] || 'Autre');
+                const keyOrIdForChange = item.catKey || item.catId;
 
                 return (
                   <motion.div
@@ -267,17 +262,29 @@ const RepartitionInterface = ({
                         >
                           {icon}
                         </motion.span>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col gap-1">
                           <span 
                             className="text-sm font-medium text-slate-300"
                             id={`${key}-label`}
                           >
                             {label}
                           </span>
-                          {groupLabel && (
-                            <span className="text-[11px] text-slate-500">
-                              {groupLabel}
-                            </span>
+                          {!isSurplus && (
+                            <select
+                              value={catForValue?.type || 'autre'}
+                              onChange={(e) => handleTypeChange(item.catId, item.catKey, e.target.value)}
+                              className="text-[11px] text-slate-400 bg-slate-800/80 border border-slate-600 rounded px-2 py-0.5 w-fit max-w-[160px] cursor-pointer focus:ring-1 focus:ring-slate-500"
+                              aria-label={`Type de catégorie pour ${label}`}
+                            >
+                              {Object.entries(REPARTITION_TYPE_LABELS)
+                                .filter(([k]) => k !== 'surplus')
+                                .map(([typeKey, typeLabel]) => (
+                                  <option key={typeKey} value={typeKey}>{typeLabel}</option>
+                                ))}
+                            </select>
+                          )}
+                          {isSurplus && groupLabel && (
+                            <span className="text-[11px] text-slate-500">{groupLabel}</span>
                           )}
                         </div>
                       </div>
@@ -302,7 +309,7 @@ const RepartitionInterface = ({
                           <input
                             type="number"
                             value={value}
-                            onChange={(e) => handleSliderChange(isCustom ? 'custom' : 'fixed', key, e.target.value)}
+                            onChange={(e) => handleSliderChange(isCustom ? 'custom' : 'fixed', keyOrIdForChange, e.target.value)}
                             className="px-3 py-1 bg-slate-900 border border-slate-600 rounded text-white text-sm font-semibold w-28 text-right focus:ring-2 focus:ring-offset-0 transition-all"
                             style={{ 
                               focusRingColor: item.color
@@ -333,9 +340,12 @@ const RepartitionInterface = ({
                           min="0"
                           max={salaire}
                           step="10"
-                          onChange={(e) => handleSliderChange(isCustom ? 'custom' : 'fixed', key, e.target.value)}
+                          onChange={(e) => handleSliderChangeThrottled(isCustom ? 'custom' : 'fixed', keyOrIdForChange, e.target.value)}
                           onMouseDown={() => setIsDragging(true)}
-                          onMouseUp={() => setIsDragging(false)}
+                          onMouseUp={(e) => {
+                            setIsDragging(false);
+                            handleSliderChange(isCustom ? 'custom' : 'fixed', keyOrIdForChange, e.target.value);
+                          }}
                           className="w-full h-3 rounded-lg appearance-none cursor-pointer transition-all duration-200"
                           style={{
                             background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${pourcent}%, #1e293b ${pourcent}%, #1e293b 100%)`,
@@ -392,8 +402,8 @@ const RepartitionInterface = ({
                     <Cell 
                       key={`cell-${index}`} 
                       fill={entry.color}
-                      stroke={hoveredItem === REPARTITION_ITEMS.find(i => i.label === entry.name)?.key ? '#fff' : 'none'}
-                      strokeWidth={hoveredItem === REPARTITION_ITEMS.find(i => i.label === entry.name)?.key ? 3 : 0}
+                      stroke={hoveredItem === entry.hoverKey ? '#fff' : 'none'}
+                      strokeWidth={hoveredItem === entry.hoverKey ? 3 : 0}
                     />
                   ))}
                 </Pie>
@@ -409,40 +419,35 @@ const RepartitionInterface = ({
             </div>
           )}
 
-          {/* Légende Interactive */}
+          {/* Légende Interactive — même ordre et couleurs que le graphique */}
           <div 
             className="mt-6 grid grid-cols-2 gap-3"
             role="list"
             aria-label="Légende du graphique"
           >
-            {REPARTITION_ITEMS.map((item) => {
-              const value = repartition[item.key] || 0;
-              if (value === 0) return null;
-              
-              return (
-                <motion.div
-                  key={item.key}
-                  role="listitem"
-                  whileHover={{ scale: 1.05 }}
-                  onMouseEnter={() => setHoveredItem(item.key)}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${
-                    hoveredItem === item.key ? 'bg-slate-700' : 'bg-slate-800/50'
-                  }`}
-                  tabIndex={0}
-                  aria-label={`${item.label}: ${formatCurrency(value)}`}
-                >
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-xs text-slate-300">{item.label}</span>
-                  <span className="text-xs font-semibold ml-auto" style={{ color: item.color }}>
-                    {formatCurrency(value)}
-                  </span>
-                </motion.div>
-              );
-            })}
+            {chartData.map((entry) => (
+              <motion.div
+                key={entry.hoverKey}
+                role="listitem"
+                whileHover={{ scale: 1.05 }}
+                onMouseEnter={() => setHoveredItem(entry.hoverKey)}
+                onMouseLeave={() => setHoveredItem(null)}
+                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all ${
+                  hoveredItem === entry.hoverKey ? 'bg-slate-700' : 'bg-slate-800/50'
+                }`}
+                tabIndex={0}
+                aria-label={`${entry.name}: ${formatCurrency(entry.value)}`}
+              >
+                <div 
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-xs text-slate-300">{entry.name}</span>
+                <span className="text-xs font-semibold ml-auto" style={{ color: entry.color }}>
+                  {formatCurrency(entry.value)}
+                </span>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       </div>

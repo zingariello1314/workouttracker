@@ -28,6 +28,28 @@ const salaireSchema = z.object({
   updatedAt: z.string().datetime()
 });
 
+// Types pour répartition V2 (source unique de vérité)
+const REPARTITION_CATEGORY_TYPES = ['investissement', 'loisirs', 'epargne', 'charges', 'surplus', 'autre'];
+
+const repartitionCategorySchema = z.object({
+  id: z.string(),
+  key: z.string().optional(),
+  label: z.string().min(1).max(100),
+  emoji: z.string().max(8).default('🧩'),
+  type: z.enum(REPARTITION_CATEGORY_TYPES),
+  subType: z.string().max(50).optional(),
+  montant: z.number().nonnegative().max(100000),
+  fixed: z.boolean().optional(),
+  order: z.number().optional()
+});
+
+const repartitionV2Schema = z.object({
+  id: z.string(),
+  categories: z.array(repartitionCategorySchema),
+  updatedAt: z.string()
+});
+
+// Legacy (lecture seule pour migration)
 const customCategorySchema = z.object({
   id: z.string(),
   label: z.string().min(1).max(100),
@@ -36,16 +58,16 @@ const customCategorySchema = z.object({
   montant: z.number().nonnegative().max(10000)
 });
 
-const repartitionSchema = z.object({
-  id: z.string(),
-  loyer: z.number().nonnegative().max(10000),
-  investissementOr: z.number().nonnegative().max(10000),
-  investissementBourse: z.number().nonnegative().max(10000),
-  cashAccumulation: z.number().nonnegative().max(10000),
-  loisirs: z.number().nonnegative().max(10000),
-  surplus: z.number(),
+const repartitionLegacySchema = z.object({
+  id: z.string().optional(),
+  loyer: z.number().nonnegative().max(10000).optional(),
+  investissementOr: z.number().nonnegative().max(10000).optional(),
+  investissementBourse: z.number().nonnegative().max(10000).optional(),
+  cashAccumulation: z.number().nonnegative().max(10000).optional(),
+  loisirs: z.number().nonnegative().max(10000).optional(),
+  surplus: z.number().optional(),
   categories: z.array(customCategorySchema).optional().default([]),
-  updatedAt: z.string().datetime()
+  updatedAt: z.string().optional()
 });
 
 const achatLoisirSchema = z.object({
@@ -288,33 +310,109 @@ class PlanificateurStorage {
     };
   }
 
-  // ========== REPARTITION ==========
+  // ========== REPARTITION (V2 = categories uniquement) ==========
+
+  /**
+   * Construit les catégories fixes par défaut (sans surplus, calculé côté hook)
+   */
+  _getDefaultCategories() {
+    return [
+      { id: 'cat_loyer', key: 'loyer', label: 'Loyer', emoji: '🏠', type: 'charges', subType: 'loyer', montant: 800, fixed: true, order: 1 },
+      { id: 'cat_investissementOr', key: 'investissementOr', label: 'Or', emoji: '🥇', type: 'investissement', subType: 'or', montant: 300, fixed: true, order: 2 },
+      { id: 'cat_bourse', key: 'investissementBourse', label: 'Bourse', emoji: '📈', type: 'investissement', subType: 'bourse', montant: 500, fixed: true, order: 3 },
+      { id: 'cat_cash', key: 'cashAccumulation', label: 'Cash', emoji: '💰', type: 'epargne', subType: 'cash', montant: 200, fixed: true, order: 4 },
+      { id: 'cat_loisirs', key: 'loisirs', label: 'Loisirs', emoji: '🎮', type: 'loisirs', montant: 400, fixed: true, order: 5 }
+    ];
+  }
+
+  /**
+   * Migration legacy -> V2. Retourne toujours { id, categories, updatedAt }.
+   */
+  _migrateLegacyToV2(data) {
+    if (!data || typeof data !== 'object') {
+      return this.getDefaultRepartition();
+    }
+    const legacy = repartitionLegacySchema.safeParse(data);
+    const raw = legacy.success ? legacy.data : data;
+    const hasLegacyKeys = [raw.loyer, raw.investissementOr, raw.investissementBourse, raw.cashAccumulation, raw.loisirs].some(v => v !== undefined && v !== null);
+    const hasValidV2 = Array.isArray(raw.categories) && raw.categories.length > 0
+      && raw.categories.every(c => c && typeof c.id === 'string' && typeof c.type === 'string' && typeof c.montant === 'number');
+
+    if (hasValidV2 && !hasLegacyKeys) {
+      const parsed = repartitionV2Schema.safeParse({ id: raw.id || 'current', categories: raw.categories, updatedAt: raw.updatedAt || new Date().toISOString() });
+      if (parsed.success) return parsed.data;
+    }
+
+    const categories = [];
+    categories.push({ id: 'cat_loyer', key: 'loyer', label: 'Loyer', emoji: '🏠', type: 'charges', subType: 'loyer', montant: Number(raw.loyer) || 0, fixed: true, order: 1 });
+    categories.push({ id: 'cat_investissementOr', key: 'investissementOr', label: 'Or', emoji: '🥇', type: 'investissement', subType: 'or', montant: Number(raw.investissementOr) || 0, fixed: true, order: 2 });
+    categories.push({ id: 'cat_bourse', key: 'investissementBourse', label: 'Bourse', emoji: '📈', type: 'investissement', subType: 'bourse', montant: Number(raw.investissementBourse) || 0, fixed: true, order: 3 });
+    categories.push({ id: 'cat_cash', key: 'cashAccumulation', label: 'Cash', emoji: '💰', type: 'epargne', subType: 'cash', montant: Number(raw.cashAccumulation) || 0, fixed: true, order: 4 });
+    categories.push({ id: 'cat_loisirs', key: 'loisirs', label: 'Loisirs', emoji: '🎮', type: 'loisirs', montant: Number(raw.loisirs) || 0, fixed: true, order: 5 });
+
+    const existingCustom = Array.isArray(raw.categories) ? raw.categories.filter(c => c && !['cat_loyer', 'cat_investissementOr', 'cat_bourse', 'cat_cash', 'cat_loisirs'].includes(c.id)) : [];
+    const maxOrder = 5;
+    existingCustom.forEach((c, i) => {
+      const type = REPARTITION_CATEGORY_TYPES.includes(c.type) ? c.type : 'autre';
+      categories.push({
+        id: c.id,
+        key: c.key,
+        label: c.label || 'Catégorie',
+        emoji: c.emoji || '🧩',
+        type,
+        subType: c.subType,
+        montant: Number(c.montant) || 0,
+        fixed: false,
+        order: maxOrder + 1 + i
+      });
+    });
+
+    return {
+      id: raw.id || 'current',
+      categories,
+      updatedAt: raw.updatedAt || new Date().toISOString()
+    };
+  }
+
+  /**
+   * Normalise l'entrée (legacy ou V2) vers V2 pour sauvegarde.
+   */
+  _normalizeToV2(repartitionData) {
+    if (!repartitionData) return this.getDefaultRepartition();
+    if (Array.isArray(repartitionData.categories) && repartitionData.categories.length >= 5
+        && !Object.prototype.hasOwnProperty.call(repartitionData, 'loyer')) {
+      const parsed = repartitionV2Schema.safeParse({
+        id: repartitionData.id || 'current',
+        categories: repartitionData.categories.filter(c => c.type !== 'surplus'),
+        updatedAt: new Date().toISOString()
+      });
+      if (parsed.success) return parsed.data;
+    }
+    return this._migrateLegacyToV2(repartitionData);
+  }
 
   async saveRepartition(repartitionData) {
     try {
-      // Validation Zod avant sauvegarde
-      const validated = repartitionSchema.parse({
-        ...repartitionData,
-        id: repartitionData.id || 'current',
+      const v2 = this._normalizeToV2(repartitionData);
+      const validated = repartitionV2Schema.parse({
+        ...v2,
         updatedAt: new Date().toISOString()
       });
-      
+
       const db = await this.initDB();
       const tx = db.transaction(STORES.REPARTITION, 'readwrite');
       await tx.objectStore(STORES.REPARTITION).put(validated);
       await tx.done;
-      
-      // Invalider cache
+
       this._invalidateCache(STORES.REPARTITION);
-      
-      // Sauvegarder dans historique
+
       await this.addHistorique({
         type: 'repartition',
         data: validated,
         date: new Date().toISOString()
       });
-      
-      log.debug('Repartition saved successfully:', validated);
+
+      log.debug('Repartition V2 saved successfully');
       return validated;
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -326,42 +424,38 @@ class PlanificateurStorage {
   }
 
   async getRepartition() {
-    // Vérifier cache d'abord
     const cacheKey = this._getCacheKey(STORES.REPARTITION);
     const cached = this._getFromCache(cacheKey);
     if (cached) {
       log.debug('Repartition retrieved from cache');
-      return cached;
+      return this._ensureV2(cached);
     }
-    
+
     const db = await this.initDB();
     if (!db.objectStoreNames.contains(STORES.REPARTITION)) {
       return this.getDefaultRepartition();
     }
-    
+
     const tx = db.transaction(STORES.REPARTITION, 'readonly');
     const data = await tx.objectStore(STORES.REPARTITION).get('current');
     await tx.done;
-    
-    const result = data || this.getDefaultRepartition();
-    
-    // Mettre en cache
+
+    const result = data ? this._migrateLegacyToV2(data) : this.getDefaultRepartition();
     this._setCache(cacheKey, result);
-    
-    log.debug('Repartition retrieved from IndexedDB');
+    log.debug('Repartition retrieved from IndexedDB (V2)');
     return result;
+  }
+
+  _ensureV2(data) {
+    if (!data) return this.getDefaultRepartition();
+    if (Array.isArray(data.categories) && data.categories.length > 0 && !data.loyer) return data;
+    return this._migrateLegacyToV2(data);
   }
 
   getDefaultRepartition() {
     return {
       id: 'current',
-      loyer: 800,
-      investissementOr: 300,
-      investissementBourse: 500,
-      cashAccumulation: 200,
-      loisirs: 400,
-      surplus: 800,
-      categories: [],
+      categories: this._getDefaultCategories(),
       updatedAt: new Date().toISOString()
     };
   }

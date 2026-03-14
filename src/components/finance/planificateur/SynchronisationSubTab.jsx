@@ -7,7 +7,7 @@ import SyncInterface from './SyncInterface';
 const SynchronisationSubTab = () => {
   const t = useTranslation();
   const { 
-    repartition, 
+    repartitionLegacy: repartition, 
     achatsLoisirs,
     objectifs,
     loading 

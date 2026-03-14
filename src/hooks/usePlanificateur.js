@@ -198,14 +198,58 @@ export const usePlanificateur = () => {
     }
   }, []);
 
+  // ========== HELPERS REPARTITION V2 ==========
+
+  const getCategoriesByType = useCallback((type) => {
+    return (repartition?.categories || []).filter(c => c.type === type);
+  }, [repartition]);
+
+  const getTotalByType = useCallback((type) => {
+    return getCategoriesByType(type).reduce((s, c) => s + (c.montant || 0), 0);
+  }, [getCategoriesByType]);
+
+  const getCategoryBySubType = useCallback((subType) => {
+    return (repartition?.categories || []).find(c => c.subType === subType) ?? null;
+  }, [repartition]);
+
+  const getMontantBySubType = useCallback((subType) => {
+    const cat = getCategoryBySubType(subType);
+    return cat ? (cat.montant || 0) : 0;
+  }, [getCategoryBySubType]);
+
+  const totalAlloue = useMemo(() => {
+    return (repartition?.categories || [])
+      .filter(c => c.type !== 'surplus')
+      .reduce((s, c) => s + (c.montant || 0), 0);
+  }, [repartition]);
+
+  const surplus = useMemo(() => {
+    const net = salaire?.netMensuel ?? 0;
+    return Math.max(0, net - totalAlloue);
+  }, [salaire, totalAlloue]);
+
+  /** Forme legacy pour compatibilité progressive : clés loyer, investissementOr, etc. + categories + surplus */
+  const repartitionLegacy = useMemo(() => {
+    if (!repartition) return null;
+    const cats = repartition.categories || [];
+    return {
+      ...repartition,
+      loyer: getMontantBySubType('loyer'),
+      investissementOr: getMontantBySubType('or'),
+      investissementBourse: getMontantBySubType('bourse'),
+      cashAccumulation: getMontantBySubType('cash'),
+      loisirs: getTotalByType('loisirs'),
+      surplus,
+      netMensuel: salaire?.netMensuel
+    };
+  }, [repartition, surplus, salaire, getMontantBySubType, getTotalByType]);
+
   // ========== CALCULS ==========
 
   const calculateFaisabilite = useCallback((achat, moisCible) => {
     if (!repartition) return null;
 
-    const budgetLoisirs = (repartition.loisirs || 0) + (repartition.categories || [])
-      .filter(cat => cat.type === 'loisirs')
-      .reduce((sum, cat) => sum + (cat.montant || 0), 0);
+    const budgetLoisirs = getTotalByType('loisirs');
     if (budgetLoisirs === 0) {
       return {
         possible: false,
@@ -235,12 +279,19 @@ export const usePlanificateur = () => {
         `Utiliser surplus des mois précédents si disponible`
       ] : []
     };
-  }, [repartition]);
+  }, [repartition, getTotalByType]);
 
   return {
     // Data
     salaire,
     repartition,
+    repartitionLegacy,
+    surplus,
+    totalAlloue,
+    getCategoriesByType,
+    getTotalByType,
+    getCategoryBySubType,
+    getMontantBySubType,
     achatsLoisirs,
     objectifs,
     chargesFixes,

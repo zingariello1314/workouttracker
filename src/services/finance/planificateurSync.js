@@ -9,6 +9,32 @@ import { budgetStorage } from './budgetStorage';
 
 const log = logger.module('planificateurSync');
 
+function getMontantBySubType(repartition, subType) {
+  if (!repartition?.categories) return undefined;
+  const cat = repartition.categories.find(c => c.subType === subType);
+  return cat ? cat.montant : undefined;
+}
+
+function getTotalByType(repartition, type) {
+  if (!repartition?.categories) return undefined;
+  return repartition.categories
+    .filter(c => c.type === type)
+    .reduce((s, c) => s + (c.montant || 0), 0);
+}
+
+/** Normalise V2 (categories) ou legacy vers { investissementOr, investissementBourse, ... } pour sync */
+function toLegacyShape(repartition) {
+  if (!repartition) return {};
+  if (repartition.investissementOr !== undefined) return repartition;
+  const categories = repartition.categories || [];
+  return {
+    investissementOr: getMontantBySubType(repartition, 'or'),
+    investissementBourse: getMontantBySubType(repartition, 'bourse'),
+    cashAccumulation: getMontantBySubType(repartition, 'cash'),
+    loisirs: getTotalByType(repartition, 'loisirs')
+  };
+}
+
 class PlanificateurSyncService {
   constructor() {
     this.eventBus = new EventTarget();
@@ -16,7 +42,7 @@ class PlanificateurSyncService {
   }
 
   /**
-   * Propager changement répartition vers tous les modules
+   * Propager changement répartition vers tous les modules (accepte V2 ou legacy)
    */
   async propagateRepartitionChange(newRepartition) {
     try {
@@ -41,57 +67,52 @@ class PlanificateurSyncService {
   }
 
   /**
-   * Mettre à jour module Investissements
+   * Mettre à jour module Investissements (accepte V2 ou legacy)
    */
   async updateInvestissements(repartition) {
+    const legacy = toLegacyShape(repartition);
     try {
-      // Mettre à jour DCA Or
-      if (repartition.investissementOr !== undefined) {
+      if (legacy.investissementOr !== undefined) {
         const bourseCryptoData = await investissementsStorage.getBourseCryptoData();
         const updatedDCA = {
           ...bourseCryptoData.dca,
           montants: {
             ...bourseCryptoData.dca?.montants,
-            or: repartition.investissementOr
+            or: legacy.investissementOr
           }
         };
         await investissementsStorage.saveBourseCryptoData({
           ...bourseCryptoData,
           dca: updatedDCA
         });
-        log.debug('Updated Or DCA:', repartition.investissementOr);
+        log.debug('Updated Or DCA:', legacy.investissementOr);
       }
-      
-      // Mettre à jour DCA Bourse
-      if (repartition.investissementBourse !== undefined) {
+      if (legacy.investissementBourse !== undefined) {
         const bourseCryptoData = await investissementsStorage.getBourseCryptoData();
         const updatedDCA = {
           ...bourseCryptoData.dca,
           montants: {
             ...bourseCryptoData.dca?.montants,
-            etf: repartition.investissementBourse * 0.6, // 60% ETF
-            actions: repartition.investissementBourse * 0.4 // 40% Actions
+            etf: legacy.investissementBourse * 0.6,
+            actions: legacy.investissementBourse * 0.4
           }
         };
         await investissementsStorage.saveBourseCryptoData({
           ...bourseCryptoData,
           dca: updatedDCA
         });
-        log.debug('Updated Bourse DCA:', repartition.investissementBourse);
+        log.debug('Updated Bourse DCA:', legacy.investissementBourse);
       }
-      
-      // Mettre à jour Cash accumulation
-      if (repartition.cashAccumulation !== undefined) {
+      if (legacy.cashAccumulation !== undefined) {
         const liquiditesData = await investissementsStorage.getLiquiditesData();
         await investissementsStorage.saveLiquiditesData({
           ...liquiditesData,
-          objectifMensuel: repartition.cashAccumulation
+          objectifMensuel: legacy.cashAccumulation
         });
-        log.debug('Updated Cash accumulation:', repartition.cashAccumulation);
+        log.debug('Updated Cash accumulation:', legacy.cashAccumulation);
       }
     } catch (error) {
       log.error('Error updating investissements:', error);
-      // Ne pas bloquer si erreur
     }
   }
 
@@ -128,35 +149,20 @@ class PlanificateurSyncService {
   }
 
   /**
-   * Obtenir notifications de changement
+   * Obtenir notifications de changement (accepte V2 ou legacy)
    */
   getNotifications(repartition) {
+    const legacy = toLegacyShape(repartition);
     const notifications = [];
-
-    if (repartition.loisirs !== undefined) {
-      notifications.push({
-        type: 'loisirs',
-        message: `Budget loisirs modifié : ${repartition.loisirs}€`,
-        icon: '🎮'
-      });
+    if (legacy.loisirs !== undefined) {
+      notifications.push({ type: 'loisirs', message: `Budget loisirs modifié : ${legacy.loisirs}€`, icon: '🎮' });
     }
-
-    if (repartition.investissementOr !== undefined) {
-      notifications.push({
-        type: 'or',
-        message: `Investissement Or modifié : ${repartition.investissementOr}€`,
-        icon: '🥇'
-      });
+    if (legacy.investissementOr !== undefined) {
+      notifications.push({ type: 'or', message: `Investissement Or modifié : ${legacy.investissementOr}€`, icon: '🥇' });
     }
-
-    if (repartition.investissementBourse !== undefined) {
-      notifications.push({
-        type: 'bourse',
-        message: `Investissement Bourse modifié : ${repartition.investissementBourse}€`,
-        icon: '📈'
-      });
+    if (legacy.investissementBourse !== undefined) {
+      notifications.push({ type: 'bourse', message: `Investissement Bourse modifié : ${legacy.investissementBourse}€`, icon: '📈' });
     }
-
     return notifications;
   }
 }
