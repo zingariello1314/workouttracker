@@ -28,6 +28,14 @@ const salaireSchema = z.object({
   updatedAt: z.string().datetime()
 });
 
+const customCategorySchema = z.object({
+  id: z.string(),
+  label: z.string().min(1).max(100),
+  emoji: z.string().max(8).optional().default('🧩'),
+  type: z.enum(['investissement', 'loisirs', 'epargne', 'charges', 'autre']),
+  montant: z.number().nonnegative().max(10000)
+});
+
 const repartitionSchema = z.object({
   id: z.string(),
   loyer: z.number().nonnegative().max(10000),
@@ -36,6 +44,7 @@ const repartitionSchema = z.object({
   cashAccumulation: z.number().nonnegative().max(10000),
   loisirs: z.number().nonnegative().max(10000),
   surplus: z.number(),
+  categories: z.array(customCategorySchema).optional().default([]),
   updatedAt: z.string().datetime()
 });
 
@@ -352,6 +361,7 @@ class PlanificateurStorage {
       cashAccumulation: 200,
       loisirs: 400,
       surplus: 800,
+      categories: [],
       updatedAt: new Date().toISOString()
     };
   }
@@ -605,14 +615,14 @@ class PlanificateurStorage {
   async addHistorique(historiqueData) {
     const db = await this.initDB();
     const tx = db.transaction(STORES.HISTORIQUE, 'readwrite');
-    const historiqueWithId = {
+    const historiqueBase = {
       ...historiqueData,
-      id: undefined, // Auto-increment
       timestamp: Date.now()
     };
-    const id = await tx.objectStore(STORES.HISTORIQUE).add(historiqueWithId);
+    // Laisser IndexedDB générer la clé auto-incrémentée (ne pas forcer id: undefined)
+    const id = await tx.objectStore(STORES.HISTORIQUE).add(historiqueBase);
     await tx.done;
-    return { ...historiqueWithId, id };
+    return { ...historiqueBase, id };
   }
 
   async getHistorique(filters = {}) {

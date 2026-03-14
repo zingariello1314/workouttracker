@@ -28,7 +28,8 @@ const SyncInterface = ({
       syncedData: [
         { label: 'DCA Or', value: repartition?.investissementOr || 0 },
         { label: 'DCA Bourse', value: repartition?.investissementBourse || 0 },
-        { label: 'Cash', value: repartition?.cashAccumulation || 0 }
+        { label: 'Cash', value: repartition?.cashAccumulation || 0 },
+        { label: 'Autres investissements', value: (repartition?.categories || []).filter(c => c.type === 'investissement').reduce((s,c) => s + (c.montant || 0), 0) }
       ]
     },
     {
@@ -40,7 +41,7 @@ const SyncInterface = ({
       connected: true,
       lastUpdate: lastSync,
       syncedData: [
-        { label: 'Budget Loisirs', value: repartition?.loisirs || 0 }
+        { label: 'Budget Loisirs', value: (repartition?.loisirs || 0) + (repartition?.categories || []).filter(c => c.type === 'loisirs').reduce((s,c) => s + (c.montant || 0), 0) }
       ]
     },
     {
@@ -52,7 +53,7 @@ const SyncInterface = ({
       connected: true,
       lastUpdate: lastSync,
       syncedData: [
-        { label: 'Budget Courses', value: repartition?.loisirs || 0 }
+        { label: 'Budget Courses', value: (repartition?.loisirs || 0) + (repartition?.categories || []).filter(c => c.type === 'loisirs').reduce((s,c) => s + (c.montant || 0), 0) }
       ]
     },
     {

@@ -203,7 +203,9 @@ export const usePlanificateur = () => {
   const calculateFaisabilite = useCallback((achat, moisCible) => {
     if (!repartition) return null;
 
-    const budgetLoisirs = repartition.loisirs || 0;
+    const budgetLoisirs = (repartition.loisirs || 0) + (repartition.categories || [])
+      .filter(cat => cat.type === 'loisirs')
+      .reduce((sum, cat) => sum + (cat.montant || 0), 0);
     if (budgetLoisirs === 0) {
       return {
         possible: false,

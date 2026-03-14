@@ -85,6 +85,25 @@ export const REPARTITION_ITEMS = [
   }
 ];
 
+// Groupe logique (macro-catégorie) pour chaque clé fixe
+export const REPARTITION_GROUPS = {
+  loyer: 'Charges fixes',
+  investissementOr: 'Investissement',
+  investissementBourse: 'Investissement',
+  cashAccumulation: 'Épargne / Sécurité',
+  loisirs: 'Loisirs',
+  surplus: 'Surplus'
+};
+
+// Libellés lisibles pour les types des catégories personnalisées
+export const REPARTITION_TYPE_LABELS = {
+  investissement: 'Investissement',
+  loisirs: 'Loisirs',
+  epargne: 'Épargne / Sécurité',
+  charges: 'Charges fixes',
+  autre: 'Autre'
+};
+
 /**
  * Couleurs par statut d'achat
  * Constant pour éviter re-création

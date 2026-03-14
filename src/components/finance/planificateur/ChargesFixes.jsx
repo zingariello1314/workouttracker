@@ -13,7 +13,7 @@ const ChargesFixes = ({ chargesFixes, repartition }) => {
   const charges = React.useMemo(() => {
     if (!repartition) return [];
 
-    return [
+    const baseCharges = [
       {
         type: 'loyer',
         montant: repartition.loyer || 0,
@@ -51,6 +51,21 @@ const ChargesFixes = ({ chargesFixes, repartition }) => {
         borderCouleur: 'border-emerald-500/50'
       }
     ].filter(charge => charge.montant > 0);
+
+    const customCharges = (repartition.categories || [])
+      .filter(cat => ['investissement', 'charges', 'epargne'].includes(cat.type) && cat.montant > 0)
+      .map(cat => ({
+        type: cat.type,
+        montant: cat.montant,
+        frequence: 'mensuel',
+        icone: Wallet,
+        couleur: 'text-orange-400',
+        bgCouleur: 'bg-orange-900/30',
+        borderCouleur: 'border-orange-500/50',
+        label: cat.label
+      }));
+
+    return [...baseCharges, ...customCharges];
   }, [repartition]);
 
   const totalCharges = charges.reduce((sum, charge) => sum + charge.montant, 0);
@@ -103,7 +118,7 @@ const ChargesFixes = ({ chargesFixes, repartition }) => {
                   </div>
                   <div>
                     <div className="text-sm font-medium text-slate-300">
-                      {t(`finance.planificateur.repartition.${charge.type}`)}
+                      {charge.label || t(`finance.planificateur.repartition.${charge.type}`)}
                     </div>
                     <div className="text-xs text-slate-500">
                       {charge.frequence}

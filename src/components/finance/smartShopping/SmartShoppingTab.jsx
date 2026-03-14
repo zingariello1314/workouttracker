@@ -174,6 +174,7 @@ const SmartShoppingTab = () => {
                 <button
                   type="button"
                   className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
+                  onClick={() => setActiveSection('listes')}
                 >
                   <ShoppingCart className="w-5 h-5" />
                   Créer ma première liste

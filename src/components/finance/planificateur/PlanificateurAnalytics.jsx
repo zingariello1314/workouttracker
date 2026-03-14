@@ -65,14 +65,21 @@ const PlanificateurAnalytics = ({
 
   // Évolution répartition (simulée avec historique)
   const evolutionRepartition = useMemo(() => {
+    const sumCustom = (type) =>
+      (repartition?.categories || [])
+        .filter(cat => cat.type === type)
+        .reduce((sum, cat) => sum + (cat.montant || 0), 0);
+
     if (historique.length === 0) {
-      // Données simulées pour démonstration
       const mois = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'];
-      return mois.map((mois, index) => ({
+      return mois.map((mois) => ({
         mois,
-        loisirs: repartition?.loisirs || 0,
-        investissements: (repartition?.investissementOr || 0) + (repartition?.investissementBourse || 0),
-        epargne: repartition?.cashAccumulation || 0
+        loisirs: (repartition?.loisirs || 0) + sumCustom('loisirs'),
+        investissements:
+          (repartition?.investissementOr || 0) +
+          (repartition?.investissementBourse || 0) +
+          sumCustom('investissement'),
+        epargne: (repartition?.cashAccumulation || 0) + sumCustom('epargne')
       }));
     }
     return historique;
@@ -82,14 +89,24 @@ const PlanificateurAnalytics = ({
   const repartitionData = useMemo(() => {
     if (!repartition) return [];
 
-    return [
+    const data = [
       { name: 'Loyer', value: repartition.loyer || 0, color: '#a855f7' },
       { name: 'Or', value: repartition.investissementOr || 0, color: '#eab308' },
       { name: 'Bourse', value: repartition.investissementBourse || 0, color: '#3b82f6' },
       { name: 'Cash', value: repartition.cashAccumulation || 0, color: '#10b981' },
       { name: 'Loisirs', value: repartition.loisirs || 0, color: '#ec4899' },
       { name: 'Surplus', value: repartition.surplus || 0, color: '#64748b' }
-    ].filter(item => item.value > 0);
+    ];
+
+    const customSlices = (repartition.categories || [])
+      .filter(cat => cat.montant > 0)
+      .map((cat, index) => ({
+        name: cat.label,
+        value: cat.montant,
+        color: '#f97316'
+      }));
+
+    return [...data, ...customSlices].filter(item => item.value > 0);
   }, [repartition]);
 
   // Performance objectifs par mois
