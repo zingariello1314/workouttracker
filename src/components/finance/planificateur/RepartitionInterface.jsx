@@ -224,9 +224,13 @@ const RepartitionInterface = ({
                 const isCustom = item.isCustom;
                 const isSurplus = item.isSurplus === true;
                 const key = isSurplus ? 'surplus' : (item.catKey ? `fixed_${item.catKey}` : item.catId);
-                const catForValue = !isSurplus && (repartition.categories || []).find(cat => cat.id === item.catId || cat.key === item.catKey);
-                // Catégories fixes : lire la clé (loyer, investissementOr...) car c’est elle qui est mise à jour au changement
-                const rawValue = isSurplus ? derivedSurplus : (item.catKey ? (repartition[item.catKey] ?? catForValue?.montant ?? 0) : (catForValue?.montant ?? 0));
+                const catForValue = !isSurplus && (repartition.categories || []).find(
+                  cat => cat.id === item.catId || cat.key === item.catKey
+                );
+                // Source unique de vérité pour l'affichage des montants = catégories V2
+                const rawValue = isSurplus
+                  ? derivedSurplus
+                  : (catForValue?.montant ?? 0);
                 const value = safeNumber(rawValue);
                 const salaireNum = safeNumber(salaire);
                 const pourcent = salaireNum > 0 ? (value / salaireNum) * 100 : 0;

@@ -343,14 +343,94 @@ class PlanificateurStorage {
       if (parsed.success) return parsed.data;
     }
 
-    const categories = [];
-    categories.push({ id: 'cat_loyer', key: 'loyer', label: 'Loyer', emoji: '🏠', type: 'charges', subType: 'loyer', montant: Number(raw.loyer) || 0, fixed: true, order: 1 });
-    categories.push({ id: 'cat_investissementOr', key: 'investissementOr', label: 'Or', emoji: '🥇', type: 'investissement', subType: 'or', montant: Number(raw.investissementOr) || 0, fixed: true, order: 2 });
-    categories.push({ id: 'cat_bourse', key: 'investissementBourse', label: 'Bourse', emoji: '📈', type: 'investissement', subType: 'bourse', montant: Number(raw.investissementBourse) || 0, fixed: true, order: 3 });
-    categories.push({ id: 'cat_cash', key: 'cashAccumulation', label: 'Cash', emoji: '💰', type: 'epargne', subType: 'cash', montant: Number(raw.cashAccumulation) || 0, fixed: true, order: 4 });
-    categories.push({ id: 'cat_loisirs', key: 'loisirs', label: 'Loisirs', emoji: '🎮', type: 'loisirs', montant: Number(raw.loisirs) || 0, fixed: true, order: 5 });
+    const existingArray = Array.isArray(raw.categories) ? raw.categories : [];
 
-    const existingCustom = Array.isArray(raw.categories) ? raw.categories.filter(c => c && !['cat_loyer', 'cat_investissementOr', 'cat_bourse', 'cat_cash', 'cat_loisirs'].includes(c.id)) : [];
+    const getExistingFixed = (id) => existingArray.find(c => c && c.id === id) || null;
+
+    const categories = [];
+    // Loyer
+    (() => {
+      const existing = getExistingFixed('cat_loyer');
+      categories.push({
+        id: 'cat_loyer',
+        key: 'loyer',
+        label: existing?.label || 'Loyer',
+        emoji: existing?.emoji || '🏠',
+        type: REPARTITION_CATEGORY_TYPES.includes(existing?.type) ? existing.type : 'charges',
+        subType: existing?.subType || 'loyer',
+        montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.loyer) || 0),
+        fixed: true,
+        order: existing?.order || 1
+      });
+    })();
+
+    // Or
+    (() => {
+      const existing = getExistingFixed('cat_investissementOr');
+      categories.push({
+        id: 'cat_investissementOr',
+        key: 'investissementOr',
+        label: existing?.label || 'Or',
+        emoji: existing?.emoji || '🥇',
+        type: REPARTITION_CATEGORY_TYPES.includes(existing?.type) ? existing.type : 'investissement',
+        subType: existing?.subType || 'or',
+        montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.investissementOr) || 0),
+        fixed: true,
+        order: existing?.order || 2
+      });
+    })();
+
+    // Bourse
+    (() => {
+      const existing = getExistingFixed('cat_bourse');
+      categories.push({
+        id: 'cat_bourse',
+        key: 'investissementBourse',
+        label: existing?.label || 'Bourse',
+        emoji: existing?.emoji || '📈',
+        type: REPARTITION_CATEGORY_TYPES.includes(existing?.type) ? existing.type : 'investissement',
+        subType: existing?.subType || 'bourse',
+        montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.investissementBourse) || 0),
+        fixed: true,
+        order: existing?.order || 3
+      });
+    })();
+
+    // Cash
+    (() => {
+      const existing = getExistingFixed('cat_cash');
+      categories.push({
+        id: 'cat_cash',
+        key: 'cashAccumulation',
+        label: existing?.label || 'Cash',
+        emoji: existing?.emoji || '💰',
+        type: REPARTITION_CATEGORY_TYPES.includes(existing?.type) ? existing.type : 'epargne',
+        subType: existing?.subType || 'cash',
+        montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.cashAccumulation) || 0),
+        fixed: true,
+        order: existing?.order || 4
+      });
+    })();
+
+    // Loisirs
+    (() => {
+      const existing = getExistingFixed('cat_loisirs');
+      categories.push({
+        id: 'cat_loisirs',
+        key: 'loisirs',
+        label: existing?.label || 'Loisirs',
+        emoji: existing?.emoji || '🎮',
+        type: REPARTITION_CATEGORY_TYPES.includes(existing?.type) ? existing.type : 'loisirs',
+        subType: existing?.subType,
+        montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.loisirs) || 0),
+        fixed: true,
+        order: existing?.order || 5
+      });
+    })();
+
+    const existingCustom = existingArray.filter(
+      c => c && !['cat_loyer', 'cat_investissementOr', 'cat_bourse', 'cat_cash', 'cat_loisirs'].includes(c.id)
+    );
     const maxOrder = 5;
     existingCustom.forEach((c, i) => {
       const type = REPARTITION_CATEGORY_TYPES.includes(c.type) ? c.type : 'autre';
