@@ -126,9 +126,9 @@ class SmartShoppingStorage {
   getDefaultData() {
     return {
       budget: {
-        mensuel: 400,
+        mensuel: 0,
         depenseCeMois: 0,
-        restant: 400
+        restant: 0
       },
       listes: [],
       inventaire: {
@@ -161,7 +161,8 @@ class SmartShoppingStorage {
       
       return { success: true };
     } catch (error) {
-      return { success: false, errors: error.errors };
+      const issues = error?.issues ?? error?.errors ?? [];
+      return { success: false, errors: issues };
     }
   }
 

@@ -47,6 +47,11 @@ const CategoryCard = memo(({ category, onEdit, onDelete }) => {
           <span className="text-3xl">{category.icone || '📁'}</span>
           <div>
             <h4 className="font-semibold text-white text-lg">{category.nom}</h4>
+            {category.syncRepartitionCategoryId ? (
+              <span className="inline-block mt-0.5 text-[10px] px-1.5 py-0.5 rounded bg-cyan-900/50 text-cyan-300 border border-cyan-600/40">
+                Sync planificateur
+              </span>
+            ) : null}
             {category.sousCategories && category.sousCategories.length > 0 && (
               <div className="text-xs text-slate-400">
                 {category.sousCategories.length} sous-catégorie{category.sousCategories.length > 1 ? 's' : ''}

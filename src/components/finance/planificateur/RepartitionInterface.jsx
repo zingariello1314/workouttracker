@@ -16,6 +16,7 @@ const RepartitionInterface = ({
 }) => {
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [subDraftByCat, setSubDraftByCat] = useState({});
 
   const safeNumber = (value) => {
     const n = typeof value === 'number' ? value : parseFloat(value);
@@ -82,6 +83,19 @@ const RepartitionInterface = ({
   const handleTypeChange = useCallback((catId, catKey, newType) => {
     if (!newType || newType === 'surplus') return;
     onRepartitionChange({ kind: 'changeType', id: catId, key: catKey, type: newType });
+  }, [onRepartitionChange]);
+
+  const removeSubCategory = useCallback((catId, list, idx) => {
+    const next = (list || []).filter((_, i) => i !== idx);
+    onRepartitionChange({ kind: 'updateMeta', id: catId, sousCategories: next });
+  }, [onRepartitionChange]);
+
+  const addSubCategory = useCallback((catId, draft, list) => {
+    const t = String(draft || '').trim();
+    if (!t) return;
+    const next = [...(list || []), t];
+    onRepartitionChange({ kind: 'updateMeta', id: catId, sousCategories: next });
+    setSubDraftByCat((p) => ({ ...p, [catId]: '' }));
   }, [onRepartitionChange]);
 
   // Pas de throttle sur le range : avec value contrôlée, ignorer des onChange bloque le curseur visuellement.
@@ -361,6 +375,61 @@ const RepartitionInterface = ({
                         />
                       )}
                     </div>
+
+                    {!isSurplus && catForValue && (
+                      <div className="mt-3 space-y-2 border-l border-slate-600/70 pl-3">
+                        <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                          Sous-catégories (tri / suivi)
+                        </div>
+                        <p className="text-[10px] text-slate-500 leading-snug">
+                          La catégorie principale est le menu « type » au-dessus (charges, investissement, etc.).
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {(catForValue.sousCategories || []).map((s, idx) => (
+                            <span
+                              key={`${item.catId}-sub-${idx}`}
+                              className="inline-flex items-center gap-1 text-[11px] bg-slate-700/90 text-slate-200 px-2 py-0.5 rounded"
+                            >
+                              {s}
+                              <button
+                                type="button"
+                                className="text-slate-400 hover:text-rose-300 leading-none"
+                                onClick={() =>
+                                  removeSubCategory(item.catId, catForValue.sousCategories, idx)
+                                }
+                                aria-label={`Retirer la sous-catégorie ${s}`}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex gap-1">
+                          <input
+                            type="text"
+                            value={subDraftByCat[item.catId] ?? ''}
+                            onChange={(e) =>
+                              setSubDraftByCat((p) => ({ ...p, [item.catId]: e.target.value }))
+                            }
+                            placeholder="Ajouter une sous-catégorie"
+                            className="flex-1 min-w-0 text-[11px] bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white"
+                          />
+                          <button
+                            type="button"
+                            className="text-[11px] px-2 py-1 rounded bg-slate-600 text-white shrink-0"
+                            onClick={() =>
+                              addSubCategory(
+                                item.catId,
+                                subDraftByCat[item.catId],
+                                catForValue.sousCategories
+                              )
+                            }
+                          >
+                            Ajouter
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}

@@ -1,7 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useBudget } from '../../../hooks/useBudget';
-import { usePlanificateur } from '../../../hooks/usePlanificateur';
 import DashboardMetrics from './DashboardMetrics';
 import BudgetCharts from './BudgetCharts';
 import PredictiveAnalysis from './PredictiveAnalysis';
@@ -11,30 +10,7 @@ import AIRecommendations from './AIRecommendations';
 
 const DashboardSubTab = () => {
   const t = useTranslation();
-  const { loading, error, warnings, budget, updateBudget } = useBudget();
-  const { salaire, getTotalByType } = usePlanificateur();
-  const hasSyncedFromPlanificateur = useRef(false);
-
-  // Synchroniser le budget depuis le Planificateur si le budget est vide (tout à 0)
-  useEffect(() => {
-    if (loading || !budget || hasSyncedFromPlanificateur.current) return;
-    const revenus = budget.revenus ?? 0;
-    if (revenus > 0) return;
-    const netMensuel = salaire?.netMensuel ?? 0;
-    if (netMensuel <= 0) return;
-
-    hasSyncedFromPlanificateur.current = true;
-    const epargnePlanificateur = getTotalByType('epargne');
-    updateBudget({
-      revenus: netMensuel,
-      epargne: {
-        objectif: budget.epargne?.objectif ?? 0,
-        actuelle: epargnePlanificateur
-      }
-    }).catch(() => {
-      hasSyncedFromPlanificateur.current = false;
-    });
-  }, [loading, budget, salaire, getTotalByType, updateBudget]);
+  const { loading, error, warnings } = useBudget();
 
   if (loading) {
     return (

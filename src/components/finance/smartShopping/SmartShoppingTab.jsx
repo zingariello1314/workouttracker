@@ -18,6 +18,7 @@ import ModesAdaptatifs from './ModesAdaptatifs';
 import SettingsManager from './SettingsManager';
 import CommandCenter from './CommandCenter';
 import NavigationSections from './NavigationSections';
+import SmartShoppingCoursesPlanifSync from './SmartShoppingCoursesPlanifSync';
 
 const SmartShoppingTab = () => {
   const {
@@ -143,6 +144,8 @@ const SmartShoppingTab = () => {
           })}
         </div>
       )}
+
+      <SmartShoppingCoursesPlanifSync budget={budget} refreshData={refreshData} />
 
       {/* ✅ PHASE 2 - Étape 2.2 : Command Center extrait en composant */}
       <CommandCenter budget={budget} listes={listes} metrics={metrics} />

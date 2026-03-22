@@ -1,10 +1,7 @@
 import React, { useMemo } from 'react';
 import moment from 'moment';
-import { useInvestissements } from '../../../hooks/useInvestissements';
 
 const OrCalendar = ({ objectifMensuel, stockActuel, prixOr }) => {
-  const { or } = useInvestissements();
-
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
@@ -80,7 +77,9 @@ const OrCalendar = ({ objectifMensuel, stockActuel, prixOr }) => {
         <div className="w-full bg-slate-700 rounded-full h-2">
           <div
             className="bg-yellow-500 h-2 rounded-full"
-            style={{ width: `${Math.min((stockActuel * prixOr / objectifMensuel) * 100, 100)}%` }}
+            style={{
+              width: `${objectifMensuel > 0 ? Math.min((stockActuel * prixOr / objectifMensuel) * 100, 100) : 0}%`
+            }}
           />
         </div>
       </div>

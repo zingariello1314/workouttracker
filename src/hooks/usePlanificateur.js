@@ -240,6 +240,7 @@ export const usePlanificateur = () => {
     return {
       ...repartition,
       loyer: mFixed('cat_loyer') || getMontantBySubType('loyer'),
+      courses: mFixed('cat_courses') || getMontantBySubType('courses'),
       investissementOr: mFixed('cat_investissementOr') || getMontantBySubType('or'),
       investissementBourse: mFixed('cat_bourse') || getMontantBySubType('bourse'),
       cashAccumulation: mFixed('cat_cash') || getMontantBySubType('cash'),

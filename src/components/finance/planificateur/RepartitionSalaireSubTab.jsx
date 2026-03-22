@@ -12,10 +12,11 @@ const log = logger.module('RepartitionSalaireSubTab');
 
 const FIXED_DEFAULTS = [
   { id: 'cat_loyer', key: 'loyer', label: 'Loyer', emoji: '🏠', type: 'charges', subType: 'loyer', order: 1 },
-  { id: 'cat_investissementOr', key: 'investissementOr', label: 'Or', emoji: '🥇', type: 'investissement', subType: 'or', order: 2 },
-  { id: 'cat_bourse', key: 'investissementBourse', label: 'Bourse', emoji: '📈', type: 'investissement', subType: 'bourse', order: 3 },
-  { id: 'cat_cash', key: 'cashAccumulation', label: 'Cash', emoji: '💰', type: 'epargne', subType: 'cash', order: 4 },
-  { id: 'cat_loisirs', key: 'loisirs', label: 'Loisirs', emoji: '🎮', type: 'loisirs', order: 5 }
+  { id: 'cat_courses', key: 'courses', label: 'Courses', emoji: '🛒', type: 'charges', subType: 'courses', order: 2 },
+  { id: 'cat_investissementOr', key: 'investissementOr', label: 'Or', emoji: '🥇', type: 'investissement', subType: 'or', order: 3 },
+  { id: 'cat_bourse', key: 'investissementBourse', label: 'Bourse', emoji: '📈', type: 'investissement', subType: 'bourse', order: 4 },
+  { id: 'cat_cash', key: 'cashAccumulation', label: 'Cash', emoji: '💰', type: 'epargne', subType: 'cash', order: 5 },
+  { id: 'cat_loisirs', key: 'loisirs', label: 'Loisirs', emoji: '🎮', type: 'loisirs', order: 6 }
 ];
 
 function buildCategoriesFromLegacy(legacy) {
@@ -31,7 +32,10 @@ function buildCategoriesFromLegacy(legacy) {
     const fromCat = existing?.montant;
     const hasCatMontant = existing != null && typeof fromCat === 'number' && !Number.isNaN(fromCat);
     const montant = Number(hasCatMontant ? fromCat : (legacy[def.key] ?? 0)) || 0;
-    return { ...def, type, montant, fixed: true };
+    const sousCategories = Array.isArray(existing?.sousCategories)
+      ? [...existing.sousCategories]
+      : [];
+    return { ...def, type, montant, fixed: true, sousCategories };
   });
   const custom = (legacy.categories || []).filter(c => c && !FIXED_CATEGORY_IDS.includes(c.id));
   return [...fixed, ...custom.map((c, i) => ({
@@ -43,16 +47,32 @@ function buildCategoriesFromLegacy(legacy) {
     subType: c.subType,
     montant: Number(c.montant) || 0,
     fixed: false,
-    order: 6 + i
+    order: 6 + i,
+    sousCategories: Array.isArray(c.sousCategories) ? [...c.sousCategories] : []
   }))];
 }
 
-const FIXED_CATEGORY_IDS = ['cat_loyer', 'cat_investissementOr', 'cat_bourse', 'cat_cash', 'cat_loisirs'];
+const FIXED_CATEGORY_IDS = [
+  'cat_loyer',
+  'cat_courses',
+  'cat_investissementOr',
+  'cat_bourse',
+  'cat_cash',
+  'cat_loisirs'
+];
 
-const REPARTITION_KEYS_SANS_SURPLUS = ['loyer', 'investissementOr', 'investissementBourse', 'cashAccumulation', 'loisirs'];
+const REPARTITION_KEYS_SANS_SURPLUS = [
+  'loyer',
+  'courses',
+  'investissementOr',
+  'investissementBourse',
+  'cashAccumulation',
+  'loisirs'
+];
 
 const KEY_TO_FIXED_ID = {
   loyer: 'cat_loyer',
+  courses: 'cat_courses',
   investissementOr: 'cat_investissementOr',
   investissementBourse: 'cat_bourse',
   cashAccumulation: 'cat_cash',
@@ -67,6 +87,7 @@ const RepartitionSalaireSubTab = () => {
   const [localSalaire, setLocalSalaire] = useState(salaire?.netMensuel || 3000);
   const defaultLegacy = {
     loyer: 800,
+    courses: 0,
     investissementOr: 300,
     investissementBourse: 500,
     cashAccumulation: 200,
@@ -85,6 +106,7 @@ const RepartitionSalaireSubTab = () => {
     } else if (repartitionLegacy) {
       raw = {
         loyer: repartitionLegacy.loyer ?? 0,
+        courses: repartitionLegacy.courses ?? 0,
         investissementOr: repartitionLegacy.investissementOr ?? 0,
         investissementBourse: repartitionLegacy.investissementBourse ?? 0,
         cashAccumulation: repartitionLegacy.cashAccumulation ?? 0,
@@ -177,7 +199,22 @@ const RepartitionSalaireSubTab = () => {
           categories: buildCategoriesFromLegacy(baseSource)
         };
 
-        if (change.kind === 'changeType') {
+        if (change.kind === 'updateMeta') {
+          const { id: catId, label, emoji, sousCategories } = change;
+          const categories = (baseRepartition.categories || []).map((c) =>
+            c.id === catId
+              ? {
+                  ...c,
+                  ...(label != null && { label: String(label).trim() || c.label }),
+                  ...(emoji != null && { emoji: String(emoji).slice(0, 10) || c.emoji }),
+                  ...(sousCategories != null && {
+                    sousCategories: Array.isArray(sousCategories) ? [...sousCategories] : []
+                  })
+                }
+              : c
+          );
+          baseRepartition = { ...baseRepartition, categories };
+        } else if (change.kind === 'changeType') {
           const { id: catId, key: catKey, type: newType } = change;
           if (!newType || newType === 'surplus') return prev;
           const categories = (baseRepartition.categories || []).map((c) =>
@@ -282,7 +319,8 @@ const RepartitionSalaireSubTab = () => {
       label,
       emoji: newCatEmoji || '🧩',
       type: newCatType,
-      montant: amount
+      montant: amount,
+      sousCategories: []
     };
 
     const updatedCategories = [...(dataForUi.categories || []), newCategory];

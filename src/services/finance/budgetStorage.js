@@ -33,6 +33,20 @@ const STORES = {
   CHARGES_FIXES: 'chargesFixes'
 };
 
+/** IndexedDB legacy : createdAt parfois en ms (number). Zod attend une ISO string. */
+function normalizeTimestampFieldForZod(val, fallbackIso) {
+  if (val instanceof Date && !Number.isNaN(val.getTime())) {
+    return val.toISOString();
+  }
+  if (typeof val === 'number' && Number.isFinite(val)) {
+    return new Date(val).toISOString();
+  }
+  if (typeof val === 'string' && val.trim() !== '') {
+    return val.trim();
+  }
+  return fallbackIso;
+}
+
 class BudgetStorage {
   constructor() {
     this.db = null;
@@ -237,11 +251,12 @@ class BudgetStorage {
    * ✅ SOLUTION 1.12 : Optimisation Transactions IndexedDB
    */
   async saveCategory(category) {
+    const nowIso = new Date().toISOString();
     let categoryWithId = {
       ...category,
       id: category.id || `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: category.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: normalizeTimestampFieldForZod(category.createdAt, nowIso),
+      updatedAt: nowIso
     };
     
     // ✅ SOLUTION 1.6 : Validation Zod avant sauvegarde (pas de retry pour erreurs validation)
@@ -389,11 +404,12 @@ class BudgetStorage {
    * ✅ SOLUTION 1.12 : Optimisation Transactions IndexedDB
    */
   async saveDepense(depense) {
+    const nowIso = new Date().toISOString();
     let depenseWithId = {
       ...depense,
       id: depense.id || `dep_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: depense.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: normalizeTimestampFieldForZod(depense.createdAt, nowIso),
+      updatedAt: nowIso
     };
     
     // ✅ SOLUTION 1.6 : Validation Zod avant sauvegarde (pas de retry pour erreurs validation)
@@ -520,12 +536,13 @@ class BudgetStorage {
    * ✅ SOLUTION 1.12 : Optimisation Transactions IndexedDB
    */
   async saveDepensePlanifiee(depensePlanifiee) {
+    const nowIso = new Date().toISOString();
     let depenseWithId = {
       ...depensePlanifiee,
       id: depensePlanifiee.id || `plan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       statut: depensePlanifiee.statut || 'planifie',
-      createdAt: depensePlanifiee.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: normalizeTimestampFieldForZod(depensePlanifiee.createdAt, nowIso),
+      updatedAt: nowIso
     };
     
     // ✅ SOLUTION 1.6 : Validation Zod avant sauvegarde (pas de retry pour erreurs validation)
@@ -640,11 +657,12 @@ class BudgetStorage {
    * ✅ SOLUTION 1.12 : Optimisation Transactions IndexedDB
    */
   async saveChargeFixe(charge) {
+    const nowIso = new Date().toISOString();
     let chargeWithId = {
       ...charge,
       id: charge.id || `charge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: charge.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: normalizeTimestampFieldForZod(charge.createdAt, nowIso),
+      updatedAt: nowIso
     };
     
     // ✅ SOLUTION 1.6 : Validation Zod avant sauvegarde (pas de retry pour erreurs validation)

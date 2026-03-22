@@ -2,52 +2,63 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useToast } from '../../ui/Toast';
 import { validateCategory } from '../../../services/finance/budgetSchemas';
+import { PLANIF_CATEGORY_LINK_OPTIONS } from '../../../services/finance/budgetPlanificateurBridge';
 import logger from '../../../utils/logger';
 
 const log = logger.module('AddCategoryForm');
 
+/**
+ * Uniquement des modèles alignés sur le planificateur (répartition salaire).
+ * Autres postes : créer une ligne dans Finance → Planificateur → Répartition.
+ */
 const CATEGORY_TEMPLATES = {
-  courses: {
-    nom: 'Courses',
-    budgetMensuel: 400,
-    sousCategories: ['Alimentation', 'Produits ménage', 'Hygiène'],
-    icone: '🛒',
-    couleur: '#3b82f6'
-  },
   logement: {
     nom: 'Logement',
-    budgetMensuel: 800,
+    budgetMensuel: 0,
     sousCategories: ['Loyer', 'Charges', 'Assurance'],
     icone: '🏠',
-    couleur: '#10b981'
+    couleur: '#10b981',
+    syncRepartitionCategoryId: 'cat_loyer'
   },
-  transport: {
-    nom: 'Transport',
-    budgetMensuel: 200,
-    sousCategories: ['Essence', 'Assurance', 'Entretien'],
-    icone: '🚗',
-    couleur: '#f59e0b'
+  courses: {
+    nom: 'Courses',
+    budgetMensuel: 0,
+    sousCategories: ['Alimentation', 'Produits ménage', 'Hygiène'],
+    icone: '🛒',
+    couleur: '#22c55e',
+    syncRepartitionCategoryId: 'cat_courses'
   },
   loisirs: {
     nom: 'Loisirs',
-    budgetMensuel: 300,
+    budgetMensuel: 0,
     sousCategories: ['Sorties', 'Abonnements', 'Achats'],
     icone: '🎮',
-    couleur: '#8b5cf6'
+    couleur: '#8b5cf6',
+    syncRepartitionCategoryId: 'cat_loisirs'
   },
-  sante: {
-    nom: 'Santé',
-    budgetMensuel: 150,
-    sousCategories: ['Médecin', 'Pharmacie', 'Mutuelle'],
-    icone: '🏥',
-    couleur: '#ef4444'
+  or: {
+    nom: 'Or',
+    budgetMensuel: 0,
+    sousCategories: ['Lingots', 'Pièces'],
+    icone: '🥇',
+    couleur: '#eab308',
+    syncRepartitionCategoryId: 'cat_investissementOr'
   },
-  education: {
-    nom: 'Éducation',
-    budgetMensuel: 200,
-    sousCategories: ['Formation', 'Livres', 'Matériel'],
-    icone: '📚',
-    couleur: '#06b6d4'
+  bourse: {
+    nom: 'Bourse',
+    budgetMensuel: 0,
+    sousCategories: ['ETF', 'Actions'],
+    icone: '📈',
+    couleur: '#3b82f6',
+    syncRepartitionCategoryId: 'cat_bourse'
+  },
+  cash: {
+    nom: 'Cash',
+    budgetMensuel: 0,
+    sousCategories: ['Réserve', 'Urgence'],
+    icone: '💰',
+    couleur: '#14b8a6',
+    syncRepartitionCategoryId: 'cat_cash'
   }
 };
 
@@ -67,7 +78,8 @@ const AddCategoryForm = ({ category, onSave, onCancel }) => {
       action80: 'NOTIFICATION',
       action100: 'BLOCK',
       action120: 'BLOCK_STRICT'
-    }
+    },
+    syncRepartitionCategoryId: category?.syncRepartitionCategoryId || ''
   });
   const [newSubCategory, setNewSubCategory] = useState('');
 
@@ -86,7 +98,8 @@ const AddCategoryForm = ({ category, onSave, onCancel }) => {
           action80: 'NOTIFICATION',
           action100: 'BLOCK',
           action120: 'BLOCK_STRICT'
-        }
+        },
+        syncRepartitionCategoryId: category.syncRepartitionCategoryId || ''
       });
     }
   }, [category]);
@@ -99,7 +112,8 @@ const AddCategoryForm = ({ category, onSave, onCancel }) => {
       budgetMensuel: template.budgetMensuel,
       sousCategories: [...template.sousCategories],
       icone: template.icone,
-      couleur: template.couleur
+      couleur: template.couleur,
+      syncRepartitionCategoryId: template.syncRepartitionCategoryId || ''
     });
   };
 
@@ -159,7 +173,7 @@ const AddCategoryForm = ({ category, onSave, onCancel }) => {
           <label className="block text-sm font-medium text-slate-300 mb-2">
             Templates prédéfinis
           </label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {Object.entries(CATEGORY_TEMPLATES).map(([key, template]) => (
               <button
                 key={key}
@@ -204,6 +218,29 @@ const AddCategoryForm = ({ category, onSave, onCancel }) => {
           step="0.01"
           required
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-300 mb-2">
+          Lien répartition salaire (planificateur)
+        </label>
+        <select
+          value={formData.syncRepartitionCategoryId || ''}
+          onChange={(e) =>
+            setFormData({ ...formData, syncRepartitionCategoryId: e.target.value })
+          }
+          className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+        >
+          {PLANIF_CATEGORY_LINK_OPTIONS.map((opt) => (
+            <option key={opt.id || 'none'} value={opt.id}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-slate-500 mt-1">
+          Si lié, le montant est synchronisé avec la ligne correspondante dans Finance → Planificateur →
+          Répartition salaire (dans les deux sens).
+        </p>
       </div>
 
       {/* Icône */}

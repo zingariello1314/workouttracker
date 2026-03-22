@@ -1,12 +1,19 @@
-import React, { useState, useMemo } from 'react';
-import { useTranslation } from '../../../utils/translations';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useInvestissements } from '../../../hooks/useInvestissements';
+import { usePlanificateur } from '../../../hooks/usePlanificateur';
 import { useOrPrice } from '../../../hooks/useOrPrice';
 import { useToast } from '../../ui/Toast';
+import { planificateurSync } from '../../../services/finance/planificateurSync';
+import {
+  getFixedCategoryMontant,
+  repartitionPatchFixedCategoryMontant,
+  FIXED_CAT_IDS
+} from '../../../utils/repartitionFixedCategoryPatch';
 import OrCalendar from './OrCalendar';
 import OrStockage from './OrStockage';
 import OrAnalytics from './OrAnalytics';
 import AddOrAcquisitionForm from './AddOrAcquisitionForm';
+import InvestissementObjectifLinkedCard from './InvestissementObjectifLinkedCard';
 
 /**
  * ✅ SOLUTION 2.1/2.9 : Utilisation hook useOrPrice avec cache partagé
@@ -18,10 +25,11 @@ import AddOrAcquisitionForm from './AddOrAcquisitionForm';
  * - Gestion d'erreurs avec fallback
  */
 const OrPhysiqueSubTab = () => {
-  const t = useTranslation();
-  const { or, addOrAcquisition, updateOrData, loading } = useInvestissements();
+  const { or, addOrAcquisition, loading, reload: reloadInvestissements } = useInvestissements();
+  const { repartition, updateRepartition, loading: planifLoading } = usePlanificateur();
   const { showToast } = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [objectifSaving, setObjectifSaving] = useState(false);
   
   // ✅ SOLUTION 2.1/2.9 : Utiliser hook avec cache partagé
   // autoRefresh: true par défaut, refreshInterval: 1h (configuré dans le hook)
@@ -52,6 +60,35 @@ const OrPhysiqueSubTab = () => {
     return (or.stockActuel || 0) * prixOr;
   }, [prixOr, or]);
 
+  const objectifMensuelOr = useMemo(() => {
+    const fromPlanif = getFixedCategoryMontant(repartition, FIXED_CAT_IDS.or, 'or');
+    if (fromPlanif !== null) return fromPlanif;
+    return or?.objectifMensuel ?? 150;
+  }, [repartition, or?.objectifMensuel]);
+
+  const handleObjectifOrSave = useCallback(
+    async (montant) => {
+      if (!repartition) {
+        showToast('Répartition non chargée', 'error');
+        throw new Error('no repartition');
+      }
+      setObjectifSaving(true);
+      try {
+        const next = repartitionPatchFixedCategoryMontant(repartition, FIXED_CAT_IDS.or, montant);
+        const saved = await updateRepartition(next);
+        await planificateurSync.propagateRepartitionChange(saved);
+        await reloadInvestissements();
+        showToast('Objectif or synchronisé avec la répartition salaire', 'success');
+      } catch (e) {
+        showToast('Impossible de mettre à jour l’objectif', 'error');
+        throw e;
+      } finally {
+        setObjectifSaving(false);
+      }
+    },
+    [repartition, updateRepartition, reloadInvestissements, showToast]
+  );
+
   // Calcul plus-value
   const plusValue = useMemo(() => {
     if (!or?.acquisitions || !prixOr || or.acquisitions.length === 0) return 0;
@@ -74,7 +111,7 @@ const OrPhysiqueSubTab = () => {
     }
   };
 
-  if (loading) {
+  if (loading || planifLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -162,9 +199,18 @@ const OrPhysiqueSubTab = () => {
         </div>
       </div>
 
+      <InvestissementObjectifLinkedCard
+        title="Objectif mensuel (répartition « Or »)"
+        hint="Même montant que la catégorie Or dans Planificateur → Répartition salaire. Modifiable ici ou dans l’onglet Répartition."
+        valueEuros={objectifMensuelOr}
+        onSave={handleObjectifOrSave}
+        saving={objectifSaving}
+        accentClass="from-yellow-900/30 to-amber-900/20 border-yellow-500/45"
+      />
+
       {/* Calendrier acquisition */}
-      <OrCalendar 
-        objectifMensuel={or?.objectifMensuel || 150}
+      <OrCalendar
+        objectifMensuel={objectifMensuelOr}
         stockActuel={or?.stockActuel || 0}
         prixOr={prixOr}
       />

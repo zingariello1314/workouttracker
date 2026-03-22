@@ -23,6 +23,30 @@ const log = logger.module('budgetSchemas');
 // ==================== HELPERS ====================
 
 /**
+ * Zod v4 : les erreurs sont dans `issues`. Anciennes versions / docs utilisaient `errors`.
+ * Sans ce garde-fou, `error.errors.map` lève et masque la vraie erreur de validation.
+ */
+function getZodIssueList(error) {
+  if (!error) return [];
+  if (Array.isArray(error.issues)) return error.issues;
+  if (Array.isArray(error.errors)) return error.errors;
+  return [];
+}
+
+function formatZodIssues(error) {
+  const list = getZodIssueList(error);
+  if (!list.length) return error?.message || 'Erreur de validation inconnue';
+  return list
+    .map((e) => {
+      const p = e?.path;
+      const pathStr = Array.isArray(p) ? p.filter((x) => x !== undefined && x !== '').join('.') : '';
+      const msg = e?.message ?? 'invalide';
+      return pathStr ? `${pathStr}: ${msg}` : msg;
+    })
+    .join(', ');
+}
+
+/**
  * Regex pour validation format date YYYY-MM-DD
  */
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -46,6 +70,14 @@ const isoTimestampSchema = z.string()
     const d = new Date(ts);
     return d instanceof Date && !isNaN(d.getTime());
   }, 'Timestamp invalide');
+
+/** Données migrées / locales : timestamp en ms (number) au lieu d’ISO string */
+const categoryIsoTimestampOptional = z
+  .union([
+    z.number().finite().transform((n) => new Date(n).toISOString()),
+    isoTimestampSchema
+  ])
+  .optional();
 
 /**
  * Schéma pour montants financiers (positifs, finis, avec limite raisonnable)
@@ -157,8 +189,14 @@ export const categorySchema = z.object({
     action100: 'BLOCK',
     action120: 'BLOCK_STRICT'
   }),
-  createdAt: isoTimestampSchema.optional(),
-  updatedAt: isoTimestampSchema.optional()
+  createdAt: categoryIsoTimestampOptional,
+  updatedAt: categoryIsoTimestampOptional,
+  /** Id catégorie planificateur V2 (ex. cat_loyer) — budget mensuel synchronisé */
+  syncRepartitionCategoryId: z
+    .string()
+    .max(80)
+    .optional()
+    .nullable()
 }).passthrough(); // Permettre autres champs pour compatibilité
 
 // ==================== SCHEMAS DEPENSE ====================
@@ -289,12 +327,12 @@ export function validateBudget(budget, options = {}) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       log.error('[validateBudget] Validation error:', {
-        errors: error.errors,
+        issues: getZodIssueList(error),
         budget
       });
       
       if (throwOnError) {
-        throw new Error(`Budget invalide: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+        throw new Error(`Budget invalide: ${formatZodIssues(error)}`);
       }
       return null;
     }
@@ -318,12 +356,12 @@ export function validateCategory(category, options = {}) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       log.error('[validateCategory] Validation error:', {
-        errors: error.errors,
+        issues: getZodIssueList(error),
         category
       });
       
       if (throwOnError) {
-        throw new Error(`Category invalide: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+        throw new Error(`Category invalide: ${formatZodIssues(error)}`);
       }
       return null;
     }
@@ -347,12 +385,12 @@ export function validateDepense(depense, options = {}) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       log.error('[validateDepense] Validation error:', {
-        errors: error.errors,
+        issues: getZodIssueList(error),
         depense
       });
       
       if (throwOnError) {
-        throw new Error(`Depense invalide: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+        throw new Error(`Depense invalide: ${formatZodIssues(error)}`);
       }
       return null;
     }
@@ -376,12 +414,12 @@ export function validateDepensePlanifiee(depensePlanifiee, options = {}) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       log.error('[validateDepensePlanifiee] Validation error:', {
-        errors: error.errors,
+        issues: getZodIssueList(error),
         depensePlanifiee
       });
       
       if (throwOnError) {
-        throw new Error(`DepensePlanifiee invalide: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+        throw new Error(`DepensePlanifiee invalide: ${formatZodIssues(error)}`);
       }
       return null;
     }
@@ -405,12 +443,12 @@ export function validateChargeFixe(chargeFixe, options = {}) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       log.error('[validateChargeFixe] Validation error:', {
-        errors: error.errors,
+        issues: getZodIssueList(error),
         chargeFixe
       });
       
       if (throwOnError) {
-        throw new Error(`ChargeFixe invalide: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+        throw new Error(`ChargeFixe invalide: ${formatZodIssues(error)}`);
       }
       return null;
     }

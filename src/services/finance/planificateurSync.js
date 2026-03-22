@@ -5,7 +5,7 @@
 
 import logger from '../../utils/logger';
 import { investissementsStorage } from './investissementsStorage';
-import { budgetStorage } from './budgetStorage';
+import { planificateurStorage } from './planificateurStorage';
 
 const log = logger.module('planificateurSync');
 
@@ -13,6 +13,11 @@ function getMontantBySubType(repartition, subType) {
   if (!repartition?.categories) return undefined;
   const cat = repartition.categories.find(c => c.subType === subType);
   return cat ? cat.montant : undefined;
+}
+
+function mFixed(repartition, id) {
+  const c = (repartition?.categories || []).find((x) => x && x.id === id);
+  return c && typeof c.montant === 'number' ? c.montant : undefined;
 }
 
 function getTotalByType(repartition, type) {
@@ -26,11 +31,10 @@ function getTotalByType(repartition, type) {
 function toLegacyShape(repartition) {
   if (!repartition) return {};
   if (repartition.investissementOr !== undefined) return repartition;
-  const categories = repartition.categories || [];
   return {
-    investissementOr: getMontantBySubType(repartition, 'or'),
-    investissementBourse: getMontantBySubType(repartition, 'bourse'),
-    cashAccumulation: getMontantBySubType(repartition, 'cash'),
+    investissementOr: mFixed(repartition, 'cat_investissementOr') ?? getMontantBySubType(repartition, 'or'),
+    investissementBourse: mFixed(repartition, 'cat_bourse') ?? getMontantBySubType(repartition, 'bourse'),
+    cashAccumulation: mFixed(repartition, 'cat_cash') ?? getMontantBySubType(repartition, 'cash'),
     loisirs: getTotalByType(repartition, 'loisirs')
   };
 }
@@ -73,6 +77,13 @@ class PlanificateurSyncService {
     const legacy = toLegacyShape(repartition);
     try {
       if (legacy.investissementOr !== undefined) {
+        const orData = await investissementsStorage.getOrData();
+        await investissementsStorage.saveOrData({
+          ...orData,
+          objectifMensuel: legacy.investissementOr
+        });
+        log.debug('Updated Or objectifMensuel:', legacy.investissementOr);
+
         const bourseCryptoData = await investissementsStorage.getBourseCryptoData();
         const updatedDCA = {
           ...bourseCryptoData.dca,
@@ -85,7 +96,7 @@ class PlanificateurSyncService {
           ...bourseCryptoData,
           dca: updatedDCA
         });
-        log.debug('Updated Or DCA:', legacy.investissementOr);
+        log.debug('Updated Or DCA montants.or:', legacy.investissementOr);
       }
       if (legacy.investissementBourse !== undefined) {
         const bourseCryptoData = await investissementsStorage.getBourseCryptoData();
@@ -121,16 +132,13 @@ class PlanificateurSyncService {
    */
   async updateBudgetPersonnel(repartition) {
     try {
-      if (repartition.loisirs !== undefined) {
-        // Mettre à jour budget loisirs dans Budget Personnel
-        // Note: Cette intégration dépendra de la structure exacte du module Budget
-        // Pour l'instant, on log juste
-        log.debug('Budget loisirs should be updated to:', repartition.loisirs);
-        // TODO: Implémenter mise à jour réelle quand le module Budget sera prêt
-      }
+      const salaire = await planificateurStorage.getSalaire();
+      const net = salaire?.netMensuel ?? 0;
+      const { syncBudgetPersonnelFromPlanificateurData } = await import('./budgetPlanificateurBridge.js');
+      const r = await syncBudgetPersonnelFromPlanificateurData(repartition, net);
+      log.debug('[updateBudgetPersonnel] Sync budget:', r);
     } catch (error) {
       log.error('Error updating budget personnel:', error);
-      // Ne pas bloquer si erreur
     }
   }
 

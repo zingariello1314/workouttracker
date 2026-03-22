@@ -1,17 +1,27 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useInvestissements } from '../../../hooks/useInvestissements';
+import { usePlanificateur } from '../../../hooks/usePlanificateur';
 import { useToast } from '../../ui/Toast/ToastProvider';
+import { planificateurSync } from '../../../services/finance/planificateurSync';
+import {
+  getFixedCategoryMontant,
+  repartitionPatchFixedCategoryMontant,
+  FIXED_CAT_IDS
+} from '../../../utils/repartitionFixedCategoryPatch';
 import LiquiditesCalculator from './LiquiditesCalculator';
 import LiquiditesStockage from './LiquiditesStockage';
 import LiquiditesAnalytics from './LiquiditesAnalytics';
 import AddLiquiditesEntryForm from './AddLiquiditesEntryForm';
+import InvestissementObjectifLinkedCard from './InvestissementObjectifLinkedCard';
 
 const LiquiditesSubTab = () => {
   const t = useTranslation();
-  const { liquidites, addLiquiditesEntry, updateLiquidites, loading } = useInvestissements();
+  const { liquidites, addLiquiditesEntry, loading, reload: reloadInvestissements } = useInvestissements();
+  const { repartition, updateRepartition, loading: planifLoading } = usePlanificateur();
   const { showToast } = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [objectifSaving, setObjectifSaving] = useState(false);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -32,6 +42,35 @@ const LiquiditesSubTab = () => {
     }
   };
 
+  const objectifMensuelCash = useMemo(() => {
+    const fromPlanif = getFixedCategoryMontant(repartition, FIXED_CAT_IDS.cash, 'cash');
+    if (fromPlanif !== null) return fromPlanif;
+    return liquidites?.objectifMensuel ?? 200;
+  }, [repartition, liquidites?.objectifMensuel]);
+
+  const handleObjectifCashSave = useCallback(
+    async (montant) => {
+      if (!repartition) {
+        showToast('Répartition non chargée', 'error');
+        throw new Error('no repartition');
+      }
+      setObjectifSaving(true);
+      try {
+        const next = repartitionPatchFixedCategoryMontant(repartition, FIXED_CAT_IDS.cash, montant);
+        const saved = await updateRepartition(next);
+        await planificateurSync.propagateRepartitionChange(saved);
+        await reloadInvestissements();
+        showToast('Objectif liquidités synchronisé avec la répartition salaire', 'success');
+      } catch (e) {
+        showToast('Impossible de mettre à jour l’objectif', 'error');
+        throw e;
+      } finally {
+        setObjectifSaving(false);
+      }
+    },
+    [repartition, updateRepartition, reloadInvestissements, showToast]
+  );
+
   // Calcul progression mensuelle
   const progressionMensuelle = useMemo(() => {
     if (!liquidites?.progression || liquidites.progression.length === 0) return [];
@@ -48,7 +87,7 @@ const LiquiditesSubTab = () => {
       .reduce((sum, entry) => sum + (entry.montant || 0), 0);
   }, [liquidites]);
 
-  if (loading) {
+  if (loading || planifLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -82,6 +121,15 @@ const LiquiditesSubTab = () => {
         </div>
       )}
 
+      <InvestissementObjectifLinkedCard
+        title="Objectif mensuel (répartition « Cash »)"
+        hint="Aligné sur la catégorie Cash / épargne sécurité du planificateur. Modifiable ici ou dans Répartition salaire."
+        valueEuros={objectifMensuelCash}
+        onSave={handleObjectifCashSave}
+        saving={objectifSaving}
+        accentClass="from-emerald-900/25 to-teal-900/20 border-emerald-500/40"
+      />
+
       {/* Métriques principales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-6">
@@ -103,7 +151,7 @@ const LiquiditesSubTab = () => {
             <div>
               <div className="text-sm text-slate-400">Objectif Mensuel</div>
               <div className="text-2xl font-bold text-white">
-                {formatCurrency(liquidites?.objectifMensuel || 200)}
+                {formatCurrency(objectifMensuelCash)}
               </div>
             </div>
           </div>
@@ -121,8 +169,8 @@ const LiquiditesSubTab = () => {
             </div>
           </div>
           <div className="text-sm text-slate-500">
-            {liquidites?.objectifMensuel > 0 
-              ? `${((progressionMensuelle / liquidites.objectifMensuel) * 100).toFixed(0)}% de l'objectif`
+            {objectifMensuelCash > 0
+              ? `${((progressionMensuelle / objectifMensuelCash) * 100).toFixed(0)}% de l'objectif`
               : 'Aucun objectif'
             }
           </div>
@@ -130,9 +178,9 @@ const LiquiditesSubTab = () => {
       </div>
 
       {/* Calculateur efficacité */}
-      <LiquiditesCalculator 
+      <LiquiditesCalculator
         stockTotal={liquidites?.stockTotal || 0}
-        objectifMensuel={liquidites?.objectifMensuel || 200}
+        objectifMensuel={objectifMensuelCash}
         progression={liquidites?.progression || []}
       />
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { usePlanificateur } from '../../../hooks/usePlanificateur';
 import { useToast } from '../../ui/Toast/ToastProvider';
@@ -8,16 +8,83 @@ import AchatLoisirForm from './AchatLoisirForm';
 import LoisirsInterface from './LoisirsInterface';
 import SkeletonLoader from '../bourse/SkeletonLoader';
 
+const CAT_LOISIRS_ID = 'cat_loisirs';
+
+/**
+ * Ajuste cat_loisirs pour que la somme des catégories type « loisirs » = totalSouhaite
+ * (les autres lignes loisirs personnalisées restent inchangées).
+ */
+function repartitionWithBudgetLoisirs(repartition, totalSouhaite) {
+  const target = Math.max(0, Number(totalSouhaite) || 0);
+  const prevCats = repartition?.categories ? [...repartition.categories] : [];
+  const autresLoisirs = prevCats
+    .filter((c) => c && c.type === 'loisirs' && c.id !== CAT_LOISIRS_ID)
+    .reduce((s, c) => s + (Number(c.montant) || 0), 0);
+  const montantPrincipal = Math.max(0, target - autresLoisirs);
+
+  const idx = prevCats.findIndex((c) => c && c.id === CAT_LOISIRS_ID);
+  if (idx >= 0) {
+    prevCats[idx] = { ...prevCats[idx], montant: montantPrincipal };
+  } else {
+    prevCats.push({
+      id: CAT_LOISIRS_ID,
+      key: 'loisirs',
+      label: 'Loisirs',
+      emoji: '🎮',
+      type: 'loisirs',
+      subType: 'loisirs',
+      order: 5,
+      montant: montantPrincipal,
+      fixed: true
+    });
+  }
+  return {
+    ...(repartition || { id: 'current' }),
+    id: repartition?.id || 'current',
+    categories: prevCats,
+    updatedAt: new Date().toISOString()
+  };
+}
+
 const PlanificationLoisirsSubTab = () => {
   const t = useTranslation();
-  const { repartition, achatsLoisirs, updateAchatLoisir, deleteAchatLoisir, loading } = usePlanificateur();
+  const {
+    repartition,
+    achatsLoisirs,
+    updateAchatLoisir,
+    deleteAchatLoisir,
+    updateRepartition,
+    getTotalByType,
+    loading
+  } = usePlanificateur();
   const { showToast } = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAchat, setEditingAchat] = useState(null);
+  const [budgetSaving, setBudgetSaving] = useState(false);
 
-  const budgetLoisirs = useMemo(() => {
-    return repartition?.loisirs || 0;
-  }, [repartition]);
+  // V2 : pas de champ repartition.loisirs — total des catégories type loisirs (dont cat_loisirs)
+  const budgetLoisirs = useMemo(() => getTotalByType('loisirs'), [repartition, getTotalByType]);
+
+  const handleBudgetLoisirsChange = useCallback(
+    async (newMontant) => {
+      if (!repartition) {
+        showToast('Répartition non chargée', 'error');
+        return;
+      }
+      setBudgetSaving(true);
+      try {
+        const next = repartitionWithBudgetLoisirs(repartition, newMontant);
+        await updateRepartition(next);
+        showToast('Budget loisirs mis à jour (répartition salaire synchronisée)', 'success');
+      } catch (e) {
+        showToast('Impossible de mettre à jour le budget', 'error');
+        throw e;
+      } finally {
+        setBudgetSaving(false);
+      }
+    },
+    [repartition, updateRepartition, showToast]
+  );
 
   const handleReorder = async (newOrder) => {
     // Mettre à jour l'ordre des achats
@@ -62,8 +129,12 @@ const PlanificationLoisirsSubTab = () => {
         </button>
       </div>
 
-      {/* Budget Loisirs */}
-      <LoisirsBudget budgetMensuel={budgetLoisirs} />
+      {/* Budget Loisirs — même total que Répartition salaire ; modifiable ici ou dans l’autre onglet */}
+      <LoisirsBudget
+        budgetMensuel={budgetLoisirs}
+        onBudgetChange={handleBudgetLoisirsChange}
+        saving={budgetSaving}
+      />
 
       {/* Formulaire Ajout/Modification */}
       {showAddForm && (

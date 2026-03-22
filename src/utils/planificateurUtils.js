@@ -118,6 +118,7 @@ export const REPARTITION_TYPE_CONFIG = {
 // Couleur par subType pour catégories fixes (Or, Bourse, Cash distincts)
 const SUBTYPE_COLORS = {
   loyer: '#a855f7',
+  courses: '#22c55e',
   or: '#eab308',
   bourse: '#3b82f6',
   cash: '#10b981',

@@ -61,6 +61,7 @@ const customCategorySchema = z.object({
 const repartitionLegacySchema = z.object({
   id: z.string().optional(),
   loyer: z.number().nonnegative().max(10000).optional(),
+  courses: z.number().nonnegative().max(10000).optional(),
   investissementOr: z.number().nonnegative().max(10000).optional(),
   investissementBourse: z.number().nonnegative().max(10000).optional(),
   cashAccumulation: z.number().nonnegative().max(10000).optional(),
@@ -318,10 +319,11 @@ class PlanificateurStorage {
   _getDefaultCategories() {
     return [
       { id: 'cat_loyer', key: 'loyer', label: 'Loyer', emoji: '🏠', type: 'charges', subType: 'loyer', montant: 800, fixed: true, order: 1 },
-      { id: 'cat_investissementOr', key: 'investissementOr', label: 'Or', emoji: '🥇', type: 'investissement', subType: 'or', montant: 300, fixed: true, order: 2 },
-      { id: 'cat_bourse', key: 'investissementBourse', label: 'Bourse', emoji: '📈', type: 'investissement', subType: 'bourse', montant: 500, fixed: true, order: 3 },
-      { id: 'cat_cash', key: 'cashAccumulation', label: 'Cash', emoji: '💰', type: 'epargne', subType: 'cash', montant: 200, fixed: true, order: 4 },
-      { id: 'cat_loisirs', key: 'loisirs', label: 'Loisirs', emoji: '🎮', type: 'loisirs', montant: 400, fixed: true, order: 5 }
+      { id: 'cat_courses', key: 'courses', label: 'Courses', emoji: '🛒', type: 'charges', subType: 'courses', montant: 0, fixed: true, order: 2 },
+      { id: 'cat_investissementOr', key: 'investissementOr', label: 'Or', emoji: '🥇', type: 'investissement', subType: 'or', montant: 300, fixed: true, order: 3 },
+      { id: 'cat_bourse', key: 'investissementBourse', label: 'Bourse', emoji: '📈', type: 'investissement', subType: 'bourse', montant: 500, fixed: true, order: 4 },
+      { id: 'cat_cash', key: 'cashAccumulation', label: 'Cash', emoji: '💰', type: 'epargne', subType: 'cash', montant: 200, fixed: true, order: 5 },
+      { id: 'cat_loisirs', key: 'loisirs', label: 'Loisirs', emoji: '🎮', type: 'loisirs', montant: 400, fixed: true, order: 6 }
     ];
   }
 
@@ -365,6 +367,22 @@ class PlanificateurStorage {
       });
     })();
 
+    // Courses (Smart Shopping / alimentation)
+    (() => {
+      const existing = getExistingFixed('cat_courses');
+      categories.push({
+        id: 'cat_courses',
+        key: 'courses',
+        label: existing?.label || 'Courses',
+        emoji: existing?.emoji || '🛒',
+        type: REPARTITION_CATEGORY_TYPES.includes(existing?.type) ? existing.type : 'charges',
+        subType: existing?.subType || 'courses',
+        montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.courses) || 0),
+        fixed: true,
+        order: existing?.order || 2
+      });
+    })();
+
     // Or
     (() => {
       const existing = getExistingFixed('cat_investissementOr');
@@ -377,7 +395,7 @@ class PlanificateurStorage {
         subType: existing?.subType || 'or',
         montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.investissementOr) || 0),
         fixed: true,
-        order: existing?.order || 2
+        order: existing?.order || 3
       });
     })();
 
@@ -393,7 +411,7 @@ class PlanificateurStorage {
         subType: existing?.subType || 'bourse',
         montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.investissementBourse) || 0),
         fixed: true,
-        order: existing?.order || 3
+        order: existing?.order || 4
       });
     })();
 
@@ -409,7 +427,7 @@ class PlanificateurStorage {
         subType: existing?.subType || 'cash',
         montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.cashAccumulation) || 0),
         fixed: true,
-        order: existing?.order || 4
+        order: existing?.order || 5
       });
     })();
 
@@ -425,14 +443,22 @@ class PlanificateurStorage {
         subType: existing?.subType,
         montant: typeof existing?.montant === 'number' ? existing.montant : (Number(raw.loisirs) || 0),
         fixed: true,
-        order: existing?.order || 5
+        order: existing?.order || 6
       });
     })();
 
+    const FIXED_IDS = [
+      'cat_loyer',
+      'cat_courses',
+      'cat_investissementOr',
+      'cat_bourse',
+      'cat_cash',
+      'cat_loisirs'
+    ];
     const existingCustom = existingArray.filter(
-      c => c && !['cat_loyer', 'cat_investissementOr', 'cat_bourse', 'cat_cash', 'cat_loisirs'].includes(c.id)
+      (c) => c && !FIXED_IDS.includes(c.id)
     );
-    const maxOrder = 5;
+    const maxOrder = 6;
     existingCustom.forEach((c, i) => {
       const type = REPARTITION_CATEGORY_TYPES.includes(c.type) ? c.type : 'autre';
       categories.push({
@@ -458,6 +484,36 @@ class PlanificateurStorage {
   /**
    * Normalise l'entrée (legacy ou V2) vers V2 pour sauvegarde.
    */
+  /**
+   * Ajoute la ligne fixe Courses si la répartition V2 date d’avant son introduction.
+   */
+  _ensureCatCoursesInRepartition(repartition) {
+    if (!repartition || !Array.isArray(repartition.categories)) return repartition;
+    if (repartition.categories.some((c) => c && c.id === 'cat_courses')) {
+      return repartition;
+    }
+    const loyerIdx = repartition.categories.findIndex((c) => c && c.id === 'cat_loyer');
+    const insertAt = loyerIdx >= 0 ? loyerIdx + 1 : 0;
+    const row = {
+      id: 'cat_courses',
+      key: 'courses',
+      label: 'Courses',
+      emoji: '🛒',
+      type: 'charges',
+      subType: 'courses',
+      montant: 0,
+      fixed: true,
+      order: 2
+    };
+    const nextCats = [...repartition.categories];
+    nextCats.splice(insertAt, 0, row);
+    return {
+      ...repartition,
+      categories: nextCats,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
   _normalizeToV2(repartitionData) {
     if (!repartitionData) return this.getDefaultRepartition();
     if (Array.isArray(repartitionData.categories) && repartitionData.categories.length >= 5
@@ -509,7 +565,7 @@ class PlanificateurStorage {
     const cached = this._getFromCache(cacheKey);
     if (cached) {
       log.debug('Repartition retrieved from cache');
-      return this._ensureV2(cached);
+      return this._ensureCatCoursesInRepartition(this._ensureV2(cached));
     }
 
     const db = await this.initDB();
@@ -522,9 +578,10 @@ class PlanificateurStorage {
     await tx.done;
 
     const result = data ? this._migrateLegacyToV2(data) : this.getDefaultRepartition();
-    this._setCache(cacheKey, result);
+    const withCourses = this._ensureCatCoursesInRepartition(result);
+    this._setCache(cacheKey, withCourses);
     log.debug('Repartition retrieved from IndexedDB (V2)');
-    return result;
+    return withCourses;
   }
 
   _ensureV2(data) {

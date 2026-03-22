@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { budgetStorage } from '../services/finance/budgetStorage';
+import { pushOrEnsureBudgetCategoryToPlanificateur } from '../services/finance/budgetPlanificateurBridge';
 import { cacheService } from '../services/finance/cacheService';
 import { CACHE_TYPES } from '../services/finance/cacheService';
 import { LRUCache } from '../utils/lruCache';
@@ -489,8 +490,15 @@ export const useBudget = () => {
   const addCategory = useCallback(async (category) => {
     try {
       const saved = await budgetStorage.saveCategory(category);
+      let finalCat = saved;
+      try {
+        const r = await pushOrEnsureBudgetCategoryToPlanificateur(saved);
+        if (r?.budgetCategory) finalCat = r.budgetCategory;
+      } catch (e) {
+        log.warn('[useBudget] Sync planificateur après ajout catégorie:', e);
+      }
       setCategories(prev => {
-        const updated = [...prev, saved].sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+        const updated = [...prev, finalCat].sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
         // Invalider et mettre à jour cache
         cacheService.delete(CACHE_KEYS.CATEGORIES, { type: CACHE_TYPES.MEMORY });
         cacheService.set(CACHE_KEYS.CATEGORIES, updated, {
@@ -499,7 +507,7 @@ export const useBudget = () => {
         });
         return updated;
       });
-      return saved;
+      return finalCat;
     } catch (err) {
       log.error('[useBudget] Error adding category:', err);
       setError(err);
@@ -524,7 +532,14 @@ export const useBudget = () => {
         rollbackNeeded = true;
         
         // Sauvegarder de manière asynchrone
-        budgetStorage.saveCategory(optimisticCategory).then(saved => {
+        budgetStorage.saveCategory(optimisticCategory).then(async (saved) => {
+          let persisted = saved;
+          try {
+            const r = await pushOrEnsureBudgetCategoryToPlanificateur(saved);
+            if (r?.budgetCategory) persisted = r.budgetCategory;
+          } catch (e) {
+            log.warn('[useBudget] Sync planificateur après maj catégorie:', e);
+          }
           // ✅ SOLUTION 1.5 : Update avec fonctionnel pour éviter race conditions
           setCategories(prevCategories => {
             // Trouver la catégorie dans l'état actuel
@@ -535,7 +550,7 @@ export const useBudget = () => {
             }
             
             // Mettre à jour avec version sauvegardée
-            const updatedCategories = prevCategories.map(c => c.id === categoryId ? saved : c);
+            const updatedCategories = prevCategories.map(c => c.id === categoryId ? persisted : c);
             
             // Invalider et mettre à jour cache
             cacheService.delete(CACHE_KEYS.CATEGORIES, { type: CACHE_TYPES.MEMORY });

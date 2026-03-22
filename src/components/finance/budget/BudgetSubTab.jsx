@@ -2,6 +2,7 @@ import React, { useMemo, lazy } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { useBudget } from '../../../hooks/useBudget';
 import BudgetErrorBoundary from './BudgetErrorBoundary';
+import BudgetPersonnelSyncListener from './BudgetPersonnelSyncListener';
 import SubTabWrapper from '../common/SubTabWrapper';
 
 /**
@@ -45,6 +46,7 @@ const BudgetSubTab = () => {
 
   return (
     <div className="budget-tab-container min-h-[calc(100vh-140px)] flex flex-col">
+      <BudgetPersonnelSyncListener />
       {/* Header */}
       <div className="bg-slate-800/50 border-b border-slate-700/50 p-4">
         <h2 className="text-2xl font-bold text-white mb-4">{t('finance.subTabs.budget')}</h2>

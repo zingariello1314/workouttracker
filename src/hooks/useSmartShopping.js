@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { smartShoppingStorage } from '../services/finance/smartShoppingStorage';
+import { sidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 
 export const useSmartShopping = () => {
   const [data, setData] = useState(null);
@@ -31,6 +32,15 @@ export const useSmartShopping = () => {
 
   useEffect(() => {
     loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    const unsub = sidebarEvents.on(SIDEBAR_EVENTS.FINANCE_UPDATED, (payload) => {
+      if (payload?.type === 'repartition' || payload?.type === 'salaire') {
+        loadData();
+      }
+    });
+    return () => unsub();
   }, [loadData]);
 
   // ==========================================================================
