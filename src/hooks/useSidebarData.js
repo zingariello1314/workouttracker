@@ -20,6 +20,9 @@ import { useSidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 import { useDebouncedCallback } from './useDebouncedCallback';
 import { measureAsync, measureSync, SIDEBAR_OPERATIONS } from '../utils/performanceMonitor';
 import garminEnhancedDataService from '../services/garmin/garminEnhancedDataService';
+import logger from '../utils/logger';
+
+const sidebarDataLog = logger.module('useSidebarData');
 
 /**
  * Hook centralisé pour les données de la Sidebar Premium
@@ -106,12 +109,10 @@ export const useSidebarData = () => {
         
         setGarminData(mergedData);
         
-        console.log('[useSidebarData] Données Garmin enrichies chargées:', {
+        sidebarDataLog.debug('Données Garmin enrichies chargées', {
           hasHeartRateZones: !!mergedData.heartRateZones?.length,
           hasSleepPhases: !!mergedData.sleepPhases?.length,
-          hasStressLevels: !!mergedData.stressLevels?.length,
-          baseDataKeys: Object.keys(baseData || {}),
-          enhancedDataKeys: Object.keys(enhancedData || {})
+          hasStressLevels: !!mergedData.stressLevels?.length
         });
         
       } catch (err) {
@@ -120,7 +121,7 @@ export const useSidebarData = () => {
         try {
           const fallbackData = garminEnhancedDataService.getEnhancedData();
           setGarminData(fallbackData);
-          console.log('[useSidebarData] Utilisation des données Garmin de fallback');
+          sidebarDataLog.debug('Utilisation des données Garmin de fallback');
         } catch (fallbackErr) {
           console.error('[useSidebarData] Erreur fallback Garmin:', fallbackErr);
           setGarminData(null);
@@ -669,23 +670,6 @@ export const useSidebarData = () => {
     // On attend que Garmin OU Nutrition soit prêt (pas les deux obligatoirement)
     return !garminReady && !nutritionReady;
   }, [garminReady, nutritionReady]);
-
-  // Log de débogage pour tracer les données
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[useSidebarData] État des données:', {
-        isAuthenticated,
-        isLoading,
-        metrics,
-        questsCount: quests.length,
-        sport,
-        finance,
-        nutrition,
-        learning,
-        today: todayData
-      });
-    }
-  }, [isAuthenticated, isLoading, metrics, quests, sport, finance, nutrition, learning, todayData]);
 
   // Retourner toutes les données agrégées avec valeurs par défaut robustes
   return {

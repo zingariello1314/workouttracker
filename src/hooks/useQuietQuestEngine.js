@@ -15,6 +15,9 @@ import {
 import { emitSidebarEvent, SIDEBAR_EVENTS, sidebarEvents } from '../utils/sidebarEvents';
 import { useAuth } from '../context/AuthContext';
 import { getHeureSortMinutes } from '../utils/quests';
+import logger from '../utils/logger';
+
+const qqLog = logger.module('useQuietQuestEngine');
 
 // Clés de stockage QuietQuest (pour fallback localStorage)
 export const STORAGE_KEYS = {
@@ -242,7 +245,7 @@ export function useQuietQuestEngine() {
       saveToStorage(STORAGE_KEYS.validations, currentValidations);
       saveToStorage(STORAGE_KEYS.dailyPerformances, currentDaily);
       
-      console.log('[useQuietQuestEngine] ✅ Sauvegarde immédiate complétée');
+      qqLog.debug('Sauvegarde immédiate complétée');
     } catch (error) {
       console.error('[useQuietQuestEngine] ❌ Erreur sauvegarde immédiate:', error);
     }
@@ -302,7 +305,7 @@ export function useQuietQuestEngine() {
     setIsLoading(true);
     
     const loadData = async () => {
-      console.log('[useQuietQuestEngine] 🔄 Début chargement données...');
+      qqLog.debug('Début chargement données');
       
       const db = await openQuietQuestDB();
 
@@ -317,7 +320,7 @@ export function useQuietQuestEngine() {
         const indexedValidations = await loadValidationsFromIndexedDB(db, userId);
         const indexedDaily = await loadDailyPerformancesFromIndexedDB(db, userId);
 
-        console.log('[useQuietQuestEngine] IndexedDB chargé:', {
+        qqLog.debug('IndexedDB chargé', {
           quests: indexedQuests.length,
           user: indexedUser,
           validations: indexedValidations.length,
@@ -346,7 +349,7 @@ export function useQuietQuestEngine() {
             localDaily.length > 0;
 
           if (hasLocalData) {
-            console.log('[useQuietQuestEngine] 📦 Données trouvées dans localStorage, migration...');
+            qqLog.debug('Données trouvées dans localStorage, migration');
             // Migration depuis localStorage
             try {
               if (localQuests.length > 0) {
@@ -361,7 +364,7 @@ export function useQuietQuestEngine() {
               if (localDaily.length > 0) {
                 await saveDailyPerformancesToIndexedDB(db, localDaily, userId);
               }
-              console.log('[useQuietQuestEngine] ✅ Migration localStorage → IndexedDB réussie');
+              qqLog.debug('Migration localStorage → IndexedDB réussie');
               // NE PAS nettoyer localStorage - garder comme backup
             } catch (error) {
               console.error('[useQuietQuestEngine] ❌ Erreur migration:', error);
@@ -387,7 +390,7 @@ export function useQuietQuestEngine() {
           }
         } else {
           // Données valides dans IndexedDB
-          console.log('[useQuietQuestEngine] ✅ Données chargées depuis IndexedDB');
+          qqLog.debug('Données chargées depuis IndexedDB');
           setAllQuests(Array.isArray(indexedQuests) ? indexedQuests : []);
           setUserData({ ...defaultUserData, ...(indexedUser || {}) });
           setValidations(Array.isArray(indexedValidations) ? indexedValidations : []);
@@ -409,7 +412,7 @@ export function useQuietQuestEngine() {
       
       isLoadingRef.current = false;
       setIsLoading(false);
-      console.log('[useQuietQuestEngine] ✅ Chargement terminé');
+      qqLog.debug('Chargement terminé');
     };
 
     loadData();

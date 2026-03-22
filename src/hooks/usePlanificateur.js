@@ -232,13 +232,18 @@ export const usePlanificateur = () => {
   const repartitionLegacy = useMemo(() => {
     if (!repartition) return null;
     const cats = repartition.categories || [];
+    /** Montant fiable même si subType manquant ou type métier changé (ex. Cash en « investissement ») */
+    const mFixed = (id) => {
+      const c = cats.find((x) => x && x.id === id);
+      return c && typeof c.montant === 'number' ? c.montant : 0;
+    };
     return {
       ...repartition,
-      loyer: getMontantBySubType('loyer'),
-      investissementOr: getMontantBySubType('or'),
-      investissementBourse: getMontantBySubType('bourse'),
-      cashAccumulation: getMontantBySubType('cash'),
-      loisirs: getTotalByType('loisirs'),
+      loyer: mFixed('cat_loyer') || getMontantBySubType('loyer'),
+      investissementOr: mFixed('cat_investissementOr') || getMontantBySubType('or'),
+      investissementBourse: mFixed('cat_bourse') || getMontantBySubType('bourse'),
+      cashAccumulation: mFixed('cat_cash') || getMontantBySubType('cash'),
+      loisirs: mFixed('cat_loisirs') || getTotalByType('loisirs'),
       surplus,
       netMensuel: salaire?.netMensuel
     };

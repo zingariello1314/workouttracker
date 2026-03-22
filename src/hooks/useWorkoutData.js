@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { cleanJustifications } from '../utils/dayJustificationUtils';
+import logger from '../utils/logger';
+
+const workoutDataLog = logger.module('useWorkoutData');
 
 // Données de test pour l'historique d'entraînement
 const generateTestWorkoutData = () => {
@@ -153,7 +156,7 @@ export const useWorkoutData = (options = {}) => {
     const { cleaned, removed } = cleanJustifications(rawData.dayJustifications);
     
     if (removed.length > 0) {
-      console.log(`🔄 Migration dayJustifications: ${removed.length} justification(s) invalide(s) supprimée(s)`);
+      workoutDataLog.debug(`🔄 Migration dayJustifications: ${removed.length} justification(s) invalide(s) supprimée(s)`);
     }
     
     return {
@@ -225,7 +228,7 @@ export const useWorkoutData = (options = {}) => {
     
     // ✅ Log si migration effectuée
     if (migrationNeeded) {
-      console.log('🔄 Migration dailyVariations effectuée (format 1.0)');
+      workoutDataLog.debug('🔄 Migration dailyVariations effectuée (format 1.0)');
     }
     
     return {
@@ -263,10 +266,10 @@ export const useWorkoutData = (options = {}) => {
         console.error('❌ Erreur ouverture IndexedDB:', event.target.error);
         // En cas d'erreur de version, essayer de supprimer et recréer la DB
         if (event.target.error.name === 'VersionError') {
-          console.log('🔄 Tentative de réparation de WorkoutTrackerDB...');
+          workoutDataLog.debug('🔄 Tentative de réparation de WorkoutTrackerDB...');
           const deleteRequest = indexedDB.deleteDatabase('WorkoutTrackerDB');
           deleteRequest.onsuccess = () => {
-            console.log('✅ Ancienne base supprimée, tentative de recréation...');
+            workoutDataLog.debug('✅ Ancienne base supprimée, tentative de recréation...');
             const newRequest = indexedDB.open('WorkoutTrackerDB', 1);
             newRequest.onsuccess = (e) => resolve(e.target.result);
             newRequest.onerror = (e) => resolve(null);
@@ -432,7 +435,7 @@ export const useWorkoutData = (options = {}) => {
         
         localStorage.setItem(`workoutData_backup_${storageKey}`, JSON.stringify(newData));
         localStorage.setItem(`workoutData_lastSaved_${storageKey}`, new Date().toISOString());
-        console.log('✅ Sauvegarde de secours réussie dans localStorage');
+        workoutDataLog.debug('✅ Sauvegarde de secours réussie dans localStorage');
       } catch (localStorageError) {
         console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
         
@@ -458,7 +461,7 @@ export const useWorkoutData = (options = {}) => {
           };
           
           localStorage.setItem(`workoutData_essential_${storageKey}`, JSON.stringify(essentialData));
-          console.log('✅ Sauvegarde des données essentielles réussie');
+          workoutDataLog.debug('✅ Sauvegarde des données essentielles réussie');
         } catch (essentialError) {
           console.error('❌ Échec de la sauvegarde des données essentielles:', essentialError);
           throw new Error('Impossible de sauvegarder les données - tous les systèmes de sauvegarde ont échoué');
@@ -517,7 +520,7 @@ export const useWorkoutData = (options = {}) => {
             console.warn('⚠️ sessionStorage plein, backup ignoré:', quotaError.message);
           }
           
-          console.log('✅ Images de la page d\'accueil sauvegardées avec backup renforcé');
+          workoutDataLog.debug('✅ Images de la page d\'accueil sauvegardées avec backup renforcé');
         }
       } catch (error) {
         console.error('❌ Erreur lors de la sauvegarde automatique:', error);
@@ -542,7 +545,7 @@ export const useWorkoutData = (options = {}) => {
         }
       });
       
-      console.log('🧹 Nettoyage automatique du localStorage effectué');
+      workoutDataLog.debug('🧹 Nettoyage automatique du localStorage effectué');
     } catch (error) {
       console.warn('⚠️ Erreur lors du nettoyage:', error);
     }
@@ -684,14 +687,14 @@ export const useWorkoutData = (options = {}) => {
       // Si aucune donnée n'existe
       if (generateTestData) {
         // Mode démo / pré-authentification : charger les données de test
-        console.log('🎯 Aucune donnée trouvée, chargement des données de test...');
+        workoutDataLog.debug('🎯 Aucune donnée trouvée, chargement des données de test...');
         const testData = generateTestWorkoutData();
         setData(testData);
         // Sauvegarder les données de test
         await saveToDB(testData);
       } else {
         // Mode multi-utilisateur : démarrer avec un jeu vide pour cet utilisateur
-        console.log(`🎯 Aucune donnée trouvée pour ${storageKey}, initialisation d'un jeu vide`);
+        workoutDataLog.debug(`🎯 Aucune donnée trouvée pour ${storageKey}, initialisation d'un jeu vide`);
         setData(INITIAL_WORKOUT_DATA);
         await saveToDB(INITIAL_WORKOUT_DATA);
       }
@@ -701,13 +704,13 @@ export const useWorkoutData = (options = {}) => {
   };
 
   const updateData = async (newData) => {
-    console.log('🔄 updateData appelé avec:', newData);
+    workoutDataLog.debug('🔄 updateData appelé avec:', newData);
     setData(newData);
     
     try {
       // Sauvegarde manuelle immédiate (pour les boutons de sauvegarde existants)
       await saveToDB(newData);
-      console.log('✅ Données sauvegardées avec succès');
+      workoutDataLog.debug('✅ Données sauvegardées avec succès');
       
       // Notifier le contexte que des données ont été sauvegardées SEULEMENT si la sauvegarde a réussi
       if (window.workoutContextCallback) {
@@ -718,7 +721,7 @@ export const useWorkoutData = (options = {}) => {
       // Essayer de sauvegarder en localStorage comme fallback
       try {
         localStorage.setItem('workoutData_backup', JSON.stringify(newData));
-        console.log('💾 Sauvegarde de secours en localStorage réussie');
+        workoutDataLog.debug('💾 Sauvegarde de secours en localStorage réussie');
       } catch (localStorageError) {
         console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
       }
@@ -774,7 +777,7 @@ export const useWorkoutData = (options = {}) => {
     // Sauvegarde immédiate pour garantir la persistance
     try {
       await saveToDB(newData);
-      console.log('✅ Feedback de session sauvegardé immédiatement:', date);
+      workoutDataLog.debug('✅ Feedback de session sauvegardé immédiatement:', date);
     } catch (error) {
       console.error('❌ Erreur lors de la sauvegarde immédiate du feedback:', error);
       // Fallback vers autoSave si la sauvegarde immédiate échoue

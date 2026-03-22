@@ -1,104 +1,94 @@
 /**
- * Logger centralisé pour l'application
- * Remplace tous les console.log/error/warn par un système de logging contrôlé
+ * Logger centralisé — niveau via VITE_LOG_LEVEL (voir .env.example)
+ * Par défaut en dev : warn → console beaucoup plus calme (plus de flood DEBUG/INFO).
+ * Pour tout voir : VITE_LOG_LEVEL=debug
  */
 
-const LOG_LEVELS = {
-  DEBUG: 0,
-  INFO: 1,
-  WARN: 1,
-  ERROR: 2,
-  NONE: 3
+/** Importance croissante : on affiche si importance(msg) >= seuil */
+const IMPORTANCE = {
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40
 };
 
-// Niveau de log selon environnement
-const getLogLevel = () => {
-  if (process.env.NODE_ENV === 'production') {
-    // En production, seulement WARN et ERROR
-    return LOG_LEVELS.WARN;
-  }
-  // En développement, tout est loggé
-  return LOG_LEVELS.DEBUG;
+const SILENT = 999;
+
+/**
+ * Seuil minimum pour afficher un message (plus haut = moins de bruit).
+ * debug=10 → tout | info=20 | warn=30 | error=40 | silent=rien
+ */
+const parseThreshold = () => {
+  const raw = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOG_LEVEL)
+    ? String(import.meta.env.VITE_LOG_LEVEL).toLowerCase().trim()
+    : '';
+
+  if (raw === 'debug' || raw === 'verbose') return IMPORTANCE.debug;
+  if (raw === 'info') return IMPORTANCE.info;
+  if (raw === 'warn' || raw === 'warning') return IMPORTANCE.warn;
+  if (raw === 'error') return IMPORTANCE.error;
+  if (raw === 'silent' || raw === 'none') return SILENT;
+
+  // Défaut : console calme (warn + error seulement), en dev comme en prod
+  return IMPORTANCE.warn;
 };
 
-const currentLogLevel = getLogLevel();
+const threshold = parseThreshold();
+
+const shouldShow = (level) => level >= threshold;
 
 /**
  * Logger principal
  */
 const logger = {
-  /**
-   * Log debug (seulement en développement)
-   */
   debug: (message, ...args) => {
-    if (currentLogLevel <= LOG_LEVELS.DEBUG) {
+    if (shouldShow(IMPORTANCE.debug)) {
       console.log(`[DEBUG] ${message}`, ...args);
     }
   },
 
-  /**
-   * Log info (développement uniquement)
-   */
   info: (message, ...args) => {
-    if (currentLogLevel <= LOG_LEVELS.INFO) {
+    if (shouldShow(IMPORTANCE.info)) {
       console.info(`[INFO] ${message}`, ...args);
     }
   },
 
-  /**
-   * Log warning (toujours visible, même en production)
-   */
   warn: (message, ...args) => {
-    if (currentLogLevel <= LOG_LEVELS.WARN) {
+    if (shouldShow(IMPORTANCE.warn)) {
       console.warn(`[WARN] ${message}`, ...args);
     }
   },
 
-  /**
-   * Log error (toujours visible, même en production)
-   */
   error: (message, error = null, ...args) => {
-    if (currentLogLevel <= LOG_LEVELS.ERROR) {
+    if (shouldShow(IMPORTANCE.error)) {
       if (error instanceof Error) {
         console.error(`[ERROR] ${message}`, error, ...args);
-        // Optionnel : envoyer à service de tracking d'erreurs
-        // trackError(error, { context: message, ...args });
       } else {
         console.error(`[ERROR] ${message}`, error, ...args);
       }
     }
   },
 
-  /**
-   * Logger pour composant spécifique (avec préfixe)
-   */
   component: (componentName) => ({
     debug: (message, ...args) => logger.debug(`[${componentName}] ${message}`, ...args),
     info: (message, ...args) => logger.info(`[${componentName}] ${message}`, ...args),
     warn: (message, ...args) => logger.warn(`[${componentName}] ${message}`, ...args),
-    error: (message, error, ...args) => logger.error(`[${componentName}] ${message}`, error, ...args)
+    error: (message, err, ...args) => logger.error(`[${componentName}] ${message}`, err, ...args)
   }),
 
-  /**
-   * Logger pour hook spécifique
-   */
   hook: (hookName) => ({
     debug: (message, ...args) => logger.debug(`[${hookName}] ${message}`, ...args),
     info: (message, ...args) => logger.info(`[${hookName}] ${message}`, ...args),
     warn: (message, ...args) => logger.warn(`[${hookName}] ${message}`, ...args),
-    error: (message, error, ...args) => logger.error(`[${hookName}] ${message}`, error, ...args)
+    error: (message, err, ...args) => logger.error(`[${hookName}] ${message}`, err, ...args)
   }),
 
-  /**
-   * Logger pour module/utilitaire spécifique
-   */
   module: (moduleName) => ({
     debug: (message, ...args) => logger.debug(`[${moduleName}] ${message}`, ...args),
     info: (message, ...args) => logger.info(`[${moduleName}] ${message}`, ...args),
     warn: (message, ...args) => logger.warn(`[${moduleName}] ${message}`, ...args),
-    error: (message, error, ...args) => logger.error(`[${moduleName}] ${message}`, error, ...args)
+    error: (message, err, ...args) => logger.error(`[${moduleName}] ${message}`, err, ...args)
   })
 };
 
 export default logger;
-

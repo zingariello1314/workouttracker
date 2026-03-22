@@ -33,19 +33,19 @@ export const useHomepageImages = () => {
   // Validation stricte des données Base64
   const validateBase64Image = (base64) => {
     if (!base64 || typeof base64 !== 'string') {
-      console.warn('❌ Image invalide: pas une chaîne de caractères');
+      log.warn('❌ Image invalide: pas une chaîne de caractères');
       return false;
     }
     if (!base64.startsWith('data:image/')) {
-      console.warn('❌ Image invalide: ne commence pas par data:image/');
+      log.warn('❌ Image invalide: ne commence pas par data:image/');
       return false;
     }
     if (base64.length < 100) {
-      console.warn('❌ Image invalide: trop petite pour être une image');
+      log.warn('❌ Image invalide: trop petite pour être une image');
       return false;
     }
     if (base64.length > 50 * 1024 * 1024) { // 50MB max
-      console.warn('❌ Image invalide: trop volumineuse (>50MB)');
+      log.warn('❌ Image invalide: trop volumineuse (>50MB)');
       return false;
     }
     return true;
@@ -66,62 +66,62 @@ export const useHomepageImages = () => {
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
         const oldVersion = event.oldVersion;
-        console.log(`🔄 Mise à jour IndexedDB de v${oldVersion} à v${db.version}...`);
+        log.debug(`🔄 Mise à jour IndexedDB de v${oldVersion} à v${db.version}...`);
         
         // Vérifier et créer l'object store 'images' si nécessaire
         let imageStore;
         if (!db.objectStoreNames.contains('images')) {
-          console.log('📦 Création de l\'object store "images"...');
+          log.debug('📦 Création de l\'object store "images"...');
           imageStore = db.createObjectStore('images', { keyPath: 'id' });
           imageStore.createIndex('type', 'type', { unique: false });
           imageStore.createIndex('timestamp', 'timestamp', { unique: false });
-          console.log('✅ Object store "images" créé avec ses index');
+          log.debug('✅ Object store "images" créé avec ses index');
         } else {
-          console.log('✅ Object store "images" existe déjà');
+          log.debug('✅ Object store "images" existe déjà');
           imageStore = event.target.transaction.objectStore('images');
           
           // ✅ Créer index manquants (upgrade depuis v1)
           try {
             const indexNames = imageStore.indexNames;
             if (!indexNames.contains('type')) {
-              console.log('📦 Création index "type" manquant...');
+              log.debug('📦 Création index "type" manquant...');
               imageStore.createIndex('type', 'type', { unique: false });
-              console.log('✅ Index "type" créé');
+              log.debug('✅ Index "type" créé');
             } else {
-              console.log('✅ Index "type" existe déjà');
+              log.debug('✅ Index "type" existe déjà');
             }
             
             if (!indexNames.contains('timestamp')) {
-              console.log('📦 Création index "timestamp" manquant...');
+              log.debug('📦 Création index "timestamp" manquant...');
               imageStore.createIndex('timestamp', 'timestamp', { unique: false });
-              console.log('✅ Index "timestamp" créé');
+              log.debug('✅ Index "timestamp" créé');
             } else {
-              console.log('✅ Index "timestamp" existe déjà');
+              log.debug('✅ Index "timestamp" existe déjà');
             }
           } catch (indexError) {
             // Peut échouer si index existe déjà ou transaction fermée, c'est OK
-            console.warn('⚠️ Erreur création index (peut être normal):', indexError.message);
+            log.warn('⚠️ Erreur création index (peut être normal):', indexError.message);
           }
         }
         
         // ✅ Phase 3: Migration vers v3 (ajout support thumbnails)
         if (oldVersion < 3) {
-          console.log('🔄 Migration v2 → v3: Ajout support thumbnails...');
+          log.debug('🔄 Migration v2 → v3: Ajout support thumbnails...');
           // Les images existantes n'auront pas de thumbnail (null), c'est OK
           // La structure est rétrocompatible (thumbnail optionnel)
-          console.log('✅ Migration v3: Structure compatible (thumbnail optionnel)');
+          log.debug('✅ Migration v3: Structure compatible (thumbnail optionnel)');
         }
         
-        console.log('✅ IndexedDB mis à jour pour les images');
+        log.debug('✅ IndexedDB mis à jour pour les images');
       };
       
       request.onsuccess = (event) => {
         const db = event.target.result;
-        console.log(`✅ IndexedDB ouvert: ${db.name} v${db.version}`);
+        log.debug(`✅ IndexedDB ouvert: ${db.name} v${db.version}`);
         
         // Vérifier que l'object store existe
         if (!db.objectStoreNames.contains('images')) {
-          console.error('❌ Object store "images" manquant après ouverture');
+          log.error('❌ Object store "images" manquant après ouverture');
           db.close();
           reject(new Error('Object store "images" manquant'));
           return;
@@ -131,16 +131,16 @@ export const useHomepageImages = () => {
       };
       
       request.onerror = (event) => {
-        console.error('❌ Erreur ouverture IndexedDB:', event.target.error);
+        log.error('❌ Erreur ouverture IndexedDB:', event.target.error);
         
         // En cas d'erreur (ex: VersionError si déjà ouverte ailleurs), fallback
         if (event.target.error.name === 'VersionError') {
-          console.warn('⚠️ VersionError détectée, tentative réouverture...');
+          log.warn('⚠️ VersionError détectée, tentative réouverture...');
           // Essayer de réouvrir sans spécifier version
           const fallbackRequest = indexedDB.open('HomepageImagesDB');
           fallbackRequest.onsuccess = (e) => {
             const db = e.target.result;
-            console.log(`✅ IndexedDB réouvert: ${db.name} v${db.version}`);
+            log.debug(`✅ IndexedDB réouvert: ${db.name} v${db.version}`);
             resolve(db);
           };
           fallbackRequest.onerror = () => reject(event.target.error);
@@ -150,7 +150,7 @@ export const useHomepageImages = () => {
       };
       
       request.onblocked = () => {
-        console.warn('⚠️ IndexedDB bloqué - fermez les autres onglets et rafraîchissez');
+        log.warn('⚠️ IndexedDB bloqué - fermez les autres onglets et rafraîchissez');
         // Attendre un peu puis réessayer
         setTimeout(() => {
           const retryRequest = indexedDB.open('HomepageImagesDB', 3);
@@ -192,7 +192,7 @@ export const useHomepageImages = () => {
   // Sauvegarde dans localStorage (niveau 2)
   const saveImagesToLocalStorage = async (images) => {
     try {
-      console.log('💾 Sauvegarde niveau 2: localStorage...');
+      log.debug('💾 Sauvegarde niveau 2: localStorage...');
       
       const data = {
         images: images,
@@ -203,11 +203,11 @@ export const useHomepageImages = () => {
       };
       
       localStorage.setItem('homepage_images_fallback', JSON.stringify(data));
-      console.log('✅ Sauvegarde localStorage réussie');
+      log.debug('✅ Sauvegarde localStorage réussie');
       return true;
       
     } catch (error) {
-      console.error('❌ Erreur sauvegarde localStorage:', error);
+      log.error('❌ Erreur sauvegarde localStorage:', error);
       return false;
     }
   };
@@ -215,7 +215,7 @@ export const useHomepageImages = () => {
   // Sauvegarde dans sessionStorage (niveau 3)
   const saveImagesToSessionStorage = async (images) => {
     try {
-      console.log('💾 Sauvegarde niveau 3: sessionStorage...');
+      log.debug('💾 Sauvegarde niveau 3: sessionStorage...');
       
       const data = {
         images: images,
@@ -226,11 +226,11 @@ export const useHomepageImages = () => {
       };
       
       sessionStorage.setItem('homepage_images_emergency', JSON.stringify(data));
-      console.log('✅ Sauvegarde sessionStorage réussie');
+      log.debug('✅ Sauvegarde sessionStorage réussie');
       return true;
       
     } catch (error) {
-      console.error('❌ Erreur sauvegarde sessionStorage:', error);
+      log.error('❌ Erreur sauvegarde sessionStorage:', error);
       return false;
     }
   };
@@ -257,12 +257,12 @@ export const useHomepageImages = () => {
         
         try {
           localStorage.setItem('homepage_images_sync_emergency', JSON.stringify(data));
-          console.log('✅ Sauvegarde d\'urgence limitée effectuée');
+          log.debug('✅ Sauvegarde d\'urgence limitée effectuée');
         } catch (fallbackError) {
-          console.error('❌ Erreur sauvegarde d\'urgence:', fallbackError);
+          log.error('❌ Erreur sauvegarde d\'urgence:', fallbackError);
         }
       } catch (fallbackError) {
-        console.error('❌ Erreur fallback localStorage:', fallbackError);
+        log.error('❌ Erreur fallback localStorage:', fallbackError);
       }
       
       return false;
@@ -288,9 +288,9 @@ export const useHomepageImages = () => {
             storage: 'indexeddb_primary'
           };
           localStorage.setItem('homepage_images_metadata', JSON.stringify(metadata));
-          console.log('✅ Métadonnées sauvegardées dans localStorage');
+          log.debug('✅ Métadonnées sauvegardées dans localStorage');
         } catch (error) {
-          console.warn('⚠️ Impossible de sauvegarder les métadonnées:', error);
+          log.warn('⚠️ Impossible de sauvegarder les métadonnées:', error);
         }
         
         setSystemHealth('excellent');
@@ -298,12 +298,12 @@ export const useHomepageImages = () => {
         backgroundImagesRef.current = validImages;
         lastSaveTimeRef.current = Date.now(); // ✅ Phase 7: Enregistrer timestamp de sauvegarde
         setBackgroundImages(validImages);
-        console.log(`🎉 ${validImages.length} images sauvegardées dans IndexedDB avec succès`);
+        log.debug(`🎉 ${validImages.length} images sauvegardées dans IndexedDB avec succès`);
         return;
       }
       
       // IndexedDB échoué → Fallback localStorage (images complètes)
-      console.log('⚠️ IndexedDB échoué, fallback localStorage...');
+      log.debug('⚠️ IndexedDB échoué, fallback localStorage...');
       const localStorageSuccess = await saveImagesToLocalStorage(validImages);
       
       if (localStorageSuccess) {
@@ -312,12 +312,12 @@ export const useHomepageImages = () => {
         backgroundImagesRef.current = validImages;
         lastSaveTimeRef.current = Date.now(); // ✅ Phase 7: Enregistrer timestamp de sauvegarde
         setBackgroundImages(validImages);
-        console.log(`🎉 ${validImages.length} images sauvegardées dans localStorage (fallback)`);
+        log.debug(`🎉 ${validImages.length} images sauvegardées dans localStorage (fallback)`);
         return;
       }
       
       // localStorage échoué → Fallback sessionStorage (images complètes)
-      console.log('⚠️ localStorage échoué, fallback sessionStorage...');
+      log.debug('⚠️ localStorage échoué, fallback sessionStorage...');
       const sessionStorageSuccess = await saveImagesToSessionStorage(validImages);
       
       if (sessionStorageSuccess) {
@@ -326,7 +326,7 @@ export const useHomepageImages = () => {
         backgroundImagesRef.current = validImages;
         lastSaveTimeRef.current = Date.now(); // ✅ Phase 7: Enregistrer timestamp de sauvegarde
         setBackgroundImages(validImages);
-        console.log(`🎉 ${validImages.length} images sauvegardées dans sessionStorage (fallback)`);
+        log.debug(`🎉 ${validImages.length} images sauvegardées dans sessionStorage (fallback)`);
         return;
       }
       
@@ -405,7 +405,7 @@ export const useHomepageImages = () => {
   // Chargement depuis IndexedDB (niveau 1)
   const loadImagesFromIndexedDB = async () => {
     try {
-      console.log('🔍 Chargement niveau 1: IndexedDB...');
+      log.debug('🔍 Chargement niveau 1: IndexedDB...');
       
       const db = await openDB();
       const transaction = db.transaction(['images'], 'readonly');
@@ -504,7 +504,7 @@ export const useHomepageImages = () => {
                   log.warn(`⚠️ ${sortedImages.length - processed.length} images invalides filtrées`);
                 }
                 
-                console.log(`✅ ${processed.length} images chargées depuis IndexedDB (avec index)`);
+                log.debug(`✅ ${processed.length} images chargées depuis IndexedDB (avec index)`);
                 resolve(processed);
               };
               
@@ -518,19 +518,19 @@ export const useHomepageImages = () => {
                 }
               }, 0); // Déferrer même avec 0ms pour laisser navigateur initialiser
             } else {
-              console.log('📭 Aucune image trouvée dans IndexedDB');
+              log.debug('📭 Aucune image trouvée dans IndexedDB');
               resolve([]);
             }
           };
           
           request.onerror = (event) => {
-            console.error('❌ Erreur chargement IndexedDB avec index:', event.target.error);
+            log.error('❌ Erreur chargement IndexedDB avec index:', event.target.error);
             reject(event.target.error);
           };
         });
       } catch (indexError) {
         // ✅ FALLBACK: Index n'existe pas, utiliser getAll() et filtrer manuellement
-        console.warn('⚠️ Index "type" non disponible, utilisation fallback getAll()');
+        log.warn('⚠️ Index "type" non disponible, utilisation fallback getAll()');
         
         const request = store.getAll();
         
@@ -594,7 +594,7 @@ export const useHomepageImages = () => {
                   log.warn(`⚠️ ${sortedImages.length - finalImages.length} images invalides filtrées`);
                 }
                 
-                console.log(`✅ ${finalImages.length} images chargées depuis IndexedDB (fallback)`);
+                log.debug(`✅ ${finalImages.length} images chargées depuis IndexedDB (fallback)`);
                 resolve(finalImages);
               }).catch((error) => {
                 log.warn('⚠️ Erreur validation batch (non bloquant), utiliser images non validées', error);
@@ -602,13 +602,13 @@ export const useHomepageImages = () => {
                 resolve(sortedImages);
               });
             } else {
-              console.log('📭 Aucune image trouvée dans IndexedDB');
+              log.debug('📭 Aucune image trouvée dans IndexedDB');
               resolve([]);
             }
           };
           
           request.onerror = (event) => {
-            console.error('❌ Erreur chargement IndexedDB (fallback):', event.target.error);
+            log.error('❌ Erreur chargement IndexedDB (fallback):', event.target.error);
             reject(event.target.error);
           };
         });
@@ -617,7 +617,7 @@ export const useHomepageImages = () => {
       return images;
       
     } catch (error) {
-      console.error('❌ Erreur chargement IndexedDB:', error);
+      log.error('❌ Erreur chargement IndexedDB:', error);
       return [];
     }
   };
@@ -625,11 +625,11 @@ export const useHomepageImages = () => {
   // Chargement depuis localStorage (niveau 2)
   const loadImagesFromLocalStorage = async () => {
     try {
-      console.log('🔍 Chargement niveau 2: localStorage...');
+      log.debug('🔍 Chargement niveau 2: localStorage...');
       
       const data = localStorage.getItem('homepage_images_fallback');
       if (!data) {
-        console.log('📭 Aucune donnée dans localStorage');
+        log.debug('📭 Aucune donnée dans localStorage');
         return [];
       }
       
@@ -645,14 +645,14 @@ export const useHomepageImages = () => {
           }
           return false;
         });
-        console.log(`✅ ${validImages.length} images chargées depuis localStorage`);
+        log.debug(`✅ ${validImages.length} images chargées depuis localStorage`);
         return validImages;
       }
       
       return [];
       
     } catch (error) {
-      console.error('❌ Erreur chargement localStorage:', error);
+      log.error('❌ Erreur chargement localStorage:', error);
       return [];
     }
   };
@@ -660,11 +660,11 @@ export const useHomepageImages = () => {
   // Chargement depuis sessionStorage (niveau 3)
   const loadImagesFromSessionStorage = async () => {
     try {
-      console.log('🔍 Chargement niveau 3: sessionStorage...');
+      log.debug('🔍 Chargement niveau 3: sessionStorage...');
       
       const data = sessionStorage.getItem('homepage_images_emergency');
       if (!data) {
-        console.log('📭 Aucune donnée dans sessionStorage');
+        log.debug('📭 Aucune donnée dans sessionStorage');
         return [];
       }
       
@@ -680,14 +680,14 @@ export const useHomepageImages = () => {
           }
           return false;
         });
-        console.log(`✅ ${validImages.length} images chargées depuis sessionStorage`);
+        log.debug(`✅ ${validImages.length} images chargées depuis sessionStorage`);
         return validImages;
       }
       
       return [];
       
     } catch (error) {
-      console.error('❌ Erreur chargement sessionStorage:', error);
+      log.error('❌ Erreur chargement sessionStorage:', error);
       return [];
     }
   };
@@ -705,13 +705,13 @@ export const useHomepageImages = () => {
     loadingRef.current = true;
     
     try {
-      console.log('🔍 Chargement avec récupération automatique...');
+      log.debug('🔍 Chargement avec récupération automatique...');
       setIsLoading(true);
       
       // 1. Essayer IndexedDB
       let images = await loadImagesFromIndexedDB();
       if (images.length > 0) {
-        console.log('✅ Images récupérées depuis IndexedDB');
+        log.debug('✅ Images récupérées depuis IndexedDB');
         setSystemHealth('excellent');
         
         // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
@@ -884,7 +884,7 @@ export const useHomepageImages = () => {
       }
       
       // 5. Aucune image trouvée
-      console.log('📭 Aucune image trouvée dans tous les systèmes');
+      log.debug('📭 Aucune image trouvée dans tous les systèmes');
       // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT
       backgroundImagesRef.current = [];
       setBackgroundImages([]);
@@ -893,7 +893,7 @@ export const useHomepageImages = () => {
       loadingRef.current = false; // ✅ Réinitialiser flag
       
     } catch (error) {
-      console.error('❌ Erreur lors du chargement avec récupération:', error);
+      log.error('❌ Erreur lors du chargement avec récupération:', error);
       // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT
       backgroundImagesRef.current = [];
       setBackgroundImages([]);
@@ -906,7 +906,7 @@ export const useHomepageImages = () => {
   // Migration depuis l'ancien système
   const migrateFromOldSystem = async () => {
     try {
-      console.log('🔄 Tentative de migration depuis l\'ancien système...');
+      log.debug('🔄 Tentative de migration depuis l\'ancien système...');
       
       const oldKeys = [
         'homepage_images_primary',
@@ -933,7 +933,7 @@ export const useHomepageImages = () => {
             if (images.length > 0) {
               const validImages = images.filter(validateBase64Image);
               if (validImages.length > 0) {
-                console.log(`✅ Migration depuis ${key}: ${validImages.length} images`);
+                log.debug(`✅ Migration depuis ${key}: ${validImages.length} images`);
                 
                 // Sauvegarder dans le nouveau système
                 await saveImagesRobust(validImages);
@@ -941,22 +941,22 @@ export const useHomepageImages = () => {
                 // Nettoyer l'ancienne clé
                 localStorage.removeItem(key);
                 sessionStorage.removeItem(key);
-                console.log(`🗑️ Ancienne clé ${key} supprimée`);
+                log.debug(`🗑️ Ancienne clé ${key} supprimée`);
                 
                 return validImages;
               }
             }
           }
         } catch (error) {
-          console.warn(`⚠️ Erreur migration ${key}:`, error);
+          log.warn(`⚠️ Erreur migration ${key}:`, error);
         }
       }
       
-      console.log('📭 Aucune donnée à migrer trouvée');
+      log.debug('📭 Aucune donnée à migrer trouvée');
       return [];
       
     } catch (error) {
-      console.error('❌ Erreur migration:', error);
+      log.error('❌ Erreur migration:', error);
       return [];
     }
   };
@@ -999,10 +999,10 @@ export const useHomepageImages = () => {
         setSystemHealth('poor');
       }
       
-      console.log(`🏥 Santé du système: ${systemHealth}`);
+      log.debug(`🏥 Santé du système: ${systemHealth}`);
       
     } catch (error) {
-      console.error('❌ Erreur vérification santé:', error);
+      log.error('❌ Erreur vérification santé:', error);
       setSystemHealth('poor');
     }
   };
@@ -1039,9 +1039,9 @@ export const useHomepageImages = () => {
         // ✅ Phase 7: Éviter sauvegarde si une sauvegarde vient d'être effectuée (< 2 secondes)
         if (currentImages.length > 0 && timeSinceLastSave > 2000) {
           saveImagesSync(currentImages);
-          console.log('🔄 Sauvegarde synchrone avant masquage effectuée');
+          log.debug('🔄 Sauvegarde synchrone avant masquage effectuée');
         } else if (timeSinceLastSave <= 2000) {
-          console.log('⏭️ Sauvegarde récente, skip sauvegarde automatique');
+          log.debug('⏭️ Sauvegarde récente, skip sauvegarde automatique');
         }
       }
     };
@@ -1052,9 +1052,9 @@ export const useHomepageImages = () => {
       // ✅ Phase 7: Éviter sauvegarde si une sauvegarde vient d'être effectuée (< 2 secondes)
       if (currentImages.length > 0 && timeSinceLastSave > 2000) {
         saveImagesSync(currentImages);
-        console.log('🔄 Sauvegarde synchrone avant fermeture effectuée');
+        log.debug('🔄 Sauvegarde synchrone avant fermeture effectuée');
       } else if (timeSinceLastSave <= 2000) {
-        console.log('⏭️ Sauvegarde récente, skip sauvegarde automatique');
+        log.debug('⏭️ Sauvegarde récente, skip sauvegarde automatique');
       }
     };
 

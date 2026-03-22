@@ -27,7 +27,10 @@ function buildCategoriesFromLegacy(legacy) {
   const fixed = FIXED_DEFAULTS.map((def) => {
     const existing = existingById[def.id];
     const type = (existing && existing.type) || def.type;
-    const montant = Number(legacy[def.key] ?? existing?.montant) || 0;
+    // Source de vérité V2 = montant sur la catégorie ; les clés legacy à 0 ne doivent pas écraser (bug ?? avec 0).
+    const fromCat = existing?.montant;
+    const hasCatMontant = existing != null && typeof fromCat === 'number' && !Number.isNaN(fromCat);
+    const montant = Number(hasCatMontant ? fromCat : (legacy[def.key] ?? 0)) || 0;
     return { ...def, type, montant, fixed: true };
   });
   const custom = (legacy.categories || []).filter(c => c && !FIXED_CATEGORY_IDS.includes(c.id));
@@ -46,6 +49,16 @@ function buildCategoriesFromLegacy(legacy) {
 
 const FIXED_CATEGORY_IDS = ['cat_loyer', 'cat_investissementOr', 'cat_bourse', 'cat_cash', 'cat_loisirs'];
 
+const REPARTITION_KEYS_SANS_SURPLUS = ['loyer', 'investissementOr', 'investissementBourse', 'cashAccumulation', 'loisirs'];
+
+const KEY_TO_FIXED_ID = {
+  loyer: 'cat_loyer',
+  investissementOr: 'cat_investissementOr',
+  investissementBourse: 'cat_bourse',
+  cashAccumulation: 'cat_cash',
+  loisirs: 'cat_loisirs'
+};
+
 const RepartitionSalaireSubTab = () => {
   const t = useTranslation();
   const { salaire, repartition, repartitionLegacy, updateSalaire, updateRepartition, loading } = usePlanificateur();
@@ -61,16 +74,50 @@ const RepartitionSalaireSubTab = () => {
     surplus: 800,
     categories: []
   };
-  const [localRepartition, setLocalRepartition] = useState(repartitionLegacy || defaultLegacy);
+  /** null = afficher la source hook (repartitionLegacy), objet = brouillon local après édition */
+  const [localRepartition, setLocalRepartition] = useState(null);
 
-  // Calcul total alloué (catégories fixes + personnalisées, hors surplus)
+  const dataForUi = useMemo(() => {
+    // != null : évite undefined ; toujours hydrater categories (sinon liste vide = aucun slider malgré les clés legacy)
+    let raw;
+    if (localRepartition != null) {
+      raw = localRepartition;
+    } else if (repartitionLegacy) {
+      raw = {
+        loyer: repartitionLegacy.loyer ?? 0,
+        investissementOr: repartitionLegacy.investissementOr ?? 0,
+        investissementBourse: repartitionLegacy.investissementBourse ?? 0,
+        cashAccumulation: repartitionLegacy.cashAccumulation ?? 0,
+        loisirs: repartitionLegacy.loisirs ?? 0,
+        surplus: repartitionLegacy.surplus ?? 0,
+        categories: Array.isArray(repartitionLegacy.categories)
+          ? repartitionLegacy.categories.map((c) => ({ ...c }))
+          : []
+      };
+    } else {
+      raw = defaultLegacy;
+    }
+    return {
+      ...raw,
+      categories: buildCategoriesFromLegacy(raw)
+    };
+  }, [localRepartition, repartitionLegacy]);
+
+  /** Dernière répartition affichée (hook ou mémo) — pour setState fonctionnel sans closure périmée */
+  const dataForUiRef = React.useRef(dataForUi);
+  dataForUiRef.current = dataForUi;
+  const localSalaireRef = React.useRef(localSalaire);
+  localSalaireRef.current = localSalaire;
+
+  // Total alloué : mêmes règles que handleRepartitionChange (pas de double comptage fixes + catégories)
   const totalAlloue = useMemo(() => {
-    const fixedTotal = ['loyer', 'investissementOr', 'investissementBourse', 'cashAccumulation', 'loisirs']
-      .reduce((sum, key) => sum + (localRepartition[key] || 0), 0);
-    const categoriesTotal = (localRepartition.categories || [])
+    const fixedTotal = REPARTITION_KEYS_SANS_SURPLUS
+      .reduce((sum, key) => sum + (dataForUi[key] || 0), 0);
+    const customOnlyTotal = (dataForUi.categories || [])
+      .filter((cat) => !FIXED_CATEGORY_IDS.includes(cat.id))
       .reduce((sum, cat) => sum + (cat.montant || 0), 0);
-    return fixedTotal + categoriesTotal;
-  }, [localRepartition]);
+    return fixedTotal + customOnlyTotal;
+  }, [dataForUi]);
 
   // Écart vs salaire
   const ecart = useMemo(() => {
@@ -118,68 +165,81 @@ const RepartitionSalaireSubTab = () => {
     [updateRepartition, showToast, repartition?.id]
   );
 
-  const REPARTITION_KEYS_SANS_SURPLUS = ['loyer', 'investissementOr', 'investissementBourse', 'cashAccumulation', 'loisirs'];
-
-  // Mise à jour répartition avec validation et debounce
+  // Mise à jour répartition : setState fonctionnel + ref pour éviter les closures périmées (plusieurs onChange/slider avant re-render)
   const handleRepartitionChange = useCallback(
-    async (change) => {
-      let baseRepartition = { ...localRepartition };
+    (change) => {
+      let computedFinal = null;
 
-      const KEY_TO_FIXED_ID = { loyer: 'cat_loyer', investissementOr: 'cat_investissementOr', investissementBourse: 'cat_bourse', cashAccumulation: 'cat_cash', loisirs: 'cat_loisirs' };
+      setLocalRepartition((prev) => {
+        const baseSource = prev != null ? prev : dataForUiRef.current;
+        let baseRepartition = {
+          ...baseSource,
+          categories: buildCategoriesFromLegacy(baseSource)
+        };
 
-      if (change.kind === 'changeType') {
-        const { id: catId, key: catKey, type: newType } = change;
-        if (!newType || newType === 'surplus') return;
-        const categories = (baseRepartition.categories || []).map((c) =>
-          (c.id === catId || c.key === catKey) ? { ...c, type: newType } : c
-        );
-        baseRepartition = { ...baseRepartition, categories };
-      } else {
-        // change = { kind: 'fixed' | 'custom', key?, id?, value }
-        const valueNum = parseFloat(change.value) || 0;
-        if (valueNum < 0) return;
+        if (change.kind === 'changeType') {
+          const { id: catId, key: catKey, type: newType } = change;
+          if (!newType || newType === 'surplus') return prev;
+          const categories = (baseRepartition.categories || []).map((c) =>
+            c.id === catId || c.key === catKey ? { ...c, type: newType } : c
+          );
+          baseRepartition = { ...baseRepartition, categories };
+        } else {
+          const valueNum = parseFloat(change.value) || 0;
+          if (valueNum < 0) return prev;
 
-        if (change.kind === 'fixed') {
-          if (change.key === 'surplus') return;
-          baseRepartition = {
-            ...baseRepartition,
-            [change.key]: valueNum
-          };
-          const fixedId = KEY_TO_FIXED_ID[change.key];
-          if (fixedId && Array.isArray(baseRepartition.categories)) {
+          if (change.kind === 'fixed') {
+            if (change.key === 'surplus') return prev;
             baseRepartition = {
               ...baseRepartition,
-              categories: baseRepartition.categories.map(c => c.id === fixedId ? { ...c, montant: valueNum } : c)
+              [change.key]: valueNum
+            };
+            const fixedId = KEY_TO_FIXED_ID[change.key];
+            if (fixedId && Array.isArray(baseRepartition.categories)) {
+              baseRepartition = {
+                ...baseRepartition,
+                categories: baseRepartition.categories.map((c) =>
+                  c.id === fixedId ? { ...c, montant: valueNum } : c
+                )
+              };
+            }
+          } else if (change.kind === 'custom') {
+            const categories = (baseRepartition.categories || []).map((cat) =>
+              cat.id === change.id ? { ...cat, montant: valueNum } : cat
+            );
+            baseRepartition = {
+              ...baseRepartition,
+              categories
             };
           }
-        } else if (change.kind === 'custom') {
-          const categories = (baseRepartition.categories || []).map((cat) =>
-            cat.id === change.id ? { ...cat, montant: valueNum } : cat
-          );
-          baseRepartition = {
-            ...baseRepartition,
-            categories
-          };
         }
-      }
 
-      // Total sans double comptage : clés fixes + uniquement catégories perso (pas les 5 fixes déjà dans les clés)
-      const fixedTotal = REPARTITION_KEYS_SANS_SURPLUS
-        .reduce((sum, k) => sum + (baseRepartition[k] || 0), 0);
-      const customOnlyTotal = (baseRepartition.categories || [])
-        .filter(cat => !FIXED_CATEGORY_IDS.includes(cat.id))
+        const fixedTotal = REPARTITION_KEYS_SANS_SURPLUS.reduce((sum, k) => sum + (baseRepartition[k] || 0), 0);
+        const customOnlyTotal = (baseRepartition.categories || [])
+          .filter((cat) => !FIXED_CATEGORY_IDS.includes(cat.id))
+          .reduce((sum, cat) => sum + (cat.montant || 0), 0);
+        const totalSansSurplus = fixedTotal + customOnlyTotal;
+        const salaireNum = localSalaireRef.current;
+        const surplus = salaireNum - totalSansSurplus;
+
+        const finalRepartition = {
+          ...baseRepartition,
+          surplus
+        };
+        computedFinal = finalRepartition;
+        return finalRepartition;
+      });
+
+      if (computedFinal == null) return;
+
+      const salaireNum = localSalaireRef.current;
+      const fixedTotal = REPARTITION_KEYS_SANS_SURPLUS.reduce((sum, k) => sum + (computedFinal[k] || 0), 0);
+      const customOnlyTotal = (computedFinal.categories || [])
+        .filter((cat) => !FIXED_CATEGORY_IDS.includes(cat.id))
         .reduce((sum, cat) => sum + (cat.montant || 0), 0);
       const totalSansSurplus = fixedTotal + customOnlyTotal;
-      const surplus = localSalaire - totalSansSurplus;
 
-      const finalRepartition = {
-        ...baseRepartition,
-        surplus
-      };
-
-      setLocalRepartition(finalRepartition);
-
-      if (totalSansSurplus > localSalaire) {
+      if (totalSansSurplus > salaireNum) {
         if (!overrunToastShownRef.current) {
           showToast('Dépassement du salaire : ajustez les autres catégories ou acceptez un surplus négatif.', 'warning');
           overrunToastShownRef.current = true;
@@ -188,9 +248,9 @@ const RepartitionSalaireSubTab = () => {
         overrunToastShownRef.current = false;
       }
 
-      debouncedUpdateRepartition(finalRepartition);
+      debouncedUpdateRepartition(computedFinal);
     },
-    [localRepartition, localSalaire, debouncedUpdateRepartition, showToast]
+    [debouncedUpdateRepartition, showToast]
   );
 
   // Synchroniser avec les données chargées
@@ -199,20 +259,6 @@ const RepartitionSalaireSubTab = () => {
       setLocalSalaire(salaire.netMensuel);
     }
   }, [salaire]);
-
-  React.useEffect(() => {
-    if (repartitionLegacy) {
-      setLocalRepartition({
-        loyer: repartitionLegacy.loyer ?? 0,
-        investissementOr: repartitionLegacy.investissementOr ?? 0,
-        investissementBourse: repartitionLegacy.investissementBourse ?? 0,
-        cashAccumulation: repartitionLegacy.cashAccumulation ?? 0,
-        loisirs: repartitionLegacy.loisirs ?? 0,
-        surplus: repartitionLegacy.surplus ?? 0,
-        categories: repartitionLegacy.categories || []
-      });
-    }
-  }, [repartitionLegacy]);
 
   // Création de catégorie personnalisée
   const [showNewCategory, setShowNewCategory] = useState(false);
@@ -239,16 +285,16 @@ const RepartitionSalaireSubTab = () => {
       montant: amount
     };
 
-    const updatedCategories = [...(localRepartition.categories || []), newCategory];
+    const updatedCategories = [...(dataForUi.categories || []), newCategory];
 
     const fixedTotal = REPARTITION_KEYS_SANS_SURPLUS
-      .reduce((sum, k) => sum + (localRepartition[k] || 0), 0);
+      .reduce((sum, k) => sum + (dataForUi[k] || 0), 0);
     const categoriesTotal = updatedCategories.reduce((sum, cat) => sum + (cat.montant || 0), 0);
     const totalSansSurplus = fixedTotal + categoriesTotal;
     const surplus = localSalaire - totalSansSurplus;
 
     const finalRepartition = {
-      ...localRepartition,
+      ...dataForUi,
       categories: updatedCategories,
       surplus
     };
@@ -261,7 +307,7 @@ const RepartitionSalaireSubTab = () => {
     setNewCatEmoji('🧩');
     setNewCatType('loisirs');
     setNewCatAmount(0);
-  }, [REPARTITION_KEYS_SANS_SURPLUS, localRepartition, localSalaire, debouncedUpdateRepartition, newCatAmount, newCatEmoji, newCatLabel, newCatType]);
+  }, [dataForUi, localSalaire, debouncedUpdateRepartition, newCatAmount, newCatEmoji, newCatLabel, newCatType]);
 
   if (loading) {
     return <SkeletonLoader />;
@@ -389,7 +435,7 @@ const RepartitionSalaireSubTab = () => {
 
       <RepartitionInterface
         salaire={localSalaire}
-        repartition={localRepartition}
+        repartition={dataForUi}
         onRepartitionChange={handleRepartitionChange}
         formatCurrency={formatCurrency}
       />

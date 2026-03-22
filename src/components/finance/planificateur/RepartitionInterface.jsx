@@ -6,7 +6,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { REPARTITION_GROUPS, REPARTITION_TYPE_LABELS, getCategoryColor, formatCurrency as formatCurrencyUtil, throttle } from '../../../utils/planificateurUtils';
+import { REPARTITION_GROUPS, REPARTITION_TYPE_LABELS, getCategoryColor, formatCurrency as formatCurrencyUtil } from '../../../utils/planificateurUtils';
 
 const RepartitionInterface = ({ 
   salaire, 
@@ -24,7 +24,8 @@ const RepartitionInterface = ({
 
   // Calcul total alloué (hors surplus) et surplus dérivé — source unique : categories
   const { totalAlloue, derivedSurplus } = useMemo(() => {
-    if (!repartition || typeof repartition !== 'object') {
+    // null a typeof 'object' en JS — exclure explicitement
+    if (repartition == null || typeof repartition !== 'object' || Array.isArray(repartition)) {
       return { totalAlloue: 0, derivedSurplus: safeNumber(salaire) };
     }
     const salaireNum = safeNumber(salaire);
@@ -45,7 +46,7 @@ const RepartitionInterface = ({
 
   // Données pour le graphique — uniquement les catégories (pas de doublons), couleurs par type/subType
   const chartData = useMemo(() => {
-    if (!repartition) return [];
+    if (repartition == null || typeof repartition !== 'object' || Array.isArray(repartition)) return [];
     const categories = repartition.categories || [];
     const slices = categories
       .filter(cat => cat.type !== 'surplus' && safeNumber(cat.montant) > 0)
@@ -83,11 +84,9 @@ const RepartitionInterface = ({
     onRepartitionChange({ kind: 'changeType', id: catId, key: catKey, type: newType });
   }, [onRepartitionChange]);
 
-  // Throttle pour le range : évite des centaines de setState pendant le drag (cause du lag du curseur)
-  const handleSliderChangeThrottled = useMemo(
-    () => throttle((kind, keyOrId, value) => handleSliderChange(kind, keyOrId, value), 80),
-    [handleSliderChange]
-  );
+  // Pas de throttle sur le range : avec value contrôlée, ignorer des onChange bloque le curseur visuellement.
+
+  const categoriesForUi = repartition?.categories ?? [];
 
   // Custom tooltip pour le graphique
   const CustomTooltip = ({ active, payload }) => {
@@ -200,7 +199,7 @@ const RepartitionInterface = ({
             <AnimatePresence>
               {[
                 // Uniquement les catégories (plus de liste en dur), couleurs par type/subType
-                ...(repartition.categories || []).filter(cat => cat.type !== 'surplus').map(cat => ({
+                ...categoriesForUi.filter(cat => cat.type !== 'surplus').map(cat => ({
                   key: cat.key ? `fixed_${cat.key}` : cat.id,
                   label: cat.label,
                   icon: cat.emoji || '🧩',
@@ -224,7 +223,7 @@ const RepartitionInterface = ({
                 const isCustom = item.isCustom;
                 const isSurplus = item.isSurplus === true;
                 const key = isSurplus ? 'surplus' : (item.catKey ? `fixed_${item.catKey}` : item.catId);
-                const catForValue = !isSurplus && (repartition.categories || []).find(
+                const catForValue = !isSurplus && categoriesForUi.find(
                   cat => cat.id === item.catId || cat.key === item.catKey
                 );
                 // Source unique de vérité pour l'affichage des montants = catégories V2
@@ -344,12 +343,10 @@ const RepartitionInterface = ({
                           min="0"
                           max={salaire}
                           step="10"
-                          onChange={(e) => handleSliderChangeThrottled(isCustom ? 'custom' : 'fixed', keyOrIdForChange, e.target.value)}
+                          onChange={(e) => handleSliderChange(isCustom ? 'custom' : 'fixed', keyOrIdForChange, e.target.value)}
                           onMouseDown={() => setIsDragging(true)}
-                          onMouseUp={(e) => {
-                            setIsDragging(false);
-                            handleSliderChange(isCustom ? 'custom' : 'fixed', keyOrIdForChange, e.target.value);
-                          }}
+                          onMouseUp={() => setIsDragging(false)}
+                          onMouseLeave={() => setIsDragging(false)}
                           className="w-full h-3 rounded-lg appearance-none cursor-pointer transition-all duration-200"
                           style={{
                             background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${pourcent}%, #1e293b ${pourcent}%, #1e293b 100%)`,

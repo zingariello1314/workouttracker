@@ -14,6 +14,9 @@ import {
   saveRotationSettings,
   rotateToNextImage
 } from '../services/profileCard/profileCardStorage';
+import logger from '../utils/logger';
+
+const profileCardHookLog = logger.module('useProfileCard');
 
 /**
  * Hook personnalisé pour gérer les données de ProfileCard
@@ -233,7 +236,7 @@ export const useProfileCard = (username = 'guest') => {
    */
   const rotateNext = useCallback(async (type) => {
     try {
-      console.log(`[useProfileCard] Rotation ${type}...`);
+      profileCardHookLog.debug(`[useProfileCard] Rotation ${type}...`);
       await rotateToNextImage(username, type);
       await loadProfileData();
       return { success: true };
@@ -272,7 +275,7 @@ export const useProfileCard = (username = 'guest') => {
          (!isSubTab && rotationSettings.cardIcon.changeOnTabSwitch));
       
       if (shouldRotate && profileData.cardIcons.length > 1) {
-        console.log('[useProfileCard] Rotation cardIcon au changement d\'onglet');
+        profileCardHookLog.debug('[useProfileCard] Rotation cardIcon au changement d\'onglet');
         rotateNext('cardIcon');
       }
     }
@@ -285,7 +288,7 @@ export const useProfileCard = (username = 'guest') => {
          (!isSubTab && rotationSettings.avatar.changeOnTabSwitch));
       
       if (shouldRotate && profileData.avatars.length > 1) {
-        console.log('[useProfileCard] Rotation avatar au changement d\'onglet');
+        profileCardHookLog.debug('[useProfileCard] Rotation avatar au changement d\'onglet');
         rotateNext('avatar');
       }
     }
@@ -315,10 +318,10 @@ export const useProfileCard = (username = 'guest') => {
     if (rotationSettings.cardIcon.rotationMode === 'tab-change') return;
     if (profileData.cardIcons.length <= 1) return;
 
-    console.log(`[useProfileCard] Démarrage timer cardIcon (${rotationSettings.cardIcon.timerInterval}s)`);
+    profileCardHookLog.debug(`[useProfileCard] Démarrage timer cardIcon (${rotationSettings.cardIcon.timerInterval}s)`);
     
     cardIconTimerRef.current = setInterval(() => {
-      console.log('[useProfileCard] Rotation cardIcon par timer');
+      profileCardHookLog.debug('[useProfileCard] Rotation cardIcon par timer');
       rotateNext('cardIcon');
     }, rotationSettings.cardIcon.timerInterval * 1000);
 
@@ -346,10 +349,10 @@ export const useProfileCard = (username = 'guest') => {
     if (rotationSettings.avatar.rotationMode === 'tab-change') return;
     if (profileData.avatars.length <= 1) return;
 
-    console.log(`[useProfileCard] Démarrage timer avatar (${rotationSettings.avatar.timerInterval}s)`);
+    profileCardHookLog.debug(`[useProfileCard] Démarrage timer avatar (${rotationSettings.avatar.timerInterval}s)`);
     
     avatarTimerRef.current = setInterval(() => {
-      console.log('[useProfileCard] Rotation avatar par timer');
+      profileCardHookLog.debug('[useProfileCard] Rotation avatar par timer');
       rotateNext('avatar');
     }, rotationSettings.avatar.timerInterval * 1000);
 

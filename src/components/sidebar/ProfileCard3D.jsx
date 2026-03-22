@@ -418,16 +418,9 @@ const ProfileCard3D = ({
   // Recharger les données quand refreshKey change
   useEffect(() => {
     if (refreshKey > 0 && refresh) {
-      console.log('[ProfileCard3D] Refreshing data after settings close...');
       refresh();
     }
   }, [refreshKey, refresh]);
-
-  // Log pour debug
-  useEffect(() => {
-    console.log('[ProfileCard3D] cardIconUrl changed:', cardIconUrl);
-    console.log('[ProfileCard3D] finalCardIconUrl:', finalCardIconUrl);
-  }, [cardIconUrl, finalCardIconUrl]);
 
   const handleContactClick = useCallback(() => {
     if (onContactClick) {
@@ -439,7 +432,6 @@ const ProfileCard3D = ({
   }, [onContactClick]);
 
   const handleSettingsClose = useCallback(() => {
-    console.log('[ProfileCard3D] Settings closed, refreshing data...');
     setIsSettingsOpen(false);
     // Force un rechargement des données
     setRefreshKey(prev => prev + 1);
@@ -470,7 +462,6 @@ const ProfileCard3D = ({
                   <img 
                     src={cardIconLayer0} 
                     alt="Card background layer 0" 
-                    onLoad={() => console.log('[ProfileCard3D] Layer 0 loaded')}
                     onError={() => console.error('[ProfileCard3D] Layer 0 failed')}
                   />
                 </div>
@@ -490,7 +481,6 @@ const ProfileCard3D = ({
                   <img 
                     src={cardIconLayer1} 
                     alt="Card background layer 1" 
-                    onLoad={() => console.log('[ProfileCard3D] Layer 1 loaded')}
                     onError={() => console.error('[ProfileCard3D] Layer 1 failed')}
                   />
                 </div>
@@ -526,7 +516,6 @@ const ProfileCard3D = ({
                               zIndex: activeAvatarLayer === 0 ? 2 : 1,
                               willChange: 'opacity'
                             }}
-                            onLoad={() => console.log('[ProfileCard3D] Avatar layer 0 loaded')}
                             onError={() => console.error('[ProfileCard3D] Avatar layer 0 failed')}
                           />
                         )}
@@ -543,7 +532,6 @@ const ProfileCard3D = ({
                               zIndex: activeAvatarLayer === 1 ? 2 : 1,
                               willChange: 'opacity'
                             }}
-                            onLoad={() => console.log('[ProfileCard3D] Avatar layer 1 loaded')}
                             onError={() => console.error('[ProfileCard3D] Avatar layer 1 failed')}
                           />
                         )}

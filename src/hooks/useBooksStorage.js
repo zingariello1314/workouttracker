@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadBooks, saveBooks } from '../utils/booksStorage';
 import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../utils/booksIndexedDB';
 import { useAuth } from '../context/AuthContext';
+import logger from '../utils/logger';
+
+const booksLog = logger.module('useBooksStorage');
 
 // Hook centralisant le chargement et la persistance des livres
 // - lecture prioritaire depuis IndexedDB (si disponible), sinon localStorage (fallback lecture uniquement)
@@ -54,7 +57,7 @@ export const useBooksStorage = () => {
           lastSavedHashRef.current = computeHash([]);
           setIsLoading(false);
           isInitialLoadRef.current = false;
-          console.log('[useBooksStorage] ⚠️ Utilisateur déconnecté : aucun livre chargé');
+          booksLog.debug('[useBooksStorage] ⚠️ Utilisateur déconnecté : aucun livre chargé');
         }
         return;
       }
@@ -62,7 +65,7 @@ export const useBooksStorage = () => {
       try {
         // 1) Essayer IndexedDB
         const allIndexedBooks = await getAllBooksFromIndexedDB();
-        console.log('[useBooksStorage] Chargement IndexedDB:', allIndexedBooks.length, 'livres trouvés (tous utilisateurs)');
+        booksLog.debug('[useBooksStorage] Chargement IndexedDB:', allIndexedBooks.length, 'livres trouvés (tous utilisateurs)');
         
         // ✅ Filtrer par userId
         // Admin : récupère les livres sans userId (anciennes données) OU avec userId = adminId
@@ -81,10 +84,10 @@ export const useBooksStorage = () => {
           return book.userId === userId;
         });
         
-        console.log('[useBooksStorage] Livres filtrés pour userId:', userId || adminId || 'déconnecté', ':', filteredBooks.length, 'livres');
+        booksLog.debug('[useBooksStorage] Livres filtrés pour userId:', userId || adminId || 'déconnecté', ':', filteredBooks.length, 'livres');
         
         if (isMounted && Array.isArray(filteredBooks) && filteredBooks.length > 0) {
-          console.log('[useBooksStorage] ✅ Utilisation des livres depuis IndexedDB (filtrés)');
+          booksLog.debug('[useBooksStorage] ✅ Utilisation des livres depuis IndexedDB (filtrés)');
           setBooks(filteredBooks);
           lastSavedHashRef.current = computeHash(filteredBooks);
           return;
@@ -101,12 +104,12 @@ export const useBooksStorage = () => {
           return book.userId === userId;
         });
         
-        console.log('[useBooksStorage] Chargement localStorage:', filteredLocalBooks.length, 'livres trouvés (filtrés)');
+        booksLog.debug('[useBooksStorage] Chargement localStorage:', filteredLocalBooks.length, 'livres trouvés (filtrés)');
         if (isMounted) {
           if (filteredLocalBooks.length > 0) {
-            console.log('[useBooksStorage] ✅ Utilisation des livres depuis localStorage (filtrés)');
+            booksLog.debug('[useBooksStorage] ✅ Utilisation des livres depuis localStorage (filtrés)');
           } else {
-            console.log('[useBooksStorage] ⚠️ Aucun livre trouvé (IndexedDB et localStorage vides pour cet utilisateur)');
+            booksLog.debug('[useBooksStorage] ⚠️ Aucun livre trouvé (IndexedDB et localStorage vides pour cet utilisateur)');
           }
           setBooks(filteredLocalBooks);
           lastSavedHashRef.current = computeHash(filteredLocalBooks);
@@ -126,7 +129,7 @@ export const useBooksStorage = () => {
             }
             return book.userId === userId;
           });
-          console.log('[useBooksStorage] Fallback localStorage:', filteredFallback.length, 'livres (filtrés)');
+          booksLog.debug('[useBooksStorage] Fallback localStorage:', filteredFallback.length, 'livres (filtrés)');
           setBooks(filteredFallback);
           lastSavedHashRef.current = computeHash(filteredFallback);
         }
@@ -134,7 +137,7 @@ export const useBooksStorage = () => {
         if (isMounted) {
           setIsLoading(false);
           isInitialLoadRef.current = false;
-          console.log('[useBooksStorage] Chargement initial terminé, isInitialLoadRef = false');
+          booksLog.debug('[useBooksStorage] Chargement initial terminé, isInitialLoadRef = false');
         }
       }
     };
@@ -157,7 +160,7 @@ export const useBooksStorage = () => {
 
       // ✅ Si déconnecté, ne rien sauvegarder
       if (!isAuthenticated || !currentUser) {
-        console.log('[useBooksStorage] ⚠️ Utilisateur déconnecté : sauvegarde ignorée');
+        booksLog.debug('[useBooksStorage] ⚠️ Utilisateur déconnecté : sauvegarde ignorée');
         return;
       }
 
@@ -188,7 +191,7 @@ export const useBooksStorage = () => {
         try {
           // ✅ Sauvegarder avec userId (merge avec les autres livres dans IndexedDB)
           await saveBooksToIndexedDB(booksWithUserId);
-          console.log('[useBooksStorage] ✅ Sauvegarde IndexedDB réussie (avec userId:', userIdToAssign, ')');
+          booksLog.debug('[useBooksStorage] ✅ Sauvegarde IndexedDB réussie (avec userId:', userIdToAssign, ')');
         } catch (error) {
           // Ne pas casser l'app en cas d'erreur IndexedDB, mais logger l'erreur
           console.error('[useBooksStorage] ❌ Erreur sauvegarde IndexedDB:', error);

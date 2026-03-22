@@ -4,6 +4,9 @@ import { HeartRateZonesChart, SleepPhasesChart, StressLevelChart } from '../../c
 import { useRealGarminData } from '../../../hooks/useRealGarminData';
 import SidebarHeartRateChart from '../charts/SidebarHeartRateChart';
 import { garminDataErrorHandler, GarminErrorType } from '../../../utils/garminDataErrorHandler';
+import logger from '../../../utils/logger';
+
+const garminModLog = logger.module('GarminMetricsModule');
 
 /**
  * Module de métriques Garmin (Position 5)
@@ -68,7 +71,7 @@ const GarminMetricsModule = memo(({
       return;
     }
 
-    console.log(`[GarminMetricsModule] Tentative de retry ${retryCount + 1}/${maxRetries}`);
+    garminModLog.debug(`[GarminMetricsModule] Tentative de retry ${retryCount + 1}/${maxRetries}`);
     
     setModuleError(null);
     setRetryCount(prev => prev + 1);
@@ -199,7 +202,7 @@ const GarminMetricsModule = memo(({
    */
   const formatSleepDuration = (minutes) => {
     // Debug: Log des données de sommeil reçues
-    console.log('[GarminMetricsModule] formatSleepDuration - données reçues:', {
+    garminModLog.debug('[GarminMetricsModule] formatSleepDuration - données reçues:', {
       minutes,
       type: typeof minutes,
       isNumber: typeof minutes === 'number',
@@ -211,7 +214,7 @@ const GarminMetricsModule = memo(({
     // Convertir en nombre si c'est une string
     const numMinutes = typeof minutes === 'string' ? parseFloat(minutes) : minutes;
     
-    console.log('[GarminMetricsModule] Valeur convertie:', numMinutes);
+    garminModLog.debug('[GarminMetricsModule] Valeur convertie:', numMinutes);
     
     // AMÉLIORATION: Détecter si c'est probablement en heures
     // Cas 1: Valeurs décimales entre 1 et 24 (ex: 12.27 heures)
@@ -224,15 +227,15 @@ const GarminMetricsModule = memo(({
     );
     
     if (isLikelyHours) {
-      console.log('[GarminMetricsModule] 🕐 Détection format heures:', numMinutes);
+      garminModLog.debug('[GarminMetricsModule] 🕐 Détection format heures:', numMinutes);
       const convertedMinutes = numMinutes * 60;
-      console.log('[GarminMetricsModule] ⏰ Conversion heures->minutes:', numMinutes, '->', convertedMinutes);
+      garminModLog.debug('[GarminMetricsModule] ⏰ Conversion heures->minutes:', numMinutes, '->', convertedMinutes);
       
       // Récursion avec la valeur convertie
       const hours = Math.floor(convertedMinutes / 60);
       const mins = Math.round(convertedMinutes % 60);
       
-      console.log('[GarminMetricsModule] 📊 Calcul final (après conversion):', { hours, mins });
+      garminModLog.debug('[GarminMetricsModule] 📊 Calcul final (après conversion):', { hours, mins });
       
       if (hours === 0) return `${mins}min`;
       if (mins === 0) return `${hours}h`;
@@ -243,7 +246,7 @@ const GarminMetricsModule = memo(({
     const hours = Math.floor(numMinutes / 60);
     const mins = Math.round(numMinutes % 60);
     
-    console.log('[GarminMetricsModule] 📊 Calcul final (minutes):', { hours, mins });
+    garminModLog.debug('[GarminMetricsModule] 📊 Calcul final (minutes):', { hours, mins });
     
     if (hours === 0) return `${mins}min`;
     if (mins === 0) return `${hours}h`;
@@ -263,7 +266,7 @@ const GarminMetricsModule = memo(({
 
   // Debug: Log des données de sommeil complètes
   useEffect(() => {
-    console.log('[GarminMetricsModule] État des données:', {
+    garminModLog.debug('[GarminMetricsModule] État des données:', {
       hasGarminData: !!garminData,
       garminDataHasData: garminData?.hasData,
       fallbackData: data?.sport?.todayMetrics || data?.garmin || {},
@@ -273,7 +276,7 @@ const GarminMetricsModule = memo(({
     });
     
     if (sleepData) {
-      console.log('[GarminMetricsModule] Données de sommeil détaillées:', {
+      garminModLog.debug('[GarminMetricsModule] Données de sommeil détaillées:', {
         sleepData,
         duration: sleepData.duration,
         durationType: typeof sleepData.duration,
@@ -513,7 +516,7 @@ const GarminMetricsModule = memo(({
                       </h4>
                       <button 
                         onClick={() => {
-                          console.log('[GarminMetricsModule] Bouton Sync cliqué');
+                          garminModLog.debug('[GarminMetricsModule] Bouton Sync cliqué');
                           // Forcer le rechargement des données
                           refreshData();
                           // Émettre des événements pour déclencher la synchronisation
@@ -562,7 +565,7 @@ const GarminMetricsModule = memo(({
                       onNavigateToSport={handleNavigateToSport}
                       onDataPointClick={(data, index, event) => {
                         if (process.env.NODE_ENV === 'development') {
-                          console.log('[GarminMetricsModule] Point FC cliqué:', {
+                          garminModLog.debug('[GarminMetricsModule] Point FC cliqué:', {
                             time: data.time,
                             bpm: data.bpm,
                             isReal: data.isReal,

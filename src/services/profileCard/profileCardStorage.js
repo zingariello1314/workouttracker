@@ -22,17 +22,14 @@ const openDB = () => {
     
     request.onsuccess = () => {
       const db = request.result;
-      console.log(`[ProfileCardStorage] DB ouverte - Version: ${db.version}`);
       resolve(db);
     };
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-      console.log(`[ProfileCardStorage] Upgrade DB de v${event.oldVersion} vers v${event.newVersion}`);
 
       // Créer le store s'il n'existe pas
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        console.log(`[ProfileCardStorage] Création du store "${STORE_NAME}"`);
         const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'username' });
         objectStore.createIndex('username', 'username', { unique: true });
         objectStore.createIndex('lastModified', 'lastModified', { unique: false });

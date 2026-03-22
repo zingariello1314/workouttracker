@@ -2,6 +2,10 @@
 // Implémentation minimale, soigneusement alignée sur useWorkoutData.openDB
 // et conçue pour rester silencieuse en cas d'échec (fallback via localStorage).
 
+import logger from './logger';
+
+const booksIdxLog = logger.module('booksIndexedDB');
+
 const DB_NAME = 'WorkoutTrackerDB';
 const BOOKS_STORE = 'books';
 
@@ -23,7 +27,7 @@ export const openBooksDB = () => {
       const db = event.target.result;
 
       if (!db.objectStoreNames.contains(BOOKS_STORE)) {
-        console.log('[booksIndexedDB] Création du store "books"');
+        booksIdxLog.debug('[booksIndexedDB] Création du store "books"');
         const store = db.createObjectStore(BOOKS_STORE, { keyPath: 'id' });
         // Index simple sur le statut pour d'éventuels filtres futurs
         try {
@@ -44,7 +48,7 @@ export const openBooksDB = () => {
         if (!indexNames.includes('userId')) {
           try {
             store.createIndex('userId', 'userId', { unique: false });
-            console.log('[booksIndexedDB] Index userId créé');
+            booksIdxLog.debug('[booksIndexedDB] Index userId créé');
           } catch {
             // Index non critique
           }
@@ -64,7 +68,7 @@ export const openBooksDB = () => {
         upgradeRequest.onupgradeneeded = (e) => {
           const upgradeDb = e.target.result;
           if (!upgradeDb.objectStoreNames.contains(BOOKS_STORE)) {
-            console.log('[booksIndexedDB] Création du store "books" (upgrade forcé)');
+            booksIdxLog.debug('[booksIndexedDB] Création du store "books" (upgrade forcé)');
             const store = upgradeDb.createObjectStore(BOOKS_STORE, { keyPath: 'id' });
             try {
               store.createIndex('status', 'status', { unique: false });
@@ -84,7 +88,7 @@ export const openBooksDB = () => {
             if (!indexNames.includes('userId')) {
               try {
                 store.createIndex('userId', 'userId', { unique: false });
-                console.log('[booksIndexedDB] Index userId créé (upgrade)');
+                booksIdxLog.debug('[booksIndexedDB] Index userId créé (upgrade)');
               } catch {
                 // Index optionnel
               }
@@ -92,7 +96,7 @@ export const openBooksDB = () => {
           }
         };
         upgradeRequest.onsuccess = (e) => {
-          console.log('[booksIndexedDB] ✅ Base mise à jour avec le store "books"');
+          booksIdxLog.debug('[booksIndexedDB] ✅ Base mise à jour avec le store "books"');
           resolve(e.target.result);
         };
         upgradeRequest.onerror = (e) => {
@@ -101,7 +105,7 @@ export const openBooksDB = () => {
         };
         return;
       }
-      console.log('[booksIndexedDB] ✅ Base ouverte, store "books" présent');
+      booksIdxLog.debug('[booksIndexedDB] ✅ Base ouverte, store "books" présent');
       resolve(db);
     };
 
@@ -190,7 +194,7 @@ export const saveBooksToIndexedDB = async (books) => {
   }
 
   const safeBooks = Array.isArray(books) ? books : [];
-  console.log('[booksIndexedDB] Sauvegarde de', safeBooks.length, 'livres');
+  booksIdxLog.debug('[booksIndexedDB] Sauvegarde de', safeBooks.length, 'livres');
 
   return new Promise(async (resolve) => {
     try {
@@ -214,7 +218,7 @@ export const saveBooksToIndexedDB = async (books) => {
         return !safeBooks.some(newBook => newBook.id === existing.id);
       });
       
-      console.log('[booksIndexedDB] Merge :', booksToKeep.length, 'livres conservés (autres utilisateurs),', safeBooks.length, 'livres à sauvegarder');
+      booksIdxLog.debug('[booksIndexedDB] Merge :', booksToKeep.length, 'livres conservés (autres utilisateurs),', safeBooks.length, 'livres à sauvegarder');
 
       const transaction = db.transaction([BOOKS_STORE], 'readwrite');
       const store = transaction.objectStore(BOOKS_STORE);
@@ -281,7 +285,7 @@ export const saveBooksToIndexedDB = async (books) => {
             savedCount++;
             if (--remaining === 0) {
               if (!failed) {
-                console.log('[booksIndexedDB] ✅', savedCount, 'livres sauvegardés avec succès (merge intelligent)');
+                booksIdxLog.debug('[booksIndexedDB] ✅', savedCount, 'livres sauvegardés avec succès (merge intelligent)');
               }
               resolve(!failed);
             }

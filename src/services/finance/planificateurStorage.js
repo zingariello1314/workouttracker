@@ -334,11 +334,12 @@ class PlanificateurStorage {
     }
     const legacy = repartitionLegacySchema.safeParse(data);
     const raw = legacy.success ? legacy.data : data;
-    const hasLegacyKeys = [raw.loyer, raw.investissementOr, raw.investissementBourse, raw.cashAccumulation, raw.loisirs].some(v => v !== undefined && v !== null);
     const hasValidV2 = Array.isArray(raw.categories) && raw.categories.length > 0
       && raw.categories.every(c => c && typeof c.id === 'string' && typeof c.type === 'string' && typeof c.montant === 'number');
 
-    if (hasValidV2 && !hasLegacyKeys) {
+    // Toujours préférer les catégories V2 valides (évite une re-migration qui écrase types/montants
+    // quand l’objet contient encore des clés legacy à 0 en plus de categories).
+    if (hasValidV2) {
       const parsed = repartitionV2Schema.safeParse({ id: raw.id || 'current', categories: raw.categories, updatedAt: raw.updatedAt || new Date().toISOString() });
       if (parsed.success) return parsed.data;
     }
