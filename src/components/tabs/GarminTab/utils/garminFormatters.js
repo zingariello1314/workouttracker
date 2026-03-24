@@ -108,6 +108,18 @@ export function formatPace(secondsPer100m) {
 }
 
 /**
+ * Allure course : secondes par km → "m:ss /km"
+ */
+export function formatPacePerKm(secondsPerKm) {
+  if (secondsPerKm == null || secondsPerKm <= 0) return '—';
+  const t = Number(secondsPerKm);
+  if (Number.isNaN(t)) return '—';
+  const m = Math.floor(t / 60);
+  const s = Math.round(t % 60);
+  return `${m}:${String(s).padStart(2, '0')} /km`;
+}
+
+/**
  * 🔴 FIX #27: Formate une distance en km avec formatage cohérent
  * Supprime les zéros inutiles après la virgule
  */

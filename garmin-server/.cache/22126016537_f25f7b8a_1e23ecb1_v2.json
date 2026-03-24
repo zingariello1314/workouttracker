@@ -1,0 +1,58 @@
+{
+  "id": 22126016537,
+  "date": "2026-03-10 12:43:46",
+  "time": "",
+  "duration": 1501,
+  "calories": {
+    "total": 239,
+    "resting": 32,
+    "active": 207
+  },
+  "avgHR": 166,
+  "maxHR": 185,
+  "minHR": null,
+  "sweatLoss": null,
+  "intensityMinutes": {
+    "moderate": 2,
+    "vigorous": 22,
+    "total": 24
+  },
+  "startTimeLocal": "2026-03-10T13:43:46Z",
+  "startTimeGMT": "2026-03-10T12:43:46Z",
+  "location": {
+    "start": {
+      "lat": 44.790810998529196,
+      "lng": -0.620681019499898
+    },
+    "end": {
+      "lat": 44.790868163108826,
+      "lng": -0.6206168979406357
+    }
+  },
+  "elevation": {
+    "gain": null,
+    "loss": null,
+    "max": 35.2199592590332,
+    "min": 30.44219970703125
+  },
+  "deviceInfo": {
+    "deviceId": null,
+    "deviceTypePk": null,
+    "deviceVersionPk": null
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Pessac Course \u00e0 pied",
+  "activityType": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "1e23ecb1",
+  "_cached_at": 1774381576.1709647,
+  "_cache_version": 2
+}

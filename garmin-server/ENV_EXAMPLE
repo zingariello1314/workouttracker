@@ -1,3 +1,17 @@
 GARMIN_EMAIL=ton.email.garmin@example.com
 GARMIN_PASSWORD=ton_mot_de_passe
 PORT=3001
+
+# Jetons OAuth Garmin (réutilisés entre les syncs — évite un login SSO à chaque fois).
+# Par défaut le script utilise %USERPROFILE%\.garminconnect (inchangé si tu renommes le dossier projet).
+# GARMINTOKENS=C:\chemin\vers\dossier\jetons_garmin
+
+# Windows : chemin vers python.exe si « python » ouvre le stub du Microsoft Store (erreur 9009).
+# Exemple : PYTHON=C:\Users\toi\AppData\Local\Programs\Python\Python313\python.exe
+# PYTHON=
+
+# Pont Python : laisser à 1 pour les vraies données Garmin ; 0 = mock côté Node (tests).
+# USE_PYTHON=1
+
+# Après une erreur 429 Garmin, durée (ms) pendant laquelle le serveur refuse les nouvelles syncs (défaut 30 min).
+# GARMIN_SSO_COOLDOWN_MS=1800000

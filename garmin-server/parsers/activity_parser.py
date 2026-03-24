@@ -78,11 +78,13 @@ def classify_activity(act_summary: Dict[str, Any], act_details: Optional[Dict[st
         'jumpro' in act_name
     ))
     
-    # Cardio général (seulement si pas natation ni corde)
+    # Cardio général (seulement si pas natation ni corde) — inclut course / trail / tapis
+    # pour le même traitement « cardio » côté app et déclencher get_activity + métriques étendues.
     is_cardio = (not is_swimming and not is_jump_rope and (
-        act_type in ('cardio', 'cardio_general', 'indoor_cardio') or 
-        'cardio' in act_type or 
-        'cardio' in act_name
+        act_type in ('cardio', 'cardio_general', 'indoor_cardio') or
+        'cardio' in act_type or
+        'cardio' in act_name or
+        is_running_like_activity(act_summary)
     ))
     
     # Re-vérifier depuis act_details si disponible
@@ -105,6 +107,286 @@ def classify_activity(act_summary: Dict[str, Any], act_details: Optional[Dict[st
             is_cardio = False
     
     return is_swimming, is_jump_rope, is_cardio
+
+
+def is_running_like_activity(act_summary: Dict[str, Any]) -> bool:
+    """
+    Indique si l'activité est une course à pied (tapis, piste, trail, etc.).
+    Utilisé pour déclencher get_activity() : sans détail, pas d'allure/tours/cadence/intervalles.
+    """
+    if not isinstance(act_summary, dict):
+        return False
+    dto = act_summary.get('activityTypeDTO') or {}
+    if not isinstance(dto, dict):
+        dto = {}
+    tk = (dto.get('typeKey') or dto.get('type') or '').lower()
+    name = (act_summary.get('activityName') or '').lower()
+
+    running_type_keys = (
+        'running', 'treadmill', 'indoor_running', 'track_running', 'street_running',
+        'trail_running', 'virtual_run', 'ultra_run', 'race', 'track_run',
+        'treadmill_running', 'indoor_track',
+    )
+    if any(x in tk for x in ('running', 'treadmill', 'trail', 'virtual_run', 'race', 'jog')):
+        return True
+    if tk in running_type_keys:
+        return True
+
+    name_keywords = (
+        'course', ' run', 'running', 'footing', 'interval', 'fractionné', 'fractionne',
+        'tapis', 'jogging', '5k', '10k', 'semi', 'marathon', 'fartlek', 'tempo',
+        ' vma', 'seuil', 'repetition', 'répétition', 'fraction', 'foot',
+    )
+    if any(k in name for k in name_keywords):
+        return True
+    # Garmin envoie souvent typeKey=indoor_cardio pour du « cardio » générique, y compris des courses
+    # extérieures mal étiquetées — ce n’est pas équivalent au profil « tapis » sur la montre.
+    if tk == 'indoor_cardio':
+        return True
+    return False
+
+
+def _collect_garmin_split_lap_rows(act_details: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Priorité : GET .../activity/{id}/splits (lapDTOs), puis typedsplits."""
+    if not isinstance(act_details, dict):
+        return []
+    splits = act_details.get("_garminActivitySplits") or {}
+    if isinstance(splits, dict):
+        lap_dtos = splits.get("lapDTOs") or splits.get("laps") or splits.get("splitDTOs")
+        if isinstance(lap_dtos, list) and lap_dtos:
+            return [x for x in lap_dtos if isinstance(x, dict)]
+    typed = act_details.get("_garminTypedSplits") or {}
+    if isinstance(typed, dict):
+        lap_dtos = typed.get("lapDTOs") or typed.get("typedLapDTOs") or typed.get("laps")
+        if isinstance(lap_dtos, list) and lap_dtos:
+            return [x for x in lap_dtos if isinstance(x, dict)]
+    return []
+
+
+def _typed_split_rows_for_merge(act_details: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not isinstance(act_details, dict):
+        return []
+    typed = act_details.get("_garminTypedSplits") or {}
+    if not isinstance(typed, dict):
+        return []
+    lap_dtos = typed.get("lapDTOs") or typed.get("typedLapDTOs") or typed.get("laps")
+    if isinstance(lap_dtos, list):
+        return [x for x in lap_dtos if isinstance(x, dict)]
+    return []
+
+
+def parse_run_cardio_metrics(
+    entry_base: Dict[str, Any],
+    summary_dto: Dict[str, Any],
+    act: Dict[str, Any],
+    act_details: Optional[Dict[str, Any]],
+    act_summary: Dict[str, Any],
+    distance_m: float,
+    duration: int,
+) -> Dict[str, Any]:
+    """
+    Enrichit une activité cardio/course avec tours, allures, cadence, etc. (nécessite act_details).
+    """
+    act_id = act_summary.get('activityId')
+    detail_dto = {}
+    if isinstance(act, dict):
+        detail_dto = act.get('activityDetailDTO', {}) or act.get('detailDTO', {}) or {}
+    if isinstance(act_details, dict) and not detail_dto:
+        detail_dto = act_details.get('activityDetailDTO', {}) or act_details.get('detailDTO', {}) or {}
+
+    def _to_kmh(val: Any) -> Optional[float]:
+        if val is None:
+            return None
+        v = safe_float(val, 0.0)
+        if v <= 0:
+            return None
+        if v < 30:
+            return round(v * 3.6, 2)
+        return round(v, 2)
+
+    def _one_lap_to_row(lap: Dict[str, Any], i: int, typed_lap: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        lap_dist = safe_float(
+            lap.get('distance') or lap.get('distanceMeters') or lap.get('totalDistance') or
+            lap.get('sumDistance') or 0.0, 0.0
+        )
+        lap_dur = safe_int(
+            lap.get('duration') or lap.get('elapsedDuration') or lap.get('movingDuration') or
+            lap.get('timerDuration') or 0, 0
+        )
+        lap_pace = safe_int(
+            lap.get('averagePace') or lap.get('pace') or lap.get('avgPace') or
+            lap.get('averageRunningPace') or 0, 0
+        )
+        if lap_pace > 200000:
+            lap_pace = lap_pace // 1000
+        hr = safe_int(
+            lap.get('averageHR') or lap.get('avgHR') or lap.get('heartRate') or
+            lap.get('averageHeartRate') or lap.get('avgHeartRate'), 0
+        )
+        if hr <= 0:
+            hr = None
+        tkey = (
+            lap.get('lapTypeKey') or lap.get('splitTypeKey') or lap.get('subActivityType') or
+            lap.get('intensityType') or lap.get('durationType')
+        )
+        if typed_lap:
+            tkey = tkey or typed_lap.get('lapTypeKey') or typed_lap.get('splitTypeKey') or typed_lap.get('subActivityType')
+        phase = lap.get('lapType') or (typed_lap or {}).get('lapType')
+        cad = safe_int(
+            lap.get('averageRunningCadenceInStepsPerMinute') or lap.get('averageRunCadence') or
+            lap.get('avgRunCadence') or 0, 0
+        )
+        str_l = safe_float(
+            lap.get('averageStrideLength') or lap.get('avgStrideLength') or
+            lap.get('strideLength') or 0, 0.0
+        )
+        if str_l > 0 and str_l > 10:
+            str_l = str_l / 100.0
+        st = lap.get('startTimeGMT') or lap.get('startTimeLocal') or lap.get('startTime')
+        row: Dict[str, Any] = {
+            "index": i + 1,
+            "distanceMeters": round(lap_dist, 2) if lap_dist > 0 else None,
+            "distanceKm": round(lap_dist / 1000.0, 4) if lap_dist > 1 else None,
+            "durationSeconds": lap_dur if lap_dur > 0 else None,
+            "avgPaceSecondsPerKm": lap_pace if lap_pace > 0 else None,
+            "avgSpeedKmh": _to_kmh(lap.get('averageSpeed') or lap.get('speed')),
+            "avgHR": hr,
+            "calories": safe_int(lap.get('calories') or lap.get('totalCalories'), 0) or None,
+            "elevationGain": safe_int(lap.get('elevationGain') or lap.get('totalElevationGain'), 0) or None,
+            "averageCadenceSpm": cad if cad > 0 else None,
+            "averageStrideLengthMeters": round(str_l, 3) if str_l > 0 else None,
+            "startTime": st,
+        }
+        if tkey:
+            row["intervalTypeKey"] = str(tkey)
+        if phase:
+            row["intervalPhase"] = str(phase)
+        return {k: v for k, v in row.items() if v is not None}
+
+    # --- Tours : API /splits (lapDTOs) prioritaire ; sinon detailDTO.laps ---
+    laps_out: List[Dict[str, Any]] = []
+    api_laps = _collect_garmin_split_lap_rows(act_details)
+    typed_all = _typed_split_rows_for_merge(act_details)
+    if api_laps:
+        for i, lap in enumerate(api_laps):
+            tl = typed_all[i] if i < len(typed_all) else None
+            laps_out.append(_one_lap_to_row(lap, i, tl))
+        print_debug(f"✅ Running: {len(laps_out)} segments (endpoint /splits) activité {act_id}")
+    else:
+        laps_raw = (
+            detail_dto.get('laps') or detail_dto.get('lapList') or
+            (act_details.get('laps', []) if isinstance(act_details, dict) else []) or
+            act.get('laps') or []
+        )
+        if isinstance(laps_raw, list):
+            for i, lap in enumerate(laps_raw):
+                if not isinstance(lap, dict):
+                    continue
+                laps_out.append(_one_lap_to_row(lap, i, None))
+            if laps_out:
+                print_debug(f"✅ Running: {len(laps_out)} tours (activityDetailDTO) activité {act_id}")
+
+    # Distance totale : si résumé Garmin = 0 (souvent tapis) mais somme des tours > 0
+    sum_lap_m = 0.0
+    for row in laps_out:
+        dm = row.get("distanceMeters")
+        if dm is not None and dm > 0:
+            sum_lap_m += float(dm)
+    if sum_lap_m > 0 and (not distance_m or distance_m <= 0):
+        distance_m = sum_lap_m
+        print_debug(f"✅ Distance totale recalculée depuis tours: {distance_m}m activité {act_id}")
+
+    # --- Cadence, foulées (résumé) : résumé fusionné + endpoint /details ---
+    summary_for_run = summary_dto if isinstance(summary_dto, dict) else {}
+    if isinstance(act_details, dict):
+        s2 = act_details.get('activitySummaryDTO', {}) or act_details.get('summaryDTO', {}) or {}
+        if isinstance(s2, dict) and s2:
+            summary_for_run = {**summary_for_run, **s2}
+        det = act_details.get("_garminActivityDetails") or {}
+        if isinstance(det, dict):
+            s3 = det.get("activitySummaryDTO") or det.get("summaryDTO") or {}
+            if isinstance(s3, dict) and s3:
+                summary_for_run = {**summary_for_run, **s3}
+
+    avg_cadence = safe_int(
+        summary_for_run.get('averageRunningCadenceInStepsPerMinute') or
+        summary_for_run.get('averageRunCadence') or
+        summary_for_run.get('avgRunCadence') or
+        detail_dto.get('averageRunningCadenceInStepsPerMinute') or
+        act.get('averageRunningCadenceInStepsPerMinute'),
+        0,
+    )
+    max_cadence = safe_int(
+        summary_for_run.get('maxRunningCadenceInStepsPerMinute') or
+        summary_for_run.get('maxRunCadence') or
+        act.get('maxRunningCadenceInStepsPerMinute'),
+        0,
+    )
+    stride = safe_float(
+        summary_for_run.get('averageStrideLength') or
+        summary_for_run.get('avgStrideLength') or
+        detail_dto.get('averageStrideLength'),
+        0.0,
+    )
+
+    # Allure moyenne / max (sec/km)
+    avg_pace = safe_int(
+        summary_for_run.get('averagePace') or summary_for_run.get('avgPace') or
+        act.get('averagePace') or act.get('avgPace'), 0
+    )
+    if avg_pace > 200000:
+        avg_pace = avg_pace // 1000
+    best_pace = safe_int(
+        summary_for_run.get('bestPace') or summary_for_run.get('minPace') or act.get('bestPace'), 0
+    )
+    if best_pace > 200000:
+        best_pace = best_pace // 1000
+
+    # Calories actives détail
+    training_cal = safe_int(summary_for_run.get('activeKilocalories') or summary_for_run.get('calories'), 0) or None
+
+    running_block: Dict[str, Any] = {}
+    lap_count_meta = safe_int(detail_dto.get('lapCount') or act.get('lapCount'), 0)
+    if laps_out:
+        running_block["lapCount"] = len(laps_out)
+        running_block["laps"] = laps_out
+    elif lap_count_meta > 0:
+        running_block["lapCount"] = lap_count_meta
+    if avg_cadence > 0:
+        running_block["averageCadenceSpm"] = avg_cadence
+    if max_cadence > 0:
+        running_block["maxCadenceSpm"] = max_cadence
+    if stride > 0:
+        running_block["averageStrideLengthMeters"] = round(stride, 3)
+    if avg_pace > 0:
+        running_block["averagePaceSecondsPerKm"] = avg_pace
+    if best_pace > 0:
+        running_block["bestPaceSecondsPerKm"] = best_pace
+    if distance_m and distance_m > 0:
+        running_block["distanceMeters"] = round(distance_m, 2)
+    if duration > 0:
+        running_block["durationSeconds"] = duration
+    if training_cal:
+        running_block["activeCaloriesDetail"] = training_cal
+
+    if running_block:
+        entry_base["running"] = running_block
+
+    # Complète les champs racine si encore absents
+    if not entry_base.get("distance") and distance_m and distance_m > 0.5:
+        entry_base["distance"] = round(distance_m / 1000.0, 4)
+    if not entry_base.get("speed"):
+        sp = _to_kmh(summary_for_run.get('averageSpeed') or act.get('averageSpeed'))
+        if sp:
+            entry_base["speed"] = sp
+    if not entry_base.get("maxSpeed"):
+        mx = _to_kmh(summary_for_run.get('maxSpeed') or act.get('maxSpeed'))
+        if mx:
+            entry_base["maxSpeed"] = mx
+    if avg_pace > 0 and not entry_base.get("avgPaceSecondsPerKm"):
+        entry_base["avgPaceSecondsPerKm"] = avg_pace
+
+    return entry_base
 
 
 def parse_common_metrics(act: Dict[str, Any], act_details: Optional[Dict[str, Any]], act_summary: Dict[str, Any]) -> Dict[str, Any]:
@@ -261,6 +543,16 @@ def parse_common_metrics(act: Dict[str, Any], act_details: Optional[Dict[str, An
                 act_details.get('totalDistanceMeters') or
                 0
             )
+    if not distance_m_raw and isinstance(act, dict):
+        adld = act.get('activityDetailDTO') or {}
+        if isinstance(adld, dict):
+            distance_m_raw = (
+                adld.get('distance') or
+                adld.get('distanceMeters') or
+                adld.get('totalDistance') or
+                adld.get('totalDistanceMeters') or
+                0
+            )
     
     # Valider et convertir distance (peut être en m ou km selon le contexte)
     distance_m = safe_float(
@@ -382,6 +674,17 @@ def parse_common_metrics(act: Dict[str, Any], act_details: Optional[Dict[str, An
     start_lng = (summary_dto.get('startLongitude') if isinstance(summary_dto, dict) else None) or act.get('startLongitude')
     end_lat = (summary_dto.get('endLatitude') if isinstance(summary_dto, dict) else None) or act.get('endLatitude')
     end_lng = (summary_dto.get('endLongitude') if isinstance(summary_dto, dict) else None) or act.get('endLongitude')
+    if isinstance(act, dict):
+        adld_loc = act.get('activityDetailDTO') or {}
+        if isinstance(adld_loc, dict):
+            if start_lat is None:
+                start_lat = adld_loc.get('startLatitude')
+            if start_lng is None:
+                start_lng = adld_loc.get('startLongitude')
+            if end_lat is None:
+                end_lat = adld_loc.get('endLatitude')
+            if end_lng is None:
+                end_lng = adld_loc.get('endLongitude')
     
     # Élévation
     # 🔴 FIX #9: Validation de plage pour élévation
@@ -493,7 +796,45 @@ def parse_common_metrics(act: Dict[str, Any], act_details: Optional[Dict[str, An
         "performanceCondition": performance_metrics.get("performanceCondition"),
         "source": "garmin"
     }
-    
+
+    # Distance (km), vitesses (km/h), allure (s/km) pour l'UI — toujours remplir si le résumé les contient
+    def _speed_to_kmh(val: Any) -> Optional[float]:
+        if val is None:
+            return None
+        v = safe_float(val, 0.0)
+        if v <= 0:
+            return None
+        if v < 30:
+            return round(v * 3.6, 2)
+        return round(v, 2)
+
+    if distance_m and distance_m > 0:
+        entry_base["distance"] = round(distance_m / 1000.0, 4)
+    avg_sr = (
+        (summary_dto.get('averageSpeed') if isinstance(summary_dto, dict) else None) or
+        act.get('averageSpeed')
+    )
+    max_sr = (
+        (summary_dto.get('maxSpeed') if isinstance(summary_dto, dict) else None) or
+        act.get('maxSpeed')
+    )
+    if avg_sr:
+        sk = _speed_to_kmh(avg_sr)
+        if sk:
+            entry_base["speed"] = sk
+    if max_sr:
+        mk = _speed_to_kmh(max_sr)
+        if mk:
+            entry_base["maxSpeed"] = mk
+    ap = safe_int(
+        (summary_dto.get('averagePace') if isinstance(summary_dto, dict) else None) or
+        act.get('averagePace') or act.get('avgPace'), 0
+    )
+    if ap > 200000:
+        ap = ap // 1000
+    if ap > 0:
+        entry_base["avgPaceSecondsPerKm"] = ap
+
     return entry_base, summary_dto, distance_m
 
 

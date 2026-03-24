@@ -8,8 +8,8 @@
  * @module components/tabs/SettingsTab
  */
 
-import React, { useState, useCallback } from 'react';
-import { Settings, Image, User } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Settings, Image, User, Search } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../utils/translations';
@@ -17,6 +17,7 @@ import { useGarminData } from '../../hooks/useGarminData';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { Input } from '../ui/Input';
 
 // Hooks
 import { useSettingsStats } from './SettingsTab/hooks/useSettingsStats';
@@ -50,24 +51,42 @@ import { QuoteManager } from '../quotes/QuoteManager';
 import { QuotesErrorBoundary } from '../quotes/QuotesErrorBoundary';
 import ProfileCardSettings from '../sidebar/ProfileCardSettings';
 
-const SETTINGS_ANCHORS = [
-  { id: 'settings-profil', label: 'Profil' },
-  { id: 'settings-carte', label: 'Carte profil' },
-  { id: 'settings-accueil', label: 'Page d\'accueil' },
-  { id: 'settings-bannieres', label: 'Bannières' },
-  { id: 'settings-citations', label: 'Citations' },
-  { id: 'settings-export', label: 'Export' },
-  { id: 'settings-quests', label: 'Quêtes' },
-  { id: 'settings-livres', label: 'Livres' },
-  { id: 'settings-budget', label: 'Budget' },
-  { id: 'settings-apprentissage', label: 'Apprentissage' },
-  { id: 'settings-import', label: 'Import' },
-  { id: 'settings-nettoyage', label: 'Nettoyage' },
-  { id: 'settings-navigation', label: 'Navigation' },
-  { id: 'settings-langue', label: 'Langue' },
-  { id: 'settings-priere', label: 'Prière' },
-  { id: 'settings-infos', label: 'Infos' },
+/** Sections paramètres : ancres + texte indexé pour la recherche (synonymes / termes courants) */
+const SETTINGS_SECTIONS = [
+  { id: 'settings-profil', label: 'Profil', searchText: 'profil avatar email mot de passe compte utilisateur migration données anonyme invité' },
+  { id: 'settings-carte', label: 'Carte profil', searchText: 'carte profil image handle username bannière sidebar logo' },
+  { id: 'settings-accueil', label: 'Page d\'accueil', searchText: 'accueil page fond bannière rotation images home' },
+  { id: 'settings-bannieres', label: 'Bannières', searchText: 'bannières bannière import export rotation' },
+  { id: 'settings-citations', label: 'Citations', searchText: 'citations citation phrases phrase quote page accueil texte inspirant épinglé aléatoire' },
+  { id: 'settings-export', label: 'Export', searchText: 'export sauvegarde backup données garmin nutrition workout' },
+  { id: 'settings-quests', label: 'Quêtes', searchText: 'quêtes quiet quest export import' },
+  { id: 'settings-livres', label: 'Livres', searchText: 'livres books lecture bibliothèque' },
+  { id: 'settings-budget', label: 'Budget', searchText: 'budget finance argent dépenses' },
+  { id: 'settings-apprentissage', label: 'Apprentissage', searchText: 'apprentissage étude cours flashcards' },
+  { id: 'settings-import', label: 'Import', searchText: 'import restauration fusion données sauvegarde json' },
+  { id: 'settings-nettoyage', label: 'Nettoyage', searchText: 'nettoyage suppression effacer mock debug cache données' },
+  { id: 'settings-navigation', label: 'Navigation', searchText: 'navigation swipe gestes onglets défilement' },
+  { id: 'settings-langue', label: 'Langue', searchText: 'langue traduction français anglais locale' },
+  { id: 'settings-priere', label: 'Prière', searchText: 'prière horaires localisation adhan quête géolocalisation' },
+  { id: 'settings-infos', label: 'Infos', searchText: 'infos informations version aide à propos' },
 ];
+
+function normalizeForSearch(str) {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .trim();
+}
+
+/** Tous les mots de la requête doivent apparaître dans le texte indexé de la section */
+function sectionMatchesQuery(query, label, searchText) {
+  const q = normalizeForSearch(query);
+  if (!q) return true;
+  const blob = normalizeForSearch(`${label} ${searchText}`);
+  const words = q.split(/\s+/).filter(Boolean);
+  return words.every((w) => blob.includes(w));
+}
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions, setActiveTab } = useWorkout();
@@ -82,6 +101,25 @@ const SettingsTab = () => {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
+
+  const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
+
+  const { isSectionVisible, showSearchEmptyState } = useMemo(() => {
+    const q = settingsSearchQuery.trim();
+    if (!q) {
+      return { isSectionVisible: () => true, showSearchEmptyState: false };
+    }
+    const matched = new Set();
+    for (const s of SETTINGS_SECTIONS) {
+      if (sectionMatchesQuery(q, s.label, s.searchText)) {
+        matched.add(s.id);
+      }
+    }
+    return {
+      isSectionVisible: (id) => matched.has(id),
+      showSearchEmptyState: matched.size === 0,
+    };
+  }, [settingsSearchQuery]);
 
   // États locaux pour les modals
   const [showProfileCardSettings, setShowProfileCardSettings] = useState(false);
@@ -195,16 +233,38 @@ const SettingsTab = () => {
         }
       `}</style>
         
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <h2 className="text-2xl font-bold text-white flex items-center">
             <Settings className="mr-3" size={28} />
             ⚙️ Paramètres & Sauvegarde
           </h2>
         </div>
 
-        {/* Ancres : liens rapides vers les sections */}
+        {/* Recherche dans les paramètres */}
+        <div className="mb-4">
+          <Input
+            id="settings-search"
+            type="search"
+            variant="search"
+            icon={Search}
+            placeholder="Rechercher un paramètre (ex. phrases, budget, langue…)"
+            value={settingsSearchQuery}
+            onChange={(e) => setSettingsSearchQuery(e.target.value)}
+            aria-label="Rechercher dans les paramètres"
+            className="!bg-slate-800/90 !border-slate-600"
+            containerClassName="max-w-xl"
+          />
+          {settingsSearchQuery.trim() && (
+            <p className="mt-2 text-xs text-slate-400">
+              Affichage des blocs correspondant à votre recherche. Effacez le champ pour tout afficher.
+            </p>
+          )}
+        </div>
+
+        {/* Ancres : liens rapides vers les sections (filtrées si recherche active) */}
+        {SETTINGS_SECTIONS.some(({ id }) => isSectionVisible(id)) && (
         <div className="flex flex-wrap gap-2 mb-6 p-3 bg-slate-800/60 border border-slate-700 rounded-xl">
-          {SETTINGS_ANCHORS.map(({ id, label }) => (
+          {SETTINGS_SECTIONS.filter(({ id }) => isSectionVisible(id)).map(({ id, label }) => (
             <button
               key={id}
               type="button"
@@ -215,8 +275,19 @@ const SettingsTab = () => {
             </button>
           ))}
         </div>
+        )}
+
+        {showSearchEmptyState && (
+          <div
+            className="mb-6 rounded-xl border border-dashed border-slate-600 bg-slate-800/40 px-4 py-8 text-center text-slate-300"
+            role="status"
+          >
+            Aucun bloc de paramètres ne correspond à « {settingsSearchQuery.trim()} ». Essayez un autre mot ou effacez la recherche.
+          </div>
+        )}
 
         {/* Section Mon Profil */}
+        {isSectionVisible('settings-profil') && (
         <div id="settings-profil" className="scroll-mt-4">
         <ProfileSettings
           currentUser={currentUser}
@@ -225,8 +296,10 @@ const SettingsTab = () => {
           migrationSettings={migrationSettings}
         />
         </div>
+        )}
 
         {/* Section Carte de Profil - Image Centrale + Handle */}
+        {isSectionVisible('settings-carte') && (
         <div id="settings-carte" className="scroll-mt-4">
         <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
           <CardHeader>
@@ -299,8 +372,10 @@ const SettingsTab = () => {
           </CardContent>
         </Card>
         </div>
+        )}
 
         {/* Section Page d'Accueil */}
+        {isSectionVisible('settings-accueil') && (
         <div id="settings-accueil" className="scroll-mt-4">
         <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
           <CardHeader>
@@ -338,20 +413,26 @@ const SettingsTab = () => {
           </CardContent>
         </Card>
         </div>
+        )}
 
         {/* Section Export/Import Bannières */}
+        {isSectionVisible('settings-bannieres') && (
         <div id="settings-bannieres" className="scroll-mt-4">
         <BannerExportImport />
         </div>
+        )}
 
         {/* Section Citations Page d'Accueil */}
+        {isSectionVisible('settings-citations') && (
         <div id="settings-citations" className="scroll-mt-4">
         <QuotesErrorBoundary>
           <QuoteManager />
         </QuotesErrorBoundary>
         </div>
+        )}
 
         {/* Section Export */}
+        {isSectionVisible('settings-export') && (
         <div id="settings-export" className="scroll-mt-4">
         <ExportSection
           data={data}
@@ -359,8 +440,10 @@ const SettingsTab = () => {
           exportSettings={exportSettings}
         />
         </div>
+        )}
 
         {/* Sections Export/Import individuelles */}
+        {isSectionVisible('settings-quests') && (
         <div id="settings-quests" className="scroll-mt-4">
         <QuietQuestExportImport
           quietQuestStats={stats.quietQuestStats}
@@ -370,7 +453,9 @@ const SettingsTab = () => {
           handleImportQuietQuest={importSettings.handleImportQuietQuest}
         />
         </div>
+        )}
 
+        {isSectionVisible('settings-livres') && (
         <div id="settings-livres" className="scroll-mt-4">
         <BooksExportImport
           booksStats={stats.booksStats}
@@ -380,7 +465,9 @@ const SettingsTab = () => {
           handleImportBooksData={handleImportBooksData}
         />
         </div>
+        )}
 
+        {isSectionVisible('settings-budget') && (
         <div id="settings-budget" className="scroll-mt-4">
         <BudgetExportImport
           budgetExportStatus={exportSettings.budgetExportStatus}
@@ -389,7 +476,9 @@ const SettingsTab = () => {
           handleImportBudgetData={handleImportBudgetData}
         />
         </div>
+        )}
 
+        {isSectionVisible('settings-apprentissage') && (
         <div id="settings-apprentissage" className="scroll-mt-4">
         <ApprentissageExportImport
           apprentissageStats={stats.apprentissageStats}
@@ -399,8 +488,10 @@ const SettingsTab = () => {
           handleImportApprentissage={importSettings.handleImportApprentissage}
         />
         </div>
+        )}
 
         {/* Section Import */}
+        {isSectionVisible('settings-import') && (
         <div id="settings-import" className="scroll-mt-4">
         <ImportSection
           allDataImportSettings={allDataImportSettings}
@@ -408,6 +499,7 @@ const SettingsTab = () => {
           restorePreImportBackup={allDataImportSettings.restorePreImportBackup}
         />
         </div>
+        )}
 
         {/* Modals de prévisualisation */}
         <BodyTrackingImportPreviewModal
@@ -427,6 +519,7 @@ const SettingsTab = () => {
         />
 
         {/* Section Nettoyage des données */}
+        {isSectionVisible('settings-nettoyage') && (
         <div id="settings-nettoyage" className="scroll-mt-4">
         <DataCleanupSection
           cleanupSettings={cleanupSettings}
@@ -434,26 +527,35 @@ const SettingsTab = () => {
           debugMockSessions={debugMockSessions}
         />
         </div>
+        )}
 
         {/* Section Navigation */}
+        {isSectionVisible('settings-navigation') && (
         <div id="settings-navigation" className="scroll-mt-4">
         <SwipeNavigationSettings swipeSettings={swipeSettings} />
         </div>
+        )}
 
         {/* Section Langue */}
+        {isSectionVisible('settings-langue') && (
         <div id="settings-langue" className="scroll-mt-4">
-        <LanguageSettings />
+        <LanguageSettings         />
         </div>
+        )}
 
         {/* Section Horaires de prière (quêtes) */}
+        {isSectionVisible('settings-priere') && (
         <div id="settings-priere" className="scroll-mt-4">
-        <PrayerLocationSettings />
+        <PrayerLocationSettings         />
         </div>
+        )}
 
         {/* Section Informations */}
+        {isSectionVisible('settings-infos') && (
         <div id="settings-infos" className="scroll-mt-4">
         <InfoCards />
         </div>
+        )}
 
         {/* Modals */}
         {showHomePageSettings && (

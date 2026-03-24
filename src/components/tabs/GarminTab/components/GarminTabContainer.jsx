@@ -113,8 +113,14 @@ export function useGarminTabContainer(options = {}) {
   // ==================== RÉFS ====================
   const prevLoadingRef = React.useRef(false);
   const prevGarminDataRef = React.useRef(null);
+  /** Dernière valeur de garminData (pour fusionner les chargements partiels par onglet sans stale closure) */
+  const garminDataRef = React.useRef(null);
   const autoSyncExecutedRef = React.useRef(false);
   const prefetchedTabsRef = React.useRef(new Set());
+
+  React.useEffect(() => {
+    garminDataRef.current = garminData;
+  }, [garminData]);
 
   // ==================== HOOKS EXTERNES ====================
   const {
@@ -359,16 +365,30 @@ export function useGarminTabContainer(options = {}) {
         if (cancelled) return;
         
         if (loaded) {
+          const loadedDaily = loaded.dailyMetrics || {};
+          // Ne pas écraser tout l'historique des métriques avec une plage partielle (Activités ±7j,
+          // Métriques 90j, Graphiques avec filtre) : sinon dateKeys se réduit et la navigation
+          // « jour suivant » se bloque alors qu'IndexedDB contient toute la synchro.
+          const shouldMergeDailyMetrics =
+            activeTab === 'activities' ||
+            activeTab === 'metrics' ||
+            (activeTab === 'charts' && periodFilter && periodFilter !== 'all');
+
+          const prevDaily = garminDataRef.current?.dailyMetrics || {};
+          const mergedForDates = shouldMergeDailyMetrics
+            ? { ...prevDaily, ...loadedDaily }
+            : loadedDaily;
+
           setGarminData({
             activities: {
               swimming: loaded.activities?.swimming || [],
               jumpRope: loaded.activities?.jumpRope || [],
               cardio: loaded.activities?.cardio || []
             },
-            dailyMetrics: loaded.dailyMetrics || {}
+            dailyMetrics: mergedForDates
           });
           
-          const dates = Object.keys(loaded.dailyMetrics || {}).sort((a, b) => a.localeCompare(b));
+          const dates = Object.keys(mergedForDates).sort((a, b) => a.localeCompare(b));
           
           if (dates.length > 0 && !selectedDate) {
             const now = new Date();

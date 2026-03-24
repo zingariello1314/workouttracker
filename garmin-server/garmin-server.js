@@ -584,6 +584,45 @@ function resolveForceRange(payload = {}) {
 // ==========================================
 // PHASE 4.2 : RETRY AVEC BACKOFF EXPONENTIEL
 // ==========================================
+
+function tryParsePythonJsonOutput(rawOut) {
+  const trimmed = String(rawOut || '').trim();
+  if (!trimmed) return null;
+  try {
+    const obj = JSON.parse(trimmed);
+    if (obj && typeof obj === 'object' && ('ok' in obj || 'error' in obj)) return obj;
+  } catch (_) {
+    const lines = trimmed.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    for (let i = lines.length - 1; i >= 0; i--) {
+      try {
+        if (!lines[i].startsWith('{')) continue;
+        const obj = JSON.parse(lines[i]);
+        if (obj && typeof obj === 'object' && ('ok' in obj || 'error' in obj)) return obj;
+      } catch (_) {
+        /* ligne suivante */
+      }
+    }
+  }
+  return null;
+}
+
+function shouldSkipPythonRetry(result) {
+  if (!result?.error) return false;
+  const e = String(result.error);
+  if (/\b429\b|Too Many Requests/i.test(e)) {
+    console.log('[RETRY] Garmin / SSO a renvoyé une limite (429) — pas de nouvelle tentative (attendre).');
+    return true;
+  }
+  if (/No module named/i.test(e)) {
+    console.log('[RETRY] Module Python manquant — exécutez: pip install garminconnect (ou pip install -r requirements.txt).');
+    return true;
+  }
+  if (!/No python executable found/i.test(e)) {
+    return true;
+  }
+  return false;
+}
+
 async function runPythonScriptWithRetry(args = [], maxRetries = 3) {
   let attempt = 0;
   let lastError = null;
@@ -603,9 +642,8 @@ async function runPythonScriptWithRetry(args = [], maxRetries = 3) {
         console.log(`[RETRY] Success on attempt ${attempt}`);
         return result;
       }
-      // Si résultat non-OK mais pas d'erreur fatale, ne pas retry
-      if (result && !result.error?.includes('No python executable')) {
-        console.log(`[RETRY] Non-fatal error, returning result: ${result.error}`);
+      if (result && shouldSkipPythonRetry(result)) {
+        console.log(`[RETRY] Erreur métier ou limite, pas de retry: ${result.error}`);
         return result;
       }
       lastError = result?.error || 'Unknown error';
@@ -629,10 +667,10 @@ async function runPythonScriptWithRetry(args = [], maxRetries = 3) {
 // ==========================================
 async function runPythonScript(args = []) {
   return new Promise((resolve) => {
-    const candidates = process.platform === 'win32' ? [
-      'C://Python313//python.exe',
-      'python', 'py', 'python3'
-    ] : ['python3', 'python'];
+    const envPython = process.env.PYTHON || process.env.PYTHON_EXE || process.env.PYTHON_PATH;
+    const candidates = process.platform === 'win32'
+      ? [envPython, 'C://Python313//python.exe', 'python', 'py', 'python3'].filter(Boolean)
+      : [envPython, 'python3', 'python'].filter(Boolean);
     let index = 0;
     let lastErr = '';
 
@@ -669,6 +707,13 @@ async function runPythonScript(args = []) {
         if (err.trim()) {
           console.log('[PYTHON] Final stderr summary:', err.trim().substring(0, 500));
         }
+
+        const businessJson = tryParsePythonJsonOutput(out);
+        if (businessJson !== null) {
+          console.log('[PYTHON] Réponse JSON reçue (code exit ignoré si présent)');
+          return resolve(businessJson);
+        }
+
         if (code !== 0) {
           console.error('[SERVER] Python failed with code:', code);
           lastErr = err.trim() || `exit ${code}`;
@@ -709,6 +754,16 @@ let lastStatus = {
   message: 'En attente de synchronisation',
 };
 let lastForcedResponse = null;
+
+/** Après un 429 sur le SSO Garmin, on évite de rappeler Python pendant ce délai (sync auto, double-clic, etc.). */
+const GARMIN_SSO_COOLDOWN_MS = Number(process.env.GARMIN_SSO_COOLDOWN_MS) || 30 * 60 * 1000;
+let garminSsoCooldownUntil = 0;
+
+function isGarmin429Error(err) {
+  if (!err) return false;
+  const s = String(err);
+  return /\b429\b/i.test(s) || /Too Many Requests/i.test(s);
+}
 
 // ==========================================
 // STRUCTURED LOGGING & MÉTRIQUES SERVEUR
@@ -1394,6 +1449,24 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
     }
 
     if (process.env.USE_PYTHON === '1') {
+      if (Date.now() < garminSsoCooldownUntil) {
+        const waitSec = Math.ceil((garminSsoCooldownUntil - Date.now()) / 1000);
+        const waitMin = Math.max(1, Math.ceil(waitSec / 60));
+        console.log(`[SERVER] Cooldown Garmin SSO (429) actif — ${waitSec}s restantes, pas d'appel Python`);
+        lastStatus = { lastSync: lastStatus.lastSync, ok: false, message: 'Garmin rate limit cooldown' };
+        serverMetrics.sync.failure += 1;
+        serverMetrics.sync.lastError = 'garmin_sso_cooldown';
+        appendStructuredLog('sync_blocked_cooldown', { waitSec });
+        return res.json({
+          ok: false,
+          error:
+            `Garmin limite encore les connexions (429). Attendez encore ~${waitMin} min (${waitSec}s) sans relancer la synchro.`,
+          lastSync: new Date().toISOString(),
+          garminRateLimited: true,
+          retryAfterSeconds: waitSec
+        });
+      }
+
       const rangeKey = buildRangeKey(start, end);
       const isForceRequest = forceRefresh === 'true';
       if (isForceRequest && lastForcedResponse && lastForcedResponse.rangeKey === rangeKey) {
@@ -1585,10 +1658,17 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
           forceRefresh: forceRefresh === 'true',
           cacheKey
         });
+        garminSsoCooldownUntil = 0;
         return;
       } else {
         console.error('[SERVER] Python run failed:', result);
         console.error(`[🔍 DIAGNOSTIC SERVEUR] ❌ Échec script Python - Erreur: ${result?.error || 'Unknown error'}`);
+        if (isGarmin429Error(result?.error)) {
+          garminSsoCooldownUntil = Date.now() + GARMIN_SSO_COOLDOWN_MS;
+          console.log(
+            `[SERVER] 429 Garmin SSO — cooldown ${Math.round(GARMIN_SSO_COOLDOWN_MS / 60000)} min (jusqu'à ${new Date(garminSsoCooldownUntil).toLocaleTimeString()})`
+          );
+        }
         lastStatus = { lastSync: lastStatus.lastSync, ok: false, message: 'Python error' };
         serverMetrics.sync.failure += 1;
         serverMetrics.sync.lastError = result?.error || 'python failed';
@@ -1597,7 +1677,17 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
           mode: resolution.mode || null,
           forceRefresh: forceRefresh === 'true'
         });
-        return res.json({ ok: false, error: result.error || 'python failed', lastSync: new Date().toISOString() });
+        return res.json({
+          ok: false,
+          error: result.error || 'python failed',
+          lastSync: new Date().toISOString(),
+          ...(isGarmin429Error(result?.error)
+            ? {
+                garminRateLimited: true,
+                retryAfterSeconds: Math.ceil(GARMIN_SSO_COOLDOWN_MS / 1000)
+              }
+            : {})
+        });
       }
     } else {
       // Fallback mock côté Node

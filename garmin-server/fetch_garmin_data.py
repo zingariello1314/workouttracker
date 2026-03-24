@@ -21,7 +21,9 @@ from parsers.activity_parser import (
     parse_common_metrics,
     parse_swimming_metrics,
     parse_jump_rope_metrics,
-    extract_activity_heart_rate_time_series
+    extract_activity_heart_rate_time_series,
+    is_running_like_activity,
+    parse_run_cardio_metrics,
 )
 from parsers.daily_metrics_parser import (
     parse_daily_steps,
@@ -349,6 +351,71 @@ def _get_activity_with_retry(client, act_id):
 
 @retry_with_backoff(max_retries=3, base_delay=1.0)
 @retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_activity_splits_with_retry(client, act_id):
+    return client.get_activity_splits(str(act_id))
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_activity_typed_splits_with_retry(client, act_id):
+    return client.get_activity_typed_splits(str(act_id))
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_activity_split_summaries_with_retry(client, act_id):
+    return client.get_activity_split_summaries(str(act_id))
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
+def _get_activity_details_with_retry(client, act_id):
+    return client.get_activity_details(str(act_id))
+
+
+def _enrich_act_details_for_running(client, act_id, act_details):
+    """
+    Garmin ne met pas toujours tours / intervalles / cadence dans get_activity() seul.
+    Endpoints complémentaires : /splits, /typedsplits, /split_summaries, /details
+    """
+    if not isinstance(act_details, dict):
+        return act_details
+    aid = str(act_id)
+    try:
+        sp = _get_activity_splits_with_retry(client, aid)
+        act_details["_garminActivitySplits"] = sp
+        if isinstance(sp, dict) and sp.get("lapDTOs"):
+            print_debug(f"✅ splits: {len(sp.get('lapDTOs', []))} lapDTOs pour activité {aid}")
+    except Exception as e:
+        print_debug(f"⚠️ get_activity_splits({aid}): {e}")
+    try:
+        ts = _get_activity_typed_splits_with_retry(client, aid)
+        act_details["_garminTypedSplits"] = ts
+    except Exception as e:
+        print_debug(f"⚠️ get_activity_typed_splits({aid}): {e}")
+    try:
+        ss = _get_activity_split_summaries_with_retry(client, aid)
+        act_details["_garminSplitSummaries"] = ss
+    except Exception as e:
+        print_debug(f"⚠️ get_activity_split_summaries({aid}): {e}")
+    try:
+        det = _get_activity_details_with_retry(client, aid)
+        act_details["_garminActivityDetails"] = det
+        # Fusionner le résumé « details » (souvent plus complet pour tapis : distance, cadence)
+        if isinstance(det, dict):
+            s_new = det.get("activitySummaryDTO") or det.get("summaryDTO") or {}
+            if isinstance(s_new, dict) and s_new:
+                s_old = act_details.get("activitySummaryDTO") or act_details.get("summaryDTO") or {}
+                if not isinstance(s_old, dict):
+                    s_old = {}
+                act_details["activitySummaryDTO"] = {**s_old, **s_new}
+    except Exception as e:
+        print_debug(f"⚠️ get_activity_details({aid}): {e}")
+    return act_details
+
+
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+@retry_on_rate_limit(max_retries=5, base_delay=5.0)
 def _get_stats_with_retry(client, date_str):
     """Helper avec retry pour get_stats"""
     return client.get_stats(date_str)
@@ -631,6 +698,79 @@ def print_json_err(message):
     print(json.dumps({"ok": False, "lastSync": now_iso, "error": message}))
 
 
+def connect_garmin_client(email: str, password: str):
+    """
+    Connexion via python-garminconnect avec jetons persistés (dossier GARMINTOKENS ou ~/.garminconnect).
+    Évite un login SSO complet à chaque sync → beaucoup moins de risques de 429 côté Garmin.
+    """
+    from pathlib import Path
+
+    from garminconnect import (  # type: ignore
+        Garmin,
+        GarminConnectConnectionError,
+        GarminConnectTooManyRequestsError,
+    )
+
+    tokenstore = os.getenv("GARMINTOKENS")
+    if tokenstore:
+        tokenstore_path = Path(tokenstore).expanduser().resolve()
+    else:
+        tokenstore_path = (Path.home() / ".garminconnect").resolve()
+    tokenstore_path.mkdir(parents=True, exist_ok=True)
+    ts = str(tokenstore_path)
+
+    client = Garmin(email=email, password=password, is_cn=False, return_on_mfa=False)
+
+    oauth1 = tokenstore_path / "oauth1_token.json"
+
+    def _do_login():
+        """
+        Si aucun jeton sur disque : login(email/password) sans chemin — sinon la lib lève
+        FileNotFoundError sur oauth1_token.json au lieu de se connecter.
+        GARMINTOKENS est retiré temporairement pour que login(tokenstore=None) ne recharge pas le chemin.
+        """
+        env_backup = os.environ.pop("GARMINTOKENS", None)
+        try:
+            if oauth1.is_file():
+                try:
+                    client.login(tokenstore=ts)
+                except FileNotFoundError:
+                    # Jetons incomplets / fichier manquant
+                    client.login(tokenstore=None)
+            else:
+                client.login(tokenstore=None)
+        finally:
+            if env_backup is not None:
+                os.environ["GARMINTOKENS"] = env_backup
+
+    # Pas de nouvelle tentative après 60s : Garmin garde souvent le 429 plus longtemps ;
+    # une 2e tentative aggrave la limite. Le serveur Node applique un cooldown entre les syncs.
+    try:
+        _do_login()
+    except GarminConnectTooManyRequestsError as e:
+        raise RuntimeError(
+            "Garmin a refusé la connexion (trop de demandes — code 429). "
+            "Attendez 30 à 60 minutes sans lancer de synchro, puis réessayez une seule fois. "
+            f"Détail: {e}"
+        ) from e
+    except GarminConnectConnectionError as e:
+        err = str(e)
+        if "429" in err or "Too Many Requests" in err:
+            raise RuntimeError(
+                "Garmin a refusé la connexion (trop de demandes — code 429). "
+                "Attendez 30 à 60 minutes sans lancer de synchro, puis réessayez une seule fois. "
+                f"Détail: {e}"
+            ) from e
+        raise
+
+    try:
+        client.garth.dump(ts)
+    except Exception as e:
+        print_debug(f"⚠️ Enregistrement des jetons Garmin: {e}")
+
+    return client
+
+
 # Tentative d'intégration réelle
 args = sys.argv[1:]
 arg_start = None
@@ -652,9 +792,7 @@ except Exception:
 
 if EMAIL and PASSWORD:
     try:
-        from garminconnect import Garmin  # type: ignore
-        client = Garmin(EMAIL, PASSWORD)
-        client.login()
+        client = connect_garmin_client(EMAIL, PASSWORD)
         # Détermine la plage
         start_for = current_date
         end_for = current_date
@@ -711,6 +849,12 @@ if EMAIL and PASSWORD:
                 print_debug(f"Fetching activities for {d_str}...")
                 activities = _get_activities_with_retry(client, d_str, d_str)
                 print_debug(f"get_activities_by_date returned: {type(activities)}, length: {len(activities) if isinstance(activities, (list, dict)) else 'N/A'}")
+                if not activities:
+                    print_debug(
+                        f"ℹ️ Aucune activité pour {d_str} — si ta séance est la veille, "
+                        f"élargis la synchro (start/end) ou resynchronise : la fenêtre « un seul jour » "
+                        f"ne recharge pas les jours précédents."
+                    )
                 if activities:
                     print_debug(f"Found {len(activities) if isinstance(activities, list) else 'unknown'} activities for {d_str}")
                     for act_summary in activities:
@@ -737,14 +881,28 @@ if EMAIL and PASSWORD:
                             # OPTIMISATION : Parser summary d'abord pour identifier si details nécessaires
                             is_swimming_preview, is_jump_rope_preview, is_cardio_preview = classify_activity(act_summary, None)
                             
-                            # Récupérer les détails complets SEULEMENT si nécessaire
+                            # Récupérer les détails complets : natation, corde, et courses (tours, allure, cadence, intervalles)
                             act_details = None
-                            needs_details = is_swimming_preview or is_jump_rope_preview
+                            # Toute activité cardio : get_activity() — sinon le résumé liste seul manque souvent
+                            # distance, allure, cadence, tours (surtout indoor_cardio / types génériques Garmin).
+                            needs_details = (
+                                is_swimming_preview
+                                or is_jump_rope_preview
+                                or is_cardio_preview
+                                or is_running_like_activity(act_summary)
+                            )
                             
                             if needs_details:
                                 try:
                                     # 🔴 FIX #38: Retry automatique pour get_activity
                                     act_details = _get_activity_with_retry(client, act_id)
+                                    # Splits / details : intervalles, distance, cadence (toute cardio avec détails)
+                                    if act_details and (
+                                        is_running_like_activity(act_summary) or is_cardio_preview
+                                    ):
+                                        act_details = _enrich_act_details_for_running(
+                                            client, act_id, act_details
+                                        )
                                 except Exception as e:
                                     print_debug(f"Failed to get_activity({act_id}) after retries: {e}")
                                     pass
@@ -832,7 +990,14 @@ if EMAIL and PASSWORD:
                             
                             # Vérification 1: Si classé comme cardio mais caractéristiques de natation
                             # UNIQUEMENT si ce n'est PAS explicitement marqué comme cardio par l'utilisateur
-                            if is_cardio and not is_swimming and not is_jump_rope and not is_explicitly_cardio:
+                            # Ni une activité « course » côté Garmin (évite fausses natations sur fractionné / 5 km).
+                            if (
+                                is_cardio
+                                and not is_swimming
+                                and not is_jump_rope
+                                and not is_explicitly_cardio
+                                and not is_running_like_activity(act_summary)
+                            ):
                                 # Critères pour natation:
                                 # - Distance entre 50m et 5000m (distance typique piscine)
                                 # - Durée > 5min (300s)
@@ -841,15 +1006,10 @@ if EMAIL and PASSWORD:
                                 if distance_m and distance_m > 0 and duration and duration > 300:
                                     # Distance cohérente avec natation (50m-5000m)
                                     if 50 <= distance_m <= 5000:
-                                        # Si nom contient mots-clés natation → reclassifier immédiatement
+                                        # Uniquement si le nom / l’intention évocateurs natation — jamais sur la seule distance
+                                        # (sinon les courses 1–4 km avec typeKey « running » / GPS étaient reclassées en natation).
                                         if any(keyword in act_name_lower for keyword in ['swim', 'natation', 'pool', 'laps', 'crawl', 'brasse']):
                                             print_debug(f"⚠️ Activity {act_id} reclassifiée: cardio → swimming (distance={distance_m}m, duration={duration}s, name keywords)")
-                                            is_swimming = True
-                                            is_cardio = False
-                                        # Sinon, si distance modérée + durée cohérente, probablement natation
-                                        # MAIS seulement si le nom ne contient PAS "cardio"
-                                        elif 100 <= distance_m <= 4000 and 'cardio' not in act_name_lower:
-                                            print_debug(f"⚠️ Activity {act_id} reclassifiée: cardio → swimming (distance={distance_m}m, duration={duration}s, caractéristiques natation)")
                                             is_swimming = True
                                             is_cardio = False
                             
@@ -895,11 +1055,39 @@ if EMAIL and PASSWORD:
                                 activity_name = act.get('activityName') or act_summary.get('activityName') or 'Cardio'
                                 act_type_dto = act_summary.get('activityTypeDTO', {}) or {}
                                 act_type_key = act_type_dto.get('typeKey') or act_type_dto.get('type') or 'indoor_cardio'
+                                # Parser métriques course / tours dès qu’on a le détail activité (pas seulement typeKey « running »)
+                                if act_details:
+                                    entry_base = parse_run_cardio_metrics(
+                                        entry_base,
+                                        summary_dto,
+                                        act,
+                                        act_details,
+                                        act_summary,
+                                        distance_m,
+                                        duration,
+                                    )
+                                # Affichage : clés génériques Garmin + GPS → afficher « running » pour l’UI
+                                display_type_key = act_type_key
+                                tk_low = (act_type_key or '').lower()
+                                loc = entry_base.get('location') or {}
+                                has_gps = bool(loc.get('start') or loc.get('end'))
+                                _gps_running_types = (
+                                    'indoor_cardio',
+                                    'cardio',
+                                    'fitness_equipment',
+                                    'hiit',
+                                )
+                                if has_gps and (
+                                    tk_low in _gps_running_types
+                                    or ('cardio' in tk_low and tk_low != 'open_water_swimming')
+                                ):
+                                    display_type_key = 'running'
                                 entry_base.update({
                                     "jumps": None,
                                     "connectIQ": None,
                                     "activityName": activity_name,
-                                    "activityType": act_type_key,
+                                    "activityType": display_type_key,
+                                    "garminTypeKey": act_type_key,
                                     "type": "cardio"
                                 })
                                 # 🔴 FIX : Sauvegarder cache avec hash de classification

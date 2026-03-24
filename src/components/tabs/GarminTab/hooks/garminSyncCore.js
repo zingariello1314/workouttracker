@@ -35,6 +35,8 @@ const log = logger.module('garminSyncCore');
  * - Calcule la date de fin (aujourd'hui en date locale)
  * - Valide que startDate <= endDate
  * - Gère le cas où startDate > endDate (fallback)
+ * - Si la plage ne contient qu’un seul jour (souvent « aujourd’hui » seul en sync incrémentale),
+ *   élargit le début à la veille pour que les activités de la veille soient rechargées depuis Garmin
  * 
  * ⚠️ IMPORTANT : Utilise la date locale (pas UTC) pour éviter problèmes de timezone.
  * 
@@ -72,12 +74,23 @@ export const calculateSyncDateRange = async (getSyncStartDate) => {
       wasAdjusted: true
     };
   }
-  
+
+  // Sync incrémentale : si lastSync était la veille, start = fin = aujourd'hui seul.
+  // Dans ce cas Garmin n'est jamais re-interrogé pour la veille → les activités déjà en
+  // base (ex. course du 23) ne sont pas re-parsées après un correctif serveur.
+  let effectiveStart = startDate;
+  if (effectiveStart === endDate) {
+    effectiveStart = subtractDaysFromDateStr(endDate, 1);
+    log.info(
+      `[calculateSyncDateRange] Plage réduite à un jour → élargie à ${effectiveStart} → ${endDate} (inclut la veille pour les activités)`
+    );
+  }
+
   return {
-    startDate,
+    startDate: effectiveStart,
     endDate,
     isValid: true,
-    wasAdjusted: false
+    wasAdjusted: effectiveStart !== startDate
   };
 };
 

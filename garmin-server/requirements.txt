@@ -1,0 +1,4 @@
+# Dépendances du bridge Garmin (fetch_garmin_data.py)
+# Installation : py -3 -m pip install -r requirements.txt
+# ou : python -m pip install -r requirements.txt
+garminconnect

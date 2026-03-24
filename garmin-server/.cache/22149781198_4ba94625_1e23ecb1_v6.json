@@ -1,0 +1,77 @@
+{
+  "id": 22149781198,
+  "date": "2026-03-12 14:44:46",
+  "time": "",
+  "duration": 334,
+  "calories": {
+    "total": 40,
+    "resting": 5,
+    "active": 35
+  },
+  "avgHR": 124,
+  "maxHR": 145,
+  "minHR": 74,
+  "sweatLoss": 33,
+  "intensityMinutes": {
+    "moderate": 3,
+    "vigorous": 2,
+    "total": 5
+  },
+  "startTimeLocal": "2026-03-12T15:44:46Z",
+  "startTimeGMT": "2026-03-12T14:44:46Z",
+  "location": {
+    "start": {
+      "lat": 44.79095860384405,
+      "lng": -0.6206401158124208
+    },
+    "end": {
+      "lat": 44.79123353026807,
+      "lng": -0.6197010912001133
+    }
+  },
+  "elevation": {
+    "gain": null,
+    "loss": null,
+    "max": 35.32,
+    "min": 30.47
+  },
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "distance": 1.041,
+  "speed": 11.2,
+  "maxSpeed": 21.9,
+  "laps": 6,
+  "swimmingMetrics": {
+    "strokeCount": null,
+    "avgStrokeRate": null,
+    "avgSwolf": null,
+    "avgMovementsPerLap": null,
+    "avgPace": null,
+    "avgPaceMovement": null,
+    "bestPace": null,
+    "avgSpeed": 11.2,
+    "avgSpeedMovement": null,
+    "maxSpeed": 21.9,
+    "poolLength": null,
+    "laps": null
+  },
+  "timeMetrics": {
+    "totalTime": 336,
+    "activeTime": 330,
+    "elapsedTime": 336
+  },
+  "type": "swimming",
+  "_classification_hash": "1e23ecb1",
+  "_cached_at": 1774384148.3382375,
+  "_cache_version": 6
+}

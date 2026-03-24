@@ -1,0 +1,58 @@
+{
+  "id": 21722329625,
+  "date": "2026-01-31 14:17:46",
+  "time": "",
+  "duration": 5802,
+  "calories": {
+    "total": 419,
+    "resting": 112,
+    "active": 307
+  },
+  "avgHR": 114,
+  "maxHR": 143,
+  "minHR": null,
+  "sweatLoss": null,
+  "intensityMinutes": {
+    "moderate": 63,
+    "vigorous": null,
+    "total": 63
+  },
+  "startTimeLocal": "2026-01-31T15:17:46Z",
+  "startTimeGMT": "2026-01-31T14:17:46Z",
+  "location": {
+    "start": {
+      "lat": 44.81576551683247,
+      "lng": -0.5868977587670088
+    },
+    "end": {
+      "lat": 44.81564071029425,
+      "lng": -0.5863061640411615
+    }
+  },
+  "elevation": {
+    "gain": 1168,
+    "loss": 1169,
+    "max": 231.60000610351562,
+    "min": -41.79999923706055
+  },
+  "deviceInfo": {
+    "deviceId": null,
+    "deviceTypePk": null,
+    "deviceVersionPk": null
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Talence Cardio",
+  "activityType": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "0f5711ee",
+  "_cached_at": 1774381564.3024185,
+  "_cache_version": 2
+}
