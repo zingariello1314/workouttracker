@@ -22,6 +22,9 @@ export default defineConfig({
   server: {
     port: 3001,
     open: true,
+    allowedHosts: [
+      'unadventuring-recognizably-felecia.ngrok-free.dev'
+    ],
     proxy: {
       '/api/garmin': {
         target: 'http://localhost:3031',

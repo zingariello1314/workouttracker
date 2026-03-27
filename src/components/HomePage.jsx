@@ -508,6 +508,20 @@ const HomePage = () => {
   // ✅ Screen reader announcement state
   const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState('');
 
+  // ✅ N'afficher la scène Spline que sur les écrans larges (évite les warnings WebGL taille 0)
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const update = (e) => setIsLargeScreen(e.matches);
+    setIsLargeScreen(mq.matches);
+    mq.addEventListener('change', update);
+    return () => {
+      mq.removeEventListener('change', update);
+    };
+  }, []);
+
   // ✅ Announce navigation to screen readers when swipe is detected
   useEffect(() => {
     if (swipeState.isSwipping && swipeState.direction === 'down') {
@@ -641,9 +655,9 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Robot Spline - Suit la souris avec la tête - Uniquement sur la page d'accueil */}
-      {activeTab === 'home' && (
-        <div className="fixed bottom-0 right-[16rem] w-96 h-96 z-50 pointer-events-none">
+      {/* Robot Spline - Suit la souris avec la tête - rendu seulement sur écrans larges pour éviter les problèmes WebGL sur mobile */}
+      {activeTab === 'home' && isLargeScreen && (
+        <div className="fixed bottom-0 right-[8rem] xl:right-[16rem] w-72 h-72 xl:w-96 xl:h-96 z-50 pointer-events-none">
           <SplineScene 
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
             className="w-full h-full pointer-events-auto"
@@ -662,7 +676,7 @@ const HomePage = () => {
       />
 
       {/* Contenu principal */}
-      <main className="relative z-10 flex-1 flex items-center justify-start px-8 pt-12 pb-12 min-h-0 overflow-hidden">
+      <main className="relative z-10 flex-1 flex flex-col md:flex-row items-start md:items-center justify-start px-4 md:px-8 pt-7 md:pt-12 pb-6 md:pb-12 gap-3 md:gap-0 min-h-0 overflow-hidden">
         <div className="max-w-2xl flex-shrink-0 w-full">
           {/* Titre principal - Citations dynamiques (lignes variables + gras paramétrable) */}
           <h1
@@ -703,11 +717,11 @@ const HomePage = () => {
           </h1>
 
           {/* Bouton CTA - Texte non coupé */}
-          <div className="relative flex-shrink-0 mb-8">
+          <div className="relative flex-shrink-0 mb-2 md:mb-8">
             <button 
               data-swipe-ignore
               onClick={() => navigateToTab(isAuthenticated ? 'today' : 'auth')}
-              className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-8 py-4 rounded-2xl text-base md:text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl whitespace-nowrap overflow-visible"
+              className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl text-sm md:text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl whitespace-normal md:whitespace-nowrap overflow-visible"
               style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
               aria-label={isAuthenticated ? 'Navigate to Today section' : 'Get started with Momentum'}
             >
@@ -719,18 +733,18 @@ const HomePage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 flex justify-between items-end p-8 pb-12 flex-shrink-0" style={{ minHeight: 'fit-content' }}>
+      <footer className="relative z-10 mt-auto grid grid-cols-[minmax(0,1fr)_auto] md:flex md:flex-row md:justify-between md:items-end items-end gap-3 md:gap-8 px-4 md:p-8 pb-6 md:pb-12 flex-shrink-0" style={{ minHeight: 'fit-content' }}>
         {/* Section À propos améliorée */}
-        <div className="max-w-2xl bg-black/10 backdrop-blur-3xl rounded-3xl p-10 border border-white/5 shadow-2xl">
+        <div className="w-full md:max-w-2xl bg-black/10 backdrop-blur-3xl rounded-3xl p-5 md:p-10 border border-white/5 shadow-2xl max-h-[40vh] overflow-auto md:max-h-none md:overflow-visible">
           <div className="flex items-center mb-6">
             <h3 className="text-white font-bold text-sm tracking-wider mr-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.title')}</h3>
             <div className="flex-1 h-px bg-gradient-to-r from-white/20 via-white/40 to-transparent"></div>
           </div>
           <div className="space-y-4">
-            <p className="text-white text-sm font-medium leading-relaxed" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+            <p className="text-white text-sm md:text-sm font-medium leading-relaxed" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
               {t('home.about.description')}
             </p>
-            <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs md:text-xs">
               <div>
                 <h4 className="font-semibold text-white mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.features.title')}</h4>
                 <ul className="space-y-1 text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
@@ -754,8 +768,8 @@ const HomePage = () => {
         </div>
 
         {/* Mots-clés simplifiés - Collés tout à droite */}
-        <div className="text-right flex flex-col items-end flex-shrink-0" style={{ minHeight: 'fit-content' }}>
-          <div className="text-white text-base font-semibold space-y-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+        <div className="w-auto text-right flex flex-col items-end md:items-end flex-shrink-0" style={{ minHeight: 'fit-content' }}>
+          <div className="text-white text-xs md:text-base font-semibold space-y-0.5 md:space-y-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
             <div>{t('home.keywords.fitness')}</div>
             <div>{t('home.keywords.performance')}</div>
             <div>{t('home.keywords.progress')}</div>
@@ -765,7 +779,7 @@ const HomePage = () => {
           </div>
           
           {/* Sélecteur de langue en dessous de Localisation - Dimensions fixes pour éviter les décalages */}
-          <div className="mt-2 w-[44px] h-[44px] flex items-center justify-end flex-shrink-0" data-swipe-ignore>
+          <div className="mt-3 md:mt-2 w-[44px] h-[44px] flex items-center justify-end flex-shrink-0" data-swipe-ignore>
             <LanguageSelector variant="compact" />
           </div>
         </div>

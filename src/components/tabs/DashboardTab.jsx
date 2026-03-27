@@ -7,6 +7,7 @@ import { LayoutDashboard, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
 import NewsBlock from '../dashboard/NewsBlock';
 import GlobalXPBar from '../dashboard/GlobalXPBar';
+import DashboardGarminSportRecapBlock from '../dashboard/DashboardGarminSportRecapBlock';
 
 const DashboardTab = () => {
   const {
@@ -83,6 +84,9 @@ const DashboardTab = () => {
           <div className="space-y-6">
             {/* Barre XP Globale */}
             <GlobalXPBar />
+
+            {/* Récap Sport & Garmin (entre XP et News) */}
+            <DashboardGarminSportRecapBlock />
             
             {/* News - Full width */}
             <NewsBlock newsData={newsData} onRefresh={refreshNews} />

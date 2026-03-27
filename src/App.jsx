@@ -102,7 +102,9 @@ const WorkoutTrackerContent = () => {
     stats: '-640px',
     exercises: '-640px',
     history: '-640px',
-    predictions: '-640px'
+    predictions: '-640px',
+    // Sous-onglet Sport : Garmin aligné comme les autres sous-onglets
+    garmin: '-640px'
   };
 
   const defaultMainOffset = (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing')
