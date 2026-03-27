@@ -471,7 +471,7 @@ const DashboardGarminSportRecapBlock = () => {
               <Activity className="w-6 h-6 text-cyan-100" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white tracking-tight">Récap Sport & Garmin</h3>
+              <h3 className="text-xl font-bold text-white tracking-tight">Sport</h3>
               <p className="text-sm text-slate-300">
                 Jour affiché: <span className="font-semibold text-white">{formatDateFr(selectedDateKey)}</span>
                 {' • '}Dernier Garmin: <span className="font-semibold text-white">{formatDateFr(derived.latestDate)}</span>

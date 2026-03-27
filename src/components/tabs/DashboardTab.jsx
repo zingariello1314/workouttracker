@@ -3,6 +3,7 @@
  * Vue d'ensemble avec modules essentiels : Surveillance, Rythme lecture, Actualités financières
  */
 
+import { useCallback, useRef } from 'react';
 import { LayoutDashboard, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
 import NewsBlock from '../dashboard/NewsBlock';
@@ -10,6 +11,8 @@ import GlobalXPBar from '../dashboard/GlobalXPBar';
 import DashboardQuestsModule from '../dashboard/DashboardQuestsModule';
 import DashboardGarminSportRecapBlock from '../dashboard/DashboardGarminSportRecapBlock';
 import DashboardBooksModule from '../dashboard/DashboardBooksModule';
+import DashboardFinanceModule from '../dashboard/DashboardFinanceModule';
+import DashboardLearningModule from '../dashboard/DashboardLearningModule';
 
 const DashboardTab = () => {
   const {
@@ -19,6 +22,18 @@ const DashboardTab = () => {
     refreshAll,
     refreshNews
   } = useDashboard();
+  const xpRef = useRef(null);
+  const questsRef = useRef(null);
+  const sportRef = useRef(null);
+  const booksRef = useRef(null);
+  const financeRef = useRef(null);
+  const learningRef = useRef(null);
+  const newsRef = useRef(null);
+
+  const scrollToRef = useCallback((ref) => {
+    if (!ref?.current) return;
+    ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   if (loading) {
     return (
@@ -64,10 +79,16 @@ const DashboardTab = () => {
                   </div>
                   Dashboard Global
                 </h1>
-                <p className="text-slate-300 text-sm flex items-center gap-2">
+                <div className="text-slate-300 text-sm flex items-center gap-2 flex-wrap">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  Ordre des modules: XP → Quêtes → Sport → Livres → Activités financières
-                </p>
+                  <button type="button" onClick={() => scrollToRef(xpRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">XP</button>
+                  <button type="button" onClick={() => scrollToRef(questsRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Quêtes</button>
+                  <button type="button" onClick={() => scrollToRef(sportRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Sport</button>
+                  <button type="button" onClick={() => scrollToRef(booksRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Livres</button>
+                  <button type="button" onClick={() => scrollToRef(financeRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Finance</button>
+                  <button type="button" onClick={() => scrollToRef(learningRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Apprentissage</button>
+                  <button type="button" onClick={() => scrollToRef(newsRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Actualité</button>
+                </div>
               </div>
               <button
                 onClick={refreshNews}
@@ -85,19 +106,39 @@ const DashboardTab = () => {
           {/* Module du Dashboard */}
           <div className="space-y-6">
             {/* Barre XP Globale */}
-            <GlobalXPBar />
+            <div ref={xpRef} className="scroll-mt-24">
+              <GlobalXPBar />
+            </div>
 
             {/* Module Quêtes (au-dessus du Sport) */}
-            <DashboardQuestsModule />
+            <div ref={questsRef} className="scroll-mt-24">
+              <DashboardQuestsModule />
+            </div>
 
             {/* Récap Sport & Garmin (entre XP et News) */}
-            <DashboardGarminSportRecapBlock />
+            <div ref={sportRef} className="scroll-mt-24">
+              <DashboardGarminSportRecapBlock />
+            </div>
 
             {/* Module Livres 3D (sous Sport) */}
-            <DashboardBooksModule />
+            <div ref={booksRef} className="scroll-mt-24">
+              <DashboardBooksModule />
+            </div>
+
+            {/* Module Finance (au-dessus des News) */}
+            <div ref={financeRef} className="scroll-mt-24">
+              <DashboardFinanceModule />
+            </div>
+
+            {/* Module Apprentissage (sous Finance) */}
+            <div ref={learningRef} className="scroll-mt-24">
+              <DashboardLearningModule />
+            </div>
             
             {/* News - Full width */}
-            <NewsBlock newsData={newsData} onRefresh={refreshNews} />
+            <div ref={newsRef} className="scroll-mt-24">
+              <NewsBlock newsData={newsData} onRefresh={refreshNews} />
+            </div>
           </div>
 
           {/* Footer Info */}
@@ -105,7 +146,7 @@ const DashboardTab = () => {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-slate-400">
                 <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse"></div>
-                <span>Dashboard: <span className="text-white font-semibold">5 modules actifs</span></span>
+                <span>Dashboard: <span className="text-white font-semibold">7 modules actifs</span></span>
               </div>
               <div className="text-slate-500 text-xs">
                 Version: 4.0.0 ✅

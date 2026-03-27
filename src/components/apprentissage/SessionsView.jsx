@@ -92,6 +92,7 @@ const SessionsView = () => {
     date: new Date().toISOString().split('T')[0],
     time: new Date().toTimeString().slice(0, 5),
   });
+  const autoStartProcessedRef = useRef(false);
 
   // Charger données depuis IndexedDB au montage
   useEffect(() => {
@@ -283,6 +284,33 @@ const SessionsView = () => {
     },
     [showSuccess, showError]
   );
+
+  // Démarrage automatique depuis Dashboard (utilise exactement le même startSession)
+  useEffect(() => {
+    if (autoStartProcessedRef.current || timer.isRunning || !Array.isArray(subjects) || subjects.length === 0) return;
+    try {
+      const raw = sessionStorage.getItem('nav_params_learning');
+      if (!raw) return;
+      const params = JSON.parse(raw);
+      if (params?.action !== 'startTimer') {
+        sessionStorage.removeItem('nav_params_learning');
+        return;
+      }
+
+      const wanted = String(params.subjectName || '').trim().toLowerCase();
+      const chosen =
+        subjects.find((s) => String(s?.name || '').trim().toLowerCase() === wanted) ||
+        subjects[0];
+
+      if (chosen) {
+        autoStartProcessedRef.current = true;
+        startSession(chosen);
+      }
+      sessionStorage.removeItem('nav_params_learning');
+    } catch {
+      try { sessionStorage.removeItem('nav_params_learning'); } catch { /* no-op */ }
+    }
+  }, [subjects, timer.isRunning, startSession]);
 
   // Pause/Reprendre
   const togglePause = useCallback(() => {
