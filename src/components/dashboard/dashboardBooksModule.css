@@ -1,0 +1,26 @@
+.dashboard-books-dome.books-dome-container {
+  height: 56vh;
+  margin-top: 0;
+  padding: 0;
+}
+
+.dashboard-books-dome.books-dome-container .books-dome-sphere-root {
+  height: 56vh;
+  border-radius: 18px;
+}
+
+.dashboard-books-dome .books-dome-stage {
+  transform: scale(1.22);
+  transform-origin: center center;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-books-dome.books-dome-container,
+  .dashboard-books-dome.books-dome-container .books-dome-sphere-root {
+    height: 48vh;
+  }
+
+  .dashboard-books-dome .books-dome-stage {
+    transform: scale(1.14);
+  }
+}

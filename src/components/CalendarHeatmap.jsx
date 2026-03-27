@@ -43,9 +43,16 @@ import {
 import { useTranslation } from '../utils/translations';
 import { useFormatters } from '../utils/translations/formatters-hook';
 
-const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
+const CalendarHeatmap = ({
+  workoutHistory = [],
+  garminData = null,
+  initialViewMode = 'year', // 'month', 'year', 'streaks'
+  compact = false
+}) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('year'); // 'month', 'year', 'streaks'
+  const [viewMode, setViewMode] = useState(
+    compact ? 'month' : initialViewMode || 'year'
+  ); // 'month', 'year', 'streaks'
   const [selectedDate, setSelectedDate] = useState(null);
   const [showStats, setShowStats] = useState(false);
   // ✅ NOUVEAU : État pour la modal de justification (gardée pour l'édition)
@@ -78,7 +85,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       }
     }
   }, [panelMode, selectedProgramId, activeProgram, isAdmin, isAuthenticated]);
-  
+
   // ✅ NOUVEAU : Initialiser selectedVariant quand on entre en mode workout-entry et qu'un programme est sélectionné
   useEffect(() => {
     if (panelMode === 'workout-entry' && selectedProgramId && panelDate && !selectedVariant) {
@@ -1652,23 +1659,25 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
     <div className="space-y-6">
       {/* En-tête avec navigation */}
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex gap-2">
-            {['month', 'year', 'streaks'].map(mode => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  viewMode === mode 
-                    ? 'bg-purple-600 text-white' 
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                {mode === 'month' ? t('calendar.heatmap.viewModes.month') : mode === 'year' ? t('calendar.heatmap.viewModes.year') : t('calendar.heatmap.viewModes.streaks')}
-              </button>
-            ))}
+        {!compact && (
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex gap-2">
+              {['month', 'year', 'streaks'].map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`px-4 py-2 rounded-lg transition-all ${
+                    viewMode === mode 
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  {mode === 'month' ? t('calendar.heatmap.viewModes.month') : mode === 'year' ? t('calendar.heatmap.viewModes.year') : t('calendar.heatmap.viewModes.streaks')}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         
         <div className="flex items-center justify-between">
           <button
@@ -1679,7 +1688,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
           </button>
           
           <h3 className="text-xl font-bold text-white">
-            {viewMode === 'month' 
+            {viewMode === 'month' || compact
               ? `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
               : viewMode === 'year'
               ? currentDate.getFullYear()
@@ -1720,7 +1729,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       </div>
 
       {/* Vue mensuelle détaillée */}
-      {viewMode === 'month' && (
+      {(viewMode === 'month' || compact) && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           {/* En-têtes des jours */}
           <div className="grid grid-cols-7 gap-2 mb-4">
@@ -1853,7 +1862,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       )}
 
       {/* Vue annuelle complète */}
-      {viewMode === 'year' && (
+      {!compact && viewMode === 'year' && (
         <div className="space-y-6">
           {/* Résumé annuel */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
@@ -2006,7 +2015,7 @@ const CalendarHeatmap = ({ workoutHistory = [], garminData = null }) => {
       )}
 
       {/* Vue Streaks */}
-      {viewMode === 'streaks' && (
+      {!compact && viewMode === 'streaks' && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-slate-700/50 rounded-lg p-6 text-center">

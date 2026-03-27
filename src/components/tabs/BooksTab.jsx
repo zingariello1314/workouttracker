@@ -104,6 +104,15 @@ const BooksTab = () => {
         scrollToBookFicheRef.current = true;
       } else if (params.tab === 'statistics' || params.tab === 'stats') {
         setActiveSubTab('statistics');
+      } else if (params.action === 'addBook') {
+        setActiveSubTab('library');
+        setTimeout(() => {
+          const titleInput = document.getElementById('book-title');
+          if (titleInput) {
+            titleInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            titleInput.focus();
+          }
+        }, 120);
       }
       sessionStorage.removeItem('nav_params_books');
     } catch (_) {

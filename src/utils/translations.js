@@ -4,6 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { LRUCache } from './lruCache';
 import logger from './logger';
 import { loadTranslationNamespace, getCachedNamespace } from './translations/loader';
+import { getBaseLanguage } from './translations/regions';
 import { tPluralFromNamespaces, getPluralKey } from './translations/pluralization';
 import { validateAndWarn } from './translations/validator';
 import { initHotReload } from './translations/hot-reload';
@@ -208,10 +209,46 @@ export const translations = {
     'justification.note.placeholder': 'Ajoutez des détails...',
     'justification.monthly': 'Justifications du mois',
     
-    // Calendar
+    // Calendar (vue calendrier & heatmap)
     'calendar.stats.reps_endurance': 'reps + endurance',
     'calendar.stats.total_time': 'temps total',
     'calendar.sessions': 'séances',
+    // Libellés spécifiques au CalendarHeatmap
+    'calendar.heatmap.viewModes.month': 'Mois',
+    'calendar.heatmap.viewModes.year': 'Année',
+    'calendar.heatmap.viewModes.streaks': 'Streaks',
+    'calendar.heatmap.intensity': 'Intensité',
+    'calendar.heatmap.showStats': 'Afficher les stats',
+    'calendar.heatmap.hideStats': 'Masquer les stats',
+    'calendar.heatmap.streaksAnalysis': 'Analyse des Streaks',
+    'calendar.heatmap.monthlyJustifications': 'Justifications du mois :',
+    'calendar.heatmap.yearSummary': 'Résumé {{year}}',
+    'calendar.heatmap.bestMonth': 'Meilleur mois',
+    'calendar.heatmap.bestDay': 'Meilleur jour',
+    'calendar.heatmap.avgPerSession': 'Moyenne/séance',
+    'calendar.heatmap.repsPerSession': 'reps par séance',
+    'calendar.heatmap.intensityLabels.extreme': 'Extrême',
+    'calendar.heatmap.intensityLabels.intense': 'Intense',
+    'calendar.heatmap.intensityLabels.moderate': 'Modéré',
+    'calendar.heatmap.intensityLabels.light': 'Léger',
+    'calendar.heatmap.intensityLabels.rest': 'Repos',
+    'calendar.heatmap.monthNames.january': 'Janvier',
+    'calendar.heatmap.monthNames.february': 'Février',
+    'calendar.heatmap.monthNames.march': 'Mars',
+    'calendar.heatmap.monthNames.april': 'Avril',
+    'calendar.heatmap.monthNames.may': 'Mai',
+    'calendar.heatmap.monthNames.june': 'Juin',
+    'calendar.heatmap.monthNames.july': 'Juillet',
+    'calendar.heatmap.monthNames.august': 'Août',
+    'calendar.heatmap.monthNames.september': 'Septembre',
+    'calendar.heatmap.monthNames.october': 'Octobre',
+    'calendar.heatmap.monthNames.november': 'Novembre',
+    'calendar.heatmap.monthNames.december': 'Décembre',
+    'calendar.heatmap.streaks.currentStreak': 'Streak actuel',
+    'calendar.heatmap.streaks.longestStreak': 'Record personnel',
+    'calendar.heatmap.streaks.longestStreakDesc': 'Plus long streak',
+    'calendar.heatmap.streaks.consecutiveDays': 'Jours consécutifs',
+    'calendar.heatmap.streaks.noStreak': 'Aucun streak en cours',
     
     // Stats
     'stats.current_streak': 'Streak actuel',
@@ -467,6 +504,41 @@ export const translations = {
     'calendar.stats.reps_endurance': 'reps + endurance',
     'calendar.stats.total_time': 'total time',
     'calendar.sessions': 'sessions',
+    'calendar.heatmap.viewModes.month': 'Month',
+    'calendar.heatmap.viewModes.year': 'Year',
+    'calendar.heatmap.viewModes.streaks': 'Streaks',
+    'calendar.heatmap.intensity': 'Intensity',
+    'calendar.heatmap.showStats': 'Show stats',
+    'calendar.heatmap.hideStats': 'Hide stats',
+    'calendar.heatmap.streaksAnalysis': 'Streaks analysis',
+    'calendar.heatmap.monthlyJustifications': 'Monthly justifications:',
+    'calendar.heatmap.yearSummary': '{{year}} Summary',
+    'calendar.heatmap.bestMonth': 'Best month',
+    'calendar.heatmap.bestDay': 'Best day',
+    'calendar.heatmap.avgPerSession': 'Average/session',
+    'calendar.heatmap.repsPerSession': 'reps per session',
+    'calendar.heatmap.intensityLabels.extreme': 'Extreme',
+    'calendar.heatmap.intensityLabels.intense': 'Intense',
+    'calendar.heatmap.intensityLabels.moderate': 'Moderate',
+    'calendar.heatmap.intensityLabels.light': 'Light',
+    'calendar.heatmap.intensityLabels.rest': 'Rest',
+    'calendar.heatmap.monthNames.january': 'January',
+    'calendar.heatmap.monthNames.february': 'February',
+    'calendar.heatmap.monthNames.march': 'March',
+    'calendar.heatmap.monthNames.april': 'April',
+    'calendar.heatmap.monthNames.may': 'May',
+    'calendar.heatmap.monthNames.june': 'June',
+    'calendar.heatmap.monthNames.july': 'July',
+    'calendar.heatmap.monthNames.august': 'August',
+    'calendar.heatmap.monthNames.september': 'September',
+    'calendar.heatmap.monthNames.october': 'October',
+    'calendar.heatmap.monthNames.november': 'November',
+    'calendar.heatmap.monthNames.december': 'December',
+    'calendar.heatmap.streaks.currentStreak': 'Current streak',
+    'calendar.heatmap.streaks.longestStreak': 'Personal record',
+    'calendar.heatmap.streaks.longestStreakDesc': 'Longest streak',
+    'calendar.heatmap.streaks.consecutiveDays': 'Consecutive days',
+    'calendar.heatmap.streaks.noStreak': 'No streak in progress',
     
     // Stats
     'stats.current_streak': 'Current streak',
@@ -800,6 +872,18 @@ export const useTranslation = () => {
         const translation = getNestedValue(namespaceData, namespaceKey);
         if (translation) {
           return translation;
+        }
+      }
+
+      // Fallback robuste: si la locale est complète (ex: fr-FR), essayer la langue de base (fr)
+      const baseLang = getBaseLanguage(lang);
+      if (baseLang && baseLang !== lang) {
+        const baseNamespaceData = getCachedNamespace(baseLang, namespace);
+        if (baseNamespaceData && namespaceKey) {
+          const baseTranslation = getNestedValue(baseNamespaceData, namespaceKey);
+          if (baseTranslation) {
+            return baseTranslation;
+          }
         }
       }
     }

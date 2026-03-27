@@ -255,10 +255,13 @@ const QuestsTab = () => {
       const raw = sessionStorage.getItem('nav_params_quests');
       if (!raw) return;
       const params = JSON.parse(raw);
+      if (params?.tab && ['today', 'week', 'quests', 'stats', 'security'].includes(params.tab)) {
+        setCurrentSubTab(params.tab);
+      }
       if (params?.action === 'openCreate') {
-        sessionStorage.removeItem('nav_params_quests');
         openNewQuestPopup();
       }
+      sessionStorage.removeItem('nav_params_quests');
     } catch (_) {
       try { sessionStorage.removeItem('nav_params_quests'); } catch (_) {}
     }

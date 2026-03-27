@@ -7,7 +7,9 @@ import { LayoutDashboard, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
 import NewsBlock from '../dashboard/NewsBlock';
 import GlobalXPBar from '../dashboard/GlobalXPBar';
+import DashboardQuestsModule from '../dashboard/DashboardQuestsModule';
 import DashboardGarminSportRecapBlock from '../dashboard/DashboardGarminSportRecapBlock';
+import DashboardBooksModule from '../dashboard/DashboardBooksModule';
 
 const DashboardTab = () => {
   const {
@@ -64,7 +66,7 @@ const DashboardTab = () => {
                 </h1>
                 <p className="text-slate-300 text-sm flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  Actualités financières
+                  Ordre des modules: XP → Quêtes → Sport → Livres → Activités financières
                 </p>
               </div>
               <button
@@ -85,8 +87,14 @@ const DashboardTab = () => {
             {/* Barre XP Globale */}
             <GlobalXPBar />
 
+            {/* Module Quêtes (au-dessus du Sport) */}
+            <DashboardQuestsModule />
+
             {/* Récap Sport & Garmin (entre XP et News) */}
             <DashboardGarminSportRecapBlock />
+
+            {/* Module Livres 3D (sous Sport) */}
+            <DashboardBooksModule />
             
             {/* News - Full width */}
             <NewsBlock newsData={newsData} onRefresh={refreshNews} />
@@ -97,7 +105,7 @@ const DashboardTab = () => {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-slate-400">
                 <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse"></div>
-                <span>Dashboard: <span className="text-white font-semibold">1 module actif</span></span>
+                <span>Dashboard: <span className="text-white font-semibold">5 modules actifs</span></span>
               </div>
               <div className="text-slate-500 text-xs">
                 Version: 4.0.0 ✅
