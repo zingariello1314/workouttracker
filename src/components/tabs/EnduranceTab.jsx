@@ -36,7 +36,7 @@ const EnduranceTab = () => {
   
   // État unifié pour toutes les sessions d'endurance
   const [enduranceState, setEnduranceState] = useState({
-    activeTab: 'boxing',
+    activeTab: 'running',
     sessions: {
       boxing: [],
       pushups: [],
@@ -58,7 +58,7 @@ const EnduranceTab = () => {
   });
 
   // Getters pour faciliter l'accès aux données
-  const activeTab = enduranceState?.activeTab || 'boxing';
+  const activeTab = enduranceState?.activeTab || 'running';
   const sessions = enduranceState?.sessions || {
     boxing: [],
     pushups: [],
@@ -1076,14 +1076,17 @@ const EnduranceTab = () => {
   const activeChallenges = useMemo(() => getActiveChallenges(), [getActiveChallenges]);
   const urgentChallenges = useMemo(() => getUrgentChallenges(), [getUrgentChallenges]);
 
-  const menuItems = useMemo(() => [
-    { id: 'boxing', label: t('endurance.menu.boxing'), icon: Box },
-    { id: 'pushups', label: t('endurance.menu.pushups'), icon: Dumbbell },
-    { id: 'swimming', label: t('endurance.menu.swimming'), icon: Waves },
-    { id: 'jumprope', label: t('endurance.menu.jumprope'), icon: Activity },
-    { id: 'running', label: t('endurance.menu.running'), icon: Play },
-    { id: 'calendar', label: t('endurance.menu.calendar'), icon: Calendar }
-  ], [t]);
+  const menuItems = useMemo(
+    () => [
+      { id: 'running', label: t('endurance.menu.running'), icon: Play },
+      { id: 'pushups', label: t('endurance.menu.pushups'), icon: Dumbbell },
+      { id: 'jumprope', label: t('endurance.menu.jumprope'), icon: Activity },
+      { id: 'boxing', label: t('endurance.menu.boxing'), icon: Box },
+      { id: 'swimming', label: t('endurance.menu.swimming'), icon: Waves },
+      { id: 'calendar', label: t('endurance.menu.calendar'), icon: Calendar }
+    ],
+    [t]
+  );
 
   // Composant pour afficher les exercices d'endurance depuis l'historique (optimisé)
   const EnduranceHistorySection = useMemo(() => {
