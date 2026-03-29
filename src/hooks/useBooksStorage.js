@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, createElement, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { loadBooks, saveBooks } from '../utils/booksStorage';
 import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../utils/booksIndexedDB';
 import { useAuth } from '../context/AuthContext';
@@ -29,7 +29,9 @@ const computeHash = (value) => {
   }
 };
 
-export const useBooksStorage = () => {
+export const BooksStorageContext = createContext(null);
+
+function useBooksStorageImpl() {
   const { currentUser, isAuthenticated } = useAuth();
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -212,11 +214,25 @@ export const useBooksStorage = () => {
             : Array.isArray(updater)
             ? updater
             : prev;
+        // Écriture immédiate (IndexedDB) pour ne pas perdre les changements si F5 avant la fin du debounce
+        if (isAuthenticated && currentUser && !isInitialLoadRef.current) {
+          const userIdToAssign =
+            currentUser.role === 'admin' || currentUser.username === 'zingariello1314'
+              ? currentUser.id
+              : currentUser.id;
+          const booksWithUserId = Array.isArray(next)
+            ? next.map((book) => ({
+                ...book,
+                userId: book.userId || userIdToAssign
+              }))
+            : [];
+          saveBooksToIndexedDB(booksWithUserId).catch(() => {});
+        }
         scheduleSave(next);
         return next;
       });
     },
-    [scheduleSave]
+    [scheduleSave, isAuthenticated, currentUser]
   );
 
   return {
@@ -224,6 +240,19 @@ export const useBooksStorage = () => {
     setBooks: updateBooks,
     isLoading,
   };
+}
+
+export function BooksStorageProvider({ children }) {
+  const value = useBooksStorageImpl();
+  return createElement(BooksStorageContext.Provider, { value }, children);
+}
+
+export const useBooksStorage = () => {
+  const ctx = useContext(BooksStorageContext);
+  if (ctx == null) {
+    throw new Error('useBooksStorage doit être utilisé dans un BooksStorageProvider (voir App.jsx).');
+  }
+  return ctx;
 };
 
 export default useBooksStorage;

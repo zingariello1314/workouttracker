@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   openQuietQuestDB,
   loadQuestsFromIndexedDB,
@@ -115,13 +115,16 @@ export const getQuestsForDate = (allQuests, targetDate, prayerLocation = null) =
     });
 };
 
+/** Contexte : une seule instance du moteur (évite les courses d’écriture IndexedDB entre Dashboard / Quêtes / sidebar). */
+export const QuietQuestContext = createContext(null);
+
 /**
  * Hook centralisant toute la logique QuietQuest (état + persistance + calculs).
- * 
+ *
  * Objectif : isoler le "moteur" pour le rendre réutilisable et testable,
  * tout en laissant les composants d'UI se concentrer sur le rendu.
  */
-export function useQuietQuestEngine() {
+function useQuietQuestEngineImpl() {
   const { currentUser, isAuthenticated } = useAuth();
   const [allQuests, setAllQuests] = useState([]);
   const [userData, setUserData] = useState(defaultUserData);
@@ -672,6 +675,15 @@ export function useQuietQuestEngine() {
     return list.some((v) => v.queteId === questId);
   };
 
+  const persistValidationsSnapshot = useCallback((arr) => {
+    if (typeof window === 'undefined' || isLoadingRef.current) return;
+    const limited = arr.length > 5000 ? arr.slice(arr.length - 5000) : arr;
+    saveToStorage(STORAGE_KEYS.validations, limited);
+    if (dbRef.current && storageModeRef.current === 'indexeddb') {
+      saveValidationsToIndexedDB(dbRef.current, limited, userId).catch(() => {});
+    }
+  }, [userId]);
+
   const updateUserXP = (delta) => {
     if (!delta) return;
     setUserData((prev) => {
@@ -687,7 +699,14 @@ export function useQuietQuestEngine() {
 
       if (currentXP < 0) currentXP = 0;
 
-      return { level, currentXP, xpForNextLevel };
+      const next = { level, currentXP, xpForNextLevel };
+      if (typeof window !== 'undefined' && !isLoadingRef.current) {
+        saveToStorage(STORAGE_KEYS.userData, next);
+        if (dbRef.current && storageModeRef.current === 'indexeddb') {
+          saveUserDataToIndexedDB(dbRef.current, next, userId).catch(() => {});
+        }
+      }
+      return next;
     });
   };
 
@@ -769,6 +788,7 @@ export function useQuietQuestEngine() {
         const copy = [...prev];
         const [removed] = copy.splice(index, 1);
         updateUserXP(-(removed?.xpGagne || xp));
+        persistValidationsSnapshot(copy);
         setTimeout(() => recalcDailyPerformanceForDate(date), 0);
         
         emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { 
@@ -792,6 +812,7 @@ export function useQuietQuestEngine() {
         },
       ];
       updateUserXP(xp);
+      persistValidationsSnapshot(next);
       setTimeout(() => recalcDailyPerformanceForDate(date), 0);
       
       // Emit sidebar event for quest completion (désynchronisation externe)
@@ -904,4 +925,15 @@ export function useQuietQuestEngine() {
   };
 }
 
+export function QuietQuestProvider({ children }) {
+  const value = useQuietQuestEngineImpl();
+  return createElement(QuietQuestContext.Provider, { value }, children);
+}
 
+export function useQuietQuestEngine() {
+  const ctx = useContext(QuietQuestContext);
+  if (ctx == null) {
+    throw new Error('useQuietQuestEngine doit être utilisé dans un QuietQuestProvider (voir App.jsx).');
+  }
+  return ctx;
+}

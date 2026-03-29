@@ -1,6 +1,8 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { WorkoutProvider } from './context/WorkoutContext';
 import { AuthProvider } from './context/AuthContext';
+import { QuietQuestProvider } from './hooks/useQuietQuestEngine';
+import { BooksStorageProvider } from './hooks/useBooksStorage';
 import { LanguageProvider } from './context/LanguageContext';
 import { QuickActionsProvider } from './context/QuickActionsContext';
 import { ToastProvider } from './components/ui/Toast';
@@ -51,11 +53,15 @@ const WorkoutTrackerApp = () => {
     <LanguageProvider>
       <ToastProvider>
         <AuthProvider>
-          <QuickActionsProvider>
-            <WorkoutProvider>
-              <WorkoutTrackerContent />
-            </WorkoutProvider>
-          </QuickActionsProvider>
+          <QuietQuestProvider>
+            <BooksStorageProvider>
+              <QuickActionsProvider>
+                <WorkoutProvider>
+                  <WorkoutTrackerContent />
+                </WorkoutProvider>
+              </QuickActionsProvider>
+            </BooksStorageProvider>
+          </QuietQuestProvider>
         </AuthProvider>
       </ToastProvider>
     </LanguageProvider>
