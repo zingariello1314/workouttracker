@@ -24,6 +24,8 @@ import {
   formatSpeed,
   normalizeGarminDate
 } from '../tabs/GarminTab/utils/garminFormatters';
+import { useTranslation } from '../../utils/translations';
+import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../../utils/runningSessionTypeLabel';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -153,6 +155,7 @@ const formatDateFr = (dateKey) => {
 };
 
 const DashboardGarminSportRecapBlock = () => {
+  const t = useTranslation();
   const { dbReady, loadAllData } = useGarminData();
   const {
     currentDate,
@@ -660,7 +663,9 @@ const DashboardGarminSportRecapBlock = () => {
                     const paceSecPerKm = km > 0 && extractNumeric(act.duration, 0) > 0 ? extractNumeric(act.duration, 0) / km : null;
                     return (
                       <div key={`cardio-${idx}`} className="rounded-xl bg-red-900/15 border border-red-500/35 p-3">
-                        <div className="text-red-200 text-sm font-semibold mb-2">❤️ {act.activityType === 'running' ? 'Course à pied' : 'Cardio'}</div>
+                        <div className="text-red-200 text-base font-bold mb-2">
+                          {garminCardioKindEmoji(act)} {garminCardioPrimaryLabel(act, t)}
+                        </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-200">
                           <div>Durée: <span className="text-white">{formatDuration(act.duration)}</span></div>
                           <div>Distance: <span className="text-white">{formatDistance(km)}</span></div>

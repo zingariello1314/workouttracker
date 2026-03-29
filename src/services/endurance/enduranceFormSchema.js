@@ -211,7 +211,7 @@ const formConfig = {
         type: 'select',
         label: 'Type de course',
         options: [
-          { label: 'Endurance', value: 'endurance' },
+          { label: 'Course classique', value: 'endurance' },
           { label: 'Fractionné', value: 'interval' },
           { label: 'Tempo', value: 'tempo' },
           { label: 'Sprint', value: 'sprint' }

@@ -42,6 +42,7 @@ import {
 } from '../utils/dayJustificationUtils';
 import { useTranslation } from '../utils/translations';
 import { useFormatters } from '../utils/translations/formatters-hook';
+import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../utils/runningSessionTypeLabel';
 
 const CalendarHeatmap = ({
   workoutHistory = [],
@@ -2930,9 +2931,15 @@ const CalendarHeatmap = ({
                   {/* Cardio */}
                   {cardio.length > 0 && (
                     <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
-                      <div className="text-red-400 font-medium mb-2">❤️ {t('calendar.heatmap.dayDetails.cardioActivities')} ({cardio.length} {cardio.length > 1 ? t('calendar.heatmap.dayDetails.sessions') : t('calendar.heatmap.dayDetails.session')})</div>
+                      <div className="text-red-400 font-medium mb-2">
+                        {t('calendar.heatmap.dayDetails.cardioActivities')} ({cardio.length}{' '}
+                        {cardio.length > 1 ? t('calendar.heatmap.dayDetails.sessions') : t('calendar.heatmap.dayDetails.session')})
+                      </div>
                       {cardio.map((act, idx) => (
                         <div key={idx} className="bg-slate-800/50 rounded p-2 mt-2 text-sm">
+                          <div className="text-white font-semibold text-base mb-2">
+                            {garminCardioKindEmoji(act)} {garminCardioPrimaryLabel(act, t)}
+                          </div>
                           <div className="grid grid-cols-2 gap-2">
                             <div>
                               <span className="text-slate-400">Durée:</span>
@@ -2940,6 +2947,12 @@ const CalendarHeatmap = ({
                                 {parseDurationToMinutes(act.duration || act.totalTime || 0, `GarminActivities.Cardio[${idx}]`)}min
                               </span>
                             </div>
+                            {act.distance != null && Number(act.distance) > 0 && (
+                              <div>
+                                <span className="text-slate-400">{t('calendar.heatmap.dayDetails.distance')}</span>
+                                <span className="text-white ml-2">{Number(act.distance).toFixed(2)} km</span>
+                              </div>
+                            )}
                             {act.calories?.active && (
                               <div>
                                 <span className="text-slate-400">Calories:</span>

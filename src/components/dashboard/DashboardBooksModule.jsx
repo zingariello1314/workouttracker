@@ -393,7 +393,7 @@ const DashboardBooksModule = () => {
               </button>
             </div>
 
-            <div className="rounded-xl border border-slate-700/70 bg-slate-950/45 p-3">
+            <div className="rounded-xl border border-slate-700/70 bg-slate-950/45 p-3 min-w-0 w-full">
               <resolvedChartConfig.Component
                 books={books}
                 statisticsData={chartStatisticsData}

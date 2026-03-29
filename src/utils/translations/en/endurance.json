@@ -150,6 +150,18 @@
     }
   },
   "running": {
+    "displayLabels": {
+      "otherCardio": "Cardio"
+    },
+    "badges": {
+      "interval": "Intervals"
+    },
+    "sessionTypes": {
+      "endurance": "Classic run",
+      "interval": "Intervals",
+      "tempo": "Tempo",
+      "sprint": "Sprint"
+    },
     "details": {
       "distance": "Distance:",
       "duration": "Duration:",
@@ -157,7 +169,8 @@
       "speed": "Speed:",
       "elevation": "Elevation:",
       "notes": "Notes:",
-      "type": "Boxing"
+      "type": "Type",
+      "typeSession": "Workout type:"
     }
   },
   "calendar": {

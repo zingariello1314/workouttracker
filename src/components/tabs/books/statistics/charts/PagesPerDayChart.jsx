@@ -159,10 +159,10 @@ const PagesPerDayChart = ({ books, statisticsData, selectedPeriod, filters }) =>
         </div>
       </div>
 
-      {/* Graphique principal */}
-      <div className="h-80 min-h-80">
+      {/* Graphique principal — hauteur fixe pour éviter width/height -1 (Recharts dans flex / scroll) */}
+      <div className="w-full min-w-0" style={{ height: 320 }}>
         {chartData.length > 0 && (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={320} minHeight={200}>
             <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 

@@ -1,0 +1,601 @@
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import {
+  ArrowLeft,
+  Loader2,
+  ExternalLink,
+  Navigation2,
+  Clock,
+  Gauge,
+  Heart,
+  Flame,
+  Mountain,
+  Footprints,
+  MapPin,
+  Watch,
+  Activity,
+  Layers,
+  Filter
+} from 'lucide-react';
+import { useGarminData } from '../../../../hooks/useGarminData';
+import { useTranslation } from '../../../../utils/translations';
+import { classifyLapPhase } from '../../../../utils/garminRunningLaps';
+import { inferDisplayTypeFromGarminActivity, runningSessionTypeLabel } from '../../../../utils/runningSessionTypeLabel';
+
+function findCardioBySession(activities, session) {
+  const cardio = activities?.cardio || [];
+  const gid = session?.garminId ?? session?.id;
+  if (gid == null) return null;
+  return (
+    cardio.find(
+      (a) =>
+        a.garminId === gid ||
+        a.id === gid ||
+        String(a.garminId) === String(gid) ||
+        String(a.id) === String(gid)
+    ) || null
+  );
+}
+
+function formatSec(s) {
+  if (s == null || Number.isNaN(Number(s))) return '—';
+  const n = Math.round(Number(s));
+  const m = Math.floor(n / 60);
+  const sec = n % 60;
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+function osmLink(lat, lng) {
+  if (lat == null || lng == null) return null;
+  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
+}
+
+function phaseLabel(phase) {
+  switch (phase) {
+    case 'effort':
+      return 'Effort';
+    case 'recovery':
+      return 'Récupération';
+    case 'warmup':
+      return 'Échauffement';
+    case 'cooldown':
+      return 'Retour au calme';
+    default:
+      return 'Autre';
+  }
+}
+
+function phaseStyles(phase) {
+  switch (phase) {
+    case 'effort':
+      return 'border-l-emerald-500 bg-emerald-950/20';
+    case 'recovery':
+      return 'border-l-amber-500 bg-amber-950/25';
+    case 'warmup':
+      return 'border-l-sky-500 bg-sky-950/20';
+    case 'cooldown':
+      return 'border-l-violet-500 bg-violet-950/20';
+    default:
+      return 'border-l-slate-500 bg-slate-800/40';
+  }
+}
+
+function badgeStyles(phase) {
+  switch (phase) {
+    case 'effort':
+      return 'bg-emerald-500/20 text-emerald-200 border-emerald-500/30';
+    case 'recovery':
+      return 'bg-amber-500/20 text-amber-200 border-amber-500/30';
+    case 'warmup':
+      return 'bg-sky-500/20 text-sky-200 border-sky-500/30';
+    case 'cooldown':
+      return 'bg-violet-500/20 text-violet-200 border-violet-500/30';
+    default:
+      return 'bg-slate-600/40 text-slate-200 border-slate-500/30';
+  }
+}
+
+function formatDeviceShort(deviceInfo) {
+  if (!deviceInfo || typeof deviceInfo !== 'object') return null;
+  const id = deviceInfo.deviceId != null ? String(deviceInfo.deviceId) : '';
+  const tail = id ? `…${id.slice(-4)}` : '';
+  return tail ? `Garmin ${tail}` : 'Montre Garmin';
+}
+
+function StatCard({ icon: Icon, label, value, hint }) {
+  return (
+    <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/80 to-slate-900/60 p-5 shadow-lg shadow-black/20">
+      <div className="mb-2 flex items-center gap-2 text-slate-400">
+        <Icon className="h-4 w-4 shrink-0 text-teal-400/90" aria-hidden />
+        <span className="text-[11px] font-semibold uppercase tracking-wider">{label}</span>
+      </div>
+      <div className="text-2xl font-bold tracking-tight text-white tabular-nums">{value}</div>
+      {hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}
+    </div>
+  );
+}
+
+const LAP_FILTER = {
+  ALL: 'all',
+  EFFORT: 'effort',
+  RECOVERY: 'recovery'
+};
+
+/**
+ * Page pleine colonne : détail séance course (remplace le contenu principal Défis).
+ */
+export default function RunningSessionDetailPage({ session, onBack }) {
+  const t = useTranslation();
+  const { loadAllData, dbReady } = useGarminData();
+  const [loading, setLoading] = useState(false);
+  const [garminFull, setGarminFull] = useState(null);
+  const [lapFilter, setLapFilter] = useState(LAP_FILTER.ALL);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onBack();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onBack]);
+
+  useEffect(() => {
+    if (!session) return;
+    const isGarmin = session.source === 'garmin' || session.garminId != null;
+    if (!isGarmin || !dbReady) {
+      setGarminFull(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const loaded = await loadAllData();
+        if (cancelled) return;
+        setGarminFull(findCardioBySession(loaded?.activities, session));
+      } catch {
+        if (!cancelled) setGarminFull(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, dbReady, loadAllData]);
+
+  const laps = garminFull?.running?.laps;
+
+  const lapsWithPhase = useMemo(() => {
+    if (!Array.isArray(laps)) return [];
+    return laps.map((lap, i) => ({
+      lap,
+      phase: classifyLapPhase(lap),
+      key: lap.index ?? lap.startTime ?? i
+    }));
+  }, [laps]);
+
+  const lapStats = useMemo(() => {
+    let effort = 0;
+    let recovery = 0;
+    lapsWithPhase.forEach(({ phase }) => {
+      if (phase === 'recovery' || phase === 'cooldown') recovery += 1;
+      else effort += 1;
+    });
+    return { effort, recovery, total: lapsWithPhase.length };
+  }, [lapsWithPhase]);
+
+  const isIntervalLike = lapStats.recovery > 0 && lapStats.effort > 0;
+  const effectiveSessionType = useMemo(
+    () => inferDisplayTypeFromGarminActivity(session, garminFull, isIntervalLike),
+    [session, garminFull, isIntervalLike]
+  );
+  const showIntervalBadge = effectiveSessionType === 'interval';
+
+  const filteredLaps = useMemo(() => {
+    if (lapFilter === LAP_FILTER.ALL) return lapsWithPhase;
+    if (lapFilter === LAP_FILTER.EFFORT) {
+      return lapsWithPhase.filter(({ phase }) => phase === 'effort' || phase === 'warmup' || phase === 'other');
+    }
+    if (lapFilter === LAP_FILTER.RECOVERY) {
+      return lapsWithPhase.filter(({ phase }) => phase === 'recovery' || phase === 'cooldown');
+    }
+    return lapsWithPhase;
+  }, [lapsWithPhase, lapFilter]);
+
+  const title = useMemo(() => {
+    if (garminFull?.activityName) return garminFull.activityName;
+    if (session?.notes && String(session.notes).startsWith('Garmin — ')) {
+      return String(session.notes).replace(/^Garmin — /, '').trim();
+    }
+    return 'Course';
+  }, [garminFull, session]);
+
+  const subtitleDate = [session?.date, session?.time].filter(Boolean).join(' · ');
+
+  const rawJson = useMemo(() => {
+    if (!garminFull) return '';
+    try {
+      return JSON.stringify(garminFull, null, 2);
+    } catch {
+      return '';
+    }
+  }, [garminFull]);
+
+  const setFilter = useCallback((f) => () => setLapFilter(f), []);
+
+  if (!session) return null;
+
+  return (
+    <div className="min-h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+      {/* Barre retour */}
+      <div className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/90 px-4 py-3 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-600/50 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-700/50 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Retour à l&apos;historique
+          </button>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6">
+        {/* En-tête hero */}
+        <header className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/50 via-slate-900/90 to-slate-950 p-8 shadow-2xl shadow-emerald-950/40">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="relative">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              {showIntervalBadge && (
+                <span className="rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-200">
+                  {t('endurance.running.badges.interval')}
+                </span>
+              )}
+              {session.source === 'garmin' && (
+                <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-200">
+                  Garmin
+                </span>
+              )}
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
+            <p className="mt-2 text-slate-400">{subtitleDate}</p>
+            <p className="mt-3 inline-flex rounded-lg bg-slate-800/60 px-3 py-1 text-sm text-slate-300">
+              {t('endurance.running.details.typeSession')}{' '}
+              <span className="ml-1 text-white">{runningSessionTypeLabel(effectiveSessionType, t)}</span>
+            </p>
+          </div>
+        </header>
+
+        {/* Stats principales */}
+        <section className="mt-8">
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-slate-500">
+            <Activity className="h-4 w-4" />
+            Synthèse
+          </h2>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCard icon={Navigation2} label="Distance" value={`${session.distance} km`} />
+            <StatCard icon={Clock} label="Durée" value={session.duration || '—'} />
+            <StatCard icon={Gauge} label="Allure" value={`${session.pace} min/km`} />
+            <StatCard icon={Footprints} label="Vitesse moy." value={`${session.speed} km/h`} />
+            {session.elevation !== undefined && session.elevation !== '' && (
+              <StatCard icon={Mountain} label="Dénivelé +" value={`${session.elevation} m`} />
+            )}
+            {garminFull?.maxSpeed != null && (
+              <StatCard icon={Gauge} label="Vitesse max" value={`${garminFull.maxSpeed} km/h`} hint="Pic sur la séance" />
+            )}
+            {(garminFull?.avgHR != null || session.avgHR) && (
+              <StatCard
+                icon={Heart}
+                label="Fréquence cardiaque"
+                value={
+                  garminFull
+                    ? `${garminFull.avgHR ?? '—'} / ${garminFull.maxHR ?? '—'} / ${garminFull.minHR ?? '—'}`
+                    : String(session.avgHR ?? '—')
+                }
+                hint="Moy. / max / min (bpm)"
+              />
+            )}
+            {garminFull?.calories && (
+              <StatCard
+                icon={Flame}
+                label="Calories"
+                value={
+                  typeof garminFull.calories === 'object'
+                    ? String(garminFull.calories.total ?? '—')
+                    : String(garminFull.calories)
+                }
+                hint={
+                  typeof garminFull.calories === 'object'
+                    ? `Actives ${garminFull.calories.active ?? '—'} · Repos ${garminFull.calories.resting ?? '—'}`
+                    : undefined
+                }
+              />
+            )}
+          </div>
+        </section>
+
+        {session.notes && (
+          <p className="mt-6 rounded-2xl border border-slate-700/50 bg-slate-800/30 px-5 py-4 text-sm leading-relaxed text-slate-300">
+            {session.notes}
+          </p>
+        )}
+
+        {/* Bloc Garmin enrichi */}
+        {(session.source === 'garmin' || session.garminId) && (
+          <section className="mt-10">
+            {loading && (
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-700/50 bg-slate-800/40 p-6 text-slate-400">
+                <Loader2 className="h-5 w-5 animate-spin text-teal-400" />
+                Chargement des métriques Garmin…
+              </div>
+            )}
+
+            {!loading && garminFull && (
+              <>
+                <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-slate-500">
+                  <Heart className="h-4 w-4" />
+                  Physiologie & intensité
+                </h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {garminFull.intensityMinutes && (
+                    <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Minutes d&apos;intensité</p>
+                      <p className="mt-2 text-lg text-white">
+                        Modérée <span className="font-semibold text-teal-300">{garminFull.intensityMinutes.moderate ?? '—'}</span>
+                        <span className="mx-2 text-slate-600">·</span>
+                        Vigoureuse{' '}
+                        <span className="font-semibold text-orange-300">{garminFull.intensityMinutes.vigorous ?? '—'}</span>
+                        <span className="mx-2 text-slate-600">·</span>
+                        Total{' '}
+                        <span className="font-semibold text-slate-200">{garminFull.intensityMinutes.total ?? '—'}</span>
+                      </p>
+                    </div>
+                  )}
+                  {garminFull.sweatLoss != null && (
+                    <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Hydratation (estim.)</p>
+                      <p className="mt-2 text-2xl font-bold text-sky-200">{garminFull.sweatLoss} ml</p>
+                      <p className="text-xs text-slate-500">Perte de sueur indiquée par Garmin</p>
+                    </div>
+                  )}
+                </div>
+
+                {garminFull.running && (
+                  <div className="mt-6 rounded-2xl border border-slate-700/50 bg-slate-800/30 p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-slate-300">
+                        <Layers className="h-5 w-5 text-teal-400" />
+                        <span className="font-semibold">Course — agrégats</span>
+                      </div>
+                      <div className="text-sm text-slate-400">
+                        Cadence moy. / max :{' '}
+                        <span className="font-medium text-white">
+                          {garminFull.running.averageCadenceSpm ?? '—'} / {garminFull.running.maxCadenceSpm ?? '—'} spm
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Carte & lieu */}
+                {(garminFull.location?.start || garminFull.location?.end) && (
+                  <div className="mt-6 rounded-2xl border border-slate-700/50 bg-slate-800/30 p-5">
+                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-200">
+                      <MapPin className="h-4 w-4 text-cyan-400" />
+                      Parcours
+                    </h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {garminFull.location?.start && (
+                        <div>
+                          <p className="text-xs uppercase text-slate-500">Départ</p>
+                          {osmLink(garminFull.location.start.lat, garminFull.location.start.lng) ? (
+                            <a
+                              href={osmLink(garminFull.location.start.lat, garminFull.location.start.lng)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300"
+                            >
+                              {garminFull.location.start.lat?.toFixed(5)}, {garminFull.location.start.lng?.toFixed(5)}
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          ) : (
+                            <p className="text-slate-400">—</p>
+                          )}
+                        </div>
+                      )}
+                      {garminFull.location?.end && (
+                        <div>
+                          <p className="text-xs uppercase text-slate-500">Arrivée</p>
+                          {osmLink(garminFull.location.end.lat, garminFull.location.end.lng) ? (
+                            <a
+                              href={osmLink(garminFull.location.end.lat, garminFull.location.end.lng)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300"
+                            >
+                              {garminFull.location.end.lat?.toFixed(5)}, {garminFull.location.end.lng?.toFixed(5)}
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          ) : (
+                            <p className="text-slate-400">—</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {garminFull.elevation && (
+                  <div className="mt-4 rounded-2xl border border-slate-700/50 bg-slate-800/30 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Altitude</p>
+                    <p className="mt-2 text-lg text-white">
+                      D+ {garminFull.elevation.gain ?? '—'} m · D− {garminFull.elevation.loss ?? '—'} m · max{' '}
+                      {garminFull.elevation.max ?? '—'} m · min {garminFull.elevation.min ?? '—'} m
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {!loading && !garminFull && (session.source === 'garmin' || session.garminId) && (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5 text-sm text-amber-100">
+                Données brutes Garmin introuvables en local. Synchronise depuis l&apos;onglet Course ou Garmin pour
+                afficher tours, FC détaillée et carte.
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Tours — filtres fractionné */}
+        {Array.isArray(laps) && laps.length > 0 && (
+          <section className="mt-12">
+            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-white">
+                <Filter className="h-5 w-5 text-teal-400" />
+                Tours & intervalles
+                <span className="ml-2 text-sm font-normal text-slate-500">({lapStats.total} tours)</span>
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={setFilter(LAP_FILTER.ALL)}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                    lapFilter === LAP_FILTER.ALL
+                      ? 'border-teal-500 bg-teal-500/20 text-teal-100'
+                      : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
+                >
+                  Tous
+                </button>
+                <button
+                  type="button"
+                  onClick={setFilter(LAP_FILTER.EFFORT)}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                    lapFilter === LAP_FILTER.EFFORT
+                      ? 'border-emerald-500 bg-emerald-500/20 text-emerald-100'
+                      : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
+                >
+                  Effort seulement
+                </button>
+                <button
+                  type="button"
+                  onClick={setFilter(LAP_FILTER.RECOVERY)}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                    lapFilter === LAP_FILTER.RECOVERY
+                      ? 'border-amber-500 bg-amber-500/20 text-amber-100'
+                      : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
+                >
+                  Récupération seulement
+                </button>
+              </div>
+            </div>
+
+            {isIntervalLike && (
+              <p className="mb-4 text-sm text-slate-400">
+                Détection : <span className="text-emerald-300">{lapStats.effort}</span> segment(s) d&apos;effort ·{' '}
+                <span className="text-amber-300">{lapStats.recovery}</span> segment(s) de récupération / repos.
+              </p>
+            )}
+
+            <div className="space-y-3">
+              {filteredLaps.map(({ lap, phase, key }) => (
+                <div
+                  key={key}
+                  className={`rounded-2xl border border-slate-700/40 border-l-4 bg-slate-800/40 p-4 pl-5 shadow-sm ${phaseStyles(phase)}`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${badgeStyles(phase)}`}>
+                        {phaseLabel(phase)}
+                      </span>
+                      {lap.intervalTypeKey && (
+                        <span className="ml-2 text-xs text-slate-500">({lap.intervalTypeKey})</span>
+                      )}
+                      <p className="mt-2 text-lg font-semibold text-white">Tour {lap.index ?? '—'}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-right text-sm sm:grid-cols-3">
+                      <div>
+                        <span className="block text-xs text-slate-500">Distance</span>
+                        <span className="font-medium text-slate-100">
+                          {lap.distanceKm != null
+                            ? `${lap.distanceKm} km`
+                            : lap.distanceMeters != null
+                              ? `${(lap.distanceMeters / 1000).toFixed(3)} km`
+                              : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-xs text-slate-500">Durée</span>
+                        <span className="font-medium text-slate-100">{formatSec(lap.durationSeconds)}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs text-slate-500">Vitesse moy.</span>
+                        <span className="font-medium text-slate-100">
+                          {lap.avgSpeedKmh != null ? `${lap.avgSpeedKmh} km/h` : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-xs text-slate-500">FC moy.</span>
+                        <span className="font-medium text-slate-100">{lap.avgHR ?? '—'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs text-slate-500">Calories</span>
+                        <span className="font-medium text-slate-100">{lap.calories ?? '—'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs text-slate-500">Cadence / foulée</span>
+                        <span className="font-medium text-slate-100">
+                          {lap.averageCadenceSpm ?? '—'} spm · {lap.averageStrideLengthMeters ?? '—'} m
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {filteredLaps.length === 0 && (
+              <p className="rounded-xl border border-slate-700/50 bg-slate-800/30 p-6 text-center text-slate-400">
+                Aucun tour dans cette catégorie. Change de filtre ou vérifie les types de segment Garmin.
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* Pied technique discret */}
+        {garminFull && (
+          <footer className="mt-12 space-y-4 border-t border-slate-800 pt-8">
+            {garminFull.deviceInfo && (
+              <div className="flex items-center gap-3 rounded-xl border border-slate-700/40 bg-slate-900/50 px-4 py-3 text-sm text-slate-400">
+                <Watch className="h-4 w-4 shrink-0 text-slate-500" />
+                <span>{formatDeviceShort(garminFull.deviceInfo)}</span>
+              </div>
+            )}
+            <details className="rounded-xl border border-slate-800 bg-slate-950/50">
+              <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-slate-500">
+                Données techniques (diagnostic)
+              </summary>
+              <div className="border-t border-slate-800 px-4 py-3 text-xs text-slate-500">
+                <p className="mb-2">
+                  Heure locale début : {garminFull.startTimeLocal || '—'}
+                </p>
+                <pre className="max-h-56 overflow-auto rounded-lg bg-black/30 p-3 font-mono text-[10px] leading-relaxed text-slate-600">
+                  {rawJson}
+                </pre>
+              </div>
+            </details>
+          </footer>
+        )}
+
+        {(!session.source || session.source !== 'garmin') && !session.garminId && (
+          <p className="mt-10 text-center text-sm text-slate-500">
+            Séance enregistrée manuellement — pas de détail d&apos;activité Garmin.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

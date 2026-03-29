@@ -35,6 +35,7 @@ import { useWorkoutHistory } from './WorkoutContext/hooks/useWorkoutHistory';
 import { useWorkoutContextStorage } from './WorkoutContext/hooks/useWorkoutContextStorage';
 import { DEFAULT_PROGRESS_FORM } from './WorkoutContext/constants';
 import { normalizeRepsValue } from './WorkoutContext/utils';
+import { filterExercisesForSessionDate } from '../utils/programExerciseScheduling';
 
 const WorkoutContext = createContext();
 
@@ -260,6 +261,20 @@ const WorkoutProvider = ({ children }) => {
             });
           });
         }
+        if (daySchedule?.salleVariants) {
+          ['semaineA', 'semaineB'].forEach((vk) => {
+            const list = daySchedule.salleVariants[vk]?.exercises;
+            if (Array.isArray(list)) {
+              list.forEach((ex, index) => {
+                const numericId = convertToStableNumericId(ex.id, index);
+                exerciseIdMappingRef.current.set(numericId, {
+                  name: ex.name,
+                  originalId: ex.id
+                });
+              });
+            }
+          });
+        }
       });
     }
   }, [activeProgram, convertToStableNumericId]);
@@ -281,18 +296,25 @@ const WorkoutProvider = ({ children }) => {
       
       for (const dayName of dayNames) {
         const daySchedule = activeProgram.schedule[dayName];
-        if (daySchedule && daySchedule.exercises) {
-          // Chercher par ID numérique (hash) ou par originalId
-          for (const ex of daySchedule.exercises) {
-            // Calculer l'ID numérique attendu pour cet exercice
+        const searchInList = (list) => {
+          if (!Array.isArray(list)) return null;
+          for (const ex of list) {
             const expectedNumericId = convertToStableNumericId(ex.id);
-            
-            // Vérifier si l'ID recherché correspond à l'ID numérique ou à l'ID original
             if (expectedNumericId === searchId || ex.id === exerciseId || ex.id === searchId) {
-              // Mettre à jour le mapping pour la prochaine fois
               exerciseIdMappingRef.current.set(searchId, { name: ex.name, originalId: ex.id });
               return ex.name;
             }
+          }
+          return null;
+        };
+        if (daySchedule?.exercises) {
+          const found = searchInList(daySchedule.exercises);
+          if (found) return found;
+        }
+        if (daySchedule?.salleVariants) {
+          for (const vk of ['semaineA', 'semaineB']) {
+            const found = searchInList(daySchedule.salleVariants[vk]?.exercises);
+            if (found) return found;
           }
         }
       }
@@ -345,6 +367,7 @@ const WorkoutProvider = ({ children }) => {
     if (activeProgram && activeProgram.schedule) {
       const dayName = workoutDayOverride || getDayName(currentDate);
       const daySchedule = activeProgram.schedule[dayName];
+      const sessionDateStr = getDateStr(currentDate);
       
       if (daySchedule) {
         // ✅ FIX : Gérer les variations salle (maison/salle) si disponibles
@@ -362,6 +385,9 @@ const WorkoutProvider = ({ children }) => {
             variantName = gymVariant.name || variantName;
           }
         }
+
+        // ✅ Retraits logiques : n'afficher l'exo que pour les dates de séance <= removedFromProgramAt
+        exercisesToUse = filterExercisesForSessionDate(exercisesToUse, sessionDateStr);
         
         // Convertir le format du programme actif au format attendu
         // Générer des IDs numériques stables pour chaque exercice

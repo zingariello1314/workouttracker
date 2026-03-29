@@ -6,40 +6,9 @@ import {
   formatHeartRate,
   formatPacePerKm
 } from '../../utils/garminFormatters';
-
-/**
- * Libellé affiché : l’app regroupe course/tapis/corps dans le même bucket « cardio » côté données,
- * mais une séance enregistrée « course à pied » sur la montre doit s’afficher comme telle quand on le détecte.
- */
-function getCardioDisplayLabel(activity) {
-  const run = activity?.running;
-  if (
-    run &&
-    (run.laps?.length > 0 ||
-      run.averagePaceSecondsPerKm > 0 ||
-      run.bestPaceSecondsPerKm > 0 ||
-      run.averageCadenceSpm > 0 ||
-      (run.distanceMeters > 0 && (run.averagePaceSecondsPerKm > 0 || run.averageCadenceSpm > 0)))
-  ) {
-    return { title: 'Course à pied', emoji: '🏃' };
-  }
-  const tk = (activity.activityType || '').toLowerCase();
-  if (
-    /running|treadmill|trail|jog|virtual_run|track_run|street_run|indoor_run|ultra/.test(tk) ||
-    tk === 'run'
-  ) {
-    return { title: 'Course à pied', emoji: '🏃' };
-  }
-  const name = (activity.activityName || '').toLowerCase();
-  if (
-    /\bcourse\b|footing|interval|fractionn|fartlek|tempo|vma|tapis|jogging|5k|10k|semi|marathon|\brun\b/.test(
-      name
-    )
-  ) {
-    return { title: 'Course à pied', emoji: '🏃' };
-  }
-  return { title: 'Cardio', emoji: '❤️' };
-}
+import { useTranslation } from '../../../../../utils/translations';
+import { getGarminCardioActivityRunKind } from '../../../../../utils/garminRunningLaps';
+import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../../../../../utils/runningSessionTypeLabel';
 
 /** Libellé court pour effort / repos / type Garmin sur un tour */
 function formatLapIntervalLabel(lap) {
@@ -148,11 +117,14 @@ function aggregateLapStats(lapList) {
  * Composant pour afficher une activité cardio (et courses détectées comme telles)
  */
 export default function CardioActivityCard({ activity }) {
+  const t = useTranslation();
   const cal = activity.calories || {};
   const intensity = activity.intensityMinutes || {};
   const run = activity.running || null;
   const laps = Array.isArray(run?.laps) ? run.laps : [];
-  const { title: kindTitle, emoji: kindEmoji } = getCardioDisplayLabel(activity);
+  const kindTitle = garminCardioPrimaryLabel(activity, t);
+  const kindEmoji = garminCardioKindEmoji(activity);
+  const runKind = getGarminCardioActivityRunKind(activity);
 
   const [segmentFilter, setSegmentFilter] = useState('all');
 
@@ -200,7 +172,21 @@ export default function CardioActivityCard({ activity }) {
       <div className="flex justify-between items-start mb-3">
         <div>
           <h4 className="text-white font-semibold">
-            {kindEmoji} {kindTitle} — {activity.date} {activity.time}
+            <span
+              className={`text-lg font-bold tracking-tight ${
+                runKind === 'interval'
+                  ? 'text-amber-200'
+                  : runKind === 'endurance'
+                    ? 'text-emerald-200'
+                    : 'text-rose-200'
+              }`}
+            >
+              {kindEmoji} {kindTitle}
+            </span>
+            <span className="text-slate-400 font-normal">
+              {' '}
+              · {activity.date} {activity.time}
+            </span>
           </h4>
           {(activity.startTimeLocal || activity.startTimeGMT) && (
             <div className="text-slate-400 text-xs mt-1">

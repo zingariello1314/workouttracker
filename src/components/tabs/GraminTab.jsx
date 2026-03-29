@@ -1,10 +1,13 @@
 import React from 'react';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useTranslation } from '../../utils/translations';
+import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../../utils/runningSessionTypeLabel';
 
 const BASES = ['http://localhost:3031', 'http://localhost:3001'];
 
 const GraminTab = () => {
+  const t = useTranslation();
   const [status, setStatus] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [baseUrl, setBaseUrl] = React.useState(null);
@@ -173,7 +176,12 @@ const GraminTab = () => {
           setGarminData(json.data);
         }
         // Import automatique vers Endurance
-        if (json.data.activities && (json.data.activities.swimming?.length > 0 || json.data.activities.jumpRope?.length > 0)) {
+        const hasActivitiesForEndurance = (a) =>
+          a &&
+          ((a.swimming?.length || 0) > 0 ||
+            (a.jumpRope?.length || 0) > 0 ||
+            (a.cardio?.length || 0) > 0);
+        if (hasActivitiesForEndurance(json.data.activities)) {
           await importToEndurance(json.data);
         }
       }
@@ -203,7 +211,12 @@ const GraminTab = () => {
           } else {
             setGarminData(json.data);
           }
-          if (json.data.activities && (json.data.activities.swimming?.length > 0 || json.data.activities.jumpRope?.length > 0)) {
+          const hasActivitiesForEndurance = (a) =>
+            a &&
+            ((a.swimming?.length || 0) > 0 ||
+              (a.jumpRope?.length || 0) > 0 ||
+              (a.cardio?.length || 0) > 0);
+          if (hasActivitiesForEndurance(json.data.activities)) {
             await importToEndurance(json.data);
           }
         }
@@ -250,8 +263,12 @@ const GraminTab = () => {
           const dates = Object.keys(json.data.dailyMetrics || {}).sort();
           if (dates.length > 0) setSelectedDate(dates[dates.length - 1]);
         }
-        // Import automatique vers Endurance
-        if (json.data.activities && (json.data.activities.swimming?.length > 0 || json.data.activities.jumpRope?.length > 0)) {
+        const hasActivitiesForEndurance = (a) =>
+          a &&
+          ((a.swimming?.length || 0) > 0 ||
+            (a.jumpRope?.length || 0) > 0 ||
+            (a.cardio?.length || 0) > 0);
+        if (hasActivitiesForEndurance(json.data.activities)) {
           await importToEndurance(json.data);
         }
       }
@@ -562,7 +579,18 @@ const GraminTab = () => {
       <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4 mb-4">
         <div className="flex justify-between items-start mb-3">
           <div>
-            <h4 className="text-white font-semibold">💪 {activity.activityName || 'Cardio'} - {activity.date} {activity.time}</h4>
+            <h4 className="text-white font-semibold">
+              <span className="text-lg">
+                {garminCardioKindEmoji(activity)} {garminCardioPrimaryLabel(activity, t)}
+              </span>
+              <span className="text-slate-400 font-normal">
+                {' '}
+                · {activity.date} {activity.time}
+              </span>
+            </h4>
+            {activity.activityName ? (
+              <p className="text-slate-500 text-sm mt-1">{activity.activityName}</p>
+            ) : null}
           </div>
           <div className="text-slate-400 text-xs">ID: {activity.id}</div>
         </div>

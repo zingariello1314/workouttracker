@@ -176,13 +176,22 @@ export const processSyncResponse = async (
   }
   
   // Import automatique vers Endurance si activités présentes
+  // (cardio = courses, vélo, etc. — les courses sont importées dans sessions.running via useGarminImport)
   if (json.data.activities) {
     const hasSwimming = json.data.activities.swimming?.length > 0;
     const hasJumpRope = json.data.activities.jumpRope?.length > 0;
-    
-    if ((hasSwimming || hasJumpRope) && importToEndurance && typeof importToEndurance === 'function') {
+    const hasCardio = json.data.activities.cardio?.length > 0;
+
+    if (
+      (hasSwimming || hasJumpRope || hasCardio) &&
+      importToEndurance &&
+      typeof importToEndurance === 'function'
+    ) {
       try {
-        log.debug('[processSyncResponse] Importing activities to Endurance tab');
+        log.debug(
+          '[processSyncResponse] Import Endurance (natation / corde / cardio course)',
+          { hasSwimming, hasJumpRope, hasCardio }
+        );
         await importToEndurance(json.data);
         log.debug('[processSyncResponse] Activities imported to Endurance successfully');
       } catch (error) {

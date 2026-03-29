@@ -22,6 +22,11 @@ import RunningSessionExtras from './EnduranceTab/components/RunningSessionExtras
 import { handleSubmitSession } from '../../services/endurance/enduranceSubmitUtils';
 import EnduranceChallengeReminder from './EnduranceTab/components/ui/EnduranceChallengeReminder.jsx';
 import EnduranceSectionHeader from './EnduranceTab/components/ui/EnduranceSectionHeader.jsx';
+import RunningGarminSyncBlock from './EnduranceTab/components/RunningGarminSyncBlock.jsx';
+import RunningSessionDetailPage from './EnduranceTab/components/RunningSessionDetailPage.jsx';
+import { runningSessionTypeLabel, resolveRunningSessionDisplayType } from '../../utils/runningSessionTypeLabel';
+import { inferRunningSessionTypeFromGarminActivity } from '../../utils/garminRunningLaps';
+import { useGarminData } from '../../hooks/useGarminData';
 
 const EnduranceTab = () => {
   const { data, updateData, getWorkoutHistory } = useWorkout();
@@ -62,6 +67,8 @@ const EnduranceTab = () => {
     running: []
   };
   const challenges = enduranceState?.challenges || [];
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminRunningKindByGarminId, setGarminRunningKindByGarminId] = useState(() => new Map());
   const ui = enduranceState?.ui || {
     showChallengeModal: false,
     showSessionForm: false,
@@ -190,6 +197,31 @@ const EnduranceTab = () => {
   useEffect(() => {
     loadEnduranceState();
   }, [loadEnduranceState]);
+
+  /** Types course affichés comme sur la page détail : inférence depuis les tours Garmin (IndexedDB). */
+  useEffect(() => {
+    if (activeTab !== 'running' || !dbReady) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const loaded = await loadAllData();
+        if (cancelled || !loaded?.activities?.cardio) return;
+        const m = new Map();
+        for (const act of loaded.activities.cardio) {
+          const id = act.garminId ?? act.id;
+          if (id == null) continue;
+          if (!Array.isArray(act.running?.laps) || act.running.laps.length === 0) continue;
+          m.set(String(id), inferRunningSessionTypeFromGarminActivity(act));
+        }
+        setGarminRunningKindByGarminId(m);
+      } catch {
+        if (!cancelled) setGarminRunningKindByGarminId(new Map());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, dbReady, loadAllData, sessions.running]);
 
   const saveEnduranceData = useCallback(async (newData) => {
     try {
@@ -376,6 +408,8 @@ const EnduranceTab = () => {
   const [runningForm, setRunningForm] = useState(() => createDefaultFormState('running'));
 
   const [challengeForm, setChallengeForm] = useState(() => createDefaultChallengeFormState('pushups'));
+  /** Modal détail séance course (Garmin / manuel) */
+  const [runningDetailSession, setRunningDetailSession] = useState(null);
 
   const addSession = useCallback(async (activityType, sessionData) => {
     try {
@@ -1126,8 +1160,14 @@ const EnduranceTab = () => {
         </nav>
       </div>
 
-      {/* Contenu principal */}
-      <div className="flex-1 overflow-auto">
+      {/* Contenu principal — page détail course en pleine colonne si sélection */}
+      <div className="flex-1 overflow-auto min-h-0">
+        {runningDetailSession ? (
+          <RunningSessionDetailPage
+            session={runningDetailSession}
+            onBack={() => setRunningDetailSession(null)}
+          />
+        ) : (
         <div className="max-w-7xl mx-auto p-8">
           {/* Rappel des défis actifs */}
           <EnduranceChallengeReminder
@@ -2028,6 +2068,8 @@ const EnduranceTab = () => {
                 ]}
               />
 
+              <RunningGarminSyncBlock />
+
               {/* Rappel défis actifs */}
               {activeChallenges.length > 0 && (
                 <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 mb-8">
@@ -2174,16 +2216,41 @@ const EnduranceTab = () => {
                     <div className="space-y-4 p-6">
                       {sessions.running.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => {
                         const originalIndex = sessions.running.findIndex(s => s === session);
+                        const gid = session.garminId ?? session.id;
+                        const inferredFromGarmin =
+                          gid != null ? garminRunningKindByGarminId.get(String(gid)) : undefined;
+                        const displayRunType = resolveRunningSessionDisplayType(session, inferredFromGarmin);
                         return (
-                        <div key={`running-${session.id}-${idx}`} className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-purple-500/30 transition-all">
+                        <div
+                          key={`running-${session.id}-${idx}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setRunningDetailSession(session)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setRunningDetailSession(session);
+                            }
+                          }}
+                          className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 transition-all hover:border-purple-500/30 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                        >
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <span className="text-white font-bold text-lg">{session.date}</span>
-                                <span className="text-slate-400">{session.time}</span>
-                                <span className="px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 rounded-lg text-sm">
-                                  {session.type ? (session.type.charAt(0).toUpperCase() + session.type.slice(1)) : t('endurance.running.details.type')}
+                              <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                <span
+                                  className={`text-lg font-bold tracking-tight ${
+                                    displayRunType === 'interval' ? 'text-amber-200' : 'text-emerald-200'
+                                  }`}
+                                >
+                                  {runningSessionTypeLabel(displayRunType, t)}
                                 </span>
+                                <span className="text-slate-500 hidden sm:inline" aria-hidden>
+                                  ·
+                                </span>
+                                <span className="text-white font-bold text-lg">{session.date}</span>
+                                {session.time ? (
+                                  <span className="text-slate-400 text-base font-medium">{session.time}</span>
+                                ) : null}
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                 <div>
@@ -2217,14 +2284,22 @@ const EnduranceTab = () => {
                                 </span>
                               )}
                               <button
-                                onClick={() => editSession('running', session.id)}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  editSession('running', session.id);
+                                }}
                                 className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
                                 title="Modifier la session"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => deleteRunningSession(session.id, originalIndex)}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteRunningSession(session.id, originalIndex);
+                                }}
                                 className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
                                 title="Supprimer la session"
                               >
@@ -2244,6 +2319,7 @@ const EnduranceTab = () => {
                   )}
                 </div>
               </div>
+
             </>
           )}
 
@@ -2467,6 +2543,7 @@ const EnduranceTab = () => {
             </>
           )}
         </div>
+        )}
       </div>
 
       {/* Modal création de défi */}
