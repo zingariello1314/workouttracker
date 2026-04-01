@@ -28,7 +28,7 @@
 
 - [🎯 Vue d'Ensemble](#-vue-densemble)
 - [🏗️ Architecture & Stack Technologique](#️-architecture--stack-technologique)
-- [📱 Documentation Complète - Les 14 Onglets](#-documentation-complète---les-14-onglets)
+- [📱 Documentation Complète - Les 8 Onglets Principaux](#-documentation-complète---les-8-onglets-principaux)
 - [🔗 Interconnexion des Onglets](#-interconnexion-des-onglets)
 - [🛠️ Installation & Déploiement](#️-installation--déploiement)
 - [🚀 Performance & Optimisations](#-performance--optimisations)
@@ -122,7 +122,7 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| **Onglets Principaux** | 8 (Home, Dashboard, Sport, Quests, Apprentissage, Books, Finance, Settings) |
+| **Onglets Principaux** | 8 (Home, Dashboard, Sport, Quests, Apprentissage, Books, Finance, Settings) + vues plein écran **Auth** / **Pricing** ; onglet **Coach** (nutrition) |
 | **Sous-Onglets Sport** | 14 (Today, Data Entry, Program, Nutrition, Exercises, Progress, Endurance, Calendar, History, Charts, Stats, Predictions, Smart Balancing, Garmin) |
 | **Sous-Onglets Finance** | 6 (Bourse, Budget, Investissements, Smart Shopping, Planificateur, Synthèse) |
 | **Graphiques Disponibles** | 20+ |
@@ -348,8 +348,8 @@
         │                  │                  │
         ▼                  ▼                  ▼
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│ ToastProvider│  │WorkoutProvider│  │GarminProvider│
-│ (Notifications)│ │ (État Global) │  │ (Garmin Data)│
+│ ToastProvider│  │WorkoutProvider│  │ useGarminData │
+│ (Notifications)│ │ (État Global) │  │ (précharge App)│
 └──────────────┘  └──────┬───────┘  └──────────────┘
                          │
         ┌────────────────┼────────────────┐
@@ -364,20 +364,10 @@
         │
         ▼
 ┌─────────────────────────────────────────────────────────┐
-│              COMPOSANTS (14 Onglets)                    │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
-│  │  Home    │ │ Aujourd' │ │  Saisie  │ │ Progress │  │
-│  │  Page    │ │   hui    │ │          │ │          │  │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
-│  │ Endurance│ │ Calendrier│ │ Programme│ │ Graphiques│ │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
-│  │ Statist. │ │ Exercices│ │ Historique│ │ Prédict. │  │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
-│  │Équilibrage│ │  Garmin  │ │ Paramètres│          │  │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘  │
+│  Onglets lazy-loaded : barre principale + 14× Sport      │
+│  (`Navigation.jsx` : home, dashboard, sport→subtabs,    │
+│   quests, apprentissage, books, finance, settings)       │
+│  + vues auth / pricing / coach selon `App.jsx`)          │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -1320,11 +1310,15 @@ Les diagrammes ci-dessus utilisent **Mermaid**, un langage de diagrammes open-so
 
 ---
 
-## 📱 Documentation Complète - Les 8 Onglets Principaux
+## 📱 Documentation des onglets
 
-Cette section détaille chaque onglet principal de Momentum avec ses fonctionnalités, techniques utilisées, et interconnexions.
+Cette partie couvre les **8 entrées** de la barre principale (`Navigation.jsx` : Home, Dashboard, Sport, Quêtes, Apprentissage, Livres, Finance, Paramètres), puis les **14 vues** du méta-onglet **Sport** (`activeTab`), et enfin les **vues système** (Auth, Pricing, Coach) décrites près de la fin du chapitre.
 
-### 🗺️ Vue d'Ensemble des Onglets Principaux
+**Ordre réel de la barre** (`Navigation.jsx`, gauche → droite) : **Home** → **Dashboard** → **Sport** (méta) → **Quêtes** → **Apprentissage** → **Livres** → **Finance** → **Paramètres**.
+
+**Numérotation de ce chapitre** : **§1 à §6** décrivent Home, Dashboard, Quêtes, Apprentissage, Livres et Finance (sans détailler ici le méta-onglet Sport). **§7** = **Paramètres** (`settings`). Les **14 vues Sport** suivent sous le titre **Sport · … (`activeTab`)**, avec un **tableau d’alignement** sur le code juste avant « Aujourd’hui ».
+
+### 🗺️ Vue d'ensemble (barre principale + finance détaillée)
 
 ```mermaid
 flowchart TB
@@ -1370,8 +1364,8 @@ flowchart TB
 
 **Légende** :
 - 🟣 **Home** : Point d'entrée principal avec citations inspirantes
-- 🔵 **Dashboard** : Vue d'ensemble globale avec 28 blocs modulaires
-- 🟢 **Sport** : 14 sous-onglets pour suivi d'entraînement complet
+- 🔵 **Dashboard** : Vue modules (XP, quêtes, sport/Garmin, livres, finance, apprentissage, actualités) — voir section détaillée
+- 🟢 **Sport** : 14 sous-onglets ; le clic sur « Sport » rouvre le **dernier sous-onglet** visité (`localStorage` `sport.lastSubTab`, défaut Aujourd'hui)
 - 🔴 **Quests** : Système de quêtes quotidiennes (QuietQuest)
 - 🟠 **Apprentissage** : Gestion matières, sessions, progression
 - 🟣 **Books** : Bibliothèque de livres avec statistiques avancées
@@ -1390,8 +1384,12 @@ flowchart TB
 - **Géolocalisation** (après interaction utilisateur, conformité navigateur)
 - **Rotation automatique** des images toutes les 2 minutes
 - **Navigation rapide** vers les autres onglets
+- **Swipe vers le Dashboard** (geste configurable : seuils, activation/désactivation dans **Paramètres → Navigation**)
+- **Sélecteur de langue** sur la page (`LanguageSelector`, i18n `useTranslation`)
+- **Comportement selon la connexion** : la page tient compte de l’état **authentifié / invité** (`AuthContext`)
 - **Design responsive** avec transitions ultra-fluides (double buffering)
 - **Système de bannières optimisé** : Export/Import, versioning, gestion quota, détection corruption
+- **Scène Spline** optionnelle (`SplineScene`) selon la mise en page
 
 #### Architecture & Flux de Données
 
@@ -1485,68 +1483,54 @@ sequenceDiagram
 
 #### Fonctionnalités Principales
 
-- **Vue d'ensemble globale** avec 28 blocs modulaires organisés par priorité
-- **Métriques rapides** : Quêtes, Sport, Lecture, Patrimoine
-- **Blocs PRIORITY-MAX** : Quête du jour, Séance sport active, Patrimoine temps réel, Session de lecture
-- **Blocs PRIORITY-HIGH** : Statut apprentissage, Timer actif, Dernière chance, Régularité quotidienne, Budget mensuel
-- **Blocs PRIORITY-MEDIUM** : Progression livre principal, Portfolio actions, Surveillance, Progression hebdomadaire, Performance du jour
-- **Blocs PRIORITY-LOW** : Rythme de lecture, Statistiques rapides, Objectifs DCA, Allocation salaire, Échéances, Progression intelligente, Comparaisons sport/lecture, Performance lecture, Quêtes express, Objectifs loisirs, Matrice de projection, Théorie vs Réalité, Actualités
+- **Architecture actuelle (refonte)** : une colonne de **modules** avec scroll et ancres, plus un en-tête (titre, rafraîchir les actualités)
+- **Barre XP globale** (`GlobalXPBar`)
+- **Module Quêtes** (`DashboardQuestsModule`)
+- **Récap sport & Garmin** (`DashboardGarminSportRecapBlock`)
+- **Module Livres** (`DashboardBooksModule`, dont galerie 3D intégrée au dashboard)
+- **Module Finance** (`DashboardFinanceModule`)
+- **Module Apprentissage** (`DashboardLearningModule`)
+- **Bloc actualités** (`NewsBlock`, données via service dashboard / API news)
 
 #### Architecture & Flux de Données
 
 ```mermaid
 flowchart TD
-    A[📊 DashboardTab Chargé] --> B[useDashboard Hook]
-    B --> C[Chargement Données Multi-Sources]
-    C --> D[Quests: QuietQuestDB]
-    C --> E[Sport: WorkoutTrackerDB]
-    C --> F[Lecture: BooksDB]
-    C --> G[Finance: FinanceDB]
-    C --> H[Apprentissage: ApprentissageDB]
-    
-    D --> I[Calcul Métriques Globales]
-    E --> I
-    F --> I
-    G --> I
-    H --> I
-    
-    I --> J[Organisation par Priorité]
-    J --> K[Affichage Blocs Modulaires]
-    
-    K --> L[👤 Interaction Utilisateur]
-    L --> M[Action Contextuelle]
-    M --> N[Mise à Jour Source]
-    N --> O[Re-render Optimisé]
+    A[📊 DashboardTab] --> B[useDashboard]
+    B --> C[initDashboard + chargement news]
+    C --> D[NewsBlock]
+    A --> E[GlobalXPBar]
+    A --> F[DashboardQuestsModule]
+    A --> G[DashboardGarminSportRecapBlock]
+    A --> H[DashboardBooksModule]
+    A --> I[DashboardFinanceModule]
+    A --> J[DashboardLearningModule]
+    F --> K[Données par module]
+    G --> K
+    H --> K
+    I --> K
+    J --> K
     
     style A fill:#8b5cf6,stroke:#fff,color:#fff
-    style I fill:#10b981,stroke:#fff,color:#fff
-    style L fill:#ec4899,stroke:#fff,color:#fff
-    style N fill:#3b82f6,stroke:#fff,color:#fff
+    style B fill:#3b82f6,stroke:#fff,color:#fff
 ```
 
 **📖 Explication Détaillée**
 
 **Composants impliqués** :
-- **DashboardTab** : Composant principal avec organisation par priorité
-- **useDashboard** : Hook personnalisé pour agrégation multi-sources
-- **28 Blocs modulaires** : Composants spécialisés par domaine (QuestDailyBlock, SportSessionBlock, etc.)
-- **IndexedDB Multi-Sources** : QuietQuestDB, WorkoutTrackerDB, BooksDB, FinanceDB, ApprentissageDB
+- **DashboardTab** : Composition des modules listés ci-dessus + scroll vers section (`scrollIntoView`)
+- **useDashboard** : Initialisation dashboard (`initDashboard`) et **flux actualités** ; le chargement complet est déclenché quand l’onglet dashboard est actif (événement `tab-change`, classe `dashboard-active`) pour éviter des appels inutiles au démarrage
+- **Chaque module** : possède sa propre logique de données (QuietQuest, workout, Garmin, livres, finance, apprentissage)
 
 **Fonctionnalités techniques** :
-1. **Agrégation multi-sources** :
-   - Chargement parallèle depuis 5 bases IndexedDB
-   - Calcul de métriques globales en temps réel
-   - Organisation hiérarchique par priorité (MAX → HIGH → MEDIUM → LOW)
+1. **Découplage** : plus d’agrégation centralisée des 28 anciens blocs dans un seul hook ; les modules consomment leurs sources comme dans leurs onglets dédiés
 
-2. **Blocs interactifs** :
-   - Actions contextuelles (toggle quest, save session, add book, etc.)
-   - Rafraîchissement manuel ou automatique
-   - Navigation vers onglets détaillés
+2. **Actualités** :
+   - Catégories / pagination côté service `dashboardStorage` + API news
+   - Bouton rafraîchir dédié
 
 3. **Performance** :
-   - Chargement paresseux des blocs non visibles
-   - Mise en cache des calculs coûteux
-   - Debouncing des actions utilisateur
+   - News et init dashboard uniquement lorsque l’utilisateur est sur le Dashboard
 
 **Interconnexions** :
 - → **Quests** : Validation quêtes, création express
@@ -1559,12 +1543,16 @@ flowchart TD
 
 ### 3. 🎯 Onglet "Quests" (Quêtes)
 
-**Fichier** : `src/components/tabs/QuestsTab.jsx`
+**Fichier** : `src/components/tabs/QuestsTab.jsx` (orchestration) ; logique extraite dans `src/components/tabs/QuestsTab/hooks/*` et `components/*`
 
 #### Fonctionnalités Principales
 
+- **Refactor** : filtres (`useQuestsFilters`), tri (`useQuestsSort`), CRUD (`useQuestsActions`), sélection / actions groupées (`useQuestsSelection`, `useQuestsBulkActions`), drag & drop (`useQuestsDragDrop`)
+- **5 sous-vues** : **Aujourd'hui**, **Cette semaine**, **Mes quêtes** (tableau), **Statistiques**, **Sécurité** (`SecurityView`) — sous-onglet mémorisé dans `localStorage` (`quests.activeSubTab`)
 - **Gestion complète des quêtes** : Création, édition, suppression, validation
-- **3 vues principales** : Aujourd'hui, Semaine, Statistiques
+- **Réordonnancement** : liste du jour + **emploi du temps** avec overrides d’heure par date (`heureOverrides`), prise en compte **prière / localisation** pour le tri (`prayerLocation`)
+- **Synchro sidebar** : écoute `SIDEBAR_EVENTS` pour refléter validations faites depuis la sidebar (`InteractiveQuestsModule`)
+- **Navigation externe** : `sessionStorage` `nav_params_quests` (ex. ouverture création, sous-onglet cible)
 - **Système de catégories** : Sport, Lecture, Finance, Apprentissage, Santé, Social, etc.
 - **Types de quêtes** : Récurrentes (jours spécifiques) ou Exceptionnelles (date unique)
 - **Système XP** : Calcul automatique basé sur difficulté, durée, récurrence
@@ -1607,11 +1595,15 @@ flowchart TD
 **📖 Explication Détaillée**
 
 **Composants impliqués** :
-- **QuestsTab** : Composant principal avec navigation 3 vues
-- **QuestsTodayView** : Affichage quêtes du jour avec validation
+- **QuestsTab** : Orchestration + persistance sous-onglet + `ErrorBoundary` par vue
+- **QuestsTableView** : Table « Mes quêtes » (filtres, tri, sélection, bulk, DnD liste)
+- **QuestFormModal** : Création / édition
+- **QuestsTodayView** : Affichage quêtes du jour avec validation et réordonnancement
 - **QuestsWeekView** : Vue hebdomadaire avec validation par jour
 - **QuestsStatsView** : Graphiques et statistiques (Recharts)
-- **QuietQuestDB** : IndexedDB v1 (object stores: `quests`, `validations`, `stats`)
+- **SecurityView** : Vue dédiée « Sécurité »
+- **useQuietQuestEngine** : Moteur central (validations, performances, date du jour après minuit, etc.)
+- **Stockage** : stores QuietQuest dans **WorkoutTrackerDB** (préfixe `quietquest_*`) — voir schéma IndexedDB plus haut
 
 **Fonctionnalités techniques** :
 1. **Gestion des quêtes** :
@@ -1722,18 +1714,23 @@ flowchart TD
 
 ### 5. 📖 Onglet "Books" (Livres)
 
-**Fichier** : `src/components/tabs/BooksTab.jsx`
+**Fichier** : `src/components/tabs/BooksTab.jsx` + hooks dans `BooksTab/hooks/*`
 
 #### Fonctionnalités Principales
 
+- **Refactor** : logique découpée (`useBooksFilters`, `useBooksProgress`, `useBooksPagination`, `useBooksActions`, `useBooksSessions`, `useBooksImportExport`, `useBooksCovers`, `useBooksAssets`)
+- **3 sous-onglets** : **Bibliothèque**, **Statistiques**, **BookFinder** (`BookFinder`) — dernier sous-onglet mémorisé (`localStorage` `books.activeSubTab`)
+- **Barre XP livres** (`BooksXPBar`) pour gamification / progression
+- **Navigation depuis la sidebar** : `sessionStorage` `nav_params_books` (focus livre, onglet stats, action ajouter un livre)
 - **Gestion bibliothèque complète** : Ajout, édition, suppression, import/export
 - **Statuts de lecture** : En cours, Terminé, À lire, Abandonné, En pause
 - **Sessions de lecture** : Suivi pages lues, vitesse (pages/heure), notes
-- **Galerie 3D** : Affichage immersif avec couvertures (WebGL/Three.js)
-- **Statistiques avancées** : Temps total, vitesse moyenne, progression, objectifs
+- **Galerie 3D** : Affichage immersif avec couvertures (lazy `BooksDomeGallery`, WebGL/Three.js)
+- **Statistiques avancées** : Temps total, vitesse moyenne, progression, objectifs (`StatisticsSubTab`)
 - **Filtres et recherche** : Par genre, année, score, statut, recherche textuelle
 - **Tri multi-critères** : Récent, titre, auteur, pages, score
 - **Gestion couvertures** : Upload, compression WebP, stockage IndexedDB
+- **i18n** : `useTranslation` sur les libellés clés
 
 #### Architecture & Flux de Données
 
@@ -1768,9 +1765,10 @@ flowchart TD
 **📖 Explication Détaillée**
 
 **Composants impliqués** :
-- **BooksTab** : Composant principal avec toggle 3D/Liste
+- **BooksTab** : Orchestration, sous-navigation, `ErrorBoundary` par sous-onglet
 - **BookCard** : Carte individuelle avec actions (éditer, supprimer, session)
-- **BooksDB** : IndexedDB v1 (object stores: `books`, `sessions`, `covers`)
+- **BooksStorageProvider** / **useBooksStorage** : chargement et persistance de la bibliothèque
+- **BooksDB** : données livres (souvent via stores préfixés dans **WorkoutTrackerDB** — voir schéma)
 
 **Fonctionnalités techniques** :
 1. **Gestion bibliothèque** :
@@ -1807,6 +1805,10 @@ flowchart TD
 
 #### Fonctionnalités Principales
 
+- **Lazy loading** : chaque sous-onglet est chargé à la demande (`React.lazy` + `Suspense` + squelette de chargement)
+- **Mémorisation du sous-onglet** : `useNavigationCache('finance.activeSubTab', …)` pour retrouver Bourse, Budget, etc. après navigation
+- **Mesure de performance** : `useFinancePerformance('FinanceTab')` pour le diagnostic
+- **i18n** : titres et libellés via clés `finance.*` (`labelKey` par id de sous-onglet)
 - **6 sous-onglets** : Bourse, Budget, Investissements, Smart Shopping, Planificateur, Synthèse
 - **Bourse** : Portfolio actions, suivi cours temps réel, alertes, graphiques, export CSV
 - **Budget** : Gestion dépenses, catégories, sous-catégories, recherche, filtres
@@ -1877,17 +1879,213 @@ flowchart TD
 
 ---
 
-### 7. 📅 Onglet "Today" (Aujourd'hui)
+### 7. ⚙️ Onglet "Settings" (Paramètres)
 
-**Fichier** : `src/components/tabs/TodayTab.jsx`
+**Fichier** : `src/components/tabs/SettingsTab.jsx` (orchestration ~quelques centaines de lignes) ; sections dans `SettingsTab/components/*` et `SettingsTab/hooks/*`
 
 #### Fonctionnalités Principales
 
-- **Liste des exercices du jour** avec cases à cocher
-- **Saisie répétitions** en temps réel
-- **Feedback visuel** (badges, toasts)
-- **Synchronisation automatique** avec IndexedDB
-- **Affichage historique** de la journée
+L'onglet Settings est le **centre de contrôle** de l'application :
+
+- **Recherche interne** : filtre les sections par mots-clés (profil, bannières, langue, etc.)
+- **Profil & compte** (`ProfileSettings`, `AuthContext`) : avatar, email, mot de passe, **liaison des données invité → compte** (`linkAnonymousDataToUser`)
+- **Carte profil sidebar** (`ProfileCardSettings`) : image centrale, handle, cohérence avec **SidebarPremium**
+- **Navigation** : **Swipe Accueil → Dashboard** (`SwipeNavigationSettings`, `useSwipeSettings`)
+- **Langue** (`LanguageSettings`) : locale globale (`LanguageProvider` / `useTranslation`)
+- **Prière / horaires** (`PrayerLocationSettings`) : localisation pour les quêtes / horaires associés
+- **Page d’accueil** : images, bannières (`BannerExportImport`), citations (`QuoteManager` + garde `QuotesErrorBoundary`)
+- **Export/Import données** : JSON complet avec validation ; **export nutrition** (`useNutritionData`) ; modules dédiés **Quêtes**, **Livres**, **Budget**, **Apprentissage**
+- **Import** : prévisualisation (`AllDataImportPreviewModal`, `BodyTrackingImportPreviewModal`)
+- **Export/Import Garmin** : Données Garmin séparées (`useGarminData`)
+- **Gestion images HomePage** : Upload, suppression, rotation
+- **Nettoyage données** : Suppression sessions mock, cache (`DataCleanupSection`, `useDataCleanup`)
+- **Migration / validation** (`useDataMigration`, `useDataValidation`, `useSettingsStats`)
+- **Statistiques données** : Compteurs détaillés
+- **Réinitialisation** : Reset complet avec confirmation (selon sections)
+
+#### Architecture & Gestion Données
+
+```mermaid
+flowchart TB
+    A[⚙️ SettingsTab] --> B{Section?}
+    
+    B -->|Export/Import| C[📥 Export/Import<br/>Données]
+    B -->|Garmin| D[⌚ Export/Import<br/>Garmin]
+    B -->|Images| E[🖼️ Gestion Images<br/>HomePage]
+    B -->|Nettoyage| F[🧹 Nettoyage<br/>Données]
+    B -->|Validation| G[✅ Validation<br/>Intégrité]
+    
+    C --> H[prepareExportData<br/>Préparation JSON]
+    H --> I[downloadExportFile<br/>Téléchargement]
+    
+    C --> J[processImportData<br/>Traitement Import]
+    J --> K[validateBodyTrackingData<br/>Validation]
+    K --> L[Fusion Données<br/>Sans Doublons]
+    L --> M[Sauvegarde<br/>IndexedDB]
+    
+    D --> N[exportGarminData<br/>Export Garmin]
+    D --> O[importGarminData<br/>Import Garmin]
+    
+    E --> P[HomePageImageSettings<br/>Upload/Delete]
+    P --> Q[HomepageImagesDB<br/>Sauvegarde]
+    
+    F --> R[deleteMockEnduranceSessions<br/>Suppression Mock]
+    F --> S[clearCache<br/>Vidage Cache]
+    
+    G --> T[Validation Structure<br/>Champs Requis]
+    T --> U[Statistiques<br/>Compteurs]
+    
+    style A fill:#8b5cf6,stroke:#fff,color:#fff
+    style C fill:#3b82f6,stroke:#fff,color:#fff
+    style D fill:#10b981,stroke:#fff,color:#fff
+    style G fill:#f59e0b,stroke:#fff,color:#fff
+```
+
+**📖 Explication Détaillée**
+
+**Composants impliqués** :
+- **SettingsTab** : Assemblage des sections + recherche + ancres
+- **HomePageImageSettings** : Gestion images homepage
+- **Hooks** : `useSettingsExport`, `useSettingsImport`, `useAllDataExportImport`, etc.
+- **useGarminData** / **useNutritionData** : Export ciblés
+- **useWorkout** : Gestion données workout, nettoyage mock endurance
+
+**Fonctionnalités techniques** :
+1. **Export données** :
+   - **Préparation** : `prepareExportData()` structure JSON complète
+   - **Contenu** :
+     - Exercices, répétitions, étirements
+     - Photos progression (multi-résolution)
+     - Métriques corporelles
+     - Données endurance (5 activités)
+     - Programmes, historique
+     - Feedbacks session
+   - **Téléchargement** : `downloadExportFile()` génère fichier JSON
+   - **Format** : JSON avec métadonnées (version, date export)
+
+2. **Import données** :
+   - **Validation** : `validateBodyTrackingData()` vérifie structure
+   - **Traitement** : `processImportData()` normalise données
+   - **Fusion intelligente** :
+     - **Sessions endurance** : Fusion sans doublons (par ID + date)
+     - **Défis** : Fusion sans doublons (par ID + nom+type+date)
+     - **Photos** : Fusion avec préservation multi-résolution
+     - **Historique** : Préservation données existantes
+   - **Sauvegarde** : Transaction atomique IndexedDB
+   - **Backup** : Sauvegarde automatique avant import
+
+3. **Export/Import Garmin** :
+   - **Export** : `exportGarminData()` exporte toutes données Garmin
+   - **Import** : `importGarminData()` importe données Garmin
+   - **Séparation** : Données Garmin séparées de données workout
+   - **Validation** : Vérification structure Garmin
+
+4. **Gestion images HomePage** :
+   - **Upload** : Images Base64 validées
+   - **Suppression** : Suppression depuis IndexedDB
+   - **Rotation** : Configuration rotation automatique
+   - **Validation** : Vérification format, taille, Base64
+
+5. **Nettoyage données** :
+   - **Sessions mock** : `deleteMockEnduranceSessions()` suppression
+   - **Cache** : `clearCache()` vidage cache frontend
+   - **Activités mock Garmin** : `deleteMockActivities()` suppression
+   - **Confirmation** : Double confirmation avant suppression
+
+6. **Validation intégrité** :
+   - **Structure** : Vérification champs requis
+   - **Types** : Validation types données
+   - **Cohérence** : Vérification cohérence interne
+   - **Statistiques** : Compteurs détaillés par type
+
+7. **Statistiques données** :
+   ```javascript
+   {
+     exercises: nombre exercices,
+     reps: nombre répétitions,
+     stretches: nombre étirements,
+     photos: nombre photos,
+     progressEntries: nombre entrées progression,
+     reminders: nombre rappels,
+     enduranceSessions: nombre sessions endurance,
+     dailyVariations: nombre variations journalières,
+     sessionFeedbacks: nombre feedbacks
+   }
+   ```
+
+8. **Réinitialisation** :
+   - **Confirmation** : Triple confirmation (sécurité)
+   - **Suppression** : Toutes données IndexedDB
+   - **Réinitialisation** : État application à zéro
+   - **Irréversible** : Action définitive
+
+**Optimisations** :
+- 🔄 **Fusion intelligente** : Évite doublons automatiquement
+- 💾 **Backup automatique** : Sauvegarde avant import
+- ✅ **Validation stricte** : Vérification complète avant import
+- 📊 **Statistiques détaillées** : Compteurs précis
+
+**Points techniques** :
+- **Format export** : JSON avec versioning
+- **Fusion doublons** : Détection par ID + métadonnées
+- **Validation Base64** : Vérification stricte images
+- **Transactions** : Atomiques pour cohérence
+
+**Interconnexions** :
+- → **Tous onglets** : Configuration globale
+- → **HomePage** : Gestion images
+- → **Garmin** : Export/import Garmin
+- → **Progress** : Export/import photos
+- ← **Tous onglets** : Données exportées
+
+---
+
+---
+
+---
+
+### Lecture de la documentation « Sport » (sous-barre)
+
+Les **14** boutons sous le méta-onglet **Sport** suivent l'ordre de `src/components/layout/Navigation.jsx` (`sportTabs`). Chaque bouton fixe `activeTab` :
+
+| # | `activeTab` | Titre dans ce README |
+|---|-------------|----------------------|
+| 1 | `today` | Sport · Aujourd'hui |
+| 2 | `data-entry` | Sport · Saisie |
+| 3 | `program` | Sport · Programme |
+| 4 | `nutrition` | Sport · Nutrition |
+| 5 | `exercises` | Sport · Exercices |
+| 6 | `progress` | Sport · Progress |
+| 7 | `endurance` | Sport · Endurance |
+| 8 | `calendar` | Sport · Calendrier |
+| 9 | `history` | Sport · Historique |
+| 10 | `charts` | Sport · Graphiques |
+| 11 | `stats` | Sport · Statistiques |
+| 12 | `predictions` | Sport · Prédictions |
+| 13 | `smart-balancing` | Sport · Équilibrage IA |
+| 14 | `garmin` | Sport · Garmin |
+
+**Ordre des chapitres** : dans ce fichier, **Garmin** est documenté **avant** **Équilibrage IA** ; dans l'application, **Équilibrage IA** (`smart-balancing`) est **avant** **Garmin** (`garmin`). Se référer au tableau pour l'ordre réel de la sous-barre.
+
+---
+
+### Sport · Aujourd'hui (`today`)
+
+**Fichier** : `src/components/tabs/TodayTab.jsx` + composants `TodayTab/components/*`
+
+#### Fonctionnalités Principales
+
+- **Liste des exercices du jour** avec cases à cocher (variantes semaine A/B, `getAutoWeekVariant`)
+- **Saisie répétitions** en temps réel (`calculateAutoReps`, unités d’exercice)
+- **Mode salle** (`isGymMode`) et **override du jour d’entraînement** (`workoutDayOverride`)
+- **Exercices exceptionnels** : ajout / suppression / complétion pour la journée (`AddExceptionalExerciseModal`, etc.)
+- **Variations journalières** : masquer ou restaurer un exercice pour aujourd’hui
+- **Justification jour sans activité** (`DayJustificationButton`, `isDayWithoutActivity`)
+- **Défis & endurance du jour** : intégration des sessions / défis dans la vue (données endurance normalisées)
+- **Barre XP sport** (`SportXPBar`)
+- **Feedback** : toasts (`useToast`) pour succès / erreurs
+- **Synchronisation automatique** avec IndexedDB via `WorkoutContext` / `useTodayExercises`
+- **i18n** : `useTranslation`
 
 #### Architecture & Flux de Données
 
@@ -1950,7 +2148,7 @@ flowchart TD
 
 ---
 
-### 3. ✏️ Onglet "Data Entry" (Saisie)
+### Sport · Saisie (`data-entry`)
 
 **Fichier** : `src/components/tabs/DataEntryTab.jsx`
 
@@ -2038,7 +2236,7 @@ sequenceDiagram
 
 ---
 
-### 4. 📸 Onglet "Progress" (Suivi Corporel)
+### Sport · Progress (`progress`)
 
 **Fichier** : `src/components/tabs/ProgressTab.jsx`
 
@@ -2111,7 +2309,7 @@ La section **Photos** est la plus avancée techniquement. Voir le [Flux 3 : Uplo
 
 ---
 
-### 5. 🏃 Onglet "Endurance"
+### Sport · Endurance (`endurance`)
 
 **Fichier** : `src/components/tabs/EnduranceTab.jsx`
 
@@ -2190,7 +2388,7 @@ flowchart LR
 
 ---
 
-### 6. 🗓️ Onglet "Calendar" (Calendrier)
+### Sport · Calendrier (`calendar`)
 
 **Fichier** : `src/components/tabs/CalendarTab.jsx`
 
@@ -2287,7 +2485,7 @@ flowchart TB
 
 ---
 
-### 7. 🎯 Onglet "Program" (Programme)
+### Sport · Programme (`program`)
 
 **Fichier** : `src/components/tabs/ProgramTab.jsx`
 
@@ -2295,9 +2493,13 @@ flowchart TB
 
 - **Gestion programmes** : Création, édition, suppression
 - **Activation programme** : Programme actif appliqué à "Today"
-- **Vue détaillée** : Affichage exercices par jour
+- **Vue détaillée** : Affichage exercices par jour (`ProgramDetailView`)
 - **Export/Import** : Sauvegarde programmes en JSON
-- **Durée calculée** : Affichage durée programme (jours/semaines/mois)
+- **Durée calculée** : Affichage durée programme (jours/semaines/mois) via **i18n** (`useTranslation` + `useFormatters`)
+- **Import du programme courant** : conversion automatique depuis `data/workoutProgram.js` vers le format application (réservé **compte admin**)
+- **Jours d’utilisation réels** : estimation à partir des exercices cochés et des dates de programme (`calculateRealUsageDays`)
+- **Contrôle d’accès** : les programmes listés et l’actif ne sont exposés que pour le **compte administrateur** ; les autres utilisateurs voient une liste vide (données personnelles à venir)
+- **Toasts** : retours utilisateur (`useToast`) sur les actions
 
 #### Architecture & Flux de Données
 
@@ -2417,7 +2619,29 @@ sequenceDiagram
 
 ---
 
-### 8. 📊 Onglet "Charts" (Graphiques)
+### Sport · Nutrition (`nutrition`)
+
+**Fichier** : `src/components/tabs/NutritionTab.jsx` + `src/components/tabs/nutrition/components/*`
+
+#### Fonctionnalités Principales
+
+- **Sections** (navigation interne) : **Journal** (`NutritionJournal`), **Programmes** (`NutritionPrograms`), **Analyses** (`NutritionAnalyses`), **Gamification** (`NutritionGamification`), **Défis** (`NutritionDailyChallenges`), **Partage / coach** (`NutritionSharing`, liens sécurisés), **Photos progression** (`NutritionProgressPhotos`)
+- **Lazy loading** des sections lourdes + squelettes (`SectionSkeleton`) pour limiter le bundle initial
+- **Persistance d’état** : sections déjà visitées peuvent rester montées (config `nutrition.config`, LRU interne)
+- **Thème dynamique** : `useNutritionTheme` (couleurs / rythme, option animation)
+- **Garmin** : `useGarminData` pour croiser calories / activité quand disponible
+- **Offline** : enregistrement du service worker nutrition (`registerNutritionServiceWorker`) et file d’attente IndexedDB (`nutrition_offlineQueue`, migrations versionnées côté `nutritionDataUtils`)
+- **i18n** : `useTranslation`
+
+#### Interconnexions
+
+- → **Garmin** : apports énergétiques et cohérence avec l’activité
+- → **Onglet Coach** (`CoachDashboard`) : flux coach / import côté nutrition
+- ← **Settings** : export des données nutrition (section dédiée)
+
+---
+
+### Sport · Graphiques (`charts`)
 
 **Fichier** : `src/components/tabs/ChartsTab.jsx`
 
@@ -2533,7 +2757,7 @@ flowchart TB
 
 ---
 
-### 9. 📈 Onglet "Stats" (Statistiques)
+### Sport · Statistiques (`stats`)
 
 **Fichier** : `src/components/tabs/StatsTab.jsx`
 
@@ -2654,7 +2878,7 @@ flowchart TD
 
 ---
 
-### 10. 💪 Onglet "Exercises" (Exercices)
+### Sport · Exercices (`exercises`)
 
 **Fichier** : `src/components/tabs/ExercisesTab.jsx`
 
@@ -2762,7 +2986,7 @@ flowchart TB
 
 ---
 
-### 11. 📜 Onglet "History" (Historique)
+### Sport · Historique (`history`)
 
 **Fichier** : `src/components/tabs/HistoryTab.jsx`
 
@@ -2875,7 +3099,7 @@ sequenceDiagram
 
 ---
 
-### 12. 🔮 Onglet "Predictions" (Prédictions)
+### Sport · Prédictions (`predictions`)
 
 **Fichier** : `src/components/PredictionsTab.jsx`
 
@@ -2999,11 +3223,16 @@ flowchart TD
 
 ---
 
----
-
-### 13. ⌚ Onglet "Garmin" (Synchronisation Garmin Connect)
+### Sport · Garmin (`garmin`) — Synchronisation Garmin Connect
 
 **Fichier** : `src/components/tabs/GarminTab.jsx`
+
+#### Contrôle d'accès (état actuel)
+
+- **Non connecté** : l’onglet s’affiche avec une **vue vide** (pas de synchro / historique chargé depuis le serveur).
+- **Compte administrateur** : accès complet aux données Garmin (chargement `useGarminData` dans `App.jsx`, persistance **GarminDataDB**).
+- **Utilisateur connecté non admin** : message indiquant que la section est **réservée au compte admin** (en attendant la séparation stricte des données par utilisateur).
+- **GarminProvider** : fourni **à l’intérieur** de l’arborescence Garmin (`GarminTab`), pas au niveau racine de `App.jsx`.
 
 #### Fonctionnalités Principales
 
@@ -3511,7 +3740,7 @@ L'onglet Garmin suit une architecture modulaire de niveau production avec sépar
 
 ---
 
-### 14. 🧠 Onglet "Smart Balancing" (Équilibrage IA)
+### Sport · Équilibrage IA (`smart-balancing`)
 
 **Fichier** : `src/components/SmartBalancingTab.jsx`
 
@@ -3670,161 +3899,6 @@ flowchart TB
 
 ---
 
-### 15. ⚙️ Onglet "Settings" (Paramètres)
-
-**Fichier** : `src/components/tabs/SettingsTab.jsx`
-
-#### Fonctionnalités Principales
-
-L'onglet Settings est le **centre de contrôle** de l'application :
-
-- **Export/Import données** : JSON complet avec validation
-- **Export/Import Garmin** : Données Garmin séparées
-- **Gestion images HomePage** : Upload, suppression, rotation
-- **Nettoyage données** : Suppression sessions mock, cache
-- **Validation données** : Vérification intégrité
-- **Statistiques données** : Compteurs détaillés
-- **Réinitialisation** : Reset complet avec confirmation
-
-#### Architecture & Gestion Données
-
-```mermaid
-flowchart TB
-    A[⚙️ SettingsTab] --> B{Section?}
-    
-    B -->|Export/Import| C[📥 Export/Import<br/>Données]
-    B -->|Garmin| D[⌚ Export/Import<br/>Garmin]
-    B -->|Images| E[🖼️ Gestion Images<br/>HomePage]
-    B -->|Nettoyage| F[🧹 Nettoyage<br/>Données]
-    B -->|Validation| G[✅ Validation<br/>Intégrité]
-    
-    C --> H[prepareExportData<br/>Préparation JSON]
-    H --> I[downloadExportFile<br/>Téléchargement]
-    
-    C --> J[processImportData<br/>Traitement Import]
-    J --> K[validateBodyTrackingData<br/>Validation]
-    K --> L[Fusion Données<br/>Sans Doublons]
-    L --> M[Sauvegarde<br/>IndexedDB]
-    
-    D --> N[exportGarminData<br/>Export Garmin]
-    D --> O[importGarminData<br/>Import Garmin]
-    
-    E --> P[HomePageImageSettings<br/>Upload/Delete]
-    P --> Q[HomepageImagesDB<br/>Sauvegarde]
-    
-    F --> R[deleteMockEnduranceSessions<br/>Suppression Mock]
-    F --> S[clearCache<br/>Vidage Cache]
-    
-    G --> T[Validation Structure<br/>Champs Requis]
-    T --> U[Statistiques<br/>Compteurs]
-    
-    style A fill:#8b5cf6,stroke:#fff,color:#fff
-    style C fill:#3b82f6,stroke:#fff,color:#fff
-    style D fill:#10b981,stroke:#fff,color:#fff
-    style G fill:#f59e0b,stroke:#fff,color:#fff
-```
-
-**📖 Explication Détaillée**
-
-**Composants impliqués** :
-- **SettingsTab** : Interface principale
-- **HomePageImageSettings** : Gestion images homepage
-- **exportImport utils** : Utilitaires export/import
-- **useGarminData** : Export/import Garmin
-- **useWorkout** : Gestion données workout
-
-**Fonctionnalités techniques** :
-1. **Export données** :
-   - **Préparation** : `prepareExportData()` structure JSON complète
-   - **Contenu** :
-     - Exercices, répétitions, étirements
-     - Photos progression (multi-résolution)
-     - Métriques corporelles
-     - Données endurance (5 activités)
-     - Programmes, historique
-     - Feedbacks session
-   - **Téléchargement** : `downloadExportFile()` génère fichier JSON
-   - **Format** : JSON avec métadonnées (version, date export)
-
-2. **Import données** :
-   - **Validation** : `validateBodyTrackingData()` vérifie structure
-   - **Traitement** : `processImportData()` normalise données
-   - **Fusion intelligente** :
-     - **Sessions endurance** : Fusion sans doublons (par ID + date)
-     - **Défis** : Fusion sans doublons (par ID + nom+type+date)
-     - **Photos** : Fusion avec préservation multi-résolution
-     - **Historique** : Préservation données existantes
-   - **Sauvegarde** : Transaction atomique IndexedDB
-   - **Backup** : Sauvegarde automatique avant import
-
-3. **Export/Import Garmin** :
-   - **Export** : `exportGarminData()` exporte toutes données Garmin
-   - **Import** : `importGarminData()` importe données Garmin
-   - **Séparation** : Données Garmin séparées de données workout
-   - **Validation** : Vérification structure Garmin
-
-4. **Gestion images HomePage** :
-   - **Upload** : Images Base64 validées
-   - **Suppression** : Suppression depuis IndexedDB
-   - **Rotation** : Configuration rotation automatique
-   - **Validation** : Vérification format, taille, Base64
-
-5. **Nettoyage données** :
-   - **Sessions mock** : `deleteMockEnduranceSessions()` suppression
-   - **Cache** : `clearCache()` vidage cache frontend
-   - **Activités mock Garmin** : `deleteMockActivities()` suppression
-   - **Confirmation** : Double confirmation avant suppression
-
-6. **Validation intégrité** :
-   - **Structure** : Vérification champs requis
-   - **Types** : Validation types données
-   - **Cohérence** : Vérification cohérence interne
-   - **Statistiques** : Compteurs détaillés par type
-
-7. **Statistiques données** :
-   ```javascript
-   {
-     exercises: nombre exercices,
-     reps: nombre répétitions,
-     stretches: nombre étirements,
-     photos: nombre photos,
-     progressEntries: nombre entrées progression,
-     reminders: nombre rappels,
-     enduranceSessions: nombre sessions endurance,
-     dailyVariations: nombre variations journalières,
-     sessionFeedbacks: nombre feedbacks
-   }
-   ```
-
-8. **Réinitialisation** :
-   - **Confirmation** : Triple confirmation (sécurité)
-   - **Suppression** : Toutes données IndexedDB
-   - **Réinitialisation** : État application à zéro
-   - **Irréversible** : Action définitive
-
-**Optimisations** :
-- 🔄 **Fusion intelligente** : Évite doublons automatiquement
-- 💾 **Backup automatique** : Sauvegarde avant import
-- ✅ **Validation stricte** : Vérification complète avant import
-- 📊 **Statistiques détaillées** : Compteurs précis
-
-**Points techniques** :
-- **Format export** : JSON avec versioning
-- **Fusion doublons** : Détection par ID + métadonnées
-- **Validation Base64** : Vérification stricte images
-- **Transactions** : Atomiques pour cohérence
-
-**Interconnexions** :
-- → **Tous onglets** : Configuration globale
-- → **HomePage** : Gestion images
-- → **Garmin** : Export/import Garmin
-- → **Progress** : Export/import photos
-- ← **Tous onglets** : Données exportées
-
----
-
----
-
 ## 🔗 Interconnexion des Onglets
 
 Cette section illustre comment les onglets communiquent entre eux et partagent des données.
@@ -3977,6 +4051,22 @@ flowchart LR
 | **History** | Charts | Données graphiques | Calcul |
 | **Predictions** | Smart Balancing | Prédictions futures | Calcul |
 | **Settings** | Tous | Configuration globale | Modification |
+| **Nutrition** | Garmin / Coach | Apports, liens coach | Temps réel / manuel |
+| **Dashboard** | Quêtes, Sport, Livres, Finance, Apprentissage, News | Modules `Dashboard*` + `GlobalXPBar` | À la visite de l’onglet |
+
+Les noms d’onglets du tableau correspondent aux **titres fonctionnels** ; les clés techniques sont en **`kebab-case`** dans le code (`data-entry`, `smart-balancing`, etc.), comme dans le tableau « Lecture de la documentation Sport ».
+
+### 🧩 Shell applicatif (sidebar, actions rapides)
+
+- **SidebarPremium** (`SidebarPremium`) : affichée sur les onglets « classiques » ; **masquée** sur **Accueil**, **Auth** et **Pricing** (voir `App.jsx`).
+- **QuickActionsProvider** : menu / raccourcis d’actions transverses.
+- **Événement `tab-change`** : émis au changement d’onglet ou de sous-onglet pour synchroniser la sidebar (ex. rotation carte profil, modules interactifs).
+
+### 🔐 Vues Auth, Pricing et Coach
+
+- **Auth** (`AuthPage`, `activeTab === 'auth'`) : connexion / inscription ; renvoie souvent vers **Pricing** pour les offres.
+- **Pricing** (`PricingTab`) : page **plein écran** (header et barre de navigation principale masqués).
+- **Coach** (`activeTab === 'coach'`, `CoachDashboard`) : tableau de bord côté **coach nutrition** (import / suivi), distinct de l’onglet **Nutrition** utilisateur.
 
 ### 🎯 Points d'Intégration Clés
 
@@ -3998,9 +4088,9 @@ flowchart LR
 
 ---
 
-**✅ CHAPITRE 3 TERMINÉ - Documentation Complète des 8 Onglets Principaux**
+**✅ CHAPITRE 3 TERMINÉ - Documentation des onglets (barre + Sport + vues système)**
 
-*Tous les onglets principaux et leurs sous-onglets ont été documentés avec diagrammes Mermaid interactifs et explications détaillées. La section Interconnexion montre comment les données circulent entre les onglets.*
+*Les huit entrées de navigation principale sont détaillées ci-dessus, ainsi que les sous-onglets Sport (dont **Nutrition** en section dédiée), les vues **Auth / Pricing / Coach** et le shell (sidebar, actions rapides). Les diagrammes Mermaid et le tableau d’interconnexion décrivent les flux de données.*
 
 ---
 
