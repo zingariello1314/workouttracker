@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getDateStr } from '../utils/dateUtils';
 import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
 import Button from './ui/Button';
@@ -32,9 +32,37 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const [editingExercise, setEditingExercise] = useState(null);
   const [editingStretch, setEditingStretch] = useState(null);
   const [editedData, setEditedData] = useState({});
+  /** Nom + description globaux du programme */
+  const [editingProgramMeta, setEditingProgramMeta] = useState(false);
+  const [programMetaDraft, setProgramMetaDraft] = useState({ name: '', description: '' });
   /** Édition titre / focus / durée affichés dans l'en-tête du jour */
   const [editingDayHeaderKey, setEditingDayHeaderKey] = useState(null);
   const [dayHeaderDraft, setDayHeaderDraft] = useState({ name: '', focus: '', duration: '' });
+
+  useEffect(() => {
+    if (!program) return;
+    setProgramMetaDraft({
+      name: program.name ?? '',
+      description: program.description ?? ''
+    });
+  }, [program?.id, program?.name, program?.description]);
+
+  const handleSaveProgramMeta = () => {
+    onUpdateProgram({
+      ...program,
+      name: programMetaDraft.name.trim() || program.name,
+      description: programMetaDraft.description.trim()
+    });
+    setEditingProgramMeta(false);
+  };
+
+  const handleCancelProgramMeta = () => {
+    setProgramMetaDraft({
+      name: program.name ?? '',
+      description: program.description ?? ''
+    });
+    setEditingProgramMeta(false);
+  };
 
   const daysOfWeek = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
   const dayNames = {
@@ -611,9 +639,63 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
           <ArrowLeft size={20} />
           Retour
         </Button>
-        <div>
-          <h1 className={`${typography.presets.h1} mb-2`}>{program.name}</h1>
-          <p className="text-slate-300">{program.description}</p>
+        <div className="flex-1 min-w-0">
+          {!editingProgramMeta ? (
+            <div className="flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <h1 className={`${typography.presets.h1} mb-2 break-words`}>{program.name}</h1>
+                <p className="text-slate-300 whitespace-pre-wrap">{program.description}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingProgramMeta(true)}
+                className="shrink-0 p-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 transition-colors"
+                title="Modifier le nom et la description"
+                aria-label="Modifier le nom et la description du programme"
+              >
+                <Edit3 size={18} />
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3 max-w-2xl">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Nom du programme</label>
+                <input
+                  type="text"
+                  value={programMetaDraft.name}
+                  onChange={(e) => setProgramMetaDraft((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-white text-lg font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Description</label>
+                <textarea
+                  value={programMetaDraft.description}
+                  onChange={(e) => setProgramMetaDraft((p) => ({ ...p, description: e.target.value }))}
+                  rows={4}
+                  className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-slate-200 text-sm"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveProgramMeta}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600/80 text-white hover:bg-emerald-500/90 border border-emerald-500/50"
+                >
+                  <Save size={16} />
+                  Enregistrer
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelProgramMeta}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-500 text-slate-300 hover:bg-slate-700/50"
+                >
+                  <X size={16} />
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

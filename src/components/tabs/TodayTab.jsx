@@ -465,7 +465,7 @@ const TodayTab = () => {
   const handleSessionFeedback = () => {
     // Calculer la durée réelle basée sur les exercices accomplis
     const calculateSessionDuration = () => {
-      const completedExercises = workout.exercices.filter(exercise => {
+      const completedExercises = (workout.exercices || []).filter((exercise) => {
         // Générer la clé appropriée selon le type d'exercice
         let exerciseKey = `${dateStr}_${exercise.id}`;
         
@@ -544,7 +544,7 @@ const TodayTab = () => {
       date: dateStr,
       exercises: [
         // Exercices classiques
-        ...workout.exercices.map(exercise => {
+        ...(workout.exercices || []).map((exercise) => {
           const exerciseKey = `${dateStr}_${exercise.id}`;
           const isChecked = data.checkedExercises[exerciseKey] || false;
           const reps = data.reps[exerciseKey] || '';
@@ -563,12 +563,12 @@ const TodayTab = () => {
           duration: workout.complementaryActivity.duration
         }] : [])
       ],
-      totalReps: workout.exercices.reduce((total, exercise) => {
+      totalReps: (workout.exercices || []).reduce((total, exercise) => {
         const exerciseKey = `${dateStr}_${exercise.id}`;
         const reps = data.reps[exerciseKey] || '';
         return total + (parseInt(reps) || 0);
       }, 0),
-      estimatedDuration: Math.max(30, workout.exercices.length * 3),
+      estimatedDuration: Math.max(30, (workout.exercices || []).length * 3),
       duration: calculateSessionDuration() // Ajouter la durée réelle calculée
     };
     
@@ -584,7 +584,15 @@ const TodayTab = () => {
     discardChanges();
   };
 
-  if (!workout.exercices || workout.exercices.length === 0) {
+  const hasStretchesContent =
+    workout.etirements &&
+    Object.keys(workout.etirements).length > 0 &&
+    Object.values(workout.etirements).some(
+      (txt) => txt && String(txt).trim().length > 0
+    );
+
+  /** Jour sans exercices : n’afficher l’écran « jour de repos » plein écran que s’il n’y a pas non plus d’étirements prévus */
+  if ((!workout.exercices || workout.exercices.length === 0) && !hasStretchesContent) {
     const activeChallenges = getActiveChallenges();
     const currentData = getCurrentData();
     const hasNoActivity = isDayWithoutActivity(currentData, dateStr);
@@ -638,13 +646,15 @@ const TodayTab = () => {
         <SportXPBar />
         {/* Workout Header */}
       <div className={`p-6 rounded-lg shadow-xl border border-slate-700 ${
-        workout.focus.includes('Repos') 
+        workout.focus?.includes('Repos')
           ? 'bg-gradient-to-r from-blue-900/80 to-slate-800/80' 
           : 'bg-gradient-to-r from-pink-600/80 to-purple-600/80'
       } backdrop-blur-sm`}>
         <h2 className="text-2xl font-bold text-white">{workout.name}</h2>
         <p className="text-sm text-gray-200 opacity-90 mt-1">{workout.focus}</p>
-        <p className="text-xs text-gray-300 mt-2">⏱️ {workout.duree}</p>
+        {workout.duree ? (
+          <p className="text-xs text-gray-300 mt-2">⏱️ {workout.duree}</p>
+        ) : null}
         
         {/* Toggle Gym/Maison - seulement pour samedi et dimanche */}
         {hasGymVariants && (
@@ -1023,7 +1033,7 @@ const TodayTab = () => {
       </div>
 
       {/* Étirements - Afficher seulement s'il y a des étirements avec contenu */}
-      {workout.etirements && Object.keys(workout.etirements).length > 0 && Object.values(workout.etirements).some(etirement => etirement && etirement.trim().length > 0) && (
+      {hasStretchesContent && (
         <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">
           <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
             <span className="text-purple-400">🧘‍♂️</span>

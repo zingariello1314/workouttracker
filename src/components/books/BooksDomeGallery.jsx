@@ -4,6 +4,7 @@ import './booksDome.css';
 /**
  * books: tableau de { id, title, author?, coverUrl }
  * onBookOpen: callback (bookId: string) => void
+ * onBookOpenDetail: callback (bookId: string) => void (bouton "Voir le détail")
  * dragSensitivity: plus grand = moins sensible
  * dragDampening: contrôle la traînée de l’inertie (0–1)
  */
@@ -70,6 +71,7 @@ export const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 const BooksDomeGallery = ({
   books,
   onBookOpen,
+  onBookOpenDetail,
   dragSensitivity = 50,
   dragDampening = 0.3,
   maxVerticalRotationDeg = 8,
@@ -961,7 +963,10 @@ const BooksDomeGallery = ({
                   type="button"
                   className="books-dome-enlarge-button"
                   onClick={() => {
-                    if (onBookOpen) {
+                    if (onBookOpenDetail) {
+                      onBookOpenDetail(openedItem.bookId);
+                    } else if (onBookOpen) {
+                      // Fallback pour conserver le comportement historique.
                       onBookOpen(openedItem.bookId);
                     }
                     setOverlayVisible(false);

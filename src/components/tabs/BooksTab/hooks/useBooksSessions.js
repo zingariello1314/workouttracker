@@ -70,8 +70,10 @@ export const useBooksSessions = (books = [], setBooks, selectedBook) => {
     });
 
     if (!validation.success) {
-      const firstError = Object.values(validation.errors)[0];
-      alert(firstError || 'Erreur de validation');
+      const msgs = Object.values(validation.errors || {}).filter(
+        (m) => typeof m === 'string' && m.length > 0
+      );
+      alert(msgs.length ? msgs.join('\n') : 'Erreur de validation');
       return;
     }
 
@@ -109,12 +111,12 @@ export const useBooksSessions = (books = [], setBooks, selectedBook) => {
       })
     );
 
-    sidebarEvents.emit(SIDEBAR_EVENTS.PAGES_READ, { 
-      bookId: selectedBook.id, 
+    sidebarEvents.emit(SIDEBAR_EVENTS.PAGES_READ, {
+      bookId: selectedBook.id,
       sessionId: newId,
-      date: session.date,
-      pagesRead: session.pagesRead,
-      durationMinutes: session.durationMinutes
+      date: baseData.date,
+      pagesRead: baseData.pagesRead,
+      durationMinutes: baseData.durationMinutes
     });
 
     resetSessionForm();

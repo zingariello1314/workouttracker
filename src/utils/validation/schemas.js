@@ -391,12 +391,17 @@ export const validateWithSchema = (schema, data) => {
     const validated = schema.parse(data);
     return { success: true, data: validated };
   } catch (error) {
-    if (error instanceof z.ZodError && error.errors && Array.isArray(error.errors)) {
+    // Zod v4 : `issues` ; Zod v3 : alias `errors` → mêmes entrées
+    const issues =
+      error instanceof z.ZodError ? error.issues ?? error.errors : null;
+    if (Array.isArray(issues) && issues.length > 0) {
       const errors = {};
-      error.errors.forEach((err) => {
-        const field = err.path && err.path.length > 0 ? err.path[0] : null;
-        if (field) {
-          errors[field] = err.message;
+      issues.forEach((err) => {
+        const path = err.path || [];
+        const field = path.length > 0 ? path[0] : '_global';
+        const key = String(field);
+        if (!errors[key]) {
+          errors[key] = err.message;
         }
       });
       return { success: false, errors };

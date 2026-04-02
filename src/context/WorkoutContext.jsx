@@ -425,6 +425,7 @@ const WorkoutProvider = ({ children }) => {
         return {
           name: variantName,
           focus: daySchedule.focus || '',
+          duree: daySchedule.duration || '',
           exercices: exercises,
           etirements: Object.keys(etirements).length > 0 ? etirements : undefined,
           isGymMode: isGymMode,

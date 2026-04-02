@@ -8,6 +8,7 @@ import { LayoutDashboard, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
 import NewsBlock from '../dashboard/NewsBlock';
 import GlobalXPBar from '../dashboard/GlobalXPBar';
+import DashboardMomentumBlock from '../dashboard/DashboardMomentumBlock';
 import DashboardQuestsModule from '../dashboard/DashboardQuestsModule';
 import DashboardGarminSportRecapBlock from '../dashboard/DashboardGarminSportRecapBlock';
 import DashboardBooksModule from '../dashboard/DashboardBooksModule';
@@ -23,6 +24,7 @@ const DashboardTab = () => {
     refreshNews
   } = useDashboard();
   const xpRef = useRef(null);
+  const momentumRef = useRef(null);
   const questsRef = useRef(null);
   const sportRef = useRef(null);
   const booksRef = useRef(null);
@@ -82,6 +84,7 @@ const DashboardTab = () => {
                 <div className="text-slate-300 text-sm flex items-center gap-2 flex-wrap">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                   <button type="button" onClick={() => scrollToRef(xpRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">XP</button>
+                  <button type="button" onClick={() => scrollToRef(momentumRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Vue du jour</button>
                   <button type="button" onClick={() => scrollToRef(questsRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Quêtes</button>
                   <button type="button" onClick={() => scrollToRef(sportRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Sport</button>
                   <button type="button" onClick={() => scrollToRef(booksRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Livres</button>
@@ -108,6 +111,10 @@ const DashboardTab = () => {
             {/* Barre XP Globale */}
             <div ref={xpRef} className="scroll-mt-24">
               <GlobalXPBar />
+            </div>
+
+            <div ref={momentumRef} className="scroll-mt-24">
+              <DashboardMomentumBlock />
             </div>
 
             {/* Module Quêtes (au-dessus du Sport) */}
@@ -146,7 +153,7 @@ const DashboardTab = () => {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-slate-400">
                 <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse"></div>
-                <span>Dashboard: <span className="text-white font-semibold">7 modules actifs</span></span>
+                <span>Dashboard: <span className="text-white font-semibold">8 modules actifs</span></span>
               </div>
               <div className="text-slate-500 text-xs">
                 Version: 4.0.0 ✅

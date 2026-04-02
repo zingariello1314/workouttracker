@@ -312,6 +312,27 @@ const BooksTab = () => {
     }, 100);
   }, []);
 
+  const handleBookOpenFromDome = useCallback((bookId) => {
+    setSelectedBookId(bookId);
+    const scrollToSessionForm = () => {
+      const el =
+        document.getElementById('book-session-form-section') ||
+        document.querySelector('[data-session-form]');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+      }
+      return false;
+    };
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!scrollToSessionForm()) {
+          setTimeout(scrollToSessionForm, 280);
+        }
+      });
+    });
+  }, []);
+
   // OPTIMISATION: Utiliser le composant BookCard mémoizé
   const renderBookCard = (book, isCompleted = false) => {
     const coverUrl = coverUrls[book.id];
@@ -830,7 +851,8 @@ const BooksTab = () => {
                 >
                   <BooksDomeGallery
                     books={domeBooks}
-                    onBookOpen={(id) => setSelectedBookId(id)}
+                    onBookOpen={handleBookClick}
+                    onBookOpenDetail={handleBookOpenFromDome}
                     dragSensitivity={50}
                     dragDampening={0.3}
                     maxVerticalRotationDeg={8}
@@ -1404,8 +1426,11 @@ const BooksTab = () => {
                             )}
                           </div>
 
-                          {/* Formulaire d'ajout / modification de session en large rectangle sous les sessions */}
-                          <div className="mt-4 space-y-3 rounded-2xl bg-slate-900/70 border border-slate-800 px-4 py-4">
+                          {/* Formulaire d'ajout / modification de session (ancre scroll depuis la vue 3D) */}
+                          <div
+                            id="book-session-form-section"
+                            className="mt-4 space-y-3 rounded-2xl bg-slate-900/70 border border-slate-800 px-4 py-4"
+                          >
                             <p className="font-semibold text-sm text-slate-200">
                               {editingSessionId
                                 ? t(
@@ -1426,6 +1451,7 @@ const BooksTab = () => {
                                 <Input
                                   id="session-date"
                                   type="date"
+                                  max={new Date().toISOString().slice(0, 10)}
                                   label={t('books.sessions.date', 'Date')}
                                   value={sessionForm.date}
                                   onChange={(e) =>
