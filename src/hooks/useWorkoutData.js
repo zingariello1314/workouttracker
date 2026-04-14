@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { cleanJustifications } from '../utils/dayJustificationUtils';
+import { DEFAULT_ADDICTION_QUIT_DATA } from '../utils/addictionQuitConstants';
 import logger from '../utils/logger';
 
 const workoutDataLog = logger.module('useWorkoutData');
@@ -121,7 +122,9 @@ const INITIAL_WORKOUT_DATA = {
   dayJustificationsVersion: '1.0', // Version du schéma pour migrations futures
   // Coefficients de charge calendrier / historique (surcharges par id d'exercice, optionnel)
   exerciseIntensityCoeffs: {},
-  exercisePersonalNotes: {}
+  exercisePersonalNotes: {},
+  /** Arrêt tabac / THC : timers, jalons 20 ans, journal des envies (IndexedDB via saveToDB) */
+  addictionQuitData: { ...DEFAULT_ADDICTION_QUIT_DATA },
   // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
 };
 
@@ -393,6 +396,10 @@ export const useWorkoutData = (options = {}) => {
           newData && newData.exercisePersonalNotes && typeof newData.exercisePersonalNotes === 'object'
             ? { ...newData.exercisePersonalNotes }
             : {},
+        addictionQuitData:
+          newData && newData.addictionQuitData && typeof newData.addictionQuitData === 'object'
+            ? JSON.parse(JSON.stringify(newData.addictionQuitData))
+            : INITIAL_WORKOUT_DATA.addictionQuitData,
         // Données d'endurance - CRUCIAL pour la persistance
         enduranceData: newData && newData.enduranceData ? { ...newData.enduranceData } : {
           sessions: {
@@ -628,6 +635,10 @@ export const useWorkoutData = (options = {}) => {
                 migratedData.exercisePersonalNotes && typeof migratedData.exercisePersonalNotes === 'object'
                   ? { ...migratedData.exercisePersonalNotes }
                   : {},
+              addictionQuitData:
+                migratedData.addictionQuitData && typeof migratedData.addictionQuitData === 'object'
+                  ? migratedData.addictionQuitData
+                  : INITIAL_WORKOUT_DATA.addictionQuitData,
               // Données d'endurance - CRUCIAL pour la persistance
               enduranceData: migratedData.enduranceData || result.enduranceData || {
                 sessions: {
@@ -659,7 +670,11 @@ export const useWorkoutData = (options = {}) => {
                   exercisePersonalNotes:
                     migratedBackup.exercisePersonalNotes && typeof migratedBackup.exercisePersonalNotes === 'object'
                       ? { ...migratedBackup.exercisePersonalNotes }
-                      : {}
+                      : {},
+                  addictionQuitData:
+                    migratedBackup.addictionQuitData && typeof migratedBackup.addictionQuitData === 'object'
+                      ? migratedBackup.addictionQuitData
+                      : INITIAL_WORKOUT_DATA.addictionQuitData,
                 });
               } else {
                 resolve(null);

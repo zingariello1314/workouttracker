@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { calculateQuestXP } from '../../../../hooks/useQuietQuestEngine';
-import { getHeureDisplay, getCreneauForQuest, CRENEAU_ORDER, CRENEAUX } from '../../../../utils/quests';
+import { getHeureDisplay, getCreneauForQuest, getQuestDureeMinutes, CRENEAU_ORDER, CRENEAUX } from '../../../../utils/quests';
 import { formatDuration } from '../utils';
 import { CATEGORIES, DIFFICULTIES, JOUR_OPTIONS } from '../constants';
 
@@ -127,7 +127,7 @@ export const QuestsTableView = ({
         </span>
       </td>
       <td className="px-3 py-2 align-top text-[11px] text-slate-200">
-        {formatDuration(quest.duree || 0)}
+        {formatDuration(getQuestDureeMinutes(quest))}
       </td>
       <td className="px-3 py-2 align-top text-[11px] text-slate-200">
         {quest.type === 'exceptionnelle'

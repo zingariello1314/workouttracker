@@ -20,6 +20,22 @@ function parseHeureToMinutes(heure) {
   return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : 24 * 60;
 }
 
+/**
+ * Durée en minutes pour une quête (nombre ou chaîne depuis le stockage).
+ * @param {Object|null|undefined} quest
+ * @returns {number} minutes > 0, sinon 0
+ */
+export function getQuestDureeMinutes(quest) {
+  if (!quest || quest.duree == null || quest.duree === '') return 0;
+  const raw = quest.duree;
+  const n =
+    typeof raw === 'number' && Number.isFinite(raw)
+      ? raw
+      : parseInt(String(raw).trim(), 10);
+  if (!Number.isFinite(n) || n < 1) return 0;
+  return Math.round(n);
+}
+
 /** Minutes depuis minuit pour une heure HH:mm */
 function addMinutesToTime(timeStr, deltaMinutes) {
   const min = parseHeureToMinutes(timeStr);
@@ -82,7 +98,7 @@ export function getHeureDisplay(quest, targetDateStr, prayerLocation) {
   ) {
     const overrideHeure = quest.heureOverrides[targetDateStr];
     if (!overrideHeure) return '';
-    const duree = typeof quest.duree === 'number' && quest.duree > 0 ? quest.duree : 0;
+    const duree = getQuestDureeMinutes(quest);
     if (duree > 0) {
       const end = addMinutesToTime(overrideHeure, duree);
       return `${overrideHeure} – ${end}`;
@@ -101,7 +117,7 @@ export function getHeureDisplay(quest, targetDateStr, prayerLocation) {
   }
   const start = quest.heure?.trim();
   if (!start) return '';
-  const duree = typeof quest.duree === 'number' && quest.duree > 0 ? quest.duree : 0;
+  const duree = getQuestDureeMinutes(quest);
   if (duree > 0) {
     const end = addMinutesToTime(start, duree);
     return `${start} – ${end}`;

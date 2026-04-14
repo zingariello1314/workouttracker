@@ -133,11 +133,13 @@ export const questSchema = z.object({
     .default(''),
   categorie: z.string()
     .min(1, 'La catégorie est requise'),
-  difficulte: z.number()
+  difficulte: z.coerce
+    .number()
     .int('La difficulté doit être un entier')
     .min(1, 'La difficulté doit être >= 1')
     .max(4, 'La difficulté doit être <= 4'),
-  duree: z.number()
+  duree: z.coerce
+    .number()
     .int('La durée doit être un entier')
     .min(5, 'La durée minimum est 5 minutes')
     .max(420, 'La durée maximum est 420 minutes'),

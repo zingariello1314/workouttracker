@@ -13,6 +13,7 @@ const Navigation = () => {
       { id: 'today',          labelKey: 'nav.today',          icon: '📅' },
       { id: 'data-entry',     labelKey: 'nav.dataEntry',      icon: '✏️' },
       { id: 'program',        labelKey: 'nav.program',        icon: '🎯' },
+      { id: 'addiction-quit', labelKey: 'nav.addictionQuit',  icon: '🚭' },
       { id: 'nutrition',      labelKey: 'nav.nutrition',      icon: '🥗' },
       { id: 'exercises',      labelKey: 'nav.exercises',      icon: '💪' },
       { id: 'progress',       labelKey: 'nav.progress',       icon: '📸' },

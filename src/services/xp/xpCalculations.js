@@ -4,6 +4,7 @@
 
 import { loadEnduranceData as loadEnduranceDataService } from '../endurance/enduranceDataService';
 import { evaluateChallenges } from '../endurance/enduranceChallengesService';
+import { getQuestDureeMinutes } from '../../utils/quests';
 
 // XP par difficulté pour les quêtes (réutilisé depuis useQuietQuestEngine)
 const DIFFICULTY_XP_BASE = {
@@ -182,7 +183,8 @@ export const calculateQuestsXP = (validations, allQuests) => {
     const quest = allQuests.find(q => q.id === questId);
     if (!quest) return;
     const base = DIFFICULTY_XP_BASE[quest.difficulte] || DIFFICULTY_XP_BASE[1];
-    const multiplier = (quest.duree || 60) / 60;
+    const d = getQuestDureeMinutes(quest);
+    const multiplier = (d > 0 ? d : 60) / 60;
     totalXP += Math.round(base * multiplier);
   });
   
@@ -220,9 +222,16 @@ export const calculateXPForAllCategories = (data) => {
   const nutritionXP = calculateNutritionXP(data.nutrition);
   const booksXP = data.books?.totalXP || 0;
   const sportXP = data.sport?.totalXP || 0;
-  
-  const totalXP = questsXP + learningXP + nutritionXP + booksXP + sportXP;
-  
+  const addictionQuitXP = Math.round(data.addictionQuit?.totalXP || 0);
+  const addictionBreakdown = data.addictionQuit?.breakdown || {
+    milestones: 0,
+    daily: 0,
+    sessions: 0,
+    relapses: 0,
+  };
+
+  const totalXP = questsXP + learningXP + nutritionXP + booksXP + sportXP + addictionQuitXP;
+
   return {
     totalXP,
     xpByCategory: {
@@ -230,7 +239,8 @@ export const calculateXPForAllCategories = (data) => {
       learning: learningXP,
       nutrition: nutritionXP,
       books: booksXP,
-      sport: sportXP
+      sport: sportXP,
+      addictionQuit: addictionQuitXP,
     },
     details: {
       quests: {
@@ -270,7 +280,12 @@ export const calculateXPForAllCategories = (data) => {
         totalXP: sportXP,
         lastCalculated: new Date().toISOString(),
         breakdown: data.sport?.breakdown || { reps: 0, exercises: 0, calories: 0, steps: 0, challenges: 0, sessions: 0 }
-      }
+      },
+      addictionQuit: {
+        totalXP: addictionQuitXP,
+        lastCalculated: new Date().toISOString(),
+        breakdown: addictionBreakdown || { milestones: 0, daily: 0, sessions: 0, relapses: 0 },
+      },
     }
   };
 };

@@ -2,8 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { useWorkoutData } from '../hooks/useWorkoutData';
 import { useWorkoutLogic } from '../hooks/useWorkoutLogic';
 import { workoutProgram } from '../data/workoutProgram';
-import { workoutProgramOptimized } from '../data/workoutProgramOptimized';
-import { convertProgramToSchedule } from '../utils/programConverter';
 import { findExerciseInDatabase } from '../data/exerciseDatabase';
 import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 // ✅ PHASE 4 : Import des utilitaires de l'historique
@@ -36,6 +34,7 @@ import { useWorkoutContextStorage } from './WorkoutContext/hooks/useWorkoutConte
 import { DEFAULT_PROGRESS_FORM } from './WorkoutContext/constants';
 import { normalizeRepsValue } from './WorkoutContext/utils';
 import { filterExercisesForSessionDate } from '../utils/programExerciseScheduling';
+import { buildTemplateProgramsForFirstLaunch } from '../utils/programPersistenceUtils';
 
 const WorkoutContext = createContext();
 
@@ -139,12 +138,27 @@ const WorkoutProvider = ({ children }) => {
     saveContextToDB,
     loadContext,
     autoSaveContext,
+    flushAutoSave,
   } = useWorkoutContextStorage(
     setPrograms,
     setActiveProgram,
     setProgramHistory,
     setWeekVariant,
     setIsGymMode
+  );
+
+  const persistProgramsPartial = useCallback(
+    (partial) => {
+      return flushAutoSave({
+        programs: partial.programs,
+        activeProgram:
+          partial.activeProgram !== undefined ? partial.activeProgram : activeProgram,
+        programHistory,
+        weekVariant,
+        isGymMode,
+      });
+    },
+    [flushAutoSave, activeProgram, programHistory, weekVariant, isGymMode]
   );
 
   // ✅ PHASE 4 : Fonction pour obtenir les données actuelles (temp ou réelles)
@@ -184,7 +198,14 @@ const WorkoutProvider = ({ children }) => {
     deleteProgram,
     updateProgram,
     calculateRealUsageDays,
-  } = useWorkoutPrograms(programs, setPrograms, activeProgram, setActiveProgram, data);
+  } = useWorkoutPrograms(
+    programs,
+    setPrograms,
+    activeProgram,
+    setActiveProgram,
+    data,
+    persistProgramsPartial
+  );
 
   // ✅ PHASE 4 : Utilisation du hook pour les exercices exceptionnels
   const {
@@ -1331,196 +1352,55 @@ const WorkoutProvider = ({ children }) => {
     }
   };
 
-  // Initialisation avec les programmes par défaut
-  useEffect(() => {
-    const initializeDefaultPrograms = () => {
-      // Vérifier si les programmes par défaut existent déjà
-      const hasDefaultProgram = programs.some(p => p.id === 'default-program');
-      const hasOptimizedProgram = programs.some(p => p.id === 'optimized-program');
-      
-      // Si les deux programmes existent déjà, ne rien faire
-      if (hasDefaultProgram && hasOptimizedProgram) {
-        return;
-      }
-      
-      const newPrograms = [...programs];
-      let shouldUpdate = false;
-      
-      // Créer le programme Cycle 3+1 s'il n'existe pas
-      if (!hasDefaultProgram) {
-        // Conversion du workoutProgram au format attendu par ProgramDetailView
-        const convertedSchedule = {};
-        
-        Object.entries(workoutProgram).forEach(([day, dayData]) => {
-          convertedSchedule[day] = {
-            name: dayData.name,
-            focus: dayData.focus,
-            duration: dayData.duree || "Non spécifié",
-            notes: dayData.notes || "",
-            etirements: {
-              matin: { 
-                name: "Étirements matinaux", 
-                duration: "5-7 min", 
-                instructions: dayData.etirements?.matin || "" 
-              },
-              midi: { 
-                name: "Pause active", 
-                duration: "4-6 min", 
-                instructions: dayData.etirements?.midi || "" 
-              },
-              soir: { 
-                name: "Récupération", 
-                duration: "3-5 min",
-                instructions: dayData.etirements?.soir || "" 
-              }
-            },
-            exercises: dayData.exercices?.map(exercise => ({
-              id: exercise.id,
-              name: exercise.name,
-              series: exercise.series,
-              reps: "",
-              rest: exercise.type?.includes('circuit') ? 30 : (exercise.type?.includes('superset') ? 45 : 90),
-              intensity: exercise.series?.includes('4×') ? "heavy" : (exercise.series?.includes('3×') ? "moderate" : "light"),
-              notes: exercise.notes || "",
-              materiel: exercise.materiel || "poids du corps",
-              type: exercise.type || "standard"
-            })) || [],
-            // Ajout des variantes salle si elles existent
-            salleVariants: dayData.salleVariants ? {
-              semaineA: {
-                name: dayData.salleVariants.semaineA.name,
-                exercises: dayData.salleVariants.semaineA.exercices.map(ex => ({
-                  id: ex.id,
-                  name: ex.name,
-                  series: ex.series,
-                  reps: "",
-                  rest: 90,
-                  intensity: "moderate",
-                  notes: ex.notes || "",
-                  materiel: "salle de sport",
-                  type: "standard"
-                }))
-              },
-              semaineB: {
-                name: dayData.salleVariants.semaineB.name,
-                exercises: dayData.salleVariants.semaineB.exercices.map(ex => ({
-                  id: ex.id,
-                  name: ex.name,
-                  series: ex.series,
-                  reps: "",
-                  rest: 90,
-                  intensity: "moderate",
-                  notes: ex.notes || "",
-                  materiel: "salle de sport",
-                  type: "standard"
-                }))
-              }
-            } : undefined
-          };
-        });
-
-        const defaultProgram = {
-          id: 'default-program',
-          name: "Programme Cycle 3+1",
-          description: "Programme d'entraînement complet - Street Workout, Boxe, Natation et Musculation",
-          duration: 12,
-          goal: "Force, endurance et développement musculaire complet",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          status: !activeProgram ? 'active' : 'inactive',
-          startDate: !activeProgram ? new Date().toISOString() : null,
-          schedule: convertedSchedule
-        };
-        newPrograms.push(defaultProgram);
-        shouldUpdate = true;
-        
-        // Si aucun programme actif, activer celui-ci
-        if (!activeProgram) {
-          setActiveProgram(defaultProgram);
-        }
-      }
-
-      // ✅ NOUVEAU : Créer le programme optimisé s'il n'existe pas
-      if (!hasOptimizedProgram) {
-        const optimizedProgram = convertProgramToSchedule(
-          workoutProgramOptimized,
-          "SEMAINE COMPLÈTE - CYCLE 3+1 (OPTIMISÉ)",
-          "Programme optimisé haut pec / delto lat / triceps / dos - Variations maison et salle disponibles"
-        );
-        optimizedProgram.id = 'optimized-program';
-        optimizedProgram.status = 'inactive';
-        optimizedProgram.startDate = null;
-        newPrograms.push(optimizedProgram);
-        shouldUpdate = true;
-      }
-      
-      // Mettre à jour la liste des programmes si nécessaire
-      if (shouldUpdate) {
-        setPrograms(newPrograms);
-      }
-    };
-    
-    // Délai pour s'assurer que le contexte est bien chargé
-    const timer = setTimeout(initializeDefaultPrograms, 200);
-    return () => clearTimeout(timer);
-  }, [programs, activeProgram, setPrograms, setActiveProgram]);
-  
   useEffect(() => {
     const initializeContext = async () => {
       try {
-        await loadContext();
-        
-        // ✅ FIX : Après chargement, vérifier et ajouter le programme optimisé s'il manque
-        // Petit délai pour s'assurer que les programmes sont bien chargés
-        setTimeout(() => {
-          setPrograms(prevPrograms => {
-            const hasOptimizedProgram = prevPrograms.some(p => p.id === 'optimized-program');
-            if (!hasOptimizedProgram) {
-              const optimizedProgram = convertProgramToSchedule(
-                workoutProgramOptimized,
-                "SEMAINE COMPLÈTE - CYCLE 3+1 (OPTIMISÉ)",
-                "Programme optimisé haut pec / delto lat / triceps / dos - Variations maison et salle disponibles"
-              );
-              optimizedProgram.id = 'optimized-program';
-              optimizedProgram.status = 'inactive';
-              optimizedProgram.startDate = null;
-              const updatedPrograms = [...prevPrograms, optimizedProgram];
-              // Sauvegarder immédiatement dans IndexedDB (avec un petit délai pour éviter les conflits)
-              setTimeout(() => {
-                autoSaveContext({
-                  programs: updatedPrograms,
-                  activeProgram: activeProgram,
-                  weekVariant: weekVariant,
-                  isGymMode: isGymMode
-                });
-              }, 100);
-              return updatedPrograms;
-            }
-            return prevPrograms;
-          });
-        }, 500);
-        
-        // Ajouter le nouveau programme musculation pour zingariello131 si il n'existe pas déjà
-        // Utiliser un petit délai pour s'assurer que le chargement est terminé
-        setTimeout(() => {
-          if (currentUser?.username === 'zingariello131' || currentUser?.username === 'zingariello1314') {
-            setPrograms(prevPrograms => {
-              // Vérifier si le programme existe déjà
-              const programExists = prevPrograms.some(p => p.id === newMusculationProgram.id || p.name === newMusculationProgram.name);
-              
-              if (!programExists && prevPrograms.length > 0) {
-                // Ajouter le nouveau programme en premier (au-dessus du programme existant)
-                return [newMusculationProgram, ...prevPrograms];
-              } else if (!programExists && prevPrograms.length === 0) {
-                // Si aucun programme, ajouter juste le nouveau
-                return [newMusculationProgram];
-              }
-              
-              return prevPrograms;
-            });
+        const saved = await loadContext();
+        const ph = saved?.programHistory ?? [];
+        const wv = saved?.weekVariant ?? 'A';
+        const gm = saved?.isGymMode ?? false;
+
+        let programsSnapshot = Array.isArray(saved?.programs) ? [...saved.programs] : [];
+        let activeSnapshot = saved?.activeProgram ?? null;
+        let mutated = false;
+
+        if (programsSnapshot.length === 0) {
+          const { defaultProgram, optimizedProgram } = buildTemplateProgramsForFirstLaunch();
+          programsSnapshot = [defaultProgram, optimizedProgram];
+          activeSnapshot = defaultProgram;
+          setPrograms(programsSnapshot);
+          setActiveProgram(activeSnapshot);
+          mutated = true;
+        }
+
+        const zingaUser =
+          currentUser?.username === 'zingariello131' ||
+          currentUser?.username === 'zingariello1314';
+        if (zingaUser) {
+          const exists = programsSnapshot.some(
+            (p) => p.id === newMusculationProgram.id || p.name === newMusculationProgram.name
+          );
+          if (!exists) {
+            programsSnapshot = [newMusculationProgram, ...programsSnapshot];
+            setPrograms(programsSnapshot);
+            mutated = true;
           }
-        }, 300);
-        
+        }
+
+        if (mutated) {
+          try {
+            await flushAutoSave({
+              programs: programsSnapshot,
+              activeProgram: activeSnapshot,
+              programHistory: ph,
+              weekVariant: wv,
+              isGymMode: gm,
+            });
+          } catch (persistErr) {
+            console.error('❌ Erreur sauvegarde initiale des programmes:', persistErr);
+          }
+        }
+
         isInitialLoadRef.current = false;
       } catch (error) {
         console.error('❌ Erreur lors de l\'initialisation du contexte:', error);

@@ -1,5 +1,12 @@
 // Export/Import JSON pour QuietQuest
 // Compatible avec IndexedDB et localStorage (fallback)
+//
+// Contenu d'un export complet (data.*) :
+// - quests : toutes les quêtes (champs tels qu'en base : ordre, heureOverrides, prière, créneau, xp, etc.)
+// - validations : historique des coches (queteId, date, xpGagne, heureValidation, …)
+// - userData : niveau, XP courant, XP pour niveau suivant
+// - dailyPerformances : totaux par jour (taux de réussite, XP du jour, …)
+// - appState : filtres liste, tri, position prière (quietquest_app_state)
 
 import {
   openQuietQuestDB,
@@ -17,8 +24,41 @@ import {
 } from './quietQuestIndexedDB';
 import { STORAGE_KEYS, loadFromStorage, saveToStorage, defaultUserData } from '../hooks/useQuietQuestEngine';
 
-const EXPORT_VERSION = '1.0';
+const EXPORT_VERSION = '1.1';
 const EXPORT_TYPE = 'QuietQuest Complete';
+
+const deepClone = (value) => JSON.parse(JSON.stringify(value));
+
+/** Retire userId (clé interne IndexedDB) pour un JSON portable. */
+const stripUserId = (record) => {
+  if (!record || typeof record !== 'object') return record;
+  const { userId: _uid, ...rest } = record;
+  return rest;
+};
+
+/**
+ * Normalise userData pour export / import (nombres valides, champs par défaut).
+ */
+export const normalizeQuietQuestUserData = (userData) => {
+  const merged = {
+    ...defaultUserData,
+    ...(userData && typeof userData === 'object' ? userData : {}),
+  };
+  const level = Number.parseInt(String(merged.level), 10);
+  const currentXP = Number(merged.currentXP);
+  const xpForNextLevel = Number(merged.xpForNextLevel);
+  return {
+    ...merged,
+    level: Number.isFinite(level) && level >= 1 ? level : 1,
+    currentXP: Number.isFinite(currentXP) && currentXP >= 0 ? currentXP : 0,
+    xpForNextLevel:
+      Number.isFinite(xpForNextLevel) && xpForNextLevel >= 1
+        ? xpForNextLevel
+        : defaultUserData.xpForNextLevel,
+  };
+};
+
+const isPlainObject = (v) => v != null && typeof v === 'object' && !Array.isArray(v);
 
 /**
  * Valide la structure d'un export JSON
@@ -26,36 +66,40 @@ const EXPORT_TYPE = 'QuietQuest Complete';
 export const validateQuietQuestExport = (jsonData) => {
   if (!jsonData || typeof jsonData !== 'object') return false;
   if (!jsonData.data || typeof jsonData.data !== 'object') return false;
-  
+
   const { data } = jsonData;
-  
-  // Vérifier que les champs essentiels existent
+
   if (!Array.isArray(data.quests)) return false;
   if (!Array.isArray(data.validations)) return false;
-  if (!data.userData || typeof data.userData !== 'object') return false;
+  if (!data.userData || typeof data.userData !== 'object' || Array.isArray(data.userData)) return false;
   if (!Array.isArray(data.dailyPerformances)) return false;
-  
-  // Valider structure des quêtes
+
+  if ('appState' in data && data.appState != null && !isPlainObject(data.appState)) {
+    return false;
+  }
+
   if (data.quests.length > 0) {
     const firstQuest = data.quests[0];
-    if (!firstQuest.id || !firstQuest.nom || !firstQuest.categorie) return false;
+    if (firstQuest == null || typeof firstQuest !== 'object') return false;
+    if (firstQuest.id === '' || firstQuest.id == null) return false;
+    if (!firstQuest.nom || !firstQuest.categorie) return false;
   }
-  
-  // Valider structure des validations
+
   if (data.validations.length > 0) {
     const firstValidation = data.validations[0];
-    if (!firstValidation.queteId || !firstValidation.date) return false;
+    if (firstValidation == null || typeof firstValidation !== 'object') return false;
+    if (firstValidation.queteId === '' || firstValidation.queteId == null) return false;
+    if (!firstValidation.date) return false;
   }
-  
-  // Valider userData
-  if (typeof data.userData.level !== 'number' || data.userData.level < 1) return false;
-  if (typeof data.userData.currentXP !== 'number' || data.userData.currentXP < 0) return false;
-  
+
+  const ud = normalizeQuietQuestUserData(data.userData);
+  if (ud.level < 1 || ud.currentXP < 0) return false;
+
   return true;
 };
 
 /**
- * Prépare les données pour l'export
+ * Prépare les données pour l'export (clone profond + sans userId + userData normalisé).
  */
 export const prepareQuietQuestExport = (
   quests,
@@ -64,16 +108,26 @@ export const prepareQuietQuestExport = (
   dailyPerformances,
   appState = {}
 ) => {
+  const safeQuests = Array.isArray(quests)
+    ? quests.map((q) => stripUserId(deepClone(q)))
+    : [];
+  const safeValidations = Array.isArray(validations)
+    ? validations.map((v) => stripUserId(deepClone(v)))
+    : [];
+  const safeDaily = Array.isArray(dailyPerformances)
+    ? dailyPerformances.map((d) => stripUserId(deepClone(d)))
+    : [];
+
   return {
     version: EXPORT_VERSION,
     exportDate: new Date().toISOString(),
     exportType: EXPORT_TYPE,
     data: {
-      quests: Array.isArray(quests) ? quests : [],
-      validations: Array.isArray(validations) ? validations : [],
-      userData: userData || defaultUserData,
-      dailyPerformances: Array.isArray(dailyPerformances) ? dailyPerformances : [],
-      appState: appState || {},
+      quests: safeQuests,
+      validations: safeValidations,
+      userData: normalizeQuietQuestUserData(userData),
+      dailyPerformances: safeDaily,
+      appState: isPlainObject(appState) ? deepClone(appState) : {},
     },
   };
 };
@@ -86,14 +140,14 @@ const calculateExportMetadata = (quests, validations, userData, dailyPerformance
     ...validations.map((v) => v.date),
     ...dailyPerformances.map((d) => d.date),
   ].filter(Boolean);
-  
-  const earliest = dates.length > 0 ? dates.sort()[0] : null;
-  const latest = dates.length > 0 ? dates.sort().reverse()[0] : null;
-  
-  // Estimer la taille en KB
+
+  const sorted = [...dates].sort();
+  const earliest = sorted.length > 0 ? sorted[0] : null;
+  const latest = sorted.length > 0 ? sorted[sorted.length - 1] : null;
+
   const jsonStr = JSON.stringify({ quests, validations, userData, dailyPerformances });
   const estimatedSizeKB = Math.round((jsonStr.length / 1024) * 100) / 100;
-  
+
   return {
     totalQuests: quests.length,
     totalValidations: validations.length,
@@ -101,6 +155,8 @@ const calculateExportMetadata = (quests, validations, userData, dailyPerformance
     userLevel: userData?.level || 1,
     totalXP: validations.reduce((sum, v) => sum + (v.xpGagne || 0), 0),
     estimatedSizeKB,
+    schemaVersion: EXPORT_VERSION,
+    includesAppState: true,
   };
 };
 
@@ -113,21 +169,22 @@ export const exportQuietQuestData = async (options = {}) => {
     compress = false,
     storageMode = 'auto', // 'indexeddb' | 'localstorage' | 'auto'
   } = options;
-  
-  let quests, validations, userData, dailyPerformances, appState;
-  
-  // Détecter source de données
+
+  let quests;
+  let validations;
+  let userData;
+  let dailyPerformances;
+  let appState;
+
   if (storageMode === 'auto') {
     const db = await openQuietQuestDB();
     if (db) {
-      // Mode IndexedDB
       quests = await loadQuestsFromIndexedDB(db, 'main');
       validations = await loadValidationsFromIndexedDB(db, 'main');
       userData = await loadUserDataFromIndexedDB(db, 'main');
       dailyPerformances = await loadDailyPerformancesFromIndexedDB(db, 'main');
       appState = await loadAppStateFromIndexedDB(db, 'main');
     } else {
-      // Fallback localStorage
       quests = loadFromStorage(STORAGE_KEYS.quests, []);
       validations = loadFromStorage(STORAGE_KEYS.validations, []);
       userData = loadFromStorage(STORAGE_KEYS.userData, defaultUserData);
@@ -143,41 +200,58 @@ export const exportQuietQuestData = async (options = {}) => {
     dailyPerformances = await loadDailyPerformancesFromIndexedDB(db, 'main');
     appState = await loadAppStateFromIndexedDB(db, 'main');
   } else {
-    // localStorage
     quests = loadFromStorage(STORAGE_KEYS.quests, []);
     validations = loadFromStorage(STORAGE_KEYS.validations, []);
     userData = loadFromStorage(STORAGE_KEYS.userData, defaultUserData);
     dailyPerformances = loadFromStorage(STORAGE_KEYS.dailyPerformances, []);
     appState = loadFromStorage(STORAGE_KEYS.appState, {});
   }
-  
-  // Préparer export
+
+  const resolvedUser = userData || defaultUserData;
+  const resolvedApp = appState != null && isPlainObject(appState) ? appState : {};
+
   const exportData = prepareQuietQuestExport(
     quests,
     validations,
-    userData,
+    resolvedUser,
     dailyPerformances,
-    appState
+    resolvedApp
   );
-  
-  // Ajouter métadonnées
+
   if (includeMetadata) {
     exportData.metadata = calculateExportMetadata(
       quests,
       validations,
-      userData,
+      normalizeQuietQuestUserData(resolvedUser),
       dailyPerformances
     );
   }
-  
-  // Compression optionnelle (pour l'instant, on retourne tel quel)
-  // TODO: Implémenter compression si nécessaire (comme Garmin/Nutrition)
+
   if (compress) {
-    // Placeholder pour compression future
     console.warn('[quietQuestExportImport] Compression non implémentée pour l\'instant');
   }
-  
+
   return exportData;
+};
+
+/**
+ * Normalise le payload importé (sans userId ; userData + appState sûrs).
+ */
+const normalizeImportPayload = (data) => {
+  const quests = Array.isArray(data.quests)
+    ? data.quests.map((q) => stripUserId(deepClone(q)))
+    : [];
+  const validations = Array.isArray(data.validations)
+    ? data.validations.map((v) => stripUserId(deepClone(v)))
+    : [];
+  const dailyPerformances = Array.isArray(data.dailyPerformances)
+    ? data.dailyPerformances.map((d) => stripUserId(deepClone(d)))
+    : [];
+  const userData = normalizeQuietQuestUserData(data.userData);
+  const appState =
+    data.appState != null && isPlainObject(data.appState) ? deepClone(data.appState) : {};
+
+  return { quests, validations, userData, dailyPerformances, appState };
 };
 
 /**
@@ -185,19 +259,17 @@ export const exportQuietQuestData = async (options = {}) => {
  */
 export const importQuietQuestData = async (jsonData, options = {}) => {
   const {
-    mode = 'replace', // 'replace' | 'merge' (merge non implémenté pour l'instant)
+    mode = 'replace',
     createBackup = true,
     validate = true,
   } = options;
-  
-  // Validation
+
   if (validate && !validateQuietQuestExport(jsonData)) {
     throw new Error('Format d\'export invalide. Vérifie que le fichier est un export QuietQuest valide.');
   }
-  
+
   const { data } = jsonData;
-  
-  // Backup avant import
+
   let backup = null;
   if (createBackup) {
     try {
@@ -205,50 +277,42 @@ export const importQuietQuestData = async (jsonData, options = {}) => {
       console.log('[quietQuestExportImport] ✅ Backup créé avant import');
     } catch (error) {
       console.error('[quietQuestExportImport] ⚠️ Erreur création backup:', error);
-      // Continuer quand même
     }
   }
-  
+
+  const normalized = normalizeImportPayload(data);
+
   try {
     const db = await openQuietQuestDB();
-    
+
     if (db) {
-      // Mode IndexedDB
       if (mode === 'replace') {
-        // Vider stores puis importer
         await clearQuietQuestStores(db, 'main');
-        await saveQuestsToIndexedDB(db, data.quests || [], 'main');
-        await saveValidationsToIndexedDB(db, data.validations || [], 'main');
-        await saveUserDataToIndexedDB(db, data.userData || defaultUserData, 'main');
-        await saveDailyPerformancesToIndexedDB(db, data.dailyPerformances || [], 'main');
-        if (data.appState) {
-          await saveAppStateToIndexedDB(db, data.appState, 'main');
-        }
+        await saveQuestsToIndexedDB(db, normalized.quests, 'main');
+        await saveValidationsToIndexedDB(db, normalized.validations, 'main');
+        await saveUserDataToIndexedDB(db, normalized.userData, 'main');
+        await saveDailyPerformancesToIndexedDB(db, normalized.dailyPerformances, 'main');
+        await saveAppStateToIndexedDB(db, normalized.appState, 'main');
       } else {
-        // Mode merge (non implémenté pour l'instant)
         throw new Error('Mode merge non implémenté. Utilisez mode "replace".');
       }
     } else {
-      // Fallback localStorage
       if (mode === 'replace') {
-        saveToStorage(STORAGE_KEYS.quests, data.quests || []);
-        saveToStorage(STORAGE_KEYS.validations, data.validations || []);
-        saveToStorage(STORAGE_KEYS.userData, data.userData || defaultUserData);
-        saveToStorage(STORAGE_KEYS.dailyPerformances, data.dailyPerformances || []);
-        if (data.appState) {
-          saveToStorage(STORAGE_KEYS.appState, data.appState);
-        }
+        saveToStorage(STORAGE_KEYS.quests, normalized.quests);
+        saveToStorage(STORAGE_KEYS.validations, normalized.validations);
+        saveToStorage(STORAGE_KEYS.userData, normalized.userData);
+        saveToStorage(STORAGE_KEYS.dailyPerformances, normalized.dailyPerformances);
+        saveToStorage(STORAGE_KEYS.appState, normalized.appState);
       } else {
         throw new Error('Mode merge non implémenté. Utilisez mode "replace".');
       }
     }
-    
+
     console.log('[quietQuestExportImport] ✅ Import réussi');
     return { success: true, backup };
   } catch (error) {
     console.error('[quietQuestExportImport] ❌ Erreur import:', error);
-    
-    // Rollback si backup disponible
+
     if (backup && createBackup) {
       try {
         console.log('[quietQuestExportImport] 🔄 Tentative de rollback...');
@@ -258,8 +322,7 @@ export const importQuietQuestData = async (jsonData, options = {}) => {
         console.error('[quietQuestExportImport] ❌ Erreur rollback:', rollbackError);
       }
     }
-    
+
     throw error;
   }
 };
-

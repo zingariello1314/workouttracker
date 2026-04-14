@@ -17,7 +17,7 @@ import { useCallback, useRef } from 'react';
  * @param {Function} setProgramHistory - Fonction pour définir l'historique des programmes
  * @param {Function} setWeekVariant - Fonction pour définir la variante de semaine
  * @param {Function} setIsGymMode - Fonction pour définir le mode gym
- * @returns {Object} { openContextDB, saveContextToDB, loadContext, autoSaveContext }
+ * @returns {Object} { openContextDB, saveContextToDB, loadContext, autoSaveContext, flushAutoSave }
  */
 export const useWorkoutContextStorage = (
   setPrograms,
@@ -212,20 +212,31 @@ export const useWorkoutContextStorage = (
     }
   }, [openContextDB, setPrograms, setActiveProgram, setProgramHistory, setWeekVariant, setIsGymMode]);
 
-  const autoSaveContext = useCallback((contextData) => {
+  const flushAutoSave = useCallback((contextData) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
-    
-    debounceTimerRef.current = setTimeout(() => {
-      saveContextToDB(contextData);
-    }, 1000);
+    return saveContextToDB(contextData);
   }, [saveContextToDB]);
+
+  const autoSaveContext = useCallback(
+    (contextData) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        saveContextToDB(contextData);
+      }, 350);
+    },
+    [saveContextToDB]
+  );
 
   return {
     openContextDB,
     saveContextToDB,
     loadContext,
     autoSaveContext,
+    flushAutoSave,
   };
 };

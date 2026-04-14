@@ -1,6 +1,6 @@
 /**
  * Hook pour gérer l'XP globale de tous les onglets
- * Agrège l'XP de : Quêtes, Apprentissage, Nutrition, Livres, Sport
+ * Agrège l'XP de : Quêtes, Apprentissage, Nutrition, Livres, Sport, Arrêt addiction
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -10,6 +10,7 @@ import { useApprentissageEngine } from './useApprentissageEngine';
 import { useNutritionGamification } from './useNutritionGamification';
 import { useBooksXP } from './useBooksXP';
 import { useSportXP } from './useSportXP';
+import { useAddictionQuitXP } from './useAddictionQuitXP';
 import { loadXPData, saveXPData } from '../services/xp/xpStorage';
 import { calculateXPForAllCategories } from '../services/xp/xpCalculations';
 
@@ -28,6 +29,7 @@ const useGlobalXP = () => {
   const { gamificationData } = useNutritionGamification();
   const { totalXP: booksXP, breakdown: booksBreakdown } = useBooksXP();
   const { totalXP: sportXP, breakdown: sportBreakdown } = useSportXP();
+  const addictionQuitXPBlock = useAddictionQuitXP();
   const cacheRef = useRef({ signature: null, result: null });
   
   // Calculer l'XP totale
@@ -38,8 +40,10 @@ const useGlobalXP = () => {
       gamificationData?.experience?.currentXP || 0,
       booksXP,
       sportXP,
+      addictionQuitXPBlock.totalXP,
       JSON.stringify(booksBreakdown),
-      JSON.stringify(sportBreakdown)
+      JSON.stringify(sportBreakdown),
+      JSON.stringify(addictionQuitXPBlock.breakdown)
     ].join('|');
 
     if (cacheRef.current.signature === signature && cacheRef.current.result) {
@@ -55,7 +59,8 @@ const useGlobalXP = () => {
       learning: progressionData,
       nutrition: gamificationData,
       books: { totalXP: booksXP, breakdown: booksBreakdown },
-      sport: { totalXP: sportXP, breakdown: sportBreakdown }
+      sport: { totalXP: sportXP, breakdown: sportBreakdown },
+      addictionQuit: addictionQuitXPBlock,
     });
     cacheRef.current = { signature, result };
     globalXpCache = { ...globalXpCache, signature, calculated: result };
@@ -68,7 +73,9 @@ const useGlobalXP = () => {
     booksXP,
     booksBreakdown,
     sportXP,
-    sportBreakdown
+    sportBreakdown,
+    addictionQuitXPBlock.totalXP,
+    addictionQuitXPBlock.breakdown,
   ]);
   
   // Charger les données sauvegardées

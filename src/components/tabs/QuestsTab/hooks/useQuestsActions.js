@@ -11,7 +11,7 @@ import { useToast } from '../../../../components/ui/Toast';
 import { questSchema, validateWithSchema } from '../../../../utils/validation/schemas';
 import { calculateQuestXP } from '../../../../hooks/useQuietQuestEngine';
 import { emitSidebarEvent, SIDEBAR_EVENTS } from '../../../../utils/sidebarEvents';
-import { CATEGORIES } from '../constants';
+import { CATEGORIES, snapDureeToValidOption } from '../constants';
 
 /**
  * Hook pour gérer les actions CRUD sur les quêtes
@@ -70,7 +70,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       description: quest.description || '',
       categorie: quest.categorie || CATEGORIES[0],
       difficulte: quest.difficulte || 1,
-      duree: quest.duree || 30,
+      duree: snapDureeToValidOption(quest.duree),
       type: quest.type || 'recurrente',
       jours: Array.isArray(quest.jours) ? [...quest.jours] : [],
       date: quest.date || '',

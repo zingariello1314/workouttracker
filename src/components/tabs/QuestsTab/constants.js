@@ -47,8 +47,26 @@ export const RECURRENCE_PRESETS = [
   { label: 'Week‑end', jours: [6, 7] },
 ];
 
-// Génère les options de durée (5 à 420 min, pas de 10)
+/** Pas de durée (minutes) : multiple de 5 entre 5 et 420 (inclut 10, 20, 30, …). */
+export const DURATION_MIN = 5;
+export const DURATION_MAX = 420;
+export const DURATION_STEP = 5;
+
 export const DURATION_OPTIONS = Array.from(
-  { length: (420 - 5) / 10 + 1 }, 
-  (_, i) => 5 + i * 10
+  { length: Math.floor((DURATION_MAX - DURATION_MIN) / DURATION_STEP) + 1 },
+  (_, i) => DURATION_MIN + i * DURATION_STEP
 );
+
+/**
+ * Ramène une durée brute (formulaire / IndexedDB) vers un multiple de 5 valide pour le select.
+ * @param {unknown} raw
+ * @param {number} [fallback=30]
+ */
+export function snapDureeToValidOption(raw, fallback = 30) {
+  if (raw == null || raw === '') return fallback;
+  const n = typeof raw === 'number' ? raw : parseInt(String(raw).trim(), 10);
+  if (!Number.isFinite(n)) return fallback;
+  const clamped = Math.min(DURATION_MAX, Math.max(DURATION_MIN, Math.round(n)));
+  const snapped = Math.round(clamped / DURATION_STEP) * DURATION_STEP;
+  return Math.min(DURATION_MAX, Math.max(DURATION_MIN, snapped));
+}

@@ -4,7 +4,14 @@ import {
   getTodayDateStr,
   calculateQuestXP,
 } from '../../hooks/useQuietQuestEngine';
-import { getHeureDisplay, getCreneauForQuest, getHeureSortMinutes, CRENEAU_ORDER, CRENEAUX } from '../../utils/quests';
+import {
+  getHeureDisplay,
+  getCreneauForQuest,
+  getHeureSortMinutes,
+  getQuestDureeMinutes,
+  CRENEAU_ORDER,
+  CRENEAUX,
+} from '../../utils/quests';
 import QuestsXPBar from './QuestsXPBar';
 
 function getCreneauLabel(value) {
@@ -17,9 +24,10 @@ function getCreneauLabel(value) {
 
 // Formatage durée (ex : 90 → "1h30")
 function formatDuration(minutes) {
-  if (!minutes || minutes <= 0) return '0 min';
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
+  const n = Number(minutes);
+  if (!Number.isFinite(n) || n <= 0) return '0 min';
+  const h = Math.floor(n / 60);
+  const m = Math.round(n % 60);
   if (!h) return `${m} min`;
   if (!m) return `${h}h`;
   return `${h}h${m.toString().padStart(2, '0')}`;
@@ -153,8 +161,7 @@ const QuestsTodayView = ({
         }
 
         // Ajouter aussi les heures de fin exactes pour les tâches avec durée
-        const dureeMin =
-          typeof quest.duree === 'number' && quest.duree > 0 ? quest.duree : 0;
+        const dureeMin = getQuestDureeMinutes(quest);
         if (startMin >= 0 && startMin < 24 * 60 && dureeMin > 0) {
           const endMin = startMin + dureeMin;
           if (endMin > 0 && endMin < 24 * 60) {
@@ -196,16 +203,14 @@ const QuestsTodayView = ({
         if (!isPrayer) return;
         const startMin = getHeureSortMinutes(quest, dateStr, prayerLocation);
         if (startMin < 0 || startMin >= 24 * 60) return;
-        const dureeMin =
-          typeof quest.duree === 'number' && quest.duree > 0 ? quest.duree : 15;
+        const dureeMin = getQuestDureeMinutes(quest) || 15;
         const endMin = Math.min(24 * 60, startMin + dureeMin);
         prayerBlocks.push({ start: startMin, end: endMin });
       });
 
       quests.forEach((quest) => {
         const startMin = getHeureSortMinutes(quest, dateStr, prayerLocation);
-        const dureeMin =
-          typeof quest.duree === 'number' && quest.duree > 0 ? quest.duree : 0;
+        const dureeMin = getQuestDureeMinutes(quest);
 
         // Pas d'heure valide ou "sans horaire" → dernière ligne
         if (startMin >= 24 * 60 || startMin < 0) {
@@ -403,7 +408,7 @@ const QuestsTodayView = ({
             )}
             <div className="flex justify-between items-center text-[11px] text-slate-300 mt-1">
               <div className="flex items-center gap-2">
-                <span>{formatDuration(quest.duree || 0)}</span>
+                <span>{formatDuration(getQuestDureeMinutes(quest))}</span>
                 <span className="text-slate-500">•</span>
                 <span>
                   {'★'.repeat(quest.difficulte || 1)}

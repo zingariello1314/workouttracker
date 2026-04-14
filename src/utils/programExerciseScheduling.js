@@ -1,13 +1,9 @@
 /**
  * Règles de visibilité d'un exercice dans le programme selon la date de séance.
  *
- * Suppression « logique » : l'exercice reste dans `schedule[...].exercises` avec
- * `removedFromProgramAt: 'YYYY-MM-DD'` (date du retrait depuis l'éditeur de programme).
- *
- * - Tant que `removedFromProgramAt` est absent : l'exo apparaît pour toutes les dates.
- * - Une fois retiré : il reste visible en saisie / calendrier pour les séances dont
- *   la date est <= date de retrait (inclus). Après cette date, il disparaît des
- *   séances futures tout en conservant l'historique (reps, cases cochées) déjà enregistré.
+ * Ancienne suppression « logique » (données héritées) : `removedFromProgramAt: 'YYYY-MM-DD'`.
+ * Les nouveaux enregistrements retirent l'exercice du schedule ; ce filtre ne s'applique
+ * qu'aux anciennes fiches non encore migrées.
  *
  * @param {Object} exercise - Exercice du programme (peut contenir removedFromProgramAt)
  * @param {string} sessionDateStr - Date de la séance au format YYYY-MM-DD

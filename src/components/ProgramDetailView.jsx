@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getDateStr } from '../utils/dateUtils';
 import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
 import Button from './ui/Button';
 import { 
@@ -26,6 +25,7 @@ import {
   createDefaultExercise,
   normalizeExerciseMeta
 } from '../utils/programExerciseTypes';
+import { purgeSoftRemovedExercisesFromProgram } from '../utils/programPersistenceUtils';
 
 const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   /** Édition exo : { dayKey, exerciseId, variantKey?: 'semaineA'|'semaineB' } */
@@ -46,6 +46,14 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       description: program.description ?? ''
     });
   }, [program?.id, program?.name, program?.description]);
+
+  useEffect(() => {
+    if (!program?.id) return;
+    const purged = purgeSoftRemovedExercisesFromProgram(program);
+    if (purged !== program) {
+      onUpdateProgram(purged);
+    }
+  }, [program, onUpdateProgram]);
 
   const handleSaveProgramMeta = () => {
     onUpdateProgram({
@@ -573,55 +581,32 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     setEditedData({});
   };
 
-  /** Retrait logique : conserve l'exercice et l'historique ; masque pour les séances après cette date. */
-  const handleRemoveExerciseFromProgram = (dayKey, exerciseId) => {
-    const removalDate = getDateStr(new Date());
-    const updatedProgram = { ...program, schedule: { ...program.schedule } };
+  const DELETE_EXO_CONFIRM =
+    "Supprimer définitivement cet exercice du programme ?\n\n" +
+    "Les reps et séances déjà enregistrées dans le calendrier ne sont pas effacées.";
+
+  const handleDeleteExerciseFromProgram = (dayKey, exerciseId) => {
+    const updatedProgram = {
+      ...program,
+      updatedAt: new Date().toISOString(),
+      schedule: { ...program.schedule },
+    };
     const day = { ...updatedProgram.schedule[dayKey] };
-    day.exercises = (day.exercises || []).map((ex) =>
-      ex.id === exerciseId ? { ...ex, removedFromProgramAt: removalDate } : ex
-    );
+    day.exercises = (day.exercises || []).filter((ex) => ex.id !== exerciseId);
     updatedProgram.schedule[dayKey] = day;
     onUpdateProgram(updatedProgram);
   };
 
-  const handleRestoreExercise = (dayKey, exerciseId) => {
-    const updatedProgram = { ...program, schedule: { ...program.schedule } };
-    const day = { ...updatedProgram.schedule[dayKey] };
-    day.exercises = (day.exercises || []).map((ex) => {
-      if (ex.id !== exerciseId) return ex;
-      const { removedFromProgramAt: _r, ...rest } = ex;
-      return rest;
-    });
-    updatedProgram.schedule[dayKey] = day;
-    onUpdateProgram(updatedProgram);
-  };
-
-  const handleRemoveVariantExercise = (dayKey, variantKey, exerciseId) => {
-    const removalDate = getDateStr(new Date());
-    const updatedProgram = { ...program, schedule: { ...program.schedule } };
+  const handleDeleteVariantExercise = (dayKey, variantKey, exerciseId) => {
+    const updatedProgram = {
+      ...program,
+      updatedAt: new Date().toISOString(),
+      schedule: { ...program.schedule },
+    };
     const day = { ...updatedProgram.schedule[dayKey] };
     const variants = { ...day.salleVariants };
     const v = { ...variants[variantKey], exercises: [...(variants[variantKey].exercises || [])] };
-    v.exercises = v.exercises.map((ex) =>
-      ex.id === exerciseId ? { ...ex, removedFromProgramAt: removalDate } : ex
-    );
-    variants[variantKey] = v;
-    day.salleVariants = variants;
-    updatedProgram.schedule[dayKey] = day;
-    onUpdateProgram(updatedProgram);
-  };
-
-  const handleRestoreVariantExercise = (dayKey, variantKey, exerciseId) => {
-    const updatedProgram = { ...program, schedule: { ...program.schedule } };
-    const day = { ...updatedProgram.schedule[dayKey] };
-    const variants = { ...day.salleVariants };
-    const v = { ...variants[variantKey], exercises: [...(variants[variantKey].exercises || [])] };
-    v.exercises = v.exercises.map((ex) => {
-      if (ex.id !== exerciseId) return ex;
-      const { removedFromProgramAt: _r, ...rest } = ex;
-      return rest;
-    });
+    v.exercises = v.exercises.filter((ex) => ex.id !== exerciseId);
     variants[variantKey] = v;
     day.salleVariants = variants;
     updatedProgram.schedule[dayKey] = day;
@@ -948,11 +933,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       return (
                         <div
                           key={exercise.id}
-                          className={`rounded-lg p-4 border ${
-                            exercise.removedFromProgramAt
-                              ? 'bg-slate-800/40 border-amber-500/40 opacity-90'
-                              : 'bg-slate-700/30 border-slate-600'
-                          }`}
+                          className="rounded-lg p-4 border bg-slate-700/30 border-slate-600"
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -975,18 +956,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                         {exercise.type}
                                       </span>
                                     )}
-                                    {exercise.removedFromProgramAt && (
-                                      <span className="bg-amber-500/20 text-amber-100 px-2 py-1 rounded text-xs border border-amber-400/40">
-                                        Retiré le {exercise.removedFromProgramAt}
-                                      </span>
-                                    )}
                                   </div>
-                                  {exercise.removedFromProgramAt && (
-                                    <p className="text-xs text-amber-200/90 mb-2">
-                                      Toujours visible en saisie et dans le calendrier pour les séances jusqu&apos;à cette date
-                                      (inclus). L&apos;historique des reps n&apos;est pas effacé.
-                                    </p>
-                                  )}
                                   {exercise.programCategory === 'cardio' && exercise.meta && (
                                     <p className="text-xs text-cyan-300/90 mb-2">
                                       {exercise.cardioKind === 'running' &&
@@ -1042,35 +1012,19 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                 >
                                   <Edit3 size={16} />
                                 </Button>
-                                {!exercise.removedFromProgramAt ? (
-                                  <Button
-                                    type="button"
-                                    onClick={() => {
-                                      if (
-                                        window.confirm(
-                                          'Retirer cet exercice du programme ?\n\n' +
-                                            'Vos anciennes séances et reps resteront enregistrées. ' +
-                                            "L'exercice restera saisissable jusqu'à la date d'aujourd'hui pour les séances passées."
-                                        )
-                                      ) {
-                                        handleRemoveExerciseFromProgram(dayKey, exercise.id);
-                                      }
-                                    }}
-                                    className="p-2 h-auto bg-transparent hover:bg-red-500/20 text-amber-300 hover:text-amber-100 text-xs whitespace-nowrap"
-                                    title="Retrait logique — historique conservé"
-                                  >
-                                    <Trash2 size={14} className="inline mr-1" />
-                                    Retirer
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    type="button"
-                                    onClick={() => handleRestoreExercise(dayKey, exercise.id)}
-                                    className="p-2 h-auto bg-transparent hover:bg-emerald-500/20 text-emerald-300 text-xs whitespace-nowrap"
-                                  >
-                                    Réintégrer
-                                  </Button>
-                                )}
+                                <Button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm(DELETE_EXO_CONFIRM)) {
+                                      handleDeleteExerciseFromProgram(dayKey, exercise.id);
+                                    }
+                                  }}
+                                  className="p-2 h-auto bg-transparent hover:bg-red-500/20 text-red-300 hover:text-red-100 text-xs whitespace-nowrap"
+                                  title="Supprimer du programme"
+                                >
+                                  <Trash2 size={14} className="inline mr-1" />
+                                  Supprimer
+                                </Button>
                               </div>
                             )}
                           </div>
@@ -1114,11 +1068,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           return (
                             <div
                               key={exercise.id}
-                              className={`rounded-lg p-4 border ${
-                                exercise.removedFromProgramAt
-                                  ? 'bg-purple-900/20 border-amber-500/40'
-                                  : 'bg-purple-700/20 border-purple-600/30'
-                              }`}
+                              className="rounded-lg p-4 border bg-purple-700/20 border-purple-600/30"
                             >
                               {isEditingVar ? (
                                 renderExerciseEditor()
@@ -1135,11 +1085,6 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                           {getCategoryLabel(exercise.programCategory)}
                                         </span>
                                       )}
-                                      {exercise.removedFromProgramAt && (
-                                        <span className="text-xs text-amber-200">
-                                          Retiré le {exercise.removedFromProgramAt}
-                                        </span>
-                                      )}
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                       <button
@@ -1149,33 +1094,17 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                       >
                                         <Edit3 size={14} />
                                       </button>
-                                      {!exercise.removedFromProgramAt ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (
-                                              window.confirm(
-                                                'Retirer cet exercice (variante salle A) ? Historique conservé.'
-                                              )
-                                            ) {
-                                              handleRemoveVariantExercise(dayKey, 'semaineA', exercise.id);
-                                            }
-                                          }}
-                                          className="text-xs text-amber-300 hover:text-amber-100 flex items-center gap-1"
-                                        >
-                                          <Trash2 size={12} /> Retirer
-                                        </button>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            handleRestoreVariantExercise(dayKey, 'semaineA', exercise.id)
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (window.confirm(DELETE_EXO_CONFIRM)) {
+                                            handleDeleteVariantExercise(dayKey, 'semaineA', exercise.id);
                                           }
-                                          className="text-xs text-emerald-300 hover:text-emerald-100"
-                                        >
-                                          Réintégrer
-                                        </button>
-                                      )}
+                                        }}
+                                        className="text-xs text-red-300 hover:text-red-100 flex items-center gap-1"
+                                      >
+                                        <Trash2 size={12} /> Supprimer
+                                      </button>
                                     </div>
                                   </div>
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-300 mb-2">
@@ -1233,11 +1162,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           return (
                             <div
                               key={exercise.id}
-                              className={`rounded-lg p-4 border ${
-                                exercise.removedFromProgramAt
-                                  ? 'bg-purple-900/20 border-amber-500/40'
-                                  : 'bg-purple-700/20 border-purple-600/30'
-                              }`}
+                              className="rounded-lg p-4 border bg-purple-700/20 border-purple-600/30"
                             >
                               {isEditingVar ? (
                                 renderExerciseEditor()
@@ -1254,11 +1179,6 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                           {getCategoryLabel(exercise.programCategory)}
                                         </span>
                                       )}
-                                      {exercise.removedFromProgramAt && (
-                                        <span className="text-xs text-amber-200">
-                                          Retiré le {exercise.removedFromProgramAt}
-                                        </span>
-                                      )}
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                       <button
@@ -1268,33 +1188,17 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                       >
                                         <Edit3 size={14} />
                                       </button>
-                                      {!exercise.removedFromProgramAt ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (
-                                              window.confirm(
-                                                'Retirer cet exercice (variante salle B) ? Historique conservé.'
-                                              )
-                                            ) {
-                                              handleRemoveVariantExercise(dayKey, 'semaineB', exercise.id);
-                                            }
-                                          }}
-                                          className="text-xs text-amber-300 hover:text-amber-100 flex items-center gap-1"
-                                        >
-                                          <Trash2 size={12} /> Retirer
-                                        </button>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            handleRestoreVariantExercise(dayKey, 'semaineB', exercise.id)
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (window.confirm(DELETE_EXO_CONFIRM)) {
+                                            handleDeleteVariantExercise(dayKey, 'semaineB', exercise.id);
                                           }
-                                          className="text-xs text-emerald-300 hover:text-emerald-100"
-                                        >
-                                          Réintégrer
-                                        </button>
-                                      )}
+                                        }}
+                                        className="text-xs text-red-300 hover:text-red-100 flex items-center gap-1"
+                                      >
+                                        <Trash2 size={12} /> Supprimer
+                                      </button>
                                     </div>
                                   </div>
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-300 mb-2">

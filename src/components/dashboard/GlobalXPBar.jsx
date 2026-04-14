@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Star, Target, BookOpen, Apple, Dumbbell } from 'lucide-react';
+import { Star, Target, BookOpen, Apple, Dumbbell, Ban } from 'lucide-react';
 import { useGlobalXP } from '../../hooks/useGlobalXP';
 
 const GlobalXPBar = () => {
@@ -14,7 +14,8 @@ const GlobalXPBar = () => {
     { key: 'learning', label: 'Apprentissage', icon: BookOpen, color: 'blue' },
     { key: 'nutrition', label: 'Nutrition', icon: Apple, color: 'green' },
     { key: 'books', label: 'Livres', icon: BookOpen, color: 'indigo' },
-    { key: 'sport', label: 'Sport', icon: Dumbbell, color: 'red' }
+    { key: 'sport', label: 'Sport', icon: Dumbbell, color: 'red' },
+    { key: 'addictionQuit', label: 'Arrêt addiction', icon: Ban, color: 'amber' },
   ];
   
   return (
@@ -46,19 +47,31 @@ const GlobalXPBar = () => {
       </div>
       
       {/* Détail par catégorie */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {categories.map(category => {
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {categories.map((category) => {
           const Icon = category.icon;
           const xp = xpByCategory[category.key] || 0;
           const percent = totalXP > 0 ? (xp / totalXP) * 100 : 0;
-          
+          const iconColor =
+            category.key === 'addictionQuit'
+              ? 'text-amber-400'
+              : category.key === 'quests'
+                ? 'text-purple-400'
+                : category.key === 'learning'
+                  ? 'text-blue-400'
+                  : category.key === 'nutrition'
+                    ? 'text-green-400'
+                    : category.key === 'books'
+                      ? 'text-indigo-400'
+                      : 'text-red-400';
+
           return (
             <div
               key={category.key}
               className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50"
             >
               <div className="flex items-center gap-2 mb-2">
-                <Icon className={`w-4 h-4 text-${category.color}-400`} />
+                <Icon className={`w-4 h-4 ${iconColor}`} />
                 <span className="text-xs text-slate-400">{category.label}</span>
               </div>
               <div className="text-lg font-bold text-white">{xp.toLocaleString('fr-FR')}</div>

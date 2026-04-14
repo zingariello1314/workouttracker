@@ -14,7 +14,7 @@ import {
 } from '../utils/quietQuestIndexedDB';
 import { emitSidebarEvent, SIDEBAR_EVENTS, sidebarEvents } from '../utils/sidebarEvents';
 import { useAuth } from '../context/AuthContext';
-import { getHeureSortMinutes } from '../utils/quests';
+import { getHeureSortMinutes, getQuestDureeMinutes } from '../utils/quests';
 import logger from '../utils/logger';
 
 const qqLog = logger.module('useQuietQuestEngine');
@@ -70,7 +70,8 @@ export const DIFFICULTY_XP_BASE = {
 
 export function calculateQuestXP(quest) {
   const base = DIFFICULTY_XP_BASE[quest.difficulte] || DIFFICULTY_XP_BASE[1];
-  const multiplier = (quest.duree || 60) / 60;
+  const d = getQuestDureeMinutes(quest);
+  const multiplier = (d > 0 ? d : 60) / 60;
   return Math.round(base * multiplier);
 }
 

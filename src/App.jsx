@@ -22,6 +22,7 @@ const ProgressTab = lazy(() => import('./components/tabs/ProgressTab'));
 const EnduranceTab = lazy(() => import('./components/tabs/EnduranceTab'));
 const CalendarTab = lazy(() => import('./components/tabs/CalendarTab'));
 const ProgramTab = lazy(() => import('./components/tabs/ProgramTab'));
+const AddictionQuitTab = lazy(() => import('./components/tabs/AddictionQuitTab'));
 const ChartsTab = lazy(() => import('./components/tabs/ChartsTab'));
 const StatsTab = lazy(() => import('./components/tabs/StatsTab'));
 const ExercisesTab = lazy(() => import('./components/tabs/ExercisesTab'));
@@ -105,14 +106,16 @@ const WorkoutTrackerContent = () => {
     endurance: '-640px',
     calendar: '-640px',
     program: '-640px',
+    'addiction-quit': '-640px',
     nutrition: '-640px',
     charts: '-640px',
     stats: '-640px',
     exercises: '-640px',
     history: '-640px',
     predictions: '-640px',
+    'smart-balancing': '-640px',
     // Sous-onglet Sport : Garmin aligné comme les autres sous-onglets
-    garmin: '-640px'
+    garmin: '-640px',
   };
 
   const defaultMainOffset = (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing')
@@ -206,6 +209,8 @@ const WorkoutTrackerContent = () => {
         return <CalendarTab />;
       case 'program':
         return <ProgramTab />;
+      case 'addiction-quit':
+        return <AddictionQuitTab />;
       case 'nutrition':
         return <NutritionTab />;
       case 'charts':

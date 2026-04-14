@@ -11,6 +11,12 @@ const STORE_USER_DATA = 'quietquest_user_data';
 const STORE_DAILY_PERFORMANCES = 'quietquest_daily_performances';
 const STORE_APP_STATE = 'quietquest_app_state';
 
+/** Enregistrements sans userId (legacy) : rattachés au profil unique `main`. */
+const recordBelongsToUser = (record, userId) => {
+  const uid = record?.userId;
+  return uid === userId || uid == null || uid === '';
+};
+
 /**
  * Ouvre la base WorkoutTrackerDB et garantit l'existence des stores QuietQuest.
  * Retourne null si IndexedDB n'est pas disponible ou en cas d'échec non récupérable.
@@ -257,12 +263,12 @@ export const loadQuestsFromIndexedDB = async (db, userId = 'main') => {
   try {
     const transaction = db.transaction([STORE_QUESTS], 'readonly');
     const store = transaction.objectStore(STORE_QUESTS);
-    const index = store.index('userId');
-    const request = index.getAll(userId);
+    const request = store.getAll();
     return new Promise((resolve, reject) => {
       request.onsuccess = () => {
-        const result = request.result || [];
-        resolve(Array.isArray(result) ? result : []);
+        const all = request.result || [];
+        const filtered = all.filter((q) => recordBelongsToUser(q, userId));
+        resolve(Array.isArray(filtered) ? filtered : []);
       };
       request.onerror = () => reject(new Error('Erreur chargement quêtes'));
     });
@@ -280,34 +286,28 @@ export const saveQuestsToIndexedDB = async (db, quests, userId = 'main') => {
   try {
     const transaction = db.transaction([STORE_QUESTS], 'readwrite');
     const store = transaction.objectStore(STORE_QUESTS);
-    
-    // Supprimer toutes les quêtes de l'utilisateur
-    const index = store.index('userId');
-    const deleteRequest = index.openKeyCursor(IDBKeyRange.only(userId));
-    const deletePromises = [];
-    
-    deleteRequest.onsuccess = (e) => {
-      const cursor = e.target.result;
-      if (cursor) {
-        deletePromises.push(
-          new Promise((resolve) => {
-            const deleteReq = store.delete(cursor.primaryKey);
-            deleteReq.onsuccess = () => resolve();
-            deleteReq.onerror = () => resolve();
-          })
-        );
-        cursor.continue();
-      } else {
-        // Toutes les suppressions lancées, maintenant ajouter les nouvelles
-        Promise.all(deletePromises).then(() => {
-          quests.forEach((quest) => {
-            const questWithUserId = { ...quest, userId };
-            store.put(questWithUserId);
-          });
-        });
-      }
-    };
-    
+
+    await new Promise((resolve, reject) => {
+      const request = store.openCursor();
+      request.onerror = () => reject(request.error);
+      request.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (recordBelongsToUser(cursor.value, userId)) {
+            cursor.delete();
+          }
+          cursor.continue();
+        } else {
+          resolve();
+        }
+      };
+    });
+
+    quests.forEach((quest) => {
+      const questWithUserId = { ...quest, userId };
+      store.put(questWithUserId);
+    });
+
     await new Promise((resolve, reject) => {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -326,12 +326,12 @@ export const loadValidationsFromIndexedDB = async (db, userId = 'main') => {
   try {
     const transaction = db.transaction([STORE_VALIDATIONS], 'readonly');
     const store = transaction.objectStore(STORE_VALIDATIONS);
-    const index = store.index('userId');
-    const request = index.getAll(userId);
+    const request = store.getAll();
     return new Promise((resolve, reject) => {
       request.onsuccess = () => {
-        const result = request.result || [];
-        resolve(Array.isArray(result) ? result : []);
+        const all = request.result || [];
+        const filtered = all.filter((v) => recordBelongsToUser(v, userId));
+        resolve(Array.isArray(filtered) ? filtered : []);
       };
       request.onerror = () => reject(new Error('Erreur chargement validations'));
     });
@@ -349,33 +349,28 @@ export const saveValidationsToIndexedDB = async (db, validations, userId = 'main
   try {
     const transaction = db.transaction([STORE_VALIDATIONS], 'readwrite');
     const store = transaction.objectStore(STORE_VALIDATIONS);
-    
-    // Supprimer toutes les validations de l'utilisateur
-    const index = store.index('userId');
-    const deleteRequest = index.openKeyCursor(IDBKeyRange.only(userId));
-    const deletePromises = [];
-    
-    deleteRequest.onsuccess = (e) => {
-      const cursor = e.target.result;
-      if (cursor) {
-        deletePromises.push(
-          new Promise((resolve) => {
-            const deleteReq = store.delete(cursor.primaryKey);
-            deleteReq.onsuccess = () => resolve();
-            deleteReq.onerror = () => resolve();
-          })
-        );
-        cursor.continue();
-      } else {
-        Promise.all(deletePromises).then(() => {
-          validations.forEach((validation) => {
-            const validationWithUserId = { ...validation, userId };
-            store.put(validationWithUserId);
-          });
-        });
-      }
-    };
-    
+
+    await new Promise((resolve, reject) => {
+      const request = store.openCursor();
+      request.onerror = () => reject(request.error);
+      request.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (recordBelongsToUser(cursor.value, userId)) {
+            cursor.delete();
+          }
+          cursor.continue();
+        } else {
+          resolve();
+        }
+      };
+    });
+
+    validations.forEach((validation) => {
+      const validationWithUserId = { ...validation, userId };
+      store.put(validationWithUserId);
+    });
+
     await new Promise((resolve, reject) => {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -442,13 +437,12 @@ export const loadDailyPerformancesFromIndexedDB = async (db, userId = 'main') =>
   try {
     const transaction = db.transaction([STORE_DAILY_PERFORMANCES], 'readonly');
     const store = transaction.objectStore(STORE_DAILY_PERFORMANCES);
-    const index = store.index('userId');
-    const request = index.getAll(userId);
+    const request = store.getAll();
     return new Promise((resolve, reject) => {
       request.onsuccess = () => {
-        const result = request.result || [];
-        // Retirer userId de chaque entrée
-        const cleaned = result.map(({ userId: _, ...rest }) => rest);
+        const all = request.result || [];
+        const filtered = all.filter((d) => recordBelongsToUser(d, userId));
+        const cleaned = filtered.map(({ userId: _, ...rest }) => rest);
         resolve(Array.isArray(cleaned) ? cleaned : []);
       };
       request.onerror = () => reject(new Error('Erreur chargement dailyPerformances'));
@@ -471,33 +465,28 @@ export const saveDailyPerformancesToIndexedDB = async (
   try {
     const transaction = db.transaction([STORE_DAILY_PERFORMANCES], 'readwrite');
     const store = transaction.objectStore(STORE_DAILY_PERFORMANCES);
-    
-    // Supprimer toutes les performances de l'utilisateur
-    const index = store.index('userId');
-    const deleteRequest = index.openKeyCursor(IDBKeyRange.only(userId));
-    const deletePromises = [];
-    
-    deleteRequest.onsuccess = (e) => {
-      const cursor = e.target.result;
-      if (cursor) {
-        deletePromises.push(
-          new Promise((resolve) => {
-            const deleteReq = store.delete(cursor.primaryKey);
-            deleteReq.onsuccess = () => resolve();
-            deleteReq.onerror = () => resolve();
-          })
-        );
-        cursor.continue();
-      } else {
-        Promise.all(deletePromises).then(() => {
-          performances.forEach((perf) => {
-            const perfWithUserId = { ...perf, userId };
-            store.put(perfWithUserId);
-          });
-        });
-      }
-    };
-    
+
+    await new Promise((resolve, reject) => {
+      const request = store.openCursor();
+      request.onerror = () => reject(request.error);
+      request.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (recordBelongsToUser(cursor.value, userId)) {
+            cursor.delete();
+          }
+          cursor.continue();
+        } else {
+          resolve();
+        }
+      };
+    });
+
+    performances.forEach((perf) => {
+      const perfWithUserId = { ...perf, userId };
+      store.put(perfWithUserId);
+    });
+
     await new Promise((resolve, reject) => {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -558,6 +547,23 @@ export const saveAppStateToIndexedDB = async (db, appState, userId = 'main') => 
 /**
  * Vide tous les stores QuietQuest (pour reset/import)
  */
+const clearStoreByUserCursor = (store, userId) =>
+  new Promise((resolve, reject) => {
+    const request = store.openCursor();
+    request.onerror = () => reject(request.error);
+    request.onsuccess = (e) => {
+      const cursor = e.target.result;
+      if (cursor) {
+        if (recordBelongsToUser(cursor.value, userId)) {
+          cursor.delete();
+        }
+        cursor.continue();
+      } else {
+        resolve();
+      }
+    };
+  });
+
 export const clearQuietQuestStores = async (db, userId = 'main') => {
   if (!db) return;
   try {
@@ -581,30 +587,13 @@ export const clearQuietQuestStores = async (db, userId = 'main') => {
           deleteReq.onerror = () => reject(deleteReq.error);
         });
       } else {
-        // Stores avec index userId : supprimer toutes les entrées de l'utilisateur
-        const index = store.index('userId');
-        const deleteRequest = index.openKeyCursor(IDBKeyRange.only(userId));
-        const deletePromises = [];
-        
-        await new Promise((resolve, reject) => {
-          deleteRequest.onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) {
-              deletePromises.push(
-                new Promise((res) => {
-                  const delReq = store.delete(cursor.primaryKey);
-                  delReq.onsuccess = () => res();
-                  delReq.onerror = () => res();
-                })
-              );
-              cursor.continue();
-            } else {
-              Promise.all(deletePromises).then(() => resolve());
-            }
-          };
-          deleteRequest.onerror = () => reject(deleteRequest.error);
-        });
+        // Inclut les enregistrements sans userId (legacy) pour ce profil
+        await clearStoreByUserCursor(store, userId);
       }
+      await new Promise((resolve, reject) => {
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+      });
     }
   } catch (error) {
     console.error('[quietQuestIndexedDB] Erreur clearStores:', error);

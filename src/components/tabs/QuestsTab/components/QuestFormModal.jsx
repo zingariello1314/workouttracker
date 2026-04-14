@@ -7,7 +7,16 @@
  */
 
 import React from 'react';
-import { CATEGORIES, CRENEAUX, PRIERES, DIFFICULTIES, JOUR_OPTIONS, RECURRENCE_PRESETS, DURATION_OPTIONS } from '../constants';
+import {
+  CATEGORIES,
+  CRENEAUX,
+  PRIERES,
+  DIFFICULTIES,
+  JOUR_OPTIONS,
+  RECURRENCE_PRESETS,
+  DURATION_OPTIONS,
+  snapDureeToValidOption,
+} from '../constants';
 import { formatDuration } from '../utils';
 
 /**
@@ -120,7 +129,7 @@ export const QuestFormModal = ({
             <div>
               <label className="block text-slate-300 mb-1">Durée</label>
               <select
-                value={Number(questForm.duree) || 30}
+                value={snapDureeToValidOption(questForm.duree)}
                 onChange={(e) =>
                   setQuestForm((prev) => ({
                     ...prev,
