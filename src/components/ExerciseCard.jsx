@@ -1,7 +1,10 @@
-import React from 'react';
-import { Clock, Target, Zap, Award, Info } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Clock, Target, Zap, Award, Info, ChevronRight, Gauge } from 'lucide-react';
+import { useTranslation } from '../utils/translations';
+import { summarizeExerciseSeries } from '../utils/exerciseSeriesSummary';
 import Badge from './ui/Badge';
 import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
+import LoadDifficultyStars from './sport/LoadDifficultyStars';
 import { 
   ExerciseCategories, 
   MuscleGroups, 
@@ -14,8 +17,12 @@ const ExerciseCard = ({
   isCompleted = false, 
   onToggle, 
   showDetails = true,
-  compact = false 
+  compact = false,
+  onOpenDetail,
+  effectiveLoadCoeff
 }) => {
+  const t = useTranslation();
+  const seriesSummary = useMemo(() => summarizeExerciseSeries(exercise), [exercise]);
   // Fonction pour obtenir la couleur selon la catégorie
   const getCategoryColor = (category) => {
     switch (category) {
@@ -49,6 +56,12 @@ const ExerciseCard = ({
         return 'bg-red-500/20 text-red-300';
       case MuscleGroups.LEGS:
         return 'bg-purple-500/20 text-purple-300';
+      case MuscleGroups.QUADS:
+        return 'bg-violet-500/20 text-violet-200';
+      case MuscleGroups.HAMSTRINGS:
+        return 'bg-fuchsia-500/20 text-fuchsia-200';
+      case MuscleGroups.CALVES:
+        return 'bg-indigo-500/20 text-indigo-200';
       case MuscleGroups.CORE:
         return 'bg-orange-500/20 text-orange-300';
       default:
@@ -119,6 +132,12 @@ const ExerciseCard = ({
         return 'Triceps';
       case MuscleGroups.LEGS:
         return 'Jambes';
+      case MuscleGroups.QUADS:
+        return 'Quadriceps';
+      case MuscleGroups.HAMSTRINGS:
+        return 'Ischio-jambiers';
+      case MuscleGroups.CALVES:
+        return 'Mollets';
       case MuscleGroups.CORE:
         return 'Core';
       case MuscleGroups.FULL_BODY:
@@ -155,21 +174,59 @@ const ExerciseCard = ({
   }
 
   return (
-    <Card className={`transition-all duration-200 ${
+    <Card
+      className={`transition-all duration-200 ${
+        onOpenDetail ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/40' : ''
+      } ${
       isCompleted 
         ? 'bg-green-500/10 border-green-500/30' 
         : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
-    }`}>
+    }`}
+      role={onOpenDetail ? 'button' : undefined}
+      tabIndex={onOpenDetail ? 0 : undefined}
+      onClick={onOpenDetail ? () => onOpenDetail(exercise) : undefined}
+      onKeyDown={
+        onOpenDetail
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onOpenDetail(exercise);
+              }
+            }
+          : undefined
+      }
+    >
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg font-semibold text-white">
+        <div className="flex items-start justify-between gap-3">
+          <CardTitle className="text-lg font-semibold text-white leading-tight flex-1">
             {exercise.name}
           </CardTitle>
+
+          {typeof effectiveLoadCoeff === 'number' && !Number.isNaN(effectiveLoadCoeff) && (
+            <div className="flex items-center gap-2 shrink-0">
+              <LoadDifficultyStars coeff={effectiveLoadCoeff} className="scale-90" />
+              <div className="flex items-center gap-1.5 rounded-lg bg-slate-900/70 px-2.5 py-1 border border-slate-600/80">
+                <Gauge className="w-4 h-4 text-amber-300" />
+                <div className="text-right">
+                  <div className="text-[9px] uppercase text-slate-500 leading-none">
+                    {t('exercisesTab.card.loadShort', 'Diff. charge')}
+                  </div>
+                  <div className="text-sm font-bold text-amber-200 tabular-nums leading-tight">
+                    {Math.round(effectiveLoadCoeff * 100) / 100}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           {onToggle && (
             <button
-              onClick={onToggle}
-              className={`ml-2 w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              className={`ml-1 w-6 h-6 rounded-full border-2 transition-all duration-200 shrink-0 ${
                 isCompleted
                   ? 'bg-green-500 border-green-500'
                   : 'border-slate-500 hover:border-slate-400'
@@ -210,15 +267,31 @@ const ExerciseCard = ({
       <CardContent className="pt-0">
         {/* Informations principales */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-300 font-medium">Séries:</span>
-            <span className="text-white font-semibold">{exercise.series}</span>
-          </div>
+          {exercise.series && (
+            <div className="rounded-lg bg-slate-900/45 border border-slate-700/80 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                    {t('exercisesTab.card.volume', 'Volume au programme')}
+                  </span>
+                  <p className="text-white font-medium mt-1 break-words">
+                    {seriesSummary.headline || exercise.series}
+                  </p>
+                  {seriesSummary.detail && (
+                    <p className="text-xs text-slate-400 mt-2 leading-relaxed">{seriesSummary.detail}</p>
+                  )}
+                </div>
+                {onOpenDetail && <ChevronRight className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" aria-hidden />}
+              </div>
+            </div>
+          )}
 
-          {exercise.equipment && (
-            <div className="flex items-center justify-between">
-              <span className="text-slate-300 font-medium">Équipement:</span>
-              <span className="text-slate-200">{getEquipmentName(exercise.equipment)}</span>
+          {(exercise.equipment || exercise.materiel) && (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-slate-300 font-medium shrink-0">Équipement:</span>
+              <span className="text-slate-200 text-right">
+                {exercise.equipment ? getEquipmentName(exercise.equipment) : exercise.materiel}
+              </span>
             </div>
           )}
 
@@ -287,6 +360,12 @@ const ExerciseCard = ({
               </div>
             </div>
           </div>
+        )}
+
+        {onOpenDetail && (
+          <p className="mt-3 text-xs text-emerald-400/90">
+            {t('exercisesTab.card.openHint', 'Cliquez pour la fiche complète et les réglages.')}
+          </p>
         )}
       </CardContent>
     </Card>

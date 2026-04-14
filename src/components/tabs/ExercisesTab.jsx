@@ -3,6 +3,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { WorkoutContext } from '../../context/WorkoutContext';
 import { workoutProgram } from '../../data/workoutProgram';
 import { convertLegacyProgram, filterExercises } from '../../utils/programUtils';
+import { CARDIO_REFERENCE_EXERCISES } from '../../data/cardioExerciseCatalog';
 import { 
   syncExercisesFromPrograms, 
   detectProgramChanges,
@@ -17,14 +18,24 @@ import { Activity, Target, Dumbbell, Clock, Filter, RefreshCw, Zap, AlertCircle,
 import { useTranslation } from '../../utils/translations';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
+import ExerciseDetailPage from './exercises/ExerciseDetailPage';
+import { loadTranslationNamespace } from '../../utils/translations/loader';
+import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 
 const ExercisesTab = () => {
-  const { state } = useWorkout();
+  const { data, updateData } = useWorkout();
   const { programs, activeProgram } = useContext(WorkoutContext);
   const t = useTranslation();
   const { language } = useLanguage();
   const { currentUser, isAuthenticated } = useAuth();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const intensityCoeffs = data?.exerciseIntensityCoeffs || {};
+  const [detailExercise, setDetailExercise] = useState(null);
+
+  useEffect(() => {
+    loadTranslationNamespace(language || 'fr', 'exercisesTab');
+  }, [language]);
+
   const [filters, setFilters] = useState({});
   const [dataSource, setDataSource] = useState('default'); // 'default', 'active_program', 'all_programs'
   const [syncData, setSyncData] = useState(null);
@@ -197,24 +208,39 @@ const ExercisesTab = () => {
 
   // Utiliser les exercices synchronisés ou extraits manuellement
   const allExercises = useMemo(() => {
+    const mergeCardio = (list) => {
+      const seen = new Set(list.map((e) => String(e.id)));
+      const out = [...list];
+      CARDIO_REFERENCE_EXERCISES.forEach((ex) => {
+        const key = String(ex.id);
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push({
+            ...ex,
+            sourceDay: ex.sourceDay || t('exercisesTab.cardio.sourceLabel', 'Référentiel cardio')
+          });
+        }
+      });
+      return out;
+    };
+
     // Priorité aux exercices synchronisés si disponibles ET s'ils sont enrichis
     if (syncData && syncData.exercises && syncData.exercises.length > 0 && 
         syncData.exercises.some(ex => ex.category || ex.metadata)) {
-      console.log('DEBUG - Utilisation des exercices synchronisés enrichis');
-      return syncData.exercises;
+      const withSource = syncData.exercises.map((exercise) => ({
+        ...exercise,
+        sourceDay: exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
+      }));
+      return mergeCardio(withSource);
     }
     
-    // Sinon, utiliser l'extraction manuelle avec enrichissement
-    console.log('DEBUG - Utilisation de l\'extraction manuelle avec enrichissement');
     const exercises = [];
     
     Object.values(enhancedProgram.days).forEach(day => {
-      // Exercices principaux
       if (day.exercises) {
         exercises.push(...day.exercises);
       }
       
-      // Variantes salle
       if (day.salleVariants) {
         Object.values(day.salleVariants).forEach(variant => {
           if (variant.exercises) {
@@ -224,17 +250,17 @@ const ExercisesTab = () => {
       }
     });
     
-    // Supprimer les doublons basés sur l'ID
     const uniqueExercises = exercises.filter((exercise, index, self) => 
       index === self.findIndex(e => e.id === exercise.id)
     );
     
-    // Ajouter des informations sur la source
-    return uniqueExercises.map(exercise => ({
+    const fromProgram = uniqueExercises.map(exercise => ({
       ...exercise,
       sourceDay: exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
     }));
-  }, [enhancedProgram, syncData]);
+
+    return mergeCardio(fromProgram);
+  }, [enhancedProgram, syncData, t]);
 
   // Filtrer les exercices
   const filteredExercises = useMemo(() => {
@@ -327,6 +353,22 @@ const ExercisesTab = () => {
     if (difficulty === t('exercisesTab.difficulty.advanced') || difficulty === 'Avancé') return 'text-red-400';
     return 'text-slate-400';
   };
+
+  if (detailExercise) {
+    return (
+      <div className="relative min-h-screen">
+        <div className="relative z-10 p-4 md:p-6">
+          <ExerciseDetailPage
+            exercise={detailExercise}
+            data={data}
+            updateData={updateData}
+            onBack={() => setDetailExercise(null)}
+            readOnly={!isAuthenticated}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen">
@@ -630,6 +672,8 @@ const ExercisesTab = () => {
                     exercise={exercise}
                     onToggleComplete={() => {}}
                     isCompleted={false}
+                    onOpenDetail={setDetailExercise}
+                    effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
                   />
                 ))}
               </div>

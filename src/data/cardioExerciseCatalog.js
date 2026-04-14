@@ -1,0 +1,138 @@
+/**
+ * Référentiel « cardio / endurance » pour l’onglet Exercices (réglage des coefficients + fiches).
+ * Les séances réelles se saisissent dans Sport → Endurance.
+ */
+
+import { ExerciseCategories, MuscleGroups, Equipment, Difficulty } from './workoutProgramEnhanced';
+
+const hint = 'Séances réelles : Sport → Endurance (date, durée, distance, type).';
+
+const CARDIO_REFERENCE_EXERCISES_RAW = [
+  {
+    id: 'cardio_run_easy',
+    name: 'Course — endurance fondamentale / footing',
+    series: 'Durée, distance, allure — ' + hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Allure confortable, conversation possible.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_long',
+    name: 'Course — sortie longue',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Volume long à intensité modérée.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_endurance',
+    name: 'Course — endurance (allure stable)',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Séance continue hors zone seuil.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_fartlek',
+    name: 'Course — fartlek',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Jeux de vitesses libres sur le terrain.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_interval',
+    name: 'Course — fractionné / intervalles',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Alternance efforts intenses / récup.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_threshold',
+    name: 'Course — seuil (STS)',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Allure tenable ~1 h en course continue.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_tempo',
+    name: 'Course — tempo',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Bloc soutenu sous le seuil maximal.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_sprint',
+    name: 'Course — sprint / VMA courte',
+    series: hint,
+    materiel: 'Piste ou terrain',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Répetitions courtes très intenses.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_jumprope',
+    name: 'Corde à sauter — endurance / technique',
+    series: 'Séances : Sport → Endurance → Corde',
+    materiel: 'Corde à sauter',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Sauts, durée, combos.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_swimming',
+    name: 'Natation — endurance / technique',
+    series: 'Séances : Sport → Endurance → Natation',
+    materiel: 'Piscine',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Longueurs, allures, types de nage.',
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_boxing',
+    name: 'Boxe — sac / ring / cardio',
+    series: 'Séances : Sport → Endurance → Boxe',
+    materiel: 'Gants, sac',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Durée, intensité, rounds.',
+    isCardioReference: true
+  }
+];
+
+/** Référentiels cardio avec difficulté par défaut pour les filtres de l’onglet Exercices */
+export const CARDIO_REFERENCE_EXERCISES = CARDIO_REFERENCE_EXERCISES_RAW.map((ex) => ({
+  ...ex,
+  difficulty: ex.difficulty ?? Difficulty.INTERMEDIATE
+}));

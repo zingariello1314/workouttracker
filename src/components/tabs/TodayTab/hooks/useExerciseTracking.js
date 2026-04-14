@@ -1,30 +1,33 @@
 /**
  * 🏋️ HOOK USE EXERCISE TRACKING
- * 
- * Hook personnalisé pour gérer le tracking des exercices (check/uncheck, mise à jour reps).
- * Encapsule toute la logique métier liée aux exercices et optimise les performances.
- * 
- * @module useExerciseTracking
+ *
+ * Gère check/reps avec clés stables ; lit aussi les variantes de clés (salle A/B, id original)
+ * pour ne pas « perdre » les reps après changement de mode ou de mapping d’id programme.
  */
 
 import { useCallback } from 'react';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { useTodayWorkout } from './useTodayWorkout';
-import { generateSmartExerciseKey } from '../../../../utils/exerciseKeyGenerator';
+import {
+  generateSmartExerciseKey,
+  collectExerciseKeysForWorkoutExercise
+} from '../../../../utils/exerciseKeyGenerator';
 import { calculateAutoReps } from '../../../../utils/exerciseCalculations';
 
+function pickStoredState(currentData, keys) {
+  for (const key of keys) {
+    const r = currentData.reps?.[key];
+    const c = currentData.checkedExercises?.[key];
+    const hasR = r !== undefined && r !== null && String(r).trim() !== '';
+    if (hasR || c) {
+      return { key, reps: hasR ? String(r) : '', isChecked: !!c };
+    }
+  }
+  return { key: keys[0] || '', reps: '', isChecked: false };
+}
+
 /**
- * Hook pour gérer le tracking des exercices
- * 
- * @param {Object} options - Options
- * @param {Date} options.date - Date à utiliser (défaut: currentDate du contexte)
- * @param {boolean} options.isGymMode - Mode salle activé (défaut: isGymMode du contexte)
- * @returns {Object} Objet contenant toggleExercise, updateReps, getExerciseStatus
- * 
- * @example
- * const { toggleExercise, updateReps } = useExerciseTracking();
- * toggleExercise(101); // Toggle exercice 101 avec auto-reps
- * updateReps(101, '45'); // Mettre à jour reps pour exercice 101
+ * @returns {{ toggleExercise: Function, updateReps: Function, getExerciseStatus: Function }}
  */
 export const useExerciseTracking = (options = {}) => {
   const {
@@ -34,7 +37,7 @@ export const useExerciseTracking = (options = {}) => {
     updateTempExerciseData
   } = useWorkout();
 
-  const { workout, dateStr, weekVariant } = useTodayWorkout({
+  const { workout, weekVariant } = useTodayWorkout({
     date: options.date || currentDate,
     isGymMode: options.isGymMode !== undefined ? options.isGymMode : contextIsGymMode
   });
@@ -42,113 +45,123 @@ export const useExerciseTracking = (options = {}) => {
   const date = options.date || currentDate;
   const isGymMode = options.isGymMode !== undefined ? options.isGymMode : contextIsGymMode;
 
-  /**
-   * Toggle un exercice (check/uncheck) avec auto-remplissage des reps si nécessaire
-   * 
-   * @param {string|number} exerciseId - ID de l'exercice
-   */
-  const toggleExercise = useCallback((exerciseId) => {
-    const currentData = getCurrentData();
-    
-    // Générer la clé appropriée selon le contexte (standard ou gym)
-    const key = generateSmartExerciseKey(date, exerciseId, {
+  const keyOptions = useCallback(
+    () => ({
       isGymMode,
       workoutIsGymMode: workout.isGymMode,
       weekVariant
-    });
-    
-    const isCurrentlyChecked = currentData.checkedExercises?.[key] || false;
-    
-    // Si pas encore coché, calculer les reps automatiques depuis les séries
-    if (!isCurrentlyChecked) {
-      const exercise = workout.exercices?.find(ex => ex.id === exerciseId);
-      
-      if (exercise?.series) {
-        // Utiliser la fonction centralisée pour calculer les reps
-        const autoReps = calculateAutoReps(exercise.series, { round: true });
-        
-        // Mettre à jour les données avec case cochée ET répétitions
-        const newData = {
+    }),
+    [isGymMode, workout.isGymMode, weekVariant]
+  );
+
+  const allKeysForExercise = useCallback(
+    (exercise) => collectExerciseKeysForWorkoutExercise(date, exercise, keyOptions()),
+    [date, keyOptions]
+  );
+
+  const primaryKeyForExercise = useCallback(
+    (exercise) => generateSmartExerciseKey(date, exercise.id, keyOptions()),
+    [date, keyOptions]
+  );
+
+  /**
+   * @param {Object} exercise — au minimum { id, series?, originalId? }
+   */
+  const toggleExercise = useCallback(
+    (exercise) => {
+      const currentData = getCurrentData();
+      const keys = allKeysForExercise(exercise);
+      const primaryKey = primaryKeyForExercise(exercise);
+      const isCurrentlyChecked = keys.some((k) => currentData.checkedExercises?.[k]);
+
+      if (!isCurrentlyChecked) {
+        const exInWorkout = workout.exercices?.find((ex) => ex.id === exercise.id);
+        const seriesSource = exInWorkout?.series || exercise?.series;
+
+        const nextReps = { ...(currentData.reps || {}) };
+        const nextChk = { ...(currentData.checkedExercises || {}) };
+
+        keys.forEach((k) => {
+          delete nextReps[k];
+          delete nextChk[k];
+        });
+
+        let repsVal = '';
+        if (seriesSource) {
+          const autoReps = calculateAutoReps(seriesSource, { round: true });
+          if (autoReps !== null) repsVal = autoReps.toString();
+        }
+        if (!repsVal) {
+          const prev = pickStoredState(currentData, keys);
+          repsVal = prev.reps || '';
+        }
+
+        nextChk[primaryKey] = true;
+        nextReps[primaryKey] = repsVal;
+
+        updateTempExerciseData({
           ...currentData,
-          checkedExercises: {
-            ...currentData.checkedExercises,
-            [key]: true
-          },
-          reps: {
-            ...currentData.reps,
-            [key]: autoReps !== null ? autoReps.toString() : ''
-          }
-        };
-        updateTempExerciseData(newData);
+          checkedExercises: nextChk,
+          reps: nextReps
+        });
         return;
       }
-    }
-    
-    // Sinon, simple toggle de la case (uncheck supprime aussi les reps)
-    const nextReps = { ...(currentData.reps || {}) };
-    if (!isCurrentlyChecked) {
-      nextReps[key] = currentData.reps?.[key] || '';
-    } else {
-      delete nextReps[key];
-    }
 
-    const newData = {
-      ...currentData,
-      checkedExercises: {
-        ...currentData.checkedExercises,
-        [key]: !isCurrentlyChecked
-      },
-      reps: nextReps
-    };
-    updateTempExerciseData(newData);
-  }, [date, isGymMode, workout, weekVariant, getCurrentData, updateTempExerciseData]);
+      const nextReps = { ...(currentData.reps || {}) };
+      const nextChk = { ...(currentData.checkedExercises || {}) };
+      keys.forEach((k) => {
+        delete nextReps[k];
+        delete nextChk[k];
+      });
+
+      updateTempExerciseData({
+        ...currentData,
+        checkedExercises: nextChk,
+        reps: nextReps
+      });
+    },
+    [date, getCurrentData, updateTempExerciseData, workout.exercices, allKeysForExercise, primaryKeyForExercise]
+  );
 
   /**
-   * Mettre à jour les répétitions d'un exercice
-   * 
-   * @param {string|number} exerciseId - ID de l'exercice
-   * @param {string} reps - Nouvelle valeur des répétitions (string pour permettre vide)
+   * @param {Object} exercise
+   * @param {string} reps
    */
-  const updateReps = useCallback((exerciseId, reps) => {
-    const currentData = getCurrentData();
-    
-    // Générer la clé appropriée selon le contexte
-    const key = generateSmartExerciseKey(date, exerciseId, {
-      isGymMode,
-      workoutIsGymMode: workout.isGymMode,
-      weekVariant
-    });
-    
-    const newData = {
-      ...currentData,
-      reps: {
-        ...currentData.reps,
-        [key]: reps
-      }
-    };
-    updateTempExerciseData(newData);
-  }, [date, isGymMode, workout, weekVariant, getCurrentData, updateTempExerciseData]);
+  const updateReps = useCallback(
+    (exercise, reps) => {
+      const currentData = getCurrentData();
+      const primaryKey = primaryKeyForExercise(exercise);
+      const keys = allKeysForExercise(exercise);
+      const nextReps = { ...(currentData.reps || {}) };
+      keys.forEach((k) => {
+        if (k !== primaryKey) delete nextReps[k];
+      });
+      nextReps[primaryKey] = reps;
+
+      updateTempExerciseData({
+        ...currentData,
+        reps: nextReps
+      });
+    },
+    [getCurrentData, updateTempExerciseData, primaryKeyForExercise, allKeysForExercise]
+  );
 
   /**
-   * Obtenir le statut d'un exercice (checked, reps)
-   * 
-   * @param {string|number} exerciseId - ID de l'exercice
-   * @returns {Object} { isChecked: boolean, reps: string }
+   * @param {Object} exercise
+   * @returns {{ isChecked: boolean, reps: string }}
    */
-  const getExerciseStatus = useCallback((exerciseId) => {
-    const currentData = getCurrentData();
-    
-    const key = generateSmartExerciseKey(date, exerciseId, {
-      isGymMode,
-      workoutIsGymMode: workout.isGymMode,
-      weekVariant
-    });
-    
-    return {
-      isChecked: currentData.checkedExercises?.[key] || false,
-      reps: currentData.reps?.[key] || ''
-    };
-  }, [date, isGymMode, workout, weekVariant, getCurrentData]);
+  const getExerciseStatus = useCallback(
+    (exercise) => {
+      const currentData = getCurrentData();
+      const keys = allKeysForExercise(exercise);
+      const picked = pickStoredState(currentData, keys);
+      return {
+        isChecked: picked.isChecked,
+        reps: picked.reps
+      };
+    },
+    [getCurrentData, allKeysForExercise]
+  );
 
   return {
     toggleExercise,
@@ -158,13 +171,3 @@ export const useExerciseTracking = (options = {}) => {
 };
 
 export default useExerciseTracking;
-
-
-
-
-
-
-
-
-
-

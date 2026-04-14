@@ -7,13 +7,12 @@
  * @module ExerciseList
  */
 
-import React, { memo } from 'react';
+import React from 'react';
 import ExerciseItem from './ExerciseItem';
 import { Checkbox } from '../../ui/Input';
 import { Input } from '../../ui/Input';
 import Button from '../../ui/Button';
 import { Zap } from 'lucide-react';
-import { useExerciseTracking } from '../hooks/useExerciseTracking';
 import { generateComplementaryKey } from '../../../../utils/exerciseKeyGenerator';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { getDateStr } from '../../../../utils/dateUtils';
@@ -37,7 +36,7 @@ import { getDateStr } from '../../../../utils/dateUtils';
  *   onShowVariations={(exercise) => setShowVariations(exercise)}
  * />
  */
-const ExerciseList = memo(({ 
+const ExerciseList = ({ 
   exercises = [], 
   complementaryActivity = null, 
   date, 
@@ -45,7 +44,6 @@ const ExerciseList = memo(({
   onShowVariations 
 }) => {
   const { getCurrentData, updateTempExerciseData } = useWorkout();
-  const { toggleExercise, updateReps } = useExerciseTracking({ date, isGymMode });
   const dateStr = getDateStr(date);
   const currentData = getCurrentData();
 
@@ -157,7 +155,7 @@ const ExerciseList = memo(({
       })()}
     </div>
   );
-});
+};
 
 ExerciseList.displayName = 'ExerciseList';
 

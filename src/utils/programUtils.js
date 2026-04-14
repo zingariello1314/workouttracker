@@ -62,7 +62,9 @@ const inferPrimaryMuscleGroups = (focus) => {
   if (focusLower.includes('triceps')) groups.push(MuscleGroups.TRICEPS);
   if (focusLower.includes('épaules')) groups.push(MuscleGroups.SHOULDERS);
   if (focusLower.includes('core') || focusLower.includes('abdos')) groups.push(MuscleGroups.CORE);
-  if (focusLower.includes('jambes')) groups.push(MuscleGroups.LEGS);
+  if (focusLower.includes('jambes')) {
+    groups.push(MuscleGroups.QUADS, MuscleGroups.HAMSTRINGS, MuscleGroups.CALVES);
+  }
   
   return groups;
 };
@@ -359,9 +361,24 @@ const inferRestTime = (series) => {
 /**
  * Filtre les exercices selon des critères
  */
+const LEG_RECAP_SPLIT = new Set([MuscleGroups.QUADS, MuscleGroups.HAMSTRINGS, MuscleGroups.CALVES]);
+
+function exerciseMatchesMuscleGroupFilter(exerciseGroup, selectedGroup) {
+  if (!selectedGroup) return true;
+  if (!exerciseGroup) return false;
+  if (exerciseGroup === selectedGroup) return true;
+  if (selectedGroup === MuscleGroups.LEGS && (exerciseGroup === MuscleGroups.LEGS || LEG_RECAP_SPLIT.has(exerciseGroup))) {
+    return true;
+  }
+  if (LEG_RECAP_SPLIT.has(selectedGroup) && exerciseGroup === MuscleGroups.LEGS) {
+    return true;
+  }
+  return false;
+}
+
 export const filterExercises = (exercises, filters) => {
   if (!Array.isArray(exercises)) return [];
-  
+
   return exercises.filter(exercise => {
     // Filtre de recherche textuelle
     if (filters.search) {
@@ -379,7 +396,9 @@ export const filterExercises = (exercises, filters) => {
     
     // Autres filtres
     if (filters.category && exercise.category !== filters.category) return false;
-    if (filters.muscleGroup && exercise.muscleGroup !== filters.muscleGroup) return false;
+    if (filters.muscleGroup && !exerciseMatchesMuscleGroupFilter(exercise.muscleGroup, filters.muscleGroup)) {
+      return false;
+    }
     if (filters.equipment && exercise.equipment !== filters.equipment) return false;
     if (filters.difficulty && exercise.difficulty !== filters.difficulty) return false;
     if (filters.maxDuration && exercise.estimatedDuration > filters.maxDuration) return false;

@@ -67,7 +67,7 @@ export function QuoteList({ quotes, onEdit, onDelete, onTogglePin, onReorder }) 
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-medium text-slate-300">
-          Citations ({quotes.length})
+          {quotes.length === 1 ? '1 citation au total' : `${quotes.length} citations au total`}
         </h3>
         <p className="text-xs text-slate-500">
           Glissez-déposez pour réorganiser
@@ -97,6 +97,7 @@ export function QuoteList({ quotes, onEdit, onDelete, onTogglePin, onReorder }) 
             onDelete={onDelete}
             onTogglePin={onTogglePin}
             draggable
+            listPosition={index + 1}
           />
         </div>
       ))}

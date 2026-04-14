@@ -9,6 +9,7 @@ const Navigation = () => {
   // ✅ Regrouper tous les onglets d'entraînement sous un méta-onglet "Sport"
   const sportTabs = useMemo(
     () => [
+      { id: 'recap',          labelKey: 'nav.recap',          icon: '🧠' },
       { id: 'today',          labelKey: 'nav.today',          icon: '📅' },
       { id: 'data-entry',     labelKey: 'nav.dataEntry',      icon: '✏️' },
       { id: 'program',        labelKey: 'nav.program',        icon: '🎯' },

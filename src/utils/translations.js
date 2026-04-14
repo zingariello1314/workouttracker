@@ -123,6 +123,145 @@ export const translations = {
     'nav.predictions': 'Prédictions',
     'nav.smartBalancing': 'Smart Balancing',
     'nav.garmin': 'Garmin',
+    'nav.recap': 'Récap',
+
+    // Récap (Sport — carte musculaire)
+    'recap.title': 'Récap musculaire',
+    'recap.subtitle':
+      'Carte 3D, scores par zone (même moteur que les couleurs), endurance et défis sur la période sélectionnée.',
+    'recap.bodyMapHeading': 'Carte corporelle',
+    'recap.bodyMapStats.reps': '{{n}} reps muscu (cochées)',
+    'recap.bodyMapStats.iso': '{{s}} s gainage / holds',
+    'recap.bodyMapStats.minutes': '{{m}} min (endurance + holds)',
+    'recap.legendHeading': 'Légende & détails',
+    'recap.legendPlaceholder':
+      'Les couleurs par muscle, le score d’équilibre et les suggestions apparaîtront ici une fois le moteur d’agrégation branché.',
+    'recap.period.today': "Aujourd'hui",
+    'recap.period.7d': '7 jours',
+    'recap.period.30d': '30 jours',
+    'recap.period.3m': '3 mois',
+    'recap.period.6m': '6 mois',
+    'recap.period.1y': '1 an',
+    'recap.period.2y': '2 ans',
+    'recap.period.all': 'Toujours',
+    'recap.periodNote': 'Période : {{label}}',
+    'recap.bodyHint':
+      'Glisser pour orienter · molette ou pincer pour zoomer · rotation automatique',
+    'recap.legendIntro':
+      'Échelle indicative : charge affichée = musculation (reps pondérées, decay) + part cardio (voir encadré du haut). Même échelle que les barres « par zone » ci-dessous.',
+    'recap.legend.level.rest': 'Gris clair — repos / aucune sollicitation',
+    'recap.legend.level.veryLow': 'Bleu froid — très faible stimulation',
+    'recap.legend.level.undertrained': 'Bleu — sous-entraînement',
+    'recap.legend.level.light': 'Vert clair — activation légère',
+    'recap.legend.level.optimal': 'Vert — stimulation optimale',
+    'recap.legend.level.moderateHigh': 'Jaune — volume modéré élevé',
+    'recap.legend.level.high': 'Orange clair — forte sollicitation',
+    'recap.legend.level.nearOverload': 'Orange — proche surcharge',
+    'recap.legend.level.overload': 'Rouge clair — surcharge',
+    'recap.legend.level.severe': 'Rouge — très forte surcharge',
+    'recap.legend.level.overtraining': 'Violet — surentraînement probable',
+    'recap.legend.level.critical': 'Rouge très sombre — zone critique (prudence)',
+    'recap.legendRecoveryTitle': 'Récupération (par zone)',
+    'recap.legendRecovery.ready': 'Prêt à solliciter',
+    'recap.legendRecovery.inProgress': 'En récupération',
+    'recap.legendRecovery.fatigued': 'Fatigue élevée — éviter volume intense',
+    'recap.loadSummary':
+      'Charge affichée = musculation (pondérée, decay {{lambda}}/j) + {{cardioPct}} % du cardio plafonné par zone.',
+    'recap.dominant': 'Zone la plus travaillée en volume (reps cochées / parts) : {{label}}',
+    'recap.muscleGroup.chest': 'Pectoraux',
+    'recap.muscleGroup.back': 'Dos',
+    'recap.muscleGroup.shoulders': 'Épaules',
+    'recap.muscleGroup.biceps': 'Biceps',
+    'recap.muscleGroup.triceps': 'Triceps',
+    'recap.muscleGroup.legs': 'Jambes',
+    'recap.muscleGroup.quads': 'Quadriceps',
+    'recap.muscleGroup.hamstrings': 'Ischio-jambiers',
+    'recap.muscleGroup.calves': 'Mollets',
+    'recap.muscleGroup.core': 'Gainage / tronc',
+    'recap.muscleGroup.full_body': 'Corps entier',
+
+    'recap.zones.title': 'Détail par zone musculaire',
+    'recap.zones.intro':
+      'Scores du moteur Récap + reps cochées (même source que le calendrier / saisie). Jambes découpées en quadriceps / ischio / mollets ; course et corde répartissent la charge cardio selon le type de séance. Teintes des cartes = volume relatif + charge relative (cohérent avec les couleurs par zone du modèle 3D lorsque le maillage est mappé).',
+    'recap.zones.section.upper': 'Haut du corps & tronc',
+    'recap.zones.section.arms': 'Bras',
+    'recap.zones.section.legs': 'Jambes',
+    'recap.zones.section.poly': 'Global / polyarticulaire',
+    'recap.zones.detail.chest': 'Pectoraux (global) — pecs serré / incliné / écartés dans ce même score.',
+    'recap.zones.detail.back':
+      'Dos : trapèzes, dorsaux, rhomboïdes, érecteurs (une charge agrégée « dos » + tirages / rowing).',
+    'recap.zones.detail.shoulders':
+      'Épaules / deltoïdes (antérieur, latéral, postérieur) ; avant-bras sollicités surtout avec tirages et curls.',
+    'recap.zones.detail.core': 'Gainage, abdos, obliques — tout ce qui est mappé « tronc / core » dans le programme.',
+    'recap.zones.detail.biceps': 'Biceps et brachial antérieur (même groupe de charge).',
+    'recap.zones.detail.triceps': 'Triceps (long, latéral, médial) regroupés.',
+    'recap.zones.detail.quads':
+      'Quadriceps (vaste interne / externe / droit) — course, squats, sauts ; répartition cardio selon type de séance (ex. fractionné > fondamental).',
+    'recap.zones.detail.hamstrings':
+      'Ischio-jambiers — chaîne postérieure ; plus sollicités sur les sorties longues et le rythme modéré que sur sprints très courts.',
+    'recap.zones.detail.calves':
+      'Mollets (jumeaux / soléaire) — impulsions, corde à sauter, stabilisation en course.',
+    'recap.zones.detail.fullBody':
+      'Burpees, circuits, mouvements multi-articulaires — charge « poly » ; le chiffre ci-dessous est le total de toutes les reps muscu cochées (sans double compte).',
+    'recap.zones.loadDisplay': 'Charge affichée',
+    'recap.zones.strength': 'Muscu (decay)',
+    'recap.zones.cardioRaw': 'Cardio brut',
+    'recap.zones.recoveryLabel': 'Lecture récup',
+    'recap.zones.recovery.ready': 'Prêt à solliciter',
+    'recap.zones.recovery.inProgress': 'En récupération',
+    'recap.zones.recovery.fatigued': 'Fatigue élevée',
+    'recap.zones.volumeCheckedTitle': 'Volume coché',
+    'recap.zones.repsChecked': 'Volume coché (arrondi)',
+    'recap.zones.repsPartsHint':
+      'Somme des reps (ou secondes de gainage) des exos cochés sur la période, répartie entre les groupes du référentiel Exercices (parts si plusieurs muscles).',
+    'recap.zones.topFromProgram': 'Exercices (réf. onglet Exercices)',
+    'recap.zones.exerciseLine': '{{name}} · {{n}} {{unit}}',
+    'recap.zones.unitReps': 'reps (parts)',
+    'recap.zones.unitSeconds': 's gainage (parts)',
+    'recap.zones.fullBodyVolumeTitle':
+      'Total reps muscu cochées sur la période (une fois par série, toutes zones confondues).',
+    'recap.zones.fullBodyVolumeFoot':
+      'Les autres cartes affichent des parts réparties selon les muscles de l’onglet Exercices ; ici = somme brute des reps (hors gainage secondes).',
+    'recap.zones.endurancePushupsExercise': 'Pompes (saisie Endurance)',
+    'recap.zones.endurancePushupsSplitLine':
+      '{{total}} pompes · {{parts}} sur cette zone ({{pct}} % du volume pompes Endurance)',
+    'recap.zones.endurancePushupsSplitTitle':
+      'Toutes les pompes saisies en Endurance sont comptées : le Récap répartit chaque pompe entre pecs, triceps, épaules et tronc (comme pour la charge cardio). Le détail à droite = part de ce total pour cette carte.',
+    'recap.zones.unmappedExerciseName':
+      'Exercice (hors programme actuel) — voir calendrier ou onglet Exercices',
+
+    'recap.endurance.title': 'Endurance & cardio saisis',
+    'recap.endurance.intro':
+      'Résumé des séances enregistrées dans l’onglet Endurance (filtré sur la même période que le Récap).',
+    'recap.endurance.empty': 'Aucune séance d’endurance sur cette période.',
+    'recap.endurance.activity.running': 'Course',
+    'recap.endurance.activity.jumprope': 'Corde à sauter',
+    'recap.endurance.activity.pushups': 'Pompes (sessions)',
+    'recap.endurance.activity.swimming': 'Natation',
+    'recap.endurance.activity.boxing': 'Boxe / sac',
+    'recap.endurance.sumMinutes': '{{m}} min cumulées',
+    'recap.endurance.sumKm': '{{km}} km cumulés',
+    'recap.endurance.sumPushups': '{{n}} pompes cumulées',
+    'recap.endurance.sumJumps': '{{n}} sauts cumulés',
+    'recap.endurance.sumLoad': 'charge cal. ~{{n}}',
+    'recap.endurance.row.km': '{{km}} km',
+    'recap.endurance.row.min': '{{m}} min',
+    'recap.endurance.row.runType': '· profil {{type}}',
+    'recap.endurance.row.jumps': '{{n}} sauts',
+    'recap.endurance.row.ropeType': '· mode {{type}}',
+    'recap.endurance.row.pushups': '{{n}} pompes',
+
+    'recap.challenges.title': 'Défis endurance',
+    'recap.challenges.empty': 'Aucun défi pertinent sur cette période (ou pas encore créé).',
+    'recap.challenge.unnamed': 'Défi sans nom',
+    'recap.challenge.activity': 'Activité : {{type}}',
+    'recap.challenge.status': 'statut {{s}}',
+    'recap.challenge.goalPushups': '≥ {{n}} pompes',
+    'recap.challenge.goalDuration': '≤ {{min}} min',
+    'recap.challenge.goalDistance': '≥ {{km}} km',
+    'recap.challenge.goalJumps': '≥ {{n}} sauts',
+    'recap.challenge.noNumericGoal': 'Objectif libre (voir notes du défi)',
+    'recap.challenge.lastDone': 'Dernière validation : {{date}}',
     
     // Finance
     'finance.title': 'Finance',
@@ -416,6 +555,145 @@ export const translations = {
     'nav.predictions': 'Predictions',
     'nav.smartBalancing': 'Smart Balancing',
     'nav.garmin': 'Garmin',
+    'nav.recap': 'Recap',
+
+    // Sport — muscle recap tab
+    'recap.title': 'Muscle recap',
+    'recap.subtitle':
+      '3D map, per-zone scores (same engine as colors), endurance and challenges for the selected period.',
+    'recap.bodyMapHeading': 'Body map',
+    'recap.bodyMapStats.reps': '{{n}} strength reps (checked)',
+    'recap.bodyMapStats.iso': '{{s}} s planks / holds',
+    'recap.bodyMapStats.minutes': '{{m}} min (endurance + holds)',
+    'recap.legendHeading': 'Legend & details',
+    'recap.legendPlaceholder':
+      'Per-muscle colors, balance score and suggestions will show here once the aggregation engine is wired.',
+    'recap.period.today': 'Today',
+    'recap.period.7d': '7 days',
+    'recap.period.30d': '30 days',
+    'recap.period.3m': '3 months',
+    'recap.period.6m': '6 months',
+    'recap.period.1y': '1 year',
+    'recap.period.2y': '2 years',
+    'recap.period.all': 'All time',
+    'recap.periodNote': 'Period: {{label}}',
+    'recap.bodyHint':
+      'Drag to rotate · scroll or pinch to zoom · auto rotation',
+    'recap.legendIntro':
+      'Indicative scale: displayed load = strength (weighted reps, decay) + blended cardio (see summary above). Same scale as the per-zone bars below.',
+    'recap.legend.level.rest': 'Light grey — rest / no stimulus',
+    'recap.legend.level.veryLow': 'Cold blue — very low stimulus',
+    'recap.legend.level.undertrained': 'Blue — undertrained',
+    'recap.legend.level.light': 'Light green — light activation',
+    'recap.legend.level.optimal': 'Green — optimal stimulus',
+    'recap.legend.level.moderateHigh': 'Yellow — elevated moderate volume',
+    'recap.legend.level.high': 'Light orange — high demand',
+    'recap.legend.level.nearOverload': 'Orange — near overload',
+    'recap.legend.level.overload': 'Light red — overload',
+    'recap.legend.level.severe': 'Red — very high overload',
+    'recap.legend.level.overtraining': 'Violet — likely overtraining',
+    'recap.legend.level.critical': 'Very dark red — critical zone (caution)',
+    'recap.legendRecoveryTitle': 'Recovery (per zone)',
+    'recap.legendRecovery.ready': 'Ready to train',
+    'recap.legendRecovery.inProgress': 'Recovering',
+    'recap.legendRecovery.fatigued': 'High fatigue — avoid intense volume',
+    'recap.loadSummary':
+      'Displayed load = strength (weighted, decay {{lambda}}/day) + {{cardioPct}}% capped cardio per zone.',
+    'recap.dominant': 'Top zone by checked training volume (rep shares): {{label}}',
+    'recap.muscleGroup.chest': 'Chest',
+    'recap.muscleGroup.back': 'Back',
+    'recap.muscleGroup.shoulders': 'Shoulders',
+    'recap.muscleGroup.biceps': 'Biceps',
+    'recap.muscleGroup.triceps': 'Triceps',
+    'recap.muscleGroup.legs': 'Legs',
+    'recap.muscleGroup.quads': 'Quadriceps',
+    'recap.muscleGroup.hamstrings': 'Hamstrings',
+    'recap.muscleGroup.calves': 'Calves',
+    'recap.muscleGroup.core': 'Core',
+    'recap.muscleGroup.full_body': 'Full body',
+
+    'recap.zones.title': 'Per muscle zone',
+    'recap.zones.intro':
+      'Recap scores + checked reps (same source as calendar / data entry). Legs split into quads / hamstrings / calves; running and jump rope spread cardio load by session type. Card colors blend relative volume + relative load (aligned with per-zone 3D colors when meshes are mapped).',
+    'recap.zones.section.upper': 'Upper body & trunk',
+    'recap.zones.section.arms': 'Arms',
+    'recap.zones.section.legs': 'Legs',
+    'recap.zones.section.poly': 'Full-body / compound',
+    'recap.zones.detail.chest': 'Chest (global) — flyes / incline / close-grip share this score.',
+    'recap.zones.detail.back':
+      'Back: traps, lats, rhomboids, erectors (one aggregated “back” load + pulls / rows).',
+    'recap.zones.detail.shoulders':
+      'Shoulders / delts (ant., lat., post.); forearms mainly through pulls and curls.',
+    'recap.zones.detail.core': 'Planks, abs, obliques — anything mapped as “core” in the program.',
+    'recap.zones.detail.biceps': 'Biceps + brachialis (single load bucket).',
+    'recap.zones.detail.triceps': 'Triceps heads grouped together.',
+    'recap.zones.detail.quads':
+      'Quadriceps — running, squats, jumps; cardio split varies by session type (e.g. intervals vs easy).',
+    'recap.zones.detail.hamstrings':
+      'Hamstrings — posterior chain; relatively more on long runs and steady rhythm.',
+    'recap.zones.detail.calves':
+      'Calves — push-off, jump rope, running stability.',
+    'recap.zones.detail.fullBody':
+      'Burpees, circuits, multi-joint moves — poly bucket load; the big number is total checked strength reps (no double-count).',
+    'recap.zones.loadDisplay': 'Displayed load',
+    'recap.zones.strength': 'Strength (decay)',
+    'recap.zones.cardioRaw': 'Raw cardio',
+    'recap.zones.recoveryLabel': 'Recovery read',
+    'recap.zones.recovery.ready': 'Ready to train',
+    'recap.zones.recovery.inProgress': 'Recovering',
+    'recap.zones.recovery.fatigued': 'High fatigue',
+    'recap.zones.volumeCheckedTitle': 'Checked volume',
+    'recap.zones.repsChecked': 'Checked volume (rounded)',
+    'recap.zones.repsPartsHint':
+      'Sum of reps (or plank seconds) from checked sets in the window, split using the Exercises database muscle groups (shared parts when multiple muscles).',
+    'recap.zones.topFromProgram': 'Exercises (Exercises tab reference)',
+    'recap.zones.exerciseLine': '{{name}} · {{n}} {{unit}}',
+    'recap.zones.unitReps': 'reps (share)',
+    'recap.zones.unitSeconds': 's plank (share)',
+    'recap.zones.fullBodyVolumeTitle':
+      'Total checked strength reps in the window (once per set, all muscle zones combined).',
+    'recap.zones.fullBodyVolumeFoot':
+      'Other cards show shares split from the Exercises muscle map; here = raw rep sum (excludes hold seconds).',
+    'recap.zones.endurancePushupsExercise': 'Push-ups (Endurance tab)',
+    'recap.zones.endurancePushupsSplitLine':
+      '{{total}} push-ups · {{parts}} to this zone ({{pct}}% of Endurance push-up volume)',
+    'recap.zones.endurancePushupsSplitTitle':
+      'All Endurance push-ups are counted; the recap splits each rep across chest, triceps, shoulders, and core (same model as cardio load). The right-hand detail is this card’s share of that total.',
+    'recap.zones.unmappedExerciseName':
+      'Exercise (not in current program) — check calendar or Exercises tab',
+
+    'recap.endurance.title': 'Logged endurance & cardio',
+    'recap.endurance.intro':
+      'Sessions saved in the Endurance tab, filtered to the same period as this recap.',
+    'recap.endurance.empty': 'No endurance sessions in this period.',
+    'recap.endurance.activity.running': 'Running',
+    'recap.endurance.activity.jumprope': 'Jump rope',
+    'recap.endurance.activity.pushups': 'Push-ups (sessions)',
+    'recap.endurance.activity.swimming': 'Swimming',
+    'recap.endurance.activity.boxing': 'Boxing / bag',
+    'recap.endurance.sumMinutes': '{{m}} min total',
+    'recap.endurance.sumKm': '{{km}} km total',
+    'recap.endurance.sumPushups': '{{n}} push-ups total',
+    'recap.endurance.sumJumps': '{{n}} jumps total',
+    'recap.endurance.sumLoad': 'cal. load ~{{n}}',
+    'recap.endurance.row.km': '{{km}} km',
+    'recap.endurance.row.min': '{{m}} min',
+    'recap.endurance.row.runType': '· profile {{type}}',
+    'recap.endurance.row.jumps': '{{n}} jumps',
+    'recap.endurance.row.ropeType': '· mode {{type}}',
+    'recap.endurance.row.pushups': '{{n}} push-ups',
+
+    'recap.challenges.title': 'Endurance challenges',
+    'recap.challenges.empty': 'No relevant challenge in this period (or none created yet).',
+    'recap.challenge.unnamed': 'Unnamed challenge',
+    'recap.challenge.activity': 'Activity: {{type}}',
+    'recap.challenge.status': 'status {{s}}',
+    'recap.challenge.goalPushups': '≥ {{n}} push-ups',
+    'recap.challenge.goalDuration': '≤ {{min}} min',
+    'recap.challenge.goalDistance': '≥ {{km}} km',
+    'recap.challenge.goalJumps': '≥ {{n}} jumps',
+    'recap.challenge.noNumericGoal': 'Open goal (see challenge notes)',
+    'recap.challenge.lastDone': 'Last completion: {{date}}',
     
     // Finance
     'finance.title': 'Finance',
@@ -951,7 +1229,8 @@ export const useTranslation = () => {
     
     // Récupérer la traduction depuis les namespaces ou l'ancien système
     let translation = getTranslationFromSource(key, lang);
-    
+    const resolvedFromSource = !!translation;
+
     // Si namespace pas encore chargé, déclencher le chargement en arrière-plan
     const { namespace, key: parsedNamespaceKey } = parseKey(key);
     if (!translation && namespace) {
@@ -993,10 +1272,14 @@ export const useTranslation = () => {
     const result = params && Object.keys(params).length > 0
       ? interpolateTranslation(translation, params, lang)
       : translation;
-    
-    // ✅ OPTIMISATION : Mettre en cache (éviction automatique si limite atteinte)
-    translationCache.set(cacheKey, result);
-    
+
+    // Ne pas figer en cache une clé brute tant que le namespace n'a pas répondu :
+    // sinon le premier rendu enregistre la clé comme « traduction » et elle reste affichée à vie.
+    const shouldCache = resolvedFromSource || !namespace;
+    if (shouldCache) {
+      translationCache.set(cacheKey, result);
+    }
+
     return result;
   }, [language, loadedNamespaces, getTranslationFromSource]);
   

@@ -90,6 +90,76 @@ export const generateSmartExerciseKey = (date, exerciseId, options = {}) => {
 };
 
 /**
+ * Toutes les clés possibles pour les reps d’un même exercice (maison vs salle A/B),
+ * pour retrouver les données après changement de mode ou de variante.
+ */
+export const collectAllExerciseRepKeys = (date, exerciseId, options = {}) => {
+  const primary = generateSmartExerciseKey(date, exerciseId, options);
+  const base = generateExerciseKey(date, exerciseId);
+  const a = generateGymExerciseKey(date, exerciseId, 'A');
+  const b = generateGymExerciseKey(date, exerciseId, 'B');
+  return [...new Set([primary, base, a, b])];
+};
+
+/**
+ * Clés candidates pour un objet exercice affiché (id affiché + originalId programme actif).
+ */
+export const collectExerciseKeysForWorkoutExercise = (date, exercise, options = {}) => {
+  const ids = [];
+  if (exercise?.id != null) ids.push(exercise.id);
+  if (exercise?.originalId != null && String(exercise.originalId) !== String(exercise.id)) {
+    ids.push(exercise.originalId);
+  }
+  const out = [];
+  ids.forEach((eid) => {
+    collectAllExerciseRepKeys(date, eid, options).forEach((k) => {
+      if (!out.includes(k)) out.push(k);
+    });
+  });
+  return out;
+};
+
+/**
+ * Clés reps/checked pour le calendrier (date déjà en string) : id + originalId + variantes salle.
+ */
+export const collectCalendarRepKeysForExercise = (dateStr, exercise) => {
+  const ids = new Set();
+  if (exercise?.id != null) ids.add(exercise.id);
+  if (exercise?.originalId != null) ids.add(exercise.originalId);
+  const out = [];
+  ids.forEach((idPart) => {
+    const base = `${dateStr}_${idPart}`;
+    out.push(base, `${base}_semaineA`, `${base}_semaineB`);
+  });
+  return [...new Set(out)];
+};
+
+/**
+ * Choisit la clé reps/checked la plus fiable parmi une liste (cohérent avec le calendrier).
+ */
+export const resolveBestRepsStorageKey = (currentData, keys) => {
+  if (!keys?.length) return null;
+  let bestKey = null;
+  let bestReps = 0;
+  let actualKey = null;
+  for (const key of keys) {
+    const keyReps = currentData?.reps?.[key];
+    const keyChecked = currentData?.checkedExercises?.[key];
+    if (keyChecked === true && keyReps !== undefined && parseInt(String(keyReps), 10) > 0) {
+      const parsedReps = parseInt(String(keyReps), 10) || 0;
+      if (parsedReps > bestReps) {
+        bestKey = key;
+        bestReps = parsedReps;
+      }
+    }
+    if (!actualKey && (keyReps !== undefined || keyChecked !== undefined)) {
+      actualKey = key;
+    }
+  }
+  return bestKey || actualKey || keys[0];
+};
+
+/**
  * Génère une clé pour un étirement
  * 
  * Format : "YYYY-MM-DD_moment" (matin, midi, soir)

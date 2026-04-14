@@ -3,6 +3,7 @@ import { workoutProgram } from '../data/workoutProgram';
 import { getDateStr } from '../utils/dateUtils';
 import { getDayJustification } from '../utils/dayJustificationUtils';
 import { isMockEnduranceSession } from '../utils/calendarUtils';
+import { resolveExerciseIntensityCoeff } from '../utils/trainingLoadUtils';
 
 export const useWorkoutStats = () => {
   const { getCurrentProgram, getDayName, getDateStr, getCurrentData, activeProgram } = useWorkout();
@@ -406,10 +407,29 @@ export const useWorkoutStats = () => {
               return Math.round(totalDurationMinutes);
             };
 
+            const userCoeffs = currentData.exerciseIntensityCoeffs || {};
+            const totalRepsSession = exercises.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0);
+            const totalLoadSession = exercises.reduce((sum, ex) => {
+              const r = parseInt(ex.reps, 10) || 0;
+              if (r <= 0) return sum;
+              const c = resolveExerciseIntensityCoeff(
+                {
+                  id: ex.id,
+                  name: ex.name || ex.nom,
+                  nom: ex.nom || ex.name,
+                  series: ex.series,
+                  type: ex.type
+                },
+                userCoeffs
+              );
+              return sum + r * c;
+            }, 0);
+
             const sessionData = {
               date: dateStr,
               exercises,
-              totalReps: exercises.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0),
+              totalReps: totalRepsSession,
+              totalLoad: totalLoadSession,
               duration: calculateSessionDuration() // Ajouter la durée calculée
             };
             history.push(sessionData);

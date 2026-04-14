@@ -7,7 +7,14 @@ import React from 'react';
 import { Edit2, Trash2, Pin, GripVertical } from 'lucide-react';
 import quotesService from '../../services/quotes/quotesService';
 
-export function QuoteCard({ quote, onEdit, onDelete, onTogglePin, draggable = false }) {
+export function QuoteCard({
+  quote,
+  onEdit,
+  onDelete,
+  onTogglePin,
+  draggable = false,
+  listPosition = null,
+}) {
   const displayFr = quote ? quotesService.formatQuoteForDisplay(quote, 'fr') : null;
   const displayEn = quote ? quotesService.formatQuoteForDisplay(quote, 'en') : null;
   const linesFr = displayFr?.lines ?? [];
@@ -30,12 +37,21 @@ export function QuoteCard({ quote, onEdit, onDelete, onTogglePin, draggable = fa
     <div className="bg-slate-700/50 rounded-lg p-4 hover:bg-slate-700/70 transition-colors group">
       <div className="flex items-start gap-3">
         {draggable && (
-          <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-300 pt-1">
+          <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-300 pt-1 shrink-0">
             <GripVertical size={20} />
           </div>
         )}
 
-        <div className="flex-1 space-y-1">
+        {listPosition != null && (
+          <div
+            className="shrink-0 w-8 flex items-start justify-center pt-1 text-sm font-semibold tabular-nums text-slate-400 select-none"
+            aria-label={`Citation ${listPosition}`}
+          >
+            {listPosition}
+          </div>
+        )}
+
+        <div className="flex-1 space-y-1 min-w-0">
           <div className="text-sm text-slate-300">
             {renderLines(linesFr, boldFrom, boldTo)}
           </div>

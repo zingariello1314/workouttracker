@@ -39,7 +39,10 @@ const ExerciseFilter = ({
         { value: MuscleGroups.SHOULDERS, label: 'Épaules' },
         { value: MuscleGroups.BICEPS, label: 'Biceps' },
         { value: MuscleGroups.TRICEPS, label: 'Triceps' },
-        { value: MuscleGroups.LEGS, label: 'Jambes' },
+        { value: MuscleGroups.LEGS, label: 'Jambes (global)' },
+        { value: MuscleGroups.QUADS, label: 'Quadriceps' },
+        { value: MuscleGroups.HAMSTRINGS, label: 'Ischio-jambiers' },
+        { value: MuscleGroups.CALVES, label: 'Mollets' },
         { value: MuscleGroups.CORE, label: 'Core' },
         { value: MuscleGroups.FULL_BODY, label: 'Corps entier' }
       ]

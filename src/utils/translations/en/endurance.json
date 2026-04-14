@@ -157,8 +157,15 @@
       "interval": "Intervals"
     },
     "sessionTypes": {
-      "endurance": "Classic run",
+      "easy": "Easy / base miles",
+      "fundamental": "Base endurance",
+      "recovery": "Recovery jog",
+      "long_run": "Long run",
+      "long": "Long run",
+      "endurance": "Steady run",
+      "fartlek": "Fartlek",
       "interval": "Intervals",
+      "threshold": "Threshold",
       "tempo": "Tempo",
       "sprint": "Sprint"
     },

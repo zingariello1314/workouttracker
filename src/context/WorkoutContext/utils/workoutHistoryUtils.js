@@ -1,3 +1,5 @@
+import { resolveExerciseIntensityCoeff } from '../../../utils/trainingLoadUtils';
+
 /**
  * Utilitaires pour l'historique des entraînements
  * 
@@ -22,16 +24,22 @@ export const getWorkoutHistoryFromData = (data) => {
         sessions[dateStr] = {
           date: dateStr,
           exercises: [],
-          totalReps: 0
+          totalReps: 0,
+          totalLoad: 0
         };
       }
       
       const reps = parseInt(data.reps?.[key] || 0);
+      const coeff = resolveExerciseIntensityCoeff(
+        { id: exerciseId, name: '', nom: '' },
+        data.exerciseIntensityCoeffs || {}
+      );
       sessions[dateStr].exercises.push({
         id: exerciseId,
         reps: reps
       });
       sessions[dateStr].totalReps += reps;
+      sessions[dateStr].totalLoad = (sessions[dateStr].totalLoad || 0) + reps * coeff;
     }
   });
   

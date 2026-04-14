@@ -157,8 +157,15 @@
       "interval": "Fractionné / intervalles"
     },
     "sessionTypes": {
+      "easy": "Endurance fondamentale",
+      "fundamental": "Endurance fondamentale",
+      "recovery": "Récupération active",
+      "long_run": "Sortie longue",
+      "long": "Sortie longue",
       "endurance": "Course classique",
+      "fartlek": "Fartlek",
       "interval": "Fractionné",
+      "threshold": "Seuil",
       "tempo": "Tempo",
       "sprint": "Sprint"
     },

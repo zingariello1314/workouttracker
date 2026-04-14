@@ -45,7 +45,255 @@
     "titleWithProgram": "Exercices ({{count}}) - {{programName}}",
     "none": "Aucun exercice trouvé",
     "noneWithProgram": "Le programme \"{{programName}}\" ne contient aucun exercice",
-    "noneHint": "Essayez de modifier vos critères de recherche ou de filtrage"
+    "noneHint": "Essayez de modifier vos critères de recherche ou de filtrage",
+    "loadCoeff": {
+      "label": "Coeff. charge (calendrier)",
+      "auto": "défaut {{value}}"
+    }
+  },
+  "card": {
+    "volume": "Volume au programme",
+    "loadShort": "Diff. charge",
+    "openHint": "Cliquez pour la fiche complète et les réglages."
+  },
+  "cardio": {
+    "sourceLabel": "Référentiel cardio"
+  },
+  "detail": {
+    "back": "Retour aux exercices",
+    "kicker": "Sport · Exercices",
+    "loadIndex": "Indice charge",
+    "loadExplain": "L'indice reflète le poids d'une « unité » (rep ou seconde) dans le calendrier : plus il est élevé, plus l'exercice alourdit ta journée par rapport au volume brut. Tu peux l'ajuster si ton niveau ou ton exécution diffère du défaut.",
+    "loadExplainCardioExtra": "Pour la course, la charge du jour vient surtout des séances Endurance (distance, durée, type, D+, allure, FC) ; l’indice ici sert aussi à comparer la dureté relative entre types d’exercices.",
+    "loadExplainIsoExtra": "Pour ce type de hold, le calendrier applique des paliers sur les secondes : voir la section dédiée ci-dessous.",
+    "tieredIsoFoot": "Le tout est calibré pour rester cohérent avec l’ancienne échelle « secondes × petit coefficient », puis multiplié par ton indice personnel.",
+    "readOnly": "Connectez-vous pour enregistrer vos réglages et notes sur cet appareil.",
+    "coeffLabel": "Coefficient personnalisé",
+    "coeffHint": "Auto : {{value}} — laisser vide pour revenir au calcul automatique.",
+    "coeffAuto": "Auto (défaut)",
+    "notesLabel": "Notes personnelles",
+    "notesPlaceholder": "Variante, élastique, tempo…",
+    "volumeSection": "Volume indiqué au programme",
+    "volumeFootnote": "Ce bloc décode la ligne « séries » du programme : c'est une cible, pas ton historique. Ce que tu fais vraiment se saisit dans Aujourd'hui et apparaît dans le Calendrier.",
+    "metaTitle": "Infos programme",
+    "metaSeries": "Séries (texte)",
+    "metaEquipment": "Équipement",
+    "coachNotes": "Notes programme",
+    "musclesPrimaryLabel": "Principalement sollicités",
+    "musclesSecondaryLabel": "Secondaires / stabilisation",
+    "executionLabel": "Exécution & consignes",
+    "loadFactorsTitle": "Détail charge (dernière séance affichée)",
+    "factorVolume": "Volume de base",
+    "factorType": "Type de course",
+    "factorPace": "Allure",
+    "factorElev": "Dénivelé +",
+    "factorHr": "FC moyenne",
+    "factorTotal": "Total estimé",
+    "extendedSectionCoeff": "Comprendre l’indice de charge",
+    "extendedSectionNotes": "À quoi servent les notes personnelles ?",
+    "extendedSectionMuscles": "Exécution & muscles sollicités",
+    "extendedSectionCalendar": "Comment c’est compté dans le calendrier",
+    "extendedSectionGarmin": "Endurance, Garmin & charge dynamique",
+    "tieredIsoTitle": "Gainage / planche : charge progressive (secondes)",
+    "tieredIsoBody": "Pour les holds détectés comme isométriques, le calendrier n’utilise plus seulement « secondes × petit coefficient » : on applique des paliers (les premières secondes « coûtent » un peu moins, puis l’intensité métabolique monte). Ton coefficient personnel amplifie ou atténue toute la courbe.",
+    "bulletLabel": "Point clé",
+    "noGarminData": "Aucune séance course enregistrée pour l’instant. Saisis une sortie dans Sport → Endurance ou synchronise Garmin pour voir ici distance, durée, D+ et charge estimée.",
+    "recentSessionsTitle": "Dernières séances liées (aperçu)",
+    "colDate": "Date",
+    "colDistance": "km",
+    "colDuration": "Durée",
+    "colElev": "D+ m",
+    "colLoad": "Charge est.",
+    "colType": "Type",
+    "hero": {
+      "kicker": "Synthèse",
+      "recapHint": "Mêmes groupes que le moteur Récap et le calendrier (référentiel Exercices + profil).",
+      "modeReps": "Unité : répétitions",
+      "modeIso": "Unité : secondes (gainage / holds)",
+      "modeCardio": "Réf. cardio — détail dans Endurance"
+    }
+  },
+  "detailProfiles": {
+    "strength_default": {
+      "musclesPrimary": "Variable selon l’exercice : consulte la ligne « séries » et l’équipement pour situer le geste.",
+      "musclesSecondary": "Stabilisation du tronc, grip, posture générale.",
+      "execution": "Respecte la ligne programme (séries / reps / tempo). Garde un contrôle strict : amplitude utile, respiration, pas de compensation lombaire.",
+      "coeffExplain": "Ici l’indice mesure combien « pèse » une répétition dans ta journée d’entraînement. Plus il est élevé, plus l’exercice tire la charge du calendrier vers le haut pour un même nombre de reps saisi dans Aujourd’hui.\n\nLaisse le champ vide pour garder l’auto (basé sur le type d’exercice). Monte l’indice si tu fais des variantes plus dures (tempo lent, déficit, charge lourde). Baisse-le si tu allèges (élastique, ROM partielle volontaire).",
+      "notesExplain": "Sers-toi des notes pour ce que le programme n’écrit pas : élastique utilisé, charge en kg, variantes de prise, douleurs à surveiller, objectif de la séance.\n\nCe texte est personnel : il n’influence pas le calcul automatique, mais te rappelle comment tu exécutes vraiment le mouvement.",
+      "calendarExplain": "Dans le calendrier, la contribution musculation = reps cochées × indice (sauf holds isométriques détectés, voir fiche gainage). Les séances cardio ne passent pas par ce champ : elles viennent de Sport → Endurance.",
+      "garminExplain": ""
+    },
+    "strength_pull": {
+      "musclesPrimary": "Dos (grand dorsal, trapèzes, rhomboïdes), biceps, avant-bras.",
+      "musclesSecondary": "Core (anti-extension), deltoïdes postérieurs, grip.",
+      "execution": "Dépression scapulaire avant de tirer, poitrine vers la barre ou les anneaux, fin de course contrôlée sans s’affaisser. Évite le balancement de bassin.",
+      "coeffExplain": "Les tractions et variantes sollicitent beaucoup de masse musculaire en chaîne fermée : l’indice auto est donc souvent plus élevé qu’un curl.\n\nTu peux l’ajuster si tu utilises une aide (élastique, machine assistée) ou si tu fais des tractions lestées.",
+      "notesExplain": "Note le type de prise, l’épaisseur de barre, l’élastique (couleur / assistance), ou si tu fais des demi-reps volontaires pour un objectif précis.",
+      "calendarExplain": "Charge = reps validées × indice. Si tu comptes des « reps partielles », garde une cohérence (ex. seulement le haut de course) et reflète la difficulté dans l’indice.",
+      "garminExplain": ""
+    },
+    "strength_push": {
+      "musclesPrimary": "Pectoraux, triceps, deltoïdes antérieurs (pompes, développés) ; triceps / deltoïdes pour les dips.",
+      "musclesSecondary": "Core, serratus, fléchisseurs du poignet.",
+      "execution": "Coude dans un plan raisonnable (≈45° pour les pompes), scapulas qui bougent sans « épaules en cornet ». Amplitude complète si la santé des articulations le permet.",
+      "coeffExplain": "Les pushes au poids du corps mobilisent une grande partie du corps : l’indice reflète cette intensité relative.\n\nMonte-le pour pompes surélevées pieds, déficit, pseudo-planche ; baisse-le pour inclinaisons mains hautes ou genoux au sol.",
+      "notesExplain": "Précise la hauteur du step, du banc, ou si tu travailles en L-sit / ring pour contextualiser la difficulté.",
+      "calendarExplain": "Même logique que les autres exercices de force : reps × indice dans le calendrier.",
+      "garminExplain": ""
+    },
+    "strength_legs": {
+      "musclesPrimary": "Quadriceps, fessiers, ischio-jambiers selon l’exercice (squat, fente, hinge…).",
+      "musclesSecondary": "Mollets, muscles profonds du tronc, adducteurs / abducteurs selon la variante.",
+      "execution": "Pieds actifs, genou aligné avec les orteils en fente, buste long. Sur squat : profondeur utile, pas collapse des voûtes plantaires.",
+      "coeffExplain": "Les gros mouvements de jambes déplacent souvent beaucoup de volume : l’indice calibre leur poids relatif dans la journée.\n\nAjuste si tu passes en unilatéral, tempo long, ou charge externe lourde.",
+      "notesExplain": "Barre vs haltères, hauteur de step, type de squat (front / back), douleur genou à surveiller, semelles minimalistes, etc.",
+      "calendarExplain": "Reps saisies × indice. Si tu comptes des pas de fente, une « rep » = un pas complet gauche+droite ou une jambe : reste constant.",
+      "garminExplain": ""
+    },
+    "strength_isolation": {
+      "musclesPrimary": "Zone ciblée (biceps, deltoïdes latéraux, triceps…) selon le mouvement.",
+      "musclesSecondary": "Stabilisation légère du tronc et posture debout ou assise.",
+      "execution": "Amplitude contrôlée, pas d’élan de bassin pour « tricher ». Charge modérée, sensation musculaire prioritaire.",
+      "coeffExplain": "Les isolations fatiguent moins le système global : l’indice auto est en général plus modeste.\n\nTu peux quand même le monter si tu fais des séries longues en débit ou des techniques intensives (21’s, drops…).",
+      "notesExplain": "Angle du banc, rotation des poignets, câble vs haltère, séries Myo-reps, etc.",
+      "calendarExplain": "Reps × indice — modèle simple et lisible pour les petits muscles.",
+      "garminExplain": ""
+    },
+    "strength_upper_push_pull": {
+      "musclesPrimary": "Chaîne push-pull du haut du corps : pectoral / deltoïde / triceps OU dos / biceps selon l’exercice listé.",
+      "musclesSecondary": "Tronc, grip, stabilisateurs de l’omoplate.",
+      "execution": "Trajectoire propre, amplitude maîtrisée. Sur rowing : tirer coude le long du corps, pas vers l’extérieur excessif.",
+      "coeffExplain": "Indice = poids d’une rep dans le total du jour. Ajuste selon la variation (prise neutre, pronation, tempo, charge).",
+      "notesExplain": "Largeur de prise, hauteur de poulie, unilatéral ou bilatéral, objectif volume vs intensité.",
+      "calendarExplain": "Reps × indice pour les exercices de musculation standards.",
+      "garminExplain": ""
+    },
+    "strength_skill": {
+      "musclesPrimary": "Dos, triceps, épaules, core — enchaînement coordonné (ex. muscle-up).",
+      "musclesSecondary": "Avant-bras, grip, hanche (kipping maîtrisé si utilisé).",
+      "execution": "Skills = technique + force. Privilégie la qualité des progressions (tractions explosives, transitions) avant le volume.",
+      "coeffExplain": "Les mouvements acrobatiques coûtent cher au système nerveux : l’indice auto est élevé.\n\nBaisse-le si tu fais des répétitions assistées ou des drills partiels ; monte-le pour strict / lesté.",
+      "notesExplain": "False grip, barre épaisse, strict vs kipping, élastique, hauteur de barre.",
+      "calendarExplain": "Chaque rep validée pèse fortement dans le calendrier — c’est voulu pour refléter la rareté du geste.",
+      "garminExplain": ""
+    },
+    "isometric_core": {
+      "musclesPrimary": "Transverse, pariétaux, muscles profonds du tronc ; selon variante : fléchisseurs du cou, fessiers.",
+      "musclesSecondary": "Deltoïdes (planche haute), quadriceps (tension globale), scapula stabilizers.",
+      "execution": "Ne creuse pas les lombaires : pense « ceinture abdominale ». Respiration courte et contrôlée. Durée progressive sur plusieurs semaines.",
+      "coeffExplain": "Pour le calendrier, les secondes de hold suivent une logique à paliers : les 30 premières secondes sont pondérées un peu moins que la suite, puis l’effort devient plus « coûteux » au-delà d’une minute.\n\nTon coefficient personnel multiplie cette courbe : monte-le si tu fais planche sur pointes / lestée ; baisse-le sur genoux ou inclinaison mains hautes.",
+      "notesExplain": "Note la variante (latérale, dynamique, sur Swiss ball), la qualité de la ligne (caméra / coach), ou la douleur à éviter.",
+      "calendarExplain": "Charge ≈ f(secondes) avec paliers × ton indice (pas un simple « secondes × 0,08 »). Les autres exercices restent en reps × indice.",
+      "garminExplain": ""
+    },
+    "cardio_run_long": {
+      "musclesPrimary": "Système cardio-pulmonaire, chaîne postérieure (ischios, fessiers), mollets.",
+      "musclesSecondary": "Quadriceps, stabilisation du tronc sur la durée.",
+      "execution": "Allure majoritairement conversationnelle, hydratation, fractionnement mental sur les très longues. Ne cherche pas la vitesse : cherche la régularité.",
+      "coeffExplain": "Sur cette fiche, l’indice sert surtout à comparer la « dureté relative » des types de séances cardio entre eux et à harmoniser l’affichage des étoiles avec la musculation.\n\nLa charge réelle de course dans le calendrier vient surtout des séances Endurance : durée, distance, type, allure, D+ et FC quand disponibles.",
+      "notesExplain": "Note objectif de sortie (ex. 24 km), sensations, chaussures, parcours, points de vigilance (adducteurs, pied…).",
+      "calendarExplain": "La course ajoute une charge calculée dynamiquement (volume × facteur de type × allure × D+ × léger facteur FC). Les sorties longues ont un facteur un peu plus élevé que le footing pur.",
+      "garminExplain": "Quand Garmin alimente Endurance, on récupère distance, durée, D+, FC moyenne : tout cela affine la charge sans que tu retapes les reps à la main."
+    },
+    "cardio_run_interval": {
+      "musclesPrimary": "Cardio-pulmonaire maximal, quadriceps et fessiers explosifs, système lactique.",
+      "musclesSecondary": "Mollets, core stabilisateur dans les phases rapides.",
+      "execution": "Échauffement sérieux, répétitions homogènes, récup complète ou active selon le protocole. Hydratation et progression prudente du volume d’intervalles.",
+      "coeffExplain": "L’indice sur la fiche positionne le fractionné comme très exigeant dans l’échelle cardio.\n\nLa charge calendrier combine durée + allure + type intervalle + D+ : une séance courte peut peser lourd si l’intensité est haute.",
+      "notesExplain": "Nombre de répétitions, distance ou durée de chaque effort, récup, cible VMA ou allure 10 km, terrain (piste / route).",
+      "calendarExplain": "Formule dynamique : même sans saisir « rounds » à part, la durée totale, l’allure moyenne et le type « interval » augmentent le facteur d’intensité. Le D+ pénalise légèrement en côte.",
+      "garminExplain": "Les imports Garmin fournissent souvent distance et durée fiables ; la FC moyenne permet d’ajuster finement quand elle est présente."
+    },
+    "cardio_run_easy": {
+      "musclesPrimary": "Système aérobie, jambes (endurance musculaire lente).",
+      "musclesSecondary": "Core léger, posture.",
+      "execution": "Allure confortable, ne pas « forcer » la cadence. Idéal pour volume et récupération active.",
+      "coeffExplain": "Indice plutôt modéré sur l’échelle cardio : le footing reste moins « dense » qu’un fractionné.\n\nCharge calendrier = f(durée, distance, allure, type easy/recovery).",
+      "notesExplain": "FC cible, compagnie, terrain, chaussures minimalistes vs amorti.",
+      "calendarExplain": "Volume pondéré avec facteurs allure + type + D+ + FC optionnelle.",
+      "garminExplain": "Synchronisation recommandée pour suivre l’allure réelle sur le terrain."
+    },
+    "cardio_run_endurance": {
+      "musclesPrimary": "Endurance aérobie, quadriceps / ischios sur la durée.",
+      "musclesSecondary": "Mollets, fessiers, tronc.",
+      "execution": "Rythme stable, légèrement plus soutenu que le footing mais sous le seuil critique.",
+      "coeffExplain": "Indice intermédiaire entre footing et seuil.\n\nCharge calendrier basée sur la même dynamique globale que les autres courses.",
+      "notesExplain": "Allure cible, fractionnement interne si tu fais des blocs.",
+      "calendarExplain": "Durée × intensité relative (type endurance) × modulateurs allure / D+ / FC.",
+      "garminExplain": ""
+    },
+    "cardio_run_fartlek": {
+      "musclesPrimary": "Mix aérobie / anaérobie léger, jambes globales.",
+      "musclesSecondary": "Agilité, stabilisation sur terrain variable.",
+      "execution": "Jeux de vitesse libres : alterne sans chronomètre rigide, reste fluide.",
+      "coeffExplain": "Indice reflète un mix variable, moins maximal que l’intervalle structuré.",
+      "notesExplain": "Terrain vallonné, sensations, groupes d’efforts spontanés.",
+      "calendarExplain": "Type fartlek avec modulateurs allure / D+.",
+      "garminExplain": ""
+    },
+    "cardio_run_threshold": {
+      "musclesPrimary": "Seuil lactique : quadriceps, fessiers, cardio élevé.",
+      "musclesSecondary": "Mollets, tronc.",
+      "execution": "Blocs longs à intensité « dure mais tenable ». Respecte la récup entre blocs.",
+      "coeffExplain": "Indice élevé : proche de l’effort soutenu maximal pour la durée.",
+      "notesExplain": "Allure seuil, %VMA, terrain plat vs vallonné.",
+      "calendarExplain": "Facteur type threshold/tempo dans la formule dynamique.",
+      "garminExplain": ""
+    },
+    "cardio_run_tempo": {
+      "musclesPrimary": "Soutenu sous seuil, muscles de jambe et cardio.",
+      "musclesSecondary": "Core, posture.",
+      "execution": "Rythme « confortablement dur », discipline mentale sur le bloc unique ou peu de répétitions.",
+      "coeffExplain": "Indice proche du seuil mais légèrement différent dans l’échelle auto.",
+      "notesExplain": "Durée du bloc tempo, parcours choisi.",
+      "calendarExplain": "Charge dynamique avec type tempo.",
+      "garminExplain": ""
+    },
+    "cardio_run_sprint": {
+      "musclesPrimary": "Neuromusculaire, quadriceps / fessiers explosifs, système phosphagène.",
+      "musclesSecondary": "Mollets, core, épaules (balancement).",
+      "execution": "Qualité maximale sur courtes répétitions, récup longue. Échauffement progressif indispensable.",
+      "coeffExplain": "Indice cardio le plus haut : chaque minute à très haute intensité coûte cher.",
+      "notesExplain": "Nombre de répétitions, distance, récup, surface (herbe / piste).",
+      "calendarExplain": "Type sprint avec fort multiplicateur ; allure très rapide augmente encore la charge estimée.",
+      "garminExplain": ""
+    },
+    "cardio_rope": {
+      "musclesPrimary": "Mollets, endurance des épaules, cardio.",
+      "musclesSecondary": "Avant-bras, coordination.",
+      "execution": "Poignets souples, sauts bas, progressivité sur les combos.",
+      "coeffExplain": "Indice pour situer la corde vs la course dans ton échelle personnelle.\n\nLa charge calendrier pour la corde suit les règles de l’onglet Endurance (durée, sauts si saisis).",
+      "notesExplain": "Type de corde, combos, surfaces, gênes cheville.",
+      "calendarExplain": "Voir module Endurance → Corde pour le détail du calcul côté volume.",
+      "garminExplain": "Peu d’activités Garmin standard pour corde : saisie manuelle ou capteur compatible reste la source la plus fiable."
+    },
+    "cardio_swim": {
+      "musclesPrimary": "Pectoraux, dorsaux, deltoïdes, triceps, jambes selon nage.",
+      "musclesSecondary": "Core, chevilles, cou.",
+      "execution": "Rotation du corps en crawl, expiration dans l’eau, relâcher la nuque.",
+      "coeffExplain": "Indice pour comparer natation vs course à pied dans ton ressenti global.",
+      "notesExplain": "Type de nage, longueur de bassin, matériel (pull-buoy, paddles).",
+      "calendarExplain": "Les séances natation sont agrégées via Endurance ; la charge suit les données saisies.",
+      "garminExplain": "Les montres natation donnent souvent distance et allure moyenne : utile pour cohérence du journal."
+    },
+    "cardio_box": {
+      "musclesPrimary": "Cardio, deltoïdes, triceps, core en rotation.",
+      "musclesSecondary": "Jambes (appuis, déplacements), trapèzes.",
+      "execution": "Technique de poing, garder les coudes près du corps en guard, respirer sur les combos.",
+      "coeffExplain": "Indice pour situer la boxe cardio vs autres modes.",
+      "notesExplain": "Rounds, type de sac, gants, sensations.",
+      "calendarExplain": "Charge via séances Endurance / boxe saisies.",
+      "garminExplain": "Certaines montres estiment la charge ; sinon saisis durée et intensité ressentie."
+    },
+    "cardio_generic": {
+      "musclesPrimary": "Cardio global et chaînes musculaires mobilisées par l’activité.",
+      "musclesSecondary": "Stabilisation, posture.",
+      "execution": "Suis les consignes du programme ou du coach ; privilégie la régularité.",
+      "coeffExplain": "Cette fiche cardio sert d’ancrage pour ton indice personnel ; la charge détaillée du jour vient surtout d’Endurance.",
+      "notesExplain": "Tout contexte utile : terrain, matériel, objectif.",
+      "calendarExplain": "Endurance + musculation forment le total journalier dans le calendrier.",
+      "garminExplain": "Garmin alimente surtout la course / vélo / natation selon ton appareil."
+    }
   },
   "difficulty": {
     "beginner": "Débutant",

@@ -9,6 +9,7 @@
 import { useCallback } from 'react';
 import { getDateStr, getDayName } from '../../../utils/dateUtils';
 import { normalizeRepsValue } from '../utils';
+import { resolveExerciseIntensityCoeff } from '../../../utils/trainingLoadUtils';
 
 /**
  * Hook pour gérer l'historique des entraînements
@@ -292,11 +293,30 @@ export const useWorkoutHistory = (getCurrentData, getExerciseNameById) => {
           });
         }
 
+        const userCoeffs = currentData.exerciseIntensityCoeffs || {};
         const totalReps = exercises
           .filter(ex => !ex.isSuppressed && ex.completed)
           .reduce((sum, ex) => {
             const normalizedReps = normalizeRepsValue(ex.reps);
             return sum + normalizedReps;
+          }, 0);
+
+        const totalLoad = exercises
+          .filter(ex => !ex.isSuppressed && ex.completed)
+          .reduce((sum, ex) => {
+            const normalizedReps = normalizeRepsValue(ex.reps);
+            if (normalizedReps <= 0) return sum;
+            const coeff = resolveExerciseIntensityCoeff(
+              {
+                id: ex.id,
+                name: ex.name,
+                nom: ex.name,
+                series: ex.series,
+                type: ex.type
+              },
+              userCoeffs
+            );
+            return sum + normalizedReps * coeff;
           }, 0);
         
         const completedExercises = exercises.filter(ex => ex.completed).length;
@@ -332,6 +352,7 @@ export const useWorkoutHistory = (getCurrentData, getExerciseNameById) => {
             exercises: exercises,
             stretches: stretches,
             totalReps: totalReps,
+            totalLoad,
             completedExercises: completedExercises,
             completedStretches: completedStretches,
             totalExercises: exercises.length,

@@ -211,10 +211,14 @@ const formConfig = {
         type: 'select',
         label: 'Type de course',
         options: [
-          { label: 'Course classique', value: 'endurance' },
-          { label: 'Fractionné', value: 'interval' },
+          { label: 'Endurance fondamentale / footing', value: 'easy' },
+          { label: 'Sortie longue', value: 'long_run' },
+          { label: 'Course classique (endurance)', value: 'endurance' },
+          { label: 'Fartlek', value: 'fartlek' },
+          { label: 'Fractionné / intervalles', value: 'interval' },
+          { label: 'Seuil / tempo', value: 'threshold' },
           { label: 'Tempo', value: 'tempo' },
-          { label: 'Sprint', value: 'sprint' }
+          { label: 'Sprint / VMA courte', value: 'sprint' }
         ]
       },
       { key: 'elevation', type: 'number', label: 'Dénivelé (m)', placeholder: 'Ex: 120' },

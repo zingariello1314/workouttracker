@@ -12,7 +12,9 @@ const generateTestWorkoutData = () => {
     checkedStretches: {},
     startDate: null,
     weekVariant: 'A',
-    progressPhotos: []
+    progressPhotos: [],
+    exerciseIntensityCoeffs: {},
+    exercisePersonalNotes: {}
   };
 
   // Générer des données pour les 30 derniers jours
@@ -116,7 +118,10 @@ const INITIAL_WORKOUT_DATA = {
   dailyVariationsVersion: '1.0', // Version du schéma pour migrations futures
   // ✅ NOUVEAU : Système de justification des jours sans activité
   dayJustifications: {}, // Format: { "YYYY-MM-DD": { reason, note?, createdAt, updatedAt } }
-  dayJustificationsVersion: '1.0' // Version du schéma pour migrations futures
+  dayJustificationsVersion: '1.0', // Version du schéma pour migrations futures
+  // Coefficients de charge calendrier / historique (surcharges par id d'exercice, optionnel)
+  exerciseIntensityCoeffs: {},
+  exercisePersonalNotes: {}
   // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
 };
 
@@ -380,6 +385,14 @@ export const useWorkoutData = (options = {}) => {
           ? { ...newData.dayJustifications } 
           : {},
         dayJustificationsVersion: newData && newData.dayJustificationsVersion ? newData.dayJustificationsVersion : '1.0',
+        exerciseIntensityCoeffs:
+          newData && newData.exerciseIntensityCoeffs && typeof newData.exerciseIntensityCoeffs === 'object'
+            ? { ...newData.exerciseIntensityCoeffs }
+            : {},
+        exercisePersonalNotes:
+          newData && newData.exercisePersonalNotes && typeof newData.exercisePersonalNotes === 'object'
+            ? { ...newData.exercisePersonalNotes }
+            : {},
         // Données d'endurance - CRUCIAL pour la persistance
         enduranceData: newData && newData.enduranceData ? { ...newData.enduranceData } : {
           sessions: {
@@ -607,6 +620,14 @@ export const useWorkoutData = (options = {}) => {
               // ✅ NOUVEAU : dayJustifications avec migration automatique
               dayJustifications: migratedData.dayJustifications || {},
               dayJustificationsVersion: migratedData.dayJustificationsVersion || '1.0',
+              exerciseIntensityCoeffs:
+                migratedData.exerciseIntensityCoeffs && typeof migratedData.exerciseIntensityCoeffs === 'object'
+                  ? { ...migratedData.exerciseIntensityCoeffs }
+                  : {},
+              exercisePersonalNotes:
+                migratedData.exercisePersonalNotes && typeof migratedData.exercisePersonalNotes === 'object'
+                  ? { ...migratedData.exercisePersonalNotes }
+                  : {},
               // Données d'endurance - CRUCIAL pour la persistance
               enduranceData: migratedData.enduranceData || result.enduranceData || {
                 sessions: {
@@ -629,7 +650,17 @@ export const useWorkoutData = (options = {}) => {
                 const parsedBackup = JSON.parse(backupData);
                 // ✅ Migration automatique des données localStorage
                 const migratedBackup = migrateDailyVariations(parsedBackup);
-                resolve(migratedBackup);
+                resolve({
+                  ...migratedBackup,
+                  exerciseIntensityCoeffs:
+                    migratedBackup.exerciseIntensityCoeffs && typeof migratedBackup.exerciseIntensityCoeffs === 'object'
+                      ? { ...migratedBackup.exerciseIntensityCoeffs }
+                      : {},
+                  exercisePersonalNotes:
+                    migratedBackup.exercisePersonalNotes && typeof migratedBackup.exercisePersonalNotes === 'object'
+                      ? { ...migratedBackup.exercisePersonalNotes }
+                      : {}
+                });
               } else {
                 resolve(null);
               }

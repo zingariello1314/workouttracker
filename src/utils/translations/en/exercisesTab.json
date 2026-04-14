@@ -45,7 +45,255 @@
     "titleWithProgram": "Exercises ({{count}}) - {{programName}}",
     "none": "No exercises found",
     "noneWithProgram": "Program \"{{programName}}\" contains no exercises",
-    "noneHint": "Try modifying your search or filter criteria"
+    "noneHint": "Try modifying your search or filter criteria",
+    "loadCoeff": {
+      "label": "Load coefficient (calendar)",
+      "auto": "default {{value}}"
+    }
+  },
+  "card": {
+    "volume": "Planned volume",
+    "loadShort": "Load idx",
+    "openHint": "Click for full sheet and settings."
+  },
+  "cardio": {
+    "sourceLabel": "Cardio reference"
+  },
+  "detail": {
+    "back": "Back to exercises",
+    "kicker": "Sport · Exercises",
+    "loadIndex": "Load index",
+    "loadExplain": "The index reflects how much each rep or second weighs in the calendar: the higher it is, the more the exercise counts versus raw volume. Adjust it if your level or execution differs from the default.",
+    "loadExplainCardioExtra": "For running, daily load mostly comes from Endurance sessions (distance, duration, type, elevation, pace, HR); this index also ranks relative hardness across exercise types.",
+    "loadExplainIsoExtra": "For this hold type, the calendar applies tiers on seconds — see the dedicated section below.",
+    "tieredIsoFoot": "This is calibrated to stay consistent with the old “seconds × small coefficient” scale, then multiplied by your personal index.",
+    "readOnly": "Sign in to save your settings and notes on this device.",
+    "coeffLabel": "Custom coefficient",
+    "coeffHint": "Auto: {{value}} — leave empty to use automatic inference.",
+    "coeffAuto": "Auto (default)",
+    "notesLabel": "Personal notes",
+    "notesPlaceholder": "Variation, band, tempo…",
+    "volumeSection": "Planned programme volume",
+    "volumeFootnote": "This decodes the programme's \"sets\" line: it's a target, not your log. What you actually do is entered in Today and reflected in the Calendar.",
+    "metaTitle": "Programme info",
+    "metaSeries": "Sets (raw text)",
+    "metaEquipment": "Equipment",
+    "coachNotes": "Programme notes",
+    "musclesPrimaryLabel": "Primary emphasis",
+    "musclesSecondaryLabel": "Secondary / stability",
+    "executionLabel": "Execution cues",
+    "loadFactorsTitle": "Load breakdown (last listed session)",
+    "factorVolume": "Base volume",
+    "factorType": "Run type",
+    "factorPace": "Pace",
+    "factorElev": "Elevation +",
+    "factorHr": "Avg HR",
+    "factorTotal": "Estimated total",
+    "extendedSectionCoeff": "Understanding the load index",
+    "extendedSectionNotes": "What are personal notes for?",
+    "extendedSectionMuscles": "Execution & muscles worked",
+    "extendedSectionCalendar": "How it counts in the calendar",
+    "extendedSectionGarmin": "Endurance, Garmin & dynamic load",
+    "tieredIsoTitle": "Plank / hollow hold: progressive load (seconds)",
+    "tieredIsoBody": "For holds detected as isometric, the calendar no longer uses only “seconds × tiny coefficient”: we apply tiers (early seconds weigh a bit less, then metabolic cost ramps up). Your personal coefficient scales the whole curve.",
+    "bulletLabel": "Key point",
+    "noGarminData": "No running sessions yet. Log a run under Sport → Endurance or sync Garmin to see distance, duration, elevation gain and estimated load here.",
+    "recentSessionsTitle": "Recent linked sessions (preview)",
+    "colDate": "Date",
+    "colDistance": "km",
+    "colDuration": "Duration",
+    "colElev": "Elev+ m",
+    "colLoad": "Est. load",
+    "colType": "Type",
+    "hero": {
+      "kicker": "Summary",
+      "recapHint": "Same muscle buckets as the Recap engine and calendar (Exercise DB + profile).",
+      "modeReps": "Unit: repetitions",
+      "modeIso": "Unit: seconds (planks / holds)",
+      "modeCardio": "Cardio reference — see Endurance tab"
+    }
+  },
+  "detailProfiles": {
+    "strength_default": {
+      "musclesPrimary": "Varies with the exercise: use the “sets” line and equipment to understand the pattern.",
+      "musclesSecondary": "Core bracing, grip, general posture.",
+      "execution": "Follow the program line (sets / reps / tempo). Control range of motion and breathing; avoid lumbar compensation.",
+      "coeffExplain": "The index is how much each repetition weighs in your training day. Higher index = more calendar load for the same reps logged in Today.\n\nLeave the field empty to keep auto (based on exercise type). Raise it for harder variants (slow tempo, deficit, heavy load). Lower it if you lighten the drill (band, partial ROM on purpose).",
+      "notesExplain": "Use notes for what the program omits: band colour, load in kg, grip style, niggles to watch, session intent.\n\nThis text is personal: it does not change the auto math, but reminds you how you actually perform the move.",
+      "calendarExplain": "Strength contribution = checked reps × index (except isometric holds detected as core holds — see plank profile). Cardio load is mostly from Sport → Endurance, not this field.",
+      "garminExplain": ""
+    },
+    "strength_pull": {
+      "musclesPrimary": "Back (lats, traps, rhomboids), biceps, forearms.",
+      "musclesSecondary": "Core (anti-extension), rear delts, grip.",
+      "execution": "Set shoulders before pulling, chest toward the bar or rings, controlled lowering without collapsing.",
+      "coeffExplain": "Pull-ups and variants are heavy closed-chain work, so the auto index is often higher than isolation curls.\n\nTune it if you use assistance (band, machine) or weighted reps.",
+      "notesExplain": "Grip width, bar thickness, band assistance, or intentional partial reps.",
+      "calendarExplain": "Load = validated reps × index. If you count partial reps, stay consistent and reflect difficulty in the index.",
+      "garminExplain": ""
+    },
+    "strength_push": {
+      "musclesPrimary": "Chest, triceps, front delts (push-ups, presses); triceps / delts for dips.",
+      "musclesSecondary": "Core, serratus, wrist flexors.",
+      "execution": "Keep elbows in a sane plane (~45° on push-ups), move shoulder blades without “shrugging ears”. Full ROM if joints allow.",
+      "coeffExplain": "Bodyweight pushes recruit a lot of mass: the index reflects that.\n\nRaise for feet-elevated push-ups or deficit; lower for incline hands or knees-down.",
+      "notesExplain": "Bench or step height, ring support, L-sit context.",
+      "calendarExplain": "Same model as other strength moves: reps × index.",
+      "garminExplain": ""
+    },
+    "strength_legs": {
+      "musclesPrimary": "Quads, glutes, hamstrings depending on pattern (squat, lunge, hinge…).",
+      "musclesSecondary": "Calves, deep trunk, adductors / abductors depending on variant.",
+      "execution": "Active feet, knee tracks toes on lunges, tall torso. On squats: useful depth without collapsing arches.",
+      "coeffExplain": "Big leg patterns move a lot of volume; the index scales their relative weight in the day.\n\nAdjust for unilateral work, long tempos, or external load.",
+      "notesExplain": "Bar vs dumbbells, step height, squat style, knee notes, shoe choice.",
+      "calendarExplain": "Logged reps × index. If you count lunge steps, define whether one rep is one leg or both — stay consistent.",
+      "garminExplain": ""
+    },
+    "strength_isolation": {
+      "musclesPrimary": "Target area (biceps, side delts, triceps…) depending on the move.",
+      "musclesSecondary": "Light trunk stability sitting or standing.",
+      "execution": "Controlled ROM, no hip swing to cheat. Moderate load, mind-muscle connection first.",
+      "coeffExplain": "Isolations stress the global system less; auto index is usually modest.\n\nYou can still raise it for long high-rep sets or intensive techniques.",
+      "notesExplain": "Bench angle, cable vs dumbbell, myo-rep protocols.",
+      "calendarExplain": "Reps × index — simple and readable for small muscles.",
+      "garminExplain": ""
+    },
+    "strength_upper_push_pull": {
+      "musclesPrimary": "Upper-body push-pull chain: chest / delt / triceps OR back / biceps depending on exercise.",
+      "musclesSecondary": "Trunk, grip, scapular stabilisers.",
+      "execution": "Clean bar path; on rows pull elbow along the body without excessive flare.",
+      "coeffExplain": "Index = weight of one rep in the daily total. Adjust for grip, tempo, load.",
+      "notesExplain": "Pulley height, unilateral vs bilateral, volume vs intensity goal.",
+      "calendarExplain": "Standard strength: reps × index.",
+      "garminExplain": ""
+    },
+    "strength_skill": {
+      "musclesPrimary": "Back, triceps, shoulders, core in coordinated sequences (e.g. muscle-up).",
+      "musclesSecondary": "Forearms, grip, hips if kipping is used.",
+      "execution": "Skills = technique + strength. Prioritise quality progressions before chasing volume.",
+      "coeffExplain": "Skill moves tax the nervous system heavily; auto index is high.\n\nLower for assisted or partial drills; raise for strict or weighted variants.",
+      "notesExplain": "False grip, thick bar, strict vs kipping, band, bar height.",
+      "calendarExplain": "Each valid rep weighs heavily — intentional to reflect rarity of the pattern.",
+      "garminExplain": ""
+    },
+    "isometric_core": {
+      "musclesPrimary": "Transverse abdominis, obliques, deep trunk; advanced variants: neck flexors, glutes.",
+      "musclesSecondary": "Delts (high plank), quads (global tension), scapular stabilisers.",
+      "execution": "Avoid lumbar sag: think “belt brace”. Short controlled breathing. Progress time week to week.",
+      "coeffExplain": "For the calendar, hold seconds use tiers: first ~30s weighted a bit lower, then cost ramps, especially after ~60s.\n\nYour coefficient scales the whole curve: raise for toes / weight; lower for knees or high incline.",
+      "notesExplain": "Side plank, dynamics, Swiss ball, filming cues, pain to avoid.",
+      "calendarExplain": "Load ≈ f(seconds) with tiers × your index (not plain seconds × 0.08). Other lifts stay reps × index.",
+      "garminExplain": ""
+    },
+    "cardio_run_long": {
+      "musclesPrimary": "Cardio-respiratory system, posterior chain (hams, glutes), calves.",
+      "musclesSecondary": "Quads, trunk stability over long duration.",
+      "execution": "Mostly conversational pace, fueling strategy, mental chunking on very long runs.",
+      "coeffExplain": "On this sheet the index mostly ranks how “hard” this cardio pattern is vs others and keeps stars comparable with strength.\n\nReal running load in the calendar comes from Endurance sessions: duration, distance, type, pace, elevation, HR when present.",
+      "notesExplain": "Target distance, shoes, route, niggles to watch.",
+      "calendarExplain": "Running adds dynamic load (volume × type factor × pace × elevation × mild HR factor). Long runs use a slightly higher type factor than easy runs.",
+      "garminExplain": "When Garmin feeds Endurance we read distance, duration, D+, average HR to refine load without retyping reps."
+    },
+    "cardio_run_interval": {
+      "musclesPrimary": "Maximal cardio demand, explosive quads / glutes, lactate system.",
+      "musclesSecondary": "Calves, core in fast phases.",
+      "execution": "Solid warm-up, even reps, recovery as prescribed. Hydrate and progress interval volume carefully.",
+      "coeffExplain": "Sheet index marks intervals as very demanding on the cardio scale.\n\nCalendar load still blends duration + pace + interval type + elevation: a short session can score high if pace is fast.",
+      "notesExplain": "Rep count, rep distance or duration, recovery, target pace or %vVO2max, track vs road.",
+      "calendarExplain": "Dynamic formula: total duration, average pace and interval type raise intensity; elevation adds cost uphill.",
+      "garminExplain": "Imports usually give reliable distance and duration; average HR fine-tunes when available."
+    },
+    "cardio_run_easy": {
+      "musclesPrimary": "Aerobic system, legs (slow endurance).",
+      "musclesSecondary": "Light core, posture.",
+      "execution": "Comfortable pace; don’t chase cadence. Great for volume and active recovery.",
+      "coeffExplain": "Moderate index on the cardio scale: easy running is less dense than intervals.\n\nCalendar load = f(duration, distance, pace, easy/recovery type).",
+      "notesExplain": "Target HR, shoes, surface.",
+      "calendarExplain": "Volume with pace + type + elevation + optional HR.",
+      "garminExplain": "Sync helps capture real outdoor pace."
+    },
+    "cardio_run_endurance": {
+      "musclesPrimary": "Aerobic endurance, quads / hams over time.",
+      "musclesSecondary": "Calves, glutes, trunk.",
+      "execution": "Steady rhythm, a bit harder than easy but below critical threshold.",
+      "coeffExplain": "Index sits between easy and threshold.\n\nCalendar uses the same global running model.",
+      "notesExplain": "Target pace, internal splits if any.",
+      "calendarExplain": "Duration × relative intensity (endurance type) × pace / elev / HR modulators.",
+      "garminExplain": ""
+    },
+    "cardio_run_fartlek": {
+      "musclesPrimary": "Mixed aerobic / light anaerobic, whole legs.",
+      "musclesSecondary": "Agility, stability on variable terrain.",
+      "execution": "Free speed play: alternate without rigid watch splits, stay fluid.",
+      "coeffExplain": "Index reflects variable mix, less extreme than structured intervals.",
+      "notesExplain": "Hilly terrain, spontaneous bursts.",
+      "calendarExplain": "Fartlek type with pace / elevation modulators.",
+      "garminExplain": ""
+    },
+    "cardio_run_threshold": {
+      "musclesPrimary": "Threshold work: quads, glutes, high cardio demand.",
+      "musclesSecondary": "Calves, trunk.",
+      "execution": "Long blocks at “hard but sustainable” intensity. Respect recovery between blocks.",
+      "coeffExplain": "High index: close to sustained hard effort for the duration.",
+      "notesExplain": "Threshold pace, %HRmax, flat vs hilly.",
+      "calendarExplain": "Threshold / tempo factors inside the dynamic model.",
+      "garminExplain": ""
+    },
+    "cardio_run_tempo": {
+      "musclesPrimary": "Sustained sub-threshold legs and cardio.",
+      "musclesSecondary": "Core, posture.",
+      "execution": "“Comfortably hard” rhythm, mental discipline on one or few long blocks.",
+      "coeffExplain": "Index close to threshold but slightly different on the auto scale.",
+      "notesExplain": "Tempo block duration, route choice.",
+      "calendarExplain": "Dynamic load with tempo type.",
+      "garminExplain": ""
+    },
+    "cardio_run_sprint": {
+      "musclesPrimary": "Neuromuscular, explosive quads / glutes, phosphagen system.",
+      "musclesSecondary": "Calves, core, shoulders (arm swing).",
+      "execution": "Max quality on short reps, long recovery. Gradual warm-up is mandatory.",
+      "coeffExplain": "Highest cardio index: each minute at very high speed is expensive.",
+      "notesExplain": "Rep count, distance, recovery, grass vs track.",
+      "calendarExplain": "Sprint type with strong multiplier; very fast pace increases estimated load further.",
+      "garminExplain": ""
+    },
+    "cardio_rope": {
+      "musclesPrimary": "Calves, shoulder endurance, cardio.",
+      "musclesSecondary": "Forearms, coordination.",
+      "execution": "Soft wrists, low jumps, progress combos gradually.",
+      "coeffExplain": "Index positions jump rope vs running on your personal scale.\n\nCalendar detail lives under Sport → Endurance → Jump rope.",
+      "notesExplain": "Rope type, combos, surface, ankle issues.",
+      "calendarExplain": "See Endurance module for volume rules.",
+      "garminExplain": "Few standard Garmin rope activities; manual logging is often most reliable."
+    },
+    "cardio_swim": {
+      "musclesPrimary": "Chest, lats, delts, triceps, legs depending on stroke.",
+      "musclesSecondary": "Core, ankles, neck.",
+      "execution": "Body roll in freestyle, exhale underwater, relaxed neck.",
+      "coeffExplain": "Index compares swimming vs running in your overall feel.",
+      "notesExplain": "Stroke, pool length, equipment (pull buoy, paddles).",
+      "calendarExplain": "Swim sessions aggregate via Endurance; load follows logged data.",
+      "garminExplain": "Swim watches often give distance and pace — useful for consistency."
+    },
+    "cardio_box": {
+      "musclesPrimary": "Cardio, delts, triceps, core in rotation.",
+      "musclesSecondary": "Legs (stance, footwork), traps.",
+      "execution": "Keep hands up, elbows in guard, breathe on combos.",
+      "coeffExplain": "Index positions boxing cardio vs other modes.",
+      "notesExplain": "Rounds, bag type, gloves, how it felt.",
+      "calendarExplain": "Load via Endurance / boxing entries.",
+      "garminExplain": "Some watches estimate load; otherwise log duration and perceived intensity."
+    },
+    "cardio_generic": {
+      "musclesPrimary": "Global cardio and whatever the activity stresses most.",
+      "musclesSecondary": "Stability, posture.",
+      "execution": "Follow coach or program cues; prioritise consistency.",
+      "coeffExplain": "This cardio sheet anchors your personal index; detailed daily load mostly comes from Endurance.",
+      "notesExplain": "Terrain, equipment, intent.",
+      "calendarExplain": "Endurance + strength form the daily total in the calendar.",
+      "garminExplain": "Garmin mostly feeds run / bike / swim depending on device."
+    }
   },
   "difficulty": {
     "beginner": "Beginner",

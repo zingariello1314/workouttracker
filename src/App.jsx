@@ -15,6 +15,7 @@ import HomePageScrollTransition from './components/HomePageScrollTransition';
 import AuthPage from './components/AuthPage';
 
 // Lazy loading des onglets (chargés à la demande)
+const RecapTab = lazy(() => import('./components/tabs/RecapTab'));
 const TodayTab = lazy(() => import('./components/tabs/TodayTab'));
 const DataEntryTab = lazy(() => import('./components/tabs/DataEntryTab'));
 const ProgressTab = lazy(() => import('./components/tabs/ProgressTab'));
@@ -97,6 +98,7 @@ const WorkoutTrackerContent = () => {
     quests: '-700px',
     books: '-720px',
     // Onglets Sport : même alignement vertical sous la sous-nav
+    recap: '-640px',
     today: '-640px',
     'data-entry': '-640px',
     progress: '-640px',
@@ -185,6 +187,8 @@ const WorkoutTrackerContent = () => {
         return <HomePage />;
       case 'auth':
         return <AuthPage />;
+      case 'recap':
+        return <RecapTab />;
       case 'today':
         return <TodayTab />;
       case 'quests':

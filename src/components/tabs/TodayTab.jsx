@@ -18,6 +18,13 @@ import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
 import SportXPBar from './TodayTab/components/SportXPBar';
 import { loadEnduranceData as loadEnduranceDataService } from '../../services/endurance/enduranceDataService';
+import {
+  collectExerciseKeysForWorkoutExercise,
+  generateSmartExerciseKey,
+  resolveBestRepsStorageKey
+} from '../../utils/exerciseKeyGenerator';
+import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
+import LoadDifficultyStars from '../sport/LoadDifficultyStars';
 
 const TodayTab = () => {
   const {
@@ -180,14 +187,21 @@ const TodayTab = () => {
 
   // Gestionnaire pour l'auto-remplissage au focus/clic
   const handleInputFocus = (exerciseId, exercise) => {
-    const dateStr = getDateStr(currentDate);
-    const key = `${dateStr}_${exerciseId}`;
-    const currentValue = data.reps[key] || '';
-    
-    // Si le champ est vide, calculer et remplir automatiquement
+    const currentData = getCurrentData();
+    const workoutForDay = getTodayWorkout(currentDate, isGymMode);
+    const exerciseUnit = detectExerciseUnit(exercise);
+    if (exerciseUnit?.isTimeBased) return;
+
+    const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
+      isGymMode,
+      workoutIsGymMode: workoutForDay?.isGymMode
+    });
+    const readKey = resolveBestRepsStorageKey(currentData, keys) || keys[0];
+    const currentValue = String(currentData.reps?.[readKey] ?? '').trim();
+
     if (!currentValue && exercise.series) {
-      const autoReps = calculateAutoReps(exercise.series);
-      if (autoReps) {
+      const autoReps = calculateAutoReps(exercise.series, { round: true });
+      if (autoReps != null) {
         updateLocalReps(exerciseId, autoReps.toString(), currentDate);
       }
     }
@@ -198,92 +212,120 @@ const TodayTab = () => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const workout = getTodayWorkout(date, isGymMode);
-    
-    // Générer la clé appropriée selon le type d'exercice
-    let key = `${dateStr}_${exerciseId}`;
-    
-    // Si c'est un exercice de salle (mode gym activé), ajouter le suffixe de semaine
-    if (isGymMode && workout.isGymMode) {
-      const currentWeekVariant = getAutoWeekVariant(date);
-      const weekSuffix = currentWeekVariant === 'A' ? '_semaineA' : '_semaineB';
-      key = `${dateStr}_${exerciseId}${weekSuffix}`;
-    }
-    
-    const isCurrentlyChecked = currentData.checkedExercises[key] || false;
-    
-    // Si pas encore coché, calculer les reps automatiques
-    if (!isCurrentlyChecked) {
-      const exercise = workout.exercices?.find(ex => ex.id === exerciseId);
-      
-      if (exercise && exercise.series) {
-        const seriesText = exercise.series;
-        let autoReps = null;
-        
-        if (seriesText.includes('×')) {
-          const match = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
-          if (match) {
-            const sets = parseInt(match[1]);
-            const minReps = parseInt(match[2]);
-            const maxReps = match[3] ? parseInt(match[3]) : minReps;
-            autoReps = sets * Math.round((minReps + maxReps) / 2);
-          }
+    const exercise = workout.exercices?.find((ex) => ex.id === exerciseId);
+    const fallbackKey = `${dateStr}_${exerciseId}`;
+
+    if (!exercise) {
+      const isCurrentlyChecked = !!currentData.checkedExercises?.[fallbackKey];
+      updateTempExerciseData({
+        ...currentData,
+        checkedExercises: {
+          ...currentData.checkedExercises,
+          [fallbackKey]: !isCurrentlyChecked
+        },
+        reps: {
+          ...currentData.reps,
+          [fallbackKey]: !isCurrentlyChecked ? currentData.reps?.[fallbackKey] || '' : undefined
         }
-        
-        // Mettre à jour les données avec case cochée ET répétitions
-        const newData = {
-          ...currentData,
-          checkedExercises: {
-            ...currentData.checkedExercises,
-            [key]: true
-          },
-          reps: {
-            ...currentData.reps,
-            [key]: autoReps ? autoReps.toString() : ''
-          }
-        };
-        updateTempExerciseData(newData);
-        return;
-      }
+      });
+      return;
     }
-    
-    // Sinon, simple toggle de la case
-    const newData = {
-      ...currentData,
-      checkedExercises: {
-        ...currentData.checkedExercises,
-        [key]: !isCurrentlyChecked
-      },
-      reps: {
-        ...currentData.reps,
-        [key]: !isCurrentlyChecked ? currentData.reps[key] || '' : undefined
-      }
+
+    const keys = collectExerciseKeysForWorkoutExercise(date, exercise, {
+      isGymMode,
+      workoutIsGymMode: workout?.isGymMode
+    });
+    const primaryKey = generateSmartExerciseKey(date, exercise.id, {
+      isGymMode,
+      workoutIsGymMode: workout?.isGymMode,
+      weekVariant: getAutoWeekVariant(date)
+    });
+    const isCurrentlyChecked = keys.some((k) => currentData.checkedExercises?.[k] === true);
+
+    const stripKeys = (checkedObj, repsObj) => {
+      const nextChecked = { ...checkedObj };
+      const nextReps = { ...repsObj };
+      keys.forEach((k) => {
+        delete nextChecked[k];
+        delete nextReps[k];
+      });
+      return { nextChecked, nextReps };
     };
-    updateTempExerciseData(newData);
+
+    if (isCurrentlyChecked) {
+      const { nextChecked, nextReps } = stripKeys(
+        currentData.checkedExercises,
+        currentData.reps
+      );
+      updateTempExerciseData({
+        ...currentData,
+        checkedExercises: nextChecked,
+        reps: nextReps
+      });
+      return;
+    }
+
+    if (exercise.series) {
+      const seriesText = exercise.series;
+      let autoReps = null;
+      if (seriesText.includes('×')) {
+        const match = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
+        if (match) {
+          const sets = parseInt(match[1], 10);
+          const minReps = parseInt(match[2], 10);
+          const maxReps = match[3] ? parseInt(match[3], 10) : minReps;
+          autoReps = sets * Math.round((minReps + maxReps) / 2);
+        }
+      }
+      const { nextChecked, nextReps } = stripKeys(
+        currentData.checkedExercises,
+        currentData.reps
+      );
+      nextChecked[primaryKey] = true;
+      nextReps[primaryKey] = autoReps != null ? autoReps.toString() : '';
+      updateTempExerciseData({
+        ...currentData,
+        checkedExercises: nextChecked,
+        reps: nextReps
+      });
+      return;
+    }
+
+    const { nextChecked, nextReps } = stripKeys(
+      currentData.checkedExercises,
+      currentData.reps
+    );
+    nextChecked[primaryKey] = true;
+    const prevKey = resolveBestRepsStorageKey(currentData, keys);
+    nextReps[primaryKey] =
+      prevKey && currentData.reps?.[prevKey] != null ? String(currentData.reps[prevKey]) : '';
+    updateTempExerciseData({
+      ...currentData,
+      checkedExercises: nextChecked,
+      reps: nextReps
+    });
   };
 
   const updateLocalReps = (exerciseId, reps, date) => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const workout = getTodayWorkout(date, isGymMode);
-    
-    // Générer la clé appropriée selon le type d'exercice
-    let key = `${dateStr}_${exerciseId}`;
-    
-    // Si c'est un exercice de salle (mode gym activé), ajouter le suffixe de semaine
-    if (isGymMode && workout.isGymMode) {
-      const currentWeekVariant = getAutoWeekVariant(date);
-      const weekSuffix = currentWeekVariant === 'A' ? '_semaineA' : '_semaineB';
-      key = `${dateStr}_${exerciseId}${weekSuffix}`;
-    }
-    
-    const newData = {
+    const exercise = workout.exercices?.find((ex) => ex.id === exerciseId);
+    const key = exercise
+      ? generateSmartExerciseKey(date, exercise.id, {
+          isGymMode,
+          workoutIsGymMode: workout?.isGymMode,
+          weekVariant: getAutoWeekVariant(date)
+        })
+      : `${dateStr}_${exerciseId}`;
+
+    updateTempExerciseData({
       ...currentData,
       reps: {
         ...currentData.reps,
         [key]: reps
       }
-    };
-    updateTempExerciseData(newData);
+    });
   };
 
   // Fonctions locales pour les étirements
@@ -465,18 +507,13 @@ const TodayTab = () => {
   const handleSessionFeedback = () => {
     // Calculer la durée réelle basée sur les exercices accomplis
     const calculateSessionDuration = () => {
+      const sessionData = getCurrentData();
       const completedExercises = (workout.exercices || []).filter((exercise) => {
-        // Générer la clé appropriée selon le type d'exercice
-        let exerciseKey = `${dateStr}_${exercise.id}`;
-        
-        // Si c'est un exercice de salle (mode gym activé), ajouter le suffixe de semaine
-        if (isGymMode && workout.isGymMode) {
-          const currentWeekVariant = getAutoWeekVariant(currentDate);
-          const weekSuffix = currentWeekVariant === 'A' ? '_semaineA' : '_semaineB';
-          exerciseKey = `${dateStr}_${exercise.id}${weekSuffix}`;
-        }
-        
-        return data.checkedExercises[exerciseKey] || false;
+        const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
+          isGymMode,
+          workoutIsGymMode: workout.isGymMode
+        });
+        return keys.some((k) => sessionData.checkedExercises?.[k] === true);
       });
       
       if (completedExercises.length === 0) return 0;
@@ -747,24 +784,48 @@ const TodayTab = () => {
           <div className="space-y-3">
             {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
             {programExercises.map((exercise) => {
-            // Générer la clé appropriée selon le type d'exercice
-            let exerciseKey = `${dateStr}_${exercise.id}`;
-            
-            // Si c'est un exercice de salle (mode gym activé), ajouter le suffixe de semaine
-            if (isGymMode && workout.isGymMode) {
-              const currentWeekVariant = getAutoWeekVariant(currentDate);
-              const weekSuffix = currentWeekVariant === 'A' ? '_semaineA' : '_semaineB';
-              exerciseKey = `${dateStr}_${exercise.id}${weekSuffix}`;
-            }
-            
             const currentData = getCurrentData();
-            const isChecked = currentData.checkedExercises[exerciseKey] || false;
-            const reps = currentData.reps[exerciseKey] || '';
+            const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
+              isGymMode,
+              workoutIsGymMode: workout.isGymMode
+            });
+            const readKey = resolveBestRepsStorageKey(currentData, keys) || keys[0];
+            const isChecked = keys.some((k) => currentData.checkedExercises?.[k] === true);
+            const reps =
+              currentData.reps?.[readKey] !== undefined && currentData.reps?.[readKey] !== null
+                ? String(currentData.reps[readKey])
+                : '';
+
+            const coeffs = currentData.exerciseIntensityCoeffs ?? {};
+            let loadCoeff = resolveExerciseIntensityCoeff(exercise, coeffs);
+            if (
+              exercise?.originalId != null &&
+              String(exercise.originalId) !== String(exercise.id)
+            ) {
+              const b = resolveExerciseIntensityCoeff(
+                { ...exercise, id: exercise.originalId },
+                coeffs
+              );
+              const hasA =
+                coeffs[String(exercise.id)] !== undefined &&
+                coeffs[String(exercise.id)] !== null &&
+                coeffs[String(exercise.id)] !== '';
+              const hasB =
+                coeffs[String(exercise.originalId)] !== undefined &&
+                coeffs[String(exercise.originalId)] !== null &&
+                coeffs[String(exercise.originalId)] !== '';
+              if (hasB && !hasA) loadCoeff = b;
+            }
 
             return (
               <div key={exercise.id} className="flex items-center space-x-3 p-4 bg-slate-700/50 rounded-lg border border-slate-600/50 hover:bg-slate-700/70 transition-all duration-200">
-                <div className="flex-1">
-                  <div className="font-medium text-white">{exercise.name}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <div className="font-medium text-white shrink-0">{exercise.name}</div>
+                    <span className="shrink-0 inline-flex items-center text-amber-300">
+                      <LoadDifficultyStars coeff={loadCoeff} className="scale-95" />
+                    </span>
+                  </div>
                   <div className="text-sm text-gray-300">
                     {exercise.series}
                     {exercise.materiel && ` • ${exercise.materiel}`}

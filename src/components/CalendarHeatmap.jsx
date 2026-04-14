@@ -23,7 +23,7 @@ import Input from './ui/Input';
 import Button from './ui/Button';
 import { Check, Save } from 'lucide-react';
 import { calculateDayIntensityWithGarmin, getGarminActivityIcons } from '../utils/garminCalendarUtils';
-import { 
+import {
   isMockEnduranceSession, 
   parseDurationToMinutes, 
   normalizeDateString,
@@ -34,6 +34,13 @@ import {
   validateNumericValue
 } from '../utils/calendarUtils';
 import {
+  buildDailyTrainingLoadByDate,
+  resolveExerciseIntensityCoeff,
+  getEnduranceLoadForDate,
+  computeStrengthCalendarContribution
+} from '../utils/trainingLoadUtils';
+import LoadDifficultyStars from './sport/LoadDifficultyStars';
+import {
   getDayJustification,
   isDayWithoutActivity,
   JUSTIFICATION_REASONS,
@@ -43,6 +50,7 @@ import {
 import { useTranslation } from '../utils/translations';
 import { useFormatters } from '../utils/translations/formatters-hook';
 import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../utils/runningSessionTypeLabel';
+import { collectCalendarRepKeysForExercise, resolveBestRepsStorageKey } from '../utils/exerciseKeyGenerator';
 
 const CalendarHeatmap = ({
   workoutHistory = [],
@@ -120,44 +128,9 @@ const CalendarHeatmap = ({
       const initialChecked = {};
       
       workout.exercices.forEach(exercise => {
-        const baseKey = `${dateStr}_${exercise.id}`;
-        
-        // ✅ CORRECTION : Chercher TOUTES les variantes possibles (base, _semaineA, _semaineB)
-        // et prendre celle qui a des données valides, exactement comme dans getIntensityForDate
-        const possibleKeys = [
-          baseKey,
-          `${baseKey}_semaineA`,
-          `${baseKey}_semaineB`
-        ];
-        
-        let bestKey = null;
-        let bestReps = 0;
-        let foundKey = null;
-        
-        // Parcourir toutes les variantes pour trouver la meilleure
-        for (const key of possibleKeys) {
-          const keyReps = allDataForEntry.reps?.[key];
-          const keyChecked = allDataForEntry.checkedExercises?.[key];
-          
-          // Si cette clé a des données valides (checked ET reps > 0), c'est la meilleure
-          if (keyChecked === true && keyReps !== undefined && parseInt(keyReps) > 0) {
-            const parsedReps = parseInt(keyReps) || 0;
-            if (parsedReps > bestReps) {
-              bestKey = key;
-              bestReps = parsedReps;
-            }
-          }
-          
-          // Si on n'a pas encore trouvé de clé et que celle-ci existe, la garder en fallback
-          if (!foundKey && (keyReps !== undefined || keyChecked !== undefined)) {
-            foundKey = key;
-          }
-        }
-        
-        // Utiliser la meilleure clé si trouvée, sinon utiliser la première clé trouvée, sinon clé de base
-        const finalKey = bestKey || foundKey || baseKey;
-        
-        // Récupérer les valeurs depuis la clé finale
+        const keys = collectCalendarRepKeysForExercise(dateStr, exercise);
+        const finalKey =
+          resolveBestRepsStorageKey(allDataForEntry, keys) || `${dateStr}_${exercise.id}`;
         initialReps[exercise.id] = allDataForEntry.reps?.[finalKey] || '';
         initialChecked[exercise.id] = allDataForEntry.checkedExercises?.[finalKey] || false;
       });
@@ -229,6 +202,20 @@ const CalendarHeatmap = ({
     
     return { min, max, thresholds, dailyReps };
   }, [allData?.reps]);
+
+  // Seuils dynamiques basés sur la charge pondérée (alignés sur buildDailyTrainingLoadByDate)
+  const dynamicLoadThresholds = useMemo(() => {
+    const dailyLoad = buildDailyTrainingLoadByDate(allData, getExerciseNameById);
+    const values = Object.values(dailyLoad).filter((v) => v > 0);
+    if (values.length === 0) {
+      return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100], dailyLoad };
+    }
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const thresholds = [0, min, min + range * 0.33, min + range * 0.66, max];
+    return { min, max, thresholds, dailyLoad };
+  }, [allData, getExerciseNameById]);
 
   // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
   // calculateDynamicIntensityLevel remplacé par calculateIntensityLevel (importée)
@@ -637,6 +624,8 @@ const CalendarHeatmap = ({
       return { 
         level: 0, 
         reps: 0, 
+        trainingLoad: 0,
+        strengthLoad: 0,
         duration: 0, 
         exerciseCount: 0, 
         completedCount: 0, 
@@ -651,6 +640,7 @@ const CalendarHeatmap = ({
     // ✅ CORRECTION : Calculer les répétitions totales de manière séquentielle et claire
     // Le total doit être : exercices classiques COCHÉS + reps d'endurance (pompes, boxe, défis complétés)
     let totalReps = 0; // ✅ CORRECTION : Commencer à 0 au lieu de enduranceData.reps
+    let strengthLoad = 0; // Charge pondérée (reps × coefficient) — musculation / pdc
     let completedExercises = 0;
     let totalPlannedExercises = exercisesList.length;
     let exercisesReps = 0; // Pour debug : somme des reps des exercices classiques
@@ -672,42 +662,10 @@ const CalendarHeatmap = ({
     }
     
     exercisesList.forEach(exercise => {
+      const uniquePossibleKeys = collectCalendarRepKeysForExercise(dateStr, exercise);
       const baseKey = `${dateStr}_${exercise.id}`;
-      
-      // ✅ CORRECTION : Chercher toutes les variantes possibles et choisir celle qui a des données valides
-      // Ordre de priorité : variante avec données valides > variante avec données > aucune
-      const possibleKeys = [
-        baseKey,
-        `${baseKey}_semaineA`,
-        `${baseKey}_semaineB`
-      ];
-      
-      let actualKey = null;
-      let bestKey = null; // Clé avec les meilleures données (checked = true et reps > 0)
-      let bestReps = 0;
-      
-      // Parcourir toutes les variantes pour trouver la meilleure
-      for (const key of possibleKeys) {
-        const keyReps = currentData?.reps?.[key];
-        const keyChecked = currentData?.checkedExercises?.[key];
-        
-        // Si cette clé a des données valides (checked ET reps > 0), c'est la meilleure
-        if (keyChecked === true && keyReps !== undefined && parseInt(keyReps) > 0) {
-          const parsedReps = parseInt(keyReps) || 0;
-          if (parsedReps > bestReps) {
-            bestKey = key;
-            bestReps = parsedReps;
-          }
-        }
-        
-        // Si on n'a pas encore trouvé de clé et que celle-ci existe, la garder en fallback
-        if (!actualKey && (keyReps !== undefined || keyChecked !== undefined)) {
-          actualKey = key;
-        }
-      }
-      
-      // Utiliser la meilleure clé si trouvée, sinon utiliser la première clé trouvée
-      const finalKey = bestKey || actualKey || baseKey;
+      const finalKey =
+        resolveBestRepsStorageKey(currentData, uniquePossibleKeys) || baseKey;
       
       const rawReps = currentData?.reps?.[finalKey] || 0;
       const isCompleted = currentData?.checkedExercises?.[finalKey] || false;
@@ -717,10 +675,10 @@ const CalendarHeatmap = ({
       if (debugThisExercise) {
         console.log(`[DEBUG getIntensityForDate] Exercice: ${exercise.name} (id: ${exercise.id}, type: ${typeof exercise.id})`);
         console.log(`[DEBUG getIntensityForDate]   baseKey: ${baseKey}`);
-        console.log(`[DEBUG getIntensityForDate]   finalKey: ${finalKey}, bestKey: ${bestKey}, actualKey: ${actualKey}`);
+        console.log(`[DEBUG getIntensityForDate]   finalKey: ${finalKey}`);
         console.log(`[DEBUG getIntensityForDate]   rawReps: ${rawReps}, isCompleted: ${isCompleted}`);
-        console.log(`[DEBUG getIntensityForDate]   Clés possibles vérifiées:`, possibleKeys);
-        console.log(`[DEBUG getIntensityForDate]   Valeurs trouvées pour chaque clé:`, possibleKeys.map(k => ({
+        console.log(`[DEBUG getIntensityForDate]   Clés possibles vérifiées:`, uniquePossibleKeys);
+        console.log(`[DEBUG getIntensityForDate]   Valeurs trouvées pour chaque clé:`, uniquePossibleKeys.map(k => ({
           key: k,
           reps: currentData?.reps?.[k],
           checked: currentData?.checkedExercises?.[k]
@@ -736,6 +694,21 @@ const CalendarHeatmap = ({
         completedExercises++;
         exercisesReps += reps;
         totalReps += reps;
+        const coeff = resolveExerciseIntensityCoeff(
+          exercise,
+          currentData?.exerciseIntensityCoeffs || {}
+        );
+        strengthLoad += computeStrengthCalendarContribution(
+          {
+            id: exercise.id,
+            name: exercise.name,
+            nom: exercise.name,
+            series: exercise.series || '',
+            type: exercise.type || ''
+          },
+          reps,
+          coeff
+        );
         if (debugThisExercise) {
           console.log(`[DEBUG getIntensityForDate] ✅ Exercice compté: ${exercise.name} (${reps} reps, clé: ${finalKey})`);
         }
@@ -809,6 +782,8 @@ const CalendarHeatmap = ({
     }
     
     totalReps += enduranceRepsValue;
+
+    const enduranceLoadForCalendar = getEnduranceLoadForDate(dateStr, currentData);
     
     // 🔍 DEBUG : Logger les détails du calcul pour diagnostiquer les problèmes
     // ✅ CORRECTION : Définir enduranceDataRaw avant le bloc if pour éviter les erreurs de scope
@@ -818,19 +793,9 @@ const CalendarHeatmap = ({
       // 🔍 DEBUG DÉTAILLÉ : Tracer chaque exercice compté
       const exercisesDetails = [];
       exercisesList.forEach(exercise => {
-        const baseKey = `${dateStr}_${exercise.id}`;
-        let actualKey = baseKey;
-        if (currentData?.reps?.[baseKey] !== undefined || currentData?.checkedExercises?.[baseKey] !== undefined) {
-          actualKey = baseKey;
-        } else {
-          const possibleKeys = [`${baseKey}_semaineA`, `${baseKey}_semaineB`];
-          for (const possibleKey of possibleKeys) {
-            if (currentData?.reps?.[possibleKey] !== undefined || currentData?.checkedExercises?.[possibleKey] !== undefined) {
-              actualKey = possibleKey;
-              break;
-            }
-          }
-        }
+        const keys = collectCalendarRepKeysForExercise(dateStr, exercise);
+        const actualKey =
+          resolveBestRepsStorageKey(currentData, keys) || `${dateStr}_${exercise.id}`;
         const reps = parseInt(currentData?.reps?.[actualKey] || 0);
         const isCompleted = currentData?.checkedExercises?.[actualKey] || false;
         if (isCompleted && reps > 0) {
@@ -1201,12 +1166,11 @@ const CalendarHeatmap = ({
           // 2. Si il y a que du temps → basé sur le temps (seuils dynamiques)
           // 3. Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
           
-          if (totalReps > 0) {
-            // PRIORITÉ AUX REPS : Utiliser les seuils dynamiques basés sur les données réelles
-            // ✅ PHASE 2.1 : Utiliser les seuils mémorisés (évite les recalculs inutiles)
-            const { thresholds } = dynamicThresholds;
-            // ✅ PHASE 1 : Utiliser la fonction centralisée
-            intensityLevel = calculateIntensityLevel(totalReps, thresholds);
+          if (totalReps > 0 || strengthLoad > 0 || enduranceLoadForCalendar > 0) {
+            // Charge muscu pondérée + endurance (course = durée / allure / type ; autres = reps)
+            const totalIntensityMetric = strengthLoad + enduranceLoadForCalendar;
+            const { thresholds } = dynamicLoadThresholds;
+            intensityLevel = calculateIntensityLevel(totalIntensityMetric, thresholds);
             
             // ✅ LOGS DE DEBUG DÉSACTIVÉS pour réduire le bruit (33k messages)
             // Debug pour le 28 octobre 2025 (réactiver uniquement si nécessaire)
@@ -1280,6 +1244,8 @@ const CalendarHeatmap = ({
     const result = {
       level: adjustedIntensity, // Utiliser le niveau ajusté par Garmin
       reps: totalReps,
+      trainingLoad: strengthLoad + enduranceLoadForCalendar,
+      strengthLoad,
       duration: realDuration,
       exerciseCount: totalPlannedExercises,
       completedCount: completedExercises,
@@ -1297,66 +1263,25 @@ const CalendarHeatmap = ({
       session: completedExercises > 0 ? { 
         exercises: exercisesList
           .filter(ex => {
-            // Chercher la clé avec les variantes (même logique que pour le calcul)
-            const baseKey = `${dateStr}_${ex.id}`;
-            let actualKey = baseKey;
-            
-            if (currentData?.reps?.[baseKey] !== undefined || currentData?.checkedExercises?.[baseKey] !== undefined) {
-              actualKey = baseKey;
-            } else {
-              const possibleKeys = [`${baseKey}_semaineA`, `${baseKey}_semaineB`];
-              for (const possibleKey of possibleKeys) {
-                if (currentData?.reps?.[possibleKey] !== undefined || currentData?.checkedExercises?.[possibleKey] !== undefined) {
-                  actualKey = possibleKey;
-                  break;
-                }
-              }
-            }
-            
+            const keys = collectCalendarRepKeysForExercise(dateStr, ex);
+            const actualKey =
+              resolveBestRepsStorageKey(currentData, keys) || `${dateStr}_${ex.id}`;
             const reps = parseInt(currentData?.reps?.[actualKey] || 0);
             const isCompleted = currentData?.checkedExercises?.[actualKey] || false;
-            // ✅ CORRECTION : Seulement si complété ET avec des reps > 0 (même logique que le calcul)
             return isCompleted && reps > 0;
           })
           .map(ex => {
-            // ✅ CORRECTION : Utiliser la même logique améliorée que pour le calcul principal
+            const keys = collectCalendarRepKeysForExercise(dateStr, ex);
             const baseKey = `${dateStr}_${ex.id}`;
-            const possibleKeys = [
-              baseKey,
-              `${baseKey}_semaineA`,
-              `${baseKey}_semaineB`
-            ];
-            
-            let actualKey = null;
-            let bestKey = null;
-            let bestReps = 0;
-            
-            // Parcourir toutes les variantes pour trouver la meilleure
-            for (const key of possibleKeys) {
-              const keyReps = currentData?.reps?.[key];
-              const keyChecked = currentData?.checkedExercises?.[key];
-              
-              // Si cette clé a des données valides (checked ET reps > 0), c'est la meilleure
-              if (keyChecked === true && keyReps !== undefined && parseInt(keyReps) > 0) {
-                const parsedReps = parseInt(keyReps) || 0;
-                if (parsedReps > bestReps) {
-                  bestKey = key;
-                  bestReps = parsedReps;
-                }
-              }
-              
-              // Si on n'a pas encore trouvé de clé et que celle-ci existe, la garder en fallback
-              if (!actualKey && (keyReps !== undefined || keyChecked !== undefined)) {
-                actualKey = key;
-              }
-            }
-            
-            const finalKey = bestKey || actualKey || baseKey;
+            const finalKey = resolveBestRepsStorageKey(currentData, keys) || baseKey;
             
             return {
               name: ex.name,
               reps: parseInt(currentData?.reps?.[finalKey] || 0),
               exerciseId: ex.id,
+              series: ex.series || '',
+              type: ex.type || '',
+              materiel: ex.materiel || '',
               programName: ex.programName || 'Programme inconnu',
               programId: ex.programId
             };
@@ -1453,8 +1378,6 @@ const CalendarHeatmap = ({
     
     const days = [];
     const currentDay = new Date(startDate);
-    // ✅ PHASE 2.1 : Utiliser les seuils mémorisés (évite les recalculs inutiles)
-    const { thresholds } = dynamicThresholds;
     
     // Générer 6 semaines (42 jours) pour couvrir tout le mois
     for (let i = 0; i < 42; i++) {
@@ -1470,6 +1393,8 @@ const CalendarHeatmap = ({
         intensity = {
           level: 0,
           reps: 0,
+          trainingLoad: 0,
+          strengthLoad: 0,
           duration: 0,
           exerciseCount: 0,
           completedCount: 0,
@@ -3049,12 +2974,29 @@ const CalendarHeatmap = ({
                     // Récupérer le nom du programme depuis l'exercice ou via getExerciseNameById
                     const programName = exercise.programName || 'Programme inconnu';
                     const exerciseName = exercise.name || (getExerciseNameById ? getExerciseNameById(exercise.exerciseId || exercise.id) : `Exercice ${exercise.exerciseId || exercise.id}`);
+                    const coeffData = getCurrentData();
+                    const userCoeffs = coeffData?.exerciseIntensityCoeffs || {};
+                    const loadCoeff = resolveExerciseIntensityCoeff(
+                      {
+                        id: exercise.exerciseId ?? exercise.id,
+                        name: exerciseName,
+                        nom: exerciseName,
+                        series: exercise.series || '',
+                        type: exercise.type || ''
+                      },
+                      userCoeffs
+                    );
                     
                     return (
                       <div key={index} className="bg-slate-700/30 rounded p-2">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-slate-300 font-medium">{exerciseName}</span>
-                          <span className="text-white font-medium">{exercise.reps} {t('calendar.heatmap.dayDetails.reps')}</span>
+                        <div className="flex justify-between items-start gap-2 mb-1">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-slate-300 font-medium">{exerciseName}</span>
+                              <LoadDifficultyStars coeff={loadCoeff} className="scale-90" />
+                            </div>
+                          </div>
+                          <span className="text-white font-medium shrink-0">{exercise.reps} {t('calendar.heatmap.dayDetails.reps')}</span>
                         </div>
                         {programName && (
                           <div className="text-xs text-slate-400 flex items-center gap-1">

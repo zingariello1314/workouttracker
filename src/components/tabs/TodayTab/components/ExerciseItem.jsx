@@ -7,13 +7,16 @@
  * @module ExerciseItem
  */
 
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Zap } from 'lucide-react';
 import { Checkbox } from '../../ui/Input';
 import { Input } from '../../ui/Input';
 import Button from '../../ui/Button';
 import { useExerciseTracking } from '../hooks/useExerciseTracking';
+import { useWorkout } from '../../../../context/WorkoutContext';
 import { calculateAutoReps, detectExerciseUnit } from '../../../../utils/exerciseCalculations';
+import { resolveExerciseIntensityCoeff } from '../../../../utils/trainingLoadUtils';
+import LoadDifficultyStars from '../../../sport/LoadDifficultyStars';
 
 /**
  * Composant pour afficher un exercice individuel
@@ -32,43 +35,53 @@ import { calculateAutoReps, detectExerciseUnit } from '../../../../utils/exercis
  *   onShowVariations={(exercise) => setShowVariations(exercise)}
  * />
  */
-const ExerciseItem = memo(({ exercise, date, isGymMode, onShowVariations }) => {
+const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
   const { toggleExercise, updateReps, getExerciseStatus } = useExerciseTracking({
     date,
     isGymMode
   });
+  const { data, getCurrentData } = useWorkout();
 
-  const { isChecked, reps } = getExerciseStatus(exercise.id);
+  const { isChecked, reps } = getExerciseStatus(exercise);
 
-  // 🔴 FIX : Détecter l'unité de l'exercice (sec, min, ou reps)
-  const exerciseUnit = useMemo(() => {
-    const unit = detectExerciseUnit(exercise);
-    // 🔴 DEBUG : Logger pour vérifier la détection (toujours pour debug)
-    console.log(`[ExerciseItem] ${exercise.name || 'Unknown'} - series: "${exercise.series}" - unit:`, unit);
-    return unit;
-  }, [exercise]);
+  const loadCoeff = useMemo(() => {
+    const live = typeof getCurrentData === 'function' ? getCurrentData() : null;
+    const coeffs = live?.exerciseIntensityCoeffs ?? data?.exerciseIntensityCoeffs ?? {};
+    const a = resolveExerciseIntensityCoeff(exercise, coeffs);
+    if (exercise?.originalId != null && String(exercise.originalId) !== String(exercise.id)) {
+      const b = resolveExerciseIntensityCoeff({ ...exercise, id: exercise.originalId }, coeffs);
+      const hasA =
+        coeffs[String(exercise.id)] !== undefined &&
+        coeffs[String(exercise.id)] !== null &&
+        coeffs[String(exercise.id)] !== '';
+      const hasB =
+        coeffs[String(exercise.originalId)] !== undefined &&
+        coeffs[String(exercise.originalId)] !== null &&
+        coeffs[String(exercise.originalId)] !== '';
+      if (hasB && !hasA) return b;
+    }
+    return a;
+  }, [exercise, data?.exerciseIntensityCoeffs, getCurrentData]);
+
+  // Détecter l'unité de l'exercice (sec, min, ou reps)
+  const exerciseUnit = useMemo(() => detectExerciseUnit(exercise), [exercise]);
 
   // Déterminer le placeholder et le label selon l'unité
   const inputPlaceholder = useMemo(() => {
     if (!exerciseUnit) {
-      console.warn(`[ExerciseItem] No unit detected for ${exercise.name}, defaulting to Reps`);
       return 'Reps';
     }
-    const placeholder = exerciseUnit.unit === 'sec' ? 'Sec' : 
-                        exerciseUnit.unit === 'min' ? 'Min' : 
-                        'Reps';
-    console.log(`[ExerciseItem] ${exercise.name} - placeholder: "${placeholder}", unit:`, exerciseUnit);
-    return placeholder;
-  }, [exerciseUnit, exercise.name]);
+    return exerciseUnit.unit === 'sec' ? 'Sec' :
+      exerciseUnit.unit === 'min' ? 'Min' :
+        'Reps';
+  }, [exerciseUnit]);
 
   const inputLabel = useMemo(() => {
     if (!exerciseUnit) return 'Reps';
-    const label = exerciseUnit.unit === 'sec' ? 'sec' : 
-                   exerciseUnit.unit === 'min' ? 'min' : 
-                   'Reps';
-    console.log(`[ExerciseItem] ${exercise.name} - label: "${label}"`);
-    return label;
-  }, [exerciseUnit, exercise.name]);
+    return exerciseUnit.unit === 'sec' ? 'sec' :
+      exerciseUnit.unit === 'min' ? 'min' :
+        'Reps';
+  }, [exerciseUnit]);
 
   // Handler pour auto-remplissage au focus
   const handleInputFocus = useCallback(() => {
@@ -81,20 +94,20 @@ const ExerciseItem = memo(({ exercise, date, isGymMode, onShowVariations }) => {
       
       const autoReps = calculateAutoReps(exercise.series, { round: true });
       if (autoReps !== null) {
-        updateReps(exercise.id, autoReps.toString());
+        updateReps(exercise, autoReps.toString());
       }
     }
-  }, [exercise.series, exercise.id, reps, updateReps, exerciseUnit]);
+  }, [exercise, reps, updateReps, exerciseUnit]);
 
   // Handler pour toggle
   const handleToggle = useCallback(() => {
-    toggleExercise(exercise.id);
-  }, [exercise.id, toggleExercise]);
+    toggleExercise(exercise);
+  }, [exercise, toggleExercise]);
 
   // Handler pour changement reps
   const handleRepsChange = useCallback((e) => {
-    updateReps(exercise.id, e.target.value);
-  }, [exercise.id, updateReps]);
+    updateReps(exercise, e.target.value);
+  }, [exercise, updateReps]);
 
   // Handler pour afficher variations
   const handleShowVariations = useCallback(() => {
@@ -105,8 +118,13 @@ const ExerciseItem = memo(({ exercise, date, isGymMode, onShowVariations }) => {
 
   return (
     <div className="flex items-center space-x-3 p-4 bg-slate-700/50 rounded-lg border border-slate-600/50 hover:bg-slate-700/70 transition-all duration-200">
-      <div className="flex-1">
-        <div className="font-medium text-white">{exercise.name}</div>
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
+          <div className="font-medium text-white shrink-0">{exercise.name}</div>
+          <span className="shrink-0 inline-flex items-center text-amber-300">
+            <LoadDifficultyStars coeff={loadCoeff} className="scale-95" />
+          </span>
+        </div>
         <div className="text-sm text-gray-300">
           {exercise.series}
           {exercise.materiel && ` • ${exercise.materiel}`}
@@ -155,7 +173,7 @@ const ExerciseItem = memo(({ exercise, date, isGymMode, onShowVariations }) => {
       </div>
     </div>
   );
-});
+};
 
 ExerciseItem.displayName = 'ExerciseItem';
 
