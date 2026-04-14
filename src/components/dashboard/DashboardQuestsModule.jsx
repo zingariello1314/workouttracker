@@ -4,6 +4,12 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useQuietQuestEngine } from '../../hooks/useQuietQuestEngine';
 import { useQuietQuestStats } from '../../hooks/useQuietQuestStats';
 import { CRENEAU_ORDER, getCreneauForQuest, getHeureDisplay, getHeureSortMinutes } from '../../utils/quests';
+import { mergeAddictionQuitData } from '../../utils/addictionQuitSessionsXp';
+import {
+  CIGARETTE_TIMELINE_FR,
+  THC_TIMELINE_FR,
+  elapsedMs
+} from '../../utils/addictionQuitConstants';
 
 const creneauLabel = {
   matin: 'Matin',
@@ -15,7 +21,7 @@ const creneauLabel = {
 };
 
 const DashboardQuestsModule = () => {
-  const { setActiveTab } = useWorkout();
+  const { setActiveTab, data } = useWorkout();
   const [viewMode, setViewMode] = useState('hour'); // hour | category | timetable
   const {
     allQuests,
@@ -27,6 +33,38 @@ const DashboardQuestsModule = () => {
     toggleQuestValidation
   } = useQuietQuestEngine();
   const stats30d = useQuietQuestStats('30d');
+  const addictionData = useMemo(() => mergeAddictionQuitData(data?.addictionQuitData), [data?.addictionQuitData]);
+  const nowMs = Date.now();
+
+  const addictionTracks = useMemo(() => {
+    const build = (trackId, label, milestones) => {
+      const track = addictionData?.tracks?.[trackId] || {};
+      const quitAtIso = track?.quitAtIso || null;
+      if (!quitAtIso) {
+        return {
+          id: trackId,
+          label,
+          elapsed: 'Pas encore démarré',
+          milestone: 'Aucun jalon débloqué'
+        };
+      }
+      const ms = elapsedMs(quitAtIso, nowMs);
+      const reached = milestones.filter((m) => ms >= m.ms);
+      const last = reached.length ? reached[reached.length - 1].label : 'Aucun jalon débloqué';
+      const days = Math.floor(ms / (24 * 3600 * 1000));
+      return {
+        id: trackId,
+        label,
+        elapsed: `${days} jour${days > 1 ? 's' : ''} d'arrêt`,
+        milestone: last
+      };
+    };
+
+    return [
+      build('cigarette', addictionData?.tracks?.cigarette?.displayName || 'Tabac', CIGARETTE_TIMELINE_FR),
+      build('thc', addictionData?.tracks?.thc?.displayName || 'THC / cannabis', THC_TIMELINE_FR)
+    ];
+  }, [addictionData, nowMs]);
 
   const questsToday = useMemo(
     () => getQuestsForDate(todayDate) || [],
@@ -296,6 +334,30 @@ const DashboardQuestsModule = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-2">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="text-[11px] text-slate-300 font-semibold">Arrêt addictions (vue du jour)</div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab?.('addiction-quit')}
+                  className="text-[10px] px-2 py-1 rounded border border-cyan-400/50 bg-cyan-500/20 text-cyan-100 hover:bg-cyan-500/30"
+                >
+                  Ouvrir
+                </button>
+              </div>
+              <div className="space-y-1.5">
+                {addictionTracks.map((row) => (
+                  <div key={`aq-${row.id}`} className="rounded border border-slate-700/70 bg-slate-950/50 p-2">
+                    <div className="text-xs text-slate-200 font-medium">{row.label}</div>
+                    <div className="text-[11px] text-cyan-200">{row.elapsed}</div>
+                    <div className="text-[11px] text-slate-400 truncate" title={row.milestone}>
+                      Dernier jalon : {row.milestone}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

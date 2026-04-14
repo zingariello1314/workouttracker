@@ -17,6 +17,8 @@ import { calculateAutoReps, detectExerciseUnit } from '../../utils/exerciseCalcu
 import CalendarHeatmap from '../CalendarHeatmap';
 import { useGarminImport } from '../tabs/GarminTab/hooks/useGarminImport';
 import { useGarminSync } from '../tabs/GarminTab/hooks/useGarminSync';
+import BodyMap from '../sport/recap/BodyMap';
+import { computeRecapMuscleState } from '../../utils/sport/recapMuscleLoadEngine';
 import {
   formatDistance,
   formatDuration,
@@ -26,8 +28,20 @@ import {
 } from '../tabs/GarminTab/utils/garminFormatters';
 import { useTranslation } from '../../utils/translations';
 import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../../utils/runningSessionTypeLabel';
+import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const DASHBOARD_RECAP_PERIOD_KEY = 'dashboard.sport.recapPeriod';
+const DASHBOARD_RECAP_PERIODS = [
+  { id: 'today', label: "Aujourd'hui" },
+  { id: '7d', label: '7j' },
+  { id: '30d', label: '30j' },
+  { id: '3m', label: '3m' },
+  { id: '6m', label: '6m' },
+  { id: '1y', label: '1a' },
+  { id: '2y', label: '2a' },
+  { id: 'all', label: 'Toujours' }
+];
 
 const toDateKey = (value) => {
   if (!value) return null;
@@ -162,8 +176,11 @@ const DashboardGarminSportRecapBlock = () => {
     isGymMode,
     getTodayWorkout,
     getCurrentData,
+    getExerciseNameById,
     updateTempExerciseData,
+    updateTempStretchData,
     saveExerciseChanges,
+    saveStretchChanges,
     getWorkoutHistory,
     setActiveTab
   } = useWorkout();
@@ -172,6 +189,16 @@ const DashboardGarminSportRecapBlock = () => {
   const [syncStatus, setSyncStatus] = useState(null);
   const [selectedDate, setSelectedDate] = useState(() => new Date(currentDate));
   const [togglingExerciseId, setTogglingExerciseId] = useState(null);
+  const [togglingStretchMoment, setTogglingStretchMoment] = useState(null);
+  const [recapPeriod, setRecapPeriod] = useState(() => {
+    try {
+      const stored = localStorage.getItem(DASHBOARD_RECAP_PERIOD_KEY);
+      if (stored && DASHBOARD_RECAP_PERIODS.some((p) => p.id === stored)) return stored;
+    } catch {
+      // no-op
+    }
+    return 'all';
+  });
   const { importToEndurance } = useGarminImport();
   const { syncNow, loading: syncingGarmin } = useGarminSync(setGarminData, setSyncStatus, importToEndurance);
 
@@ -180,6 +207,19 @@ const DashboardGarminSportRecapBlock = () => {
   const selectedWorkout = getTodayWorkout(selectedDate, isGymMode);
   const { programExercises, additionalExercises, metadata } = useTodayExercises({ date: selectedDate, isGymMode });
   const liveWorkoutData = getCurrentData();
+
+  const recapState = useMemo(
+    () => computeRecapMuscleState(liveWorkoutData, recapPeriod, getExerciseNameById, selectedDate),
+    [liveWorkoutData, recapPeriod, getExerciseNameById, selectedDate]
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DASHBOARD_RECAP_PERIOD_KEY, recapPeriod);
+    } catch {
+      // no-op
+    }
+  }, [recapPeriod]);
 
   useEffect(() => {
     setSelectedDate(new Date(currentDate));
@@ -289,6 +329,103 @@ const DashboardGarminSportRecapBlock = () => {
     }
     return base;
   };
+
+  const stretchEntries = useMemo(() => {
+    const out = [];
+    const added = new Set();
+    const stretchMoments = ['matin', 'midi', 'soir'];
+
+    const descriptionFromValue = (val) => {
+      if (typeof val === 'string') return val.trim();
+      if (!val || typeof val !== 'object') return '';
+      if (typeof val.instructions === 'string') return val.instructions.trim();
+      if (Array.isArray(val.exercises) && val.exercises.length) {
+        const names = val.exercises
+          .map((ex) => ex?.name || ex?.nom || '')
+          .map((s) => String(s).trim())
+          .filter(Boolean);
+        if (names.length) return names.join(' · ');
+      }
+      return '';
+    };
+
+    const walk = (node) => {
+      if (!node || typeof node !== 'object') return;
+      Object.entries(node).forEach(([key, value]) => {
+        const k = String(key || '').toLowerCase().trim();
+        if (stretchMoments.includes(k)) {
+          const desc = descriptionFromValue(value);
+          if (desc && !added.has(k)) {
+            out.push({ moment: k, description: desc });
+            added.add(k);
+          }
+          return;
+        }
+        if (value && typeof value === 'object') walk(value);
+      });
+    };
+
+    walk(selectedWorkout?.etirements || null);
+    return out;
+  }, [selectedWorkout]);
+
+  const isStretchChecked = (moment) => {
+    const checked = liveWorkoutData?.checkedStretches || {};
+    const key = `${selectedDateKey}_${moment}`;
+    return Boolean(checked[key]);
+  };
+
+  const handleToggleStretch = async (moment) => {
+    if (!moment) return;
+    setTogglingStretchMoment(moment);
+    try {
+      const currentData = getCurrentData();
+      const key = `${selectedDateKey}_${moment}`;
+      const next = {
+        ...currentData,
+        checkedStretches: {
+          ...(currentData?.checkedStretches || {}),
+          [key]: !Boolean(currentData?.checkedStretches?.[key])
+        }
+      };
+      updateTempStretchData(next);
+      await saveStretchChanges();
+    } catch {
+      // no-op
+    } finally {
+      setTogglingStretchMoment(null);
+    }
+  };
+
+  const muscleStatsRows = useMemo(() => {
+    const rows = [
+      { id: MuscleGroups.CHEST, label: 'Pectoraux' },
+      { id: MuscleGroups.BACK, label: 'Dos' },
+      { id: MuscleGroups.SHOULDERS, label: 'Épaules' },
+      { id: MuscleGroups.BICEPS, label: 'Biceps' },
+      { id: MuscleGroups.TRICEPS, label: 'Triceps' },
+      { id: MuscleGroups.QUADS, label: 'Quadriceps' },
+      { id: MuscleGroups.HAMSTRINGS, label: 'Ischio-jambiers' },
+      { id: MuscleGroups.CALVES, label: 'Mollets' },
+      { id: MuscleGroups.TIBIALIS_ANTERIOR, label: 'Tibial antérieur' },
+      { id: MuscleGroups.CORE, label: 'Tronc / gainage' }
+    ];
+    return rows.map((row) => {
+      const g = recapState.byGroup?.[row.id] || {};
+      const reps = Math.round(recapState.repShareByGroup?.[row.id] || 0);
+      const cardioMin = Math.round(recapState.cardioMinutesByGroup?.[row.id] || 0);
+      const cardioPctRaw = recapState.cardioActivationPctByGroup?.[row.id] || 0;
+      const cardioPct = Math.round(cardioPctRaw * 10) / 10;
+      const load = Number(g.displayScore || 0);
+      return {
+        ...row,
+        reps,
+        cardioMin,
+        cardioPct,
+        load: load < 10 ? load.toFixed(1) : String(Math.round(load))
+      };
+    });
+  }, [recapState]);
 
   const isExerciseChecked = (exerciseId) => {
     const checked = liveWorkoutData?.checkedExercises || {};
@@ -599,6 +736,57 @@ const DashboardGarminSportRecapBlock = () => {
               </div>
             )}
 
+            {/* Gros bloc corps + stats, placé juste sous les métriques Garmin */}
+            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-sm font-semibold text-slate-200">Corps (zones colorées)</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {DASHBOARD_RECAP_PERIODS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setRecapPeriod(p.id)}
+                      className={`px-2 py-1 rounded-md text-[11px] border transition-colors ${
+                        recapPeriod === p.id
+                          ? 'bg-emerald-600/80 border-emerald-400/70 text-white'
+                          : 'bg-slate-800/70 border-slate-600/70 text-slate-300 hover:bg-slate-700/70'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4 items-start">
+                <BodyMap
+                  muscleColors={recapState.meshColors}
+                  uniformBodyColor={recapState.uniformBodyColor}
+                />
+                <div className="rounded-xl border border-slate-700/70 bg-slate-900/40 p-3">
+                  <div className="text-xs font-semibold text-slate-300 mb-2">Stats par muscle (période sélectionnée)</div>
+                  <div className="max-h-[520px] overflow-auto pr-1 space-y-1.5">
+                    {muscleStatsRows.map((row) => (
+                      <div
+                        key={`muscle-stat-${row.id}`}
+                        className="rounded-lg border border-slate-700/60 bg-slate-950/45 px-2.5 py-2"
+                      >
+                        <div className="text-xs font-semibold text-slate-200">{row.label}</div>
+                        <div className="mt-1 grid grid-cols-3 gap-2 text-[11px] text-slate-400">
+                          <span>Reps: <span className="text-cyan-200 font-semibold">{row.reps}</span></span>
+                          <span>Cardio: <span className="text-emerald-200 font-semibold">{row.cardioMin} min</span></span>
+                          <span>% cardio: <span className="text-amber-200 font-semibold">{row.cardioPct}%</span></span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-slate-400">
+                          Charge: <span className="text-white font-semibold">{row.load}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="p-4 rounded-xl bg-slate-900/30 border border-slate-700/40">
               <div className="text-sm font-semibold text-slate-200 mb-2">Résumé Garmin 7 jours</div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -827,6 +1015,43 @@ const DashboardGarminSportRecapBlock = () => {
                       );
                     })}
                   </div>
+                  <div className="mt-4 border-t border-slate-700/60 pt-3">
+                    <div className="text-xs font-semibold text-slate-300 mb-2">Étirements du jour</div>
+                    {stretchEntries.length ? (
+                      <div className="space-y-2">
+                        {stretchEntries.map(({ moment, description }) => {
+                          const checked = isStretchChecked(moment);
+                          const disabled = togglingStretchMoment === moment;
+                          const label =
+                            moment === 'matin' ? 'Matin' :
+                              moment === 'midi' ? 'Midi' :
+                                moment === 'soir' ? 'Soir' : moment;
+                          return (
+                            <div
+                              key={`stretch-${selectedDateKey}-${moment}`}
+                              className="flex items-start gap-2 p-2 rounded-lg border border-slate-700/40 bg-slate-800/30"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={disabled}
+                                onChange={() => handleToggleStretch(moment)}
+                                className="mt-1"
+                              />
+                              <div className="min-w-0">
+                                <div className={`text-sm font-medium ${checked ? 'text-emerald-300 line-through' : 'text-slate-100'}`}>
+                                  {label}
+                                </div>
+                                <div className="text-xs text-slate-400">{description}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500">Aucun étirement défini pour cette séance.</div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="text-sm text-slate-400">Aucune séance planifiée ce jour (repos ou programme vide).</div>
@@ -853,6 +1078,7 @@ const DashboardGarminSportRecapBlock = () => {
                 compact
               />
             </div>
+
           </div>
         </div>
       </div>
