@@ -32,6 +32,10 @@ const FRENCH_LABEL_TO_GROUP = new Map(
     quadriceps: MuscleGroups.QUADS,
     'ischio-jambiers': MuscleGroups.HAMSTRINGS,
     mollets: MuscleGroups.CALVES,
+    'tibial antérieur': MuscleGroups.TIBIALIS_ANTERIOR,
+    'tibial anterieur': MuscleGroups.TIBIALIS_ANTERIOR,
+    tibialis: MuscleGroups.TIBIALIS_ANTERIOR,
+    'tibialis anterior': MuscleGroups.TIBIALIS_ANTERIOR,
     core: MuscleGroups.CORE,
     obliques: MuscleGroups.CORE,
     "grand droit de l'abdomen": MuscleGroups.CORE,
@@ -95,6 +99,9 @@ function heuristicGroupsFromName(name) {
     s.add(MuscleGroups.QUADS);
     s.add(MuscleGroups.HAMSTRINGS);
     s.add(MuscleGroups.CALVES);
+  }
+  if (/tibial|tibialis|dorsiflex|dorsi-flex|toe raise|relev[eé] pointes talon|relev[eé]s tibial/.test(n)) {
+    s.add(MuscleGroups.TIBIALIS_ANTERIOR);
   }
   if (/planche|gainage|crunch|vacuum|mountain|abdo|core|hollow|l-sit|relevé.*genou/.test(n)) {
     s.add(MuscleGroups.CORE);

@@ -1,13 +1,18 @@
 import React, { Suspense, useLayoutEffect, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Bounds, OrbitControls, useGLTF } from '@react-three/drei';
-import * as THREE from 'three';
 import { useTranslation } from '../../../utils/translations';
 
 /** Modèle servi depuis `public/` (copie depuis garmin-server/imagemuscle). */
-export const ANATOMY_MODEL_URL = '/models/anatomy_study_basemesh_human_male_body.glb';
+export const ANATOMY_MODEL_URL = '/models/ecorche-muscles-decoupes.glb';
 
 useGLTF.preload(ANATOMY_MODEL_URL);
+
+function meshKey(name) {
+  return String(name || '')
+    .trim()
+    .replace(/\./g, '_');
+}
 
 /**
  * Clone du GLB + application optionnelle de couleurs par nom de mesh (`muscleColors[mesh.name]`).
@@ -29,16 +34,44 @@ function AnatomyModel({ muscleColors = {}, uniformBodyColor, onMuscleClick }) {
   }, [scene]);
 
   useLayoutEffect(() => {
+    const hasPerMuscleColors = Object.keys(muscleColors || {}).length > 0;
+    // Teinte de base des zones non mappées (squelette/parties non musculaires)
+    // volontairement plus claire pour un rendu plus esthétique.
+    const neutralUnmappedColor = '#64748b';
     root.traverse((child) => {
       if (!child.isMesh) return;
       const mats = Array.isArray(child.material) ? child.material : [child.material];
-      const override = muscleColors[child.name] || uniformBodyColor;
+      const mappedColor =
+        muscleColors[child.name] ||
+        muscleColors[meshKey(child.name)];
+      const override = mappedColor || (hasPerMuscleColors ? neutralUnmappedColor : uniformBodyColor);
       mats.forEach((mat) => {
         if (!mat || !override) return;
+        const isMapped = Boolean(mappedColor);
+
+        // Forcer un rendu lisible "par zone" :
+        // - zones mappées : on neutralise la texture de base du GLB pour voir la vraie couleur de charge
+        // - zones non mappées : teinte neutre sombre
+        if ('map' in mat && mat.map) {
+          mat.map = null;
+        }
+        if ('emissiveMap' in mat && mat.emissiveMap) {
+          mat.emissiveMap = null;
+        }
+        if ('metalnessMap' in mat && mat.metalnessMap) {
+          mat.metalnessMap = null;
+        }
+        if ('roughnessMap' in mat && mat.roughnessMap) {
+          mat.roughnessMap = null;
+        }
+
         if (mat.color) {
           mat.color.set(override);
-          mat.needsUpdate = true;
         }
+        if ('roughness' in mat) mat.roughness = isMapped ? 0.62 : 0.85;
+        if ('metalness' in mat) mat.metalness = isMapped ? 0.08 : 0.02;
+        if ('emissive' in mat) mat.emissive.set(isMapped ? '#0f172a' : '#000000');
+        mat.needsUpdate = true;
       });
     });
   }, [root, muscleColors, uniformBodyColor]);

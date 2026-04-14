@@ -98,11 +98,11 @@ const DashboardQuestsModule = () => {
     setActiveTab?.('quests');
   };
 
-  const renderQuestItem = (quest) => {
+  const renderQuestItem = (quest, questKey) => {
     const checked = isQuestCompletedOnDate(quest.id, todayDate);
     return (
       <button
-        key={quest.id}
+        key={questKey}
         type="button"
         onClick={() => toggleQuestValidation(quest.id, todayDate)}
         className={`w-full text-left rounded-lg border px-3 py-2 flex items-start gap-2 transition-colors ${
@@ -195,7 +195,14 @@ const DashboardQuestsModule = () => {
                   byHour[slot]?.length ? (
                     <div key={slot} className="space-y-2">
                       <div className="text-xs font-semibold text-amber-200">{creneauLabel[slot] || slot}</div>
-                      <div className="space-y-2">{byHour[slot].map(renderQuestItem)}</div>
+                      <div className="space-y-2">
+                        {byHour[slot].map((quest, idx) =>
+                          renderQuestItem(
+                            quest,
+                            `hour-${slot}-${todayDate}-${quest.id}-${idx}-${getHeureDisplay(quest, todayDate, prayerLocation) || 'na'}`
+                          )
+                        )}
+                      </div>
                     </div>
                   ) : null
                 ))}
@@ -205,7 +212,14 @@ const DashboardQuestsModule = () => {
                 {byCategory.map(([cat, list]) => (
                   <div key={cat} className="space-y-2">
                     <div className="text-xs font-semibold text-yellow-200">{cat}</div>
-                    <div className="space-y-2">{list.map(renderQuestItem)}</div>
+                    <div className="space-y-2">
+                      {list.map((quest, idx) =>
+                        renderQuestItem(
+                          quest,
+                          `cat-${cat}-${todayDate}-${quest.id}-${idx}-${getHeureDisplay(quest, todayDate, prayerLocation) || 'na'}`
+                        )
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -220,7 +234,7 @@ const DashboardQuestsModule = () => {
                 <div className="divide-y divide-slate-700/60">
                   {timetableRows.map((row) => (
                     <button
-                      key={row.id}
+                      key={`tt-${todayDate}-${row.id}-${row.time}-${row.category}-${row.name}`}
                       type="button"
                       onClick={() => toggleQuestValidation(row.id, todayDate)}
                       className={`w-full grid grid-cols-[140px_1fr_110px_90px] text-left text-xs ${

@@ -27,8 +27,32 @@ export function recapScoreToHex(score) {
 export function recapScoreToHexRelative(score, referenceMax) {
   const ref = Math.max(1e-9, Number(referenceMax) || 0);
   const s = Math.max(0, Number(score) || 0);
-  const scaled = (s / ref) * 420;
-  return recapScoreToHex(scaled);
+  const ratio = s / ref;
+  const clamped = Math.max(0, Math.min(ratio, 1.25));
+
+  if (clamped <= 0.01) return '#cbd5e1';
+
+  // Mapping continu basé sur la période courante (pas de seuils fixes).
+  // 0.0..1.0 : bleu -> vert -> jaune -> orange -> rouge
+  // >1.0 : violet/sombre (sur-sollicitation relative)
+  const eased = Math.pow(Math.min(clamped, 1), 0.72);
+  let hue;
+  let saturation;
+  let lightness;
+
+  if (clamped <= 1) {
+    hue = 210 - 210 * eased; // 210 (bleu) -> 0 (rouge)
+    saturation = 84;
+    lightness = 69 - 24 * eased;
+  } else {
+    const over = Math.min(1, (clamped - 1) / 0.25);
+    hue = 285 - 45 * over; // violet -> pourpre
+    saturation = 72 + 18 * over;
+    lightness = 45 - 18 * over;
+  }
+
+  // Format avec virgules pour compatibilité parsing `THREE.Color.set(...)`.
+  return `hsl(${Math.round(hue)}, ${Math.round(saturation)}%, ${Math.round(lightness)}%)`;
 }
 
 /**

@@ -353,7 +353,7 @@ export const translations = {
     'recap.bodyHint':
       'Glisser pour orienter · molette ou pincer pour zoomer · rotation automatique',
     'recap.legendIntro':
-      'Échelle indicative : charge affichée = musculation (reps pondérées, decay) + part cardio (voir encadré du haut). Même échelle que les barres « par zone » ci-dessous.',
+      'Échelle relative à la période sélectionnée : les couleurs sont réparties selon tes écarts réels (et non des seuils figés). Charge affichée = musculation (reps pondérées, decay) + part cardio.',
     'recap.legend.level.rest': 'Gris clair — repos / aucune sollicitation',
     'recap.legend.level.veryLow': 'Bleu froid — très faible stimulation',
     'recap.legend.level.undertrained': 'Bleu — sous-entraînement',
@@ -382,12 +382,13 @@ export const translations = {
     'recap.muscleGroup.quads': 'Quadriceps',
     'recap.muscleGroup.hamstrings': 'Ischio-jambiers',
     'recap.muscleGroup.calves': 'Mollets',
+    'recap.muscleGroup.tibialis_anterior': 'Tibial antérieur',
     'recap.muscleGroup.core': 'Gainage / tronc',
     'recap.muscleGroup.full_body': 'Corps entier',
 
     'recap.zones.title': 'Détail par zone musculaire',
     'recap.zones.intro':
-      'Scores du moteur Récap + reps cochées (même source que le calendrier / saisie). Jambes découpées en quadriceps / ischio / mollets ; course et corde répartissent la charge cardio selon le type de séance. Teintes des cartes = volume relatif + charge relative (cohérent avec les couleurs par zone du modèle 3D lorsque le maillage est mappé).',
+      'Scores du moteur Récap + reps cochées (même source que le calendrier / saisie). Jambes découpées en quadriceps / ischio / mollets / tibial antérieur ; course et corde répartissent la charge cardio selon le type de séance, l’allure et la durée. Teintes des cartes = volume relatif + charge relative (cohérent avec les couleurs par zone du modèle 3D lorsque le maillage est mappé).',
     'recap.zones.section.upper': 'Haut du corps & tronc',
     'recap.zones.section.arms': 'Bras',
     'recap.zones.section.legs': 'Jambes',
@@ -406,6 +407,8 @@ export const translations = {
       'Ischio-jambiers — chaîne postérieure ; plus sollicités sur les sorties longues et le rythme modéré que sur sprints très courts.',
     'recap.zones.detail.calves':
       'Mollets (jumeaux / soléaire) — impulsions, corde à sauter, stabilisation en course.',
+    'recap.zones.detail.tibialis_anterior':
+      'Tibial antérieur — dorsiflexion et contrôle à l’attaque du pied ; davantage sollicité en course rapide/fractionnée selon allure et durée.',
     'recap.zones.detail.fullBody':
       'Burpees, circuits, mouvements multi-articulaires — charge « poly » ; le chiffre ci-dessous est le total de toutes les reps muscu cochées (sans double compte).',
     'recap.zones.loadDisplay': 'Charge affichée',
@@ -416,6 +419,8 @@ export const translations = {
     'recap.zones.recovery.inProgress': 'En récupération',
     'recap.zones.recovery.fatigued': 'Fatigue élevée',
     'recap.zones.volumeCheckedTitle': 'Volume coché',
+    'recap.zones.cardioMinutesTitle': 'Sollicitation cardio',
+    'recap.zones.cardioMinutesValue': '{{m}} min ({{pct}}%)',
     'recap.zones.repsChecked': 'Volume coché (arrondi)',
     'recap.zones.repsPartsHint':
       'Somme des reps (ou secondes de gainage) des exos cochés sur la période, répartie entre les groupes du référentiel Exercices (parts si plusieurs muscles).',
@@ -989,7 +994,7 @@ export const translations = {
     'recap.bodyHint':
       'Drag to rotate · scroll or pinch to zoom · auto rotation',
     'recap.legendIntro':
-      'Indicative scale: displayed load = strength (weighted reps, decay) + blended cardio (see summary above). Same scale as the per-zone bars below.',
+      'Period-relative scale: colors are distributed from your real gaps (not fixed thresholds). Displayed load = strength (weighted reps, decay) + blended cardio.',
     'recap.legend.level.rest': 'Light grey — rest / no stimulus',
     'recap.legend.level.veryLow': 'Cold blue — very low stimulus',
     'recap.legend.level.undertrained': 'Blue — undertrained',
@@ -1018,12 +1023,13 @@ export const translations = {
     'recap.muscleGroup.quads': 'Quadriceps',
     'recap.muscleGroup.hamstrings': 'Hamstrings',
     'recap.muscleGroup.calves': 'Calves',
+    'recap.muscleGroup.tibialis_anterior': 'Tibialis anterior',
     'recap.muscleGroup.core': 'Core',
     'recap.muscleGroup.full_body': 'Full body',
 
     'recap.zones.title': 'Per muscle zone',
     'recap.zones.intro':
-      'Recap scores + checked reps (same source as calendar / data entry). Legs split into quads / hamstrings / calves; running and jump rope spread cardio load by session type. Card colors blend relative volume + relative load (aligned with per-zone 3D colors when meshes are mapped).',
+      'Recap scores + checked reps (same source as calendar / data entry). Legs split into quads / hamstrings / calves / tibialis anterior; running and jump rope spread cardio load by session type, pace and duration. Card colors blend relative volume + relative load (aligned with per-zone 3D colors when meshes are mapped).',
     'recap.zones.section.upper': 'Upper body & trunk',
     'recap.zones.section.arms': 'Arms',
     'recap.zones.section.legs': 'Legs',
@@ -1042,6 +1048,8 @@ export const translations = {
       'Hamstrings — posterior chain; relatively more on long runs and steady rhythm.',
     'recap.zones.detail.calves':
       'Calves — push-off, jump rope, running stability.',
+    'recap.zones.detail.tibialis_anterior':
+      'Tibialis anterior — dorsiflexion and foot-strike control; tends to rise with faster/interval running depending on pace and duration.',
     'recap.zones.detail.fullBody':
       'Burpees, circuits, multi-joint moves — poly bucket load; the big number is total checked strength reps (no double-count).',
     'recap.zones.loadDisplay': 'Displayed load',
@@ -1052,6 +1060,8 @@ export const translations = {
     'recap.zones.recovery.inProgress': 'Recovering',
     'recap.zones.recovery.fatigued': 'High fatigue',
     'recap.zones.volumeCheckedTitle': 'Checked volume',
+    'recap.zones.cardioMinutesTitle': 'Cardio activation',
+    'recap.zones.cardioMinutesValue': '{{m}} min ({{pct}}%)',
     'recap.zones.repsChecked': 'Checked volume (rounded)',
     'recap.zones.repsPartsHint':
       'Sum of reps (or plank seconds) from checked sets in the window, split using the Exercises database muscle groups (shared parts when multiple muscles).',

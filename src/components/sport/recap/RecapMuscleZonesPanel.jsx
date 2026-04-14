@@ -38,7 +38,8 @@ const ZONE_SECTIONS = [
     rows: [
       { groupId: MuscleGroups.QUADS, detailKey: 'recap.zones.detail.quads' },
       { groupId: MuscleGroups.HAMSTRINGS, detailKey: 'recap.zones.detail.hamstrings' },
-      { groupId: MuscleGroups.CALVES, detailKey: 'recap.zones.detail.calves' }
+      { groupId: MuscleGroups.CALVES, detailKey: 'recap.zones.detail.calves' },
+      { groupId: MuscleGroups.TIBIALIS_ANTERIOR, detailKey: 'recap.zones.detail.tibialis_anterior' }
     ]
   },
   {
@@ -60,6 +61,8 @@ function ZoneRow({
   volumeCheckedDisplay,
   topExercises,
   endurancePushupTotal,
+  cardioMinutes = 0,
+  cardioActivationPct = 0,
   t,
   cardioPct
 }) {
@@ -97,6 +100,14 @@ function ZoneRow({
     pct = Math.min(100, Math.max(10, repPct));
   }
   const label = t(`recap.muscleGroup.${groupId}`, groupId);
+  const isLegCardioGroup =
+    groupId === MuscleGroups.QUADS ||
+    groupId === MuscleGroups.HAMSTRINGS ||
+    groupId === MuscleGroups.CALVES ||
+    groupId === MuscleGroups.TIBIALIS_ANTERIOR;
+  const showCardioMinutesAsPrimary = isLegCardioGroup && !hasReps && cardioMinutes > 0.25;
+  const cardioMinutesRounded = Math.round(cardioMinutes);
+  const cardioActivationPctRounded = Math.round(cardioActivationPct * 10) / 10;
 
   return (
     <div className="rounded-lg border border-slate-700/70 bg-slate-950/40 px-3 py-2.5">
@@ -120,10 +131,17 @@ function ZoneRow({
         }
       >
         <span className="text-xs font-semibold uppercase tracking-wide text-emerald-100/90">
-          {t('recap.zones.volumeCheckedTitle')}
+          {showCardioMinutesAsPrimary
+            ? t('recap.zones.cardioMinutesTitle', 'Sollicitation cardio')
+            : t('recap.zones.volumeCheckedTitle')}
         </span>
-        <span className="text-2xl sm:text-3xl font-bold tabular-nums text-emerald-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.35)]">
-          {vol}
+        <span className="text-xl sm:text-2xl font-bold tabular-nums text-emerald-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.35)]">
+          {showCardioMinutesAsPrimary
+            ? t('recap.zones.cardioMinutesValue', '{{m}} min ({{pct}}%)', {
+                m: cardioMinutesRounded,
+                pct: cardioActivationPctRounded
+              })
+            : vol}
         </span>
       </div>
       <div className="mt-2 h-2.5 w-full rounded-full bg-slate-800/90 overflow-hidden ring-1 ring-slate-700/60">
@@ -222,6 +240,8 @@ const RecapMuscleZonesPanel = ({ recapState, t }) => {
     topExercisesByGroup = {},
     colorReferenceMax = 1e-9,
     maxRepShareAcrossGroups = 0,
+    cardioMinutesByGroup = {},
+    cardioActivationPctByGroup = {},
     volumeTotals = {}
   } = recapState;
   const cardioPct = Math.round(CARDIO_BLEND * 100);
@@ -274,6 +294,8 @@ const RecapMuscleZonesPanel = ({ recapState, t }) => {
                   }
                   topExercises={topExercisesByGroup[row.groupId]}
                   endurancePushupTotal={volumeTotals.endurancePushupReps || 0}
+                  cardioMinutes={cardioMinutesByGroup[row.groupId] || 0}
+                  cardioActivationPct={cardioActivationPctByGroup[row.groupId] || 0}
                   t={t}
                   cardioPct={cardioPct}
                 />

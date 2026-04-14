@@ -27,7 +27,7 @@ const PERIODS = [
 
 /**
  * Sous-onglet Sport — Récap : carte 3D, légende d’intensité, détail par zone, digest endurance.
- * Modèle 3D : /models/anatomy_study_basemesh_human_male_body.glb
+ * Modèle 3D : /models/ecorche-muscles-decoupes.glb
  */
 const RecapTab = () => {
   const t = useTranslation();

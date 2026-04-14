@@ -35,6 +35,7 @@ const ALL_GROUPS = [
   MuscleGroups.QUADS,
   MuscleGroups.HAMSTRINGS,
   MuscleGroups.CALVES,
+  MuscleGroups.TIBIALIS_ANTERIOR,
   MuscleGroups.CORE,
   MuscleGroups.FULL_BODY
 ];
@@ -240,6 +241,10 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
   /** @type {Record<string, Map<string, { name: string, repsShare: number, isIso: boolean }>>} */
   const exerciseAccByGroup = {};
   const volumeTotals = { strengthReps: 0, isoSeconds: 0, enduranceMinutes: 0, endurancePushupReps: 0 };
+  const cardioMinutesByGroup = {};
+  ALL_GROUPS.forEach((g) => {
+    cardioMinutesByGroup[g] = 0;
+  });
 
   grouped.forEach(({ reps: r }, gkey) => {
     const sep = gkey.lastIndexOf('::');
@@ -301,6 +306,7 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
   });
 
   const sessions = allData?.enduranceData?.sessions || {};
+  let cardioMinutesWeightedTotal = 0;
   Object.entries(sessions).forEach(([activityType, activitySessions]) => {
     if (!Array.isArray(activitySessions)) return;
     activitySessions.forEach((session) => {
@@ -309,7 +315,14 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
       if (!ds || !inWindow(ds, window)) return;
       const load = enduranceSessionCalendarLoad(activityType, session);
       if (load <= 0) return;
-      volumeTotals.enduranceMinutes += parseDurationToMinutes(session?.duration || 0);
+      const sessionMinutes = parseDurationToMinutes(
+        session?.duration ??
+          session?.durationMinutes ??
+          session?.duration_min ??
+          session?.metrics?.durationMinutes ??
+          0
+      );
+      volumeTotals.enduranceMinutes += sessionMinutes;
       const wmap =
         activityType === 'running'
           ? weightsForRunningSession(session)
@@ -321,6 +334,9 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
       Object.entries(wmap).forEach(([g, frac]) => {
         if (!accum[g]) accum[g] = { strength: 0, cardio: 0 };
         accum[g].cardio += dayCap * frac * w;
+        const minutesShare = sessionMinutes * frac;
+        cardioMinutesByGroup[g] = (cardioMinutesByGroup[g] || 0) + minutesShare;
+        cardioMinutesWeightedTotal += minutesShare;
       });
     });
   });
@@ -435,6 +451,13 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
       .slice(0, 8);
   });
 
+  const cardioActivationPctByGroup = {};
+  ALL_GROUPS.forEach((g) => {
+    const m = cardioMinutesByGroup[g] || 0;
+    cardioActivationPctByGroup[g] =
+      cardioMinutesWeightedTotal > 0 ? (m / cardioMinutesWeightedTotal) * 100 : 0;
+  });
+
   return {
     byGroup,
     dominantGroup: dominantByRepShare,
@@ -445,6 +468,8 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
     repShareByGroup,
     maxRepShareAcrossGroups,
     topExercisesByGroup,
+    cardioMinutesByGroup,
+    cardioActivationPctByGroup,
     volumeTotals: {
       ...volumeTotals,
       strengthMinutesFromIso: volumeTotals.isoSeconds / 60,
