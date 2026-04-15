@@ -105,7 +105,7 @@ const DashboardMomentumBlock = () => {
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-indigo-950/40 p-6 mb-6 shadow-lg shadow-slate-950/40">
+    <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-indigo-950/40 p-6 mb-6 shadow-lg shadow-slate-950/40 min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-cyan-500/15 border border-cyan-500/30">

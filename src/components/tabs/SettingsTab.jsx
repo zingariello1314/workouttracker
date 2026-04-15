@@ -50,10 +50,12 @@ import BannerExportImport from '../BannerExportImport';
 import { QuoteManager } from '../quotes/QuoteManager';
 import { QuotesErrorBoundary } from '../quotes/QuotesErrorBoundary';
 import ProfileCardSettings from '../sidebar/ProfileCardSettings';
+import AppLockSettingsPanel from '../appLock/AppLockSettingsPanel';
 
 /** Sections paramètres : ancres + texte indexé pour la recherche (synonymes / termes courants) */
 const SETTINGS_SECTIONS = [
   { id: 'settings-profil', label: 'Profil', searchText: 'profil avatar email mot de passe compte utilisateur migration données anonyme invité' },
+  { id: 'settings-verrou', label: 'Verrouillage', searchText: 'verrouillage cadenas code pin mot de passe inactivité arrière-plan sécurité confidentialité session' },
   { id: 'settings-carte', label: 'Carte profil', searchText: 'carte profil image handle username bannière sidebar logo' },
   { id: 'settings-accueil', label: 'Page d\'accueil', searchText: 'accueil page fond bannière rotation images home' },
   { id: 'settings-bannieres', label: 'Bannières', searchText: 'bannières bannière import export rotation' },
@@ -295,6 +297,12 @@ const SettingsTab = () => {
           setActiveTab={setActiveTab}
           migrationSettings={migrationSettings}
         />
+        </div>
+        )}
+
+        {isSectionVisible('settings-verrou') && (
+        <div id="settings-verrou" className="scroll-mt-4">
+          <AppLockSettingsPanel />
         </div>
         )}
 

@@ -14,7 +14,8 @@ import {
 } from 'recharts';
 import { BarChart3 } from 'lucide-react';
 
-const chartWrap = 'rounded-lg border border-slate-700/50 bg-slate-950/40 p-3';
+const chartWrap =
+  'rounded-lg border border-slate-700/50 bg-slate-950/40 p-3 min-w-0 overflow-hidden';
 
 const QuestTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
@@ -75,18 +76,18 @@ const MomentumWeekCharts = ({ chartData, weekRangeLabel }) => {
   if (!chartData.length) return null;
 
   return (
-    <div className="border-t border-slate-700/50 pt-5 mt-5">
+    <div className="border-t border-slate-700/50 pt-5 mt-5 min-w-0">
       <div className="flex items-center gap-2 mb-4">
         <BarChart3 className="w-4 h-4 text-cyan-400/90" aria-hidden />
         <h4 className="text-sm font-semibold text-white">Vue hebdomadaire</h4>
         <span className="text-xs text-slate-500">{weekRangeLabel}</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-w-0">
         <div className={chartWrap}>
           <p className="text-xs font-medium text-purple-300/90 mb-2">Taux de complétion des quêtes (%)</p>
-          <div className="h-[200px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[200px] w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
               <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.35)" />
                 <XAxis dataKey="shortLabel" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} />
@@ -100,8 +101,8 @@ const MomentumWeekCharts = ({ chartData, weekRangeLabel }) => {
 
         <div className={chartWrap}>
           <p className="text-xs font-medium text-indigo-300/90 mb-2">Lecture (minutes / jour)</p>
-          <div className="h-[200px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[200px] w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
               <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.35)" />
                 <XAxis dataKey="shortLabel" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} />
@@ -115,8 +116,8 @@ const MomentumWeekCharts = ({ chartData, weekRangeLabel }) => {
 
         <div className={chartWrap}>
           <p className="text-xs font-medium text-rose-300/90 mb-2">Sport — intensité (min) & pas (k)</p>
-          <div className="h-[200px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[200px] w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
               <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.35)" />
                 <XAxis dataKey="shortLabel" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} />

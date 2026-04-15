@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { Lock } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
+import { useAppLock } from '../../context/AppLockContext';
 import Button from '../ui/Button';
 import { useTranslation } from '../../utils/translations';
 import { getAvatarByUserId } from '../../utils/authIndexedDB';
@@ -8,6 +10,7 @@ import { getAvatarByUserId } from '../../utils/authIndexedDB';
 const Header = () => {
   const { setActiveTab } = useWorkout();
   const { currentUser, isAuthenticated, logout } = useAuth();
+  const { lockReady, lockNow } = useAppLock();
   const t = useTranslation();
   const [avatarUrl, setAvatarUrl] = useState(null);
 
@@ -117,6 +120,17 @@ const Header = () => {
               </Button>
             ) : (
               <div className="flex items-center space-x-3">
+                {lockReady && (
+                  <button
+                    type="button"
+                    onClick={lockNow}
+                    className="p-2 rounded-lg border border-slate-500/40 text-slate-200 hover:bg-slate-800/80 hover:text-white transition-colors"
+                    title="Verrouiller maintenant"
+                    aria-label="Verrouiller l'application"
+                  >
+                    <Lock className="w-5 h-5" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleGoToSettings}

@@ -46,6 +46,8 @@ import SidebarPremium from './components/sidebar/SidebarPremium';
 import { useWorkout } from './context/WorkoutContext';
 import { useGarminData } from './hooks/useGarminData';
 import { useAuth } from './context/AuthContext';
+import { AppLockProvider } from './context/AppLockContext';
+import { AppLockGate } from './components/appLock/LockScreen';
 import AnimatedBackground from './components/ui/AnimatedBackground';
 import GlassFilter from './components/ui/GlassFilter';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -55,15 +57,17 @@ const WorkoutTrackerApp = () => {
     <LanguageProvider>
       <ToastProvider>
         <AuthProvider>
-          <QuietQuestProvider>
-            <BooksStorageProvider>
-              <QuickActionsProvider>
-                <WorkoutProvider>
-                  <WorkoutTrackerContent />
-                </WorkoutProvider>
-              </QuickActionsProvider>
-            </BooksStorageProvider>
-          </QuietQuestProvider>
+          <AppLockProvider>
+            <QuietQuestProvider>
+              <BooksStorageProvider>
+                <QuickActionsProvider>
+                  <WorkoutProvider>
+                    <WorkoutTrackerContent />
+                  </WorkoutProvider>
+                </QuickActionsProvider>
+              </BooksStorageProvider>
+            </QuietQuestProvider>
+          </AppLockProvider>
         </AuthProvider>
       </ToastProvider>
     </LanguageProvider>
@@ -415,6 +419,8 @@ const WorkoutTrackerContent = () => {
             />
           </Suspense>
         )}
+
+        <AppLockGate />
 
         {showSessionFeedback && (
           <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="text-white">Chargement...</div></div>}>
