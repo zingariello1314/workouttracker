@@ -1,5 +1,8 @@
 import React from 'react';
+import { Lock } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useAuth } from '../../context/AuthContext';
+import { useAppLock } from '../../context/AppLockContext';
 import { useTranslation } from '../../utils/translations';
 
 /**
@@ -8,6 +11,8 @@ import { useTranslation } from '../../utils/translations';
  */
 const NavigationHeader = () => {
   const { setActiveTab } = useWorkout();
+  const { isAuthenticated } = useAuth();
+  const { lockReady, lockNow } = useAppLock();
   const t = useTranslation();
 
   const navigateToTab = (tabId) => {
@@ -18,14 +23,27 @@ const NavigationHeader = () => {
 
   return (
     <header className="relative z-10 flex flex-row md:flex-row md:justify-between md:items-center px-3 pt-1 pb-2 md:p-8 gap-2 md:gap-0 flex-shrink-0">
-      {/* Logo et informations */}
-      <div className="flex flex-col items-center justify-start flex-shrink-0 -ml-0 md:-ml-8 mr-1 md:mr-8 mt-0 md:-mt-24" role="banner">
-        <img 
-          src="/logo.png" 
-          alt="Momentum application logo" 
-          className="w-8 h-8 md:w-24 md:h-24 rounded-xl md:rounded-2xl opacity-95 drop-shadow-2xl translate-y-0 md:translate-y-[55px]"
-          role="img"
-        />
+      {/* Logo + verrou (même flux que l’écran Paramètres / Header : le PIN ne s’ouvre qu’après ce bouton) */}
+      <div className="flex flex-shrink-0 items-start gap-2 -ml-0 md:-ml-8 mr-1 md:mr-8 mt-0 md:-mt-24" role="banner">
+        <div className="flex flex-col items-center justify-start">
+          <img
+            src="/logo.png"
+            alt="Momentum application logo"
+            className="w-8 h-8 md:w-24 md:h-24 rounded-xl md:rounded-2xl opacity-95 drop-shadow-2xl translate-y-0 md:translate-y-[55px]"
+            role="img"
+          />
+        </div>
+        {isAuthenticated && lockReady ? (
+          <button
+            type="button"
+            onClick={lockNow}
+            className="mt-1 md:mt-[60px] shrink-0 rounded-xl border border-white/15 bg-white/5 p-2 text-slate-100 backdrop-blur-md transition hover:border-sky-400/40 hover:bg-white/10 hover:text-white md:p-2.5"
+            title={t('nav.lockApp')}
+            aria-label={t('nav.lockAppAria')}
+          >
+            <Lock className="h-4 w-4 md:h-5 md:w-5" aria-hidden />
+          </button>
+        ) : null}
       </div>
 
       {/* Navigation en une seule ligne – version simplifiée */}

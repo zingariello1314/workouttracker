@@ -1,6 +1,68 @@
 /**
- * Passe une intensité agrégée (0 → +∞) à une couleur type « heat » (cohérent avec la légende Récap).
+ * Couleurs « heat » Récap : mapping relatif à la période + spectre pour la légende.
+ * Le corps 3D et les panneaux utilisent la même fonction pour rester alignés.
  */
+
+/**
+ * @param {number} clamped — ratio charge/réf, typiquement dans [0, 1.25]
+ * @returns {string} couleur CSS (hsl ou hex)
+ */
+function loadRatioToCssColor(clamped) {
+  const c = Math.max(0, Math.min(Number(clamped) || 0, 1.25));
+
+  if (c <= 0.01) return '#cbd5e1';
+
+  // Courbe plus « ouverte » que x^0.72 : les scores proches se séparent mieux en teinte.
+  if (c <= 1) {
+    const eased = Math.pow(c, 0.5);
+    const hue = 218 - 218 * eased;
+    // Saturation plus haute au milieu du spectre (verts / jaunes) → mélange visuel plus riche.
+    const saturation = 72 + 26 * Math.sin(eased * Math.PI);
+    const lightness = 74 - 32 * eased + 4 * Math.sin(eased * Math.PI * 2);
+    return `hsl(${Math.round(hue)}, ${Math.round(saturation)}%, ${Math.round(Math.max(38, Math.min(82, lightness)))}%)`;
+  }
+
+  const over = Math.min(1, (c - 1) / 0.25);
+  const hue = 285 - 45 * over;
+  const saturation = 72 + 18 * over;
+  const lightness = 45 - 18 * over;
+  return `hsl(${Math.round(hue)}, ${Math.round(saturation)}%, ${Math.round(lightness)}%)`;
+}
+
+/**
+ * Ratio charge / référence (même plafond que pour le rendu couleur).
+ */
+export function recapLoadRatioClamped(score, referenceMax) {
+  const ref = Math.max(1e-9, Number(referenceMax) || 0);
+  const s = Math.max(0, Number(score) || 0);
+  return Math.max(0, Math.min(s / ref, 1.25));
+}
+
+/**
+ * Même palette que l’historique `recapScoreToHex`, mais l’intensité est ramenée sur la période :
+ * quand les scores bruts sont faibles, évite que tout reste gris/bleuet comme un seul palier.
+ * Utiliser la même `referenceMax` pour le corps 3D, les meshes et les jauges Récap.
+ */
+export function recapScoreToHexRelative(score, referenceMax) {
+  return loadRatioToCssColor(recapLoadRatioClamped(score, referenceMax));
+}
+
+/**
+ * Échantillons pour un dégradé CSS (légende) — beaucoup de stops = transitions fines visibles.
+ * @param {number} segmentCount — nombre de points (≥ 2)
+ * @param {number} [maxRatio=1.06] — jusqu’où balayer sur l’axe charge (avant zone surcharge violette)
+ */
+export function recapIntensityGradientStops(segmentCount = 36, maxRatio = 1.06) {
+  const n = Math.max(2, Math.floor(segmentCount));
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const u = i / (n - 1);
+    const r = u * maxRatio;
+    out.push({ offset: u, color: loadRatioToCssColor(r) });
+  }
+  return out;
+}
+
 export function recapScoreToHex(score) {
   const s = Math.max(0, Number(score) || 0);
   const t = Math.tanh(s / 420);
@@ -17,42 +79,6 @@ export function recapScoreToHex(score) {
   if (t < 0.8) return '#dc2626';
   if (t < 0.9) return '#a855f7';
   return '#3f0f14';
-}
-
-/**
- * Même palette que `recapScoreToHex`, mais l’intensité est ramenée sur la période :
- * quand les scores bruts sont faibles, évite que tout reste gris/bleuet comme un seul palier.
- * Utiliser la même `referenceMax` pour le corps 3D, les meshes et les jauges Récap.
- */
-export function recapScoreToHexRelative(score, referenceMax) {
-  const ref = Math.max(1e-9, Number(referenceMax) || 0);
-  const s = Math.max(0, Number(score) || 0);
-  const ratio = s / ref;
-  const clamped = Math.max(0, Math.min(ratio, 1.25));
-
-  if (clamped <= 0.01) return '#cbd5e1';
-
-  // Mapping continu basé sur la période courante (pas de seuils fixes).
-  // 0.0..1.0 : bleu -> vert -> jaune -> orange -> rouge
-  // >1.0 : violet/sombre (sur-sollicitation relative)
-  const eased = Math.pow(Math.min(clamped, 1), 0.72);
-  let hue;
-  let saturation;
-  let lightness;
-
-  if (clamped <= 1) {
-    hue = 210 - 210 * eased; // 210 (bleu) -> 0 (rouge)
-    saturation = 84;
-    lightness = 69 - 24 * eased;
-  } else {
-    const over = Math.min(1, (clamped - 1) / 0.25);
-    hue = 285 - 45 * over; // violet -> pourpre
-    saturation = 72 + 18 * over;
-    lightness = 45 - 18 * over;
-  }
-
-  // Format avec virgules pour compatibilité parsing `THREE.Color.set(...)`.
-  return `hsl(${Math.round(hue)}, ${Math.round(saturation)}%, ${Math.round(lightness)}%)`;
 }
 
 /**

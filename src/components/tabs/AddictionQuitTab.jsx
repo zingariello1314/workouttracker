@@ -12,6 +12,12 @@ import {
 } from '../../utils/addictionQuitConstants';
 import { getNextMilestone, formatTimeUntilFr, formatTimeUntilEn } from '../../utils/addictionQuitHelpers';
 import {
+  getPeriodMilestoneDefinitions,
+  resolvePeriodMilestoneLabel,
+  getNextPeriodMilestone,
+  periodMilestoneGaugeT,
+} from '../../utils/addictionQuitPeriodMilestones';
+import {
   mergeAddictionQuitData,
   applyQuitAtChange,
   applyRelapse,
@@ -55,6 +61,9 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
       ? t('addictionQuit.allMilestonesDone')
       : '';
 
+  const nextPeriod = quitAtIso ? getNextPeriodMilestone(elapsed, t) : null;
+  const periodDefs = useMemo(() => getPeriodMilestoneDefinitions(), []);
+
   const progressAria =
     trackId === 'cigarette'
       ? t('addictionQuit.progressAriaTobacco', { pct: String(pctRounded) })
@@ -93,6 +102,14 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
           {nextLine}
         </p>
       )}
+      {quitAtIso && nextPeriod && (
+        <p className="rounded-lg border border-slate-600/50 bg-slate-900/50 px-3 py-2 text-xs text-slate-300">
+          {t('addictionQuit.nextPeriodMilestone', {
+            label: nextPeriod.label,
+            when: whenFn(nextPeriod.msUntil),
+          })}
+        </p>
+      )}
       <div className="flex items-center justify-between gap-2 text-xs text-slate-400 uppercase tracking-wide">
         <span>{t('addictionQuit.benefits20y')}</span>
         <span>{t('addictionQuit.gaugePct', { pct: String(pctRounded) })}</span>
@@ -124,6 +141,17 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
             className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${accentClass} opacity-90 transition-[width] duration-700 ease-out`}
             style={{ width: `${pct * 100}%` }}
           />
+          {periodDefs.map((d, i) => (
+            <div
+              key={`pdef-${i}`}
+              className="pointer-events-none absolute bottom-0 w-px bg-amber-400/35"
+              style={{
+                left: `${Math.min(100, periodMilestoneGaugeT(d.ms) * 100)}%`,
+                height: '42%',
+              }}
+              aria-hidden="true"
+            />
+          ))}
           {milestones.map((m, i) => (
             <div
               key={i}
@@ -173,6 +201,43 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
           );
         })}
       </ul>
+      <details className="mt-3 rounded-lg border border-slate-700/80 bg-slate-900/40 px-2 py-1.5">
+        <summary className="cursor-pointer select-none text-xs font-semibold text-amber-100/90">
+          {t('addictionQuit.periodMilestonesTitle')}
+          <span className="ml-1 font-normal text-slate-500">({t('addictionQuit.periodMilestonesHint')})</span>
+        </summary>
+        <ul className="mt-2 max-h-52 space-y-1 overflow-y-auto pr-1 text-xs text-slate-300">
+          {periodDefs.map((m, i) => {
+            const reached = quitAtIso && elapsed >= m.ms - 1;
+            const past = !reached && aq ? findPastSessionReachedMilestone(aq, trackId, m.ms) : null;
+            const lab = resolvePeriodMilestoneLabel(m, t);
+            return (
+              <li
+                key={`pd-${i}`}
+                className={`rounded-lg border px-2 py-1 ${
+                  reached
+                    ? 'border-amber-500/40 bg-amber-950/25 text-amber-50'
+                    : past
+                      ? 'border-slate-600/50 bg-slate-800/50 text-slate-200'
+                      : 'border-slate-700/60 bg-slate-800/30 text-slate-500'
+                }`}
+              >
+                <div>{lab}</div>
+                {reached && (
+                  <div className="mt-0.5 text-[10px] font-medium text-amber-200/90">
+                    {t('addictionQuit.milestoneCurrent')}
+                  </div>
+                )}
+                {past && (
+                  <div className="mt-0.5 text-[10px] text-slate-400">
+                    {t('addictionQuit.milestonePastSession', { date: formatSessionLabel(past.startedAtIso, isFr) })}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </details>
     </div>
   );
 }

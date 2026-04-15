@@ -22,6 +22,8 @@
   "settings": "Paramètres",
   "mainTabs": "Navigation principale",
   "dashboard": "Tableau de bord",
-  "finance": "Finance"
+  "finance": "Finance",
+  "lockApp": "Verrouiller l'app",
+  "lockAppAria": "Verrouiller l'application maintenant"
 }
 

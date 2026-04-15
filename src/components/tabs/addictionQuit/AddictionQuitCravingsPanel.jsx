@@ -20,6 +20,7 @@ import {
 import {
   filterCravingsByScope,
   buildCravingTimelineItems,
+  listJournalScopeCalendarDaysDescending,
 } from '../../../utils/addictionQuitJournalFilters';
 import { getActiveSessionId, buildAddictionRecapStats } from '../../../utils/addictionQuitSessionsXp';
 import {
@@ -29,6 +30,7 @@ import {
   thcHeavyDayTriggerHint,
 } from '../../../utils/addictionQuitCopilot';
 import AddictionQuitCopilotToday from './AddictionQuitCopilotToday';
+import AddictionQuitAbstinenceCurves from './AddictionQuitAbstinenceCurves';
 import {
   Activity,
   Plus,
@@ -104,17 +106,11 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
     [aq, journalScope, filterTrack, nowTick]
   );
 
-  const dayKeys = useMemo(() => {
-    const set = new Set();
-    set.add(todayStr);
-    for (const [k, arr] of Object.entries(cravingsForScope || {})) {
-      if (!Array.isArray(arr) || arr.length === 0) continue;
-      const has =
-        filterTrack === 'all' ? true : arr.some((c) => c.trackId === filterTrack);
-      if (has) set.add(k);
-    }
-    return Array.from(set).sort((a, b) => b.localeCompare(a));
-  }, [cravingsForScope, todayStr, filterTrack]);
+  /** Tous les jours calendaires du scope (y compris 0 envie), aligné sur le graphique d’abstinence / filtres. */
+  const dayKeys = useMemo(
+    () => listJournalScopeCalendarDaysDescending(journalScope, aq, nowTick),
+    [journalScope, aq, nowTick]
+  );
 
   const displayRows = useMemo(() => {
     const rows = {};
@@ -239,7 +235,8 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
   const start30 = getDateStr(d30);
   const endStr = todayStr;
 
-  const mapForStats = journalScope === 'all' ? aq.cravingsByDay : cravingsForScope;
+  /** Même périmètre que l’historique / graphiques (période + filtre piste). */
+  const mapForStats = cravingsForScope;
   const periodKeys = useMemo(() => Object.keys(mapForStats || {}).sort(), [mapForStats]);
   const firstStatDay = periodKeys[0];
   const lastStatDay = periodKeys[periodKeys.length - 1] || todayStr;
@@ -577,6 +574,13 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
         </Card>
       ) : (
         <>
+          <AddictionQuitAbstinenceCurves
+            aq={aq}
+            journalScope={journalScope}
+            nowTick={nowTick}
+            t={t}
+            isFr={isFr}
+          />
           <AddictionQuitCopilotToday aq={aq} onSaveData={onSaveData} t={t} todayStr={todayStr} />
 
           <div className="flex flex-wrap items-center gap-2">
@@ -902,7 +906,9 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                 <tr key={day} className={`border-b border-slate-800 ${isToday ? 'bg-cyan-950/20' : ''}`}>
                   <td className="sticky left-0 z-10 bg-slate-950/95 px-3 py-2 font-medium text-slate-200">
                     <div>{label}</div>
-                    <div className="text-xs font-normal text-slate-500">{arr.length} envie(s)</div>
+                    <div className="text-xs font-normal text-slate-500">
+                      {t('addictionQuit.cravingsOnDay', { n: String(arr.length) })}
+                    </div>
                   </td>
                   {Array.from({ length: maxSlots }, (_, i) => {
                     const c = arr[i];
@@ -1001,7 +1007,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
               <div className="mb-2 font-semibold text-white">{label}</div>
               <div className="space-y-2">
                 {arr.length === 0 ? (
-                  <p className="text-sm text-slate-500">—</p>
+                  <p className="text-sm text-slate-500">{t('addictionQuit.dayNoCravings')}</p>
                 ) : (
                   arr.map((c) => (
                     <div key={c.id} className="rounded-lg border border-slate-600 bg-slate-800/80 p-2 text-sm">

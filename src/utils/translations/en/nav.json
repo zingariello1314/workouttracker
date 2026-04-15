@@ -22,6 +22,8 @@
   "settings": "Settings",
   "mainTabs": "Main navigation",
   "dashboard": "Dashboard",
-  "finance": "Finance"
+  "finance": "Finance",
+  "lockApp": "Lock app",
+  "lockAppAria": "Lock the application now"
 }
 

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useAuth } from '../context/AuthContext';
+import { useAppLock } from '../context/AppLockContext';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import { preloadAdjacentImages, preloadImage } from '../utils/imageLazyLoader';
 import logger from '../utils/logger';
@@ -12,12 +13,14 @@ import SwipeIndicator from './ui/SwipeIndicator';
 import { getSettings } from '../services/swipeNavigationSettings';
 import { useQuoteDisplay } from '../hooks/useQuoteDisplay';
 import { SplineScene } from './ui/SplineScene';
+import { MomentumWelcomeGate } from './ui/MomentumBrandedLoading';
 
 const log = logger.component('HomePage');
 
 const HomePage = () => {
   const { setActiveTab, activeTab } = useWorkout();
   const { isAuthenticated } = useAuth();
+  const { lockNow, lockReady } = useAppLock();
   const t = useTranslation();
   // ✅ Récupérer la langue depuis useTranslation pour éviter le double appel de useLanguage
   // useTranslation utilise déjà useLanguage en interne
@@ -80,6 +83,18 @@ const HomePage = () => {
   // ✅ Chargement initial : État pour savoir si l'image initiale est chargée
   const [isInitialImageLoaded, setIsInitialImageLoaded] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(true);
+  /** L’utilisateur a validé l’écran d’accueil (bouton déverrouiller). */
+  const [introPlaybackDone, setIntroPlaybackDone] = useState(false);
+  const onUnlockHomeWelcome = useCallback(() => {
+    setIntroPlaybackDone(true);
+    setShowLoadingScreen(false);
+    // Si un code app lock est défini : afficher tout de suite l’écran PIN (LockScreen au-dessus).
+    if (lockReady) {
+      queueMicrotask(() => {
+        lockNow();
+      });
+    }
+  }, [lockReady, lockNow]);
   const initialImageLoadedRef = useRef(false); // Ref pour suivre si l'image initiale a été marquée comme chargée
   
   const imagePreloadedRef = useRef(new Set()); // Images déjà préchargées
@@ -503,7 +518,8 @@ const HomePage = () => {
 
   // ✅ Chargement initial : Déterminer si on doit afficher l'écran de chargement
   // Ne s'affiche que si on est vraiment sur home ET que le chargement est en cours
-  const shouldShowLoading = (isLoading || showLoadingScreen) && activeTab === 'home';
+  const shouldShowLoading =
+    activeTab === 'home' && (isLoading || showLoadingScreen || !introPlaybackDone);
 
   // ✅ Screen reader announcement state
   const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState('');
@@ -570,45 +586,19 @@ const HomePage = () => {
       {/* ✅ Chargement initial : Écran de chargement élégant et professionnel */}
       {/* Ne s'affiche que lors du premier chargement de l'app, pas lors de la navigation */}
       {shouldShowLoading && (
-        <div 
-          className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-[100] flex items-center justify-center transition-opacity duration-500"
-          style={{
-            opacity: shouldShowLoading ? 1 : 0,
-            pointerEvents: shouldShowLoading ? 'auto' : 'none',
-            // Masquer si on n'est pas sur home (pour éviter l'affichage lors de la navigation vers dashboard)
-            display: shouldShowLoading ? 'flex' : 'none',
-          }}
-        >
-          <div className="text-center">
-            {/* Logo */}
-            <div className="mb-8 flex justify-center">
-              <img 
-                src="/logo.png" 
-                alt="Momentum Logo" 
-                className="w-32 h-32 rounded-3xl opacity-95 drop-shadow-2xl animate-pulse"
-              />
-            </div>
-            
-            {/* Spinner moderne */}
-            <div className="relative w-16 h-16 mx-auto mb-6">
-              <div className="absolute inset-0 border-4 border-white/10 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-transparent border-t-white rounded-full animate-spin"></div>
-              <div className="absolute inset-2 border-4 border-transparent border-r-white/50 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-            </div>
-            
-            {/* Texte de chargement */}
-            <p className="text-white text-lg font-medium mb-2" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-              {t('home.loading.title')}
-            </p>
-            <p className="text-white/70 text-sm" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
-              {t('home.loading.subtitle')}
-            </p>
-          </div>
-        </div>
+        <MomentumWelcomeGate
+          onUnlock={onUnlockHomeWelcome}
+          title={t('home.loading.title')}
+          subtitle={t('home.loading.subtitle')}
+          unlockLabel={t('home.loading.unlock')}
+          unlockHint={t('home.loading.unlockHint')}
+          syncMessage={t('home.loading.sync')}
+          isDataLoading={isLoading || showLoadingScreen}
+        />
       )}
 
-      {/* ✅ Phase 7: Double buffering - Layer 0 */}
-      {backgroundImages.length > 0 && layer0Src && (
+      {/* ✅ Phase 7: Double buffering — masqué pendant l’intro pour ne pas concurrencer le Player (GPU / peinture). */}
+      {!shouldShowLoading && backgroundImages.length > 0 && layer0Src && (
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -632,7 +622,7 @@ const HomePage = () => {
       )}
 
       {/* ✅ Phase 7: Double buffering - Layer 1 */}
-      {backgroundImages.length > 0 && layer1Src && (
+      {!shouldShowLoading && backgroundImages.length > 0 && layer1Src && (
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -655,8 +645,8 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Robot Spline - Suit la souris avec la tête - rendu seulement sur écrans larges pour éviter les problèmes WebGL sur mobile */}
-      {activeTab === 'home' && isLargeScreen && (
+      {/* Robot Spline — pas pendant l’écran de chargement (WebGL + Remotion = saccades). */}
+      {activeTab === 'home' && isLargeScreen && !shouldShowLoading && (
         <div className="fixed bottom-0 right-[8rem] xl:right-[16rem] w-72 h-72 xl:w-96 xl:h-96 z-50 pointer-events-none">
           <SplineScene 
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"

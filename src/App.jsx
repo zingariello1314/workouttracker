@@ -51,6 +51,7 @@ import { AppLockGate } from './components/appLock/LockScreen';
 import AnimatedBackground from './components/ui/AnimatedBackground';
 import GlassFilter from './components/ui/GlassFilter';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import { MomentumTabLoadOverlay, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
 
 const WorkoutTrackerApp = () => {
   return (
@@ -380,16 +381,7 @@ const WorkoutTrackerContent = () => {
                 title={`Erreur dans l'onglet ${activeTab}`}
                 onGoHome={() => setActiveTab('home')}
               >
-                <Suspense fallback={
-                  <div className="container mx-auto px-4 py-8">
-                    <div className="flex items-center justify-center min-h-[400px]">
-                      <div className="text-center">
-                        <div className="text-4xl mb-4 animate-spin">⚡</div>
-                        <div className="text-slate-400 font-semibold uppercase tracking-wide">CHARGEMENT...</div>
-                      </div>
-                    </div>
-                  </div>
-                }>
+                <Suspense fallback={<MomentumTabLoadOverlay message="Chargement…" />}>
                   <div className="container mx-auto px-4">
                     {renderTabContent()}
                   </div>
@@ -401,7 +393,13 @@ const WorkoutTrackerContent = () => {
 
         {/* Modales avec lazy loading */}
         {showExerciseVariations && (
-          <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="text-white">Chargement...</div></div>}>
+          <Suspense
+            fallback={
+              <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                <MomentumModalLoadCard borderAccentClass="border-t-violet-400" />
+              </div>
+            }
+          >
             <ExerciseVariations
               baseExercise={selectedExercise}
               onClose={() => setShowExerciseVariations(false)}
@@ -410,7 +408,13 @@ const WorkoutTrackerContent = () => {
         )}
 
         {showAdvancedStats && (
-          <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="text-white">Chargement...</div></div>}>
+          <Suspense
+            fallback={
+              <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                <MomentumModalLoadCard borderAccentClass="border-t-emerald-400" />
+              </div>
+            }
+          >
             <AdvancedStats
               workoutData={getWorkoutHistory()}
               garminData={garminData}
@@ -423,7 +427,13 @@ const WorkoutTrackerContent = () => {
         <AppLockGate />
 
         {showSessionFeedback && (
-          <Suspense fallback={<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="text-white">Chargement...</div></div>}>
+          <Suspense
+            fallback={
+              <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                <MomentumModalLoadCard borderAccentClass="border-t-pink-400" />
+              </div>
+            }
+          >
             <SessionFeedback
               isOpen={showSessionFeedback}
               onClose={() => setShowSessionFeedback(false)}

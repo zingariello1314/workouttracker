@@ -108,8 +108,60 @@ export function getJournalScopeBounds(scope, aq, nowMs = Date.now()) {
   return { from: null, to: null };
 }
 
+/** Plus ancienne date connue (sessions + clés cravingsByDay ISO). */
+export function earliestTrackedDayFromAq(aq) {
+  let minD = null;
+  for (const tid of TRACK_IDS) {
+    for (const s of aq?.sessions?.[tid] || []) {
+      if (!s?.startedAtIso) continue;
+      const d = getDateStr(new Date(s.startedAtIso));
+      if (!minD || d < minD) minD = d;
+    }
+  }
+  for (const k of Object.keys(aq?.cravingsByDay || {})) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+    if (!minD || k < minD) minD = k;
+  }
+  return minD;
+}
+
+/**
+ * Plage calendaire [from, to] pour le journal, les filtres et le graphique d’abstinence
+ * (même logique partout ; « tout » = premier suivi → aujourd’hui).
+ */
+export function getJournalScopeDayRange(scope, aq, nowMs = Date.now()) {
+  const today = getDateStr(new Date(nowMs));
+  if (scope === 'all') {
+    const e = earliestTrackedDayFromAq(aq);
+    return { from: e || today, to: today };
+  }
+  const { from, to } = getJournalScopeBounds(scope, aq, nowMs);
+  const fromStr = from || today;
+  const toStr = to && to < today ? to : today;
+  return { from: fromStr, to: toStr };
+}
+
+/** Jours calendaires inclusifs de fromStr à toStr (YYYY-MM-DD), ordre chronologique. */
+export function enumerateCalendarDaysAscending(fromStr, toStr) {
+  const out = [];
+  const cur = new Date(`${fromStr}T12:00:00`);
+  const endT = new Date(`${toStr}T12:00:00`).getTime();
+  const guard = cur.getTime() + 25 * 366 * 24 * 60 * 60 * 1000;
+  while (cur.getTime() <= endT && cur.getTime() <= guard) {
+    out.push(getDateStr(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
+}
+
+/** Jours du scope, du plus récent au plus ancien (tableau historique par jour). */
+export function listJournalScopeCalendarDaysDescending(scope, aq, nowMs = Date.now()) {
+  const { from, to } = getJournalScopeDayRange(scope, aq, nowMs);
+  const asc = enumerateCalendarDaysAscending(from, to);
+  return asc.length ? [...asc].reverse() : [getDateStr(new Date(nowMs))];
+}
+
 function dayInRange(dayStr, from, to) {
-  if (!from && !to) return true;
   if (from && dayStr < from) return false;
   if (to && dayStr > to) return false;
   return true;
@@ -119,7 +171,7 @@ function dayInRange(dayStr, from, to) {
  * Retourne un objet cravingsByDay filtré (copie).
  */
 export function filterCravingsByScope(aq, scope, filterTrack, nowMs = Date.now()) {
-  const { from, to } = getJournalScopeBounds(scope, aq, nowMs);
+  const { from, to } = getJournalScopeDayRange(scope, aq, nowMs);
   const out = {};
   for (const [day, arr] of Object.entries(aq.cravingsByDay || {})) {
     if (!Array.isArray(arr) || arr.length === 0) continue;
