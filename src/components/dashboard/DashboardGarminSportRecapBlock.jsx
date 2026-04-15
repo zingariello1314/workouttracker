@@ -27,10 +27,21 @@ import {
   normalizeGarminDate
 } from '../tabs/GarminTab/utils/garminFormatters';
 import { useTranslation } from '../../utils/translations';
+import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
 import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../../utils/runningSessionTypeLabel';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Jambes + abdos/gainage : métrique reps ou temps ; le reste du corps = reps seulement. */
+const DASHBOARD_RECAP_MUSCLE_GROUPS_TIME_OR_REPS = new Set([
+  MuscleGroups.QUADS,
+  MuscleGroups.HAMSTRINGS,
+  MuscleGroups.CALVES,
+  MuscleGroups.TIBIALIS_ANTERIOR,
+  MuscleGroups.CORE
+]);
+
 const DASHBOARD_RECAP_PERIOD_KEY = 'dashboard.sport.recapPeriod';
 const DASHBOARD_RECAP_PERIODS = [
   { id: 'today', label: "Aujourd'hui" },
@@ -408,21 +419,43 @@ const DashboardGarminSportRecapBlock = () => {
       { id: MuscleGroups.HAMSTRINGS, label: 'Ischio-jambiers' },
       { id: MuscleGroups.CALVES, label: 'Mollets' },
       { id: MuscleGroups.TIBIALIS_ANTERIOR, label: 'Tibial antérieur' },
-      { id: MuscleGroups.CORE, label: 'Tronc / gainage' }
+      { id: MuscleGroups.CORE, label: 'Abdos / gainage' }
     ];
     return rows.map((row) => {
-      const g = recapState.byGroup?.[row.id] || {};
       const reps = Math.round(recapState.repShareByGroup?.[row.id] || 0);
       const cardioMin = Math.round(recapState.cardioMinutesByGroup?.[row.id] || 0);
-      const cardioPctRaw = recapState.cardioActivationPctByGroup?.[row.id] || 0;
-      const cardioPct = Math.round(cardioPctRaw * 10) / 10;
-      const load = Number(g.displayScore || 0);
+
+      if (!DASHBOARD_RECAP_MUSCLE_GROUPS_TIME_OR_REPS.has(row.id)) {
+        return { ...row, reps, cardioMin, statKind: 'reps', statValue: reps };
+      }
+
+      const isCore = row.id === MuscleGroups.CORE;
+      let statKind = 'reps';
+      let statValue = reps;
+      if (isCore) {
+        if (cardioMin > 0) {
+          statKind = 'time';
+          statValue = cardioMin;
+        } else {
+          statKind = 'reps';
+          statValue = reps;
+        }
+      } else if (reps > 0) {
+        statKind = 'reps';
+        statValue = reps;
+      } else if (cardioMin > 0) {
+        statKind = 'time';
+        statValue = cardioMin;
+      } else {
+        statKind = 'reps';
+        statValue = 0;
+      }
       return {
         ...row,
         reps,
         cardioMin,
-        cardioPct,
-        load: load < 10 ? load.toFixed(1) : String(Math.round(load))
+        statKind,
+        statValue
       };
     });
   }, [recapState]);
@@ -658,6 +691,8 @@ const DashboardGarminSportRecapBlock = () => {
           </div>
         )}
 
+        <GarminRunningStatsCard variant="embedded" />
+
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Colonne Garmin */}
           <div className="xl:col-span-2 space-y-4">
@@ -764,7 +799,9 @@ const DashboardGarminSportRecapBlock = () => {
                   uniformBodyColor={recapState.uniformBodyColor}
                 />
                 <div className="rounded-xl border border-slate-700/70 bg-slate-900/40 p-3">
-                  <div className="text-xs font-semibold text-slate-300 mb-2">Stats par muscle (période sélectionnée)</div>
+                  <div className="text-xs font-semibold text-slate-300 mb-2">
+                    Stats par muscle (période sélectionnée)
+                  </div>
                   <div className="max-h-[520px] overflow-auto pr-1 space-y-1.5">
                     {muscleStatsRows.map((row) => (
                       <div
@@ -772,13 +809,18 @@ const DashboardGarminSportRecapBlock = () => {
                         className="rounded-lg border border-slate-700/60 bg-slate-950/45 px-2.5 py-2"
                       >
                         <div className="text-xs font-semibold text-slate-200">{row.label}</div>
-                        <div className="mt-1 grid grid-cols-3 gap-2 text-[11px] text-slate-400">
-                          <span>Reps: <span className="text-cyan-200 font-semibold">{row.reps}</span></span>
-                          <span>Cardio: <span className="text-emerald-200 font-semibold">{row.cardioMin} min</span></span>
-                          <span>% cardio: <span className="text-amber-200 font-semibold">{row.cardioPct}%</span></span>
-                        </div>
                         <div className="mt-1 text-[11px] text-slate-400">
-                          Charge: <span className="text-white font-semibold">{row.load}</span>
+                          {row.statKind === 'time' ? (
+                            <>
+                              Temps:{' '}
+                              <span className="text-emerald-200 font-semibold">{row.statValue} min</span>
+                            </>
+                          ) : (
+                            <>
+                              Reps:{' '}
+                              <span className="text-cyan-200 font-semibold">{row.statValue}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     ))}

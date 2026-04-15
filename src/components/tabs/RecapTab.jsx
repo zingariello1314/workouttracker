@@ -11,6 +11,7 @@ import {
 import { buildRecapEnduranceDigest } from '../../utils/sport/recapPageDigest';
 import RecapMuscleZonesPanel from '../sport/recap/RecapMuscleZonesPanel';
 import RecapEnduranceDigestPanel from '../sport/recap/RecapEnduranceDigestPanel';
+import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
 
@@ -92,6 +93,10 @@ const RecapTab = () => {
             {t(p.labelKey)}
           </button>
         ))}
+      </div>
+
+      <div className="mb-8">
+        <GarminRunningStatsCard variant="embedded" />
       </div>
 
       <p className="text-xs text-slate-400 mb-4 max-w-3xl leading-relaxed">

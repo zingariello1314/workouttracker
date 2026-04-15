@@ -46,7 +46,16 @@
   "messages": {
     "todayNotInData": "Today ({{today}}) is not in available data. The most recent date is {{latestDate}}. Sync recommended.",
     "todayNotInDataSimple": "Today ({{today}}) is not in available data. Sync recommended."
-  }
+  },
+  "runningCardTitle": "Running (Garmin)",
+  "runningCardVsPrev": "vs previous period",
+  "runningCardLoading": "Loading runs…",
+  "runningCardNoData": "No runs in these windows. Sync Garmin or pick a longer period.",
+  "runningCardP7": "7d",
+  "runningCardP14": "14d",
+  "runningCardP21": "21d",
+  "runningCardP30": "30d",
+  "runningCardP42": "42d"
 }
 
 
