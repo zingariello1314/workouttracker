@@ -28,18 +28,23 @@ export const useSidebar = () => {
       finance: true,
       nutrition: true,
       
-      // AJOUTER: Sections pour modules historiques - OUVERTES
-      'enregistrer-session': true,
+      // Sections pour modules historiques - OUVERTES
+      'course-garmin-running': true,
+      'sidebar-sport-planning': true,
+      'sidebar-sport-calendar': true,
+      'sidebar-daily-quests': true,
       'progression-lecture': true,
       'metriques-garmin': true,
-      'quetes-interactives': true,
-      'evolution-patrimoine': true,
       'liste-courses': true,
       'session-lecture-active': true,
-      'entrainement-jour': true,
       'creativite-projets': true,
       'performance-globale': true,
       'apprentissage-express': true,
+      'sidebar-reading-session': true,
+      'sidebar-book-focus': true,
+      'sidebar-books-recap': true,
+      'sidebar-body-recap': true,
+      'sidebar-finance-snapshot': true,
       
       // Anciennes sections supprimées - FERMÉES (compatibilité)
       learning: false,

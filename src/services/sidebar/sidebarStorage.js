@@ -38,6 +38,29 @@ const DEFAULT_PREFERENCES = {
 };
 
 /**
+ * États d’ouverture par défaut des modules sidebar (alternance historique).
+ * Fusionnés avant les préférences stockées pour que les clés existent après rechargement (IndexedDB).
+ */
+const SIDEBAR_HISTORICAL_MODULE_EXPANDED_DEFAULTS = {
+  'course-garmin-running': true,
+  'sidebar-sport-planning': true,
+  'sidebar-sport-calendar': true,
+  'sidebar-daily-quests': true,
+  'progression-lecture': false,
+  'metriques-garmin': false,
+  'sidebar-body-recap': true,
+  'sidebar-finance-snapshot': true,
+  'liste-courses': false,
+  'session-lecture-active': false,
+  'creativite-projets': false,
+  'performance-globale': false,
+  'apprentissage-express': false,
+  'sidebar-reading-session': true,
+  'sidebar-book-focus': true,
+  'sidebar-books-recap': true,
+};
+
+/**
  * Initialise la base de données IndexedDB
  * @returns {Promise<IDBDatabase>} Instance de la base de données
  */
@@ -137,15 +160,32 @@ export const getPreferences = async () => {
           }
 
           // Fusionner avec les valeurs par défaut pour gérer les nouvelles sections
+          const fromStored = stored.expandedSections || {};
+          const expandedSections = {
+            ...DEFAULT_PREFERENCES.expandedSections,
+            ...SIDEBAR_HISTORICAL_MODULE_EXPANDED_DEFAULTS,
+            ...fromStored,
+          };
+          // Remplacement « enregistrer session » → planning sport (conserver ouvert/fermé)
+          if (expandedSections['sidebar-sport-planning'] === undefined) {
+            expandedSections['sidebar-sport-planning'] =
+              fromStored['enregistrer-session'] !== undefined ? fromStored['enregistrer-session'] : true;
+          }
+          delete expandedSections['enregistrer-session'];
+
+          // « Corps et charges » séparé de Course Garmin : reprendre l’ancien état si pas encore de clé dédiée
+          if (!Object.prototype.hasOwnProperty.call(fromStored, 'sidebar-body-recap')) {
+            if (Object.prototype.hasOwnProperty.call(fromStored, 'course-garmin-running')) {
+              expandedSections['sidebar-body-recap'] = !!fromStored['course-garmin-running'];
+            }
+          }
+
           const merged = {
             ...DEFAULT_PREFERENCES,
             ...stored,
-            expandedSections: {
-              ...DEFAULT_PREFERENCES.expandedSections,
-              ...(stored.expandedSections || {}),
-            },
+            expandedSections,
           };
-          
+
           resolve(merged);
         };
 

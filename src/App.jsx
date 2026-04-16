@@ -270,10 +270,12 @@ const WorkoutTrackerContent = () => {
   };
 
   // Déterminer si la sidebar doit être affichée
-  // Visible partout SAUF sur home, auth et pricing
-  const shouldShowSidebar = activeTab !== 'home' && 
+  // Visible partout SAUF sur home, auth, pricing et dashboard :
+  // sur le dashboard la sidebar est déjà rendue dans HomePageScrollTransition (évite doublon / fantômes au scroll).
+  const shouldShowSidebar = activeTab !== 'home' &&
                             activeTab !== 'auth' &&
-                            activeTab !== 'pricing';
+                            activeTab !== 'pricing' &&
+                            activeTab !== 'dashboard';
 
   // État pour contrôler l'affichage du fond animé
   const [showAnimatedBackground, setShowAnimatedBackground] = useState(false);
@@ -357,7 +359,7 @@ const WorkoutTrackerContent = () => {
 
         {/* Layout avec sidebar */}
         <div className="flex-1 relative">
-          {/* Sidebar Premium - Visible sur toutes les pages sauf home, auth et settings */}
+          {/* Sidebar Premium — pas sur dashboard (gérée par HomePageScrollTransition) */}
           {shouldShowSidebar && <SidebarPremium />}
           
           <main 

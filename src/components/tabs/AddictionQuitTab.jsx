@@ -509,6 +509,19 @@ const AddictionQuitTab = () => {
 
   const [sub, setSub] = useState(() => {
     try {
+      const raw = sessionStorage.getItem('addictionQuit.deepLink');
+      if (raw) {
+        const o = JSON.parse(raw);
+        if (o?.openCravingsJournal) {
+          if (o.scrollToId) sessionStorage.setItem('addictionQuit.pendingScroll', String(o.scrollToId));
+          sessionStorage.removeItem('addictionQuit.deepLink');
+          return 'cravings';
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    try {
       const s = localStorage.getItem(SUB_KEY);
       if (s === 'timers' || s === 'cravings') return s;
     } catch {

@@ -7,6 +7,7 @@
  */
 
 import React, { Suspense, useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { BOOKS_OPEN_NAV_EVENT } from '../../utils/booksSidebarNav';
 import { BookOpen, Download, Search, Upload, BarChart3, Library } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
 import { Input, TextArea, Select } from '../ui/Input';
@@ -90,9 +91,10 @@ const BooksTab = () => {
   }, [activeSubTab]);
 
   const scrollToBookFicheRef = useRef(false);
+  const [selectedBookId, setSelectedBookId] = useState(null);
+  const [show3D, setShow3D] = useState(true);
 
-  // Appliquer les paramètres de navigation envoyés par la sidebar (Lecture, etc.)
-  useEffect(() => {
+  const applyBooksNavParams = useCallback(() => {
     try {
       const raw = sessionStorage.getItem('nav_params_books');
       if (!raw) return;
@@ -102,8 +104,24 @@ const BooksTab = () => {
         setSelectedBookId(params.bookId);
         setActiveSubTab('library');
         scrollToBookFicheRef.current = true;
+      } else if (params.showGlobe) {
+        setActiveSubTab('library');
+        setShow3D(true);
+        setTimeout(() => {
+          document.getElementById('books-library-globe-anchor')?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }, 200);
       } else if (params.tab === 'statistics' || params.tab === 'stats') {
         setActiveSubTab('statistics');
+        if (params.statsNavigation) {
+          try {
+            sessionStorage.setItem('books.stats.pendingNavigation', JSON.stringify(params.statsNavigation));
+          } catch {
+            /* ignore */
+          }
+        }
       } else if (params.action === 'addBook') {
         setActiveSubTab('library');
         setTimeout(() => {
@@ -120,8 +138,12 @@ const BooksTab = () => {
     }
   }, []);
 
-  const [selectedBookId, setSelectedBookId] = useState(null);
-  const [show3D, setShow3D] = useState(true);
+  useEffect(() => {
+    applyBooksNavParams();
+    window.addEventListener(BOOKS_OPEN_NAV_EVENT, applyBooksNavParams);
+    return () => window.removeEventListener(BOOKS_OPEN_NAV_EVENT, applyBooksNavParams);
+  }, [applyBooksNavParams]);
+
   const [summaryTab, setSummaryTab] = useState('short'); // 'short' | 'long' | 'notes'
   const [isEditingSummaries, setIsEditingSummaries] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState({
@@ -836,7 +858,7 @@ const BooksTab = () => {
               </Card>
 
 
-              {/* Vue 3D */}
+              {/* Vue 3D — ancre navigation sidebar (globe bibliothèque) */}
               {show3D && (
                 <Suspense
                   fallback={
@@ -849,6 +871,7 @@ const BooksTab = () => {
                     </Card>
                   }
                 >
+                  <div id="books-library-globe-anchor" className="scroll-mt-4">
                   <BooksDomeGallery
                     books={domeBooks}
                     onBookOpen={handleBookClick}
@@ -861,6 +884,7 @@ const BooksTab = () => {
                     maxRadius={1600}
                     padFactor={0.02}
                   />
+                  </div>
                 </Suspense>
               )}
 

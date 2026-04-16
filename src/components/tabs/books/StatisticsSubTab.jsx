@@ -162,10 +162,13 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
     updateFilters({ selectedPeriod: period });
   };
 
-  const handleChartChange = (chartType) => {
-    setActiveChart(chartType);
-    updateDisplay({ activeChart: chartType });
-  };
+  const handleChartChange = useCallback(
+    (chartType) => {
+      setActiveChart(chartType);
+      updateDisplay({ activeChart: chartType });
+    },
+    [updateDisplay]
+  );
 
   const handleFilterChange = (filterType, value) => {
     const newFilters = {
@@ -184,6 +187,37 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
 
   // Vérifier si nous avons des données à afficher
   const hasData = books.length > 0 && statisticsData.hasData;
+
+  useEffect(() => {
+    if (!hasData) return;
+    let raw = null;
+    try {
+      raw = sessionStorage.getItem('books.stats.pendingNavigation');
+      if (!raw) return;
+      const nav = JSON.parse(raw);
+      sessionStorage.removeItem('books.stats.pendingNavigation');
+      if (nav.chart) {
+        setActiveChart(nav.chart);
+        updateDisplay({ activeChart: nav.chart });
+      }
+      if (nav.scrollToId) {
+        setTimeout(() => {
+          document.getElementById(String(nav.scrollToId))?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }, 350);
+      }
+    } catch {
+      if (raw) {
+        try {
+          sessionStorage.removeItem('books.stats.pendingNavigation');
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }, [hasData, updateDisplay]);
 
   return (
     <div className="statistics-container">
@@ -344,7 +378,7 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
           </div>
           
           {/* Panneau de métriques (pleine largeur) */}
-          <div className="metrics-panel-full">
+          <div id="books-stats-metrics-panel" className="metrics-panel-full scroll-mt-4">
             <MetricsPanel 
               statisticsData={statisticsData}
               selectedPeriod={selectedPeriod}
@@ -354,9 +388,9 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
           </div>
           
           {/* Modules supplémentaires au-dessus des graphiques */}
-          <div className="modules-section space-y-4">
+          <div id="books-stats-modules-stack" className="modules-section space-y-4 scroll-mt-4">
             {/* Analyse des sessions */}
-            <Card variant="glass">
+            <Card variant="glass" id="books-stats-session-analysis">
               <CardHeader>
                 <CardTitle size="sm" className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-green-300" />
@@ -390,7 +424,7 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
           </div>
           
           {/* Container des graphiques (pleine largeur) */}
-          <div className="charts-main-full">
+          <div id="books-stats-charts-container" className="charts-main-full scroll-mt-4">
             <ChartsContainer
               books={books}
               statisticsData={statisticsData}
@@ -422,7 +456,9 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
 
           {/* Toutes les sessions enregistrées (liste + édition) */}
           {setBooks && (
-            <AllSessionsSection books={books} setBooks={setBooks} />
+            <div id="books-stats-all-sessions" className="scroll-mt-4">
+              <AllSessionsSection books={books} setBooks={setBooks} />
+            </div>
           )}
         </div>
       )}

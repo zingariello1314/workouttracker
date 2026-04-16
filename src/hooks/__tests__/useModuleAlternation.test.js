@@ -21,8 +21,8 @@ import moduleAlternationService from '../../services/sidebar/moduleAlternationSe
 describe('useModuleAlternation', () => {
   const mockPattern = [
     {
-      id: 'enregistrer-session',
-      component: 'SessionRecorderModule',
+      id: 'sidebar-sport-planning',
+      component: 'SidebarSportPlanningModule',
       position: 1,
       type: 'historical',
       isVisible: true
@@ -115,10 +115,10 @@ describe('useModuleAlternation', () => {
       await new Promise(resolve => setTimeout(resolve, 0));
     });
 
-    const module = result.current.getModuleById('enregistrer-session');
+    const module = result.current.getModuleById('sidebar-sport-planning');
     expect(module).toBeDefined();
-    expect(module.id).toBe('enregistrer-session');
-    expect(moduleAlternationService.getModuleById).toHaveBeenCalledWith('enregistrer-session');
+    expect(module.id).toBe('sidebar-sport-planning');
+    expect(moduleAlternationService.getModuleById).toHaveBeenCalledWith('sidebar-sport-planning');
   });
 
   it('should handle getModulesByType', async () => {
@@ -162,7 +162,7 @@ describe('useModuleAlternation', () => {
   });
 
   it('should handle removeModule', async () => {
-    const updatedPattern = mockPattern.filter(m => m.id !== 'enregistrer-session');
+    const updatedPattern = mockPattern.filter(m => m.id !== 'sidebar-sport-planning');
     moduleAlternationService.removeModule.mockReturnValue(true);
     moduleAlternationService.getAlternatedModules.mockReturnValue(updatedPattern);
 
@@ -174,17 +174,17 @@ describe('useModuleAlternation', () => {
 
     let success;
     await act(async () => {
-      success = result.current.removeModule('enregistrer-session');
+      success = result.current.removeModule('sidebar-sport-planning');
     });
 
     expect(success).toBe(true);
     expect(result.current.alternationPattern).toEqual(updatedPattern);
-    expect(moduleAlternationService.removeModule).toHaveBeenCalledWith('enregistrer-session');
+    expect(moduleAlternationService.removeModule).toHaveBeenCalledWith('sidebar-sport-planning');
   });
 
   it('should handle toggleModuleVisibility', async () => {
     const updatedPattern = mockPattern.map(m => 
-      m.id === 'enregistrer-session' ? { ...m, isVisible: false } : m
+      m.id === 'sidebar-sport-planning' ? { ...m, isVisible: false } : m
     );
     moduleAlternationService.toggleModuleVisibility.mockReturnValue(true);
     moduleAlternationService.getAlternatedModules.mockReturnValue(updatedPattern);
@@ -197,12 +197,12 @@ describe('useModuleAlternation', () => {
 
     let success;
     await act(async () => {
-      success = result.current.toggleModuleVisibility('enregistrer-session');
+      success = result.current.toggleModuleVisibility('sidebar-sport-planning');
     });
 
     expect(success).toBe(true);
     expect(result.current.alternationPattern).toEqual(updatedPattern);
-    expect(moduleAlternationService.toggleModuleVisibility).toHaveBeenCalledWith('enregistrer-session');
+    expect(moduleAlternationService.toggleModuleVisibility).toHaveBeenCalledWith('sidebar-sport-planning');
   });
 
   it('should handle errors gracefully', async () => {

@@ -42,6 +42,7 @@ function CardContent({ className, children, ...props }) {
  *   onActionClick?: () => void,
  *   primaryBarClassName?: string,
  *   secondaryBarClassName?: string,
+ *   chartAxisDensity?: 'default' | 'compact',
  * }} ActivityStatsCardProps
  */
 
@@ -57,6 +58,7 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
     onActionClick,
     primaryBarClassName,
     secondaryBarClassName,
+    chartAxisDensity = 'default',
     ...props
   },
   ref
@@ -119,17 +121,31 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
           </span>
         </div>
 
-        <div className="mt-5 h-32 w-full">
+        <div
+          className={cn(
+            'mt-5 w-full',
+            chartAxisDensity === 'compact' ? 'h-28 pb-1' : 'h-32'
+          )}
+        >
           <AnimatePresence>
             <motion.div
               key={chartData.map((p) => p.label).join('|')}
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="flex h-full w-full items-end justify-between gap-1 sm:gap-2"
+              className={cn(
+                'flex h-full w-full items-end justify-between',
+                chartAxisDensity === 'compact' ? 'gap-0.5 px-0.5' : 'gap-1 sm:gap-2'
+              )}
             >
               {(chartData || []).map((point) => (
-                <div key={point.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+                <div
+                  key={point.label}
+                  className={cn(
+                    'flex h-full min-w-0 flex-1 flex-col items-center justify-end',
+                    chartAxisDensity === 'compact' ? 'gap-0' : 'gap-1'
+                  )}
+                >
                   <div className="relative flex h-full w-full items-end justify-center gap-0.5 sm:gap-1">
                     <motion.div
                       custom={point.currentValue}
@@ -151,7 +167,16 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
                       aria-hidden
                     />
                   </div>
-                  <span className="truncate text-[10px] text-slate-500 sm:text-xs">{point.label}</span>
+                  <span
+                    title={point.label}
+                    className={cn(
+                      chartAxisDensity === 'compact'
+                        ? 'mt-0.5 line-clamp-2 max-h-[2.75rem] w-full px-0.5 text-center text-[8px] leading-[1.05] tracking-tight text-slate-500 [word-break:break-word]'
+                        : 'truncate text-[10px] text-slate-500 sm:text-xs'
+                    )}
+                  >
+                    {point.label}
+                  </span>
                 </div>
               ))}
             </motion.div>

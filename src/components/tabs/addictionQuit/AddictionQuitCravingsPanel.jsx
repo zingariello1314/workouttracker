@@ -56,6 +56,9 @@ import {
 const TRACK_IDS = ['cigarette', 'thc'];
 const CRAVINGS_SUB_KEY = 'addictionQuit.cravingsSub';
 
+/** Ancrage scroll depuis le tableau de bord (raccourci « journal des envies »). */
+export const ADDICTION_QUIT_JOURNAL_BOTTOM_ANCHOR_ID = 'addiction-quit-journal-bottom';
+
 function newCravingId() {
   return typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
@@ -98,6 +101,24 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
     const id = setTimeout(() => setToast(''), 2200);
     return () => clearTimeout(id);
   }, [toast]);
+
+  useEffect(() => {
+    if (cravingsSub !== 'journal') return undefined;
+    const id = sessionStorage.getItem('addictionQuit.pendingScroll');
+    if (!id || id !== ADDICTION_QUIT_JOURNAL_BOTTOM_ANCHOR_ID) return undefined;
+    const t = window.setTimeout(() => {
+      const el = document.getElementById(ADDICTION_QUIT_JOURNAL_BOTTOM_ANCHOR_ID);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        try {
+          sessionStorage.removeItem('addictionQuit.pendingScroll');
+        } catch {
+          /* ignore */
+        }
+      }
+    }, 450);
+    return () => window.clearTimeout(t);
+  }, [cravingsSub]);
 
   const todayStr = getDateStr(new Date(nowTick));
 
@@ -872,7 +893,10 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-end justify-between gap-2">
+      <div
+        id={ADDICTION_QUIT_JOURNAL_BOTTOM_ANCHOR_ID}
+        className="flex scroll-mt-28 flex-wrap items-end justify-between gap-2"
+      >
         <h3 className="text-lg font-semibold text-white">{t('addictionQuit.historyByDay')}</h3>
         <p className="text-sm text-slate-400">
           {t('addictionQuit.slotsSummary', { slots: String(maxSlots), total: String(totalCravings) })}

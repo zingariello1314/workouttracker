@@ -137,6 +137,8 @@ const COMPONENT_MIGRATIONS = {
  */
 const MODULE_DOMAIN_MAPPING = {
   'PatrimonyEvolutionModule': 'finance',
+  'SidebarFinanceSnapshotModule': 'finance',
+  'SidebarBodyRecapModule': 'health',
   'GlobalPerformanceModule': 'performance',
   'CreativityProjectsModule': 'creativity',
   'GarminMetricsModule': 'health',
@@ -146,7 +148,13 @@ const MODULE_DOMAIN_MAPPING = {
   'InteractiveQuestsModule': 'social',
   'ShoppingListModule': 'finance',
   'DailyTrainingModule': 'health',
-  'SessionRecorderModule': 'performance'
+  'SessionRecorderModule': 'performance',
+  'SidebarSportPlanningModule': 'health',
+  'SidebarSportCalendarModule': 'health',
+  'SidebarDailyQuestsModule': 'social',
+  'SidebarReadingSessionModule': 'learning',
+  'SidebarBookFocusModule': 'learning',
+  'SidebarBooksRecapModule': 'learning'
 };
 
 // ===== FONCTIONS DE MIGRATION =====

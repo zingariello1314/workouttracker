@@ -18,20 +18,30 @@ describe('ModuleAlternationService', () => {
       }
     });
 
-    it('should include both legacy and historical modules', () => {
+    it('should include historical modules (legacy optionnel dans la sidebar)', () => {
       const pattern = moduleAlternationService.getAlternatedModules();
       const legacyCount = pattern.filter(m => m.type === 'legacy').length;
       const historicalCount = pattern.filter(m => m.type === 'historical').length;
       
-      expect(legacyCount).toBeGreaterThan(0);
+      expect(legacyCount).toBeGreaterThanOrEqual(0);
       expect(historicalCount).toBeGreaterThan(0);
     });
 
     it('should maintain alternation sequence', () => {
       const pattern = moduleAlternationService.getAlternatedModules();
       
-      // Vérifier que les positions impaires sont historiques et paires sont legacy
-      pattern.forEach(module => {
+      // Position 0 : slot historique optionnel en tête (Course Garmin)
+      // Positions 1–3 : bloc sport + calendrier + quêtes (historique)
+      // À partir de 4 : pairs = legacy, impairs = historique
+      pattern.forEach((module) => {
+        if (module.position === 0) {
+          expect(module.type).toBe('historical');
+          return;
+        }
+        if (module.position >= 1 && module.position <= 3) {
+          expect(module.type).toBe('historical');
+          return;
+        }
         if (module.position % 2 === 1) {
           expect(module.type).toBe('historical');
         } else {
@@ -43,9 +53,9 @@ describe('ModuleAlternationService', () => {
 
   describe('getModuleById', () => {
     it('should return correct module by id', () => {
-      const module = moduleAlternationService.getModuleById('enregistrer-session');
+      const module = moduleAlternationService.getModuleById('sidebar-sport-planning');
       expect(module).toBeDefined();
-      expect(module.id).toBe('enregistrer-session');
+      expect(module.id).toBe('sidebar-sport-planning');
       expect(module.type).toBe('historical');
     });
 
@@ -59,7 +69,7 @@ describe('ModuleAlternationService', () => {
     it('should return only legacy modules', () => {
       const legacyModules = moduleAlternationService.getModulesByType('legacy');
       expect(legacyModules.every(m => m.type === 'legacy')).toBe(true);
-      expect(legacyModules.length).toBeGreaterThan(0);
+      expect(legacyModules.length).toBeGreaterThanOrEqual(0);
     });
 
     it('should return only historical modules', () => {
@@ -114,10 +124,10 @@ describe('ModuleAlternationService', () => {
 
   describe('removeModule', () => {
     it('should remove existing module', () => {
-      const success = moduleAlternationService.removeModule('enregistrer-session');
+      const success = moduleAlternationService.removeModule('sidebar-sport-planning');
       expect(success).toBe(true);
       
-      const module = moduleAlternationService.getModuleById('enregistrer-session');
+      const module = moduleAlternationService.getModuleById('sidebar-sport-planning');
       expect(module).toBeUndefined();
     });
 
@@ -129,7 +139,7 @@ describe('ModuleAlternationService', () => {
 
   describe('toggleModuleVisibility', () => {
     it('should toggle module visibility', () => {
-      const moduleId = 'enregistrer-session';
+      const moduleId = 'sidebar-sport-planning';
       const originalModule = moduleAlternationService.getModuleById(moduleId);
       const originalVisibility = originalModule.isVisible;
       
@@ -185,11 +195,11 @@ describe('ModuleAlternationService', () => {
       const stats = moduleAlternationService.getAlternationStats();
       
       expect(stats.totalModules).toBeGreaterThan(0);
-      expect(stats.legacyModules).toBeGreaterThan(0);
+      expect(stats.legacyModules).toBeGreaterThanOrEqual(0);
       expect(stats.historicalModules).toBeGreaterThan(0);
       expect(stats.totalModules).toBe(stats.legacyModules + stats.historicalModules);
       expect(stats.pattern).toBeInstanceOf(Array);
-      expect(stats.alternationRatio).toBeGreaterThan(0);
+      expect(stats.alternationRatio === null || stats.alternationRatio > 0).toBe(true);
     });
 
     it('should include pattern information', () => {

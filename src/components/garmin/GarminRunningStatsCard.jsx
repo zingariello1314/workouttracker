@@ -39,6 +39,8 @@ function readStoredRunningStatsWindowDays() {
 }
 
 const NUM_BARS = 8;
+/** Colonnes plus larges en sidebar → moins de chevauchement sur les dates. */
+const NUM_BARS_SIDEBAR = 5;
 
 /**
  * Carte stats course Garmin (comparaison fenêtre / fenêtre précédente).
@@ -106,9 +108,11 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
   }, [dbReady, isAuthenticated, loadDataByRange, windowDays, garminDataTick]);
 
   const endStr = todayIsoLocal();
+  const numBars = variant === 'sidebar' ? NUM_BARS_SIDEBAR : NUM_BARS;
+
   const built = useMemo(() => {
-    return buildRunningCompareChart(kmByDate, endStr, windowDays, NUM_BARS);
-  }, [kmByDate, endStr, windowDays]);
+    return buildRunningCompareChart(kmByDate, endStr, windowDays, numBars);
+  }, [kmByDate, endStr, windowDays, numBars]);
 
   const chartData = useMemo(
     () =>
@@ -186,6 +190,7 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
           onActionClick={onGarmin}
           primaryBarClassName="bg-violet-500"
           secondaryBarClassName="bg-violet-200/30 dark:bg-violet-900"
+          chartAxisDensity={variant === 'sidebar' ? 'compact' : 'default'}
         />
       )}
     </div>

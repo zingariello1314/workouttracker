@@ -30,29 +30,13 @@ import { useTranslation } from '../../utils/translations';
 import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
 import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../../utils/runningSessionTypeLabel';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
+import {
+  DASHBOARD_RECAP_PERIOD_KEY,
+  DASHBOARD_RECAP_PERIODS,
+  DASHBOARD_RECAP_MUSCLE_GROUPS_TIME_OR_REPS
+} from '../sidebar/historical/sidebarBodyRecapShared';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** Jambes + abdos/gainage : métrique reps ou temps ; le reste du corps = reps seulement. */
-const DASHBOARD_RECAP_MUSCLE_GROUPS_TIME_OR_REPS = new Set([
-  MuscleGroups.QUADS,
-  MuscleGroups.HAMSTRINGS,
-  MuscleGroups.CALVES,
-  MuscleGroups.TIBIALIS_ANTERIOR,
-  MuscleGroups.CORE
-]);
-
-const DASHBOARD_RECAP_PERIOD_KEY = 'dashboard.sport.recapPeriod';
-const DASHBOARD_RECAP_PERIODS = [
-  { id: 'today', label: "Aujourd'hui" },
-  { id: '7d', label: '7j' },
-  { id: '30d', label: '30j' },
-  { id: '3m', label: '3m' },
-  { id: '6m', label: '6m' },
-  { id: '1y', label: '1a' },
-  { id: '2y', label: '2a' },
-  { id: 'all', label: 'Toujours' }
-];
 
 const toDateKey = (value) => {
   if (!value) return null;

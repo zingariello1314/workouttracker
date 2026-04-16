@@ -2,57 +2,44 @@ import React, { memo, Suspense, lazy } from 'react';
 import { useModuleAlternation } from '../../hooks/useModuleAlternation';
 import SidebarSectionErrorBoundary from './SidebarSectionErrorBoundary';
 
-// Lazy loading des composants existants (legacy)
-const ActionsRapidesSection = lazy(() => import('./ActionsRapidesSection'));
-const AujourdhuiSection = lazy(() => import('./AujourdhuiSection'));
-const ProgressionGlobaleSection = lazy(() => import('./ProgressionGlobaleSection'));
-const QuestesJourSection = lazy(() => import('./QuestesJourSection'));
-const ActivitePhysiqueSection = lazy(() => import('./ActivitePhysiqueSection'));
-const LectureSection = lazy(() => import('./LectureSection'));
-const FinancesSection = lazy(() => import('./FinancesSection'));
-const NutritionSection = lazy(() => import('./NutritionSection'));
-
-// Lazy loading des nouveaux composants historiques (à créer)
-const SessionRecorderModule = lazy(() => import('./historical/SessionRecorderModule'));
+// Lazy loading des modules historiques (sidebar)
+const SidebarSportPlanningModule = lazy(() => import('./historical/SidebarSportPlanningModule'));
+const SidebarSportCalendarModule = lazy(() => import('./historical/SidebarSportCalendarModule'));
+const SidebarDailyQuestsModule = lazy(() => import('./historical/SidebarDailyQuestsModule'));
+const SidebarReadingSessionModule = lazy(() => import('./historical/SidebarReadingSessionModule'));
+const SidebarBookFocusModule = lazy(() => import('./historical/SidebarBookFocusModule'));
+const SidebarBooksRecapModule = lazy(() => import('./historical/SidebarBooksRecapModule'));
+const GarminRunningSidebarModule = lazy(() => import('./historical/GarminRunningSidebarModule'));
+const SidebarBodyRecapModule = lazy(() => import('./historical/SidebarBodyRecapModule'));
 const ReadingProgressModule = lazy(() => import('./historical/ReadingProgressModule'));
 const GarminMetricsModule = lazy(() => import('./historical/GarminMetricsModule'));
-const InteractiveQuestsModule = lazy(() => import('./historical/InteractiveQuestsModule'));
-const PatrimonyEvolutionModule = lazy(() => import('./historical/PatrimonyEvolutionModule'));
+const SidebarFinanceSnapshotModule = lazy(() => import('./historical/SidebarFinanceSnapshotModule'));
 const ShoppingListModule = lazy(() => import('./historical/ShoppingListModule'));
 const ActiveReadingSessionModule = lazy(() => import('./historical/ActiveReadingSessionModule'));
-const DailyTrainingModule = lazy(() => import('./historical/DailyTrainingModule'));
 const CreativityProjectsModule = lazy(() => import('./historical/CreativityProjectsModule'));
 const GlobalPerformanceModule = lazy(() => import('./historical/GlobalPerformanceModule'));
 const ExpressLearningModule = lazy(() => import('./historical/ExpressLearningModule'));
-const LectureUnifiedModule = lazy(() => import('./historical/LectureUnifiedModule'));
 
 /**
  * Mapping des composants par nom
  */
 const COMPONENT_MAP = {
-  // Composants legacy
-  'ActionsRapidesSection': ActionsRapidesSection,
-  'AujourdhuiSection': AujourdhuiSection,
-  'ProgressionGlobaleSection': ProgressionGlobaleSection,
-  'QuestesJourSection': QuestesJourSection,
-  'ActivitePhysiqueSection': ActivitePhysiqueSection,
-  'LectureSection': LectureSection,
-  'FinancesSection': FinancesSection,
-  'NutritionSection': NutritionSection,
-
-  // Nouveaux composants historiques
-  'SessionRecorderModule': SessionRecorderModule,
-  'ReadingProgressModule': ReadingProgressModule,
-  'GarminMetricsModule': GarminMetricsModule,
-  'InteractiveQuestsModule': InteractiveQuestsModule,
-  'PatrimonyEvolutionModule': PatrimonyEvolutionModule,
-  'ShoppingListModule': ShoppingListModule,
-  'ActiveReadingSessionModule': ActiveReadingSessionModule,
-  'DailyTrainingModule': DailyTrainingModule,
-  'CreativityProjectsModule': CreativityProjectsModule,
-  'GlobalPerformanceModule': GlobalPerformanceModule,
-  'ExpressLearningModule': ExpressLearningModule,
-  'LectureUnifiedModule': LectureUnifiedModule
+  SidebarSportPlanningModule,
+  SidebarSportCalendarModule,
+  SidebarDailyQuestsModule,
+  SidebarReadingSessionModule,
+  SidebarBookFocusModule,
+  SidebarBooksRecapModule,
+  GarminRunningSidebarModule,
+  SidebarBodyRecapModule,
+  ReadingProgressModule,
+  GarminMetricsModule,
+  SidebarFinanceSnapshotModule,
+  ShoppingListModule,
+  ActiveReadingSessionModule,
+  CreativityProjectsModule,
+  GlobalPerformanceModule,
+  ExpressLearningModule
 };
 
 /**
@@ -111,85 +98,11 @@ const ModuleItem = memo(({
       ...sidebarProps
     };
 
-    // Props spécifiques pour les modules legacy
     if (module.type === 'legacy') {
-      switch (module.component) {
-        case 'ActionsRapidesSection':
-          return {
-            isExpanded: sidebarProps.isSectionExpanded('actions'),
-            onToggle: () => sidebarProps.toggleSection('actions'),
-            navigation: sidebarProps.navigation
-          };
-        case 'AujourdhuiSection':
-          return {
-            isExpanded: sidebarProps.isSectionExpanded('today'),
-            onToggle: () => sidebarProps.toggleSection('today'),
-            data: sidebarProps.data?.today,
-            navigation: sidebarProps.navigation,
-            todayDate: sidebarProps.todayDate
-          };
-        case 'ProgressionGlobaleSection':
-          return {
-            isExpanded: sidebarProps.isSectionExpanded('metrics'),
-            onToggle: () => sidebarProps.toggleSection('metrics'),
-            metrics: sidebarProps.data?.metrics,
-            navigation: sidebarProps.navigation
-          };
-        case 'QuestesJourSection':
-          return {
-            isExpanded: sidebarProps.isSectionExpanded('quests'),
-            onToggle: () => sidebarProps.toggleSection('quests'),
-            quests: sidebarProps.data?.quests,
-            navigation: sidebarProps.navigation
-          };
-        case 'ActivitePhysiqueSection':
-          return {
-            isExpanded: sidebarProps.isSectionExpanded('sport'),
-            onToggle: () => sidebarProps.toggleSection('sport'),
-            data: sidebarProps.data?.sport,
-            navigation: sidebarProps.navigation
-          };
-        case 'LectureSection':
-          return {
-            isExpanded: sidebarProps.isSectionExpanded('books'),
-            onToggle: () => sidebarProps.toggleSection('books'),
-            data: sidebarProps.data?.learning,
-            navigation: sidebarProps.navigation,
-            todayDate: sidebarProps.todayDate
-          };
-        case 'LectureUnifiedModule':
-          return {
-            isExpanded: sidebarProps.isSectionExpanded('lecture-unifie'),
-            onToggle: () => sidebarProps.toggleSection('lecture-unifie'),
-            data: {
-              ...sidebarProps.data,
-              activeReadingSession: sidebarProps.data?.learning?.activeReadingSession
-            },
-            navigation: sidebarProps.navigation,
-            todayDate: sidebarProps.todayDate
-          };
-        case 'FinancesSection':
-          return {
-            isExpanded: sidebarProps.isSectionExpanded('finance'),
-            onToggle: () => sidebarProps.toggleSection('finance'),
-            data: sidebarProps.data?.finance,
-            navigation: sidebarProps.navigation
-          };
-        case 'NutritionSection':
-          return {
-            isExpanded: sidebarProps.isSectionExpanded('nutrition'),
-            onToggle: () => sidebarProps.toggleSection('nutrition'),
-            data: sidebarProps.data?.nutrition,
-            navigation: sidebarProps.navigation,
-            todayDate: sidebarProps.todayDate
-          };
-        default:
-          return baseProps;
-      }
+      return baseProps;
     }
 
-    // Props pour les nouveaux modules historiques
-    // Utiliser uniquement les vraies données, pas de données de démo
+    // Props pour les modules historiques
     const historicalData = sidebarProps.data || {};
     
     const finalData = {
@@ -207,18 +120,16 @@ const ModuleItem = memo(({
       error: historicalData.shopping?.error || null,
       today: historicalData.today || {}
     };
-    
+
     return {
       moduleId: module.id,
       moduleType: module.type,
       navigationTarget: module.navigationTarget,
       navigation: sidebarProps.navigation,
-      setActiveTab: sidebarProps.setActiveTab, // FIX: Ajouter setActiveTab pour la navigation
+      setActiveTab: sidebarProps.setActiveTab,
       data: finalData,
       todayDate: sidebarProps.todayDate || new Date().toISOString().slice(0, 10),
-      isLoading: false, // FIX: Toujours false pour éviter les états de chargement infinis
-      
-      // AJOUTER: Props d'expansion pour modules historiques
+      isLoading: false,
       isExpanded: sidebarProps.isSectionExpanded(module.id),
       onToggle: () => sidebarProps.toggleSection(module.id)
     };

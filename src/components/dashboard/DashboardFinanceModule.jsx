@@ -197,8 +197,12 @@ const DashboardFinanceModule = () => {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
               <div className="rounded-xl border border-amber-500/30 bg-slate-900/55 p-4 flex flex-col items-center justify-center gap-3">
-                <div className="relative w-40 h-40 rounded-full p-2" style={repartitionChartStyle}>
-                  <div className="absolute inset-[18%] rounded-full bg-slate-950/90 border border-slate-700/80 grid place-items-center">
+                <div className="relative flex h-40 w-40 shrink-0 items-center justify-center">
+                  <div className="pointer-events-none absolute inset-0 rounded-full border border-slate-600/45" aria-hidden />
+                  <div className="absolute inset-0 overflow-hidden rounded-full">
+                    <div className="h-full w-full rounded-full" style={repartitionChartStyle} />
+                  </div>
+                  <div className="relative z-10 flex aspect-square w-[64%] max-h-[64%] items-center justify-center rounded-full border border-slate-700/80 bg-slate-950/95 px-2 shadow-inner">
                     <div className="text-center">
                       <div className="text-[11px] text-slate-400">Alloué</div>
                       <div className="text-sm font-semibold text-white">{formatCurrency(totalAllocation)}</div>

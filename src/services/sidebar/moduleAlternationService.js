@@ -5,87 +5,70 @@
 
 /**
  * Configuration des modules existants (legacy)
+ * Tableau vide : les blocs legacy ne sont plus affichés dans la sidebar.
  */
-const LEGACY_MODULES = [
-  {
-    id: 'actions-rapides',
-    component: 'ActionsRapidesSection',
-    position: 2,
-    type: 'legacy',
-    isVisible: true
-  },
-  {
-    id: 'aujourdhui',
-    component: 'AujourdhuiSection', 
-    position: 4,
-    type: 'legacy',
-    isVisible: true
-  },
-  {
-    id: 'progression-globale',
-    component: 'ProgressionGlobaleSection',
-    position: 6,
-    type: 'legacy',
-    isVisible: true
-  },
-  {
-    id: 'quetes-jour',
-    component: 'QuestesJourSection',
-    position: 8,
-    type: 'legacy',
-    isVisible: false
-  },
-  {
-    id: 'activite-physique',
-    component: 'ActivitePhysiqueSection',
-    position: 10,
-    type: 'legacy',
-    isVisible: true
-  },
-  {
-    id: 'lecture-unifie',
-    component: 'LectureUnifiedModule',
-    position: 12,
-    type: 'legacy',
-    isVisible: true
-  },
-  {
-    id: 'finances',
-    component: 'FinancesSection',
-    position: 14,
-    type: 'legacy',
-    isVisible: true
-  },
-  {
-    id: 'nutrition',
-    component: 'NutritionSection',
-    position: 16,
-    type: 'legacy',
-    isVisible: true
-  }
-];
+const LEGACY_MODULES = [];
 
 /**
  * Configuration des nouveaux modules historiques
  */
 const HISTORICAL_MODULES = [
   {
-    id: 'enregistrer-session',
-    component: 'SessionRecorderModule',
+    id: 'course-garmin-running',
+    component: 'GarminRunningSidebarModule',
+    position: 0,
+    type: 'historical',
+    isVisible: true,
+    navigationTarget: {
+      tab: 'garmin',
+      subtab: 'dashboard',
+      moduleId: 'course-garmin-running',
+      scrollBehavior: 'smooth'
+    }
+  },
+  {
+    id: 'sidebar-sport-planning',
+    component: 'SidebarSportPlanningModule',
     position: 1,
     type: 'historical',
     isVisible: true,
     navigationTarget: {
-      tab: 'sport',
-      subtab: 'aujourdhui',
-      moduleId: 'session-recorder',
+      tab: 'today',
+      subtab: 'today',
+      moduleId: 'sidebar-sport-planning',
+      scrollBehavior: 'smooth'
+    }
+  },
+  {
+    id: 'sidebar-sport-calendar',
+    component: 'SidebarSportCalendarModule',
+    position: 2,
+    type: 'historical',
+    isVisible: true,
+    navigationTarget: {
+      tab: 'calendar',
+      subtab: 'calendar',
+      moduleId: 'sidebar-sport-calendar',
+      scrollBehavior: 'smooth'
+    }
+  },
+  {
+    id: 'sidebar-daily-quests',
+    component: 'SidebarDailyQuestsModule',
+    position: 3,
+    type: 'historical',
+    isVisible: true,
+    navigationTarget: {
+      tab: 'quests',
+      subtab: 'today',
+      moduleId: 'sidebar-daily-quests',
       scrollBehavior: 'smooth'
     }
   },
   {
     id: 'progression-lecture',
     component: 'ReadingProgressModule',
-    position: 3,
+    position: 5,
     type: 'historical',
     isVisible: false,
     navigationTarget: {
@@ -98,7 +81,7 @@ const HISTORICAL_MODULES = [
   {
     id: 'metriques-garmin',
     component: 'GarminMetricsModule',
-    position: 5,
+    position: 7,
     type: 'historical',
     isVisible: false,
     navigationTarget: {
@@ -109,35 +92,35 @@ const HISTORICAL_MODULES = [
     }
   },
   {
-    id: 'quetes-interactives',
-    component: 'InteractiveQuestsModule',
-    position: 7,
-    type: 'historical',
-    isVisible: true,
-    navigationTarget: {
-      tab: 'quests',
-      subtab: 'create',
-      moduleId: 'interactive-quests',
-      scrollBehavior: 'smooth'
-    }
-  },
-  {
-    id: 'evolution-patrimoine',
-    component: 'PatrimonyEvolutionModule',
+    id: 'sidebar-body-recap',
+    component: 'SidebarBodyRecapModule',
     position: 9,
     type: 'historical',
     isVisible: true,
     navigationTarget: {
+      tab: 'today',
+      subtab: 'today',
+      moduleId: 'sidebar-body-recap',
+      scrollBehavior: 'smooth'
+    }
+  },
+  {
+    id: 'sidebar-finance-snapshot',
+    component: 'SidebarFinanceSnapshotModule',
+    position: 11,
+    type: 'historical',
+    isVisible: true,
+    navigationTarget: {
       tab: 'finance',
-      subtab: 'patrimony',
-      moduleId: 'patrimony-evolution',
+      subtab: 'planificateur',
+      moduleId: 'sidebar-finance-snapshot',
       scrollBehavior: 'smooth'
     }
   },
   {
     id: 'liste-courses',
     component: 'ShoppingListModule',
-    position: 11,
+    position: 13,
     type: 'historical',
     isVisible: false,
     navigationTarget: {
@@ -150,7 +133,7 @@ const HISTORICAL_MODULES = [
   {
     id: 'session-lecture-active',
     component: 'ActiveReadingSessionModule',
-    position: 13,
+    position: 15,
     type: 'historical',
     isVisible: false,
     navigationTarget: {
@@ -161,22 +144,9 @@ const HISTORICAL_MODULES = [
     }
   },
   {
-    id: 'entrainement-jour',
-    component: 'DailyTrainingModule',
-    position: 15,
-    type: 'historical',
-    isVisible: true,
-    navigationTarget: {
-      tab: 'sport',
-      subtab: 'training',
-      moduleId: 'daily-training',
-      scrollBehavior: 'smooth'
-    }
-  },
-  {
     id: 'creativite-projets',
     component: 'CreativityProjectsModule',
-    position: 17,
+    position: 19,
     type: 'historical',
     isVisible: false,
     navigationTarget: {
@@ -188,7 +158,7 @@ const HISTORICAL_MODULES = [
   {
     id: 'performance-globale',
     component: 'GlobalPerformanceModule',
-    position: 19,
+    position: 21,
     type: 'historical',
     isVisible: false,
     navigationTarget: {
@@ -200,13 +170,52 @@ const HISTORICAL_MODULES = [
   {
     id: 'apprentissage-express',
     component: 'ExpressLearningModule',
-    position: 21,
+    position: 23,
     type: 'historical',
     isVisible: false,
     navigationTarget: {
       tab: 'settings',
       subtab: 'learning',
       moduleId: 'express-learning',
+      scrollBehavior: 'smooth'
+    }
+  },
+  {
+    id: 'sidebar-reading-session',
+    component: 'SidebarReadingSessionModule',
+    position: 25,
+    type: 'historical',
+    isVisible: true,
+    navigationTarget: {
+      tab: 'books',
+      subtab: 'library',
+      moduleId: 'sidebar-reading-session',
+      scrollBehavior: 'smooth'
+    }
+  },
+  {
+    id: 'sidebar-book-focus',
+    component: 'SidebarBookFocusModule',
+    position: 27,
+    type: 'historical',
+    isVisible: true,
+    navigationTarget: {
+      tab: 'books',
+      subtab: 'library',
+      moduleId: 'sidebar-book-focus',
+      scrollBehavior: 'smooth'
+    }
+  },
+  {
+    id: 'sidebar-books-recap',
+    component: 'SidebarBooksRecapModule',
+    position: 29,
+    type: 'historical',
+    isVisible: true,
+    navigationTarget: {
+      tab: 'books',
+      subtab: 'statistics',
+      moduleId: 'sidebar-books-recap',
       scrollBehavior: 'smooth'
     }
   }
@@ -229,9 +238,27 @@ class ModuleAlternationService {
   generateAlternationPattern() {
     const pattern = [];
     const maxPosition = Math.max(
+      0,
       ...this.legacyModules.map(m => m.position),
       ...this.historicalModules.map(m => m.position)
     );
+
+    // Position 0 : bloc optionnel tout en haut (au-dessus de l’alternance 1 = historique, 2 = legacy…)
+    const historicalAtZero = this.historicalModules.find((m) => m.position === 0);
+    const legacyAtZero = this.legacyModules.find((m) => m.position === 0);
+    if (historicalAtZero) {
+      pattern.push({
+        ...historicalAtZero,
+        order: 0,
+        alternationType: 'historical'
+      });
+    } else if (legacyAtZero) {
+      pattern.push({
+        ...legacyAtZero,
+        order: 0,
+        alternationType: 'legacy'
+      });
+    }
 
     // Créer le pattern d'alternance
     for (let position = 1; position <= maxPosition; position++) {
@@ -285,7 +312,12 @@ class ModuleAlternationService {
    */
   insertNewModule(moduleConfig) {
     // Valider la configuration du module
-    if (!moduleConfig.id || !moduleConfig.component || !moduleConfig.position) {
+    if (
+      !moduleConfig.id ||
+      !moduleConfig.component ||
+      typeof moduleConfig.position !== 'number' ||
+      !Number.isFinite(moduleConfig.position)
+    ) {
       throw new Error('Configuration de module invalide: id, component et position requis');
     }
 
@@ -405,8 +437,23 @@ class ModuleAlternationService {
       errors.push('Positions dupliquées détectées');
     }
 
-    // Vérifier l'alternance des types (historique en position impaire, legacy en position paire)
+    // Position 0 : historique (ex. course Garmin). Positions 1–3 : bloc sport + calendrier + quêtes (historique).
+    // À partir de la position 4 : alternance legacy (pair) / historique (impair) lorsque les deux types sont présents.
     for (const module of visibleModules) {
+      if (module.position === 0) {
+        if (module.type !== 'historical') {
+          errors.push(`Module ${module.id} en position 0 doit être de type historical, reçu: ${module.type}`);
+        }
+        continue;
+      }
+      if (module.position >= 1 && module.position <= 3) {
+        if (module.type !== 'historical') {
+          errors.push(
+            `Module ${module.id} à la position ${module.position} fait partie du bloc sport/quêtes et doit être historical`
+          );
+        }
+        continue;
+      }
       const expectedType = module.position % 2 === 1 ? 'historical' : 'legacy';
       if (module.type !== expectedType) {
         errors.push(`Module ${module.id} à la position ${module.position} devrait être de type ${expectedType} mais est ${module.type}`);
@@ -441,7 +488,7 @@ class ModuleAlternationService {
       totalModules: visibleModules.length,
       legacyModules: legacyCount,
       historicalModules: historicalCount,
-      alternationRatio: legacyCount > 0 ? historicalCount / legacyCount : 0,
+      alternationRatio: legacyCount > 0 ? historicalCount / legacyCount : null,
       pattern: visibleModules.map(m => ({
         position: m.position,
         type: m.type,

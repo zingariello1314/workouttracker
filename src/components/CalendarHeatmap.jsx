@@ -56,8 +56,11 @@ const CalendarHeatmap = ({
   workoutHistory = [],
   garminData = null,
   initialViewMode = 'year', // 'month', 'year', 'streaks'
-  compact = false
+  compact = false,
+  /** Réduit typo / grilles / légende pour calendrier dans la sidebar (avec compact) */
+  embedInSidebar = false
 }) => {
+  const isSidebarEmbed = Boolean(compact && embedInSidebar);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState(
     compact ? 'month' : initialViewMode || 'year'
@@ -1560,8 +1563,28 @@ const CalendarHeatmap = ({
 
   // Données calculées
   const monthDays = useMemo(() => generateMonthDays(currentDate), [currentDate, allData, garminData]);
-  const { months: yearMonths, yearStats } = useMemo(() => generateYearData(currentDate), [currentDate, allData, garminData]);
-  const streaks = useMemo(() => calculateStreaks(), [workoutHistory]);
+  const { months: yearMonths, yearStats } = useMemo(() => {
+    if (isSidebarEmbed) {
+      return {
+        months: [],
+        yearStats: {
+          totalSessions: 0,
+          totalReps: 0,
+          totalDuration: 0,
+          avgIntensity: 0,
+          bestMonth: null,
+          bestDay: null
+        }
+      };
+    }
+    return generateYearData(currentDate);
+  }, [isSidebarEmbed, currentDate, allData, garminData]);
+  const streaks = useMemo(() => {
+    if (isSidebarEmbed) {
+      return { currentStreak: 0, longestStreak: 0 };
+    }
+    return calculateStreaks();
+  }, [isSidebarEmbed, workoutHistory]);
 
   // Constantes pour l'affichage
   const monthNames = useMemo(() => [
@@ -1582,9 +1605,15 @@ const CalendarHeatmap = ({
   const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
   return (
-    <div className="space-y-6">
+    <div className={isSidebarEmbed ? 'space-y-2 min-w-0' : 'space-y-6'}>
       {/* En-tête avec navigation */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700">
+      <div
+        className={
+          isSidebarEmbed
+            ? 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-slate-700 min-w-0'
+            : 'bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700'
+        }
+      >
         {!compact && (
           <div className="flex items-center justify-between mb-4">
             <div className="flex gap-2">
@@ -1605,15 +1634,26 @@ const CalendarHeatmap = ({
           </div>
         )}
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-1 min-w-0">
           <button
+            type="button"
             onClick={() => navigateDate(-1)}
-            className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all"
+            className={
+              isSidebarEmbed
+                ? 'p-1 shrink-0 bg-slate-700 hover:bg-slate-600 rounded-md transition-all'
+                : 'p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all'
+            }
           >
-            <ChevronLeft size={20} className="text-white" />
+            <ChevronLeft size={isSidebarEmbed ? 16 : 20} className="text-white" />
           </button>
-          
-          <h3 className="text-xl font-bold text-white">
+
+          <h3
+            className={
+              isSidebarEmbed
+                ? 'text-xs sm:text-sm font-semibold text-white text-center truncate px-1 min-w-0 flex-1'
+                : 'text-xl font-bold text-white'
+            }
+          >
             {viewMode === 'month' || compact
               ? `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
               : viewMode === 'year'
@@ -1621,53 +1661,105 @@ const CalendarHeatmap = ({
               : t('calendar.heatmap.streaksAnalysis')
             }
           </h3>
-          
+
           <button
+            type="button"
             onClick={() => navigateDate(1)}
-            className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all"
+            className={
+              isSidebarEmbed
+                ? 'p-1 shrink-0 bg-slate-700 hover:bg-slate-600 rounded-md transition-all'
+                : 'p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all'
+            }
           >
-            <ChevronRight size={20} className="text-white" />
+            <ChevronRight size={isSidebarEmbed ? 16 : 20} className="text-white" />
           </button>
         </div>
       </div>
 
       {/* Légende améliorée */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-slate-300 text-sm">{t('calendar.heatmap.intensity')}</span>
-            <div className="flex gap-2">
-              {[0, 1, 2, 3, 4].map(level => (
-                <div key={level} className="flex items-center gap-1">
-                  <div className={`w-4 h-4 rounded border ${getIntensityColor(level)}`} />
-                  <span className="text-xs text-slate-400">{getIntensityLabel(level)}</span>
+      <div
+        className={
+          isSidebarEmbed
+            ? 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-slate-700 min-w-0'
+            : 'bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700'
+        }
+      >
+        <div
+          className={
+            isSidebarEmbed
+              ? 'flex flex-col gap-1.5 min-w-0'
+              : 'flex items-center justify-between'
+          }
+        >
+          <div
+            className={
+              isSidebarEmbed
+                ? 'flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0'
+                : 'flex items-center gap-4'
+            }
+          >
+            <span
+              className={
+                isSidebarEmbed ? 'text-[10px] text-slate-400 shrink-0' : 'text-slate-300 text-sm'
+              }
+            >
+              {t('calendar.heatmap.intensity')}
+            </span>
+            <div className={isSidebarEmbed ? 'flex flex-wrap gap-x-1.5 gap-y-0.5 min-w-0' : 'flex gap-2'}>
+              {[0, 1, 2, 3, 4].map((level) => (
+                <div
+                  key={level}
+                  className={isSidebarEmbed ? 'flex items-center gap-0.5 shrink-0' : 'flex items-center gap-1'}
+                >
+                  <div
+                    className={`rounded border shrink-0 ${isSidebarEmbed ? 'w-2.5 h-2.5' : 'w-4 h-4'} ${getIntensityColor(level)}`}
+                  />
+                  <span className={isSidebarEmbed ? 'text-[9px] text-slate-400 leading-none' : 'text-xs text-slate-400'}>
+                    {getIntensityLabel(level)}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-          <button
-            onClick={() => setShowStats(!showStats)}
-            className="text-sm text-purple-400 hover:text-purple-300"
-          >
-            {showStats ? t('calendar.heatmap.hideStats') : t('calendar.heatmap.showStats')}
-          </button>
+          {!isSidebarEmbed && (
+            <button
+              type="button"
+              onClick={() => setShowStats(!showStats)}
+              className="text-sm text-purple-400 hover:text-purple-300"
+            >
+              {showStats ? t('calendar.heatmap.hideStats') : t('calendar.heatmap.showStats')}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Vue mensuelle détaillée */}
       {(viewMode === 'month' || compact) && (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+        <div
+          className={
+            isSidebarEmbed
+              ? 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-1.5 py-2 border border-slate-700 min-w-0'
+              : 'bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700'
+          }
+        >
           {/* En-têtes des jours */}
-          <div className="grid grid-cols-7 gap-2 mb-4">
+          <div className={`grid grid-cols-7 ${isSidebarEmbed ? 'gap-0.5 mb-1' : 'gap-2 mb-4'}`}>
             {weekDays.map((day, index) => (
-              <div key={`weekday-${index}`} className="text-center text-slate-400 text-sm font-medium p-2">
+              <div
+                key={`weekday-${index}`}
+                className={
+                  isSidebarEmbed
+                    ? 'text-center text-slate-400 text-[9px] font-medium py-0.5 px-0'
+                    : 'text-center text-slate-400 text-sm font-medium p-2'
+                }
+              >
                 {day}
               </div>
             ))}
           </div>
 
           {/* Grille des jours */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className={`grid grid-cols-7 ${isSidebarEmbed ? 'gap-0.5' : 'gap-2'}`}>
             {monthDays.map((day, index) => (
               <div
                 key={index}
@@ -1691,29 +1783,44 @@ const CalendarHeatmap = ({
                   }
                 }}
                 className={`
-                  aspect-square rounded-lg border-2 cursor-pointer transition-all duration-200 relative
+                  aspect-square rounded-lg ${isSidebarEmbed ? 'border' : 'border-2'} cursor-pointer transition-all duration-200 relative min-w-0
                   ${getDayColor(day.intensity, day.isToday)}
                   ${day.isCurrentMonth ? 'border-transparent' : 'border-slate-600 opacity-30'}
                   ${selectedDate?.date.toDateString() === day.date.toDateString() 
                     ? 'ring-2 ring-purple-400' : ''
                   }
-                  hover:ring-2 hover:ring-purple-300 hover:scale-105
+                  ${isSidebarEmbed ? 'hover:ring-1 hover:ring-purple-300' : 'hover:ring-2 hover:ring-purple-300 hover:scale-105'}
                 `}
                   title={getDayTooltip(day, day.intensity)}
               >
-                <div className="w-full h-full flex flex-col items-center justify-center relative">
-                  <span className={`text-sm font-medium ${
-                    day.intensity.level > 0 ? 'text-white' : 'text-slate-400'
-                  }`}>
-                    {day.date.getDate()}
-                  </span>
-                  {day.intensity.level > 0 && (
-                    <div className="text-xs text-white/80">
-                      {day.intensity.reps}
-                    </div>
+                <div className="w-full h-full flex flex-col items-center justify-center relative px-px">
+                  {isSidebarEmbed ? (
+                    <span
+                      className={`tabular-nums text-[10px] font-semibold leading-none text-center max-w-full truncate ${
+                        day.intensity.level > 0 ? 'text-white' : 'text-slate-400'
+                      }`}
+                    >
+                      {day.date.getDate()}
+                      {day.intensity.level > 0 && Number(day.intensity.reps) > 0 ? (
+                        <span className="text-[7px] font-normal opacity-90">·{day.intensity.reps}</span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <>
+                      <span
+                        className={`text-sm font-medium ${
+                          day.intensity.level > 0 ? 'text-white' : 'text-slate-400'
+                        }`}
+                      >
+                        {day.date.getDate()}
+                      </span>
+                      {day.intensity.level > 0 && (
+                        <div className="text-xs text-white/80 leading-none">{day.intensity.reps}</div>
+                      )}
+                    </>
                   )}
                   {/* PHASE 5.3 : Icônes Garmin (discret, en bas à droite) */}
-                  {day.intensity.garminIcons && day.intensity.garminIcons.length > 0 && (
+                  {day.intensity.garminIcons && day.intensity.garminIcons.length > 0 && !isSidebarEmbed && (
                     <div className="absolute bottom-1 right-1 flex gap-0.5">
                       {day.intensity.garminIcons.map((iconData, idx) => (
                         <span
@@ -1728,7 +1835,9 @@ const CalendarHeatmap = ({
                   )}
                 </div>
                 {day.isToday && (
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <div
+                    className={`absolute bg-blue-500 rounded-full ${isSidebarEmbed ? 'top-0 right-0 w-1.5 h-1.5' : '-top-1 -right-1 w-3 h-3'}`}
+                  />
                 )}
               </div>
             ))}
@@ -1742,8 +1851,10 @@ const CalendarHeatmap = ({
             if (!hasJustifications) return null;
             
             return (
-              <div className="mt-4 pt-4 border-t border-slate-700/50">
-                <div className="text-xs text-slate-400 mb-2">{t('calendar.heatmap.monthlyJustifications')}</div>
+              <div className={isSidebarEmbed ? 'mt-2 pt-2 border-t border-slate-700/50' : 'mt-4 pt-4 border-t border-slate-700/50'}>
+                <div className={isSidebarEmbed ? 'text-[10px] text-slate-400 mb-1' : 'text-xs text-slate-400 mb-2'}>
+                  {t('calendar.heatmap.monthlyJustifications')}
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {monthStats[JUSTIFICATION_REASONS.MALADIE] > 0 && (
                     <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.MALADIE]}`}>
