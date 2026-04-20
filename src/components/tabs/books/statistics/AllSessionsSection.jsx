@@ -7,7 +7,8 @@ import React, { useState, useMemo } from 'react';
 import { Calendar, BookOpen, Edit2, X, Check } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
-import { Input } from '../../../ui/Input';
+import { Input, TextArea } from '../../../ui/Input';
+import ReadingSessionCriteriaSliders from '../../../books/ReadingSessionCriteriaSliders';
 import SessionAggregator from '../../../../services/statistics/SessionAggregator';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../../../utils/sidebarEvents';
 import { validateWithSchema, readingSessionSchema } from '../../../../utils/validation/schemas';
@@ -25,7 +26,21 @@ const normalizeDate = (dateString) => {
 export default function AllSessionsSection({ books = [], setBooks }) {
   const [filter, setFilter] = useState('year'); // 'year' | 'all'
   const [editingSession, setEditingSession] = useState(null);
-  const [editForm, setEditForm] = useState({ date: '', durationMinutes: '', pagesRead: '', startTime: '', note: '' });
+  const defaultCriteria = () => ({
+    immersion: 5,
+    rythme: 5,
+    richesse: 5,
+    concentration: 5,
+    plaisir: 5,
+  });
+  const [editForm, setEditForm] = useState({
+    date: '',
+    durationMinutes: '',
+    pagesRead: '',
+    startTime: '',
+    note: '',
+    criteriaRatings: defaultCriteria(),
+  });
   const [editError, setEditError] = useState('');
 
   const currentYear = new Date().getFullYear().toString();
@@ -48,12 +63,16 @@ export default function AllSessionsSection({ books = [], setBooks }) {
 
   const openEdit = (session) => {
     setEditingSession(session);
+    const cr = session.criteriaRatings && typeof session.criteriaRatings === 'object'
+      ? { ...defaultCriteria(), ...session.criteriaRatings }
+      : defaultCriteria();
     setEditForm({
       date: session.normalizedDate || session.date?.split?.('T')[0] || '',
       durationMinutes: session.durationMinutes != null ? String(session.durationMinutes) : '',
       pagesRead: session.pagesRead != null ? String(session.pagesRead) : '',
       startTime: session.startTime || '',
       note: session.note || '',
+      criteriaRatings: cr,
     });
     setEditError('');
   };
@@ -65,6 +84,13 @@ export default function AllSessionsSection({ books = [], setBooks }) {
 
   const handleEditChange = (field, value) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCriteriaChange = (key, value) => {
+    setEditForm((prev) => ({
+      ...prev,
+      criteriaRatings: { ...prev.criteriaRatings, [key]: value },
+    }));
   };
 
   const saveEdit = () => {
@@ -86,6 +112,13 @@ export default function AllSessionsSection({ books = [], setBooks }) {
       pagesRead: pages || 0,
       startTime: (editForm.startTime || '').trim(),
       note: (editForm.note || '').trim(),
+      criteriaRatings: {
+        immersion: Number(editForm.criteriaRatings?.immersion) || 5,
+        rythme: Number(editForm.criteriaRatings?.rythme) || 5,
+        richesse: Number(editForm.criteriaRatings?.richesse) || 5,
+        concentration: Number(editForm.criteriaRatings?.concentration) || 5,
+        plaisir: Number(editForm.criteriaRatings?.plaisir) || 5,
+      },
     };
     const validation = validateWithSchema(readingSessionSchema, payload);
     if (!validation.success) {
@@ -103,13 +136,7 @@ export default function AllSessionsSection({ books = [], setBooks }) {
           const match = s.id !== undefined && s.id !== null
             ? s.id === sessionId
             : (normalizeDate(s.date) === normalizedDate && (s.pagesRead ?? 0) === oldPages && (s.durationMinutes ?? 0) === oldMins);
-          return match
-            ? {
-                ...s,
-                ...validation.data,
-                criteriaRatings: s.criteriaRatings || validation.data.criteriaRatings,
-              }
-            : s;
+          return match ? { ...s, ...validation.data } : s;
         });
         return { ...book, readingSessions: sessions };
       })
@@ -210,7 +237,7 @@ export default function AllSessionsSection({ books = [], setBooks }) {
       {editingSession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={closeEdit}>
           <div
-            className="bg-slate-800 rounded-xl shadow-xl max-w-md w-full p-6 border border-slate-600"
+            className="bg-slate-800 rounded-xl shadow-xl max-w-lg w-full p-6 border border-slate-600 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -256,12 +283,16 @@ export default function AllSessionsSection({ books = [], setBooks }) {
                 onChange={(e) => handleEditChange('startTime', e.target.value)}
                 variant="glass"
               />
-              <Input
-                label="Note (optionnel)"
-                type="text"
+              <ReadingSessionCriteriaSliders
+                criteriaRatings={editForm.criteriaRatings}
+                onChange={handleCriteriaChange}
+              />
+              <TextArea
+                id="stats-session-note"
+                label="Note libre (optionnel)"
+                rows={3}
                 value={editForm.note}
                 onChange={(e) => handleEditChange('note', e.target.value)}
-                variant="glass"
               />
             </div>
             {editError && <p className="text-red-400 text-sm mt-2">{editError}</p>}

@@ -1,6 +1,6 @@
 /**
  * Composant ApprentissageTab - Onglet Apprentissage
- * Système de gestion de l'apprentissage avec 3 sous-onglets : Matières, Sessions, Trophées
+ * Système de gestion de l'apprentissage avec sous-onglets : Matières, Sessions, Trophées, Calendrier
  */
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
@@ -11,6 +11,7 @@ import ErrorBoundary from '../ui/ErrorBoundary';
 const MatièresView = lazy(() => import('../apprentissage/MatièresView'));
 const SessionsView = lazy(() => import('../apprentissage/SessionsView'));
 const TrophéesView = lazy(() => import('../apprentissage/TrophéesView'));
+const ApprentissageCalendarView = lazy(() => import('../apprentissage/ApprentissageCalendarView'));
 const ApprentissageXPBar = lazy(() => import('../apprentissage/ApprentissageXPBar'));
 
 // Composant de chargement
@@ -58,6 +59,7 @@ const ApprentissageTab = () => {
     { id: 'matieres', label: 'Matières', icon: '📚' },
     { id: 'sessions', label: 'Sessions', icon: '⏱️' },
     { id: 'trophees', label: 'Trophées', icon: '🏆' },
+    { id: 'calendrier', label: 'Calendrier', icon: '📆' },
   ];
 
   const switchToSubView = (subView) => {
@@ -72,6 +74,8 @@ const ApprentissageTab = () => {
         return <SessionsView />;
       case 'trophees':
         return <TrophéesView />;
+      case 'calendrier':
+        return <ApprentissageCalendarView />;
       default:
         return null;
     }
@@ -90,6 +94,8 @@ const ApprentissageTab = () => {
                 key={subView.id}
                 type="button"
                 onClick={() => switchToSubView(subView.id)}
+                data-subtab={subView.id}
+                data-tab={subView.id === 'calendrier' ? 'learning-calendar' : undefined}
                 className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center space-x-2 whitespace-nowrap flex-shrink-0 ${
                   currentSubView === subView.id
                     ? 'gradient-button-premium-variant'

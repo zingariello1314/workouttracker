@@ -16,6 +16,7 @@ const generateTestWorkoutData = () => {
     weekVariant: 'A',
     progressPhotos: [],
     exerciseIntensityCoeffs: {},
+    exercisePerceivedRatings: {},
     exercisePersonalNotes: {}
   };
 
@@ -125,6 +126,8 @@ const INITIAL_WORKOUT_DATA = {
   dayJustificationsVersion: '1.0', // Version du schéma pour migrations futures
   // Coefficients de charge calendrier / historique (surcharges par id d'exercice, optionnel)
   exerciseIntensityCoeffs: {},
+  /** Notes subjectives 1–10 par critère (modifiables dans l’onglet Exercices > fiche) */
+  exercisePerceivedRatings: {},
   exercisePersonalNotes: {},
   /** Arrêt tabac / THC : timers, jalons 20 ans, journal des envies (IndexedDB via saveToDB) */
   addictionQuitData: { ...DEFAULT_ADDICTION_QUIT_DATA },
@@ -417,6 +420,10 @@ export const useWorkoutData = (options = {}) => {
           newData && newData.exerciseIntensityCoeffs && typeof newData.exerciseIntensityCoeffs === 'object'
             ? { ...newData.exerciseIntensityCoeffs }
             : {},
+        exercisePerceivedRatings:
+          newData && newData.exercisePerceivedRatings && typeof newData.exercisePerceivedRatings === 'object'
+            ? { ...newData.exercisePerceivedRatings }
+            : {},
         exercisePersonalNotes:
           newData && newData.exercisePersonalNotes && typeof newData.exercisePersonalNotes === 'object'
             ? { ...newData.exercisePersonalNotes }
@@ -661,6 +668,10 @@ export const useWorkoutData = (options = {}) => {
                 migratedData.exerciseIntensityCoeffs && typeof migratedData.exerciseIntensityCoeffs === 'object'
                   ? { ...migratedData.exerciseIntensityCoeffs }
                   : {},
+              exercisePerceivedRatings:
+                migratedData.exercisePerceivedRatings && typeof migratedData.exercisePerceivedRatings === 'object'
+                  ? { ...migratedData.exercisePerceivedRatings }
+                  : {},
               exercisePersonalNotes:
                 migratedData.exercisePersonalNotes && typeof migratedData.exercisePersonalNotes === 'object'
                   ? { ...migratedData.exercisePersonalNotes }
@@ -697,6 +708,10 @@ export const useWorkoutData = (options = {}) => {
                     migratedBackup.exerciseIntensityCoeffs && typeof migratedBackup.exerciseIntensityCoeffs === 'object'
                       ? { ...migratedBackup.exerciseIntensityCoeffs }
                       : {},
+                  exercisePerceivedRatings:
+                    migratedBackup.exercisePerceivedRatings && typeof migratedBackup.exercisePerceivedRatings === 'object'
+                      ? { ...migratedBackup.exercisePerceivedRatings }
+                      : {},
                   exercisePersonalNotes:
                     migratedBackup.exercisePersonalNotes && typeof migratedBackup.exercisePersonalNotes === 'object'
                       ? { ...migratedBackup.exercisePersonalNotes }
@@ -726,7 +741,28 @@ export const useWorkoutData = (options = {}) => {
               const parsedBackup = JSON.parse(backupData);
               // ✅ Migration automatique des données localStorage
               const migratedBackup = migrateDailyVariations(parsedBackup);
-              resolve(migratedBackup);
+              resolve({
+                ...migratedBackup,
+                exerciseIntensityCoeffs:
+                  migratedBackup.exerciseIntensityCoeffs &&
+                  typeof migratedBackup.exerciseIntensityCoeffs === 'object'
+                    ? { ...migratedBackup.exerciseIntensityCoeffs }
+                    : {},
+                exercisePerceivedRatings:
+                  migratedBackup.exercisePerceivedRatings &&
+                  typeof migratedBackup.exercisePerceivedRatings === 'object'
+                    ? { ...migratedBackup.exercisePerceivedRatings }
+                    : {},
+                exercisePersonalNotes:
+                  migratedBackup.exercisePersonalNotes &&
+                  typeof migratedBackup.exercisePersonalNotes === 'object'
+                    ? { ...migratedBackup.exercisePersonalNotes }
+                    : {},
+                addictionQuitData:
+                  migratedBackup.addictionQuitData && typeof migratedBackup.addictionQuitData === 'object'
+                    ? migratedBackup.addictionQuitData
+                    : INITIAL_WORKOUT_DATA.addictionQuitData,
+              });
             } else {
               resolve(null);
             }

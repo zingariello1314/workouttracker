@@ -87,6 +87,11 @@ export const TROPHIES_CONFIG = [
   { id: 'early_bird', icon: '🐦', name: 'Lève-tôt', description: 'Étudier avant 7h', type: 'special', requirement: { type: 'early_study', value: 1 }, xp: 100 },
   { id: 'marathon_runner', icon: '🏃‍♂️', name: 'Marathonien', description: 'Session 3h', type: 'special', requirement: { type: 'long_session', value: 10800 }, xp: 200 },
   { id: 'perfectionist', icon: '💎', name: 'Perfectionniste', description: '20 sessions sans interruption', type: 'special', requirement: { type: 'perfect_sessions', value: 20 }, xp: 250 },
+  /** Débloqués via l’onglet Apprentissage → Calendrier (stats calendrier fusion dashboard), pas via les sessions. */
+  { id: 'fusion_calendar_5d', icon: '📅', name: 'Rythme multi-piliers', description: '5 jours avec activité sur le calendrier fusion (année affichée)', type: 'fusion_calendar', requirement: { type: 'fusion_active_days', value: 5 }, xp: 35 },
+  { id: 'fusion_calendar_20d', icon: '🔥', name: 'Charge régulière', description: '20 jours actifs sur le calendrier fusion', type: 'fusion_calendar', requirement: { type: 'fusion_active_days', value: 20 }, xp: 90 },
+  { id: 'fusion_calendar_60d', icon: '⚡', name: 'Année dense', description: '60 jours actifs sur le calendrier fusion', type: 'fusion_calendar', requirement: { type: 'fusion_active_days', value: 60 }, xp: 200 },
+  { id: 'fusion_calendar_triple', icon: '🎯', name: 'Triple pilier', description: 'Au moins un jour avec lecture, quêtes et sport', type: 'fusion_calendar', requirement: { type: 'fusion_triple_days', value: 1 }, xp: 55 },
 ];
 
 // Jours de la semaine

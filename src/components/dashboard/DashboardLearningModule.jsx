@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { GraduationCap, BookOpen, Clock3, Trophy, Sparkles, Play, Pause, Square } from 'lucide-react';
+import { GraduationCap, BookOpen, Clock3, Trophy, Sparkles, Play, Pause, Square, CalendarDays } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useApprentissageEngine } from '../../hooks/useApprentissageEngine';
 import { TIMER_DEFAULTS, TIMER_COLORS } from '../../utils/apprentissageConstants';
@@ -233,6 +233,14 @@ const DashboardLearningModule = () => {
               className="h-8 px-3 rounded-lg border border-indigo-400/45 bg-indigo-500/20 text-indigo-100 text-xs font-medium hover:bg-indigo-500/30"
             >
               Accéder aux trophées
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateToLearning('calendrier')}
+              className="h-8 px-3 rounded-lg border border-amber-400/45 bg-amber-500/15 text-amber-100 text-xs font-medium hover:bg-amber-500/25 inline-flex items-center gap-1.5"
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              Calendrier fusion
             </button>
             <button
               type="button"

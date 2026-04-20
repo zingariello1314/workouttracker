@@ -49,6 +49,36 @@ function profileText(t, profileId, field, fallback = '') {
   return t(`exercisesTab.detailProfiles.${profileId}.${field}`, fallback);
 }
 
+function PerceivedTenStarRow({ label, value, readOnly, onChange }) {
+  const v = Math.max(0, Math.min(10, Number(value) || 0));
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-slate-400">{label}</span>
+        {v > 0 ? <span className="text-[10px] text-slate-500 tabular-nums">{v}/10</span> : null}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            type="button"
+            disabled={readOnly}
+            onClick={() => onChange(n === v ? 0 : n)}
+            className={`h-8 min-w-[2rem] rounded-md border text-sm leading-none transition ${
+              n <= v
+                ? 'border-amber-400/70 bg-amber-500/15 text-amber-300'
+                : 'border-slate-700 bg-slate-950/80 text-slate-600'
+            } ${readOnly ? 'opacity-50 cursor-not-allowed' : 'hover:border-amber-500/50'}`}
+            aria-label={`${n} sur 10`}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Fiche détaillée d’un exercice (charge, notes, explications par profil, aperçu Endurance).
  */
@@ -56,8 +86,10 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
   const t = useTranslation();
   const summary = useMemo(() => summarizeExerciseSeries(exercise), [exercise]);
   const coeffs = data?.exerciseIntensityCoeffs || {};
+  const ratingsMap = data?.exercisePerceivedRatings || {};
   const notesMap = data?.exercisePersonalNotes || {};
   const idKey = String(exercise.id);
+  const perceived = ratingsMap[idKey] || {};
 
   const profile = useMemo(() => resolveExerciseDetailProfile(exercise), [exercise]);
   const pid = profile.profileId;
@@ -88,6 +120,27 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
     updateData({
       ...data,
       exercisePersonalNotes: next
+    });
+  };
+
+  const setPerceivedField = (field, nextVal) => {
+    if (readOnly) return;
+    const n = Math.max(0, Math.min(10, Number(nextVal) || 0));
+    const prev = ratingsMap[idKey] || {};
+    const merged = { ...prev, [field]: n };
+    const empty =
+      (!merged.difficulty || merged.difficulty === 0) &&
+      (!merged.enjoyment || merged.enjoyment === 0) &&
+      (!merged.recovery || merged.recovery === 0);
+    if (empty) {
+      const nextMap = { ...ratingsMap };
+      delete nextMap[idKey];
+      updateData({ ...data, exercisePerceivedRatings: nextMap });
+      return;
+    }
+    updateData({
+      ...data,
+      exercisePerceivedRatings: { ...ratingsMap, [idKey]: merged },
     });
   };
 
@@ -210,7 +263,7 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
                 {exercise.name || exercise.nom}
               </CardTitle>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <LoadDifficultyStars coeff={effectiveCoeff} />
+                <LoadDifficultyStars coeff={effectiveCoeff} maxStars={10} />
                 <span className="text-xs text-slate-500">
                   {t('exercisesTab.detail.loadIndex', 'Indice charge')} ≈{' '}
                   <span className="text-slate-300 tabular-nums font-medium">
@@ -381,6 +434,39 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
                   placeholder={t('exercisesTab.detail.notesPlaceholder', 'Variante, élastique, tempo…')}
                 />
               )}
+            </div>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-slate-700/60 space-y-5">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Heart className="w-4 h-4 text-amber-400" />
+              {t('exercisesTab.detail.perceivedTitle', 'Ressenti (3 critères × 10)')}
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              {t(
+                'exercisesTab.detail.perceivedHint',
+                'Notes subjectives indépendantes du coefficient de charge calendrier : tu peux les réévaluer quand ton exécution ou ta condition change.'
+              )}
+            </p>
+            <div className="space-y-5 max-w-xl">
+              <PerceivedTenStarRow
+                label={t('exercisesTab.detail.perceivedDifficulty', 'Pénibilité perçue')}
+                value={perceived.difficulty || 0}
+                readOnly={readOnly}
+                onChange={(n) => setPerceivedField('difficulty', n)}
+              />
+              <PerceivedTenStarRow
+                label={t('exercisesTab.detail.perceivedEnjoyment', 'Plaisir / motivation')}
+                value={perceived.enjoyment || 0}
+                readOnly={readOnly}
+                onChange={(n) => setPerceivedField('enjoyment', n)}
+              />
+              <PerceivedTenStarRow
+                label={t('exercisesTab.detail.perceivedRecovery', 'Récupération ressentie')}
+                value={perceived.recovery || 0}
+                readOnly={readOnly}
+                onChange={(n) => setPerceivedField('recovery', n)}
+              />
             </div>
           </div>
         </CardContent>

@@ -77,18 +77,18 @@ const QuestsCalendarView = ({
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-to-r from-emerald-900/25 to-indigo-900/25 border-emerald-500/35">
+      <Card className="bg-black border border-amber-600/45 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
-            <Sparkles className="text-emerald-400" size={24} />
+            <Sparkles className="text-amber-400" size={24} />
             {t('quests.calendar.counterTitle', 'Résumé quêtes')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-slate-800/50 rounded-lg p-4 text-center">
+            <div className="bg-black rounded-lg p-4 text-center border border-slate-600">
               <div className="flex items-center justify-center mb-2">
-                <CheckCircle2 className="text-emerald-400 mr-2" size={20} />
+                <CheckCircle2 className="text-amber-400 mr-2" size={20} />
                 <span className="text-slate-300 text-sm">
                   {t('quests.calendar.totalChecks', 'Validations')}
                 </span>
@@ -98,9 +98,9 @@ const QuestsCalendarView = ({
                 {t('quests.calendar.totalChecksHint', 'Toutes dates confondues')}
               </div>
             </div>
-            <div className="bg-slate-800/50 rounded-lg p-4 text-center">
+            <div className="bg-black rounded-lg p-4 text-center border border-slate-600">
               <div className="flex items-center justify-center mb-2">
-                <Calendar className="text-sky-400 mr-2" size={20} />
+                <Calendar className="text-amber-300 mr-2" size={20} />
                 <span className="text-slate-300 text-sm">
                   {t('quests.calendar.activeDays', 'Jours avec quête')}
                 </span>
@@ -110,7 +110,7 @@ const QuestsCalendarView = ({
                 {t('quests.calendar.activeDaysHint', 'Au moins une validation')}
               </div>
             </div>
-            <div className="bg-slate-800/50 rounded-lg p-4 text-center">
+            <div className="bg-black rounded-lg p-4 text-center border border-slate-600">
               <div className="flex items-center justify-center mb-2">
                 <Zap className="text-amber-400 mr-2" size={20} />
                 <span className="text-slate-300 text-sm">
@@ -124,9 +124,9 @@ const QuestsCalendarView = ({
                 })}
               </div>
             </div>
-            <div className="bg-slate-800/50 rounded-lg p-4 text-center">
+            <div className="bg-black rounded-lg p-4 text-center border border-slate-600">
               <div className="flex items-center justify-center mb-2">
-                <Clock className="text-indigo-300 mr-2" size={20} />
+                <Clock className="text-amber-300 mr-2" size={20} />
                 <span className="text-slate-300 text-sm">
                   {t('quests.calendar.timeBank', 'Temps quêtes cumulé')}
                 </span>
@@ -139,8 +139,8 @@ const QuestsCalendarView = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="bg-slate-800/50 rounded-lg p-4 flex items-center gap-3 border border-slate-600/30">
-              <Target className="text-indigo-400 shrink-0" size={22} />
+            <div className="bg-black rounded-lg p-4 flex items-center gap-3 border border-slate-600">
+              <Target className="text-amber-400 shrink-0" size={22} />
               <div>
                 <div className="text-white font-medium text-sm">
                   {t('quests.calendar.hintTitle', 'Lecture du calendrier')}

@@ -85,11 +85,15 @@ import {
   sumBooksMinutesForMonth,
   sumBooksPagesForMonth,
 } from '../utils/booksCalendarMetrics';
+import {
+  buildLearningSessionsByDate,
+  sumLearningSessionsForMonth,
+} from '../utils/apprentissageCalendarMetrics';
 import BooksCalendarDayDetailPanel from './books/BooksCalendarDayDetailPanel';
 
 /**
- * Fond des grands blocs du calendrier : sport inchangé, livres noir, quêtes indigo.
- * @param {'sport'|'quests'|'books'} variant
+ * Fond des grands blocs du calendrier : sport inchangé, livres noir, quêtes noir + liseré doré, apprentissage noir + liseré vert.
+ * @param {'sport'|'quests'|'books'|'apprentissage'} variant
  * @param {'header'|'legend'|'month'|'wide'} slot
  */
 function heatmapModuleShell(variant, isEmbed, slot) {
@@ -102,14 +106,23 @@ function heatmapModuleShell(variant, isEmbed, slot) {
     const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
     return `bg-black rounded-xl border border-slate-600 ${pad}`;
   }
+  if (variant === 'apprentissage') {
+    if (isEmbed) {
+      return slot === 'month'
+        ? 'bg-black rounded-lg border border-emerald-700/50 min-w-0 px-1.5 py-2'
+        : 'bg-black rounded-lg border border-emerald-700/50 min-w-0 px-2 py-1.5';
+    }
+    const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
+    return `bg-black rounded-xl border border-emerald-600/45 ${pad}`;
+  }
   if (variant === 'quests') {
     if (isEmbed) {
       return slot === 'month'
-        ? 'bg-indigo-950/95 backdrop-blur-sm rounded-lg border border-indigo-800/55 min-w-0 px-1.5 py-2'
-        : 'bg-indigo-950/95 backdrop-blur-sm rounded-lg border border-indigo-800/55 min-w-0 px-2 py-1.5';
+        ? 'bg-black rounded-lg border border-amber-600/45 min-w-0 px-1.5 py-2'
+        : 'bg-black rounded-lg border border-amber-600/45 min-w-0 px-2 py-1.5';
     }
     const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
-    return `bg-indigo-950/95 backdrop-blur-sm rounded-xl border border-indigo-800/55 ${pad}`;
+    return `bg-black rounded-xl border border-amber-600/50 ${pad}`;
   }
   if (isEmbed) {
     return slot === 'month'
@@ -137,16 +150,9 @@ function getIntensityColor(level, isToday = false) {
   return `${baseColors[safe]}${todayRing}`;
 }
 
-/** Texte du chiffre du jour : contraste selon la luminosité de la teinte. */
-function heatmapDayNumberTone(cellStyle, dayHasPaint, level, composite01) {
-  const lev = Math.max(0, Math.min(4, Math.round(Number(level) || 0)));
-  const u =
-    composite01 != null && Number.isFinite(Number(composite01)) ? Number(composite01) : null;
-  if (u != null && u < 0.48) return 'text-slate-800';
-  if (!cellStyle?.backgroundColor && lev >= 1 && lev <= 2) return 'text-slate-900';
-  const onTint =
-    Boolean(cellStyle?.backgroundColor) || dayHasPaint || lev > 0;
-  return onTint ? 'text-white' : 'text-slate-800';
+/** Texte du chiffre du jour : toujours noir (lisibilité uniforme sur toutes les teintes). */
+function heatmapDayNumberTone() {
+  return 'text-black';
 }
 
 /** Métriques Garmin quotidiennes : évite le panneau « choix » sur un jour déjà « vécu ». */
@@ -172,15 +178,18 @@ const CalendarHeatmap = ({
   compact = false,
   /** Réduit typo / grilles / légende pour calendrier dans la sidebar (avec compact) */
   embedInSidebar = false,
-  /** 'sport' | 'quests' | 'books' */
+  /** 'sport' | 'quests' | 'books' | 'apprentissage' */
   variant = 'sport',
   /** Requis si variant === 'quests' : { validationsByDate, validations?, allQuests, getQuestsForDate, prayerLocation? } */
   questCalendarContext = null,
   /** Requis si variant === 'books' : { sessionsByDate } ou { books } */
   booksCalendarContext = null,
+  /** Requis si variant === 'apprentissage' : { sessionsByDate?: Map, sessionsHistory?: array } */
+  apprentissageCalendarContext = null,
 }) => {
   const isSidebarEmbed = Boolean(compact && embedInSidebar);
-  const isQuestsOrBooks = variant === 'quests' || variant === 'books';
+  const isQuestsOrBooks =
+    variant === 'quests' || variant === 'books' || variant === 'apprentissage';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState(
     compact ? 'month' : initialViewMode || 'year'
@@ -322,6 +331,75 @@ const CalendarHeatmap = ({
     });
   }, [variant, booksCalendarContext, currentDate, compact, viewMode]);
 
+  const learningIntensityMap = useMemo(() => {
+    if (variant !== 'apprentissage' || !apprentissageCalendarContext || compact) return null;
+    const sessionsByDate =
+      apprentissageCalendarContext.sessionsByDate ||
+      buildLearningSessionsByDate(apprentissageCalendarContext.sessionsHistory || []);
+    const year = currentDate.getFullYear();
+    const raw = new Map();
+    const cursor = new Date(year, 0, 1);
+    const end = new Date(year, 11, 31);
+    while (cursor <= end) {
+      const dateStr = getDateStr(cursor);
+      raw.set(dateStr, computeBooksIntensityForDate(dateStr, sessionsByDate, null));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return applyRelativePerformanceTint(raw, viewMode, currentDate, {
+      getScore: (int) => Number(int.intensityScore) || 0,
+      hasActivity: (int) => (int.bookData?.sessions ?? 0) > 0,
+    });
+  }, [variant, apprentissageCalendarContext, currentDate, compact, viewMode]);
+
+  const learningYearAggregates = useMemo(() => {
+    if (variant !== 'apprentissage' || !learningIntensityMap) return null;
+    let totalMinutes = 0;
+    let totalSessions = 0;
+    let activeDays = 0;
+    let bestDay = null;
+    let bestScore = -1;
+    const monthMinutes = Array(12).fill(0);
+    for (const [ds, inten] of learningIntensityMap.entries()) {
+      const bd = inten?.bookData;
+      if (!bd || bd.sessions <= 0) continue;
+      totalMinutes += bd.minutes || 0;
+      totalSessions += bd.sessions || 0;
+      activeDays += 1;
+      const score = Number(inten.intensityScore) || 0;
+      if (score > bestScore) {
+        bestScore = score;
+        bestDay = { dateStr: ds, bd };
+      }
+      const mi = parseInt(ds.slice(5, 7), 10) - 1;
+      if (mi >= 0 && mi < 12) monthMinutes[mi] += bd.minutes || 0;
+    }
+    let bestMonthIdx = -1;
+    let bestMonthMinutes = -1;
+    for (let m = 0; m < 12; m++) {
+      const x = monthMinutes[m];
+      if (x > 0 && x > bestMonthMinutes) {
+        bestMonthMinutes = x;
+        bestMonthIdx = m;
+      }
+    }
+    return {
+      totalMinutes,
+      totalSessions,
+      activeDays,
+      bestDay,
+      bestMonthIdx,
+      bestMonthMinutes,
+    };
+  }, [variant, learningIntensityMap]);
+
+  const learningSessionsByDateResolved = useMemo(() => {
+    if (variant !== 'apprentissage' || !apprentissageCalendarContext) return null;
+    return (
+      apprentissageCalendarContext.sessionsByDate ||
+      buildLearningSessionsByDate(apprentissageCalendarContext.sessionsHistory || [])
+    );
+  }, [variant, apprentissageCalendarContext]);
+
   const questYearAggregates = useMemo(() => {
     if (variant !== 'quests' || !questIntensityMap) return null;
     let totalXp = 0;
@@ -416,7 +494,16 @@ const CalendarHeatmap = ({
     // Vider le cache lorsque allData change (les données sources ont changé)
     // ✅ NOUVEAU : Invalider aussi si les justifications changent
     intensityCache.current = {};
-  }, [allData, garminData, allData?.dayJustifications, allData?.sessionFeedbacks, variant, questIntensityMap, booksIntensityMap]);
+  }, [
+    allData,
+    garminData,
+    allData?.dayJustifications,
+    allData?.sessionFeedbacks,
+    variant,
+    questIntensityMap,
+    booksIntensityMap,
+    learningIntensityMap,
+  ]);
 
   // Fonction pour obtenir le nom du jour
   const getDayName = (date) => {
@@ -691,6 +778,9 @@ const CalendarHeatmap = ({
     }
     if (variant === 'books' && booksIntensityMap) {
       return booksIntensityMap.get(dateStr) || createNeutralBooksIntensity();
+    }
+    if (variant === 'apprentissage' && learningIntensityMap) {
+      return learningIntensityMap.get(dateStr) || createNeutralBooksIntensity();
     }
 
     // ✅ NOUVEAU : Récupérer les données fraîches à chaque appel pour éviter les problèmes de closure
@@ -1887,6 +1977,7 @@ const CalendarHeatmap = ({
     variant,
     questIntensityMap,
     booksIntensityMap,
+    learningIntensityMap,
   ]);
   const { months: yearMonths, yearStats } = useMemo(() => {
     if (isSidebarEmbed) {
@@ -1913,6 +2004,7 @@ const CalendarHeatmap = ({
     variant,
     questIntensityMap,
     booksIntensityMap,
+    learningIntensityMap,
   ]);
 
   /**
@@ -1993,7 +2085,7 @@ const CalendarHeatmap = ({
       const dateStr = day.date.toLocaleDateString('fr-FR');
       return `${dateStr} — ${qd.completedUnique ?? 0}/${qd.scheduledTotal ?? 0} quêtes · ${qd.xpTotal ?? 0} XP · ${qd.minutesOccupied ?? 0} min`;
     }
-    if (variant === 'books' && intensity?.bookData) {
+    if ((variant === 'books' || variant === 'apprentissage') && intensity?.bookData) {
       const bd = intensity.bookData;
       const dateStr = day.date.toLocaleDateString('fr-FR');
       return `${dateStr} — ${bd.sessions ?? 0} session(s) · ${bd.pages ?? 0} p. · ${bd.minutes ?? 0} min`;
@@ -2056,8 +2148,10 @@ const CalendarHeatmap = ({
                   className={`px-4 py-2 rounded-lg transition-all ${
                     viewMode === mode
                       ? variant === 'quests'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-purple-600 text-white'
+                        ? 'bg-amber-500 text-black font-semibold'
+                        : variant === 'apprentissage'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-purple-600 text-white'
                       : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}
                 >
@@ -2164,7 +2258,13 @@ const CalendarHeatmap = ({
             <button
               type="button"
               onClick={() => setShowStats(!showStats)}
-              className="text-sm text-purple-400 hover:text-purple-300"
+              className={
+                variant === 'quests'
+                  ? 'text-sm text-amber-300 hover:text-amber-200'
+                  : variant === 'apprentissage'
+                    ? 'text-sm text-emerald-300 hover:text-emerald-200'
+                    : 'text-sm text-purple-400 hover:text-purple-300'
+              }
             >
               {showStats ? t('calendar.heatmap.hideStats') : t('calendar.heatmap.showStats')}
             </button>
@@ -2196,12 +2296,7 @@ const CalendarHeatmap = ({
             {monthDays.map((day, index) => {
               const cellColor = getDayColorStyle(day.intensity, day.isToday);
               const dayHasPaint = calendarDayHasPaintSignal(day.intensity);
-              const dayNumTone = heatmapDayNumberTone(
-                cellColor.style,
-                dayHasPaint,
-                day.intensity?.level,
-                day.intensity?.visualContext?.composite01
-              );
+              const dayNumTone = heatmapDayNumberTone();
               const dayDateStr = getDateStr(day.date);
               const stepsCount =
                 day.intensity?.steps != null && Number.isFinite(Number(day.intensity.steps))
@@ -2218,14 +2313,16 @@ const CalendarHeatmap = ({
               const questTileCount =
                 variant === 'quests'
                   ? day.intensity?.questData?.completedUnique ?? 0
-                  : variant === 'books'
+                  : variant === 'books' || variant === 'apprentissage'
                     ? day.intensity?.bookData?.sessions ?? 0
                     : 0;
               const showQuestCountOnTile =
                 (variant === 'quests' &&
                   questTileCount > 0 &&
                   (day.intensity?.level > 0 || dayHasPaint)) ||
-                (variant === 'books' && questTileCount > 0 && dayHasPaint);
+                ((variant === 'books' || variant === 'apprentissage') &&
+                  questTileCount > 0 &&
+                  dayHasPaint);
               return (
               <div
                 key={index}
@@ -2255,17 +2352,23 @@ const CalendarHeatmap = ({
                   ${day.isCurrentMonth ? 'border-transparent' : 'border-slate-600 opacity-30'}
                   ${selectedDate?.date.toDateString() === day.date.toDateString()
                     ? variant === 'quests'
-                      ? 'ring-2 ring-indigo-400'
-                      : 'ring-2 ring-purple-400'
+                      ? 'ring-2 ring-amber-400'
+                      : variant === 'apprentissage'
+                        ? 'ring-2 ring-emerald-400'
+                        : 'ring-2 ring-purple-400'
                     : ''}
                   ${
                     isSidebarEmbed
                       ? variant === 'quests'
-                        ? 'hover:ring-1 hover:ring-indigo-300'
-                        : 'hover:ring-1 hover:ring-purple-300'
+                        ? 'hover:ring-1 hover:ring-amber-400/80'
+                        : variant === 'apprentissage'
+                          ? 'hover:ring-1 hover:ring-emerald-400/80'
+                          : 'hover:ring-1 hover:ring-purple-300'
                       : variant === 'quests'
-                        ? 'hover:ring-2 hover:ring-indigo-300 hover:scale-105'
-                        : 'hover:ring-2 hover:ring-purple-300 hover:scale-105'
+                        ? 'hover:ring-2 hover:ring-amber-400/90 hover:scale-105'
+                        : variant === 'apprentissage'
+                          ? 'hover:ring-2 hover:ring-emerald-400/90 hover:scale-105'
+                          : 'hover:ring-2 hover:ring-purple-300 hover:scale-105'
                   }
                 `}
                 style={cellColor.style}
@@ -2411,7 +2514,7 @@ const CalendarHeatmap = ({
 
             {variant === 'quests' && questYearAggregates ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-black border border-slate-600 rounded-lg p-4">
                   <div className="text-slate-400 text-sm">
                     {t('quests.calendar.yearBestMonthXp', 'Meilleur mois (XP)')}
                   </div>
@@ -2424,7 +2527,7 @@ const CalendarHeatmap = ({
                     {questYearAggregates.bestMonthXp > 0 ? `${questYearAggregates.bestMonthXp} XP` : '—'}
                   </div>
                 </div>
-                <div className="bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-black border border-slate-600 rounded-lg p-4">
                   <div className="text-slate-400 text-sm">
                     {t('quests.calendar.yearBestDay', 'Jour le plus chargé')}
                   </div>
@@ -2442,7 +2545,7 @@ const CalendarHeatmap = ({
                     {t('quests.calendar.questsDone', 'quêtes')}
                   </div>
                 </div>
-                <div className="bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-black border border-slate-600 rounded-lg p-4">
                   <div className="text-slate-400 text-sm">
                     {t('quests.calendar.yearTotals', 'Totaux année')}
                   </div>
@@ -2454,9 +2557,50 @@ const CalendarHeatmap = ({
                   </div>
                 </div>
               </div>
+            ) : variant === 'apprentissage' && learningYearAggregates ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-black border border-emerald-800/40 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">Meilleur mois (temps d&apos;étude)</div>
+                  <div className="text-xl font-bold text-white">
+                    {learningYearAggregates.bestMonthIdx >= 0 && learningYearAggregates.bestMonthMinutes > 0
+                      ? monthNames[learningYearAggregates.bestMonthIdx]
+                      : 'N/A'}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    {learningYearAggregates.bestMonthMinutes > 0
+                      ? `${learningYearAggregates.bestMonthMinutes} min`
+                      : '—'}
+                  </div>
+                </div>
+                <div className="bg-black border border-emerald-800/40 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">Jour le plus chargé</div>
+                  <div className="text-xl font-bold text-white">
+                    {learningYearAggregates.bestDay?.dateStr
+                      ? new Date(`${learningYearAggregates.bestDay.dateStr}T12:00:00`).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                        })
+                      : 'N/A'}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    {(learningYearAggregates.bestDay?.bd?.minutes || 0) +
+                      ' min · ' +
+                      (learningYearAggregates.bestDay?.bd?.sessions || 0) +
+                      ' session(s)'}
+                  </div>
+                </div>
+                <div className="bg-black border border-emerald-800/40 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">Totaux année</div>
+                  <div className="text-xl font-bold text-white">{learningYearAggregates.totalMinutes} min</div>
+                  <div className="text-sm text-slate-300">
+                    {learningYearAggregates.activeDays} jours avec étude ·{' '}
+                    {learningYearAggregates.totalSessions} sessions
+                  </div>
+                </div>
+              </div>
             ) : variant === 'books' && booksYearAggregates ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-black border border-slate-600 rounded-lg p-4">
                   <div className="text-slate-400 text-sm">Meilleur mois (pages)</div>
                   <div className="text-xl font-bold text-white">
                     {booksYearAggregates.bestMonthIdx >= 0 && booksYearAggregates.bestMonthPages > 0
@@ -2469,7 +2613,7 @@ const CalendarHeatmap = ({
                       : '—'}
                   </div>
                 </div>
-                <div className="bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-black border border-slate-600 rounded-lg p-4">
                   <div className="text-slate-400 text-sm">Jour le plus chargé</div>
                   <div className="text-xl font-bold text-white">
                     {booksYearAggregates.bestDay?.dateStr
@@ -2486,7 +2630,7 @@ const CalendarHeatmap = ({
                       ' min'}
                   </div>
                 </div>
-                <div className="bg-slate-700/50 rounded-lg p-4">
+                <div className="bg-black border border-slate-600 rounded-lg p-4">
                   <div className="text-slate-400 text-sm">Totaux année</div>
                   <div className="text-xl font-bold text-white">{booksYearAggregates.totalPages} p.</div>
                   <div className="text-sm text-slate-300">
@@ -2549,7 +2693,12 @@ const CalendarHeatmap = ({
                               (d) =>
                                 d.isCurrentMonth && (d.intensity?.bookData?.sessions || 0) > 0
                             ).length} jour(s) avec lecture`
-                          : t('calendar.stats.sessions', { count: month.sessionsCount })}
+                          : variant === 'apprentissage'
+                            ? `${month.days.filter(
+                                (d) =>
+                                  d.isCurrentMonth && (d.intensity?.bookData?.sessions || 0) > 0
+                              ).length} jour(s) avec étude`
+                            : t('calendar.stats.sessions', { count: month.sessionsCount })}
                     </div>
                   </div>
                   
@@ -2566,12 +2715,7 @@ const CalendarHeatmap = ({
                       {month.days.map((day, dayIndex) => {
                         const yCell = getDayColorStyle(day.intensity, false);
                         const yPaint = calendarDayHasPaintSignal(day.intensity);
-                        const yDayNumTone = heatmapDayNumberTone(
-                          yCell.style,
-                          yPaint,
-                          day.intensity?.level,
-                          day.intensity?.visualContext?.composite01
-                        );
+                        const yDayNumTone = heatmapDayNumberTone();
                         const yDateStr = getDateStr(day.date);
                         const yStepsCount =
                           day.intensity?.steps != null && Number.isFinite(Number(day.intensity.steps))
@@ -2593,7 +2737,11 @@ const CalendarHeatmap = ({
                             ${yCell.className}
                             ${day.isCurrentMonth ? '' : 'opacity-20'}
                             hover:ring-1 ${
-                              variant === 'quests' ? 'hover:ring-indigo-300' : 'hover:ring-purple-300'
+                              variant === 'quests'
+                                ? 'hover:ring-amber-400/90'
+                                : variant === 'apprentissage'
+                                  ? 'hover:ring-emerald-400/90'
+                                  : 'hover:ring-purple-300'
                             } hover:scale-110
                           `}
                           style={yCell.style}
@@ -2647,7 +2795,7 @@ const CalendarHeatmap = ({
                   {/* Stats du mois */}
                   {variant === 'quests' && questCalendarContext?.validationsByDate ? (
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-slate-700/50 rounded p-2 text-center">
+                      <div className="bg-black border border-amber-700/35 rounded p-2 text-center">
                         <div className="text-white font-bold">
                           {sumQuestXpForMonth(
                             month.date.getFullYear(),
@@ -2659,7 +2807,7 @@ const CalendarHeatmap = ({
                           {t('quests.calendar.monthXp', 'XP ce mois')}
                         </div>
                       </div>
-                      <div className="bg-slate-700/50 rounded p-2 text-center">
+                      <div className="bg-black border border-amber-700/35 rounded p-2 text-center">
                         <div className="text-white font-bold">
                           {month.days.reduce(
                             (sum, d) =>
@@ -2695,6 +2843,30 @@ const CalendarHeatmap = ({
                           min
                         </div>
                         <div className="text-slate-400">Temps lecture</div>
+                      </div>
+                    </div>
+                  ) : variant === 'apprentissage' && learningSessionsByDateResolved ? (
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-black border border-emerald-800/35 rounded p-2 text-center">
+                        <div className="text-white font-bold">
+                          {sumLearningSessionsForMonth(
+                            month.date.getFullYear(),
+                            month.date.getMonth(),
+                            learningSessionsByDateResolved
+                          )}
+                        </div>
+                        <div className="text-slate-400">Sessions ce mois</div>
+                      </div>
+                      <div className="bg-black border border-emerald-800/35 rounded p-2 text-center">
+                        <div className="text-white font-bold">
+                          {sumBooksMinutesForMonth(
+                            month.date.getFullYear(),
+                            month.date.getMonth(),
+                            learningSessionsByDateResolved
+                          )}
+                          min
+                        </div>
+                        <div className="text-slate-400">Temps d&apos;étude</div>
                       </div>
                     </div>
                   ) : (
@@ -3440,6 +3612,67 @@ const CalendarHeatmap = ({
           );
         }
 
+        if (variant === 'apprentissage' && selectedDate && panelMode === 'details') {
+          const bd = selectedDate.intensity?.bookData;
+          const entries = bd?.entries || [];
+          return (
+            <div className={`${heatmapModuleShell(variant, isSidebarEmbed, 'wide')} space-y-4`}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-bold text-white">
+                  {formatLocaleDate(selectedDate.date, {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(null)}
+                  className="text-slate-400 hover:text-white text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-black border border-emerald-800/40 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-white">{bd?.sessions ?? 0}</div>
+                  <div className="text-xs text-slate-400">Sessions</div>
+                </div>
+                <div className="bg-black border border-emerald-800/40 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-white">{bd?.minutes ?? 0} min</div>
+                  <div className="text-xs text-slate-400">Temps total</div>
+                </div>
+                <div className="bg-black border border-emerald-800/40 rounded-lg p-3 text-center md:col-span-2">
+                  <div className="text-2xl font-bold text-white">{bd?.uniqueBooks ?? 0}</div>
+                  <div className="text-xs text-slate-400">Matières / sujets touchés</div>
+                </div>
+              </div>
+              {entries.length > 0 ? (
+                <div>
+                  <h4 className="text-white font-medium mb-2">Sessions enregistrées</h4>
+                  <ul className="space-y-2">
+                    {entries.map((row, idx) => (
+                      <li
+                        key={`${row.sessionId || idx}`}
+                        className="flex justify-between gap-2 bg-black/90 border border-emerald-900/40 rounded-lg px-3 py-2 text-sm"
+                      >
+                        <span className="text-white font-medium truncate">{row.bookTitle}</span>
+                        <span className="text-slate-300 shrink-0">
+                          {row.durationMinutes || 0} min
+                          {row.startTime ? ` · ${row.startTime}` : ''}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-slate-400 text-sm">Aucune session d&apos;étude ce jour.</p>
+              )}
+            </div>
+          );
+        }
+
         if (variant === 'quests' && selectedDate && panelMode === 'details') {
           const qd = selectedDate.intensity?.questData;
           return (
@@ -3462,20 +3695,20 @@ const CalendarHeatmap = ({
                 </button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-white">{qd?.completedUnique ?? 0}</div>
                   <div className="text-xs text-slate-400">Quêtes cochées (uniques)</div>
                 </div>
-                <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-white">{qd?.scheduledTotal ?? 0}</div>
                   <div className="text-xs text-slate-400">Prévues ce jour</div>
                 </div>
-                <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-white">{qd?.minutesOccupied ?? 0} min</div>
                   <div className="text-xs text-slate-400">Temps occupé (durées param.)</div>
                 </div>
-                <div className="bg-slate-700/50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-white">{qd?.xpTotal ?? 0}</div>
+                <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-amber-300">{qd?.xpTotal ?? 0}</div>
                   <div className="text-xs text-slate-400">XP ce jour</div>
                 </div>
               </div>
@@ -3486,7 +3719,7 @@ const CalendarHeatmap = ({
                     {qd.completedRows.map((row, idx) => (
                       <li
                         key={`${row.queteId}-${idx}`}
-                        className="flex justify-between gap-2 bg-slate-700/30 rounded-lg px-3 py-2 text-sm"
+                        className="flex justify-between gap-2 bg-black/80 border border-slate-600/80 rounded-lg px-3 py-2 text-sm"
                       >
                         <span className="text-white font-medium truncate">{row.nom}</span>
                         <span className="text-slate-300 shrink-0">

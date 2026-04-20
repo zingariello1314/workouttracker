@@ -86,21 +86,21 @@ const QuestsXPBar = ({ userData, validations, allQuests, isLoading = false }) =>
   }, [currentXP, xpForNextLevel]);
 
   return (
-    <div className="bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 border border-emerald-500/30 rounded-2xl px-6 py-4 shadow-xl shadow-emerald-500/10">
+    <div className="bg-black border border-amber-600/45 rounded-2xl px-6 py-4 shadow-lg shadow-amber-900/20">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-emerald-400" />
+          <Target className="w-5 h-5 text-amber-400" />
           <span className="font-semibold text-white">Niveau {level}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-slate-300">
-          <TrendingUp className="w-4 h-4 text-emerald-300" />
+          <TrendingUp className="w-4 h-4 text-amber-300" />
           <span>{currentXP.toLocaleString('fr-FR')} XP actuel</span>
         </div>
       </div>
 
       <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-cyan-400 transition-all duration-300"
+          className="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 transition-all duration-300"
           style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
         />
       </div>

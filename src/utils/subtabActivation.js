@@ -50,7 +50,8 @@ const SUBTAB_CONFIGURATIONS = {
     subtabs: {
       main: { selector: '[data-subtab="main"]', fallback: '[data-tab="learning-main"]' },
       subjects: { selector: '[data-subtab="subjects"]', fallback: '[data-tab="subjects"]' },
-      progress: { selector: '[data-subtab="progress"]', fallback: '[data-tab="learning-progress"]' }
+      progress: { selector: '[data-subtab="progress"]', fallback: '[data-tab="learning-progress"]' },
+      calendrier: { selector: '[data-subtab="calendrier"]', fallback: '[data-tab="learning-calendar"]' },
     }
   },
   

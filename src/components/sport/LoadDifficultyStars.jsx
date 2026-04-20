@@ -2,16 +2,22 @@ import React from 'react';
 import { intensityCoeffToStarCount } from '../../utils/trainingLoadUtils';
 
 /**
- * Affiche 1–5 étoiles selon le coefficient de charge (réglage onglet Exercices).
+ * Affiche 1–5 (ou 1–10) étoiles selon le coefficient de charge (réglage onglet Exercices).
+ * @param {5|10} [maxStars=5]
  */
-const LoadDifficultyStars = ({ coeff, className = '', title }) => {
+const LoadDifficultyStars = ({ coeff, className = '', title, maxStars = 5 }) => {
   const c = Number(coeff);
-  const n = intensityCoeffToStarCount(Number.isFinite(c) ? c : 1);
+  const base5 = intensityCoeffToStarCount(Number.isFinite(c) ? c : 1);
+  const n =
+    maxStars === 10
+      ? Math.max(1, Math.min(10, Math.round(1 + ((base5 - 1) * 9) / 4)))
+      : base5;
+  const max = maxStars === 10 ? 10 : 5;
   const tip =
     title ||
     (Number.isFinite(c)
-      ? `Charge calendrier ×${Math.round(c * 100) / 100} (${n}/5)`
-      : `Charge calendrier (${n}/5)`);
+      ? `Charge calendrier ×${Math.round(c * 100) / 100} (${n}/${max})`
+      : `Charge calendrier (${n}/${max})`);
 
   return (
     <span
@@ -23,7 +29,7 @@ const LoadDifficultyStars = ({ coeff, className = '', title }) => {
         {'★'.repeat(n)}
       </span>
       <span className="text-sm text-slate-600" aria-hidden>
-        {'☆'.repeat(5 - n)}
+        {'☆'.repeat(max - n)}
       </span>
     </span>
   );

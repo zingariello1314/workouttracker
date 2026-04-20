@@ -123,6 +123,7 @@ export const useApprentissageEngine = () => {
     totalStudyTime: 0,
     unlockedBadges: [],
     unlockedTrophies: [],
+    fusionCalendarTrophiesGranted: [],
     dailyStreak: 0,
     lastStudyDate: null,
     weeklyGoals: {},
@@ -287,6 +288,23 @@ export const useApprentissageEngine = () => {
 
     loadData();
   }, []);
+
+  useEffect(() => {
+    const onReload = async () => {
+      try {
+        const db = await openApprentissageDB();
+        if (!db) return;
+        const p = await loadProgressionFromIndexedDB(db, userId);
+        if (p && typeof p === 'object') {
+          setProgressionData((old) => ({ ...old, ...p }));
+        }
+      } catch {
+        // no-op
+      }
+    };
+    window.addEventListener('apprentissage-reload-progression', onReload);
+    return () => window.removeEventListener('apprentissage-reload-progression', onReload);
+  }, [userId]);
 
   // Sauvegarder les matières (avec débounce)
   const saveSubjects = useCallback(async (subjectsToSave) => {
@@ -855,6 +873,10 @@ export const useApprentissageEngine = () => {
         case 'perfect_sessions':
           unlocked = Object.values(progressionData.subjects).some(s => (s.perfectSessions || 0) >= req.value);
           break;
+        case 'fusion_active_days':
+        case 'fusion_triple_days':
+          unlocked = false;
+          break;
       }
 
       if (unlocked) {
@@ -864,6 +886,55 @@ export const useApprentissageEngine = () => {
       }
     });
   }, []);
+
+  /**
+   * Synchronise les trophées « calendrier fusion » (dashboard) avec la progression globale apprentissage.
+   * Idempotent : chaque trophée n’attribue l’XP qu’une fois (fusionCalendarTrophiesGranted).
+   */
+  const unlockFusionCalendarTrophies = useCallback((yearStats) => {
+    if (!yearStats?.totals) return;
+    const daysAct = Number(yearStats.daysWithCombinedActivity) || 0;
+    const triple = Number(yearStats.daysTriplePillar) || 0;
+    setProgressionData((prev) => {
+      const granted = new Set(prev.fusionCalendarTrophiesGranted || []);
+      const rules = [
+        { id: 'fusion_calendar_5d', test: () => daysAct >= 5, xp: 35 },
+        { id: 'fusion_calendar_20d', test: () => daysAct >= 20, xp: 90 },
+        { id: 'fusion_calendar_60d', test: () => daysAct >= 60, xp: 200 },
+        { id: 'fusion_calendar_triple', test: () => triple >= 1, xp: 55 },
+      ];
+      let addedXp = 0;
+      const newTrophies = [...(prev.unlockedTrophies || [])];
+      for (const r of rules) {
+        if (granted.has(r.id)) continue;
+        if (r.test()) {
+          granted.add(r.id);
+          addedXp += r.xp;
+          if (!newTrophies.includes(r.id)) newTrophies.push(r.id);
+        }
+      }
+      if (addedXp === 0) return prev;
+      const nextGlobal = (prev.globalXP || 0) + addedXp;
+      const updated = {
+        ...prev,
+        unlockedTrophies: newTrophies,
+        fusionCalendarTrophiesGranted: Array.from(granted),
+        globalXP: nextGlobal,
+        globalLevel: calculateLevel(nextGlobal),
+      };
+      saveToStorage(STORAGE_KEYS.PROGRESSION, updated);
+      openApprentissageDB()
+        .then((db) => {
+          if (db) return saveProgressionToIndexedDB(db, updated, userId);
+          return null;
+        })
+        .then(() => {
+          window.dispatchEvent(new CustomEvent('apprentissage-reload-progression'));
+        })
+        .catch(() => {});
+      return updated;
+    });
+  }, [userId]);
 
   // Obtenir progression d'une matière
   const getSubjectProgression = useCallback(
@@ -999,7 +1070,8 @@ export const useApprentissageEngine = () => {
     saveTimer,
     savePlanner,
     saveSessionsHistory,
-    
+    unlockFusionCalendarTrophies,
+
     // Exports des constantes (pour compatibilité)
     XP_CONFIG,
     SUBJECT_BADGES,

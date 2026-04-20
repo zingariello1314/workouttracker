@@ -415,7 +415,7 @@ const QuestsTodayView = ({
                   <span className="text-slate-500 text-[10px] ml-1">({quest.difficulte || 1})</span>
                 </span>
               </div>
-              <span className="text-emerald-300 font-semibold">{xp} XP</span>
+              <span className="text-amber-300 font-semibold">{xp} XP</span>
             </div>
           </div>
           {deleteQuest && (
@@ -486,7 +486,7 @@ const QuestsTodayView = ({
             {quest.nom}
           </div>
         </div>
-        <span className="shrink-0 text-emerald-400/90 text-[9px]">{xp} XP</span>
+        <span className="shrink-0 text-amber-300/95 text-[9px] font-semibold">{xp} XP</span>
         {deleteQuest && (
           <button
             type="button"
@@ -579,7 +579,7 @@ const QuestsTodayView = ({
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">XP théorique</span>
-            <span className="text-emerald-300 font-semibold">
+            <span className="text-amber-300 font-semibold">
               {totalXPTheorique} XP
             </span>
           </div>
@@ -588,7 +588,7 @@ const QuestsTodayView = ({
             <div className="flex items-center gap-2">
               <div className="w-20 h-1.5 rounded-full bg-slate-800 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all"
+                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-600 transition-all"
                   style={{ width: `${Math.min(successRate, 100)}%` }}
                 />
               </div>

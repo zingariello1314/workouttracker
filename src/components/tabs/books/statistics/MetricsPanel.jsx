@@ -19,21 +19,25 @@ import { useTranslation } from '../../../../utils/translations';
 
 const MetricCard = ({ icon: Icon, title, value, subtitle, trend, color = 'purple', onClick, isExpandable = false, isExpanded = false }) => {
   const colorClasses = {
-    purple: 'text-purple-300 bg-purple-500/10 border-purple-500/20',
-    blue: 'text-blue-300 bg-blue-500/10 border-blue-500/20',
-    green: 'text-green-300 bg-green-500/10 border-green-500/20',
-    orange: 'text-orange-300 bg-orange-500/10 border-orange-500/20',
-    red: 'text-red-300 bg-red-500/10 border-red-500/20',
-    slate: 'text-slate-300 bg-slate-500/10 border-slate-500/20'
+    purple: 'text-purple-300',
+    blue: 'text-blue-300',
+    green: 'text-green-300',
+    orange: 'text-orange-300',
+    red: 'text-red-300',
+    slate: 'text-slate-300',
   };
 
   return (
-    <Card variant="glass" className={`border ${colorClasses[color]} ${isExpandable ? 'cursor-pointer' : ''}`} onClick={onClick}>
+    <Card
+      variant="default"
+      className={`!bg-black border border-slate-600 ${isExpandable ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <CardContent className="metric-card">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <Icon className={`w-4 h-4 ${colorClasses[color].split(' ')[0]}`} />
+              <Icon className={`w-4 h-4 ${colorClasses[color]}`} />
               <span className="metric-title text-xs font-medium text-slate-400 uppercase tracking-wide">
                 {title}
               </span>
@@ -91,14 +95,14 @@ const ExpandableSection = ({
   };
   
   return (
-    <Card variant="glass" className="expandable-section">
+    <Card variant="default" className="expandable-section !bg-black border border-slate-600">
       <CardHeader 
         className="expandable-header"
         onClick={handleToggle}
       >
         <CardTitle size="sm" className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Icon className="w-4 h-4 text-purple-300" />
+            <Icon className="w-4 h-4 text-emerald-400" />
             {title}
           </div>
           {isExpanded ? (
@@ -367,7 +371,7 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
   if (!statisticsData || !statisticsData.hasData) {
     return (
       <div className="space-y-4">
-        <Card variant="glass">
+        <Card variant="default" className="!bg-black border border-slate-600">
           <CardContent className="p-4 text-center">
             <Calendar className="w-8 h-8 text-slate-500 mx-auto mb-2" />
             <p className="text-sm text-slate-400">
@@ -486,7 +490,7 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
 
       {/* Détail lié aux métriques principales */}
       {expandedMetric && booksWithStats.length > 0 && (
-        <Card variant="glass">
+        <Card variant="default" className="!bg-black border border-slate-600">
           <CardHeader>
             <CardTitle size="sm" className="flex items-center gap-2 text-slate-200">
               {expandedMetric === 'pages' && (
@@ -598,20 +602,20 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
           <div>
             <h4 className="text-sm font-medium text-slate-300 mb-3">Répartition du temps</h4>
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 text-center">
-                <div className="text-xs text-purple-300 mb-1">Quotidien</div>
+              <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
+                <div className="text-xs text-slate-400 mb-1">Quotidien</div>
                 <div className="text-sm font-bold text-white truncate" title={formatDuration((metrics.totalTime || 0) / Math.max(1, metrics.uniqueDays || 1))}>
                   {formatDuration((metrics.totalTime || 0) / Math.max(1, metrics.uniqueDays || 1))}
                 </div>
               </div>
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-center">
-                <div className="text-xs text-blue-300 mb-1">Hebdomadaire</div>
+              <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
+                <div className="text-xs text-slate-400 mb-1">Hebdomadaire</div>
                 <div className="text-sm font-bold text-white truncate" title={formatDuration((metrics.totalTime || 0) / Math.max(1, Math.ceil((metrics.uniqueDays || 1) / 7)))}>
                   {formatDuration((metrics.totalTime || 0) / Math.max(1, Math.ceil((metrics.uniqueDays || 1) / 7)))}
                 </div>
               </div>
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center">
-                <div className="text-xs text-green-300 mb-1">Par session</div>
+              <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
+                <div className="text-xs text-slate-400 mb-1">Par session</div>
                 <div className="text-sm font-bold text-white truncate" title={formatDuration(metrics.averageSessionDuration || 0)}>
                   {formatDuration(metrics.averageSessionDuration || 0)}
                 </div>
@@ -722,7 +726,7 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
 
       {/* Aperçu des livres concernés par les stats */}
       {topBooks.length > 0 && (
-        <Card variant="glass">
+        <Card variant="default" className="!bg-black border border-slate-600">
           <CardHeader>
             <CardTitle size="sm" className="text-slate-200">
               {t('books.statistics.metrics.relatedBooks', 'Livres concernés')}
@@ -777,7 +781,7 @@ const MetricsPanel = ({ statisticsData, selectedPeriod, books = [], userPreferen
 
       {/* Objectifs (si définis) */}
       {metrics.dailyGoal && (
-        <Card variant="glass" className="border border-yellow-500/20">
+        <Card variant="default" className="!bg-black border border-slate-600 border-yellow-500/25">
           <CardHeader>
             <CardTitle size="sm" className="flex items-center gap-2 text-yellow-300">
               <Target className="w-4 h-4" />
