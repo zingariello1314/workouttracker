@@ -11,8 +11,9 @@ const QuestsWeekView = ({
   validations,
   toggleQuestValidation,
   getQuestsForDate,
+  todayDate: todayDateProp,
 }) => {
-  const today = getTodayDateStr();
+  const today = todayDateProp != null ? todayDateProp : getTodayDateStr();
   const todayDayOfWeek = getDayOfWeekFromDateStr(today);
 
   const mondayOffset = 1 - todayDayOfWeek;

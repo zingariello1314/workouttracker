@@ -10,6 +10,7 @@ const generateTestWorkoutData = () => {
   const testData = {
     checkedExercises: {},
     reps: {},
+    exerciseWeights: {},
     checkedStretches: {},
     startDate: null,
     weekVariant: 'A',
@@ -106,6 +107,8 @@ const generateTestWorkoutData = () => {
 const INITIAL_WORKOUT_DATA = {
   checkedExercises: {},
   reps: {},
+  /** Poids saisis (kg) par clé d’exercice — même schéma de clés que `reps` */
+  exerciseWeights: {},
   checkedStretches: {},
   startDate: null,
   weekVariant: 'A',
@@ -305,7 +308,7 @@ export const useWorkoutData = (options = {}) => {
       }
 
       // Validation de l'intégrité des propriétés critiques
-      const requiredProperties = ['checkedExercises', 'reps', 'checkedStretches'];
+      const requiredProperties = ['checkedExercises', 'reps', 'checkedStretches', 'exerciseWeights'];
       for (const prop of requiredProperties) {
         if (newData[prop] && typeof newData[prop] !== 'object') {
           console.warn(`Propriété ${prop} corrompue, réinitialisation`);
@@ -329,6 +332,24 @@ export const useWorkoutData = (options = {}) => {
           }
         }
         newData.reps = cleanReps;
+      }
+
+      if (newData.exerciseWeights) {
+        const cleanWeights = {};
+        for (const [key, value] of Object.entries(newData.exerciseWeights)) {
+          if (value === '' || value === undefined || value === null) {
+            cleanWeights[key] = '';
+            continue;
+          }
+          const normalized = String(value).trim().replace(',', '.');
+          const numValue = parseFloat(normalized);
+          if (!Number.isNaN(numValue) && numValue >= 0 && numValue <= 999) {
+            cleanWeights[key] = normalized;
+          } else {
+            console.warn(`Valeur de poids invalide supprimée: ${key} = ${value}`);
+          }
+        }
+        newData.exerciseWeights = cleanWeights;
       }
 
       // Validation des photos de progression
@@ -370,6 +391,10 @@ export const useWorkoutData = (options = {}) => {
         id: storageKey,
         checkedExercises: newData && newData.checkedExercises ? { ...newData.checkedExercises } : {},
         reps: newData && newData.reps ? { ...newData.reps } : {},
+        exerciseWeights:
+          newData && newData.exerciseWeights && typeof newData.exerciseWeights === 'object'
+            ? { ...newData.exerciseWeights }
+            : {},
         checkedStretches: newData && newData.checkedStretches ? { ...newData.checkedStretches } : {},
         startDate: newData && newData.startDate ? newData.startDate : null,
         weekVariant: newData && newData.weekVariant ? newData.weekVariant : 'A',
@@ -464,6 +489,7 @@ export const useWorkoutData = (options = {}) => {
           const essentialData = {
             checkedExercises: newData.checkedExercises || {},
             reps: newData.reps || {},
+            exerciseWeights: newData.exerciseWeights || {},
             checkedStretches: newData.checkedStretches || {},
             startDate: newData.startDate || null,
             weekVariant: newData.weekVariant || 'A',
@@ -613,6 +639,10 @@ export const useWorkoutData = (options = {}) => {
             const validatedData = {
               checkedExercises: migratedData.checkedExercises || {},
               reps: migratedData.reps || {},
+              exerciseWeights:
+                migratedData.exerciseWeights && typeof migratedData.exerciseWeights === 'object'
+                  ? { ...migratedData.exerciseWeights }
+                  : {},
               checkedStretches: migratedData.checkedStretches || {},
               startDate: migratedData.startDate || null,
               weekVariant: migratedData.weekVariant || 'A',

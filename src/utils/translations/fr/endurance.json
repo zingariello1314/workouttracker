@@ -178,6 +178,28 @@
       "notes": "Notes:",
       "type": "Type",
       "typeSession": "Type de séance :"
+    },
+    "records": {
+      "title": "Records & stats course",
+      "subtitle": "Filtrez par période et par moment de la journée (heure de départ de la séance).",
+      "periodLabel": "Période",
+      "todLabel": "Moment (heure de départ)",
+      "periodAll": "Tout le temps",
+      "periodYear": "Année en cours",
+      "period365": "365 derniers jours",
+      "period90": "90 derniers jours",
+      "period30": "30 derniers jours",
+      "period7": "7 derniers jours",
+      "todAll": "Toute la journée",
+      "todMorning": "Matin (avant 12 h)",
+      "todAfternoon": "Après-midi (12 h – 18 h)",
+      "todEvening": "Soir (après 18 h)",
+      "empty": "Aucune session dans cette sélection.",
+      "insufficient": "Pas assez de données (distance + durée).",
+      "bestPace": "Meilleure allure",
+      "longestDistance": "Plus longue distance",
+      "longestTime": "Plus longue durée",
+      "atPace": "Allure moyenne :"
     }
   },
   "calendar": {

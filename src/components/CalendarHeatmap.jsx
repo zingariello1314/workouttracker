@@ -22,7 +22,16 @@ import { calculateAutoReps } from '../utils/exerciseCalculations';
 import Input from './ui/Input';
 import Button from './ui/Button';
 import { Check, Save } from 'lucide-react';
-import { calculateDayIntensityWithGarmin, getGarminActivityIcons } from '../utils/garminCalendarUtils';
+import {
+  calculateDayIntensityWithGarmin,
+  getGarminActivityIcons,
+  getGarminCardioMinutesByKindForDate
+} from '../utils/garminCalendarUtils';
+import {
+  computeCalendarDayVisualContext,
+  CALENDAR_VISUAL_CONSTANTS,
+  calendarDayHasPaintSignal
+} from '../utils/calendarDayVisualModel';
 import {
   isMockEnduranceSession, 
   parseDurationToMinutes, 
@@ -37,8 +46,11 @@ import {
   buildDailyTrainingLoadByDate,
   resolveExerciseIntensityCoeff,
   getEnduranceLoadForDate,
-  computeStrengthCalendarContribution
+  computeStrengthCalendarContribution,
+  computeMedianWeightKgForExercise,
+  computeExternalLoadMultiplier
 } from '../utils/trainingLoadUtils';
+import { exerciseUsesExternalLoad } from '../utils/programUtils';
 import LoadDifficultyStars from './sport/LoadDifficultyStars';
 import {
   getDayJustification,
@@ -48,9 +60,110 @@ import {
   JUSTIFICATION_ICONS
 } from '../utils/dayJustificationUtils';
 import { useTranslation } from '../utils/translations';
+import { useLanguage } from '../context/LanguageContext';
+import { loadTranslationNamespace } from '../utils/translations/loader';
 import { useFormatters } from '../utils/translations/formatters-hook';
 import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../utils/runningSessionTypeLabel';
 import { collectCalendarRepKeysForExercise, resolveBestRepsStorageKey } from '../utils/exerciseKeyGenerator';
+import { calendarHeatmapCompositeBackground } from '../utils/calendarHeatmapTint';
+import {
+  isSessionFeedbackFilled,
+  normalizeDifficultyForCalendarModel,
+  sessionFeedbackVisualBoost01,
+  computeSessionFeedbackWeightedScore10
+} from '../utils/sessionFeedbackUtils';
+import {
+  computeQuestIntensityForDate,
+  createNeutralQuestIntensity,
+  sumQuestXpForMonth,
+} from '../utils/questCalendarMetrics';
+import { applyRelativePerformanceTint } from '../utils/calendarRelativeDayRanking';
+import {
+  buildBooksSessionsByDate,
+  computeBooksIntensityForDate,
+  createNeutralBooksIntensity,
+  sumBooksMinutesForMonth,
+  sumBooksPagesForMonth,
+} from '../utils/booksCalendarMetrics';
+import BooksCalendarDayDetailPanel from './books/BooksCalendarDayDetailPanel';
+
+/**
+ * Fond des grands blocs du calendrier : sport inchangé, livres noir, quêtes indigo.
+ * @param {'sport'|'quests'|'books'} variant
+ * @param {'header'|'legend'|'month'|'wide'} slot
+ */
+function heatmapModuleShell(variant, isEmbed, slot) {
+  if (variant === 'books') {
+    if (isEmbed) {
+      return slot === 'month'
+        ? 'bg-black rounded-lg border border-slate-600 min-w-0 px-1.5 py-2'
+        : 'bg-black rounded-lg border border-slate-600 min-w-0 px-2 py-1.5';
+    }
+    const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
+    return `bg-black rounded-xl border border-slate-600 ${pad}`;
+  }
+  if (variant === 'quests') {
+    if (isEmbed) {
+      return slot === 'month'
+        ? 'bg-indigo-950/95 backdrop-blur-sm rounded-lg border border-indigo-800/55 min-w-0 px-1.5 py-2'
+        : 'bg-indigo-950/95 backdrop-blur-sm rounded-lg border border-indigo-800/55 min-w-0 px-2 py-1.5';
+    }
+    const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
+    return `bg-indigo-950/95 backdrop-blur-sm rounded-xl border border-indigo-800/55 ${pad}`;
+  }
+  if (isEmbed) {
+    return slot === 'month'
+      ? 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-1.5 py-2 border border-slate-700 min-w-0'
+      : 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-slate-700 min-w-0';
+  }
+  const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
+  return `bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 ${pad}`;
+}
+
+/**
+ * Classes Tailwind pour les niveaux 0–4 (légende + repli sans dégradé HSL).
+ * 0 = blanc (aucune donnée). 1 = vert très clair → 2 jaune → 3 orange → 4 rouge foncé.
+ */
+function getIntensityColor(level, isToday = false) {
+  const safe = Math.max(0, Math.min(4, Math.round(Number(level) || 0)));
+  const baseColors = {
+    4: 'bg-red-900 border-red-700/90',
+    3: 'bg-orange-600 border-orange-500/90',
+    2: 'bg-yellow-500 border-yellow-600/85',
+    1: 'bg-emerald-200 border-emerald-500/70',
+    0: 'bg-white border-slate-400'
+  };
+  const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
+  return `${baseColors[safe]}${todayRing}`;
+}
+
+/** Texte du chiffre du jour : contraste selon la luminosité de la teinte. */
+function heatmapDayNumberTone(cellStyle, dayHasPaint, level, composite01) {
+  const lev = Math.max(0, Math.min(4, Math.round(Number(level) || 0)));
+  const u =
+    composite01 != null && Number.isFinite(Number(composite01)) ? Number(composite01) : null;
+  if (u != null && u < 0.48) return 'text-slate-800';
+  if (!cellStyle?.backgroundColor && lev >= 1 && lev <= 2) return 'text-slate-900';
+  const onTint =
+    Boolean(cellStyle?.backgroundColor) || dayHasPaint || lev > 0;
+  return onTint ? 'text-white' : 'text-slate-800';
+}
+
+/** Métriques Garmin quotidiennes : évite le panneau « choix » sur un jour déjà « vécu ». */
+function hasMeaningfulGarminDailyMetrics(garminData, dateStr) {
+  if (!garminData?.dailyMetrics || !dateStr) return false;
+  const dm = garminData.dailyMetrics[dateStr];
+  if (!dm) return false;
+  const steps = Number(dm.steps) || 0;
+  const kcal = Number(dm?.calories?.active) || 0;
+  const mod = Number(dm.intensityMinutes?.moderate) || 0;
+  const vig = Number(dm.intensityMinutes?.vigorous) || 0;
+  const tot =
+    dm.intensityMinutes?.total != null && Number.isFinite(Number(dm.intensityMinutes.total))
+      ? Number(dm.intensityMinutes.total)
+      : mod + vig;
+  return steps >= 180 || kcal >= 22 || tot >= 1;
+}
 
 const CalendarHeatmap = ({
   workoutHistory = [],
@@ -58,14 +171,23 @@ const CalendarHeatmap = ({
   initialViewMode = 'year', // 'month', 'year', 'streaks'
   compact = false,
   /** Réduit typo / grilles / légende pour calendrier dans la sidebar (avec compact) */
-  embedInSidebar = false
+  embedInSidebar = false,
+  /** 'sport' | 'quests' | 'books' */
+  variant = 'sport',
+  /** Requis si variant === 'quests' : { validationsByDate, validations?, allQuests, getQuestsForDate, prayerLocation? } */
+  questCalendarContext = null,
+  /** Requis si variant === 'books' : { sessionsByDate } ou { books } */
+  booksCalendarContext = null,
 }) => {
   const isSidebarEmbed = Boolean(compact && embedInSidebar);
+  const isQuestsOrBooks = variant === 'quests' || variant === 'books';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState(
     compact ? 'month' : initialViewMode || 'year'
   ); // 'month', 'year', 'streaks'
   const [selectedDate, setSelectedDate] = useState(null);
+  /** Après un clic sur une case : afficher le nombre de pas sur la tuile (si Garmin a des pas). */
+  const [stepsRevealedByDateStr, setStepsRevealedByDateStr] = useState({});
   const [showStats, setShowStats] = useState(false);
   // ✅ NOUVEAU : État pour la modal de justification (gardée pour l'édition)
   const [justificationModalDate, setJustificationModalDate] = useState(null);
@@ -148,17 +270,153 @@ const CalendarHeatmap = ({
   
   // ✅ NOUVEAU : Traductions
   const t = useTranslation();
+  const { language } = useLanguage();
   const { formatDate: formatLocaleDate } = useFormatters();
+
+  useEffect(() => {
+    const lang = language || 'fr';
+    loadTranslationNamespace(lang, 'calendar').catch(() => {});
+  }, [language]);
 
   // ✅ PHASE 2.3 : Cache pour les intensités calculées (useRef pour persister entre renders)
   const intensityCache = useRef({});
-  
+
+  const questIntensityMap = useMemo(() => {
+    if (variant !== 'quests' || !questCalendarContext || compact) return null;
+    const year = currentDate.getFullYear();
+    const raw = new Map();
+    const cursor = new Date(year, 0, 1);
+    const end = new Date(year, 11, 31);
+    while (cursor <= end) {
+      const dateStr = getDateStr(cursor);
+      raw.set(dateStr, computeQuestIntensityForDate(dateStr, questCalendarContext));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return applyRelativePerformanceTint(raw, viewMode, currentDate, {
+      getScore: (int) => Number(int.intensityScore) || 0,
+      hasActivity: (int) => (int.questData?.completedCount ?? 0) > 0,
+    });
+  }, [variant, questCalendarContext, currentDate, compact, viewMode]);
+
+  const booksIntensityMap = useMemo(() => {
+    if (variant !== 'books' || !booksCalendarContext || compact) return null;
+    const sessionsByDate =
+      booksCalendarContext.sessionsByDate ||
+      buildBooksSessionsByDate(booksCalendarContext.books || []);
+    const year = currentDate.getFullYear();
+    const raw = new Map();
+    const cursor = new Date(year, 0, 1);
+    const end = new Date(year, 11, 31);
+    const dayFb =
+      booksCalendarContext.dayFeedbacks && typeof booksCalendarContext.dayFeedbacks === 'object'
+        ? booksCalendarContext.dayFeedbacks
+        : null;
+    while (cursor <= end) {
+      const dateStr = getDateStr(cursor);
+      raw.set(dateStr, computeBooksIntensityForDate(dateStr, sessionsByDate, dayFb));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return applyRelativePerformanceTint(raw, viewMode, currentDate, {
+      getScore: (int) => Number(int.intensityScore) || 0,
+      hasActivity: (int) => (int.bookData?.sessions ?? 0) > 0,
+    });
+  }, [variant, booksCalendarContext, currentDate, compact, viewMode]);
+
+  const questYearAggregates = useMemo(() => {
+    if (variant !== 'quests' || !questIntensityMap) return null;
+    let totalXp = 0;
+    let totalMinutes = 0;
+    let totalChecks = 0;
+    let activeDays = 0;
+    let bestDay = null;
+    let bestScore = -1;
+    const monthXp = Array(12).fill(0);
+    for (const [ds, inten] of questIntensityMap.entries()) {
+      const qd = inten?.questData;
+      if (!qd) continue;
+      totalXp += qd.xpTotal || 0;
+      totalMinutes += qd.minutesOccupied || 0;
+      totalChecks += qd.completedCount || 0;
+      if ((qd.completedUnique || 0) > 0) activeDays += 1;
+      const score = (qd.xpTotal || 0) + (qd.minutesOccupied || 0) * 1.5 + (qd.completedUnique || 0) * 20;
+      if (score > bestScore) {
+        bestScore = score;
+        bestDay = { dateStr: ds, qd };
+      }
+      const mi = parseInt(ds.slice(5, 7), 10) - 1;
+      if (mi >= 0 && mi < 12) monthXp[mi] += qd.xpTotal || 0;
+    }
+    let bestMonthIdx = -1;
+    let bestMonthXp = -1;
+    for (let m = 0; m < 12; m++) {
+      const x = monthXp[m];
+      if (x > 0 && x > bestMonthXp) {
+        bestMonthXp = x;
+        bestMonthIdx = m;
+      }
+    }
+    return {
+      totalXp,
+      totalMinutes,
+      totalChecks,
+      activeDays,
+      bestDay,
+      bestMonthIdx,
+      bestMonthXp,
+      monthXp,
+    };
+  }, [variant, questIntensityMap]);
+
+  const booksYearAggregates = useMemo(() => {
+    if (variant !== 'books' || !booksIntensityMap) return null;
+    let totalPages = 0;
+    let totalMinutes = 0;
+    let totalSessions = 0;
+    let activeDays = 0;
+    let bestDay = null;
+    let bestScore = -1;
+    const monthPages = Array(12).fill(0);
+    for (const [ds, inten] of booksIntensityMap.entries()) {
+      const bd = inten?.bookData;
+      if (!bd || bd.sessions <= 0) continue;
+      totalPages += bd.pages || 0;
+      totalMinutes += bd.minutes || 0;
+      totalSessions += bd.sessions || 0;
+      activeDays += 1;
+      const score = Number(inten.intensityScore) || 0;
+      if (score > bestScore) {
+        bestScore = score;
+        bestDay = { dateStr: ds, bd };
+      }
+      const mi = parseInt(ds.slice(5, 7), 10) - 1;
+      if (mi >= 0 && mi < 12) monthPages[mi] += bd.pages || 0;
+    }
+    let bestMonthIdx = -1;
+    let bestMonthPages = -1;
+    for (let m = 0; m < 12; m++) {
+      const x = monthPages[m];
+      if (x > 0 && x > bestMonthPages) {
+        bestMonthPages = x;
+        bestMonthIdx = m;
+      }
+    }
+    return {
+      totalPages,
+      totalMinutes,
+      totalSessions,
+      activeDays,
+      bestDay,
+      bestMonthIdx,
+      bestMonthPages,
+    };
+  }, [variant, booksIntensityMap]);
+
   // ✅ PHASE 2.3 : Invalider le cache lorsque les données sources changent
   useEffect(() => {
     // Vider le cache lorsque allData change (les données sources ont changé)
     // ✅ NOUVEAU : Invalider aussi si les justifications changent
     intensityCache.current = {};
-  }, [allData, garminData, allData?.dayJustifications]);
+  }, [allData, garminData, allData?.dayJustifications, allData?.sessionFeedbacks, variant, questIntensityMap, booksIntensityMap]);
 
   // Fonction pour obtenir le nom du jour
   const getDayName = (date) => {
@@ -303,6 +561,30 @@ const CalendarHeatmap = ({
     return { min, max, thresholds };
   }, [allData?.checkedExercises, allData?.enduranceData?.sessions, allData?.reps]);
 
+  /** Médiane des kcal actives Garmin (référence pour teintes calendrier). */
+  const garminKcalMedianRef = useMemo(() => {
+    if (!garminData?.dailyMetrics) return 0;
+    const vals = Object.values(garminData.dailyMetrics)
+      .map((d) => (d && typeof d.calories?.active === 'number' ? d.calories.active : 0))
+      .filter((v) => v > 40)
+      .sort((a, b) => a - b);
+    if (vals.length === 0) return 420;
+    const mid = Math.floor(vals.length / 2);
+    return vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2;
+  }, [garminData?.dailyMetrics]);
+
+  /** Médiane des pas (référence pour la part « volume quotidien » des teintes). */
+  const garminStepsMedianRef = useMemo(() => {
+    if (!garminData?.dailyMetrics) return 0;
+    const vals = Object.values(garminData.dailyMetrics)
+      .map((d) => (d && typeof d.steps === 'number' ? d.steps : 0))
+      .filter((v) => v > 800)
+      .sort((a, b) => a - b);
+    if (vals.length === 0) return 7200;
+    const mid = Math.floor(vals.length / 2);
+    return vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2;
+  }, [garminData?.dailyMetrics]);
+
   // ✅ NOUVEAU : Fonction pour détecter une vraie activité Garmin (vs pas quotidiens)
   // Détecte une activité d'entraînement réelle basée sur des critères stricts
   const detectRealGarminActivity = (dateStr, garminData) => {
@@ -368,12 +650,32 @@ const CalendarHeatmap = ({
       return { hasActivity: true, intensity, duration: intensityMinutes, source: 'intensityMinutes' };
     }
     
-    // Critère 4 : ActiveTime significatif (> 30 minutes)
+    // Critère 4 : ActiveTime significatif (> 30 minutes) — atténué si la journée est surtout de la marche
     if (dailyMetrics?.activeTime && dailyMetrics.activeTime >= 30) {
-      const activeTime = dailyMetrics.activeTime;
+      let effectiveActive = dailyMetrics.activeTime;
+      const cardioKind = getGarminCardioMinutesByKindForDate(garminData, dateStr);
+      const walkHeavy =
+        cardioKind.walk >= (cardioKind.run + cardioKind.other + 5) * 1.35 &&
+        cardioKind.run < 22 &&
+        cardioKind.other < 25;
+      const walkOnlyDay =
+        cardioKind.total > 8 &&
+        cardioKind.walk >= cardioKind.total * 0.72 &&
+        cardioKind.run < 12;
+      if (walkHeavy || walkOnlyDay) {
+        effectiveActive = Math.min(effectiveActive * 0.36, 44);
+      }
       const { thresholds: timeThresholds } = dynamicTimeThresholds;
-      const intensity = calculateTimeIntensityLevel(activeTime, timeThresholds);
-      return { hasActivity: true, intensity, duration: activeTime, source: 'activeTime' };
+      let intensity = calculateTimeIntensityLevel(effectiveActive, timeThresholds);
+      if (walkHeavy || walkOnlyDay) {
+        intensity = Math.min(intensity, 2);
+      }
+      return {
+        hasActivity: true,
+        intensity,
+        duration: dailyMetrics.activeTime,
+        source: 'activeTime'
+      };
     }
     
     return { hasActivity: false, intensity: null, duration: 0 };
@@ -383,7 +685,14 @@ const CalendarHeatmap = ({
   // calculateDynamicTimeIntensityLevel remplacé par calculateTimeIntensityLevel (importée)
   const getIntensityForDate = (date) => {
     const dateStr = getDateStr(date);
-    
+
+    if (variant === 'quests' && questIntensityMap) {
+      return questIntensityMap.get(dateStr) || createNeutralQuestIntensity();
+    }
+    if (variant === 'books' && booksIntensityMap) {
+      return booksIntensityMap.get(dateStr) || createNeutralBooksIntensity();
+    }
+
     // ✅ NOUVEAU : Récupérer les données fraîches à chaque appel pour éviter les problèmes de closure
     const currentData = getCurrentData();
     
@@ -624,16 +933,22 @@ const CalendarHeatmap = ({
     
     // Si pas d'exercices pour ce jour ET pas de données d'endurance, retourner des valeurs par défaut
     if (allExercisesForDate.length === 0 && enduranceData.sessions === 0) {
-      return { 
-        level: 0, 
-        reps: 0, 
+      return {
+        level: 0,
+        reps: 0,
         trainingLoad: 0,
         strengthLoad: 0,
-        duration: 0, 
-        exerciseCount: 0, 
-        completedCount: 0, 
+        duration: 0,
+        exerciseCount: 0,
+        completedCount: 0,
         intensityScore: 0,
-        enduranceData: enduranceData
+        enduranceData: enduranceData,
+        activeKcal: 0,
+        kcalRefMedian: garminKcalMedianRef,
+        steps: 0,
+        stepsRefMedian: garminStepsMedianRef,
+        intensityMinutesTotal: 0,
+        visualContext: null
       };
     }
 
@@ -650,20 +965,8 @@ const CalendarHeatmap = ({
     
     // ✅ ÉTAPE 1 : Calculer les répétitions des exercices classiques COCHÉS
     // Seulement les exercices avec checkedExercises = true ET reps > 0
-    // 🔍 DEBUG : Logs pour diagnostiquer le problème de lecture (toujours actif pour janvier 2026)
-    const debugThisDate = dateStr === '2026-01-17' || dateStr.startsWith('2026-01');
-    if (debugThisDate) {
-      console.log('[DEBUG getIntensityForDate] === LECTURE DONNÉES ===');
-      console.log('[DEBUG getIntensityForDate] dateStr:', dateStr);
-      console.log('[DEBUG getIntensityForDate] exercisesList:', exercisesList.map(ex => ({ id: ex.id, name: ex.name, idType: typeof ex.id })));
-      const allRepsKeys = Object.keys(currentData?.reps || {}).filter(k => k.startsWith(dateStr));
-      const allCheckedKeys = Object.keys(currentData?.checkedExercises || {}).filter(k => k.startsWith(dateStr));
-      console.log('[DEBUG getIntensityForDate] Clés dans currentData.reps:', allRepsKeys);
-      console.log('[DEBUG getIntensityForDate] Clés dans currentData.checkedExercises:', allCheckedKeys);
-      console.log('[DEBUG getIntensityForDate] Valeurs des clés reps:', allRepsKeys.reduce((acc, k) => ({ ...acc, [k]: currentData?.reps?.[k] }), {}));
-      console.log('[DEBUG getIntensityForDate] Valeurs des clés checked:', allCheckedKeys.reduce((acc, k) => ({ ...acc, [k]: currentData?.checkedExercises?.[k] }), {}));
-    }
-    
+    const weightsStore = currentData?.exerciseWeights || {};
+
     exercisesList.forEach(exercise => {
       const uniquePossibleKeys = collectCalendarRepKeysForExercise(dateStr, exercise);
       const baseKey = `${dateStr}_${exercise.id}`;
@@ -672,22 +975,7 @@ const CalendarHeatmap = ({
       
       const rawReps = currentData?.reps?.[finalKey] || 0;
       const isCompleted = currentData?.checkedExercises?.[finalKey] || false;
-      
-      // 🔍 DEBUG : Logs pour chaque exercice (toujours actif pour diagnostiquer)
-      const debugThisExercise = dateStr === '2026-01-17' || dateStr.startsWith('2026-01');
-      if (debugThisExercise) {
-        console.log(`[DEBUG getIntensityForDate] Exercice: ${exercise.name} (id: ${exercise.id}, type: ${typeof exercise.id})`);
-        console.log(`[DEBUG getIntensityForDate]   baseKey: ${baseKey}`);
-        console.log(`[DEBUG getIntensityForDate]   finalKey: ${finalKey}`);
-        console.log(`[DEBUG getIntensityForDate]   rawReps: ${rawReps}, isCompleted: ${isCompleted}`);
-        console.log(`[DEBUG getIntensityForDate]   Clés possibles vérifiées:`, uniquePossibleKeys);
-        console.log(`[DEBUG getIntensityForDate]   Valeurs trouvées pour chaque clé:`, uniquePossibleKeys.map(k => ({
-          key: k,
-          reps: currentData?.reps?.[k],
-          checked: currentData?.checkedExercises?.[k]
-        })));
-      }
-      
+
       // ✅ PHASE 4 : Valider la valeur numérique (rejette négatif, NaN)
       const repsValidation = validateNumericValue(rawReps, `getIntensityForDate.${dateStr}.${exercise.id}.reps`, false);
       const reps = repsValidation.normalizedValue;
@@ -701,6 +989,11 @@ const CalendarHeatmap = ({
           exercise,
           currentData?.exerciseIntensityCoeffs || {}
         );
+        const usesLoad = exerciseUsesExternalLoad(exercise);
+        const wRaw = weightsStore[finalKey];
+        const wKg = parseFloat(String(wRaw ?? '').replace(',', '.'));
+        const medianKg = computeMedianWeightKgForExercise(weightsStore, exercise.id);
+        const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
         strengthLoad += computeStrengthCalendarContribution(
           {
             id: exercise.id,
@@ -710,20 +1003,12 @@ const CalendarHeatmap = ({
             type: exercise.type || ''
           },
           reps,
-          coeff
+          coeff,
+          wMult
         );
-        if (debugThisExercise) {
-          console.log(`[DEBUG getIntensityForDate] ✅ Exercice compté: ${exercise.name} (${reps} reps, clé: ${finalKey})`);
-        }
-      } else if (debugThisExercise) {
-        console.log(`[DEBUG getIntensityForDate] ❌ Exercice NON compté: ${exercise.name} (isCompleted: ${isCompleted}, reps: ${reps}, finalKey: ${finalKey})`);
       }
     });
-    
-    if (debugThisDate) {
-      console.log('[DEBUG getIntensityForDate] Résultat final:', { completedExercises, totalReps, exercisesReps, totalPlannedExercises });
-    }
-    
+
     // ✅ ÉTAPE 2 : Ajouter les reps d'endurance (pompes, boxe, défis complétés)
     // Les défis complétés sont déjà inclus dans enduranceData.reps via les sessions d'endurance
     // (voir getEnduranceDataForDate qui parcourt enduranceData.sessions)
@@ -1204,7 +1489,13 @@ const CalendarHeatmap = ({
           // ✅ NOUVEAU : Si pas d'exercices mais vraie activité Garmin détectée, utiliser Garmin
           const garminActivity = detectRealGarminActivity(dateStr, garminData);
           if (garminActivity.hasActivity && garminActivity.intensity !== null) {
-            intensityLevel = garminActivity.intensity;
+            let gLevel = garminActivity.intensity;
+            // Sans street ni charge endurance saisie : éviter des niveaux « extrêmes » surtout passifs
+            if (completedExercises === 0 && enduranceLoadForCalendar <= 0) {
+              gLevel = Math.min(3, gLevel);
+              gLevel = Math.max(0, Math.round(gLevel * 0.86));
+            }
+            intensityLevel = gLevel;
             // Mettre à jour realDuration avec la durée détectée depuis Garmin
             if (garminActivity.duration > realDuration) {
               realDuration = garminActivity.duration;
@@ -1220,19 +1511,18 @@ const CalendarHeatmap = ({
             duration: realDuration,
             reps: totalReps
           };
-          
+
           const garminAdjusted = calculateDayIntensityWithGarmin(dateStr, workoutIntensity, garminData);
           adjustedIntensity = garminAdjusted.level;
-          
-          // ✅ LOGS DE DEBUG DÉSACTIVÉS pour réduire le bruit (33k messages)
-          // Debug pour le 28 octobre 2025 (réactiver uniquement si nécessaire)
-          // if (dateStr === '2025-10-28' && garminAdjusted.multiplier !== 1.0) {
-          //   console.log('🔍 DEBUG Ajustements Garmin:');
-          //   console.log('Niveau original:', intensityLevel);
-          //   console.log('Niveau ajusté:', adjustedIntensity);
-          //   console.log('Multiplicateur:', garminAdjusted.multiplier);
-          //   console.log('Ajustements:', garminAdjusted.adjustments);
-          // }
+        }
+
+        const sessionFbForDay = currentData.sessionFeedbacks?.[dateStr];
+        if (sessionFbForDay && isSessionFeedbackFilled(sessionFbForDay)) {
+          const diff5 = normalizeDifficultyForCalendarModel(sessionFbForDay);
+          if (diff5 != null) {
+            const bump = Math.round((diff5 - 3) * 0.35);
+            adjustedIntensity = Math.max(0, Math.min(4, adjustedIntensity + bump));
+          }
         }
     
     // L'intensité ne dépend que des activités complémentaires de l'onglet Aujourd'hui
@@ -1244,9 +1534,80 @@ const CalendarHeatmap = ({
     // ✅ NOUVEAU : Récupérer la justification pour ce jour
     const justification = getDayJustification(currentData, dateStr);
     
+    const activeKcal =
+      garminData?.dailyMetrics?.[dateStr]?.calories?.active != null
+        ? Number(garminData.dailyMetrics[dateStr].calories.active) || 0
+        : 0;
+
+    const dm = garminData?.dailyMetrics?.[dateStr];
+    const stepsVal =
+      dm?.steps != null && Number.isFinite(Number(dm.steps)) ? Math.max(0, Math.round(Number(dm.steps))) : 0;
+    let intensityMinutesTotal = 0;
+    let intensityMinutesModerate;
+    let intensityMinutesVigorous;
+    if (dm?.intensityMinutes != null) {
+      const im = dm.intensityMinutes;
+      const hasMod = im.moderate != null && Number.isFinite(Number(im.moderate));
+      const hasVig = im.vigorous != null && Number.isFinite(Number(im.vigorous));
+      if (hasMod || hasVig) {
+        intensityMinutesModerate = hasMod ? Math.max(0, Math.round(Number(im.moderate))) : 0;
+        intensityMinutesVigorous = hasVig ? Math.max(0, Math.round(Number(im.vigorous))) : 0;
+      }
+      if (im.total != null && Number.isFinite(Number(im.total))) {
+        intensityMinutesTotal = Math.max(0, Math.round(Number(im.total)));
+      } else if (hasMod || hasVig) {
+        intensityMinutesTotal = (intensityMinutesModerate ?? 0) + (intensityMinutesVigorous ?? 0);
+      }
+    }
+
+    const cardioKindV = garminData
+      ? getGarminCardioMinutesByKindForDate(garminData, dateStr)
+      : { walk: 0, run: 0, other: 0, total: 0 };
+    const walkHeavyV =
+      cardioKindV.walk >= (cardioKindV.run + cardioKindV.other + 5) * 1.35 &&
+      cardioKindV.run < 22 &&
+      cardioKindV.other < 25;
+    const walkOnlyDayV =
+      cardioKindV.total > 8 &&
+      cardioKindV.walk >= cardioKindV.total * 0.72 &&
+      cardioKindV.run < 12;
+
+    const fbRaw = currentData.sessionFeedbacks?.[dateStr];
+    const fbDiffVal = normalizeDifficultyForCalendarModel(fbRaw);
+
+    const visualContext = computeCalendarDayVisualContext({
+      level: adjustedIntensity,
+      activeKcal,
+      kcalRefMedian: garminKcalMedianRef,
+      steps: stepsVal,
+      stepsRefMedian: garminStepsMedianRef,
+      intensityMinutesTotal,
+      ...(intensityMinutesModerate !== undefined && intensityMinutesVigorous !== undefined
+        ? {
+            intensityMinutesModerate,
+            intensityMinutesVigorous
+          }
+        : {}),
+      walkHeavy: walkHeavyV,
+      walkOnlyDay: walkOnlyDayV,
+      feedbackDiff: fbDiffVal,
+      strengthLoad,
+      enduranceLoad: enduranceLoadForCalendar,
+      totalReps
+    });
+
     const result = {
       level: adjustedIntensity, // Utiliser le niveau ajusté par Garmin
       reps: totalReps,
+      activeKcal,
+      kcalRefMedian: garminKcalMedianRef,
+      steps: stepsVal,
+      stepsRefMedian: garminStepsMedianRef,
+      intensityMinutesTotal,
+      ...(intensityMinutesModerate !== undefined && intensityMinutesVigorous !== undefined
+        ? { intensityMinutesModerate, intensityMinutesVigorous }
+        : {}),
+      visualContext,
       trainingLoad: strengthLoad + enduranceLoadForCalendar,
       strengthLoad,
       duration: realDuration,
@@ -1261,6 +1622,8 @@ const CalendarHeatmap = ({
       exercises: completedExercises,
       // ✅ NOUVEAU : Ajouter la justification si elle existe
       ...(justification && { justification }),
+      feedbackBoost01: sessionFeedbackVisualBoost01(fbRaw),
+      weightedFeedbackScore10: computeSessionFeedbackWeightedScore10(fbRaw),
       // ✅ CORRECTION : Utiliser la même logique que pour le calcul du total
       // (chercher les variantes _semaineA, _semaineB, et vérifier reps > 0)
       session: completedExercises > 0 ? { 
@@ -1403,6 +1766,12 @@ const CalendarHeatmap = ({
           completedCount: 0,
           intensityScore: 0,
           completionRate: 0,
+          activeKcal: 0,
+          kcalRefMedian: 0,
+          steps: 0,
+          stepsRefMedian: 0,
+          intensityMinutesTotal: 0,
+          visualContext: null,
           enduranceData: { reps: 0, duration: 0, distance: 0, jumps: 0, sessions: 0 },
           garminIcons: [],
           exercises: 0,
@@ -1508,61 +1877,17 @@ const CalendarHeatmap = ({
     return { months, yearStats };
   };
 
-  const getIntensityColor = (level, isToday = false) => {
-    const baseColors = {
-      4: 'bg-red-500 border-red-400', // Extrême (maximum)
-      3: 'bg-orange-500 border-orange-400', // Intense
-      2: 'bg-yellow-500 border-yellow-400', // Modéré
-      1: 'bg-green-500 border-green-400', // Léger (minimum enregistré)
-      0: 'bg-gray-200 border-gray-300' // Pas d'exercice
-    };
-    
-    const todayRing = isToday ? ' ring-2 ring-blue-400' : '';
-    return `${baseColors[level]}${todayRing}`;
-  };
-  
-  // ✅ NOUVEAU : Fonction de couleur combinée (priorité justification > intensité)
-  const getDayColor = (intensity, isToday = false) => {
-    // Si justification existe, utiliser sa couleur
-    if (intensity?.justification) {
-      const reason = intensity.justification.reason;
-      const baseColor = JUSTIFICATION_COLORS[reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE];
-      const todayRing = isToday ? ' ring-2 ring-blue-400' : '';
-      return `${baseColor}${todayRing}`;
-    }
-    
-    // Sinon, utiliser la couleur d'intensité existante
-    return getIntensityColor(intensity?.level || 0, isToday);
-  };
-  
-  // ✅ NOUVEAU : Fonction pour obtenir le tooltip avec justification
-  const getDayTooltip = (day, intensity) => {
-    const dateStr = day.date.toLocaleDateString('fr-FR');
-    const baseTooltip = `${dateStr} - ${getIntensityLabel(intensity?.level || 0)}${intensity?.duration > 0 ? ` (${intensity.duration}min)` : ''}${intensity?.reps > 0 ? ` - ${intensity.reps} reps` : ''}`;
-    
-    // Si justification existe, l'ajouter au tooltip
-    if (intensity?.justification) {
-      const reasonLabel = t(`justification.${intensity.justification.reason}`) || t('justification.autre');
-      const note = intensity.justification.note ? ` : ${intensity.justification.note}` : '';
-      return `${baseTooltip}\n${t('justification.button.dayJustified')} : ${reasonLabel}${note}`;
-    }
-    
-    return baseTooltip;
-  };
-
-  const getIntensityLabel = (level) => {
-    const labels = {
-      4: t('calendar.heatmap.intensityLabels.extreme'),
-      3: t('calendar.heatmap.intensityLabels.intense'),
-      2: t('calendar.heatmap.intensityLabels.moderate'), 
-      1: t('calendar.heatmap.intensityLabels.light'),
-      0: t('calendar.heatmap.intensityLabels.rest')
-    };
-    return labels[level];
-  };
-
   // Données calculées
-  const monthDays = useMemo(() => generateMonthDays(currentDate), [currentDate, allData, garminData]);
+  const monthDays = useMemo(() => generateMonthDays(currentDate), [
+    currentDate,
+    allData,
+    garminData,
+    garminKcalMedianRef,
+    garminStepsMedianRef,
+    variant,
+    questIntensityMap,
+    booksIntensityMap,
+  ]);
   const { months: yearMonths, yearStats } = useMemo(() => {
     if (isSidebarEmbed) {
       return {
@@ -1578,7 +1903,120 @@ const CalendarHeatmap = ({
       };
     }
     return generateYearData(currentDate);
-  }, [isSidebarEmbed, currentDate, allData, garminData]);
+  }, [
+    isSidebarEmbed,
+    currentDate,
+    allData,
+    garminData,
+    garminKcalMedianRef,
+    garminStepsMedianRef,
+    variant,
+    questIntensityMap,
+    booksIntensityMap,
+  ]);
+
+  /**
+   * Couleur case : dégradé direct depuis l’indice composite (sans recalage « teinte » sur la période).
+   */
+  const getDayColorStyle = (intensity, isToday = false) => {
+    if (intensity?.justification) {
+      const reason = intensity.justification.reason;
+      const baseColor = JUSTIFICATION_COLORS[reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE];
+      const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
+      return { className: `${baseColor}${todayRing}`, style: undefined };
+    }
+    const level = Math.max(0, Math.min(4, intensity?.level || 0));
+    const kcal = intensity?.activeKcal || 0;
+    const kref = intensity?.kcalRefMedian || 0;
+    const steps = intensity?.steps ?? 0;
+    const intMin = intensity?.intensityMinutesTotal ?? 0;
+    const vc = intensity?.visualContext;
+    const tl = intensity?.trainingLoad ?? 0;
+
+    const hasQuietGarmin =
+      kcal >= 22 ||
+      steps >= 380 ||
+      intMin >= 1 ||
+      tl >= 1.2 ||
+      (vc && typeof vc.composite01 === 'number' && vc.composite01 >= 0.004);
+
+    let u = typeof vc?.composite01 === 'number' ? Math.min(1, Math.max(0, vc.composite01)) : 0;
+    if (hasQuietGarmin && level === 0) {
+      u = Math.max(u, 0.12 + Math.min(0.08, steps / 18000) + Math.min(0.06, kcal / 800));
+    }
+    const levelFloor = (level / 4) * 0.28;
+    u = Math.max(u, levelFloor);
+    if (kcal > 85 && kref > 55) {
+      const kn = Math.min(1.45, kcal / kref);
+      const tk = Math.min(1, (level / 4) * 0.52 + (kn / 1.45) * 0.48);
+      u = Math.max(u, tk * 0.55);
+    }
+
+    u += intensity?.feedbackBoost01 ?? 0;
+    u = Math.min(1, Math.max(0, u));
+
+    const isRestLike =
+      level === 0 &&
+      !intensity?.justification &&
+      !hasQuietGarmin &&
+      u < 0.01 &&
+      kcal < 48 &&
+      steps < 3600 &&
+      intMin < 3 &&
+      tl < 1.5;
+
+    if (isRestLike) {
+      return { className: getIntensityColor(0, isToday), style: undefined };
+    }
+
+    const ring = isToday ? 'ring-2 ring-amber-300/95' : '';
+    return {
+      className: `border border-slate-900/20 ${ring}`.trim(),
+      style: { backgroundColor: calendarHeatmapCompositeBackground(u) }
+    };
+  };
+
+  const getIntensityLabel = (level) => {
+    const labels = {
+      4: t('calendar.heatmap.intensityLabels.extreme', 'Extrême'),
+      3: t('calendar.heatmap.intensityLabels.intense', 'Intense'),
+      2: t('calendar.heatmap.intensityLabels.moderate', 'Modéré'),
+      1: t('calendar.heatmap.intensityLabels.light', 'Léger'),
+      0: t('calendar.heatmap.intensityLabels.rest', 'Repos')
+    };
+    return labels[level];
+  };
+
+  const getDayTooltip = (day, intensity) => {
+    if (variant === 'quests' && intensity?.questData) {
+      const qd = intensity.questData;
+      const dateStr = day.date.toLocaleDateString('fr-FR');
+      return `${dateStr} — ${qd.completedUnique ?? 0}/${qd.scheduledTotal ?? 0} quêtes · ${qd.xpTotal ?? 0} XP · ${qd.minutesOccupied ?? 0} min`;
+    }
+    if (variant === 'books' && intensity?.bookData) {
+      const bd = intensity.bookData;
+      const dateStr = day.date.toLocaleDateString('fr-FR');
+      return `${dateStr} — ${bd.sessions ?? 0} session(s) · ${bd.pages ?? 0} p. · ${bd.minutes ?? 0} min`;
+    }
+    const dateStr = day.date.toLocaleDateString('fr-FR');
+    const vc = intensity?.visualContext;
+    const scoreHint =
+      vc != null && vc.visualScore100 != null
+        ? ` — ${t('calendar.heatmap.tooltip.visualScore', { score: vc.visualScore100 })}`
+        : '';
+    const stepsHint =
+      intensity?.steps > 0 ? ` — ${t('calendar.heatmap.tooltip.steps', { n: intensity.steps })}` : '';
+    const baseTooltip = `${dateStr} - ${getIntensityLabel(intensity?.level || 0)}${intensity?.duration > 0 ? ` (${intensity.duration}min)` : ''}${intensity?.reps > 0 ? ` - ${intensity.reps} reps` : ''}${stepsHint}${scoreHint}`;
+
+    if (intensity?.justification) {
+      const reasonLabel = t(`justification.${intensity.justification.reason}`) || t('justification.autre');
+      const note = intensity.justification.note ? ` : ${intensity.justification.note}` : '';
+      return `${baseTooltip}\n${t('justification.button.dayJustified')} : ${reasonLabel}${note}`;
+    }
+
+    return baseTooltip;
+  };
+
   const streaks = useMemo(() => {
     if (isSidebarEmbed) {
       return { currentStreak: 0, longestStreak: 0 };
@@ -1607,27 +2045,27 @@ const CalendarHeatmap = ({
   return (
     <div className={isSidebarEmbed ? 'space-y-2 min-w-0' : 'space-y-6'}>
       {/* En-tête avec navigation */}
-      <div
-        className={
-          isSidebarEmbed
-            ? 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-slate-700 min-w-0'
-            : 'bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700'
-        }
-      >
+      <div className={heatmapModuleShell(variant, isSidebarEmbed, 'header')}>
         {!compact && (
           <div className="flex items-center justify-between mb-4">
             <div className="flex gap-2">
-              {['month', 'year', 'streaks'].map(mode => (
+              {(isQuestsOrBooks ? ['month', 'year'] : ['month', 'year', 'streaks']).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
                   className={`px-4 py-2 rounded-lg transition-all ${
-                    viewMode === mode 
-                      ? 'bg-purple-600 text-white' 
+                    viewMode === mode
+                      ? variant === 'quests'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-purple-600 text-white'
                       : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}
                 >
-                  {mode === 'month' ? t('calendar.heatmap.viewModes.month') : mode === 'year' ? t('calendar.heatmap.viewModes.year') : t('calendar.heatmap.viewModes.streaks')}
+                  {mode === 'month'
+                    ? t('calendar.heatmap.viewModes.month')
+                    : mode === 'year'
+                      ? t('calendar.heatmap.viewModes.year')
+                      : t('calendar.heatmap.viewModes.streaks')}
                 </button>
               ))}
             </div>
@@ -1677,13 +2115,7 @@ const CalendarHeatmap = ({
       </div>
 
       {/* Légende améliorée */}
-      <div
-        className={
-          isSidebarEmbed
-            ? 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-slate-700 min-w-0'
-            : 'bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700'
-        }
-      >
+      <div className={heatmapModuleShell(variant, isSidebarEmbed, 'legend')}>
         <div
           className={
             isSidebarEmbed
@@ -1705,14 +2137,21 @@ const CalendarHeatmap = ({
             >
               {t('calendar.heatmap.intensity')}
             </span>
-            <div className={isSidebarEmbed ? 'flex flex-wrap gap-x-1.5 gap-y-0.5 min-w-0' : 'flex gap-2'}>
-              {[0, 1, 2, 3, 4].map((level) => (
+            <div className={isSidebarEmbed ? 'flex flex-wrap gap-x-1.5 gap-y-0.5 min-w-0' : 'flex flex-wrap gap-2'}>
+              {[
+                { level: 0, u: 0 },
+                { level: 1, u: 0.16 },
+                { level: 2, u: 0.42 },
+                { level: 3, u: 0.72 },
+                { level: 4, u: 1 }
+              ].map(({ level, u }) => (
                 <div
                   key={level}
                   className={isSidebarEmbed ? 'flex items-center gap-0.5 shrink-0' : 'flex items-center gap-1'}
                 >
                   <div
-                    className={`rounded border shrink-0 ${isSidebarEmbed ? 'w-2.5 h-2.5' : 'w-4 h-4'} ${getIntensityColor(level)}`}
+                    className={`rounded border shrink-0 border-slate-600/70 ${isSidebarEmbed ? 'w-2.5 h-2.5' : 'w-4 h-4'}`}
+                    style={{ backgroundColor: calendarHeatmapCompositeBackground(u) }}
                   />
                   <span className={isSidebarEmbed ? 'text-[9px] text-slate-400 leading-none' : 'text-xs text-slate-400'}>
                     {getIntensityLabel(level)}
@@ -1735,13 +2174,7 @@ const CalendarHeatmap = ({
 
       {/* Vue mensuelle détaillée */}
       {(viewMode === 'month' || compact) && (
-        <div
-          className={
-            isSidebarEmbed
-              ? 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-1.5 py-2 border border-slate-700 min-w-0'
-              : 'bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700'
-          }
-        >
+        <div className={heatmapModuleShell(variant, isSidebarEmbed, 'month')}>
           {/* En-têtes des jours */}
           <div className={`grid grid-cols-7 ${isSidebarEmbed ? 'gap-0.5 mb-1' : 'gap-2 mb-4'}`}>
             {weekDays.map((day, index) => (
@@ -1760,23 +2193,57 @@ const CalendarHeatmap = ({
 
           {/* Grille des jours */}
           <div className={`grid grid-cols-7 ${isSidebarEmbed ? 'gap-0.5' : 'gap-2'}`}>
-            {monthDays.map((day, index) => (
+            {monthDays.map((day, index) => {
+              const cellColor = getDayColorStyle(day.intensity, day.isToday);
+              const dayHasPaint = calendarDayHasPaintSignal(day.intensity);
+              const dayNumTone = heatmapDayNumberTone(
+                cellColor.style,
+                dayHasPaint,
+                day.intensity?.level,
+                day.intensity?.visualContext?.composite01
+              );
+              const dayDateStr = getDateStr(day.date);
+              const stepsCount =
+                day.intensity?.steps != null && Number.isFinite(Number(day.intensity.steps))
+                  ? Math.max(0, Math.round(Number(day.intensity.steps)))
+                  : 0;
+              const showStepsOnTile =
+                stepsCount > 0 && stepsRevealedByDateStr[dayDateStr] === true;
+              const stepsLocale = language === 'en' ? 'en-US' : 'fr-FR';
+              const stepsTileLabel = showStepsOnTile
+                ? t('calendar.heatmap.stepsOnCell', {
+                    count: stepsCount.toLocaleString(stepsLocale)
+                  })
+                : '';
+              const questTileCount =
+                variant === 'quests'
+                  ? day.intensity?.questData?.completedUnique ?? 0
+                  : variant === 'books'
+                    ? day.intensity?.bookData?.sessions ?? 0
+                    : 0;
+              const showQuestCountOnTile =
+                (variant === 'quests' &&
+                  questTileCount > 0 &&
+                  (day.intensity?.level > 0 || dayHasPaint)) ||
+                (variant === 'books' && questTileCount > 0 && dayHasPaint);
+              return (
               <div
                 key={index}
                 onClick={() => {
-                  // ✅ CORRECTION : Seulement les jours BLANCS (sans activité ET sans justification) ouvrent la modal
-                  // Un jour est "blanc" si : level === 0 ET pas de justification
                   const dateStr = getDateStr(day.date);
-                  const hasJustification = !!day.intensity?.justification;
-                  const isWhiteDay = day.intensity.level === 0 && !hasJustification;
-                  
-                  if (isWhiteDay && isDayWithoutActivity(allData, dateStr)) {
-                    // Jour blanc sans activité → afficher panneau de choix (justifier OU saisir)
+                  setStepsRevealedByDateStr((prev) => ({ ...prev, [dateStr]: true }));
+                  if (isQuestsOrBooks) {
+                    setSelectedDate(day);
+                    setPanelMode('details');
+                    setPanelDate(null);
+                    return;
+                  }
+                  const hasGarmin = hasMeaningfulGarminDailyMetrics(garminData, dateStr);
+                  if (!dayHasPaint && !hasGarmin && isDayWithoutActivity(allData, dateStr)) {
                     setPanelDate(day.date);
                     setPanelMode('choice');
                     setSelectedDate(null);
                   } else {
-                    // Jour avec activité OU justifié → afficher le recap normal
                     setSelectedDate(day);
                     setPanelMode('details');
                     setPanelDate(null);
@@ -1784,39 +2251,71 @@ const CalendarHeatmap = ({
                 }}
                 className={`
                   aspect-square rounded-lg ${isSidebarEmbed ? 'border' : 'border-2'} cursor-pointer transition-all duration-200 relative min-w-0
-                  ${getDayColor(day.intensity, day.isToday)}
+                  ${cellColor.className}
                   ${day.isCurrentMonth ? 'border-transparent' : 'border-slate-600 opacity-30'}
-                  ${selectedDate?.date.toDateString() === day.date.toDateString() 
-                    ? 'ring-2 ring-purple-400' : ''
+                  ${selectedDate?.date.toDateString() === day.date.toDateString()
+                    ? variant === 'quests'
+                      ? 'ring-2 ring-indigo-400'
+                      : 'ring-2 ring-purple-400'
+                    : ''}
+                  ${
+                    isSidebarEmbed
+                      ? variant === 'quests'
+                        ? 'hover:ring-1 hover:ring-indigo-300'
+                        : 'hover:ring-1 hover:ring-purple-300'
+                      : variant === 'quests'
+                        ? 'hover:ring-2 hover:ring-indigo-300 hover:scale-105'
+                        : 'hover:ring-2 hover:ring-purple-300 hover:scale-105'
                   }
-                  ${isSidebarEmbed ? 'hover:ring-1 hover:ring-purple-300' : 'hover:ring-2 hover:ring-purple-300 hover:scale-105'}
                 `}
+                style={cellColor.style}
                   title={getDayTooltip(day, day.intensity)}
               >
                 <div className="w-full h-full flex flex-col items-center justify-center relative px-px">
                   {isSidebarEmbed ? (
                     <span
-                      className={`tabular-nums text-[10px] font-semibold leading-none text-center max-w-full truncate ${
-                        day.intensity.level > 0 ? 'text-white' : 'text-slate-400'
-                      }`}
+                      className={`tabular-nums text-[10px] font-semibold leading-none text-center max-w-full truncate flex flex-col items-center gap-0 ${dayNumTone}`}
                     >
-                      {day.date.getDate()}
-                      {day.intensity.level > 0 && Number(day.intensity.reps) > 0 ? (
-                        <span className="text-[7px] font-normal opacity-90">·{day.intensity.reps}</span>
+                      <span className="leading-none">
+                        {day.date.getDate()}
+                        {showQuestCountOnTile ? (
+                          <span className={`text-[7px] font-normal opacity-95 ${dayNumTone}`}>
+                            ·{questTileCount}
+                          </span>
+                        ) : (day.intensity.level > 0 || dayHasPaint) && Number(day.intensity.reps) > 0 ? (
+                          <span className={`text-[7px] font-normal opacity-95 ${dayNumTone}`}>
+                            ·{day.intensity.reps}
+                          </span>
+                        ) : null}
+                      </span>
+                      {showStepsOnTile ? (
+                        <span className={`text-[6px] font-medium leading-none mt-0.5 max-w-full truncate ${dayNumTone}`}>
+                          {stepsTileLabel}
+                        </span>
                       ) : null}
                     </span>
                   ) : (
                     <>
-                      <span
-                        className={`text-sm font-medium ${
-                          day.intensity.level > 0 ? 'text-white' : 'text-slate-400'
-                        }`}
-                      >
+                      <span className={`text-sm font-semibold ${dayNumTone}`}>
                         {day.date.getDate()}
                       </span>
-                      {day.intensity.level > 0 && (
-                        <div className="text-xs text-white/80 leading-none">{day.intensity.reps}</div>
+                      {showQuestCountOnTile ? (
+                        <div className={`text-xs leading-none opacity-95 ${dayNumTone}`}>
+                          {questTileCount}
+                        </div>
+                      ) : (
+                        (day.intensity.level > 0 || dayHasPaint) &&
+                        Number(day.intensity.reps) > 0 && (
+                          <div className={`text-xs leading-none opacity-95 ${dayNumTone}`}>
+                            {day.intensity.reps}
+                          </div>
+                        )
                       )}
+                      {showStepsOnTile ? (
+                        <div className={`text-[10px] leading-tight font-medium mt-0.5 ${dayNumTone}`}>
+                          {stepsTileLabel}
+                        </div>
+                      ) : null}
                     </>
                   )}
                   {/* PHASE 5.3 : Icônes Garmin (discret, en bas à droite) */}
@@ -1840,11 +2339,13 @@ const CalendarHeatmap = ({
                   />
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
           
           {/* ✅ NOUVEAU : Compteurs de justifications en bas du mois */}
           {(() => {
+            if (isQuestsOrBooks) return null;
             const monthStats = calculateMonthJustificationStats(monthDays);
             const hasJustifications = Object.values(monthStats).some(count => count > 0);
             
@@ -1902,43 +2403,133 @@ const CalendarHeatmap = ({
       {!compact && viewMode === 'year' && (
         <div className="space-y-6">
           {/* Résumé annuel */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+          <div className={heatmapModuleShell(variant, isSidebarEmbed, 'wide')}>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="text-green-400" />
+              <TrendingUp className="text-amber-400" />
               {t('calendar.heatmap.yearSummary', { year: currentDate.getFullYear() })}
             </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-slate-700/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm">{t('calendar.heatmap.bestMonth')}</div>
-                <div className="text-xl font-bold text-white">
-                  {yearStats.bestMonth ? monthNames[yearStats.bestMonth.date.getMonth()] : 'N/A'}
+
+            {variant === 'quests' && questYearAggregates ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">
+                    {t('quests.calendar.yearBestMonthXp', 'Meilleur mois (XP)')}
+                  </div>
+                  <div className="text-xl font-bold text-white">
+                    {questYearAggregates.bestMonthIdx >= 0 && questYearAggregates.bestMonthXp > 0
+                      ? monthNames[questYearAggregates.bestMonthIdx]
+                      : 'N/A'}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    {questYearAggregates.bestMonthXp > 0 ? `${questYearAggregates.bestMonthXp} XP` : '—'}
+                  </div>
                 </div>
-                <div className="text-sm text-slate-300">
-                  {yearStats.bestMonth?.totalReps || 0} reps
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">
+                    {t('quests.calendar.yearBestDay', 'Jour le plus chargé')}
+                  </div>
+                  <div className="text-xl font-bold text-white">
+                    {questYearAggregates.bestDay?.dateStr
+                      ? new Date(`${questYearAggregates.bestDay.dateStr}T12:00:00`).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                        })
+                      : 'N/A'}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    {questYearAggregates.bestDay?.qd?.xpTotal || 0} XP ·{' '}
+                    {questYearAggregates.bestDay?.qd?.completedUnique || 0}{' '}
+                    {t('quests.calendar.questsDone', 'quêtes')}
+                  </div>
+                </div>
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">
+                    {t('quests.calendar.yearTotals', 'Totaux année')}
+                  </div>
+                  <div className="text-xl font-bold text-white">{questYearAggregates.totalXp} XP</div>
+                  <div className="text-sm text-slate-300">
+                    {questYearAggregates.activeDays}{' '}
+                    {t('quests.calendar.activeDaysShort', 'jours actifs')} ·{' '}
+                    {questYearAggregates.totalMinutes} min
+                  </div>
                 </div>
               </div>
-              
-              <div className="bg-slate-700/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm">{t('calendar.heatmap.bestDay')}</div>
-                <div className="text-xl font-bold text-white">
-                  {yearStats.bestDay ? yearStats.bestDay.date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : 'N/A'}
+            ) : variant === 'books' && booksYearAggregates ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">Meilleur mois (pages)</div>
+                  <div className="text-xl font-bold text-white">
+                    {booksYearAggregates.bestMonthIdx >= 0 && booksYearAggregates.bestMonthPages > 0
+                      ? monthNames[booksYearAggregates.bestMonthIdx]
+                      : 'N/A'}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    {booksYearAggregates.bestMonthPages > 0
+                      ? `${booksYearAggregates.bestMonthPages} p.`
+                      : '—'}
+                  </div>
                 </div>
-                <div className="text-sm text-slate-300">
-                  {yearStats.bestDay?.intensity.reps || 0} reps
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">Jour le plus chargé</div>
+                  <div className="text-xl font-bold text-white">
+                    {booksYearAggregates.bestDay?.dateStr
+                      ? new Date(`${booksYearAggregates.bestDay.dateStr}T12:00:00`).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                        })
+                      : 'N/A'}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    {(booksYearAggregates.bestDay?.bd?.pages || 0) +
+                      ' p. · ' +
+                      (booksYearAggregates.bestDay?.bd?.minutes || 0) +
+                      ' min'}
+                  </div>
+                </div>
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">Totaux année</div>
+                  <div className="text-xl font-bold text-white">{booksYearAggregates.totalPages} p.</div>
+                  <div className="text-sm text-slate-300">
+                    {booksYearAggregates.activeDays} jours avec session · {booksYearAggregates.totalMinutes}{' '}
+                    min · {booksYearAggregates.totalSessions} sessions
+                  </div>
                 </div>
               </div>
-              
-              <div className="bg-slate-700/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm">{t('calendar.heatmap.avgPerSession')}</div>
-                <div className="text-xl font-bold text-white">{yearStats.avgIntensity}</div>
-                <div className="text-sm text-slate-300">{t('calendar.heatmap.repsPerSession')}</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">{t('calendar.heatmap.bestMonth')}</div>
+                  <div className="text-xl font-bold text-white">
+                    {yearStats.bestMonth ? monthNames[yearStats.bestMonth.date.getMonth()] : 'N/A'}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    {yearStats.bestMonth?.totalReps || 0} reps
+                  </div>
+                </div>
+
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">{t('calendar.heatmap.bestDay')}</div>
+                  <div className="text-xl font-bold text-white">
+                    {yearStats.bestDay
+                      ? yearStats.bestDay.date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+                      : 'N/A'}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    {yearStats.bestDay?.intensity.reps || 0} reps
+                  </div>
+                </div>
+
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm">{t('calendar.heatmap.avgPerSession')}</div>
+                  <div className="text-xl font-bold text-white">{yearStats.avgIntensity}</div>
+                  <div className="text-sm text-slate-300">{t('calendar.heatmap.repsPerSession')}</div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Grille des mois */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+          <div className={heatmapModuleShell(variant, isSidebarEmbed, 'wide')}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {yearMonths.map((month, monthIndex) => (
                 <div key={monthIndex} className="space-y-3">
@@ -1947,7 +2538,18 @@ const CalendarHeatmap = ({
                       {monthNames[month.date.getMonth()]}
                     </h4>
                     <div className="text-xs text-slate-400">
-                      {t('calendar.stats.sessions', { count: month.sessionsCount })}
+                      {variant === 'quests'
+                        ? `${month.days.filter(
+                            (d) =>
+                              d.isCurrentMonth &&
+                              (d.intensity?.questData?.completedUnique || 0) > 0
+                          ).length} jour(s) avec quêtes`
+                        : variant === 'books'
+                          ? `${month.days.filter(
+                              (d) =>
+                                d.isCurrentMonth && (d.intensity?.bookData?.sessions || 0) > 0
+                            ).length} jour(s) avec lecture`
+                          : t('calendar.stats.sessions', { count: month.sessionsCount })}
                     </div>
                   </div>
                   
@@ -1961,47 +2563,156 @@ const CalendarHeatmap = ({
                       ))}
                     </div>
                     <div className="grid grid-cols-7 gap-1">
-                      {month.days.map((day, dayIndex) => (
+                      {month.days.map((day, dayIndex) => {
+                        const yCell = getDayColorStyle(day.intensity, false);
+                        const yPaint = calendarDayHasPaintSignal(day.intensity);
+                        const yDayNumTone = heatmapDayNumberTone(
+                          yCell.style,
+                          yPaint,
+                          day.intensity?.level,
+                          day.intensity?.visualContext?.composite01
+                        );
+                        const yDateStr = getDateStr(day.date);
+                        const yStepsCount =
+                          day.intensity?.steps != null && Number.isFinite(Number(day.intensity.steps))
+                            ? Math.max(0, Math.round(Number(day.intensity.steps)))
+                            : 0;
+                        const yShowSteps =
+                          yStepsCount > 0 && stepsRevealedByDateStr[yDateStr] === true;
+                        const yStepsLocale = language === 'en' ? 'en-US' : 'fr-FR';
+                        const yStepsLabel = yShowSteps
+                          ? t('calendar.heatmap.stepsOnCell', {
+                              count: yStepsCount.toLocaleString(yStepsLocale)
+                            })
+                          : '';
+                        return (
                         <div
                           key={dayIndex}
                           className={`
-                            aspect-square rounded-sm cursor-pointer transition-all text-xs flex items-center justify-center
-                            ${getDayColor(day.intensity)}
+                            aspect-square rounded-sm cursor-pointer transition-all text-xs flex flex-col items-center justify-center gap-0 py-0.5
+                            ${yCell.className}
                             ${day.isCurrentMonth ? '' : 'opacity-20'}
-                            hover:ring-1 hover:ring-purple-300 hover:scale-110
+                            hover:ring-1 ${
+                              variant === 'quests' ? 'hover:ring-indigo-300' : 'hover:ring-purple-300'
+                            } hover:scale-110
                           `}
+                          style={yCell.style}
                           onClick={() => {
-                            // ✅ CORRECTION : Dans la vue 12 mois, toujours changer de vue (comportement normal)
-                            // La modal de justification s'ouvrira seulement si on clique sur un jour blanc dans la vue mois
+                            const dateStr = getDateStr(day.date);
+                            setStepsRevealedByDateStr((prev) => ({ ...prev, [dateStr]: true }));
                             setCurrentDate(new Date(day.date));
                             setViewMode('month');
+                            if (isQuestsOrBooks) {
+                              setSelectedDate(day);
+                              setPanelMode('details');
+                              setPanelDate(null);
+                              return;
+                            }
+                            const yHasPaint = calendarDayHasPaintSignal(day.intensity);
+                            const hasGarmin = hasMeaningfulGarminDailyMetrics(garminData, dateStr);
+                            if (!yHasPaint && !hasGarmin && isDayWithoutActivity(allData, dateStr)) {
+                              setPanelDate(day.date);
+                              setPanelMode('choice');
+                              setSelectedDate(null);
+                            } else {
+                              setSelectedDate(day);
+                              setPanelMode('details');
+                              setPanelDate(null);
+                            }
                           }}
                           title={getDayTooltip(day, day.intensity)}
                         >
-                          {day.isCurrentMonth && day.intensity.level > 0 && (
-                            <span className="text-white font-bold">
-                              {day.date.getDate()}
+                          <span
+                            className={`leading-none tabular-nums ${
+                              day.isCurrentMonth
+                                ? `text-xs font-bold ${yDayNumTone}`
+                                : `text-[10px] font-medium ${yDayNumTone}`
+                            }`}
+                          >
+                            {day.date.getDate()}
+                          </span>
+                          {yShowSteps ? (
+                            <span
+                              className={`leading-none text-[8px] font-medium text-center max-w-[95%] truncate mt-px ${yDayNumTone}`}
+                            >
+                              {yStepsLabel}
                             </span>
+                          ) : null}
+                        </div>
+                      );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Stats du mois */}
+                  {variant === 'quests' && questCalendarContext?.validationsByDate ? (
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-slate-700/50 rounded p-2 text-center">
+                        <div className="text-white font-bold">
+                          {sumQuestXpForMonth(
+                            month.date.getFullYear(),
+                            month.date.getMonth(),
+                            questCalendarContext.validationsByDate
                           )}
                         </div>
-                      ))}
+                        <div className="text-slate-400">
+                          {t('quests.calendar.monthXp', 'XP ce mois')}
+                        </div>
+                      </div>
+                      <div className="bg-slate-700/50 rounded p-2 text-center">
+                        <div className="text-white font-bold">
+                          {month.days.reduce(
+                            (sum, d) =>
+                              sum +
+                              (d.isCurrentMonth ? d.intensity?.questData?.completedCount || 0 : 0),
+                            0
+                          )}
+                        </div>
+                        <div className="text-slate-400">
+                          {t('quests.calendar.monthChecks', 'Validations')}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Stats du mois */}
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-slate-700/50 rounded p-2 text-center">
-                      <div className="text-white font-bold">{month.totalReps}</div>
-                      <div className="text-slate-400">{t('calendar.stats.reps_endurance')}</div>
+                  ) : variant === 'books' && booksCalendarContext?.sessionsByDate ? (
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-slate-700/50 rounded p-2 text-center">
+                        <div className="text-white font-bold">
+                          {sumBooksPagesForMonth(
+                            month.date.getFullYear(),
+                            month.date.getMonth(),
+                            booksCalendarContext.sessionsByDate
+                          )}
+                        </div>
+                        <div className="text-slate-400">Pages ce mois</div>
+                      </div>
+                      <div className="bg-slate-700/50 rounded p-2 text-center">
+                        <div className="text-white font-bold">
+                          {sumBooksMinutesForMonth(
+                            month.date.getFullYear(),
+                            month.date.getMonth(),
+                            booksCalendarContext.sessionsByDate
+                          )}
+                          min
+                        </div>
+                        <div className="text-slate-400">Temps lecture</div>
+                      </div>
                     </div>
-                    <div className="bg-slate-700/50 rounded p-2 text-center">
-                      <div className="text-white font-bold">{month.totalDuration}min</div>
-                      <div className="text-slate-400">{t('calendar.stats.total_time')}</div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-slate-700/50 rounded p-2 text-center">
+                        <div className="text-white font-bold">{month.totalReps}</div>
+                        <div className="text-slate-400">{t('calendar.stats.reps_endurance')}</div>
+                      </div>
+                      <div className="bg-slate-700/50 rounded p-2 text-center">
+                        <div className="text-white font-bold">{month.totalDuration}min</div>
+                        <div className="text-slate-400">{t('calendar.stats.total_time')}</div>
+                      </div>
                     </div>
-                  </div>
-                  
+                  )}
+
                   {/* ✅ NOUVEAU : Compteurs de justifications en dessous des stats */}
                   {(() => {
+                    if (isQuestsOrBooks) return null;
                     const monthStats = calculateMonthJustificationStats(month.days);
                     const hasJustifications = Object.values(monthStats).some(count => count > 0);
                     
@@ -2052,7 +2763,7 @@ const CalendarHeatmap = ({
       )}
 
       {/* Vue Streaks */}
-      {!compact && viewMode === 'streaks' && (
+      {!compact && viewMode === 'streaks' && !isQuestsOrBooks && (
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-slate-700/50 rounded-lg p-6 text-center">
@@ -2728,6 +3439,114 @@ const CalendarHeatmap = ({
             </div>
           );
         }
+
+        if (variant === 'quests' && selectedDate && panelMode === 'details') {
+          const qd = selectedDate.intensity?.questData;
+          return (
+            <div className={`${heatmapModuleShell(variant, isSidebarEmbed, 'wide')} space-y-4`}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-bold text-white">
+                  {formatLocaleDate(selectedDate.date, {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(null)}
+                  className="text-slate-400 hover:text-white text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-white">{qd?.completedUnique ?? 0}</div>
+                  <div className="text-xs text-slate-400">Quêtes cochées (uniques)</div>
+                </div>
+                <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-white">{qd?.scheduledTotal ?? 0}</div>
+                  <div className="text-xs text-slate-400">Prévues ce jour</div>
+                </div>
+                <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-white">{qd?.minutesOccupied ?? 0} min</div>
+                  <div className="text-xs text-slate-400">Temps occupé (durées param.)</div>
+                </div>
+                <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-white">{qd?.xpTotal ?? 0}</div>
+                  <div className="text-xs text-slate-400">XP ce jour</div>
+                </div>
+              </div>
+              {qd?.completedRows?.length > 0 && (
+                <div>
+                  <h4 className="text-white font-medium mb-2">Validations</h4>
+                  <ul className="space-y-2">
+                    {qd.completedRows.map((row, idx) => (
+                      <li
+                        key={`${row.queteId}-${idx}`}
+                        className="flex justify-between gap-2 bg-slate-700/30 rounded-lg px-3 py-2 text-sm"
+                      >
+                        <span className="text-white font-medium truncate">{row.nom}</span>
+                        <span className="text-slate-300 shrink-0">
+                          {row.dureeMinutes} min · {row.xp} XP
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {qd?.scheduledNotDone?.length > 0 && (
+                <div>
+                  <h4 className="text-slate-300 font-medium mb-2 text-sm">Prévues mais non cochées</h4>
+                  <ul className="space-y-1">
+                    {qd.scheduledNotDone.map((row) => (
+                      <li
+                        key={row.queteId}
+                        className="text-slate-400 text-xs flex justify-between gap-2"
+                      >
+                        <span className="truncate">{row.nom}</span>
+                        <span className="shrink-0">{row.dureeMinutes} min</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {!qd?.completedRows?.length && !qd?.scheduledNotDone?.length && (
+                <p className="text-slate-400 text-sm">Aucune quête prévue ni cochée ce jour.</p>
+              )}
+            </div>
+          );
+        }
+
+        if (variant === 'books' && selectedDate && panelMode === 'details') {
+          const bd = selectedDate.intensity?.bookData;
+          const ds = getDateStr(selectedDate.date);
+          const booksList = booksCalendarContext?.books || [];
+          const covers = booksCalendarContext?.coverUrls || {};
+          const df = booksCalendarContext?.dayFeedbacks?.[ds];
+          return (
+            <div className={heatmapModuleShell(variant, isSidebarEmbed, 'wide')}>
+              <BooksCalendarDayDetailPanel
+                dateStr={ds}
+                heading={formatLocaleDate(selectedDate.date, {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+                onClose={() => setSelectedDate(null)}
+                bd={bd}
+                books={booksList}
+                coverUrls={covers}
+                dayFeedback={df}
+                onSaveDayFeedback={booksCalendarContext?.setDayFeedback}
+                onUpdateBookSession={booksCalendarContext?.onUpdateBookSession}
+              />
+            </div>
+          );
+        }
         
         // MODE DETAILS : Afficher les détails du jour (code existant)
         if (selectedDate && panelMode === 'details') {
@@ -2752,6 +3571,83 @@ const CalendarHeatmap = ({
               garminAdjustments = adjusted;
             }
           }
+
+          const vcDetail = selectedDate.intensity?.visualContext;
+          const colorMixRows = [
+            ['level', 'calendar.heatmap.colorMix.barLevel', 'bg-cyan-500'],
+            ['kcal', 'calendar.heatmap.colorMix.barKcal', 'bg-amber-500'],
+            ['steps', 'calendar.heatmap.colorMix.barSteps', 'bg-emerald-500'],
+            ['intensityMin', 'calendar.heatmap.colorMix.barIntMin', 'bg-violet-500'],
+            ['load', 'calendar.heatmap.colorMix.barLoad', 'bg-rose-500'],
+            ['repsHint', 'calendar.heatmap.colorMix.barReps', 'bg-slate-400']
+          ];
+          const dayFeedback = allData?.sessionFeedbacks?.[selectedDateStr];
+          const intenD = selectedDate.intensity;
+          const caAbs = vcDetail?.contribAbsolute || {};
+          const kcalRefD = intenD.kcalRefMedian || 0;
+          const stepsRefD = intenD.stepsRefMedian || 0;
+          const activeKD = intenD.activeKcal || 0;
+          const stepsVD = intenD.steps ?? 0;
+          const intMinD = intenD.intensityMinutesTotal ?? 0;
+          const pctKcalVsRef =
+            kcalRefD > 45
+              ? Math.round(((activeKD - kcalRefD) / Math.max(1, kcalRefD)) * 100)
+              : null;
+          const pctStepsVsRef =
+            stepsRefD > 600
+              ? Math.round(((stepsVD - stepsRefD * 0.72) / Math.max(1, stepsRefD * 0.35)) * 100)
+              : null;
+          const fmtU = (n) => (Number.isFinite(n) ? (Math.round(n * 1000) / 1000).toString() : '—');
+          const mixValueLine = (key) => {
+            switch (key) {
+              case 'level':
+                return `${intenD.level} / 4 · ${t('calendar.heatmap.colorMix.contribUnits', 'unités')} ${fmtU(
+                  caAbs.level
+                )}`;
+              case 'kcal':
+                return `${Math.round(activeKD)} kcal${
+                  kcalRefD ? ` · ${t('calendar.heatmap.colorMix.baselineKcal', { ref: Math.round(kcalRefD) })}` : ''
+                }${pctKcalVsRef != null ? ` (${pctKcalVsRef >= 0 ? '+' : ''}${pctKcalVsRef}%)` : ''} · ${fmtU(
+                  caAbs.kcal
+                )}`;
+              case 'steps':
+                return `${stepsVD} pas${
+                  stepsRefD
+                    ? ` · ${t('calendar.heatmap.colorMix.baselineSteps', { ref: Math.round(stepsRefD) })}`
+                    : ''
+                }${pctStepsVsRef != null ? ` (${pctStepsVsRef >= 0 ? '+' : ''}${pctStepsVsRef}%)` : ''} · ${fmtU(
+                  caAbs.steps
+                )}`;
+              case 'intensityMin': {
+                const baseLine = `${intMinD} min · ${fmtU(caAbs.intensityMin)}`;
+                if (
+                  intenD.intensityMinutesModerate != null &&
+                  intenD.intensityMinutesVigorous != null &&
+                  vcDetail?.intensityMinutesEffective != null
+                ) {
+                  return `${baseLine} · ${t('calendar.heatmap.colorMix.intensitySplit', {
+                    mod: intenD.intensityMinutesModerate,
+                    vig: intenD.intensityMinutesVigorous,
+                    effective: fmtU(vcDetail.intensityMinutesEffective)
+                  })}`;
+                }
+                return baseLine;
+              }
+              case 'load':
+                return `${t('calendar.heatmap.dayDetails.street')} ${fmtU(
+                  vcDetail.strengthLoad || 0
+                )} + ${t('calendar.heatmap.dayDetails.enduranceShort')} ${fmtU(
+                  vcDetail.enduranceLoad || 0
+                )} · ${fmtU(caAbs.load)}`;
+              case 'repsHint':
+                return `${intenD.reps ?? 0} reps · ${fmtU(caAbs.repsHint)}`;
+              default:
+                return '';
+            }
+          };
+          const cardioKindsD = garminData
+            ? getGarminCardioMinutesByKindForDate(garminData, selectedDateStr)
+            : { walk: 0, run: 0, other: 0, total: 0 };
           
           return (
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 space-y-6">
@@ -2832,6 +3728,102 @@ const CalendarHeatmap = ({
                 </div>
               </div>
             )}
+
+            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && vcDetail && (
+              <div className="space-y-3 rounded-lg border border-indigo-500/30 bg-indigo-950/35 p-4">
+                <h4 className="flex items-center gap-2 font-medium text-indigo-200">
+                  <BarChart3 size={18} />
+                  {t('calendar.heatmap.colorMix.title')}
+                </h4>
+                <p className="text-xs text-slate-400">{t('calendar.heatmap.colorMix.subtitle')}</p>
+                <p className="text-[11px] leading-snug text-slate-300 border border-slate-600/50 rounded-md bg-slate-900/50 px-2 py-1.5">
+                  {t(
+                    'calendar.heatmap.colorMix.scaleExplainer',
+                    'Couleur des cases : du vert clair (jour le plus calme sur la période affichée) au rouge foncé (jour le plus chargé). Les pourcentages = part du mélange ; à droite = tes valeurs réelles et unités internes.'
+                  )}
+                </p>
+                <div className="text-sm font-semibold text-white">
+                  {t('calendar.heatmap.colorMix.score', { score: vcDetail.visualScore100 })}
+                </div>
+                {vcDetail.synergyStreetEndurance > 1.001 && (
+                  <p className="text-xs text-emerald-200/95">
+                    {t('calendar.heatmap.colorMix.synergyLine', {
+                      mult: Math.round(vcDetail.synergyStreetEndurance * 1000) / 1000
+                    })}
+                  </p>
+                )}
+                {garminData && (cardioKindsD.total > 0 || cardioKindsD.walk > 0) && (
+                  <p className="text-xs text-sky-200/90">
+                    {t('calendar.heatmap.colorMix.cardioSplit', {
+                      walk: Math.round(cardioKindsD.walk),
+                      run: Math.round(cardioKindsD.run),
+                      other: Math.round(cardioKindsD.other)
+                    })}
+                  </p>
+                )}
+                <div className="space-y-3">
+                  {colorMixRows.map(([key, labelKey, colorClass]) => {
+                    const pct = Math.round(((vcDetail.breakdownShares || {})[key] || 0) * 100);
+                    return (
+                      <div key={key} className="space-y-1">
+                        <div className="flex flex-wrap items-start justify-between gap-2 text-xs text-slate-400">
+                          <span className="min-w-0 flex-1">{t(labelKey)}</span>
+                          <span className="shrink-0 tabular-nums text-slate-200 font-medium">{pct}%</span>
+                        </div>
+                        <div className="text-[11px] text-slate-300 leading-snug text-right">
+                          {mixValueLine(key)}
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                          <div
+                            className={`h-full rounded-full ${colorClass}`}
+                            style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {(vcDetail.walkHeavy || vcDetail.walkOnlyDay) && (
+                  <p className="text-xs text-amber-200/90">{t('calendar.heatmap.colorMix.walkNote')}</p>
+                )}
+                <div className="border-t border-slate-600/60 pt-3 text-xs text-slate-300">
+                  {dayFeedback?.difficulte != null && Number(dayFeedback.difficulte) >= 1 ? (
+                    <div>
+                      <div className="text-slate-400">
+                        {t('calendar.heatmap.colorMix.feedback', { n: dayFeedback.difficulte })}
+                      </div>
+                      {dayFeedback.note ? (
+                        <div className="mt-1 text-slate-200">
+                          <span className="text-slate-500">{t('calendar.heatmap.colorMix.feedbackNote')} </span>
+                          {dayFeedback.note}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="text-slate-500">{t('calendar.heatmap.colorMix.feedbackNone')}</div>
+                  )}
+                </div>
+                <div className="rounded-md border border-slate-600/50 bg-slate-900/40 p-3 text-xs text-slate-300">
+                  <div className="font-medium text-slate-200 mb-1">{t('calendar.heatmap.equiv.title')}</div>
+                  <p className="mt-1 text-slate-400">{t('calendar.heatmap.equiv.intro')}</p>
+                  <ul className="mt-2 list-disc space-y-1.5 pl-4 marker:text-indigo-400">
+                    <li>{t('calendar.heatmap.equiv.b1', { kcal: CALENDAR_VISUAL_CONSTANTS.KCAL_PER_VISUAL_UNIT })}</li>
+                    <li>{t('calendar.heatmap.equiv.b2', { steps: CALENDAR_VISUAL_CONSTANTS.STEPS_PER_VISUAL_UNIT })}</li>
+                    <li>{t('calendar.heatmap.equiv.b3')}</li>
+                    <li>{t('calendar.heatmap.equiv.b4')}</li>
+                    <li>{t('calendar.heatmap.equiv.b5')}</li>
+                  </ul>
+                  {(vcDetail.approxRepEquivFromKcal > 0 || vcDetail.approxRepEquivFromSteps > 0) && (
+                    <p className="mt-2 text-slate-400">
+                      {t('calendar.heatmap.equiv.todayApprox', {
+                        kcalU: vcDetail.approxRepEquivFromKcal,
+                        stepU: vcDetail.approxRepEquivFromSteps
+                      })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
             
             {/* ✅ NOUVEAU : Message si jour justifié (pas d'entraînement) - Sauf repos */}
             {justification && justification.reason !== JUSTIFICATION_REASONS.REPOS && (
@@ -2844,8 +3836,8 @@ const CalendarHeatmap = ({
 
             {/* Ajustements Garmin appliqués - Masquer si jour justifié (sauf repos) */}
             {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && garminAdjustments && (
-              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                <h4 className="text-green-400 font-medium mb-2 flex items-center">
+              <div className="bg-slate-800/40 border border-amber-500/25 rounded-lg p-4">
+                <h4 className="text-amber-300 font-medium mb-2 flex items-center">
                   <Target className="mr-2" size={16} />
                   {t('calendar.heatmap.dayDetails.garminAdjustments')}
                 </h4>
@@ -2890,7 +3882,7 @@ const CalendarHeatmap = ({
             {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) && (
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
-                  <Zap className="mr-2 text-green-400" size={16} />
+                  <Zap className="mr-2 text-amber-400" size={16} />
                   {t('calendar.heatmap.dayDetails.garminData')}
                 </h4>
                 <div className="space-y-4">
@@ -2931,8 +3923,8 @@ const CalendarHeatmap = ({
 
                   {/* Corde à sauter */}
                   {jumpRope.length > 0 && (
-                    <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-                      <div className="text-green-400 font-medium mb-2">🪢 {t('calendar.heatmap.dayDetails.jumpRope')} ({jumpRope.length} {jumpRope.length > 1 ? t('calendar.heatmap.dayDetails.sessions') : t('calendar.heatmap.dayDetails.session')})</div>
+                    <div className="bg-amber-950/30 border border-amber-600/25 rounded-lg p-4">
+                      <div className="text-amber-300 font-medium mb-2">🪢 {t('calendar.heatmap.dayDetails.jumpRope')} ({jumpRope.length} {jumpRope.length > 1 ? t('calendar.heatmap.dayDetails.sessions') : t('calendar.heatmap.dayDetails.session')})</div>
                       {jumpRope.map((act, idx) => (
                         <div key={idx} className="bg-slate-800/50 rounded p-2 mt-2 text-sm">
                           <div className="grid grid-cols-2 gap-2">
@@ -3064,13 +4056,13 @@ const CalendarHeatmap = ({
                     </div>
                     <div className="text-blue-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceDistance')}</div>
                   </div>
-                  <div className="bg-green-700/30 rounded-lg p-3 text-center">
-                    <div className="text-lg font-bold text-green-200">{selectedDate.intensity.enduranceData.jumps}</div>
-                    <div className="text-green-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceJumps')}</div>
+                  <div className="bg-amber-900/25 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-amber-100">{selectedDate.intensity.enduranceData.jumps}</div>
+                    <div className="text-amber-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceJumps')}</div>
                   </div>
-                  <div className="bg-purple-700/30 rounded-lg p-3 text-center">
-                    <div className="text-lg font-bold text-purple-200">{selectedDate.intensity.enduranceData.duration}min</div>
-                    <div className="text-purple-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceDuration')}</div>
+                  <div className="bg-slate-700/40 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-slate-100">{selectedDate.intensity.enduranceData.duration}min</div>
+                    <div className="text-slate-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceDuration')}</div>
                   </div>
                 </div>
               </div>

@@ -143,10 +143,19 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
       ...feedback,
       date: sessionDate,
       timestamp: new Date().toISOString(),
+      sessionPayloadVersion: 2,
       sessionId: sessionData?.id || Date.now(),
       sessionDuration: sessionData?.duration || 0,
       totalReps: sessionData?.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0,
-      totalExercises: sessionData?.exercises?.length || 0
+      totalExercises: sessionData?.exercises?.length || 0,
+      exercisesSnapshot: Array.isArray(sessionData?.exercises)
+        ? sessionData.exercises.map((ex) => ({
+            id: ex.id,
+            name: ex.name,
+            reps: ex.reps,
+            completed: ex.completed
+          }))
+        : []
     };
     onSave(feedbackData);
     onClose();

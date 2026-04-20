@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   formatDuration,
   formatDistance,
@@ -144,6 +144,23 @@ export default function CardioActivityCard({ activity }) {
 
   const hasRestSegment = useMemo(() => laps.some((l) => lapKind(l) === 'rest'), [laps]);
   const intervalMode = useMemo(() => isIntervalStructuredSession(laps), [laps]);
+  /**
+   * Beaucoup de tours « ACTIVE » sans repos = découpe auto Garmin (street / cardio indoor),
+   * pas un fractionné : on n’affiche pas le gros tableau par défaut.
+   */
+  const continuousAutoLapSession = useMemo(() => {
+    if (!laps.length || intervalMode || hasRestSegment) return false;
+    if (laps.length < 6) return false;
+    return laps.every((l) => lapKind(l) === 'active');
+  }, [laps, intervalMode, hasRestSegment]);
+
+  const [showTechnicalLaps, setShowTechnicalLaps] = useState(false);
+  useEffect(() => {
+    setShowTechnicalLaps(false);
+  }, [activity?.id]);
+
+  const allLapsAgg = useMemo(() => aggregateLapStats(laps), [laps]);
+
   /** Filtres effort/repos : seulement si fractionné réel avec au moins un segment repos */
   const showEffortRestFilters = intervalMode && hasRestSegment;
 
@@ -416,8 +433,34 @@ export default function CardioActivityCard({ activity }) {
         )}
       </div>
 
-      {/* Tours (sortie classique) ou fractionné — détail Garmin */}
-      {laps.length > 0 && (
+      {/* Séance continue avec tours auto : explication (street / indoor_cardio) — pas le tableau fractionné */}
+      {laps.length > 0 && continuousAutoLapSession && (
+        <div className="mt-4 border-t border-slate-700 pt-3 space-y-2">
+          <div className="text-slate-200 text-sm font-semibold">
+            {t('garmin.cardioActivity.continuousLapsTitle')}
+          </div>
+          <p className="text-slate-400 text-xs leading-relaxed max-w-2xl">
+            {t('garmin.cardioActivity.continuousLapsBody', { count: laps.length })}
+          </p>
+          {allLapsAgg.avgHR != null && (
+            <p className="text-slate-500 text-xs">
+              {t('garmin.cardioActivity.continuousLapsHr', { hr: allLapsAgg.avgHR })}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowTechnicalLaps((v) => !v)}
+            className="text-xs text-purple-300 hover:text-purple-200 underline-offset-2 hover:underline"
+          >
+            {showTechnicalLaps
+              ? t('garmin.cardioActivity.continuousLapsHideTechnical')
+              : t('garmin.cardioActivity.continuousLapsShowTechnical')}
+          </button>
+        </div>
+      )}
+
+      {/* Tours (sortie classique) ou fractionné — détail Garmin (masqué par défaut si séance continue auto-laps) */}
+      {laps.length > 0 && (!continuousAutoLapSession || showTechnicalLaps) && (
         <div className="mt-4 border-t border-slate-700 pt-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
             <div className="text-slate-300 text-sm font-semibold">

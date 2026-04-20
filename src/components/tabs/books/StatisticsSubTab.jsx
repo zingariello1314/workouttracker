@@ -33,6 +33,7 @@ import ComparisonMode from './statistics/ComparisonMode';
 import { ExportToolsContent } from './statistics/ExportTools';
 import PredictionsPanel from './statistics/PredictionsPanel';
 import AllSessionsSection from './statistics/AllSessionsSection';
+import FinishedBooksRatingsShowcase from '../../books/FinishedBooksRatingsShowcase';
 import Card, { CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import { Activity, Trophy, Download } from 'lucide-react';
 
@@ -246,6 +247,10 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
             {t('books.statistics.comparison', 'Comparaison')}
           </Button>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <FinishedBooksRatingsShowcase books={books} />
       </div>
 
       {/* Filtres temporels et autres filtres */}

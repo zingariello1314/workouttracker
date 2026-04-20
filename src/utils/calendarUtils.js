@@ -112,6 +112,28 @@ export function parseDurationToMinutes(duration, context = '') {
 }
 
 /**
+ * Détecte si le libellé d’un exercice correspond à une variante de pompes
+ * (programme street / base locale), pour cumuler les reps dans le calendrier.
+ *
+ * @param {string} name
+ * @returns {boolean}
+ */
+export function isPushupExerciseName(name) {
+  const raw = String(name || '');
+  const n = raw
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  if (!n) return false;
+  if (n.includes('pomp')) return true;
+  if (n.includes('pushup')) return true;
+  if (n.includes('push-up') || n.includes('push up')) return true;
+  if (/(^|[^a-z])push[- ]?ups?([^a-z]|$)/.test(n)) return true;
+  if (n.includes('diamond') && (n.includes('pomp') || n.includes('push'))) return true;
+  return false;
+}
+
+/**
  * Normalise une date string pour la comparaison
  * 
  * Gère différents formats :

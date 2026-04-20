@@ -55,7 +55,14 @@
   "runningCardP14": "14d",
   "runningCardP21": "21d",
   "runningCardP30": "30d",
-  "runningCardP42": "42d"
+  "runningCardP42": "42d",
+  "cardioActivity": {
+    "continuousLapsTitle": "Continuous session (not intervals)",
+    "continuousLapsBody": "Garmin split this workout into {{count}} auto “active” segments with no rest phase — typical for indoor/street cardio logged that way, not structured interval work.",
+    "continuousLapsHr": "Average HR across these segments: {{hr}} bpm",
+    "continuousLapsShowTechnical": "Show raw laps table (Garmin)",
+    "continuousLapsHideTechnical": "Hide laps table"
+  }
 }
 
 

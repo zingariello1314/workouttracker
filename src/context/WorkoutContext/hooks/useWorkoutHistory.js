@@ -10,6 +10,7 @@ import { useCallback } from 'react';
 import { getDateStr, getDayName } from '../../../utils/dateUtils';
 import { normalizeRepsValue } from '../utils';
 import { resolveExerciseIntensityCoeff } from '../../../utils/trainingLoadUtils';
+import { isSessionFeedbackFilled } from '../../../utils/sessionFeedbackUtils';
 
 /**
  * Hook pour gérer l'historique des entraînements
@@ -375,6 +376,39 @@ export const useWorkoutHistory = (getCurrentData, getExerciseNameById) => {
       });
     } catch (error) {
       console.error('❌ Erreur Phase 5 (Fusion):', error);
+    }
+
+    try {
+      const seenDates = new Set(history.map((h) => h.date));
+      const feedMap = currentData.sessionFeedbacks || {};
+      Object.entries(feedMap).forEach(([dateStr, fb]) => {
+        if (!fb || seenDates.has(dateStr)) return;
+        if (!isSessionFeedbackFilled(fb)) return;
+        const d = new Date(`${dateStr}T12:00:00`);
+        history.push({
+          date: dateStr,
+          dayName: getDayName(d),
+          exercises: [],
+          stretches: [],
+          totalReps: 0,
+          totalLoad: 0,
+          completedExercises: 0,
+          completedStretches: 0,
+          totalExercises: 0,
+          totalStretches: 0,
+          intensity: fb.difficulte ?? null,
+          duration: fb.sessionDuration ?? null,
+          hasVariations: false,
+          suppressedCount: 0,
+          exceptionalCount: 0,
+          variationReason: null,
+          feedback: fb,
+          feedbackOnly: true
+        });
+        seenDates.add(dateStr);
+      });
+    } catch (e) {
+      console.error('[useWorkoutHistory] sessionFeedbacks merge:', e);
     }
 
     return history.sort((a, b) => new Date(b.date) - new Date(a.date));

@@ -240,37 +240,92 @@ export const bookSchema = z.object({
     .min(0, 'Le score doit être >= 0')
     .max(10, 'Le score doit être <= 10')
     .optional()
-    .default(0)
+    .default(0),
+  /** Date (YYYY-MM-DD) où le livre a été terminé (auto ou manuel). */
+  finishedAt: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format finishedAt invalide')
+    .optional()
 });
+
+const readingCriterionScoreSchema = z.coerce
+  .number()
+  .int()
+  .min(1, 'Chaque critère doit être entre 1 et 10')
+  .max(10, 'Chaque critère doit être entre 1 et 10');
 
 /**
  * Schéma pour une session de lecture
  * Accepte string ou number pour durationMinutes/pagesRead (formulaire envoie souvent un number).
  */
-export const readingSessionSchema = z.object({
-  date: dateSchema,
-  durationMinutes: z.union([z.string(), z.number()])
-    .transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v))
-    .refine((d) => !Number.isNaN(d) && d > 0 && d <= 1440, 'La durée doit être entre 1 et 1440 minutes')
-    .optional()
-    .default(0),
-  pagesRead: z.union([z.string(), z.number()])
-    .transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v))
-    .refine((p) => !Number.isNaN(p) && p >= 0 && p <= 10000, 'Le nombre de pages doit être entre 0 et 10000')
-    .optional()
-    .default(0),
-  startTime: z.string()
-    .optional()
-    .default('')
-    .refine(
-      (v) => !v || /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v),
-      'Heure invalide (format attendu : HH:mm)'
-    ),
-  note: z.string()
-    .max(1000, 'La note ne peut pas dépasser 1000 caractères')
-    .optional()
-    .default('')
-});
+export const readingSessionSchema = z
+  .object({
+    date: dateSchema,
+    durationMinutes: z.union([z.string(), z.number()])
+      .transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v))
+      .refine(
+        (d) => !Number.isNaN(d) && d >= 0 && d <= 1440,
+        'La durée doit être entre 0 et 1440 minutes'
+      )
+      .optional()
+      .default(0),
+    pagesRead: z.union([z.string(), z.number()])
+      .transform((v) => (typeof v === 'string' ? parseInt(v, 10) : v))
+      .refine((p) => !Number.isNaN(p) && p >= 0 && p <= 10000, 'Le nombre de pages doit être entre 0 et 10000')
+      .optional()
+      .default(0),
+    startTime: z.string()
+      .optional()
+      .default('')
+      .refine(
+        (v) => !v || /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v),
+        'Heure invalide (format attendu : HH:mm)'
+      ),
+    note: z.string()
+      .max(1000, 'La note ne peut pas dépasser 1000 caractères')
+      .optional()
+      .default(''),
+    criteriaRatings: z
+      .object({
+        immersion: readingCriterionScoreSchema.optional(),
+        rythme: readingCriterionScoreSchema.optional(),
+        richesse: readingCriterionScoreSchema.optional(),
+        concentration: readingCriterionScoreSchema.optional(),
+        plaisir: readingCriterionScoreSchema.optional(),
+      })
+      .optional()
+      .default({}),
+  })
+  .superRefine((data, ctx) => {
+    const dur = data.durationMinutes ?? 0;
+    const pages = data.pagesRead ?? 0;
+    if (dur <= 0 && pages <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Renseigne au moins une durée > 0 ou des pages lues > 0',
+        path: ['durationMinutes'],
+      });
+    }
+  })
+  .transform((data) => {
+    const { criteriaRatings: rawCr, ...rest } = data;
+    const cr = rawCr && typeof rawCr === 'object' ? rawCr : {};
+    const criteriaRatings = {
+      immersion: cr.immersion ?? 5,
+      rythme: cr.rythme ?? 5,
+      richesse: cr.richesse ?? 5,
+      concentration: cr.concentration ?? 5,
+      plaisir: cr.plaisir ?? 5,
+    };
+    const sum =
+      criteriaRatings.immersion +
+      criteriaRatings.rythme +
+      criteriaRatings.richesse +
+      criteriaRatings.concentration +
+      criteriaRatings.plaisir;
+    const sessionScore = Math.round((sum / 5) * 10) / 10;
+    return { ...rest, criteriaRatings, sessionScore };
+  });
 
 // ============================================================================
 // SCHÉMAS APPRENTISSAGE

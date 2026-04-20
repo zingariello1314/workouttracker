@@ -14,7 +14,10 @@ import {
 } from '../utils/quietQuestIndexedDB';
 import { emitSidebarEvent, SIDEBAR_EVENTS, sidebarEvents } from '../utils/sidebarEvents';
 import { useAuth } from '../context/AuthContext';
-import { getHeureSortMinutes, getQuestDureeMinutes } from '../utils/quests';
+import { getHeureSortMinutes } from '../utils/quests';
+import { getLocalCalendarDateStr, addCalendarDays, parseLocalCalendarDate } from '../utils/dateUtils';
+import { calculateQuestXP, DIFFICULTY_XP_BASE } from '../utils/questXpCore';
+import { computeValidationXpAward } from '../utils/questScoring';
 import logger from '../utils/logger';
 
 const qqLog = logger.module('useQuietQuestEngine');
@@ -60,35 +63,19 @@ export function saveToStorage(key, data) {
   }
 }
 
-// XP par difficulté (spec)
-export const DIFFICULTY_XP_BASE = {
-  1: 250,
-  2: 375,
-  3: 500,
-  4: 750,
-};
+export { DIFFICULTY_XP_BASE, calculateQuestXP } from '../utils/questXpCore';
 
-export function calculateQuestXP(quest) {
-  const base = DIFFICULTY_XP_BASE[quest.difficulte] || DIFFICULTY_XP_BASE[1];
-  const d = getQuestDureeMinutes(quest);
-  const multiplier = (d > 0 ? d : 60) / 60;
-  return Math.round(base * multiplier);
-}
-
-// Helpers date
-export const getTodayDateStr = () => new Date().toISOString().slice(0, 10);
+// Helpers date (calendrier local — cohérent avec l’affichage « aujourd’hui » / validations)
+export const getTodayDateStr = () => getLocalCalendarDateStr(new Date());
 
 export const getDayOfWeekFromDateStr = (dateStr) => {
-  const d = new Date(dateStr);
-  const jsDay = d.getDay(); // 0 (dimanche) → 6 (samedi)
-  return jsDay === 0 ? 7 : jsDay; // 1 = lundi, ... 7 = dimanche
+  const d = parseLocalCalendarDate(dateStr);
+  if (!d) return 1;
+  const jsDay = d.getDay();
+  return jsDay === 0 ? 7 : jsDay;
 };
 
-export const addDays = (dateStr, delta) => {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + delta);
-  return d.toISOString().slice(0, 10);
-};
+export const addDays = (dateStr, delta) => addCalendarDays(dateStr, delta);
 
 // Récupère les quêtes actives pour une date donnée (récurrentes + exceptionnelles).
 // Tri : d'abord par heure prévue (prière calculée, créneau ou heure précise), puis par ordre.
@@ -772,14 +759,13 @@ function useQuietQuestEngineImpl() {
     const quest = effectiveQuests.find((q) => q.id === questId);
     if (!quest) return;
 
-    const xp = quest.xp ?? calculateQuestXP(quest);
-
     setValidations((prev) => {
       const index = prev.findIndex(
         (v) => v.queteId === questId && v.date === date
       );
 
       if (index !== -1) {
+        const fallbackXp = quest.xp ?? calculateQuestXP(quest);
         // Décocher : interdire pour les jours passés pour ne pas perdre l'XP déjà gagné
         const realToday = getTodayDateStr();
         if (date < realToday) {
@@ -788,7 +774,7 @@ function useQuietQuestEngineImpl() {
         // Uncompleting quest (date = aujourd'hui uniquement)
         const copy = [...prev];
         const [removed] = copy.splice(index, 1);
-        updateUserXP(-(removed?.xpGagne || xp));
+        updateUserXP(-(removed?.xpGagne || fallbackXp));
         persistValidationsSnapshot(copy);
         setTimeout(() => recalcDailyPerformanceForDate(date), 0);
         
@@ -802,7 +788,8 @@ function useQuietQuestEngineImpl() {
         return copy;
       }
 
-      // Completing quest
+      // Completing quest — XP dynamique (fréquence, relance, difficulté)
+      const xp = computeValidationXpAward(quest, prev, date);
       const next = [
         ...prev,
         {
@@ -817,9 +804,9 @@ function useQuietQuestEngineImpl() {
       setTimeout(() => recalcDailyPerformanceForDate(date), 0);
       
       // Emit sidebar event for quest completion (désynchronisation externe)
-      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_COMPLETED, { 
-        questId, 
-        date, 
+      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_COMPLETED, {
+        questId,
+        date,
         xp,
         origin: options.origin || null,
       });

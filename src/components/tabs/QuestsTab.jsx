@@ -12,6 +12,7 @@ import { useQuietQuestEngine } from '../../hooks/useQuietQuestEngine';
 import QuestsTodayView from '../quests/QuestsTodayView';
 import QuestsWeekView from '../quests/QuestsWeekView';
 import QuestsStatsView from '../quests/stats/QuestsStatsView';
+import QuestsCalendarView from '../quests/QuestsCalendarView';
 
 // Hooks personnalisés
 import { useQuestsFilters } from './QuestsTab/hooks/useQuestsFilters';
@@ -73,6 +74,7 @@ const QuestsTab = () => {
     setAllQuests,
     userData,
     validations,
+    validationsByDate,
     dailyPerformances,
     isQuestCompletedOnDate,
     toggleQuestValidation,
@@ -255,7 +257,7 @@ const QuestsTab = () => {
       const raw = sessionStorage.getItem('nav_params_quests');
       if (!raw) return;
       const params = JSON.parse(raw);
-      if (params?.tab && ['today', 'week', 'quests', 'stats', 'security'].includes(params.tab)) {
+      if (params?.tab && ['today', 'week', 'quests', 'stats', 'security', 'calendar'].includes(params.tab)) {
         setCurrentSubTab(params.tab);
       }
       if (params?.action === 'openCreate') {
@@ -277,6 +279,7 @@ const QuestsTab = () => {
         { id: 'quests', label: 'Mes quêtes' },
         { id: 'stats', label: 'Statistiques' },
         { id: 'security', label: 'Sécurité' },
+        { id: 'calendar', label: 'Calendrier' },
       ].map((tab) => (
         <button
           key={tab.id}
@@ -322,6 +325,7 @@ const QuestsTab = () => {
       validations={validations}
       toggleQuestValidation={toggleQuestValidation}
       getQuestsForDate={getQuestsForDateMemoized}
+      todayDate={todayDate}
     />
   );
 
@@ -368,6 +372,16 @@ const QuestsTab = () => {
             allQuests={allQuests}
             validations={validations}
             dailyPerformances={dailyPerformances}
+          />
+        );
+      case 'calendar':
+        return (
+          <QuestsCalendarView
+            allQuests={allQuests}
+            validations={validations}
+            validationsByDate={validationsByDate}
+            getQuestsForDate={getQuestsForDateMemoized}
+            prayerLocation={prayerLocation}
           />
         );
       default:

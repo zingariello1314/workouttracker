@@ -40,7 +40,12 @@ const HistoryTab = () => {
         ...session,
         exercises: filteredExercises
       };
-    }).filter(session => session.exercises.length > 0 || (session.stretches && session.stretches.length > 0));
+    }).filter(
+      (session) =>
+        session.exercises.length > 0 ||
+        (session.stretches && session.stretches.length > 0) ||
+        session.feedbackOnly
+    );
   }, [history, exerciseFilter]);
 
   // ✅ Calculer statistiques filtrées
@@ -224,11 +229,18 @@ const HistoryTab = () => {
           <Card key={index} className="hover:scale-[1.02] transition-transform duration-200">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-blue-400" />
-                  <span className={`${typography.presets.h5} text-white`}>
-                    {formatDate(new Date(session.date))}
-                  </span>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-5 h-5 text-blue-400" />
+                    <span className={`${typography.presets.h5} text-white`}>
+                      {formatDate(new Date(session.date))}
+                    </span>
+                  </div>
+                  {session.feedbackOnly && (
+                    <Badge className="w-fit bg-amber-500/15 text-amber-200 border-amber-500/35 text-xs">
+                      {t('history.session.feedbackOnly')}
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center space-x-1">
                   <Flame className="w-4 h-4 text-orange-400" />
@@ -238,6 +250,7 @@ const HistoryTab = () => {
                 </div>
               </div>
               
+              {!session.feedbackOnly ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-4 h-4 text-green-400" />
@@ -273,6 +286,7 @@ const HistoryTab = () => {
                   </span>
                 </div>
               </div>
+              ) : null}
 
               {/* ✅ Métadonnées enrichies (si variations présentes) */}
               {session.hasVariations && (

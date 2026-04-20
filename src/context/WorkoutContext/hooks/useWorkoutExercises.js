@@ -40,12 +40,15 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
           throw new Error('Données temporaires invalides pour les exercices');
         }
 
-        const { checkedExercises, reps } = tempData;
+        const { checkedExercises, reps, exerciseWeights } = tempData;
         if (checkedExercises && typeof checkedExercises !== 'object') {
           throw new Error('Format invalide pour checkedExercises');
         }
         if (reps && typeof reps !== 'object') {
           throw new Error('Format invalide pour reps');
+        }
+        if (exerciseWeights && typeof exerciseWeights !== 'object') {
+          throw new Error('Format invalide pour exerciseWeights');
         }
 
         if (reps) {
@@ -56,6 +59,18 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
                 console.warn(`Valeur de répétition invalide pour ${key}: ${value}`);
                 tempData.reps[key] = '';
               }
+            }
+          }
+        }
+
+        if (exerciseWeights) {
+          for (const [key, value] of Object.entries(exerciseWeights)) {
+            if (value === '' || value === undefined || value === null) continue;
+            const normalized = String(value).trim().replace(',', '.');
+            const numValue = parseFloat(normalized);
+            if (Number.isNaN(numValue) || numValue < 0 || numValue > 999) {
+              console.warn(`Valeur de poids invalide pour ${key}: ${value}`);
+              tempData.exerciseWeights[key] = '';
             }
           }
         }
@@ -152,6 +167,12 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
     Object.keys(newData.reps || {}).forEach(key => {
       if (key.startsWith(dateStr)) {
         delete newData.reps[key];
+      }
+    });
+
+    Object.keys(newData.exerciseWeights || {}).forEach(key => {
+      if (key.startsWith(dateStr)) {
+        delete newData.exerciseWeights[key];
       }
     });
     

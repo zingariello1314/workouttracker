@@ -10,6 +10,15 @@
     "thisWeek": "Cette Semaine",
     "sessionsPer7Days": "séances / 7 jours"
   },
+  "cumulativeStats": {
+    "streetReps": "Reps programme (exercices cochés)",
+    "volumeLifted": "{{kg}} kg soulevés (reps × kg)",
+    "volumeLiftedHint": "Saisis le poids (kg) sur Aujourd’hui pour les exos lestés — cumul ici.",
+    "enduranceMinutes": "Minutes sport (endurance)",
+    "runningTime": "Temps total course",
+    "runningTimeHoursMinutes": "{{h}} h {{m}} min",
+    "runningTimeMinutesOnly": "{{m}} min"
+  },
   "enduranceChallenges": {
     "title": "Défis d'Endurance",
     "boxing": "Boxe",
@@ -18,6 +27,7 @@
     "jumprope": "Corde à sauter",
     "jumpropeShort": "Corde",
     "running": "Course",
+    "kilometers": " km",
     "reps": "reps",
     "meters": "m",
     "jumps": "sauts",
@@ -48,7 +58,11 @@
       "streaks": "Streaks"
     },
     "streaksAnalysis": "Analyse des Streaks",
+    "stepsOnCell": "{{count}} pas",
     "intensity": "Intensité:",
+    "legendBlendTitle": "Teinte (sur ton année / mois affiché) :",
+    "legendBlendLow": "Jour le plus calme dans la période affichée",
+    "legendBlendHigh": "Jour le plus chargé dans la période affichée",
     "showStats": "Afficher stats",
     "hideStats": "Masquer stats",
     "monthlyJustifications": "Justifications du mois :",
@@ -71,12 +85,50 @@
       "consecutiveDays": "Jours consécutifs",
       "noStreak": "Aucun streak en cours"
     },
+    "tooltip": {
+      "visualScore": "score visuel {{score}}/100",
+      "steps": "{{n}} pas"
+    },
+    "colorMix": {
+      "title": "Teinte de la case (multi-signaux)",
+      "subtitle": "Le dégradé privilégie la charge street (exos cochés) et l’endurance saisie ; les kcal et les pas comptent moins ; les minutes Garmin modéré / soutenu sont pondérées (soutenu > modéré, marche atténue le modéré) ; le ressenti séance ajuste légèrement ; les journées très « marche » sont atténuées.",
+      "score": "Indice visuel global : {{score}} / 100",
+      "barLevel": "Part niveau d’intensité (0–4)",
+      "barKcal": "Part kcal actives (vs médiane)",
+      "barSteps": "Part pas (au-delà de la base)",
+      "barIntMin": "Part minutes d’intensité (Garmin)",
+      "intensitySplit": "répartition mod. {{mod}} min · sout. {{vig}} min — équivalent score ≈ {{effective}} min (soutenu pèse plus ; modéré fortement réduit si journée « marche »)",
+      "barLoad": "Part charge (street + endurance pondérée)",
+      "barReps": "Part indice répétitions brutes",
+      "walkNote": "Journée très orientée marche : contribution « temps actif » réduite pour le réalisme.",
+      "feedback": "Ressenti séance : {{n}}/5",
+      "feedbackNone": "Pas de ressenti séance saisi ce jour.",
+      "feedbackNote": "Note :",
+      "scaleExplainer": "Couleur des cases : du vert clair (ton jour le plus calme sur la période affichée) au rouge foncé (ton jour le plus chargé). Les pourcentages ci-dessous indiquent la répartition ; les chiffres à droite sont tes valeurs réelles ce jour-là.",
+      "synergyLine": "Bonus « street + endurance » le même jour : ×{{mult}} sur l’indice combiné.",
+      "cardioSplit": "Temps cardio Garmin (ce jour) : marche {{walk}} min · course {{run}} min · autre {{other}} min",
+      "baselineKcal": "Réf. kcal (médiane perso) : {{ref}} kcal",
+      "baselineSteps": "Réf. pas (médiane perso) : {{ref}} pas",
+      "contribUnits": "unités brutes"
+    },
+    "equiv": {
+      "title": "Échelle indicative (comparaisons entre jours)",
+      "intro": "Ce ne sont pas des MET officiels : des repères pour relier street, Garmin et couleur.",
+      "b1": "≈ {{kcal}} kcal actives « utiles » ≈ 1 unité de charge visuelle (ordre de grandeur).",
+      "b2": "≈ {{steps}} pas marginaux au-dessus de ta base habituelle ≈ 1 unité (plafonnée dans le mélange).",
+      "b3": "1 rep street avec coefficient d’intensité 1 (ex. curl haltère simple) ≈ 1 unité de charge dans le calendrier ; les étoiles par exo multiplient déjà cette charge.",
+      "b4": "La course fractionnée vs le fondamental : la durée seule ne suffit pas — l’allure, le type (fractionné / tempo / EF) et la FC pèsent via la charge endurance déjà calculée pour le jour.",
+      "b5": "Les relations entre notes (ex. séance difficile + beaucoup de marche) sont lues dans le modèle : ressenti 1–5 déplace légèrement le score ; la domination marche atténue l’intensité dérivée du temps actif.",
+      "todayApprox": "Ordre du jour pour cette date : ≈ +{{kcalU}} unités depuis les kcal utiles, ≈ +{{stepU}} depuis les pas marginaux (repères internes au calendrier)."
+    },
     "dayDetails": {
       "workoutStats": "Statistiques d'entraînement",
       "totalReps": "Répétitions totales",
       "classicExercises": "Exercices classiques",
       "totalDuration": "Durée totale",
       "globalIntensity": "Intensité globale",
+      "street": "Street",
+      "enduranceShort": "Endurance",
       "garminAdjusted": "Ajusté Garmin",
       "noWorkoutJustified": "Aucun entraînement enregistré ce jour (jour justifié)",
       "garminAdjustments": "Ajustements Garmin appliqués",

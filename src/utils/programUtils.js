@@ -156,6 +156,19 @@ export const enrichExercise = (exercise) => {
   };
 };
 
+/** Même logique que le filtre « Équipement » (haltères, barre, gilet lesté) dans l'onglet Exercices. */
+const EXTERNAL_LOAD_EQUIPMENT = new Set([
+  Equipment.BARBELL,
+  Equipment.DUMBBELL,
+  Equipment.WEIGHTED_VEST
+]);
+
+export const exerciseUsesExternalLoad = (exercise) => {
+  if (!exercise || typeof exercise !== 'object') return false;
+  const { metadata } = enrichExercise(exercise);
+  return EXTERNAL_LOAD_EQUIPMENT.has(metadata?.equipment);
+};
+
 /**
  * Infère la catégorie d'un exercice
  */

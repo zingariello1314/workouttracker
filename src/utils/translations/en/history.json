@@ -24,6 +24,7 @@
   },
   "session": {
     "number": "Session #{{number}}",
+    "feedbackOnly": "Feedback saved (no exercise rows in history for this day)",
     "reps": "{{count}} repetition",
     "repsPlural": "{{count}} repetitions",
     "minutes": "{{count}} minute",

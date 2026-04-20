@@ -185,6 +185,20 @@ export default function RunningSessionDetailPage({ session, onBack }) {
   }, [lapsWithPhase]);
 
   const isIntervalLike = lapStats.recovery > 0 && lapStats.effort > 0;
+  /** Beaucoup de tours sans récup/repos = découpe auto (street / cardio indoor), pas un fractionné. */
+  const continuousGarminAutoLaps = useMemo(() => {
+    if (!lapsWithPhase.length || isIntervalLike) return false;
+    if (lapsWithPhase.length < 6) return false;
+    return lapsWithPhase.every(
+      ({ phase }) => phase !== 'recovery' && phase !== 'cooldown'
+    );
+  }, [lapsWithPhase, isIntervalLike]);
+
+  const [showGarminLapsTable, setShowGarminLapsTable] = useState(false);
+  useEffect(() => {
+    setShowGarminLapsTable(false);
+  }, [session?.id, session?.garminId]);
+
   const effectiveSessionType = useMemo(
     () => inferDisplayTypeFromGarminActivity(session, garminFull, isIntervalLike),
     [session, garminFull, isIntervalLike]
@@ -447,13 +461,38 @@ export default function RunningSessionDetailPage({ session, onBack }) {
           </section>
         )}
 
-        {/* Tours — filtres fractionné */}
-        {Array.isArray(laps) && laps.length > 0 && (
-          <section className="mt-12">
+        {/* Tours auto (street / cardio) : message si pas fractionné */}
+        {Array.isArray(laps) && laps.length > 0 && continuousGarminAutoLaps && (
+          <section className="mt-12 rounded-2xl border border-slate-700/60 bg-slate-800/30 p-5">
+            <h2 className="text-base font-semibold text-slate-200">
+              {t('garmin.cardioActivity.continuousLapsTitle')}
+            </h2>
+            <p className="mt-2 text-sm text-slate-400 leading-relaxed max-w-2xl">
+              {t('garmin.cardioActivity.continuousLapsBody', { count: lapStats.total })}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowGarminLapsTable((v) => !v)}
+              className="mt-3 text-sm text-purple-300 hover:text-purple-200 underline-offset-2 hover:underline"
+            >
+              {showGarminLapsTable
+                ? t('garmin.cardioActivity.continuousLapsHideTechnical')
+                : t('garmin.cardioActivity.continuousLapsShowTechnical')}
+            </button>
+          </section>
+        )}
+
+        {/* Tours — filtres fractionné (masqué par défaut si découpe auto sans repos) */}
+        {Array.isArray(laps) && laps.length > 0 && (!continuousGarminAutoLaps || showGarminLapsTable) && (
+          <section
+            className={
+              continuousGarminAutoLaps && showGarminLapsTable ? 'mt-6' : 'mt-12'
+            }
+          >
             <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="flex items-center gap-2 text-lg font-bold text-white">
                 <Filter className="h-5 w-5 text-teal-400" />
-                Tours & intervalles
+                {isIntervalLike ? 'Tours & intervalles' : 'Tours Garmin'}
                 <span className="ml-2 text-sm font-normal text-slate-500">({lapStats.total} tours)</span>
               </h2>
               <div className="flex flex-wrap gap-2">

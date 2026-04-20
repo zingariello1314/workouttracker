@@ -8,7 +8,7 @@
 
 import React, { Suspense, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { BOOKS_OPEN_NAV_EVENT } from '../../utils/booksSidebarNav';
-import { BookOpen, Download, Search, Upload, BarChart3, Library } from 'lucide-react';
+import { BookOpen, Calendar, Download, Search, Upload, BarChart3, Library } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
 import { Input, TextArea, Select } from '../ui/Input';
 import ErrorBoundary from '../ui/ErrorBoundary';
@@ -18,6 +18,16 @@ import { useBooksStorage } from '../../hooks/useBooksStorage';
 import BookCard from '../books/BookCard';
 import StatisticsSubTab from './books/StatisticsSubTab';
 import BookFinder from '../BookFinder/BookFinder';
+import BooksCalendarView from '../books/BooksCalendarView';
+import ReadingSessionCriteriaSliders from '../books/ReadingSessionCriteriaSliders';
+import BookCompletionDialog from '../books/BookCompletionDialog';
+import BookSessionFeedbackReadonly from '../books/BookSessionFeedbackReadonly';
+import {
+  suggestPagesFromHistory,
+  aggregateCriteriaMeansForBook,
+  getBookDisplayRating,
+  averageCriteriaScore,
+} from '../../utils/bookReadingRatings';
 
 // Hooks personnalisés
 import { useBooksFilters } from './BooksTab/hooks/useBooksFilters';
@@ -113,6 +123,8 @@ const BooksTab = () => {
             block: 'start'
           });
         }, 200);
+      } else if (params.tab === 'calendar') {
+        setActiveSubTab('calendar');
       } else if (params.tab === 'statistics' || params.tab === 'stats') {
         setActiveSubTab('statistics');
         if (params.statsNavigation) {
@@ -265,12 +277,16 @@ const BooksTab = () => {
     sessionForm,
     setSessionForm,
     handleSessionChange,
+    handleCriteriaRatingChange,
     handleAddSession,
     resetSessionForm,
     editingSessionId,
     startEditSession,
     cancelEditSession,
-  } = useBooksSessions(books, setBooks, selectedBook);
+    pendingBookCompletion,
+    dismissPendingBookCompletion,
+    confirmBookCompletion,
+  } = useBooksSessions(books, setBooks, selectedBook, selectedBookId);
 
   const {
     isImporting,
@@ -298,11 +314,6 @@ const BooksTab = () => {
     setPageCompleted(0);
     setPageToRead(0);
   }, [search, filterGenre, filterMinYear, filterMaxYear, filterMinScore, sortMode]);
-
-  // Initialiser la date par défaut de la session
-  useEffect(() => {
-    resetSessionForm();
-  }, [resetSessionForm]);
 
   // Debug: Log les livres quand ils changent (uniquement en développement)
   useEffect(() => {
@@ -388,7 +399,7 @@ const BooksTab = () => {
           genre: b.genre || '',
           year: b.year || null,
           pages: b.pages || null,
-          personalScore: typeof b.personalScore === 'number' ? b.personalScore : 0,
+          personalScore: getBookDisplayRating(b).value,
           status: b.status || 'in-progress',
           shortSummary: b.shortSummary || b.notes || '',
           coverUrl: coverUrls[b.id],
@@ -447,8 +458,31 @@ const BooksTab = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [filteredLibraryBooks, filteredCompletedBooks, selectedBookId]);
 
+  const suggestedPagesHint = useMemo(() => {
+    if (!selectedBook) return null;
+    const dm = Number(sessionForm.durationMinutes);
+    if (!Number.isFinite(dm) || dm <= 0) return null;
+    return suggestPagesFromHistory(selectedBook, dm);
+  }, [selectedBook, sessionForm.durationMinutes]);
+
+  const sessionCriteriaPreview = useMemo(
+    () => averageCriteriaScore(sessionForm.criteriaRatings),
+    [sessionForm.criteriaRatings]
+  );
+
+  const selectedBookRatingAgg = useMemo(() => {
+    if (!selectedBook) return null;
+    return aggregateCriteriaMeansForBook(selectedBook.readingSessions);
+  }, [selectedBook]);
+
   return (
-    <div className="relative min-h-screen">
+    <>
+      <BookCompletionDialog
+        pending={pendingBookCompletion}
+        onConfirm={confirmBookCompletion}
+        onDismiss={dismissPendingBookCompletion}
+      />
+      <div className="relative min-h-screen">
       <div className="relative z-10 space-y-8 p-8">
         <BooksXPBar />
         {isLoading && (
@@ -515,6 +549,16 @@ const BooksTab = () => {
             </button>
             <button
               type="button"
+              onClick={() => setActiveSubTab('calendar')}
+              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
+                activeSubTab === 'calendar' ? 'gradient-button-premium-variant' : ''
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              {t('books.subtabs.calendar', 'Calendrier')}
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveSubTab('bookfinder')}
               className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
                 activeSubTab === 'bookfinder' ? 'gradient-button-premium-variant' : ''
@@ -529,11 +573,21 @@ const BooksTab = () => {
         {/* Contenu conditionnel selon le sous-onglet actif */}
         <ErrorBoundary
           context={{ activeSubTab, tab: 'books', booksCount: books.length }}
-          title={`Erreur dans ${activeSubTab === 'statistics' ? 'Statistiques' : activeSubTab === 'bookfinder' ? 'BookFinder' : 'Bibliothèque'}`}
+          title={`Erreur dans ${
+            activeSubTab === 'statistics'
+              ? 'Statistiques'
+              : activeSubTab === 'bookfinder'
+                ? 'BookFinder'
+                : activeSubTab === 'calendar'
+                  ? 'Calendrier'
+                  : 'Bibliothèque'
+          }`}
           message="Une erreur s'est produite dans ce sous-onglet. Vous pouvez réessayer ou changer de sous-onglet."
         >
           {activeSubTab === 'statistics' ? (
             <StatisticsSubTab books={books} setBooks={setBooks} />
+          ) : activeSubTab === 'calendar' ? (
+            <BooksCalendarView books={books} coverUrls={coverUrls} setBooks={setBooks} />
           ) : activeSubTab === 'bookfinder' ? (
             <div className="max-w-3xl mx-auto">
               <BookFinder />
@@ -1255,6 +1309,50 @@ const BooksTab = () => {
                               </span>{' '}
                               {(selectedBook.readingSessions || []).length}
                             </p>
+                            {(() => {
+                              const disp = getBookDisplayRating(selectedBook);
+                              const fin = selectedBook.finishedAt
+                                ? new Date(`${selectedBook.finishedAt}T12:00:00`).toLocaleDateString('fr-FR')
+                                : null;
+                              return (
+                                <div className="mt-4 pt-3 border-t border-slate-800 space-y-1 text-xs text-slate-300">
+                                  <p>
+                                    <span className="font-semibold text-slate-200">Note affichée :</span>{' '}
+                                    {disp.value > 0 ? (
+                                      <>
+                                        <span className="text-amber-200 font-mono">{disp.value.toFixed(1)}</span>
+                                        /10
+                                        <span className="text-slate-500">
+                                          {' '}
+                                          (
+                                          {disp.source === 'personal'
+                                            ? 'note personnelle'
+                                            : 'moyenne des sessions'}
+                                          )
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="text-slate-500">pas encore noté</span>
+                                    )}
+                                  </p>
+                                  {selectedBookRatingAgg && (
+                                    <p className="text-slate-500">
+                                      Synthèse critères (moy. {selectedBookRatingAgg.sessionCount} session
+                                      {selectedBookRatingAgg.sessionCount > 1 ? 's' : ''}) :{' '}
+                                      <span className="text-amber-200/90 font-mono">
+                                        {selectedBookRatingAgg.overall.toFixed(1)}
+                                      </span>
+                                      /10
+                                    </p>
+                                  )}
+                                  {selectedBook.status === 'completed' && fin && (
+                                    <p>
+                                      <span className="font-semibold text-slate-200">Terminé le</span> {fin}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -1387,6 +1485,31 @@ const BooksTab = () => {
                             </p>
                           </div>
 
+                          {(selectedBook.readingSessions || []).length > 0 && (
+                            <div className="mt-4 rounded-2xl border border-amber-900/35 bg-slate-950/50 px-4 py-3 space-y-3">
+                              <p className="font-semibold text-sm text-amber-100/95">
+                                Feedback des sessions
+                              </p>
+                              <p className="text-[11px] text-slate-500">
+                                Retours enregistrés pour chaque session (mêmes données qu’au calendrier et dans la
+                                bibliothèque). Modifiable via « Modifier » dans la liste ci-dessous ou depuis le
+                                calendrier lecture.
+                              </p>
+                              <ul className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                                {[...(selectedBook.readingSessions || [])]
+                                  .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+                                  .map((session) => (
+                                    <li key={session.id || `${session.date}-${session.pagesRead}`}>
+                                      <p className="text-[10px] text-slate-500 mb-0.5">
+                                        {session.date || '—'}
+                                      </p>
+                                      <BookSessionFeedbackReadonly session={session} title="Détail" />
+                                    </li>
+                                  ))}
+                              </ul>
+                            </div>
+                          )}
+
                           {/* Liste des sessions */}
                           <div className="mt-4 space-y-2">
                             <p className="font-semibold text-sm text-slate-200">
@@ -1426,6 +1549,20 @@ const BooksTab = () => {
                                           <span>
                                             • {session.pagesRead}{' '}
                                             {t('books.pages', 'pages')}
+                                          </span>
+                                        )}
+                                        {(session.sessionScore != null ||
+                                          (session.criteriaRatings &&
+                                            typeof session.criteriaRatings === 'object')) && (
+                                          <span className="text-amber-200/90">
+                                            {' '}
+                                            · note session{' '}
+                                            {Number(
+                                              session.sessionScore != null
+                                                ? session.sessionScore
+                                                : averageCriteriaScore(session.criteriaRatings)
+                                            ).toFixed(1)}
+                                            /10
                                           </span>
                                         )}
                                       </p>
@@ -1526,6 +1663,32 @@ const BooksTab = () => {
                                   }
                                 />
                               </div>
+                              {suggestedPagesHint != null && (
+                                <p className="text-[11px] text-cyan-300/90">
+                                  Suggestion d’après ton rythme habituel sur ce livre : environ{' '}
+                                  <button
+                                    type="button"
+                                    className="underline font-semibold text-cyan-200"
+                                    onClick={() =>
+                                      handleSessionChange('pagesRead', String(suggestedPagesHint))
+                                    }
+                                  >
+                                    {suggestedPagesHint} pages
+                                  </button>{' '}
+                                  pour la durée indiquée (clic pour remplir).
+                                </p>
+                              )}
+                              <ReadingSessionCriteriaSliders
+                                criteriaRatings={sessionForm.criteriaRatings}
+                                onChange={handleCriteriaRatingChange}
+                              />
+                              <p className="text-xs text-slate-400">
+                                Note de session (moyenne des 5 critères) :{' '}
+                                <span className="font-mono text-amber-200">
+                                  {sessionCriteriaPreview.toFixed(1)}
+                                </span>
+                                /10
+                              </p>
                               <TextArea
                                 id="session-note"
                                 rows={3}
@@ -1787,6 +1950,7 @@ const BooksTab = () => {
         </ErrorBoundary>
       </div>
     </div>
+    </>
   );
 };
 

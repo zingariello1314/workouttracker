@@ -55,7 +55,14 @@
   "runningCardP14": "14 j.",
   "runningCardP21": "21 j.",
   "runningCardP30": "30 j.",
-  "runningCardP42": "42 j."
+  "runningCardP42": "42 j.",
+  "cardioActivity": {
+    "continuousLapsTitle": "Séance continue (pas du fractionné)",
+    "continuousLapsBody": "Garmin a découpé cette séance en {{count}} segments « actifs » automatiques, sans phase repos : c’est typique du cardio indoor / street enregistré comme tel, pas d’un fractionné structuré.",
+    "continuousLapsHr": "FC moyenne sur ces segments : {{hr}} bpm",
+    "continuousLapsShowTechnical": "Voir le tableau des tours (données brutes Garmin)",
+    "continuousLapsHideTechnical": "Masquer le tableau des tours"
+  }
 }
 
 

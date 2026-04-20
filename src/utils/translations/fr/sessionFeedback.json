@@ -1,5 +1,7 @@
 {
   "title": "Feedback de séance",
+  "weightedOverall": "Note globale (pondérée)",
+  "weightedOverallHint": "Ressenti et difficulté pèsent le plus ; motivation et énergie ; sommeil, hydratation et nutrition comptent moins ; la douleur réduit la note ; objectif atteint bonifie légèrement.",
   "step": "Étape {{current}}/{{total}}",
   "summary": {
     "title": "Résumé de ta séance",

@@ -1,3 +1,6 @@
+import { parseDurationToMinutes } from './calendarUtils';
+import { isGarminWalkingLikeActivity, isGarminRunningLikeActivity } from './garminRunningLaps';
+
 /**
  * Utilitaires pour l'intégration des données Garmin dans le calendrier
  * 
@@ -244,4 +247,30 @@ export function getGarminActivityIcons(garminData, date) {
   return icons;
 }
 
-
+/**
+ * Minutes d’activités cardio Garmin pour une date, ventilées marche / course / autre.
+ * Sert à éviter qu’une longue marche (activeTime) soit traitée comme une séance intense.
+ */
+export function getGarminCardioMinutesByKindForDate(garminData, dateStr) {
+  const cardio = (garminData?.activities?.cardio || []).filter((a) => a.date === dateStr);
+  let walk = 0;
+  let run = 0;
+  let other = 0;
+  for (const act of cardio) {
+    let dur = 0;
+    if (act.duration != null) {
+      dur = parseDurationToMinutes(act.duration, 'garminCardio.duration');
+    } else if (act.totalTime != null) {
+      const n = Number(act.totalTime);
+      dur = Number.isFinite(n) ? (n > 200 ? Math.round(n / 60) : n) : 0;
+    } else if (act.elapsedTime != null) {
+      const n = Number(act.elapsedTime);
+      dur = Number.isFinite(n) ? Math.round(n / 60) : 0;
+    }
+    if (dur <= 0) continue;
+    if (isGarminWalkingLikeActivity(act)) walk += dur;
+    else if (isGarminRunningLikeActivity(act)) run += dur;
+    else other += dur;
+  }
+  return { walk, run, other, total: walk + run + other };
+}

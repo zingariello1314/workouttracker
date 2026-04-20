@@ -103,7 +103,13 @@ export default function AllSessionsSection({ books = [], setBooks }) {
           const match = s.id !== undefined && s.id !== null
             ? s.id === sessionId
             : (normalizeDate(s.date) === normalizedDate && (s.pagesRead ?? 0) === oldPages && (s.durationMinutes ?? 0) === oldMins);
-          return match ? { ...s, ...validation.data } : s;
+          return match
+            ? {
+                ...s,
+                ...validation.data,
+                criteriaRatings: s.criteriaRatings || validation.data.criteriaRatings,
+              }
+            : s;
         });
         return { ...book, readingSessions: sessions };
       })

@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import Card from '../ui/Card';
 import { BookOpen, Star, Clock, FileText } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
+import { getBookDisplayRating } from '../../utils/bookReadingRatings';
 
 const BookCard = memo(({ 
   book, 
@@ -14,6 +15,7 @@ const BookCard = memo(({
 }) => {
   const t = useTranslation();
   const bookStatus = book.status || 'in-progress';
+  const displayRating = getBookDisplayRating(book);
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
@@ -174,10 +176,16 @@ const BookCard = memo(({
             </div>
 
             {/* Section 4b: Étoiles sur une ligne dédiée */}
-            <div className="flex items-center flex-shrink-0">
+            <div className="flex flex-col gap-0.5 flex-shrink-0">
               <div style={{ opacity: 1, visibility: 'visible', zIndex: 10 }}>
-                {renderStars(book.personalScore || 0)}
+                {renderStars(displayRating.value || 0)}
               </div>
+              {displayRating.value > 0 && (
+                <span className="text-[10px] text-slate-500">
+                  {displayRating.source === 'personal' ? 'Note perso' : 'Synthèse sessions'} ·{' '}
+                  {displayRating.value.toFixed(1)}/10
+                </span>
+              )}
             </div>
           </div>
 
@@ -243,6 +251,7 @@ const BookCard = memo(({
     prevProps.book.status === nextProps.book.status &&
     prevProps.book._progressPercent === nextProps.book._progressPercent &&
     prevProps.book.personalScore === nextProps.book.personalScore &&
+    prevProps.book.readingSessions === nextProps.book.readingSessions &&
     prevProps.coverUrl === nextProps.coverUrl &&
     prevProps.progressPercent === nextProps.progressPercent &&
     prevProps.selectedBookId === nextProps.selectedBookId

@@ -51,6 +51,8 @@ const WorkoutProvider = ({ children }) => {
   // État principal
   const [currentDate, setCurrentDate] = useState(new Date());
   const [activeTab, setActiveTabState] = useState('home');
+  /** Sous-onglet cible (Course, Pompes, etc.) à appliquer au prochain affichage de l’onglet Défis */
+  const [pendingEnduranceSubTab, setPendingEnduranceSubTab] = useState(null);
   const [previousTab, setPreviousTab] = useState(null);
   const [weekVariant, setWeekVariant] = useState('A');
   const [statsPeriod, setStatsPeriod] = useState('week');
@@ -75,6 +77,23 @@ const WorkoutProvider = ({ children }) => {
       setActiveTabState(newTab);
     }
   }, [activeTab]);
+
+  const clearPendingEnduranceSubTab = useCallback(() => {
+    setPendingEnduranceSubTab(null);
+  }, []);
+
+  const requestOpenEnduranceSubTab = useCallback(
+    (tabId) => {
+      const valid = ['running', 'pushups', 'swimming', 'jumprope', 'boxing'];
+      if (!valid.includes(tabId)) return;
+      setPendingEnduranceSubTab(tabId);
+      if (activeTab !== 'endurance') {
+        setPreviousTab(activeTab);
+        setActiveTabState('endurance');
+      }
+    },
+    [activeTab]
+  );
   
   // ✅ PHASE 4 : Utilisation du hook pour les exercices et étirements
   // Les états pour les modifications non sauvegardées sont maintenant gérés par le hook
@@ -1042,6 +1061,9 @@ const WorkoutProvider = ({ children }) => {
     setCurrentDate,
     activeTab,
     setActiveTab,
+    pendingEnduranceSubTab,
+    requestOpenEnduranceSubTab,
+    clearPendingEnduranceSubTab,
     previousTab,
     weekVariant,
     setWeekVariant,

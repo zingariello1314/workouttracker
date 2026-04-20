@@ -94,6 +94,14 @@ function garminHasPositiveRunDistance(gAct) {
   return m != null && Number(m) > 0;
 }
 
+/** Marche / rando côté activité complète (clés Garmin + libellé). */
+export function isGarminWalkingLikeActivity(gAct) {
+  if (!gAct) return false;
+  const gTk = garminTypeKeyLower(gAct);
+  const dTk = displayActivityTypeLower(gAct);
+  return isGarminWalkingLikeTypeKey(gTk) || isGarminWalkingLikeTypeKey(dTk);
+}
+
 /** Activité cardio enregistrée comme course (même critères que l’import endurance). */
 export function isGarminRunningLikeActivity(gAct) {
   if (!gAct || (gAct.jumps && gAct.jumps > 0)) return false;

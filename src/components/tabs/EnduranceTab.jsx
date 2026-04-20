@@ -23,13 +23,15 @@ import { handleSubmitSession } from '../../services/endurance/enduranceSubmitUti
 import EnduranceChallengeReminder from './EnduranceTab/components/ui/EnduranceChallengeReminder.jsx';
 import EnduranceSectionHeader from './EnduranceTab/components/ui/EnduranceSectionHeader.jsx';
 import RunningGarminSyncBlock from './EnduranceTab/components/RunningGarminSyncBlock.jsx';
+import RunningPersonalRecordsPanel from './EnduranceTab/components/RunningPersonalRecordsPanel.jsx';
 import RunningSessionDetailPage from './EnduranceTab/components/RunningSessionDetailPage.jsx';
 import { runningSessionTypeLabel, resolveRunningSessionDisplayType } from '../../utils/runningSessionTypeLabel';
 import { inferRunningSessionTypeFromGarminActivity } from '../../utils/garminRunningLaps';
 import { useGarminData } from '../../hooks/useGarminData';
 
 const EnduranceTab = () => {
-  const { data, updateData, getWorkoutHistory } = useWorkout();
+  const { data, updateData, getWorkoutHistory, pendingEnduranceSubTab, clearPendingEnduranceSubTab } =
+    useWorkout();
   const t = useTranslation();
   const { formatDate } = useFormatters();
   const { language } = useLanguage();
@@ -114,6 +116,12 @@ const EnduranceTab = () => {
   const setActiveTab = useCallback((tab) => {
     setEnduranceState(prev => ({ ...prev, activeTab: tab }));
   }, []);
+
+  useEffect(() => {
+    if (!pendingEnduranceSubTab) return;
+    setEnduranceState((prev) => ({ ...prev, activeTab: pendingEnduranceSubTab }));
+    clearPendingEnduranceSubTab?.();
+  }, [pendingEnduranceSubTab, clearPendingEnduranceSubTab]);
 
   const setUI = useCallback((uiUpdates) => {
     setEnduranceState(prev => ({
@@ -2072,6 +2080,8 @@ const EnduranceTab = () => {
               />
 
               <RunningGarminSyncBlock />
+
+              <RunningPersonalRecordsPanel sessions={sessions.running} />
 
               {/* Rappel défis actifs */}
               {activeChallenges.length > 0 && (

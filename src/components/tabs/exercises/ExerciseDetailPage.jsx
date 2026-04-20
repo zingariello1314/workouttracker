@@ -17,8 +17,11 @@ import {
   resolveExerciseIntensityCoeff,
   inferExerciseIntensityCoeff,
   computeRunningTrainingLoad,
-  analyzeRunningSessionFactors
+  analyzeRunningSessionFactors,
+  computeMedianWeightKgForExercise,
+  computeExternalLoadMultiplier
 } from '../../../utils/trainingLoadUtils';
+import { exerciseUsesExternalLoad } from '../../../utils/programUtils';
 import { resolveExerciseDetailProfile } from '../../../utils/exerciseDetailProfile';
 import {
   getExerciseDatabaseHit,
@@ -145,6 +148,19 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
     return analyzeRunningSessionFactors(recentSessions[0]);
   }, [profile.enduranceActivityType, recentSessions]);
 
+  const externalLoadWeightExplain = useMemo(() => {
+    if (!exerciseUsesExternalLoad(exercise)) return null;
+    const ew = data?.exerciseWeights;
+    const med = computeMedianWeightKgForExercise(ew, exercise.id);
+    const ref = med != null && med > 0 ? med : 20;
+    return {
+      median: med,
+      at85: computeExternalLoadMultiplier(true, ref * 0.85, med ?? ref),
+      at100: computeExternalLoadMultiplier(true, ref, med ?? ref),
+      at115: computeExternalLoadMultiplier(true, ref * 1.15, med ?? ref)
+    };
+  }, [data?.exerciseWeights, exercise]);
+
   const txt = (field) => profileText(t, pid, field, profileText(t, 'strength_default', field, ''));
 
   const dbHit = useMemo(() => getExerciseDatabaseHit(exercise), [exercise]);
@@ -254,6 +270,45 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
               </div>
             </div>
           </div>
+
+          {externalLoadWeightExplain && (
+            <div className="rounded-xl border border-amber-500/25 bg-amber-950/20 p-4 space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-amber-200/90">
+                {t('exercisesTab.detail.weightLoadTitle', 'Charge externe (kg saisis)')}
+              </div>
+              <p className="text-sm text-slate-200 leading-relaxed">
+                {externalLoadWeightExplain.median != null
+                  ? t(
+                      'exercisesTab.detail.weightLoadBodyWithMedian',
+                      `Médiane de tes saisies : ${Math.round(externalLoadWeightExplain.median * 10) / 10} kg. Le calendrier et le score « Aujourd’hui » multiplient la charge (reps × indice) : léger malus sous ta médiane, bonus modéré au-dessus. Sans poids saisi : 1× (neutre, pas « gratuit » par rapport à une série lourde).`
+                    )
+                  : t(
+                      'exercisesTab.detail.weightLoadBodyNoMedian',
+                      "Quelques enregistrements de kg construisent une médiane personnelle. En attendant, un poids saisi seul donne un léger bonus ; sans poids : 1×."
+                    )}
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="rounded-lg bg-slate-950/60 border border-slate-700/80 py-2">
+                  <div className="text-slate-500">−15% kg</div>
+                  <div className="text-white font-semibold tabular-nums">
+                    ×{Math.round(externalLoadWeightExplain.at85 * 100) / 100}
+                  </div>
+                </div>
+                <div className="rounded-lg bg-slate-950/60 border border-slate-700/80 py-2">
+                  <div className="text-slate-500">réf.</div>
+                  <div className="text-white font-semibold tabular-nums">
+                    ×{Math.round(externalLoadWeightExplain.at100 * 100) / 100}
+                  </div>
+                </div>
+                <div className="rounded-lg bg-slate-950/60 border border-slate-700/80 py-2">
+                  <div className="text-slate-500">+15% kg</div>
+                  <div className="text-white font-semibold tabular-nums">
+                    ×{Math.round(externalLoadWeightExplain.at115 * 100) / 100}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <p className="text-sm text-slate-300 leading-relaxed border-l-2 border-emerald-500/40 pl-3">
             {t(

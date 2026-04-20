@@ -1,0 +1,62 @@
+{
+  "id": 22562666874,
+  "date": "2026-04-17 18:07:10",
+  "time": "",
+  "duration": 3731,
+  "calories": {
+    "total": 280,
+    "resting": 83,
+    "active": 197
+  },
+  "avgHR": 102,
+  "maxHR": 120,
+  "minHR": null,
+  "sweatLoss": null,
+  "intensityMinutes": {
+    "moderate": 41,
+    "vigorous": null,
+    "total": 41
+  },
+  "startTimeLocal": "2026-04-17T20:07:10Z",
+  "startTimeGMT": "2026-04-17T18:07:10Z",
+  "location": {
+    "start": {
+      "lat": 44.791376860812306,
+      "lng": -0.6233434472233057
+    },
+    "end": {
+      "lat": 44.791593197733164,
+      "lng": -0.6225368566811085
+    }
+  },
+  "elevation": {
+    "gain": 25,
+    "loss": 25,
+    "max": 45.113525390625,
+    "min": 29.600000381469727
+  },
+  "deviceInfo": {
+    "deviceId": null,
+    "deviceTypePk": null,
+    "deviceVersionPk": null
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "distance": 4.0023,
+  "speed": 3.86,
+  "maxSpeed": 6.89,
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Pessac Marche \u00e0 pied",
+  "activityType": "running",
+  "garminTypeKey": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "463f4b49",
+  "_cached_at": 1776454955.5263622,
+  "_cache_version": 7
+}

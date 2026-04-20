@@ -178,6 +178,28 @@
       "notes": "Notes:",
       "type": "Type",
       "typeSession": "Workout type:"
+    },
+    "records": {
+      "title": "Running records",
+      "subtitle": "Filter by period and time-of-day (session start time).",
+      "periodLabel": "Period",
+      "todLabel": "Time of day (start)",
+      "periodAll": "All time",
+      "periodYear": "Current year",
+      "period365": "Last 365 days",
+      "period90": "Last 90 days",
+      "period30": "Last 30 days",
+      "period7": "Last 7 days",
+      "todAll": "Whole day",
+      "todMorning": "Morning (before 12)",
+      "todAfternoon": "Afternoon (12 – 18)",
+      "todEvening": "Evening (after 18)",
+      "empty": "No sessions in this selection.",
+      "insufficient": "Not enough data (distance + duration).",
+      "bestPace": "Best pace",
+      "longestDistance": "Longest distance",
+      "longestTime": "Longest duration",
+      "atPace": "Avg pace:"
     }
   },
   "calendar": {

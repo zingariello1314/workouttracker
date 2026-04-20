@@ -70,6 +70,17 @@
     "notSpecified": "Non spécifié",
     "noPrograms": "Aucun programme créé",
     "noProgramsHint": "Commencez par créer votre premier programme d'entraînement"
+  },
+  "detailSearch": {
+    "title": "Rechercher un exercice",
+    "placeholder": "Ex. : traction, pompe, curl…",
+    "hint": "Chaque ligne = une place dans le programme (jour et type de séance). Cliquez sur un résultat pour y accéder et modifier ou supprimer l'exercice.",
+    "noResults": "Aucun exercice ne correspond à cette recherche.",
+    "mainTrack": "Séance principale",
+    "weekA": "Variante salle — semaine A",
+    "weekB": "Variante salle — semaine B",
+    "weekAWithName": "Variante salle — semaine A ({{name}})",
+    "weekBWithName": "Variante salle — semaine B ({{name}})"
   }
 }
 

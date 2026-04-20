@@ -95,3 +95,30 @@ export const getAutoWeekVariant = (date = new Date()) => {
   // Alternance basée sur le numéro de semaine : pair = A, impair = B
   return weekNumber % 2 === 0 ? 'A' : 'B';
 };
+
+/** Date civile locale YYYY-MM-DD (évite le décalage UTC de toISOString sur « aujourd’hui »). */
+export const getLocalCalendarDateStr = (date = new Date()) => {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${month}-${day}`;
+};
+
+/** Parse YYYY-MM-DD en Date à minuit local (pas UTC). */
+export const parseLocalCalendarDate = (dateStr) => {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const parts = dateStr.split('-').map((x) => parseInt(x, 10));
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [y, m, d] = parts;
+  return new Date(y, m - 1, d);
+};
+
+/** Ajoute `delta` jours à une date YYYY-MM-DD (calendrier local). */
+export const addCalendarDays = (dateStr, delta) => {
+  const d = parseLocalCalendarDate(dateStr);
+  if (!d) return dateStr;
+  d.setDate(d.getDate() + delta);
+  return getLocalCalendarDateStr(d);
+};

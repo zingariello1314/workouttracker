@@ -70,6 +70,17 @@
     "notSpecified": "Not specified",
     "noPrograms": "No programs created",
     "noProgramsHint": "Start by creating your first training program"
+  },
+  "detailSearch": {
+    "title": "Search for an exercise",
+    "placeholder": "e.g. pull-up, push-up, curl…",
+    "hint": "Each row is one slot in your program (weekday and session type). Click a result to jump there so you can edit or remove the exercise.",
+    "noResults": "No exercise matches this search.",
+    "mainTrack": "Main session",
+    "weekA": "Gym variant — week A",
+    "weekB": "Gym variant — week B",
+    "weekAWithName": "Gym variant — week A ({{name}})",
+    "weekBWithName": "Gym variant — week B ({{name}})"
   }
 }
 

@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
+import { computeSessionFeedbackWeightedScore10 } from '../../utils/sessionFeedbackUtils';
 import { typography } from '../../styles/typography';
 import Card, { CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -32,6 +33,8 @@ const SessionFeedbackDisplay = ({ feedback, date }) => {
   if (!feedback) {
     return null;
   }
+
+  const weightedScore10 = computeSessionFeedbackWeightedScore10(feedback);
 
   // Fonction pour obtenir l'icône de ressenti
   const getRessentiIcon = (value) => {
@@ -93,6 +96,24 @@ const SessionFeedbackDisplay = ({ feedback, date }) => {
             {t('history.feedback.title', 'Feedback de Session')}
           </h4>
         </div>
+
+        {weightedScore10 != null && (
+          <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-950/25 px-3 py-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-amber-200/90">
+              {t('sessionFeedback.weightedOverall', 'Note globale (pondérée)')}
+            </span>
+            <div className="mt-1 text-lg font-bold tabular-nums text-amber-100">
+              {weightedScore10}
+              <span className="text-sm font-normal text-amber-200/80">/10</span>
+            </div>
+            <p className="mt-1 text-[11px] text-slate-400 leading-snug">
+              {t(
+                'sessionFeedback.weightedOverallHint',
+                'Ressenti et difficulté comptent plus ; sommeil, hydratation et nutrition sont des facteurs secondaires ; la douleur réduit la note.'
+              )}
+            </p>
+          </div>
+        )}
 
         <div className="space-y-4">
           {/* Section 1: Ressenti général */}

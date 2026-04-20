@@ -160,6 +160,33 @@ export const resolveBestRepsStorageKey = (currentData, keys) => {
 };
 
 /**
+ * Dernière valeur de poids enregistrée pour un id d’exercice (toutes dates),
+ * pour préremplir la saisie du jour (clés du type YYYY-MM-DD_id[_semaineA|B]).
+ */
+export const findLatestExerciseWeightValue = (currentData, exerciseIds) => {
+  const weights = currentData?.exerciseWeights;
+  if (!weights || typeof weights !== 'object') return '';
+  const ids = [...new Set((exerciseIds || []).filter((x) => x != null).map(String))];
+  if (!ids.length) return '';
+  let bestDate = '';
+  let bestVal = '';
+  for (const [key, raw] of Object.entries(weights)) {
+    if (raw === undefined || raw === null || String(raw).trim() === '') continue;
+    const datePart = key.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) continue;
+    const rest = key.slice(11);
+    if (!rest) continue;
+    const matchedId = ids.find((id) => rest === id || rest.startsWith(`${id}_`));
+    if (!matchedId) continue;
+    if (datePart >= bestDate) {
+      bestDate = datePart;
+      bestVal = String(raw).trim().replace(',', '.');
+    }
+  }
+  return bestVal;
+};
+
+/**
  * Génère une clé pour un étirement
  * 
  * Format : "YYYY-MM-DD_moment" (matin, midi, soir)

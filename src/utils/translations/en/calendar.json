@@ -10,6 +10,15 @@
     "thisWeek": "This Week",
     "sessionsPer7Days": "sessions / 7 days"
   },
+  "cumulativeStats": {
+    "streetReps": "Program reps (checked exercises)",
+    "volumeLifted": "{{kg}} kg lifted (reps × kg)",
+    "volumeLiftedHint": "Enter weight (kg) on Today for loaded exercises to see volume here.",
+    "enduranceMinutes": "Sport time (endurance, min)",
+    "runningTime": "Total running time",
+    "runningTimeHoursMinutes": "{{h}} h {{m}} min",
+    "runningTimeMinutesOnly": "{{m}} min"
+  },
   "enduranceChallenges": {
     "title": "Endurance Challenges",
     "boxing": "Boxing",
@@ -18,6 +27,7 @@
     "jumprope": "Jump Rope",
     "jumpropeShort": "Rope",
     "running": "Running",
+    "kilometers": " km",
     "reps": "reps",
     "meters": "m",
     "jumps": "jumps",
@@ -48,7 +58,11 @@
       "streaks": "Streaks"
     },
     "streaksAnalysis": "Streaks Analysis",
+    "stepsOnCell": "{{count}} steps",
     "intensity": "Intensity:",
+    "legendBlendTitle": "Tint (for your displayed year/month):",
+    "legendBlendLow": "Quietest day in the displayed period",
+    "legendBlendHigh": "Busiest day in the displayed period",
     "showStats": "Show stats",
     "hideStats": "Hide stats",
     "monthlyJustifications": "Monthly justifications:",
@@ -71,12 +85,50 @@
       "consecutiveDays": "Consecutive days",
       "noStreak": "No streak in progress"
     },
+    "tooltip": {
+      "visualScore": "visual score {{score}}/100",
+      "steps": "{{n}} steps"
+    },
+    "colorMix": {
+      "title": "Cell color (multi-signal)",
+      "subtitle": "The gradient favors logged street load and endurance; kcal and steps weigh less; Garmin moderate vs vigorous minutes are weighted (vigorous > moderate; walking days damp moderate); session feel nudges slightly; heavy walking days are damped.",
+      "score": "Overall visual index: {{score}} / 100",
+      "barLevel": "Intensity level (0–4) share",
+      "barKcal": "Active kcal (vs median) share",
+      "barSteps": "Steps (above baseline) share",
+      "barIntMin": "Intensity minutes (Garmin) share",
+      "intensitySplit": "split mod. {{mod}} min · vigorous {{vig}} min — score equivalent ≈ {{effective}} min (vigorous counts full; moderate discounted on walk-heavy days)",
+      "barLoad": "Load share (street + weighted endurance)",
+      "barReps": "Raw repetitions hint share",
+      "walkNote": "Walking-heavy day: active-time contribution is reduced for realism.",
+      "feedback": "Session feel: {{n}}/5",
+      "feedbackNone": "No session feel logged for this day.",
+      "feedbackNote": "Note:",
+      "scaleExplainer": "Cell colors: light green (your quietest day in the displayed range) to deep red (your busiest). Percentages show the mix; numbers on the right are your real values that day.",
+      "synergyLine": "Same-day street + endurance bonus: ×{{mult}} on the combined index.",
+      "cardioSplit": "Garmin cardio time (this day): walk {{walk}} min · run {{run}} min · other {{other}} min",
+      "baselineKcal": "Personal kcal median (reference): {{ref}} kcal",
+      "baselineSteps": "Personal steps median (reference): {{ref}} steps",
+      "contribUnits": "raw units"
+    },
+    "equiv": {
+      "title": "Indicative scale (day-to-day comparisons)",
+      "intro": "These are heuristics, not official MET tables—anchors to connect street work, Garmin, and color.",
+      "b1": "≈ {{kcal}} useful active kcal ≈ 1 visual load unit (order of magnitude).",
+      "b2": "≈ {{steps}} marginal steps above your usual baseline ≈ 1 unit (capped in the blend).",
+      "b3": "1 street rep at intensity coefficient 1 (e.g. simple dumbbell curl) ≈ 1 calendar load unit; per-exercise stars already scale load.",
+      "b4": "Intervals vs easy running: duration alone is not enough—pace, workout type (intervals/tempo/easy), and HR feed into the endurance load already computed for the day.",
+      "b5": "How notes interact (e.g. hard session + lots of walking): feel 1–5 nudges the score; walk-heavy days dampen intensity inferred from active time.",
+      "todayApprox": "For this date, rough internal units: ~+{{kcalU}} from useful active kcal, ~+{{stepU}} from marginal steps (calendar-only anchors)."
+    },
     "dayDetails": {
       "workoutStats": "Workout statistics",
       "totalReps": "Total repetitions",
       "classicExercises": "Classic exercises",
       "totalDuration": "Total duration",
       "globalIntensity": "Global intensity",
+      "street": "Street load",
+      "enduranceShort": "Endurance",
       "garminAdjusted": "Garmin adjusted",
       "noWorkoutJustified": "No workout recorded this day (justified day)",
       "garminAdjustments": "Garmin adjustments applied",

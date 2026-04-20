@@ -1,5 +1,7 @@
 {
   "title": "Session feedback",
+  "weightedOverall": "Overall score (weighted)",
+  "weightedOverallHint": "Feeling and difficulty weigh most; motivation and energy next; sleep, hydration and nutrition matter less; pain lowers the score; goal reached adds a small bonus.",
   "step": "Step {{current}}/{{total}}",
   "summary": {
     "title": "Summary of your session",

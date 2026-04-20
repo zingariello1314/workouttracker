@@ -36,7 +36,16 @@
     "completedWithDuration": "✓ Complété : {{minutes}}min {{seconds}}s",
     "completedSimple": "✓ Complété",
     "minutes": "Min",
-    "minutesLabel": "min"
+    "minutesLabel": "min",
+    "weightPlaceholder": "Poids",
+    "weightUnit": "kg"
+  },
+  "sessionScore": {
+    "title": "Charge séance (street)",
+    "score": "{{score}} % du volume estimatif",
+    "na": "—",
+    "load": "Charge réalisée {{done}} / ref. {{ref}}",
+    "doneCount": "{{n}} / {{total}} exos cochés"
   },
   "stretches": {
     "title": "Étirements",

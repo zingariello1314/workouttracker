@@ -31,7 +31,16 @@
     "completedWithDuration": "✓ Completed: {{minutes}}min {{seconds}}s",
     "completedSimple": "✓ Completed",
     "minutes": "Min",
-    "minutesLabel": "min"
+    "minutesLabel": "min",
+    "weightPlaceholder": "Weight",
+    "weightUnit": "kg"
+  },
+  "sessionScore": {
+    "title": "Session load (strength)",
+    "score": "{{score}} % of estimated volume",
+    "na": "—",
+    "load": "Load done {{done}} / ref. {{ref}}",
+    "doneCount": "{{n}} / {{total}} exercises checked"
   },
   "stretches": {
     "title": "Stretches",

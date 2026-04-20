@@ -168,10 +168,16 @@ export const useBooksActions = (books = [], setBooks, coverUrls, setCoverUrls, c
   }, [setBooks]);
 
   const handleStatusChange = useCallback((bookId, newStatus) => {
+    const today = new Date().toISOString().slice(0, 10);
     setBooks((prevBooks) =>
-      prevBooks.map((b) =>
-        b.id === bookId ? { ...b, status: newStatus } : b
-      )
+      prevBooks.map((b) => {
+        if (b.id !== bookId) return b;
+        const next = { ...b, status: newStatus };
+        if (newStatus === 'completed' && !b.finishedAt) {
+          next.finishedAt = today;
+        }
+        return next;
+      })
     );
     sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_UPDATED, { bookId, statusChanged: true });
   }, [setBooks]);

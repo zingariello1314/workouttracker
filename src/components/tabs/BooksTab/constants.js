@@ -25,6 +25,14 @@ export const emptySessionForm = {
   pagesRead: '',
   startTime: '',
   note: '',
+  /** 1–10 par critère (voir READING_SESSION_CRITERIA) */
+  criteriaRatings: {
+    immersion: 5,
+    rythme: 5,
+    richesse: 5,
+    concentration: 5,
+    plaisir: 5,
+  },
 };
 
 export const PAGE_SIZE = 30;

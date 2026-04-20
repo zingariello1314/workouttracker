@@ -41,13 +41,13 @@ export function inferExerciseIntensityCoeff(exercise) {
 
   // Référentiel cardio (onglet Exercices) — ids stables cardio_*
   if (idStr.startsWith('cardio_')) {
-    if (idStr.includes('sprint')) return 2.2;
-    if (idStr.includes('interval')) return 1.95;
-    if (idStr.includes('fartlek')) return 1.65;
-    if (idStr.includes('threshold') || idStr.includes('seuil')) return 1.78;
-    if (idStr.includes('tempo')) return 1.72;
-    if (idStr.includes('long')) return 1.48;
-    if (idStr.includes('easy') || idStr.includes('fondamental') || idStr.includes('recovery')) return 1.12;
+    if (idStr.includes('sprint')) return 2.35;
+    if (idStr.includes('interval')) return 2.08;
+    if (idStr.includes('fartlek')) return 1.68;
+    if (idStr.includes('threshold') || idStr.includes('seuil')) return 1.86;
+    if (idStr.includes('tempo')) return 1.78;
+    if (idStr.includes('long')) return 1.42;
+    if (idStr.includes('easy') || idStr.includes('fondamental') || idStr.includes('recovery')) return 1.06;
     if (idStr.includes('jumprope') || idStr.includes('corde')) return 1.42;
     if (idStr.includes('swim') || idStr.includes('natation')) return 1.52;
     if (idStr.includes('box')) return 1.55;
@@ -137,19 +137,65 @@ export function tieredIsometricRawUnits(seconds) {
 const TIERED_ISO_CALIBRATION = 0.575;
 
 /**
- * Contribution calendrier musculation : reps × coeff, ou paliers secondes × coeff pour holds détectés.
+ * Médiane des poids (kg) saisis pour un id d’exercice (toutes dates, clés `YYYY-MM-DD_id…`).
+ * @param {Record<string, string|number>|undefined|null} exerciseWeights
+ * @param {string|number} exerciseId
+ * @returns {number|null}
  */
-export function computeStrengthCalendarContribution(exerciseLike, reps, coeff) {
+export function computeMedianWeightKgForExercise(exerciseWeights, exerciseId) {
+  const id = exerciseId != null ? String(exerciseId) : '';
+  if (!id || !exerciseWeights || typeof exerciseWeights !== 'object') return null;
+  const vals = [];
+  for (const [k, raw] of Object.entries(exerciseWeights)) {
+    const rest = k.slice(11);
+    if (rest !== id && !rest.startsWith(`${id}_`)) continue;
+    if (raw === undefined || raw === null || String(raw).trim() === '') continue;
+    const n = parseFloat(String(raw).trim().replace(',', '.'));
+    if (Number.isFinite(n) && n > 0) vals.push(n);
+  }
+  if (!vals.length) return null;
+  vals.sort((a, b) => a - b);
+  const mid = Math.floor(vals.length / 2);
+  return vals.length % 2 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2;
+}
+
+/**
+ * Multiplicateur de charge pour exercices à charge externe (haltères / barre / gilet).
+ * Sans poids saisi : 1 (pas « gratuit » vs charges lourdes).
+ * Au-dessus de la médiane perso : bonus modéré ; en dessous : léger malus.
+ */
+export function computeExternalLoadMultiplier(usesExternalLoad, weightKg, medianKg) {
+  if (!usesExternalLoad) return 1;
+  const w = Number(weightKg);
+  if (!Number.isFinite(w) || w <= 0) return 1;
+  const med = Number(medianKg);
+  if (!Number.isFinite(med) || med <= 0) {
+    return Math.min(1.14, 1 + w / 420);
+  }
+  const ratio = w / med;
+  if (ratio < 0.72) return 0.88 + (ratio / 0.72) * 0.06;
+  if (ratio < 1) return 0.94 + ((ratio - 0.72) / (1 - 0.72)) * 0.06;
+  if (ratio < 1.35) return 1 + ((ratio - 1) / 0.35) * 0.14;
+  return Math.min(1.42, 1.14 + (ratio - 1.35) * 0.2);
+}
+
+/**
+ * Contribution calendrier musculation : reps × coeff, ou paliers secondes × coeff pour holds détectés.
+ * @param {number} [weightMultiplier] — ex. charge externe (défaut 1)
+ */
+export function computeStrengthCalendarContribution(exerciseLike, reps, coeff, weightMultiplier = 1) {
   const name = exerciseLike?.name || exerciseLike?.nom || '';
   const r = Math.max(0, Math.floor(Number(reps) || 0));
   if (r <= 0) return 0;
   const c = Number(coeff);
   const coeffN = Number.isFinite(c) && c > 0 ? c : inferExerciseIntensityCoeff(exerciseLike);
+  const wm = Number(weightMultiplier);
+  const mult = Number.isFinite(wm) && wm > 0 ? wm : 1;
   if (exerciseNameLooksIsometricForCalendar(name)) {
     const raw = tieredIsometricRawUnits(r);
-    return raw * coeffN * TIERED_ISO_CALIBRATION;
+    return raw * coeffN * TIERED_ISO_CALIBRATION * mult;
   }
-  return r * coeffN;
+  return r * coeffN * mult;
 }
 
 function normalizeSessionDate(session) {
@@ -180,16 +226,16 @@ export function enduranceRepsForSession(activityType, session) {
 
 const RUNNING_TYPE_FACTORS = {
   endurance: 1,
-  easy: 0.92,
-  fundamental: 0.92,
-  recovery: 0.88,
-  long_run: 1.14,
-  long: 1.14,
-  tempo: 1.22,
-  threshold: 1.26,
-  interval: 1.36,
-  fartlek: 1.16,
-  sprint: 1.52
+  easy: 0.86,
+  fundamental: 0.86,
+  recovery: 0.82,
+  long_run: 1.1,
+  long: 1.1,
+  tempo: 1.28,
+  threshold: 1.34,
+  interval: 1.5,
+  fartlek: 1.2,
+  sprint: 1.64
 };
 
 /**
@@ -209,13 +255,13 @@ export function analyzeRunningSessionFactors(session) {
   let paceMult = 1;
   if (distanceKm > 0.05 && minutes > 0) {
     const paceMinPerKm = minutes / distanceKm;
-    if (paceMinPerKm < 3.8) paceMult = 1.4;
-    else if (paceMinPerKm < 4.4) paceMult = 1.28;
-    else if (paceMinPerKm < 5) paceMult = 1.15;
+    if (paceMinPerKm < 3.8) paceMult = 1.48;
+    else if (paceMinPerKm < 4.4) paceMult = 1.34;
+    else if (paceMinPerKm < 5) paceMult = 1.18;
     else if (paceMinPerKm < 5.8) paceMult = 1.02;
-    else if (paceMinPerKm < 6.8) paceMult = 0.95;
-    else if (paceMinPerKm < 8.2) paceMult = 0.88;
-    else paceMult = 0.8;
+    else if (paceMinPerKm < 6.8) paceMult = 0.94;
+    else if (paceMinPerKm < 8.2) paceMult = 0.86;
+    else paceMult = 0.78;
   }
 
   const elev = parseFloat(String(session.elevation ?? '').replace(',', '.')) || 0;

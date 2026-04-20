@@ -24,6 +24,7 @@
   },
   "session": {
     "number": "Séance #{{number}}",
+    "feedbackOnly": "Feedback enregistré (aucun détail d’exercice dans l’historique pour ce jour)",
     "reps": "{{count}} répétition",
     "repsPlural": "{{count}} répétitions",
     "minutes": "{{count}} minute",

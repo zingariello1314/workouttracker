@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
 import Button from './ui/Button';
 import { 
@@ -12,7 +12,8 @@ import {
   Sun, 
   Sunset,
   Plus,
-  Trash2
+  Trash2,
+  Search
 } from 'lucide-react';
 import { typography } from '../styles/typography';
 import {
@@ -26,6 +27,26 @@ import {
   normalizeExerciseMeta
 } from '../utils/programExerciseTypes';
 import { purgeSoftRemovedExercisesFromProgram } from '../utils/programPersistenceUtils';
+import { useTranslation } from '../utils/translations';
+import { useLanguage } from '../context/LanguageContext';
+import { LANGUAGES } from '../utils/translations/constants';
+
+const PROGRAM_WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+
+/** Identifiant DOM stable pour défiler jusqu'à un exo (piste principale ou variante salle). */
+const getProgramExerciseAnchorId = (dayKey, variantKey, exerciseId) => {
+  const slot = variantKey == null ? 'main' : variantKey;
+  return `program-exercise-${dayKey}-${slot}-${exerciseId}`;
+};
+const PROGRAM_DAY_LABELS = {
+  lundi: 'Lundi',
+  mardi: 'Mardi',
+  mercredi: 'Mercredi',
+  jeudi: 'Jeudi',
+  vendredi: 'Vendredi',
+  samedi: 'Samedi',
+  dimanche: 'Dimanche'
+};
 
 const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   /** Édition exo : { dayKey, exerciseId, variantKey?: 'semaineA'|'semaineB' } */
@@ -38,6 +59,30 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   /** Édition titre / focus / durée affichés dans l'en-tête du jour */
   const [editingDayHeaderKey, setEditingDayHeaderKey] = useState(null);
   const [dayHeaderDraft, setDayHeaderDraft] = useState({ name: '', focus: '', duration: '' });
+  const tProgram = useTranslation();
+  const { language } = useLanguage();
+  const [exerciseSearchQuery, setExerciseSearchQuery] = useState('');
+  const [flashExerciseAnchorId, setFlashExerciseAnchorId] = useState(null);
+
+  const programSearchFallback = useMemo(() => {
+    const en = language === LANGUAGES.EN;
+    return {
+      mainTrack: en ? 'Main session' : 'Séance principale',
+      weekA: en ? 'Gym variant — week A' : 'Variante salle — semaine A',
+      weekB: en ? 'Gym variant — week B' : 'Variante salle — semaine B',
+      weekAWithName: (name) =>
+        en ? `Gym variant — week A (${name})` : `Variante salle — semaine A (${name})`,
+      weekBWithName: (name) =>
+        en ? `Gym variant — week B (${name})` : `Variante salle — semaine B (${name})`,
+      title: en ? 'Search an exercise' : 'Rechercher un exercice',
+      placeholder: en ? 'e.g. pull-up, push-up, curl…' : 'Ex. : traction, pompe, curl…',
+      hint:
+        en
+          ? 'Each row is one slot in your program (day and session type). Click a result to jump there.'
+          : 'Chaque ligne = une place dans le programme (jour et type de séance). Cliquez pour y accéder.',
+      noResults: en ? 'No exercise matches this search.' : 'Aucun exercice ne correspond à cette recherche.'
+    };
+  }, [language]);
 
   useEffect(() => {
     if (!program) return;
@@ -55,6 +100,91 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     }
   }, [program, onUpdateProgram]);
 
+  const allProgramExerciseOccurrences = useMemo(() => {
+    const rows = [];
+    if (!program?.schedule) return rows;
+    PROGRAM_WEEK_DAYS.forEach((dayKey) => {
+      const dayData = program.schedule[dayKey];
+      if (!dayData) return;
+
+      (dayData.exercises || []).forEach((exercise) => {
+        rows.push({
+          key: `${dayKey}-main-${exercise.id}`,
+          dayKey,
+          dayLabel: PROGRAM_DAY_LABELS[dayKey],
+          variantKey: null,
+          contextLine: tProgram('program.detailSearch.mainTrack', programSearchFallback.mainTrack),
+          exercise
+        });
+      });
+
+      const sv = dayData.salleVariants;
+      if (sv?.semaineA?.exercises?.length) {
+        sv.semaineA.exercises.forEach((exercise) => {
+          const variantName = sv.semaineA.name?.trim();
+          rows.push({
+            key: `${dayKey}-semaineA-${exercise.id}`,
+            dayKey,
+            dayLabel: PROGRAM_DAY_LABELS[dayKey],
+            variantKey: 'semaineA',
+            contextLine: variantName
+              ? tProgram(
+                  'program.detailSearch.weekAWithName',
+                  programSearchFallback.weekAWithName(variantName),
+                  { name: variantName }
+                )
+              : tProgram('program.detailSearch.weekA', programSearchFallback.weekA),
+            exercise
+          });
+        });
+      }
+      if (sv?.semaineB?.exercises?.length) {
+        sv.semaineB.exercises.forEach((exercise) => {
+          const variantName = sv.semaineB.name?.trim();
+          rows.push({
+            key: `${dayKey}-semaineB-${exercise.id}`,
+            dayKey,
+            dayLabel: PROGRAM_DAY_LABELS[dayKey],
+            variantKey: 'semaineB',
+            contextLine: variantName
+              ? tProgram(
+                  'program.detailSearch.weekBWithName',
+                  programSearchFallback.weekBWithName(variantName),
+                  { name: variantName }
+                )
+              : tProgram('program.detailSearch.weekB', programSearchFallback.weekB),
+            exercise
+          });
+        });
+      }
+    });
+    return rows;
+  }, [program, tProgram, programSearchFallback]);
+
+  const filteredExerciseOccurrences = useMemo(() => {
+    const q = exerciseSearchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return allProgramExerciseOccurrences.filter((row) => {
+      const ex = row.exercise;
+      const hay = [ex.name, ex.notes, ex.materiel, ex.series, ex.type]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [allProgramExerciseOccurrences, exerciseSearchQuery]);
+
+  const scrollToProgramExercise = useCallback((row) => {
+    const anchorId = getProgramExerciseAnchorId(row.dayKey, row.variantKey, row.exercise.id);
+    const el = typeof document !== 'undefined' ? document.getElementById(anchorId) : null;
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setFlashExerciseAnchorId(anchorId);
+    window.setTimeout(() => {
+      setFlashExerciseAnchorId((cur) => (cur === anchorId ? null : cur));
+    }, 2200);
+  }, []);
+
   const handleSaveProgramMeta = () => {
     onUpdateProgram({
       ...program,
@@ -70,17 +200,6 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       description: program.description ?? ''
     });
     setEditingProgramMeta(false);
-  };
-
-  const daysOfWeek = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
-  const dayNames = {
-    lundi: 'Lundi',
-    mardi: 'Mardi', 
-    mercredi: 'Mercredi',
-    jeudi: 'Jeudi',
-    vendredi: 'Vendredi',
-    samedi: 'Samedi',
-    dimanche: 'Dimanche'
   };
 
   const stretchIcons = {
@@ -700,9 +819,63 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
         </CardContent>
       </Card>
 
+      {/* Recherche globale d'exercices (tous les jours + variantes salle) */}
+      <Card className="mb-6 border border-cyan-500/25 bg-slate-900/40">
+        <CardHeader className="pb-2">
+          <CardTitle
+            className={`${typography.presets.h3} flex items-center gap-2 text-cyan-100 normal-case tracking-normal`}
+          >
+            <Search size={20} className="text-cyan-400 shrink-0" />
+            {tProgram('program.detailSearch.title', programSearchFallback.title)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <input
+            type="search"
+            value={exerciseSearchQuery}
+            onChange={(e) => setExerciseSearchQuery(e.target.value)}
+            placeholder={tProgram('program.detailSearch.placeholder', programSearchFallback.placeholder)}
+            className="w-full rounded-lg border border-slate-600 bg-slate-800/90 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            autoComplete="off"
+          />
+          <p className="text-xs text-slate-500">{tProgram('program.detailSearch.hint', programSearchFallback.hint)}</p>
+          {exerciseSearchQuery.trim() && (
+            <div className="rounded-lg border border-slate-600/80 bg-slate-800/50 max-h-[min(24rem,50vh)] overflow-y-auto">
+              {filteredExerciseOccurrences.length === 0 ? (
+                <p className="p-4 text-sm text-slate-400">
+                  {tProgram('program.detailSearch.noResults', programSearchFallback.noResults)}
+                </p>
+              ) : (
+                <ul className="divide-y divide-slate-700/80">
+                  {filteredExerciseOccurrences.map((row) => (
+                    <li key={row.key}>
+                      <button
+                        type="button"
+                        onClick={() => scrollToProgramExercise(row)}
+                        className="w-full px-4 py-3 text-left hover:bg-slate-700/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
+                      >
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                          <span className="text-sm font-semibold text-amber-200/95 shrink-0">{row.dayLabel}</span>
+                          <span className="text-slate-500">·</span>
+                          <span className="text-sm font-medium text-white">{row.exercise.name}</span>
+                        </div>
+                        <div className="mt-1 text-xs text-slate-400">{row.contextLine}</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          {[row.exercise.series, row.exercise.materiel].filter(Boolean).join(' · ')}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Programme détaillé par jour */}
       <div className="space-y-6">
-        {daysOfWeek.map((dayKey) => {
+        {PROGRAM_WEEK_DAYS.map((dayKey) => {
           const dayData = program.schedule[dayKey];
           if (!dayData) return null;
 
@@ -715,7 +888,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   {editingDayHeaderKey === dayKey ? (
                     <div className="w-full space-y-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-white shrink-0">{dayNames[dayKey]}</span>
+                        <span className="text-white shrink-0">{PROGRAM_DAY_LABELS[dayKey]}</span>
                         <span className="text-slate-500">—</span>
                         <input
                           type="text"
@@ -765,7 +938,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                     <>
                       <div className="flex flex-wrap items-start gap-2 sm:gap-3 flex-1 min-w-0">
                         <div className="min-w-0">
-                          <span className="text-white">{dayNames[dayKey]}</span>
+                          <span className="text-white">{PROGRAM_DAY_LABELS[dayKey]}</span>
                           <span className="text-slate-300 font-normal ml-2 sm:ml-3">
                             - {dayData.name}
                           </span>
@@ -929,11 +1102,17 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         editingExercise?.dayKey === dayKey &&
                         editingExercise?.exerciseId === exercise.id &&
                         !editingExercise?.variantKey;
+                      const mainAnchorId = getProgramExerciseAnchorId(dayKey, null, exercise.id);
 
                       return (
                         <div
                           key={exercise.id}
-                          className="rounded-lg p-4 border bg-slate-700/30 border-slate-600"
+                          id={mainAnchorId}
+                          className={`rounded-lg p-4 border bg-slate-700/30 border-slate-600 transition-shadow duration-300 ${
+                            flashExerciseAnchorId === mainAnchorId
+                              ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-slate-900'
+                              : ''
+                          }`}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -1065,10 +1244,16 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                             editingExercise?.dayKey === dayKey &&
                             editingExercise?.exerciseId === exercise.id &&
                             editingExercise?.variantKey === 'semaineA';
+                          const varAAnchorId = getProgramExerciseAnchorId(dayKey, 'semaineA', exercise.id);
                           return (
                             <div
                               key={exercise.id}
-                              className="rounded-lg p-4 border bg-purple-700/20 border-purple-600/30"
+                              id={varAAnchorId}
+                              className={`rounded-lg p-4 border bg-purple-700/20 border-purple-600/30 transition-shadow duration-300 ${
+                                flashExerciseAnchorId === varAAnchorId
+                                  ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-slate-900'
+                                  : ''
+                              }`}
                             >
                               {isEditingVar ? (
                                 renderExerciseEditor()
@@ -1159,10 +1344,16 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                             editingExercise?.dayKey === dayKey &&
                             editingExercise?.exerciseId === exercise.id &&
                             editingExercise?.variantKey === 'semaineB';
+                          const varBAnchorId = getProgramExerciseAnchorId(dayKey, 'semaineB', exercise.id);
                           return (
                             <div
                               key={exercise.id}
-                              className="rounded-lg p-4 border bg-purple-700/20 border-purple-600/30"
+                              id={varBAnchorId}
+                              className={`rounded-lg p-4 border bg-purple-700/20 border-purple-600/30 transition-shadow duration-300 ${
+                                flashExerciseAnchorId === varBAnchorId
+                                  ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-slate-900'
+                                  : ''
+                              }`}
                             >
                               {isEditingVar ? (
                                 renderExerciseEditor()

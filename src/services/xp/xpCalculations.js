@@ -5,6 +5,7 @@
 import { loadEnduranceData as loadEnduranceDataService } from '../endurance/enduranceDataService';
 import { evaluateChallenges } from '../endurance/enduranceChallengesService';
 import { getQuestDureeMinutes } from '../../utils/quests';
+import { averageCriteriaScore } from '../../utils/bookReadingRatings';
 
 // XP par difficulté pour les quêtes (réutilisé depuis useQuietQuestEngine)
 const DIFFICULTY_XP_BASE = {
@@ -14,41 +15,80 @@ const DIFFICULTY_XP_BASE = {
   4: 750,
 };
 
+function genreMultiplier(genre) {
+  const g = (genre || '').toLowerCase();
+  if (!g.trim()) return 1;
+  if (/technique|science|docu|essai|manuel|acad|philosophie|histoire/.test(g)) return 1.08;
+  if (/poésie|classique|théâtre/.test(g)) return 1.04;
+  if (/bd|manga|comic|jeunesse|young/.test(g)) return 0.96;
+  return 1;
+}
+
 /**
- * Calcule l'XP pour les livres
- * @param {Array} sessions - Sessions de lecture
+ * XP d'une session avec contexte livre (pages totales, genre, statut terminé, critères).
+ */
+function sessionXpWithContext(session, book) {
+  const pages = Number(session?.pagesRead) || 0;
+  const mins = Number(session?.durationMinutes) || 0;
+  const totalBookPages = Math.max(0, Number(book?.pages) || 0);
+  const critAvg = averageCriteriaScore(session?.criteriaRatings);
+  const ratingMult = 0.78 + (critAvg / 10) * 0.44;
+
+  let sessionXP = 8;
+  sessionXP += pages * 0.92;
+  sessionXP += Math.min(mins * 0.42, 22);
+
+  if (totalBookPages > 0 && pages > 0) {
+    const frac = Math.min(1, pages / totalBookPages);
+    sessionXP *= 1 + frac * 0.28;
+  }
+
+  if (mins > 0 && pages > 0) {
+    const pagesPerHour = (pages / mins) * 60;
+    if (pagesPerHour >= 48) sessionXP *= 1.48;
+    else if (pagesPerHour >= 32) sessionXP *= 1.26;
+    else if (pagesPerHour >= 20) sessionXP *= 1.12;
+    else if (pagesPerHour >= 12) sessionXP *= 1.04;
+  }
+
+  sessionXP *= ratingMult;
+  sessionXP *= genreMultiplier(book?.genre);
+
+  if (book?.status === 'completed') {
+    sessionXP *= 1.14;
+  }
+
+  return Math.max(0, sessionXP);
+}
+
+/**
+ * Calcule l'XP pour les livres (sessions + contexte par livre).
+ * @param {Array<{ readingSessions?: object[], pages?: number|string, genre?: string, status?: string }>} books
  * @returns {number} XP totale
  */
-export const calculateBooksXP = (sessions) => {
-  if (!sessions || sessions.length === 0) return 0;
-  
+export const calculateBooksXP = (books) => {
+  if (!books || !Array.isArray(books) || books.length === 0) return 0;
+
   let totalXP = 0;
-  
-  sessions.forEach(session => {
-    // Base : 10 XP par session
-    let sessionXP = 10;
-    
-    // Bonus pages : 1 XP par page lue
-    sessionXP += session.pagesRead || 0;
-    
-    // Bonus durée : 0.5 XP par minute (max 30 min = 15 XP)
-    const durationBonus = Math.min((session.durationMinutes || 0) * 0.5, 15);
-    sessionXP += durationBonus;
-    
-    // Bonus vitesse : +20% si > 20 pages/heure, +50% si > 40 pages/heure
-    if (session.durationMinutes > 0 && session.pagesRead > 0) {
-      const pagesPerHour = (session.pagesRead / session.durationMinutes) * 60;
-      if (pagesPerHour >= 40) {
-        sessionXP *= 1.5;
-      } else if (pagesPerHour >= 20) {
-        sessionXP *= 1.2;
-      }
-    }
-    
-    totalXP += Math.round(sessionXP);
+  books.forEach((book) => {
+    const sessions = Array.isArray(book?.readingSessions) ? book.readingSessions : [];
+    sessions.forEach((session) => {
+      totalXP += sessionXpWithContext(session, book);
+    });
   });
-  
-  return totalXP;
+
+  return Math.round(totalXP);
+};
+
+/** @deprecated Préfère calculateBooksXP(books) ; conservé pour appels anciens qui passent une liste plate de sessions. */
+export const calculateBooksXPFromSessionsOnly = (sessions) => {
+  if (!sessions || sessions.length === 0) return 0;
+  const fakeBook = { pages: 0, genre: '', status: 'in-progress' };
+  let totalXP = 0;
+  sessions.forEach((session) => {
+    totalXP += sessionXpWithContext(session, fakeBook);
+  });
+  return Math.round(totalXP);
 };
 
 /**
